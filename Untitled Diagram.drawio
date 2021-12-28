@@ -1,1 +1,13 @@
-<mxfile host="app.diagrams.net" modified="2021-12-28T17:40:26.314Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15" version="16.1.0" etag="9IvBfRKbG37-1oUrIgaH" type="github"><diagram id="7V6z3-Z2AGt-YawSaDxu">UzV2zq1wL0osyPDNT0nNUTV2VTV2LsrPL4GwciucU3NyVI0MMlNUjV1UjYwMgFjVyA2HrCFY1qAgsSg1rwSLBiADYTaQg2Y1AA==</diagram></mxfile>
+<mxfile host="app.diagrams.net" modified="2021-12-28T18:49:48.956Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.110 Safari/537.36" etag="mrfVij2RskYnGjslPa6U" version="16.0.3" type="github">
+  <diagram id="7V6z3-Z2AGt-YawSaDxu" name="Page-1">
+    <mxGraphModel dx="1124" dy="1058" grid="0" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="0" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="8fAWCKdKvo1CzNQNeIbV-1" value="Home page&lt;br&gt;- Log in with Discord&lt;br&gt;&amp;nbsp;Menu: Anki addon&lt;br&gt;Add the bot&lt;br&gt;- Tutorials&lt;br&gt;-&amp;nbsp;" style="rounded=0;whiteSpace=wrap;html=1;sketch=1;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontSize=20;" vertex="1" parent="1">
+          <mxGeometry x="-346" y="-359" width="346" height="234" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
