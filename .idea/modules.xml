@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/next-auth-example.iml" filepath="$PROJECT_DIR$/.idea/next-auth-example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/Discord-Study.iml" filepath="$PROJECT_DIR$/.idea/Discord-Study.iml" />
     </modules>
   </component>
 </project>
