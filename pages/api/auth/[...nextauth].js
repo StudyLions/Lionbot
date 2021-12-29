@@ -9,7 +9,7 @@ export default NextAuth({
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      authorization: { params: { scope: 'identify email' } },
+      authorization: {params: {scope: 'identify email'}},
     })
   ],
   // The secret should be set to a reasonably long random string.
