@@ -1,3 +1,8 @@
+### Deploy: https://discord-study.vercel.app/
+
+<details>
+  <summary>NextAuth info</summary>
+
 <p align="center">
    <br/>
    <a href="https://next-auth.js.org" target="_blank"><img width="150px" src="https://next-auth.js.org/img/logo/logo-sm.png" /></a>
@@ -22,7 +27,7 @@
 
 NextAuth.js is a complete open source authentication solution for [Next.js](http://nextjs.org/) applications.
 
-This is an example application which shows how `next-auth` is applied to a basic Next.js app. It is also used in many of our CI workflows and other places where a concrete usage example is necessary. 
+This is an example application which shows how `next-auth` is applied to a basic Next.js app. It is also used in many of our CI workflows and other places where a concrete usage example is necessary.
 
 It can be found at [`next-auth-example.vercel.app`](https://next-auth-example.vercel.app/)
 
@@ -71,9 +76,9 @@ For more information about setting up a database, please check out the following
 
 2. When setting up OAuth, in the developer admin page for each of your OAuth services, you should configure the callback URL to use a callback path of `{server}/api/auth/callback/{provider}`.
 
-  e.g. For Google OAuth you would use: `http://localhost:3000/api/auth/callback/google`
+e.g. For Google OAuth you would use: `http://localhost:3000/api/auth/callback/google`
 
-  A list of configured providers and their callback URLs is available from the endpoint `/api/auth/providers`. You can find more information at https://next-auth.js.org/configuration/providers
+A list of configured providers and their callback URLs is available from the endpoint `/api/auth/providers`. You can find more information at https://next-auth.js.org/configuration/providers
 
 3. You can also choose to specify an SMTP server for passwordless sign in via email.
 
@@ -117,3 +122,6 @@ Do not forget to set the environment variables for the Client ID and Client Secr
 
 ISC
 
+
+
+</details>

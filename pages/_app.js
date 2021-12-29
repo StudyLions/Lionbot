@@ -1,5 +1,5 @@
 import { SessionProvider } from 'next-auth/react'
-import './styles.css'
+import './styles.scss'
 
 // Use of the <SessionProvider> is now mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
