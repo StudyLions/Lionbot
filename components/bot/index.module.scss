@@ -1,5 +1,5 @@
-@use '../../public/styles/mixinHelper';
-@use "../../public/styles/globalVariables";
+@use 'public/styles/mixinHelper';
+@use "public/styles/globalVariables";
 
 .container_card{
   .card {
@@ -43,19 +43,19 @@
       margin-bottom: 20px;
     }
   }
-}
 
-.container_card:nth-child(2n){
-  background-color: globalVariables.$color-4;
+  &:nth-child(2n){
+    background-color: globalVariables.$color-4;
 
-  .card{
-    flex-direction: row;
+    .card{
+      flex-direction: row;
+    }
   }
 }
 
 .trusted_by_2500 {
   font-size: 58px;
-  color: white;
+  color: globalVariables.$color-0;
   font-weight: bolder;
   background-color: globalVariables.$color-4;
   margin-top: 90px;

@@ -1,5 +1,5 @@
 import {signIn, signOut, useSession} from "next-auth/react"
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import Image from "next/image";
 
 import {default as popup_links} from './popup_links.json'
@@ -28,7 +28,7 @@ export default function Header() {
 
       <nav className={`navbar navbar-expand-lg ${styles.navbar}`}>
         <Image className="navbar-brand"
-               src={require('@/public/images/StudyLion_1.png')}
+               src={require('public/images/StudyLion_1.png')}
                alt="Study bot lion discord logo"
                height="50px"
                width="200px"
@@ -75,14 +75,14 @@ export default function Header() {
                      }}
                   >
                     <Image
-                      src={require('@/public/icons/discord.svg')}
+                      src={require('public/icons/discord.svg')}
                       alt="Discord icon"
                       width={25}
                       height={25}
                     />
                     <span className={`${styles.text_discord}`}>
-               Log in with Discord
-            </span>
+                      Log in with Discord
+                     </span>
                   </a>
                 </>
               )}
@@ -120,7 +120,7 @@ export default function Header() {
                 <a
                   key={link.title + i}
                   href={link.href}
-                  className={`${styles.button} ${link.customClassName ? styles[link.customClassName] : ''}`}
+                  className={`${styles.button_link}`}
                   onClick={(e) => {
                     if(link.title === 'Logout'){
                       e.preventDefault();

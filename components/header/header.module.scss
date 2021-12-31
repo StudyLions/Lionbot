@@ -1,7 +1,6 @@
 @use "public/styles/globalVariables";
 @use "public/styles/mixinHelper";
 
-
 .navbar {
   max-width: 1300px;
   min-height: 90.19px;
@@ -30,7 +29,6 @@
   .content_right {
     margin-left: auto;
     margin-right: 10px;
-    gap: 0 10px;
 
     @include mixinHelper.tabletResponsive{
       margin: 0 auto;
@@ -38,7 +36,12 @@
   }
 }
 
-//TODO: move back
+.signedInStatus {
+  display: block;
+  min-height: 4rem;
+  width: 100%;
+}
+
 .button_login_discord {
   @include mixinHelper.center-content;
 
@@ -64,11 +67,10 @@
   cursor: pointer;
 }
 
-
 .popup {
   @include mixinHelper.center-content;
   position: absolute;
-  top: 75px;
+  top: 80px;
   right: 25px;
   width: fit-content;
   display: grid;
@@ -84,12 +86,11 @@
     transform: translate(-50%, 0);
   }
 
-  .button {
+  .button_link {
     text-decoration: none;
     text-align: center;
     color: globalVariables.$color-4;
     padding: 12px 0;
-    width: 100%;
     min-width: 200px;
     border-radius: 10px;
 
@@ -98,32 +99,26 @@
       color: globalVariables.$color-0;
     }
   }
-}
 
-.popup::after {
-  z-index: -99;
-  content: "";
-  position: absolute;
-  width: 0;
-  height: 0;
-  margin-left: 0;
-  top: 0;
-  right: 7px;
-  box-sizing: border-box;
-  border: 5px solid #fff;
-  transform-origin: 0 0;
-  transform: rotate(135deg);
-  @include mixinHelper.tabletResponsive{
+  &::after {
+    z-index: -99;
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin-left: 0;
     top: 0;
-    left: calc(50% + 42px);
+    right: 7px;
+    box-sizing: border-box;
+    border: 5px solid globalVariables.$color-0;
+    transform-origin: 0 0;
+    transform: rotate(135deg);
+
+    @include mixinHelper.tabletResponsive{
+      top: 0;
+      left: calc(50% + 42px);
+    }
   }
-}
-
-
-.signedInStatus {
-  display: block;
-  min-height: 4rem;
-  width: 100%;
 }
 
 .loading,
@@ -153,15 +148,4 @@
   background-size: cover;
   background-repeat: no-repeat;
   cursor: pointer;
-}
-
-.navItems {
-  margin-bottom: 2rem;
-  padding: 0;
-  list-style: none;
-}
-
-.navItem {
-  display: inline-block;
-  margin-right: 1rem;
 }

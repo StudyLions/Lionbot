@@ -34,7 +34,7 @@ export default function Page() {
             </div>
             <div className={`col-md-6 col-sm-12 ${styles.image_card}`}>
               <Image
-                src={require('@/public/images/banner-1.png')}
+                src={require('public/images/banner-1.png')}
                 alt="Study bot lion discord logo"
               />
             </div>
