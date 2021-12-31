@@ -1,0 +1,167 @@
+@use "public/styles/globalVariables";
+@use "public/styles/mixinHelper";
+
+
+.navbar {
+  max-width: 1300px;
+  min-height: 90.19px;
+  margin: 0 auto;
+  color: globalVariables.$color-0;
+
+  @include mixinHelper.tabletResponsive {
+    text-align: center;
+    flex-direction: column;
+  }
+
+  .navbar_nav {
+    @include mixinHelper.tabletResponsive {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      width: 87%;
+    }
+
+    .nav_link {
+      color: globalVariables.$color-0;
+      font-weight: 600;
+      font-size: 19px;
+    }
+  }
+
+  .content_right {
+    margin-left: auto;
+    margin-right: 10px;
+    gap: 0 10px;
+
+    @include mixinHelper.tabletResponsive{
+      margin: 0 auto;
+    }
+  }
+}
+
+//TODO: move back
+.button_login_discord {
+  @include mixinHelper.center-content;
+
+  background-color: globalVariables.$color-5;
+  padding: 15px 50px;
+  border-radius: 8px;
+  color: globalVariables.$color-0;
+  font-weight: 500;
+  text-decoration: none;
+  cursor: pointer;
+
+  .text_discord {
+    color: globalVariables.$color-0;
+    padding-left: 5px;
+    pointer-events: none;
+  }
+}
+
+.study_button {
+  @include mixinHelper.center-content;
+  background-color: globalVariables.$color-2;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+
+.popup {
+  @include mixinHelper.center-content;
+  position: absolute;
+  top: 75px;
+  right: 25px;
+  width: fit-content;
+  display: grid;
+  z-index: 10;
+  background: globalVariables.$color-0;
+  color: black;
+  border-radius: 10px;
+  font-weight: 500;
+
+  @include mixinHelper.tabletResponsive{
+    top: 98%;
+    left: 50%;
+    transform: translate(-50%, 0);
+  }
+
+  .button {
+    text-decoration: none;
+    text-align: center;
+    color: globalVariables.$color-4;
+    padding: 12px 0;
+    width: 100%;
+    min-width: 200px;
+    border-radius: 10px;
+
+    &:hover {
+      background-color: globalVariables.$color-2;
+      color: globalVariables.$color-0;
+    }
+  }
+}
+
+.popup::after {
+  z-index: -99;
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  margin-left: 0;
+  top: 0;
+  right: 7px;
+  box-sizing: border-box;
+  border: 5px solid #fff;
+  transform-origin: 0 0;
+  transform: rotate(135deg);
+  @include mixinHelper.tabletResponsive{
+    top: 0;
+    left: calc(50% + 42px);
+  }
+}
+
+
+.signedInStatus {
+  display: block;
+  min-height: 4rem;
+  width: 100%;
+}
+
+.loading,
+.loaded {
+  position: relative;
+  top: 0;
+  opacity: 1;
+  overflow: hidden;
+  border-radius: 0 0 .6rem .6rem;
+  padding: .6rem 1rem;
+  margin: 0;
+  background-color: rgba(0, 0, 0, .05);
+  transition: all 0.2s ease-in;
+}
+
+.loading {
+  top: -2rem;
+  opacity: 0;
+}
+
+.avatar {
+  border-radius: 2rem;
+  float: left;
+  height: 2.8rem;
+  width: 2.8rem;
+  background-color: white;
+  background-size: cover;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.navItems {
+  margin-bottom: 2rem;
+  padding: 0;
+  list-style: none;
+}
+
+.navItem {
+  display: inline-block;
+  margin-right: 1rem;
+}

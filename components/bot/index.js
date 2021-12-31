@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import styles from "./index.module.scss"
 import {default as cards} from './bot-cards-info.json'
-import Layout from '@/components/layout'
+import Layout from 'components/layout'
 
 export default function Page() {
   return (
