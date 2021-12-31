@@ -1,0 +1,92 @@
+[
+    {
+      "title": "Statistics.",
+      "description_1": "Allow users to check their daily, weekly, monthly and all-time study statistics.",
+      "description_2": "The users can check their summary, get study tips and analyze their progress using our beautiful graphical interface.",
+      "image": {
+        "src": "weekly.png",
+        "alt": "study statistics studylion Discord bot"
+      }
+    },
+    {
+      "title": "Leaderboards.",
+      "description_1": "Allow your members to check their progress and compare it to other members within the same servers, or in other servers.",
+      "description_2": "You can reset the leaderboard at any time, which allows you to create your own ‘study seasons’.",
+      "image": {
+        "src": "leaderboard-assets.png",
+        "alt": "Leaderboard studylion"
+      }
+    },
+    {
+      "title": "Virtual Study Rooms.",
+      "description_1": "Allows the members to create their own private study rooms and invite their friends to join!",
+      "description_2": "Allow Admins to force the usage of a webcam in specific study rooms, to keep the community safe.",
+      "image": {
+        "src": "cam_only.png",
+        "alt": "Discord Virtual Study Rooms"
+      }
+    },
+    {
+      "title": "Pomodoro Timers.",
+      "description_1": "Show a Pomodoro timer in the title of the study room and play a sound at the start and end of each session.",
+      "description_2": "Highly customizable feature: create your own custom title, timer, and an infinite number of rooms.",
+      "image": {
+        "src": "pomodoro.png",
+        "alt": "Discord Pomodoro Timers"
+      }
+    },
+    {
+      "title": "Profiles.",
+      "description_1": "Stunning profile cards for each one of your members.",
+      "description_2": "Users can show their study fields, statistics and achievements using a single command.",
+      "image": {
+        "src": "profile-1.png",
+        "alt": "Study profile discord studylion"
+      }
+    },
+    {
+      "title": "Economy.",
+      "description_1": "Allow users to earn coins the more they study, and spend it in the role shop!",
+      "description_2": "Set the shop prices, roles, colors: rewarding the users who study the most.",
+      "image": {
+        "src": "economy.png",
+        "alt": "discord name shop color"
+      }
+    },
+    {
+      "title": "Study Badges.",
+      "description_1": "Give roles to users based on the number of hours they studied. This feature is also completely customizable.",
+      "description_2": "Name your ranks, choose the intervals, and the colours of all of the study badges.",
+      "image": {
+        "src": "badges.png",
+        "alt": "Study Lions badges"
+      }
+    },
+    {
+      "title": "To-do and Reminders.",
+      "description_1": "Create todo lists, set weekly and monthly goals that you can keep track of.",
+      "description_2": "Allow your users to develop the accountability and responsibility to complete their tasks while getting use to manage their time.",
+      "image": {
+        "src": "to-do-3.png",
+        "alt": "Discord bot studylion to do list"
+      }
+    },
+    {
+      "title": "Accountability Rooms.",
+      "description_1": "User can schedule study sessions where they must attend. Not attending will cause the entire study group to lose a bonus.",
+      "description_2": "Allow your users to develop the accountability and responsibility to attend the study session on time.",
+      "image": {
+        "src": "accountability.png",
+        "alt": "Accountability rooms"
+      }
+    },
+    {
+      "title": "Utility and Moderation.",
+      "description_1": "Dozens of utility and moderation features every study community needs.",
+      "description_2": "Allows you to make sure your community is safe, welcome new members and much more.",
+      "image": {
+        "src": "moderation-1.png",
+        "alt": "Moderation studylion Discord bot"
+      }
+    }
+]
