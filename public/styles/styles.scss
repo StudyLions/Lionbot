@@ -1,3 +1,4 @@
+@use "public/styles/globalVariables";
 @import 'fonts';
 
 *, body {
@@ -7,4 +8,6 @@
 body {
   margin: 0;
   padding: 0;
+  background: globalVariables.$color-6;
+  color: globalVariables.$color-0;
 }
