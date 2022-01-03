@@ -9,12 +9,16 @@
   font-weight: bold;
   padding: 10px;
 
-  .buttons{
+  .timer_Fields {
+    margin: 10px 0;
+  }
+
+  .buttons {
     @include mixinHelper.center-content;
     margin-top: 10px;
     gap: 0 20px;
 
-    .pushable {
+    .btn_start_countdown {
       background: globalVariables.$color-9;
       border-radius: 34px;
       border: none;
@@ -23,7 +27,6 @@
       outline-offset: 4px;
       user-select: none;
       font-weight: bold;
-
 
       &:active .front {
         transform: translateY(-2px);

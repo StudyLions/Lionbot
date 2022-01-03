@@ -1,19 +1,6 @@
 @use "public/styles/globalVariables";
 @import 'fonts';
 
-body {
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  background: globalVariables.$color-6;
-  color: globalVariables.$color-0;
-}
-
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
 a, abbr, acronym, address, big, cite, code,
@@ -32,7 +19,7 @@ time, mark, audio, video {
   border: 0;
   vertical-align: baseline;
 }
-/* HTML5 display-role reset for older browsers */
+
 article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
   display: block;
@@ -54,4 +41,17 @@ q:before, q:after {
 table {
   border-collapse: collapse;
   border-spacing: 0;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: globalVariables.$color-6;
+  color: globalVariables.$color-0;
 }

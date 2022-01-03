@@ -3,32 +3,32 @@ import {default as options} from './options-timer.json'
 import {useEffect, useState} from 'react';
 
 export default function Timer() {
-  const [typeInterval, setTypeInterval] = useState("Group's Timer");
-  const [timerTotalSeconds, setTimerTotalSeconds] = useState(0);
+  const [typeInterval, setTypeInterval] = useState("Session Timer");
+  const [timerCountdown, setTimerCountdown] = useState(0);
 
   useEffect(() => {
-    if (typeInterval === "Group's Timer") {
+    if (typeInterval === "Session Timer") {
       //   TODO: Get time from API;
-      setTimerTotalSeconds(0)
+      setTimerCountdown(0)
     }
   }, [typeInterval]);
 
   useEffect(() => {
-    if (timerTotalSeconds === 0) {
+    if (timerCountdown === 0) {
       return;
     }
 
     let interval = setInterval(() => {
-      setTimerTotalSeconds(timerTotalSeconds => timerTotalSeconds - 1)
+      setTimerCountdown(timerCountdown => timerCountdown - 1)
     }, 1000);
     return () => clearInterval(interval);
 
-  }, [timerTotalSeconds])
+  }, [timerCountdown])
 
   return (
     <div className={`${styles.container}`}>
       <p>VC Name</p>
-      {showTimerFields(timerTotalSeconds)}
+      {showTimerFields(timerCountdown)}
       <div className={`${styles.buttons}`}>
         {showStartButton(typeInterval)}
         <div className={`${styles.option_dropdown}`}>
@@ -44,23 +44,23 @@ export default function Timer() {
     </div>
   )
 
-  function showTimerFields(timerTotalSeconds) {
-    let minutes = Math.floor(timerTotalSeconds / 60);
-    let seconds = timerTotalSeconds - minutes * 60;
+  function showTimerFields(timerCountdown) {
+    let minutes = Math.floor(timerCountdown / 60);
+    let seconds = timerCountdown - minutes * 60;
 
     minutes = minutes <= 9 ? '0' + minutes : minutes;
     seconds = seconds <= 9 ? '0' + seconds : seconds;
-    return <p>{minutes}:{seconds}</p>
+    return <p className={styles.timer_Fields}>{minutes}:{seconds}</p>
   }
 
   function showStartButton(typeInterval) {
-    if(typeInterval === 'Group\'s Timer'){
+    if(typeInterval === 'Session Timer'){
       return;
     }
 
     return <button onClick={() => {
-      setTimerTotalSeconds(typeInterval * 60 - 1);
-    }} className={styles.pushable}>
+      setTimerCountdown(typeInterval * 60 - 1);
+    }} className={styles.btn_start_countdown}>
           <span className={styles.front}>
             Start
           </span>
