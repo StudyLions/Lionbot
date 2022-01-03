@@ -6,13 +6,6 @@ import Layout from 'components/layout'
 export default function Page() {
   return (
     <Layout>
-      <style jsx global>{`
-        body {
-          background: #082032;
-          max-width: unset;
-        }
-      `}
-      </style>
       <div>
         <div className={styles.container_card}>
           <div className={`row flex-row ${styles.card}`}>
