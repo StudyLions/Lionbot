@@ -1,8 +1,10 @@
 @use "public/styles/globalVariables";
 @import 'fonts';
 
-*, body {
+html, body, div, button, p, input, .mat-checkbox, select, .mat-option, span, pre {
   font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
 }
 
 body {
@@ -10,4 +12,9 @@ body {
   padding: 0;
   background: globalVariables.$color-6;
   color: globalVariables.$color-0;
+}
+
+h1, h2, h3, h4, h5, h6, p {
+  margin: 0;
+  padding: 0;
 }
