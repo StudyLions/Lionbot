@@ -1,4 +1,5 @@
 import {signIn, signOut, useSession} from "next-auth/react"
+import Link from 'next/link'
 import React, {useState} from 'react';
 import Image from "next/image";
 
@@ -26,7 +27,7 @@ export default function Header() {
         <style>{`.nojs-show { opacity: 1; top: 0; }`}</style>
       </noscript>
 
-      <nav className={`navbar navbar-expand-lg ${styles.navbar}`}>
+      <nav className={`container navbar navbar-expand-lg ${styles.navbar}`}>
         <Image className="navbar-brand"
                src={require('public/images/StudyLion_1.png')}
                alt="Study bot lion discord logo"
@@ -89,9 +90,9 @@ export default function Header() {
               {session && (
                 <>
                   <div className="row">
-                    <div className={`col-6 ${styles.study_button}`}>
-                      Study
-                    </div>
+                    <Link href="/study">
+                      <a className={`col-6 text-decoration-none ${styles.study_button}`}>Study</a>
+                    </Link>
 
                     <div className={`col-6 ${styles.options_menu}`}>
                       {session.user.image && (
