@@ -1,6 +1,6 @@
 import styles from "./timer.module.scss"
 import {default as options} from './options-timer.json'
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 export default function Timer() {
   const [typeInterval, setTypeInterval] = useState("Group's Timer");
@@ -29,8 +29,8 @@ export default function Timer() {
     <div className={`${styles.container}`}>
       <div>VC Name</div>
       <div>{Math.floor(timeLeft / 60)}:{timeLeft - (Math.floor(timeLeft / 60)) * 60}</div>
-      <div className={`${styles.buttons}`}>
 
+      <div className={`${styles.buttons}`}>
         <div onClick={() => {
           setTimeLeft(typeInterval * 60 - 1);
         }} className={styles.pushable}>
@@ -48,6 +48,7 @@ export default function Timer() {
             ))}
           </select>
         </div>
+
       </div>
     </div>
   )
