@@ -1,5 +1,5 @@
 import Layout from 'components/layout'
-import Timer from "./timer";
+import Timer from "components/timer";
 
 export default function Page() {
   return (
