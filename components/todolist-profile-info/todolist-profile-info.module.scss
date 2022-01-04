@@ -1,0 +1,100 @@
+@use 'public/styles/mixinHelper';
+@use "public/styles/globalVariables";
+
+.current_task {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  font-weight: 900;
+  background-color: globalVariables.$color-0;
+  padding: 15px;
+  color: globalVariables.$color-6;
+  border-radius: 45px;
+}
+
+.avatar {
+  border-radius: 1rem;
+  height: 4rem;
+  width: 4rem;
+  background-color: globalVariables.$color-0;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border: 1px solid globalVariables.$color-0;
+}
+
+.profile{
+  padding-left: 20px;
+  align-self: flex-end;
+  padding-bottom: 5px;
+}
+
+.name_author {
+  color: globalVariables.$color-8;
+  font-weight: bold;
+}
+
+.number_author {
+  margin-left: 10px;
+  color: globalVariables.$color-10;
+  font-weight: bold;
+}
+
+.tags{
+  margin-top: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+
+  .tag_name{
+    background-color: globalVariables.$color-0;
+    color: globalVariables.$color-6;
+    font-weight: 900;
+    font-size: 7px;
+    width: fit-content;
+    padding: 2px 5px;
+    border-radius: 5px;
+  }
+}
+
+.more_details{
+  margin-top: 10px;
+  div{
+    .answers, .attendance{
+      font-size: 8px;
+    }
+  }
+}
+
+.container_rank{
+  .name_rank{
+    color: globalVariables.$color-8;
+    font-weight: 600;
+    font-size: 12px;
+
+    .range_rank{
+      font-weight: 200;
+      font-size: 10px;
+      color: globalVariables.$color-10;
+    }
+  }
+
+  .progress{
+    width: 100%;
+    background-color: globalVariables.$color-11;
+    border-radius: 5px;
+    margin: 5px 0;
+
+    .bar{
+      border-radius: 5px;
+      height: 5px;
+      background-color: globalVariables.$color-8;
+    }
+  }
+
+  .next_rank{
+    font-weight: 200;
+    font-size: 8px;
+    color: globalVariables.$color-10;
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "current_user": {
+    "profile_info": {
+      "action": "Editing",
+      "image_src": "https://cdn.discordapp.com/embed/avatars/1.png",
+      "name_author": "Ari Horesh",
+      "number_author": "#0001",
+      "tags": [
+        "Medical Student",
+        "Hobby: Nutrition",
+        "Job: Premed Tutor",
+        "Study streamer"
+      ],
+      "current_rank": "Levelbadge level 11",
+      "range_rank": "144-1000h",
+      "percent_progress_bar": "12%",
+      "next_rank": "Levelbadge Ultimate > 1000h"
+    },
+    "todo_list": [
+      {
+        "name": "Run 50km",
+        "is_completed": true
+      },
+      {
+        "name": "Read 5 books",
+        "is_completed": false
+      },
+      {
+        "name": "Renovate bedroom",
+        "is_completed": true
+      },
+      {
+        "name": "Learn a new language",
+        "is_completed": false
+      },
+      {
+        "name": "Upload a vlog",
+        "is_completed": true
+      }
+    ]
+  }
+}
