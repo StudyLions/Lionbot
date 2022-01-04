@@ -26,7 +26,7 @@ export default function Timer() {
   }, [timerCountdown])
 
   return (
-    <div className={`${styles.container}`}>
+    <div className={`border-radius-15 p-2 bg-dark-blue ${styles.container}`}>
       <p>VC Name</p>
       {showTimerFields(timerCountdown)}
       <div className={`${styles.buttons}`}>

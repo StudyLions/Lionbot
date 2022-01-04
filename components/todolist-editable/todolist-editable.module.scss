@@ -1,0 +1,47 @@
+@use "public/styles/globalVariables";
+@use "public/styles/mixinHelper";
+
+.task_editable {
+  font-size: 13px;
+
+  .index_task {
+    line-height: 13px;
+    height: 15px;
+    min-width: 15px;
+    font-size: 10px;
+    border: 1px solid globalVariables.$color-10;
+  }
+}
+
+.task_completed {
+  .index_task {
+    background-color: globalVariables.$color-12;
+    border: solid 1px globalVariables.$color-12;
+    color: globalVariables.$color-7;
+  }
+
+  .name_task {
+    color: globalVariables.$color-12;
+    text-decoration: line-through;
+  }
+}
+
+.task_incompleted {
+  .index_task, .name_task {
+    color: globalVariables.$color-10;
+  }
+}
+
+.add_task_container {
+  height: 30px;
+
+  input {
+    font-size: 12px;
+  }
+
+  button {
+    font-size: 12px;
+    color: globalVariables.$color-7;
+    background-color: globalVariables.$color-8;
+  }
+}
