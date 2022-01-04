@@ -116,7 +116,7 @@ export default function Header() {
         </div>
         {session && expanded && (
           <>
-            <div className={`${styles.popup}`} onMouseLeave={close}>
+            <div className={`bg-white text-black ${styles.popup}`} onMouseLeave={close}>
               {popup_links.map((link, i) =>(
                 <a
                   key={link.title + i}
