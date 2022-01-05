@@ -1,12 +1,15 @@
+import Image from 'next/image'
 import styles from './todolist-editable.module.scss'
+import {Menu, MenuButton, MenuDivider, MenuItem, MenuList} from "@chakra-ui/react";
 
 export default function TodolistEditable(data){
   let tasks = data.tasks;
+
   return (
     <>
       {tasks.map((task, index) => (
         <div
-          className={`mb-2 d-flex align-items-center ${styles.task_editable} 
+          className={`mb-1 pb-1 d-flex align-items-center ${styles.task_editable} 
           ${task.is_completed ? styles.task_completed : styles.task_incompleted}`}
           key={task + index}>
           <div className={`me-2 d-inline-block text-center rounded ${styles.index_task}`}>
@@ -16,13 +19,47 @@ export default function TodolistEditable(data){
             className={`d-inline ${styles.name_task}`}>
             {task.name}
           </div>
+          <div
+            className={`ms-auto d-flex ${styles.three_horizontal_dots}`}
+            onClick={() => {
+              toggle_dropdown(task, index)
+            }}>
+            <Image width={15} src={require('public/icons/3-horizontal-dots.svg')} alt="3 horizontal dots"/>
+          </div>
+
+          <Menu>
+            <MenuButton
+              px={4}
+              py={2}
+              transition='all 0.2s'
+              borderRadius='md'
+              borderWidth='1px'
+              _hover={{ bg: 'gray.400' }}
+              _expanded={{ bg: 'blue.400' }}
+              _focus={{ boxShadow: 'outline' }}
+            >
+              test
+            </MenuButton>
+            <MenuList>
+              <MenuItem>New File</MenuItem>
+              <MenuItem>New Window</MenuItem>
+              <MenuDivider />
+              <MenuItem>Open...</MenuItem>
+              <MenuItem>Save File</MenuItem>
+            </MenuList>
+          </Menu>
+
+
         </div>
       ))}
-      <div className={`d-flex mt-3 ${styles.add_task_container}`}>
-        <input type="text" className="form-control d-inline-block me-3" placeholder="Add task here" aria-label=""
-               aria-describedby="basic-addon1"/>
-        <button type="button" className="btn fw-bold d-inline-block">Add</button>
-      </div>
     </>
   )
+
+  function toggle_dropdown(task, index) {
+    return (
+      <div className={styles.dropdown_settings_task}>
+        Test
+      </div>
+    )
+  }
 }

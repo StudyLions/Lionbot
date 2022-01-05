@@ -1,4 +1,6 @@
 import {SessionProvider} from 'next-auth/react'
+import { ChakraProvider } from '@chakra-ui/react'
+
 import 'bootstrap/dist/css/bootstrap.css';
 import 'public/styles/styles.scss'
 
@@ -25,7 +27,9 @@ export default function App({Component, pageProps}) {
         refetchInterval: 0
       }}
       session={pageProps.session}>
-      <Component {...pageProps} />
+      <ChakraProvider>
+        <Component {...pageProps} />
+      </ChakraProvider>
     </SessionProvider>
   )
 }

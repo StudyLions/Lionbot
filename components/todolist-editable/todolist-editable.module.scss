@@ -3,6 +3,7 @@
 
 .task_editable {
   font-size: 18px;
+  border-bottom: 1px solid #2d485a59;
 
   .index_task {
     line-height: 18px;
@@ -42,4 +43,14 @@
     color: globalVariables.$color-7;
     background-color: globalVariables.$color-8;
   }
+}
+
+.three_horizontal_dots {
+  cursor: pointer;
+}
+
+.dropdown_settings_task {
+  background-color: white;
+  color: black;
+  position: absolute;
 }
