@@ -1,7 +1,7 @@
-import Image from "next/image";
-import styles from "./index.module.scss";
-import { default as cards } from "./bot-cards-info.json";
-import Layout from "components/layout";
+import Image from 'next/image';
+import styles from './index.module.scss';
+import {default as cards} from './bot-cards-info.json';
+import Layout from 'components/layout';
 
 export default function Page() {
   return (
@@ -31,7 +31,7 @@ export default function Page() {
                   in your Discord community for free with configuration tutorials? Yeap! For Free. Always.
                 </p>
                 <a
-                  className={`d-flex justify-content-center text-decoration-none ${styles.link} ${styles.buttonLink}`}
+                  className={`d-flex justify-content-center text-decoration-none text-uppercase ${styles.link} ${styles.buttonLink}`}
                   href={"https://discord.studylions.com/invite"}
                   target={"_blank"}
                 >
@@ -40,7 +40,7 @@ export default function Page() {
               </div>
             </div>
             <div className={`col-12 col-xl-6 ${styles.image_card}`}>
-              <Image src={require("public/images/banner-1.png")} alt="Study bot lion discord logo" />
+              <Image priority src={require("public/images/banner-1.png")} alt="Study bot lion discord logo" />
             </div>
           </div>
         </div>
