@@ -1,18 +1,22 @@
 import Layout from "@/components/layout";
 import { loadStripe } from "@stripe/stripe-js";
+import DonationCard from "@/components/donationCard/donationCard";
+import { DonationsTypes } from "constants/DonationsTypes";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
 export default function Checkout() {
-  const handleClick = async (event) => {
-    // Call your backend to create the Checkout session
+
+  const createPaymentSession = async (price: number) => {
+    // Create Checkout session on backend
     const { sessionId } = await fetch('/api/checkout/session', {
       method: 'POST',
       headers: {
         'content-type': "application/json",
       },
-      body: JSON.stringify({ quantity: 25 })
+      body: JSON.stringify({ quantity: 1, amount: price })
     }).then(res => res.json());
+
     //When the customer clicks on the button, redirect them to Checkout.
     const stripe = await stripePromise;
     const { error } = await stripe.redirectToCheckout({
@@ -21,10 +25,13 @@ export default function Checkout() {
   }
 
   return <Layout>
-    <h1>Checkout</h1>
-
-    <button role="link" onClick={ handleClick }>
-      Checkout
-    </button>
+    <div className={`container`}>
+      <h1 className={`mb-5 text-center`}>Support Discord.study Development</h1>
+      <div style={{display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "30px", justifyItems: 'center'}}>
+        { DonationsTypes.map((product, index) => (
+                <DonationCard onSelect={ createPaymentSession } { ...product } key={ index }/>
+        ) )}
+      </div>
+    </div>
   </Layout>
 }

@@ -2,6 +2,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { getToken } from "next-auth/jwt";
 
+import { DonationsTypes } from "constants/DonationsTypes";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2020-08-27',
 })
@@ -10,17 +12,19 @@ const secret = process.env.SECRET
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   const userID = (await getToken({req, secret}))
-  const { quantity } = req.body;
+  const { quantity, amount } = req.body;
+
+  const donationInfo: any  = DonationsTypes.find(d => d.amount == amount)
 
   const session = await stripe.checkout.sessions.create({
-    submit_type: 'donate',
+    submit_type: 'auto',
     payment_method_types: ['card'],
     line_items: [{
       name: `Donation ${userID.name} (${userID.sub})`,
-      amount: 3350,
+      amount: amount * 100, // * 100 because must be also with cents
       currency: 'eur',
       quantity: quantity,
-      description: 'Total - 33$ for 3000 tokens',
+      description: `Tokens: ${donationInfo.tokens + donationInfo.tokens_bonus}`,
     }],
     mode: 'payment',
     success_url: `${req.headers.origin}/result?session_id={CHECKOUT_SESSION_ID}`,
