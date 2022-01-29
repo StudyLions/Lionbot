@@ -1,6 +1,6 @@
 const defaultDonationImage = "/../public/images/StudyLion_1.png"
 
-export const DonationsTypes = [
+export const DonationsData = [
   {
     amount: 1,
     tokens: 300,
@@ -37,4 +37,37 @@ export const DonationsTypes = [
     tokens_bonus: 7000,
     image: defaultDonationImage
   },
+]
+
+export const SubscriptionsData = [
+  {
+    amount: 11.95,
+    benefits: [
+      "Fully refundable for 7 days",
+      "benef 2",
+      "benef 3",
+      "benef 4",
+      "benef 5",
+    ]
+  },
+  {
+    amount: 89.90,
+    benefits: [
+      "Fully refundable for 7 days",
+      "benef 2",
+      "benef 3",
+      "benef 4",
+      "benef 5",
+    ]
+  },
+  {
+    amount: 49.99,
+    benefits: [
+      "Fully refundable for 7 days",
+      "benef 2",
+      "benef 3",
+      "benef 4",
+      "benef 5",
+    ]
+  }
 ]

@@ -1,4 +1,4 @@
-import Bot_Page from "components/bot/index";
+import Bot_Page from "components/Bot/index";
 
 export default function Page() {
   return (

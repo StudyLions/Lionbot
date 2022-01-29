@@ -4,7 +4,7 @@ import React, {useState} from 'react';
 import Image from "next/image";
 
 import {default as popup_links} from './popup_links.json'
-import styles from "./header.module.scss"
+import styles from "./Header.module.scss"
 
 export default function Header() {
   const {data: session, status} = useSession()

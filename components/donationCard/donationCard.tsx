@@ -1,5 +1,5 @@
 import Image from "next/image";
-import styles from "./donationCard.module.scss"
+import styles from "./DonationCard.module.scss"
 
 interface IProps {
   amount: number,
