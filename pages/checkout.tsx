@@ -1,7 +1,8 @@
 import Layout from "@/components/layout";
 import { loadStripe } from "@stripe/stripe-js";
 import DonationCard from "@/components/DonationCard/DonationCard";
-import { DonationsData } from "constants/DonationsData";
+import { DonationsData, SubscriptionsData } from "constants/DonationsData";
+import SubscriptionCard from "@/components/SubscriptionCard/SubscriptionCard";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
@@ -37,15 +38,11 @@ export default function Checkout() {
     <div className={ `container` }>
       <h1 className={ `mt-5 mb-5 text-center` }>Subscription</h1>
       <div className={ `row text-center` }>
-        <div className={ `col-4` }>
-          1
-        </div>
-        <div className={ `col-4` }>
-          2
-        </div>
-        <div className={ `col-4` }>
-          3
-        </div>
+        { SubscriptionsData.map((subscription, index) => (
+                <div className={ `col-4` }>
+                  <SubscriptionCard { ...subscription } key={ index }/>
+                </div>
+        )) }
       </div>
     </div>
   </Layout>
