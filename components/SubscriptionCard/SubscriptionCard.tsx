@@ -3,15 +3,15 @@ import Image from "next/image";
 import React from "react";
 
 interface IProps {
-  typePlan: number,
+  tag?: string,
+  typePlan: string,
   amount: number,
-  billedFrequency: number,
+  billedFrequency: string,
   benefits: Array<string>,
   buttonText: string,
-  tag: string
 }
 
-export default function SubscriptionCard({ typePlan, amount, billedFrequency, benefits, buttonText, tag = null }: IProps) {
+export default function SubscriptionCard({tag, typePlan, amount, billedFrequency, benefits, buttonText }: IProps) {
   return (
           <div className={ `${ styles.containerSubscriptionCard }` }>
             {tag && <p className={`${styles.tag}`}>{tag}</p>}
