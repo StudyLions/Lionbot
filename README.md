@@ -1,4 +1,4 @@
-### Deploy: https://discord-study.vercel.app/
+### Deploy: https://discordstudy.vercel.app/
 
 <details>
   <summary>NextAuth info</summary>
