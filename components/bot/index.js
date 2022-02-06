@@ -46,7 +46,7 @@ export default function Page() {
         </div>
 
         <div className={`text-center ${styles.trusted_by_2500}`}>
-          <h2>Trusted by 2,500+ Study Servers</h2>
+          <h2>Trusted by 4,500+ Study Servers</h2>
         </div>
 
         {cards.map((card, i) => (
