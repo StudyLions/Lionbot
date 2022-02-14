@@ -1,32 +1,32 @@
-# stage1 as builder
-FROM node:14.18.0-alpine as builder
+FROM node:14.18.0-alpine3.14
 
-# copy the package.json to install dependencies
-COPY package.json package-lock.json ./
+RUN apk add --no-cache libc6-compat
 
-# Install the dependencies and make the folder
-RUN npm install && mkdir /nextjs-ui && mv ./node_modules ./nextjs-ui
+RUN npm i -g npm
 
-WORKDIR /nextjs-ui
+#ENV NODE_ENV production
+ENV PORT 3000
+
+EXPOSE 3000
+
+WORKDIR /home/nextjs/app
+
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nextjs -u 1001
+
+COPY package.json .
+COPY package-lock.json .
+
+RUN chown -R nextjs:nodejs /home/nextjs
+
+USER nextjs
+
+RUN npm install
+RUN npx browserslist@latest --update-db
+RUN npx next telemetry disable
 
 COPY . .
 
-# Build the project and copy the files
 RUN npm run build
 
-
-FROM nginx:alpine
-
-#!/bin/sh
-
-COPY ./.nginx/nginx.conf /etc/nginx/nginx.conf
-
-## Remove default nginx index page
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy from the stahg 1
-COPY --from=builder /nextjs-ui/out /usr/share/nginx/html
-
-EXPOSE 3000 80
-
-ENTRYPOINT ["nginx", "-g", "daemon off;"]
+CMD [ "npm", "start" ]
