@@ -1,13 +1,30 @@
 version: '3.1'
 
 services:
-  nextjs:
+  app_dev:
+    container_name: app_dev
     restart: unless-stopped
     env_file:
       - .env.local
     ports:
-      - 3000:3000
+      - '3000:3000'
     build:
       context: .
       dockerfile: Dockerfile
     command: npm run dev
+
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - app-network
+
+#Docker Networks
+networks:
+  app-network:
+    driver: bridge
