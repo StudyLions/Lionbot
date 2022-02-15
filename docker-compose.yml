@@ -21,12 +21,6 @@ services:
     ports:
       - "80:80"
       - "443:443"
-    networks:
-      - app-network
     volumes:
       - ./secrets/ssl:/etc/ssl/
       - ./secrets/nginx:/etc/nginx/conf.d/
-#Docker Networks
-networks:
-  app-network:
-    driver: bridge
