@@ -5,7 +5,7 @@ services:
     container_name: app_dev
     restart: unless-stopped
     env_file:
-      - .env.local
+      - secrets/.env.local
     ports:
       - '3000:3000'
     build:
@@ -23,7 +23,8 @@ services:
       - "443:443"
     networks:
       - app-network
-
+    volumes:
+      - ./secrets/ssl:/etc/ssl/
 #Docker Networks
 networks:
   app-network:
