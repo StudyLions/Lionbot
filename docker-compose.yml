@@ -1,21 +1,26 @@
 version: '3.1'
 
 services:
-  app_dev:
-    container_name: app_dev
+  app_staging:
     restart: unless-stopped
     env_file:
-      - secrets/.env.local
-    ports:
-      - '3000:3000'
+      - secrets/.env.staging
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run dev
+    command: npm run start
+
+  app_production:
+    restart: unless-stopped
+    env_file:
+      - secrets/.env.production
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run start
 
   nginx:
     image: nginx:alpine
-    container_name: nginx
     restart: unless-stopped
     tty: true
     ports:
