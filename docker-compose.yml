@@ -13,9 +13,9 @@ services:
       dockerfile: Dockerfile
     command: npm run dev
 
-  webserver:
+  nginx:
     image: nginx:alpine
-    container_name: webserver
+    container_name: nginx
     restart: unless-stopped
     tty: true
     ports:
@@ -25,6 +25,7 @@ services:
       - app-network
     volumes:
       - ./secrets/ssl:/etc/ssl/
+      - ./secrets/nginx:/etc/nginx/conf.d/
 #Docker Networks
 networks:
   app-network:
