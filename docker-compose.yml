@@ -4,20 +4,20 @@ services:
   app_staging:
     restart: unless-stopped
     env_file:
-      - secrets/.env.staging
+      - secrets/.env.local
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run start
+    command: npm run start:dev
 
   app_production:
     restart: unless-stopped
     env_file:
-      - secrets/.env.production
+      - secrets/.env.local
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run start
+    command: npm run start:dev
 
   nginx:
     image: nginx:alpine
