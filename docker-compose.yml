@@ -1,9 +1,31 @@
 version: '3.1'
 
 services:
-  nextjs:
-    ports:
-      - 3000:3000
+  app_staging:
+    restart: unless-stopped
+    env_file:
+      - secrets/.env.local
     build:
       context: .
       dockerfile: Dockerfile
+    command: npm run start:dev
+
+  app_production:
+    restart: unless-stopped
+    env_file:
+      - secrets/.env.local
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: npm run start:dev
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./secrets/ssl:/etc/ssl/
+      - ./secrets/nginx:/etc/nginx/conf.d/
