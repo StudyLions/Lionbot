@@ -1,4 +1,31 @@
-### Deploy: https://discordstudy.vercel.app/
+### Deployment: https://discord.study/
+### Staging: https://staging.discord.study/
+
+
+<details>
+  <summary>Config docker and deployment on server</summary>
+
+Server structure:
+- home/discordStudy 
+  - [deploy.sh](https://gist.github.com/EliseiNicolae/40f5046eb1aebd157a289f85ae6e2b2a#file-deploy-sh)
+  - [docker-compose.yml  ](https://gist.github.com/EliseiNicolae/0b3b5a6b369a04ac92e0d35bbad739f6)
+  - [Dockerfile](https://gist.github.com/EliseiNicolae/d79b33ab3f649e854e081b77f6422e68)
+  - production ([main](https://github.com/StudyLions/Discord-Study) repository)
+  - staging ([staging](https://github.com/StudyLions/Discord-Study/tree/staging) repository)
+  - secrets
+    - env_production
+      - .env.local
+    - env_staging
+      - .env.local
+    - nginx
+      - [production.conf](https://gist.github.com/EliseiNicolae/03bb019cbf9e76ef48982ccb65c0ded5)
+      - [staging.conf](https://gist.github.com/EliseiNicolae/26189c94e2a8ca7e3e290cf1d262d8c5)
+    - ssl
+      - discord.study.key
+      - discord.study.pem
+  
+  For running the deployment you need to write `./deploy.sh` in `discordStudy` folder.
+</details>
 
 <details>
   <summary>NextAuth info</summary>
