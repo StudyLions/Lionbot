@@ -23,6 +23,8 @@ Server structure:
     - ssl
       - discord.study.key
       - discord.study.pem
+  
+  For running the deployment you need to write `./deploy.sh` in `discordStudy` folder.
 </details>
 
 <details>
