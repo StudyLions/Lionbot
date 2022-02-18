@@ -1,8 +1,7 @@
 import Layout from "@/components/layout";
 import { loadStripe } from "@stripe/stripe-js";
-import DonationCard from "@/components/DonationCard/DonationCard";
-import { DonationsData, SubscriptionsData } from "constants/DonationsData";
-import SubscriptionCard from "@/components/SubscriptionCard/SubscriptionCard";
+import { DonationsData } from "constants/DonationsData";
+import DonationCard from "@/components/donationCard/donationCard";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
@@ -31,17 +30,6 @@ export default function Checkout() {
       <div style={ { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "30px", justifyItems: 'center' } }>
         { DonationsData.map((product, index) => (
                 <DonationCard onSelect={ createPaymentSession } { ...product } key={ index }/>
-        )) }
-      </div>
-    </div>
-
-    <div className={ `container` }>
-      <h1 className={ `mt-5 mb-5 text-center` }>Subscription</h1>
-      <div className={ `row text-center` }>
-        { SubscriptionsData.map((subscription, index) => (
-                <div className={ `col-4` }>
-                  <SubscriptionCard { ...subscription } key={ index }/>
-                </div>
         )) }
       </div>
     </div>

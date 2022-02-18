@@ -21,7 +21,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     payment_method_types: ['card'],
     line_items: [{
       name: `Donation ${userID.name} (${userID.sub})`,
-      amount: amount * 100, // * 100 because must be also with cents
+      amount: amount * 100, // we multiply by 100 because the amount must be in cents.
       currency: 'eur',
       quantity: quantity,
       description: `Tokens: ${donationInfo.tokens + donationInfo.tokens_bonus}`,
