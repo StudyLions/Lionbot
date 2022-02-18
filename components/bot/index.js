@@ -11,7 +11,7 @@ export default function Page() {
           <div className={`row flex-row ${styles.card}`}>
             <div className="col-12 col-xl-6">
               <div className={styles.title_blue}>
-                <h1>Build the best Discord study community with StudyLion!</h1>{" "}
+                <h1>Build the best Discord study community with StudyLion</h1>{" "}
               </div>
 
               <div className={styles.description_white}>
