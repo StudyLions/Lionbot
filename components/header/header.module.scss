@@ -2,80 +2,119 @@
 @use "public/styles/mixinHelper";
 
 .navbar {
-  min-height: 90.19px;
+  @include mixinHelper.center-content;
+  max-width: 1500px;
   margin: 0 auto;
-  color: globalVariables.$color-0;
+  width: auto;
+  padding: 22px;
 
-  @include mixinHelper.tabletResponsive {
-    text-align: center;
+  @include mixinHelper.desktopResponsive{
     flex-direction: column;
   }
 
-  .navbar_nav {
+  .studyLion {
+    font-style: normal;
+    font-weight: 800;
+    font-size: 40px;
+    line-height: 36px;
+    color: globalVariables.$color-11;
+    text-transform: uppercase;
+    margin-right: 40px;
+
+    @include mixinHelper.desktopResponsive {
+      margin-right: 0;
+      padding-bottom: 20px;
+    }
+  }
+
+  .links {
+    @include mixinHelper.center-content;
+    gap: 15px;
+
     @include mixinHelper.tabletResponsive {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      width: 87%;
+      flex-direction: column;
     }
 
-    .nav_link {
-      color: globalVariables.$color-0;
+    .link {
+      font-style: normal;
       font-weight: 600;
-      font-size: 19px;
+      font-size: 18px;
+      line-height: 25px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+
+      @include mixinHelper.desktopResponsive {
+        font-size: 15px;
+      }
+    }
+  }
+}
+
+.content_right {
+  .signedInStatus {
+    @include mixinHelper.center-content;
+    position: relative;
+    min-height: 4rem;
+    width: 325px;
+
+    .loading,
+    .loaded {
+      position: relative;
+      top: 0;
+      opacity: 1;
+      overflow: hidden;
+      border-radius: 0 0 .6rem .6rem;
+      padding: .6rem 1rem;
+      margin: 0;
+      background-color: rgba(0, 0, 0, .05);
+      transition: all 0.2s ease-in;
+    }
+
+    .loading {
+      top: -2rem;
+      opacity: 0;
     }
   }
 
-  .content_right {
-    margin-left: auto;
-    margin-right: 10px;
+  .button_login_discord {
+    @include mixinHelper.center-content;
 
-    @include mixinHelper.tabletResponsive{
-      margin: 0 auto;
+    background-color: globalVariables.$color-2;
+    padding: 5px 10px;
+    border-radius: 22.5px;
+    color: globalVariables.$color-0;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    font-style: normal;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+
+    .text_discord {
+      color: globalVariables.$color-0;
+      padding-left: 10px;
+      pointer-events: none;
     }
   }
-}
 
-.signedInStatus {
-  display: block;
-  min-height: 4rem;
-  width: 100%;
-}
-
-.button_login_discord {
-  @include mixinHelper.center-content;
-
-  background-color: globalVariables.$color-5;
-  padding: 15px 50px;
-  border-radius: 8px;
-  color: globalVariables.$color-0;
-  font-weight: 500;
-  text-decoration: none;
-  cursor: pointer;
-
-  .text_discord {
-    color: globalVariables.$color-0;
-    padding-left: 5px;
-    pointer-events: none;
-  }
-}
-
-.study_button {
-  @include mixinHelper.center-content;
-  background-color: globalVariables.$color-2;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-
-  &:hover {
-    color: globalVariables.$color-0;
+  .avatar {
+    border-radius: 2rem;
+    float: left;
+    height: 2.8rem;
+    width: 2.8rem;
+    background-color: white;
+    background-size: cover;
+    background-repeat: no-repeat;
+    cursor: pointer;
   }
 }
 
 .popup {
   @include mixinHelper.center-content;
   position: absolute;
-  top: 80px;
-  right: 25px;
+  top: 68px;
+  right: 140px;
   width: fit-content;
   display: grid;
   z-index: 10;
@@ -83,12 +122,6 @@
   color: black;
   border-radius: 10px;
   font-weight: 500;
-
-  @include mixinHelper.tabletResponsive{
-    top: 98%;
-    left: 50%;
-    transform: translate(-50%, 0);
-  }
 
   .button_link {
     text-decoration: none;
@@ -117,39 +150,5 @@
     border: 5px solid globalVariables.$color-0;
     transform-origin: 0 0;
     transform: rotate(135deg);
-
-    @include mixinHelper.tabletResponsive{
-      top: 0;
-      left: calc(50% + 42px);
-    }
   }
-}
-
-.loading,
-.loaded {
-  position: relative;
-  top: 0;
-  opacity: 1;
-  overflow: hidden;
-  border-radius: 0 0 .6rem .6rem;
-  padding: .6rem 1rem;
-  margin: 0;
-  background-color: rgba(0, 0, 0, .05);
-  transition: all 0.2s ease-in;
-}
-
-.loading {
-  top: -2rem;
-  opacity: 0;
-}
-
-.avatar {
-  border-radius: 2rem;
-  float: left;
-  height: 2.8rem;
-  width: 2.8rem;
-  background-color: white;
-  background-size: cover;
-  background-repeat: no-repeat;
-  cursor: pointer;
 }

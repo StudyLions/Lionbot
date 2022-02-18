@@ -1,143 +1,29 @@
-import {signIn, signOut, useSession} from "next-auth/react"
-import Link from 'next/link'
-import React, {useState} from 'react';
-import Image from "next/image";
+import React from 'react';
 
-import {default as popup_links} from './popup_links.json'
 import styles from "./Header.module.scss"
+import {DiscordLoginButton} from "@/components/Header/DiscordLoginButton";
+import {SupportUsButton} from "@/components/Header/SupportUsButton";
 
 export default function Header() {
-  const {data: session, status} = useSession()
-  const loading = status === "loading"
-
-  const [expanded, setExpanded] = useState(false);
-
-  function togglExpand() {
-    setExpanded(!expanded);
-  }
-
-  function close() {
-    setExpanded(false);
-  }
 
 
   return (
-    <header>
-      <noscript>
-        <style>{`.nojs-show { opacity: 1; top: 0; }`}</style>
-      </noscript>
+    <header className={styles.navbar}>
+      <h1 className={styles.studyLion}>StudyBot</h1>
+      <div className={styles.links}>
+        <p className={styles.link}>
+          Invite the bot
+        </p>
+        <p className={styles.link}>
+          Tutorials
+        </p>
+        <p className={styles.link}>
+          Anki Addon
+        </p>
+        <SupportUsButton/>
+      </div>
 
-      <nav className={`container navbar navbar-expand-lg ${styles.navbar}`}>
-        <Image className="navbar-brand"
-               src={require('public/images/StudyLion_1.png')}
-               alt="Study bot lion discord logo"
-               height="50px"
-               width="200px"
-               objectFit={'contain'}
-        />
-        <ul className={`navbar-nav mr-auto mt-2 mt-lg-0 ${styles.navbar_nav}`}>
-          <li className="nav-item">
-            <a className={`text-decoration-none nav-link ${styles.nav_link}`}
-               href={'https://discord.studylions.com/invite'}
-               target={'_blank'} rel="noreferrer">
-              Invite Bot
-            </a>
-          </li>
-
-          <li className="nav-item">
-            <a className={`text-decoration-none nav-link ${styles.nav_link}`}
-               href={'https://www.notion.so/izabellakis/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707'}
-               target={'_blank'} rel="noreferrer">
-              Tutorials
-            </a>
-          </li>
-
-          <li className="nav-item">
-            <a className={`nav-link ${styles.nav_link}`} href="#">Anki Addon</a>
-          </li>
-
-          <li className="nav-item">
-            <Link href="/supportUS">
-              <a className={`nav-link ${styles.nav_link}`}>Premium</a>
-            </Link>
-          </li>
-        </ul>
-        <div className={styles.content_right}>
-          <div className={styles.signedInStatus}>
-            <div
-              className={`nojs-show ${
-                !session && loading ? styles.loading : styles.loaded
-              }`}
-            >
-              {!session && (
-                <>
-                  <a className={`${styles.button_login_discord}`}
-                     onClick={(e) => {
-                       e.preventDefault()
-                       signIn("discord")
-                     }}
-                  >
-                    <Image
-                      src={require('public/icons/discord.svg')}
-                      alt="Discord icon"
-                      width={25}
-                      height={25}
-                    />
-                    <span className={`${styles.text_discord}`}>
-                      Log in with Discord
-                     </span>
-                  </a>
-                </>
-              )}
-              {session && (
-                <>
-                  <div className="row">
-                    <Link href="/study">
-                      <a className={`col-6 text-decoration-none ${styles.study_button}`}>Study</a>
-                    </Link>
-
-                    <div className={`col-6 ${styles.options_menu}`}>
-                      {session.user.image && (
-                        <>
-                          <span
-                            style={{backgroundImage: `url('${session.user.image}')`}}
-                            className={styles.avatar}
-                            onClick={(e) => {
-                              togglExpand();
-                            }}
-                          />
-                        </>
-                      )}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-        </div>
-        {session && expanded && (
-          <>
-            <div className={`${styles.popup}`} onMouseLeave={close}>
-              {popup_links.map((link, i) =>(
-                <a
-                  key={link.title + i}
-                  href={link.href}
-                  className={`${styles.button_link}`}
-                  onClick={(e) => {
-                    if(link.title === 'Logout'){
-                      e.preventDefault();
-                      signOut();
-                    }
-                  }}
-                >
-                  {link.title}
-                </a>
-              ))}
-            </div>
-          </>
-        )}
-      </nav>
+      <DiscordLoginButton/>
     </header>
   )
 }
