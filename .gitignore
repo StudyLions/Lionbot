@@ -108,7 +108,3 @@ dist
 .env.*
 
 .DS_Store
-
-secrets/
-!secrets/.gitkeep
-!secrets/.env.local
