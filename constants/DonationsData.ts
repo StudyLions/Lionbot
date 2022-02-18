@@ -2,7 +2,7 @@ const defaultDonationImage = "/../public/images/StudyLion_1.png"
 
 export const DonationsData = [
   {
-    amount: 1,
+    amount: 0.99,
     tokens: 300,
     tokens_bonus: 0,
     image: defaultDonationImage
@@ -10,7 +10,7 @@ export const DonationsData = [
   {
     amount: 4.99,
     tokens: 1500,
-    tokens_bonus: 150,
+    tokens_bonus: 50,
     image: defaultDonationImage
   },
   {

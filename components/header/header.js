@@ -39,7 +39,7 @@ export default function Header() {
           <li className="nav-item">
             <a className={`text-decoration-none nav-link ${styles.nav_link}`}
                href={'https://discord.studylions.com/invite'}
-               target={'_blank'}>
+               target={'_blank'} rel="noreferrer">
               Invite Bot
             </a>
           </li>
@@ -47,7 +47,7 @@ export default function Header() {
           <li className="nav-item">
             <a className={`text-decoration-none nav-link ${styles.nav_link}`}
                href={'https://www.notion.so/izabellakis/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707'}
-               target={'_blank'}>
+               target={'_blank'} rel="noreferrer">
               Tutorials
             </a>
           </li>
@@ -57,7 +57,9 @@ export default function Header() {
           </li>
 
           <li className="nav-item">
-            <a className={`nav-link ${styles.nav_link}`} href="#">Premium</a>
+            <Link href="/supportUS">
+              <a className={`nav-link ${styles.nav_link}`}>Premium</a>
+            </Link>
           </li>
         </ul>
         <div className={styles.content_right}>

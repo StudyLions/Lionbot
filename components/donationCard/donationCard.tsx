@@ -26,7 +26,7 @@ export default function DonationCard({ amount, tokens, tokens_bonus, image, onSe
     </div>
 
     <button className={`mt-2 ${styles.checkoutButton}`} role="link" onClick={ (e => onSelect(amount)) }>
-      <span className={`pe-3`}>{ amount }€</span> Checkout
+      <span className={`pe-3`}>{ amount }€</span>
     </button>
   </div>
   )

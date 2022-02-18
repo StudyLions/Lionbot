@@ -33,7 +33,7 @@ export default function Page() {
                 <a
                   className={`d-flex justify-content-center text-decoration-none text-uppercase ${styles.link} ${styles.buttonLink}`}
                   href={"https://discord.studylions.com/invite"}
-                  target={"_blank"}
+                  target={"_blank"} rel="noreferrer"
                 >
                   Claim StudyLion for Free!
                 </a>

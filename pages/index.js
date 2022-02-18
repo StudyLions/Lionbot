@@ -1,8 +1,10 @@
 import Bot_Page from "components/Bot/index";
+import Layout from "@/components/layout";
 
 export default function Page() {
   return (
-    <Bot_Page>
-    </Bot_Page>
+    <Layout>
+      tst
+    </Layout>
   )
 }

@@ -1,11 +1,11 @@
 import Layout from "@/components/layout";
 import { loadStripe } from "@stripe/stripe-js";
 import { DonationsData } from "constants/DonationsData";
-import DonationCard from "@/components/donationCard/donationCard";
+import DonationCard from "@/components/DonationCard/DonationCard";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
-export default function Checkout() {
+export default function SupportUS() {
 
   const createPaymentSession = async (price: number) => {
     // Create Checkout session on backend
