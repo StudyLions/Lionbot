@@ -12,7 +12,6 @@ export function DiscordLoginButton() {
   return <>
     <div
       className={styles.content_right}
-      onMouseLeave={() => setExpanded(false)}
     >
       <div className={styles.signedInStatus}>
         <div
@@ -47,7 +46,7 @@ export function DiscordLoginButton() {
                 <span
                   style={{backgroundImage: `url('${session.user.image}')`}}
                   className={styles.avatar}
-                  onMouseEnter={(e) => setExpanded(!expanded)}
+                  onClick={() => setExpanded(!expanded)}
                 />
               )}
             </>
@@ -56,7 +55,9 @@ export function DiscordLoginButton() {
 
         {/* Dropdown menu */}
         {session && expanded && (
-          <div className={`${styles.popup}`}>
+          <div className={`${styles.popup}`}
+               onMouseLeave={() => setExpanded(false)}
+               onClick={() => setExpanded(false)}>
             {popup_links.map((link, i) => (
               <a
                 key={link.title + i}

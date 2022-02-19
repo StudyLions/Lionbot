@@ -153,20 +153,16 @@
     transform: rotate(135deg);
   }
 }
-
-.toggle_up {
-  transform: rotate(0deg);
-  transition: transform 111s linear;
-}
-
-.toggle_down {
-  transform: rotate(90deg);
-  transition: transform 111s linear;
-}
-
-
 .supportUSButton {
   position: relative;
+
+  .toggle_up {
+    transform: rotate(0deg);
+  }
+
+  .toggle_down {
+    transform: rotate(270deg);
+  }
 
   .dropdown {
     display: flex;

@@ -31,18 +31,16 @@ export function SupportUsDropdown() {
         objectFit="contain"
       />
       <p style={{color: '#FFB636'}}>Support us</p>
-      <span className={`${expanded ? styles.toggle_down : styles.toggle_up}`}>
-              <Image
-                src={require('public/icons/arrow.svg')}
-                priority
-                alt="Arrow right icon"
-                layout="fixed"
-                height={12}
-                width={15}
-                objectFit="contain"
-              />
-      </span>
-
+      <Image
+        src={require('public/icons/arrow.svg')}
+        className={`${expanded ? styles.toggle_down : styles.toggle_up}`}
+        priority
+        alt="Arrow right icon"
+        layout="fixed"
+        height={12}
+        width={15}
+        objectFit="contain"
+      />
     </div>
   )
 
