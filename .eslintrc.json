@@ -1,6 +1,7 @@
 {
   "extends": [
     "next/core-web-vitals",
+    "plugin:@next/next/recommended",
     "plugin:import/errors",
     "plugin:import/warnings",
     "plugin:import/typescript"

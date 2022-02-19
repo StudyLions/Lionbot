@@ -10,14 +10,17 @@ export function DiscordLoginButton() {
   const [expanded, setExpanded] = useState(false);
 
   return <>
-    <div className={styles.content_right}>
+    <div
+      className={styles.content_right}
+      onMouseLeave={() => setExpanded(false)}
+    >
       <div className={styles.signedInStatus}>
         <div
           className={`nojs-show ${
             !session && loading ? styles.loading : styles.loaded
           }`}
         >
-          {!session && (
+          {!session ? (
             <>
               <a className={`${styles.button_login_discord}`}
                  onClick={(e) => {
@@ -34,27 +37,26 @@ export function DiscordLoginButton() {
                   objectFit="contain"
                 />
                 <span className={`${styles.text_discord}`}>
-                      Log in with DISCORD
-                     </span>
+                  Log in with DISCORD
+                </span>
               </a>
             </>
-          )}
-          {session && (
+          ) : (
             <>
               {session.user.image && (
                 <span
                   style={{backgroundImage: `url('${session.user.image}')`}}
                   className={styles.avatar}
-                  onClick={(e) => setExpanded(!expanded)}
+                  onMouseEnter={(e) => setExpanded(!expanded)}
                 />
               )}
             </>
           )}
         </div>
 
-        {/*Dropdown with buttons, when user clicks on discord image*/}
+        {/* Dropdown menu */}
         {session && expanded && (
-          <div className={`${styles.popup}`} onMouseLeave={() => setExpanded(false)}>
+          <div className={`${styles.popup}`}>
             {popup_links.map((link, i) => (
               <a
                 key={link.title + i}

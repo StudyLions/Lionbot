@@ -27,7 +27,7 @@
     }
   }
 
-  .links {
+  .navbar_links {
     @include mixinHelper.center-content;
     gap: 15px;
 
@@ -35,13 +35,14 @@
       flex-direction: column;
     }
 
-    .link {
+    .navbar_item {
       font-style: normal;
       font-weight: 600;
       font-size: 18px;
       line-height: 25px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
+      cursor: pointer;
 
       @include mixinHelper.desktopResponsive {
         font-size: 15px;
@@ -152,3 +153,39 @@
     transform: rotate(135deg);
   }
 }
+
+.toggle_up {
+  transform: rotate(0deg);
+  transition: transform 111s linear;
+}
+
+.toggle_down {
+  transform: rotate(90deg);
+  transition: transform 111s linear;
+}
+
+
+.supportUSButton {
+  position: relative;
+
+  .dropdown {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    background: #324486;
+    z-index: 1;
+    width: 100%;
+    border-radius: 6px;
+
+    .dropdown_link {
+      padding: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:hover {
+        background: #26387B;
+      }
+    }
+  }
+}
+

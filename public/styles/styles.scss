@@ -1,4 +1,5 @@
 @use "public/styles/globalVariables";
+@use "public/styles/mixinHelper";
 @import 'fonts';
 
 html, body, div, span, applet, object, iframe,
@@ -54,4 +55,8 @@ body {
   padding: 0;
   background: globalVariables.$color-6;
   color: globalVariables.$color-0;
+}
+
+.alignCenter {
+  @include mixinHelper.center-content;
 }
