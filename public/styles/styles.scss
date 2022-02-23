@@ -45,7 +45,7 @@ table {
 }
 
 body {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Rubik', sans-serif;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
 }
@@ -59,4 +59,9 @@ body {
 
 .alignCenter {
   @include mixinHelper.center-content;
+}
+
+.container {
+  max-width: 1500px;
+  margin: 0 auto;
 }

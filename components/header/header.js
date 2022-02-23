@@ -8,7 +8,7 @@ export default function Header() {
 
 
   return (
-    <header className={styles.navbar}>
+    <header className={`container ${styles.navbar}`}>
       <h1 className={styles.studyLion}>StudyBot</h1>
       <div className={styles.navbar_links}>
         <p className={styles.navbar_item}>
