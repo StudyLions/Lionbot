@@ -1,0 +1,20 @@
+@use 'public/styles/mixinHelper';
+
+.donationCard{
+  padding: 30px;
+  max-width: 300px;
+  background: #78aced;
+  border-radius: 10px;
+
+  div{
+    padding: 0;
+  }
+}
+
+.checkoutButton{
+  @include mixinHelper.center-content;
+  margin: 0 auto;
+  border: 0;
+  padding: 15px;
+  border-radius: 5px;
+}

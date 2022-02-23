@@ -1,0 +1,120 @@
+@use 'public/styles/mixinHelper';
+@use "public/styles/globalVariables";
+
+.section {
+  width: 100%;
+  position: relative;
+}
+
+.homepage_top_content {
+  background: #141414;
+  margin: 0 auto 100px;
+
+  .backgroundImage {
+    width: 100%;
+    max-height: 1145px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .sectionText {
+    position: absolute;
+    left: 20%;
+    top: 10%;
+
+    .bigger_text {
+      font-style: normal;
+      font-weight: 800;
+      font-size: 65px;
+      line-height: 67px;
+      text-transform: uppercase;
+      color: #EEC73C;
+      max-width: 584px;
+    }
+
+    .smallerText {
+      margin-top: 20px;
+      max-width: 478px;
+      font-style: normal;
+      font-weight: normal;
+      font-size: 20px;
+      line-height: 32px;
+      color: #EEEEEE;
+    }
+
+    .addToServerButton {
+      background: rgba(249, 249, 249, 0.26);
+      border: 1px solid #F1F1F1;
+      box-sizing: border-box;
+      border-radius: 42.5px;
+      padding: 5px 21px;
+      font-style: normal;
+      font-weight: 800;
+      font-size: 20px;
+      line-height: 41px;
+      color: white;
+      margin: 20px 0 0;
+      cursor: pointer;
+    }
+  }
+}
+
+// Sections content
+.container_card {
+  .card {
+    display: flex;
+    flex-direction: row;
+    margin: 0 auto;
+    padding: 5rem 10px;
+    max-width: calc(1300px - 20px);
+    gap: 0 50px;
+    min-height: 500px;
+
+    .card_text {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      width: 50%;
+
+
+      .title_card h3 {
+        text-align: left;
+        color: #EEC73C;
+        font-size: 58px;
+        line-height: 1.16;
+        letter-spacing: -0.036em;
+        font-weight: 700;
+        margin: 1rem 0;
+        text-transform: uppercase;
+
+        @include mixinHelper.mobileResponsive {
+          font-size: 40px;
+        }
+      }
+
+      .description_white p {
+        color: globalVariables.$color-0;
+        font-weight: 400;
+        font-size: 22px;
+        line-height: 36px;
+        margin: 1rem 0px;
+      }
+    }
+
+
+    .card_image {
+      @include mixinHelper.center-content;
+      margin-bottom: 20px;
+      width: 82%;
+      height: 100%;
+      min-height: 540px;
+      position: relative;
+    }
+  }
+
+  &:nth-child(2n) {
+    .card {
+      flex-direction: row-reverse;
+    }
+  }
+}

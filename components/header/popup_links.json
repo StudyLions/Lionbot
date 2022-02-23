@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Profile",
+    "href": ""
+  },
+  {
+    "title": "Stats",
+    "href": ""
+  },
+  {
+    "title": "Todo",
+    "href": ""
+  },
+  {
+    "title": "Premium",
+    "href": "/supportUS"
+  },
+  {
+    "title": "Email",
+    "href": ""
+  },
+  {
+    "title": "Logout",
+    "href": "/api/auth/signout"
+  }
+]

@@ -1,0 +1,185 @@
+@use "public/styles/globalVariables";
+@use "public/styles/mixinHelper";
+
+.navbar {
+  @include mixinHelper.center-content;
+  width: auto;
+  padding: 22px;
+
+  @include mixinHelper.desktopResponsive{
+    flex-direction: column;
+  }
+
+  .studyLion {
+    font-style: normal;
+    font-weight: 800;
+    font-size: 40px;
+    line-height: 36px;
+    color: globalVariables.$color-11;
+    text-transform: uppercase;
+    margin-right: 40px;
+
+    @include mixinHelper.desktopResponsive {
+      margin-right: 0;
+      padding-bottom: 20px;
+    }
+  }
+
+  .navbar_links {
+    @include mixinHelper.center-content;
+    gap: 15px;
+
+    @include mixinHelper.tabletResponsive {
+      flex-direction: column;
+    }
+
+    .navbar_item {
+      font-style: normal;
+      font-weight: 600;
+      font-size: 18px;
+      line-height: 25px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+
+      @include mixinHelper.desktopResponsive {
+        font-size: 15px;
+      }
+    }
+  }
+}
+
+.content_right {
+  .signedInStatus {
+    @include mixinHelper.center-content;
+    position: relative;
+    min-height: 4rem;
+    width: 325px;
+
+    .loading,
+    .loaded {
+      position: relative;
+      top: 0;
+      opacity: 1;
+      overflow: hidden;
+      border-radius: 0 0 .6rem .6rem;
+      padding: .6rem 1rem;
+      margin: 0;
+      background-color: rgba(0, 0, 0, .05);
+      transition: all 0.2s ease-in;
+    }
+
+    .loading {
+      top: -2rem;
+      opacity: 0;
+    }
+  }
+
+  .button_login_discord {
+    @include mixinHelper.center-content;
+
+    background-color: globalVariables.$color-2;
+    padding: 5px 10px;
+    border-radius: 22.5px;
+    color: globalVariables.$color-0;
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    font-style: normal;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+
+    .text_discord {
+      color: globalVariables.$color-0;
+      padding-left: 10px;
+      pointer-events: none;
+    }
+  }
+
+  .avatar {
+    border-radius: 2rem;
+    float: left;
+    height: 2.8rem;
+    width: 2.8rem;
+    background-color: white;
+    background-size: cover;
+    background-repeat: no-repeat;
+    cursor: pointer;
+  }
+}
+
+.popup {
+  @include mixinHelper.center-content;
+  position: absolute;
+  top: 68px;
+  right: 140px;
+  width: fit-content;
+  display: grid;
+  z-index: 10;
+  background: globalVariables.$color-0;
+  color: black;
+  border-radius: 10px;
+  font-weight: 500;
+
+  .button_link {
+    text-decoration: none;
+    text-align: center;
+    color: globalVariables.$color-4;
+    padding: 12px 0;
+    min-width: 200px;
+    border-radius: 10px;
+
+    &:hover {
+      background-color: globalVariables.$color-2;
+      color: globalVariables.$color-0;
+    }
+  }
+
+  &::after {
+    z-index: -99;
+    content: "";
+    position: absolute;
+    width: 0;
+    height: 0;
+    margin-left: 0;
+    top: 0;
+    right: 7px;
+    box-sizing: border-box;
+    border: 5px solid globalVariables.$color-0;
+    transform-origin: 0 0;
+    transform: rotate(135deg);
+  }
+}
+.supportUSButton {
+  position: relative;
+
+  .toggle_up {
+    transform: rotate(0deg);
+  }
+
+  .toggle_down {
+    transform: rotate(270deg);
+  }
+
+  .dropdown {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    background: #324486;
+    z-index: 1;
+    width: 100%;
+    border-radius: 6px;
+
+    .dropdown_link {
+      padding: 15px;
+      border-radius: 6px;
+      cursor: pointer;
+
+      &:hover {
+        background: #26387B;
+      }
+    }
+  }
+}
+
