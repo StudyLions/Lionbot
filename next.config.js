@@ -1,5 +1,5 @@
 module.exports = {
   images: {
-    domains: ['api-production.s3.amazonaws.com'],
+    domains: ['s3.eu-central-1.amazonaws.com', 'api-production.s3.amazonaws.com'],
   },
 }

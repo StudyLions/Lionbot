@@ -1,6 +1,7 @@
+import Image from "next/image"
+
 import {HomepageSectionsContent} from "constants/HomepageSectionsContent";
 import styles from "./Homepage.module.scss"
-import Image from "next/image"
 
 export default function HomepageSectionsMiddle() {
   return (

@@ -1,18 +1,17 @@
-import styles from "@/components/Header/Header.module.scss";
-import {signIn, signOut, useSession} from "next-auth/react";
-import Image from "next/image";
-import {default as popup_links} from "@/components/Header/popup_links.json";
 import React, {useState} from "react";
+import Image from "next/image";
+import {signIn, signOut, useSession} from "next-auth/react";
 
-export function DiscordLoginButton() {
+import styles from "@/components/Header/Header.module.scss";
+import {default as popup_links} from "@/components/Header/popup_links.json";
+
+export function LoginButtonAndMenuDropdown() {
   const {data: session, status} = useSession()
   const loading = status === "loading"
   const [expanded, setExpanded] = useState(false);
 
   return <>
-    <div
-      className={styles.content_right}
-    >
+    <div className={styles.content_right}>
       <div className={styles.signedInStatus}>
         <div
           className={`nojs-show ${
