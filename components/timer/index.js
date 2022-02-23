@@ -1,4 +1,4 @@
-import styles from "./timer.module.scss"
+import styles from "./Timer.module.scss"
 import {default as options} from './options-timer.json'
 import {useEffect, useState} from 'react';
 

@@ -1,8 +1,13 @@
-import Bot_Page from "components/bot/index";
+import React from "react";
+import HomepageTop from "@/components/Homepage/Homepage-top-content";
+import HomepageSectionsMiddle from "@/components/Homepage/Homepage-sections-middle";
+import Layout from "@/components/layout";
 
 export default function Page() {
   return (
-    <Bot_Page>
-    </Bot_Page>
+    <Layout>
+      <HomepageTop/>
+      <HomepageSectionsMiddle/>
+    </Layout>
   )
 }
