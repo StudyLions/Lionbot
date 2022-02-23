@@ -1,6 +1,7 @@
-import styles from "@/components/Header/Header.module.scss";
-import Image from "next/image";
 import React, {useState} from "react";
+import Image from "next/image";
+
+import styles from "@/components/Header/Header.module.scss";
 
 const supportLinks = [
   {

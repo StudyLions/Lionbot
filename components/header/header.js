@@ -1,7 +1,7 @@
 import React from 'react';
 
 import styles from "./Header.module.scss"
-import {DiscordLoginButton} from "@/components/Header/DiscordLoginButton";
+import {LoginButtonAndMenuDropdown} from "@/components/Header/LoginButtonAndMenuDropdown";
 import {SupportUsDropdown} from "@/components/Header/SupportUsDropdown";
 
 export default function Header() {
@@ -23,7 +23,7 @@ export default function Header() {
         <SupportUsDropdown/>
       </div>
 
-      <DiscordLoginButton/>
+      <LoginButtonAndMenuDropdown/>
     </header>
   )
 }
