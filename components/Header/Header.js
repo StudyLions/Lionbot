@@ -5,8 +5,6 @@ import {LoginButtonAndMenuDropdown} from "@/components/Header/LoginButtonAndMenu
 import {SupportUsDropdown} from "@/components/Header/SupportUsDropdown";
 
 export default function Header() {
-
-
   return (
     <header className={`container ${styles.navbar}`}>
       <h1 className={styles.studyLion}>StudyBot</h1>
