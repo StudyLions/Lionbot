@@ -1,5 +1,3 @@
-import Image from "next/image"
-
 import {HomepageSectionsContent} from "constants/HomepageSectionsContent";
 import styles from "./Homepage.module.scss"
 
@@ -19,14 +17,9 @@ export default function HomepageSectionsMiddle() {
               <p>{card.description_2}</p>
             </div>
           </div>
-
-          <div className={styles.card_image}>
-            <Image
-              src={card.image.src} alt={card.image.alt}
-              layout='fill'
-              objectFit='contain'
-            />
-          </div>
+          <img className={styles.card_image}
+               src={card.image.src} alt={card.image.alt} loading={"lazy"}
+          />
         </div>
       </div>
     ))
