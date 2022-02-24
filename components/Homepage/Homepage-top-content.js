@@ -5,7 +5,7 @@ export default function HomepageTopContent() {
   return (
     <div>
       <div className={`${styles.section} ${styles.homepage_top_content}`}>
-        <img src={'https://s3.eu-central-1.amazonaws.com/discord.study/images/Homepage_top_image.png'}
+        <img src={'https://cdn.discord.study/images/Homepage_top_image.png'}
              className={styles.backgroundImage}
              alt={'Homepage top iamge.'}/>
 

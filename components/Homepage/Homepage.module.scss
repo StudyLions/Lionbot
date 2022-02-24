@@ -105,10 +105,11 @@
     .card_image {
       @include mixinHelper.center-content;
       margin-bottom: 20px;
-      width: 82%;
+      width: 50%;
       height: 100%;
       min-height: 540px;
       position: relative;
+      object-fit: contain;
     }
   }
 
