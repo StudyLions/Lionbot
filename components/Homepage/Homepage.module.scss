@@ -1,5 +1,6 @@
 @use 'public/styles/mixinHelper';
 @use "public/styles/globalVariables";
+@use "public/styles/animations";
 
 .section {
   width: 100%;
@@ -117,5 +118,135 @@
     .card {
       flex-direction: row-reverse;
     }
+  }
+}
+
+// Trusted by (Homepage-bottom-content.js)
+.trustedBy {
+  &_section {
+    background: linear-gradient(180deg, #27559A 1.1%, #1B2137 84.24%);
+  }
+
+  &_container {
+    max-width: calc(1300px - 20px);
+    margin: 0 auto;
+  }
+
+  &_heading {
+    @include mixinHelper.center-content;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 58px;
+    line-height: 40px;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    padding-top: 150px;
+    padding-bottom: 74px;
+  }
+
+  &_servers {
+    @include mixinHelper.center-content;
+    align-items: unset;
+    min-height: 220px;
+    gap: 0 68px;
+
+    .server {
+      text-align: center;
+      width: 250px;
+
+      img {
+        width: 168px;
+      }
+
+      p {
+        display: none;
+        text-align: center;
+        text-transform: uppercase;
+        padding-top: 15px;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 20px;
+        color: #F8F8F8;
+      }
+    }
+
+    .server:hover {
+      img{
+        width: 180px;
+        @include animations.zoomInAnimation(1s);
+      }
+
+      p {
+        display: block;
+        @include animations.fadeInAnimation(1s);
+      }
+    }
+  }
+}
+
+.counters {
+  @include mixinHelper.center-content;
+  gap: 0 78px;
+  margin-top: 75px;
+
+  .number_counter {
+    @include mixinHelper.center-content;
+    width: 175px;
+    height: 100px;
+    background: #FFFFFF;
+    border-radius: 27px;
+    color: #27559A;
+
+    font-style: normal;
+    font-weight: 800;
+    font-size: 58px;
+    text-align: center;
+  }
+
+  .name_counter{
+    margin-top: 20px;
+    text-align: center;
+  }
+}
+
+.joinTheRevolutionToday_section {
+  @include mixinHelper.center-content;
+  flex-direction: column;
+  max-width: calc(1300px - 20px);
+  margin: 250px auto 0;
+
+  h1 {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 65px;
+    line-height: 47px;
+    text-align: center;
+    color: #FFCC15;
+  }
+
+  h2 {
+    margin: 10px auto 0;
+    max-width: 700px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 29px;
+    line-height: 47px;
+    text-align: center;
+    color: #FFFFFF;
+  }
+
+  .inviteTheBot_button {
+    background: #FFCC15;
+    border-radius: 42.5px;
+    font-weight: 800;
+    font-size: 30px;
+    line-height: 41px;
+    text-align: center;
+    color: #27559A;
+    padding: 22px 50px;
+    margin-top: 50px;
+    margin-bottom: 150px;
+    text-transform: uppercase;
+    cursor: pointer;
   }
 }
