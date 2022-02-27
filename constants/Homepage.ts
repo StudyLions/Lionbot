@@ -1,4 +1,4 @@
-export const HomepageSectionsContent = [
+export const Homepage_sections_middle = [
   {
     "title": "Statistics",
     "description_1": "Allow students to check their daily, weekly, monthly and all-time study statistics.",
@@ -88,5 +88,66 @@ export const HomepageSectionsContent = [
       "src": "https://cdn.discord.study/images/Homepage_section10.png",
       "alt": "Utility and Moderation image"
     }
+  }
+]
+
+export const Servers_list = [
+  {
+    name: 'ENTERMEDSCHOOL',
+    img: {
+      src: 'https://cdn.discord.study/images/entermedschool_icon.png',
+      alt: 'ENTERMEDSCHOOL server icon'
+    }
+  },
+  {
+    name: 'STUDYWITHME',
+    img: {
+      src: 'https://cdn.discord.study/images/studywithme_icon.png',
+      alt: 'STUDYWITHME server icon'
+    }
+  },
+  {
+    name: 'Rehber Matematik',
+    img: {
+      src: 'https://cdn.discord.study/images/rehber_icon.png',
+      alt: 'Rehber Matematik server icon'
+    }
+  },
+  {
+    name: 'CATIONS',
+    img: {
+      src: 'https://cdn.discord.study/images/captions_icon.png',
+      alt: 'CATIONS server icon'
+    }
+  },
+  {
+    name: 'Jintang space',
+    img: {
+      src: 'https://cdn.discord.study/images/jintang_icon.png',
+      alt: 'Jintang space server icon'
+    }
+  },
+]
+
+export const Counters_list = [
+  {
+    name: 'Sessions',
+    number: 2,
+    last_char: 'm'
+  },
+  {
+    name: 'Users',
+    number: 81,
+    last_char: 'k'
+  },
+  {
+    name: 'Tasks',
+    number: 89,
+    last_char: 'k'
+  },
+  {
+    name: 'Timers',
+    number: 600,
+    last_char: '+'
   }
 ]
