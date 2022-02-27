@@ -13,7 +13,9 @@ export default function Header() {
           Invite the bot
         </p>
         <p className={styles.navbar_item}>
-          Tutorials
+          <a href={'https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707'} target={'_blank'} rel="noreferrer">
+            Tutorials
+          </a>
         </p>
         <p className={styles.navbar_item}>
           Anki Addon
