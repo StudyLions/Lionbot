@@ -1,5 +1,9 @@
+import {useRef} from "react";
+import {useOnScreen} from "@/hooks/useOnScreen";
+
 import styles from "@/components/Homepage/Homepage.module.scss";
-import {Servers_list, Counters_list} from "constants/Homepage";
+import {Counters_list, Servers_list} from "constants/Homepage";
+import AnimatedNumberCounter from "@/components/AnimatedNumberCounter";
 
 function HowToUse() {
   return <>
@@ -26,6 +30,9 @@ function HowToUse() {
 }
 
 function TrustedBy() {
+  const ref = useRef();
+  const onScreen = useOnScreen(ref, "-50px");
+
   return <>
     <div className={styles.trustedBy_section}>
       <div className={styles.trustedBy_container}>
@@ -33,7 +40,7 @@ function TrustedBy() {
         <div className={styles.trustedBy_servers}>
           {Servers_list.map((server, index) => (
             <div className={styles.server} key={server.title + index}>
-              <img src={server.img.src} alt={server.img.alt}/>
+              <img src={server.img.src} alt={server.img.alt} loading={"lazy"}/>
               <p>{server.name}</p>
             </div>
           ))}
@@ -44,7 +51,14 @@ function TrustedBy() {
     <div className={styles.counters}>
       {Counters_list.map((counter, index) => (
         <div key={counter.name + index}>
-          <h1 className={styles.number_counter}>{counter.number}{counter.last_char}</h1>
+          <h1 ref={ref} className={styles.number_counter}>
+            {onScreen ?
+              <>
+                <AnimatedNumberCounter number={`${counter.number}`} duration={1}/>
+                {counter.last_char}
+              </>
+              : null }
+          </h1>
           <h1  className={styles.name_counter}>{counter.name}</h1>
         </div>
       ))}

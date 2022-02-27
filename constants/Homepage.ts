@@ -132,7 +132,7 @@ export const Servers_list = [
 export const Counters_list = [
   {
     name: 'Sessions',
-    number: 1.9,
+    number: 2,
     last_char: 'm'
   },
   {
