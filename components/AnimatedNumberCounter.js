@@ -9,6 +9,7 @@ const AnimatedNumberCounter = (props) => {
   const [count, setCount] = useState("0")
 
   useEffect(() => {
+    let isSubscribed = true;
     let start = 0;
     // first three numbers from props
     const end = parseInt(number.substring(0, 3))
@@ -23,9 +24,12 @@ const AnimatedNumberCounter = (props) => {
     // ends if start reaches end
     let timer = setInterval(() => {
       start += 1;
-      setCount(String(start) + number.substring(3))
+      if (isSubscribed) setCount(String(start) + number.substring(3))
       if (start === end) clearInterval(timer)
     }, incrementTime);
+
+    // cancel subscription to useEffect
+    return () => (isSubscribed = false)
 
     // dependency array
   }, [number, duration]);
