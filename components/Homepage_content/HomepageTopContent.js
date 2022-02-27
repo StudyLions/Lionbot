@@ -16,9 +16,11 @@ export default function HomepageTopContent() {
             <br/> <br/>
             Learn how to create a Discord co-working environment for your classmates or coworkers!
           </p>
-          <button className={styles.addToServerButton}>
+          <a className={styles.addToServerButton} target={'_blank'}
+             href={'https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot'}
+             rel="noreferrer">
             ADD TO SERVER
-          </button>
+          </a>
         </div>
       </div>
     </div>

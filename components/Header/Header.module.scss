@@ -34,11 +34,6 @@
     }
 
     .navbar_item {
-      :-webkit-any-link {
-        text-decoration: none;
-        color: white;
-      }
-      
       font-style: normal;
       font-weight: 600;
       font-size: 18px;
@@ -46,6 +41,7 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       cursor: pointer;
+      color: white;
 
       @include mixinHelper.desktopResponsive {
         font-size: 15px;
