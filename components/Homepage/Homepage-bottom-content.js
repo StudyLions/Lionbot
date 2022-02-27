@@ -59,7 +59,7 @@ function TrustedBy() {
               </>
               : null }
           </h1>
-          <h1  className={styles.name_counter}>{counter.name}</h1>
+          <h1 className={styles.name_counter}>{counter.name}</h1>
         </div>
       ))}
     </div>
