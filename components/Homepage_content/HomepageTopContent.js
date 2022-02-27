@@ -7,7 +7,7 @@ export default function HomepageTopContent() {
       <div className={`${styles.section} ${styles.homepage_top_content}`}>
         <img src={'https://cdn.discord.study/images/Homepage_top_image.png'}
              className={styles.backgroundImage}
-             alt={'Homepage top iamge.'}/>
+             alt={'Homepage_content top iamge.'}/>
 
         <div className={styles.sectionText}>
           <h1 className={styles.bigger_text}>Build the best Discord study community</h1>
