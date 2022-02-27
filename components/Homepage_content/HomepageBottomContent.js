@@ -1,7 +1,7 @@
 import {useRef} from "react";
 import {useOnScreen} from "@/hooks/useOnScreen";
 
-import styles from "@/components/Homepage/Homepage.module.scss";
+import styles from "@/components/Homepage_content/Homepage.module.scss";
 import {Counters_list, Servers_list} from "constants/Homepage";
 import AnimatedNumberCounter from "@/components/AnimatedNumberCounter";
 
@@ -29,17 +29,17 @@ function HowToUse() {
   </>
 }
 
-function TrustedBy() {
+function StudyLionCommunities() {
   const ref = useRef();
   const onScreen = useOnScreen(ref, "-50px");
 
   return <>
-    <div className={styles.trustedBy_section}>
-      <div className={styles.trustedBy_container}>
-        <h1 className={styles.trustedBy_heading}>Trusted by 5,100+ study servers</h1>
-        <div className={styles.trustedBy_servers}>
+    <div className={styles.communities_section}>
+      <div className={styles.communities_container}>
+        <h1 className={styles.communities_heading}>Trusted by 5,100+ study servers</h1>
+        <div className={styles.communities_servers}>
           {Servers_list.map((server, index) => (
-            <div className={styles.server} key={server.title + index}>
+            <div className={styles.server} key={server.name + index}>
               <img src={server.img.src} alt={server.img.alt} loading={"lazy"}/>
               <p>{server.name}</p>
             </div>
@@ -66,8 +66,8 @@ function TrustedBy() {
   </>
 }
 
-function JoinTheRevolution() {
-  return <div className={styles.joinTheRevolutionToday_section}>
+function Participation() {
+  return <div className={styles.participation_section}>
     <h1>Join the revolution today!</h1>
     <h2>Create a Discord co-working environment for your classmates or coworkers!</h2>
     <a className={styles.inviteTheBot_button}>Invite the bot</a>
@@ -77,7 +77,7 @@ function JoinTheRevolution() {
 export default function HomepageBottomContent() {
   return <>
     <HowToUse/>
-    <TrustedBy/>
-    <JoinTheRevolution/>
+    <StudyLionCommunities/>
+    <Participation/>
   </>
 }

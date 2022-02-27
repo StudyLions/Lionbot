@@ -121,8 +121,8 @@
   }
 }
 
-// Trusted by (Homepage-bottom-content.js)
-.trustedBy {
+// StudyLion Communities  (HomepageBottomContent.js)
+.communities {
   &_section {
     background: linear-gradient(180deg, #27559A 1.1%, #1B2137 84.24%);
   }
@@ -209,7 +209,8 @@
   }
 }
 
-.joinTheRevolutionToday_section {
+// Participation (HomepageBottomContent.js)
+.participation_section {
   @include mixinHelper.center-content;
   flex-direction: column;
   max-width: calc(1300px - 20px);

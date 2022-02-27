@@ -1,7 +1,7 @@
 import {Homepage_sections_middle} from "constants/Homepage";
 import styles from "./Homepage.module.scss"
 
-export default function HomepageSectionsMiddle() {
+export default function HomepageSections() {
   return (
     Homepage_sections_middle.map((card, i) => (
       <div className={styles.container_card} key={card.title + i}>
