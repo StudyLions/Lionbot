@@ -1,4 +1,4 @@
-import Layout from "@/components/layout";
+import Layout from "@/components/Layout/Layout";
 import { loadStripe } from "@stripe/stripe-js";
 import { DonationsData } from "constants/DonationsData";
 import DonationCard from "@/components/DonationCard/DonationCard";

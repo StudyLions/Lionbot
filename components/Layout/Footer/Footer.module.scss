@@ -1,0 +1,64 @@
+@use 'public/styles/mixinHelper';
+
+@mixin textStyle {
+  font-style: normal;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: justify;
+  color: #939393;
+}
+
+.containerFooter {
+  display: flex;
+  padding-top: 75px;
+  padding-bottom: 75px;
+  max-width: 1280px;
+  margin: 0 auto;
+  gap: 0 150px;
+
+  .aboutProject {
+    width: 30%;
+    margin-right: auto;
+
+    .title {
+      font-style: normal;
+      font-weight: bold;
+      font-size: 45px;
+      color: #D8B025;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .description {
+      @include textStyle;
+    }
+
+    .copyright {
+      @include textStyle;
+      margin-top: 34px;
+    }
+  }
+
+  .menuContainer, .legalContainer {
+    width: 35%;
+    display: flex;
+    flex-direction: column;
+    flex-basis: fit-content;
+
+    .title{
+      margin-bottom: 20px;
+      font-weight: bold;
+      font-size: 20px;
+      color: #E0E0E0;
+    }
+
+    .item {
+      @include textStyle;
+      font-weight: 500;
+      line-height: 22px;
+      padding: 10px 0;
+    }
+  }
+}
+

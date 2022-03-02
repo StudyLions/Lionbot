@@ -1,6 +1,6 @@
 import { useRouter } from "next/router";
 import useSWR from 'swr'
-import Layout from "@/components/layout";
+import Layout from "@/components/Layout/Layout";
 
 export default function Result(){
   const router = useRouter();

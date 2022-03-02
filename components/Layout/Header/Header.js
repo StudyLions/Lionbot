@@ -1,8 +1,8 @@
 import React from 'react';
 
 import styles from "./Header.module.scss"
-import {LoginButtonAndMenuDropdown} from "@/components/Header/LoginButtonAndMenuDropdown";
-import {SupportUsDropdown} from "@/components/Header/SupportUsDropdown";
+import {LoginButtonAndMenuDropdown} from "@/components/Layout/Header/LoginButtonAndMenuDropdown";
+import {SupportUsDropdown} from "@/components/Layout/Header/SupportUsDropdown";
 
 export default function Header() {
   return (
