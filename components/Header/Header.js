@@ -10,10 +10,14 @@ export default function Header() {
       <h1 className={styles.studyLion}>StudyBot</h1>
       <div className={styles.navbar_links}>
         <p className={styles.navbar_item}>
-          Invite the bot
+          <a href={'https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot'} target={'_blank'} rel="noreferrer">
+            Invite the bot
+          </a>
         </p>
         <p className={styles.navbar_item}>
-          Tutorials
+          <a href={'https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707'} target={'_blank'} rel="noreferrer">
+            Tutorials
+          </a>
         </p>
         <p className={styles.navbar_item}>
           Anki Addon

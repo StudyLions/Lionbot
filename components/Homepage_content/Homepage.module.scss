@@ -44,17 +44,18 @@
     }
 
     .addToServerButton {
+      position: relative;
+      top: 20px;
       background: rgba(249, 249, 249, 0.26);
       border: 1px solid #F1F1F1;
       box-sizing: border-box;
       border-radius: 42.5px;
-      padding: 5px 21px;
+      padding: 12px 21px;
       font-style: normal;
       font-weight: 800;
       font-size: 20px;
       line-height: 41px;
       color: white;
-      margin: 20px 0 0;
       cursor: pointer;
     }
   }

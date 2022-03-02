@@ -41,6 +41,7 @@
       letter-spacing: 0.2em;
       text-transform: uppercase;
       cursor: pointer;
+      color: white;
 
       @include mixinHelper.desktopResponsive {
         font-size: 15px;

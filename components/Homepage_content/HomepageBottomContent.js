@@ -70,7 +70,9 @@ function Participation() {
   return <div className={styles.participation_section}>
     <h1>Join the revolution today!</h1>
     <h2>Create a Discord co-working environment for your classmates or coworkers!</h2>
-    <a className={styles.inviteTheBot_button}>Invite the bot</a>
+    <a className={styles.inviteTheBot_button}
+       href={'https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot'}
+       target={'_blank'} rel="noreferrer">Invite the bot</a>
   </div>
 }
 
