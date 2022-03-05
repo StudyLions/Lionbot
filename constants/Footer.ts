@@ -18,7 +18,7 @@ export const MenuItems = [
   {
     title: 'Anki Addon',
     link: {
-      href: '',
+      href: '/',
       target: ''
     }
   },
@@ -63,7 +63,7 @@ export const LegalItems = [
   {
     title: 'Refund Policy',
     link: {
-      href: '',
+      href: '/',
       target: ''
     }
   },
