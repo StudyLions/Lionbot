@@ -1,4 +1,4 @@
-import Layout from 'components/layout'
+import Layout from '@/components/Layout/Layout'
 import Timer from "components/Timer";
 
 export default function Page() {
