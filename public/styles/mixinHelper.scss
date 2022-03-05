@@ -21,3 +21,15 @@
     @content;
   }
 }
+
+@mixin container {
+  max-width: 1280px;
+
+  @include desktopResponsive {
+    max-width: 900px;
+  }
+
+  @include tabletResponsive {
+    max-width: 800px;
+  }
+}

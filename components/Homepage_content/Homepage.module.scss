@@ -64,11 +64,11 @@
 // Sections content
 .container_card {
   .card {
+    @include mixinHelper.container;
     display: flex;
     flex-direction: row;
     margin: 0 auto;
     padding: 5rem 10px;
-    max-width: calc(1300px - 20px);
     gap: 0 50px;
     min-height: 500px;
 
@@ -129,7 +129,7 @@
   }
 
   &_container {
-    max-width: calc(1300px - 20px);
+    @include mixinHelper.container;
     margin: 0 auto;
   }
 
@@ -212,9 +212,9 @@
 
 // Participation (HomepageBottomContent.js)
 .participation_section {
+  @include mixinHelper.container;
   @include mixinHelper.center-content;
   flex-direction: column;
-  max-width: calc(1300px - 20px);
   margin: 250px auto 0;
 
   h1 {
