@@ -3,7 +3,7 @@ import Image from "next/image";
 import {signIn, signOut, useSession} from "next-auth/react";
 
 import styles from "@/components/Layout/Header/Header.module.scss";
-import {Menu_links} from "@/components/Layout/Header/Menu_links.ts";
+import {Menu_links} from "@/components/Layout/Header/Menu_links";
 
 export function LoginButtonAndMenuDropdown() {
   const {data: session, status} = useSession()
