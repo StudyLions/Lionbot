@@ -3,7 +3,7 @@ import Image from "next/image";
 import {signIn, signOut, useSession} from "next-auth/react";
 
 import styles from "@/components/Layout/Header/Header.module.scss";
-import {default as popup_links} from "@/components/Layout/Header/popup_links.json";
+import {Menu_links} from "@/components/Layout/Header/Menu_links.ts";
 
 export function LoginButtonAndMenuDropdown() {
   const {data: session, status} = useSession()
@@ -57,7 +57,7 @@ export function LoginButtonAndMenuDropdown() {
           <div className={`${styles.popup}`}
                onMouseLeave={() => setExpanded(false)}
                onClick={() => setExpanded(false)}>
-            {popup_links.map((link, i) => (
+            {Menu_links.map((link, i) => (
               <a
                 key={link.title + i}
                 href={link.href}

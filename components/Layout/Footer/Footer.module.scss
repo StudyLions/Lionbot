@@ -26,12 +26,12 @@
       font-weight: bold;
       font-size: 45px;
       color: #D8B025;
-      margin-bottom: 20px;
       text-transform: uppercase;
     }
 
     .description {
       @include textStyle;
+      margin-top: 20px;
     }
 
     .copyright {

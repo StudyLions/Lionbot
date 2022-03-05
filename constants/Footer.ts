@@ -1,3 +1,5 @@
+import { NavigationPaths } from "./types";
+
 export const MenuItems = [
   {
     title: 'Source Code',
@@ -30,7 +32,7 @@ export const MenuItems = [
   {
     title: 'Support Us!',
     link: {
-      href: '/supportUS',
+      href: NavigationPaths.SupportUS,
       target: ''
     }
   },

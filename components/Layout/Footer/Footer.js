@@ -1,13 +1,17 @@
+import React from "react";
 import Link from 'next/link'
 
 import styles from './Footer.module.scss'
 import {LegalItems, MenuItems} from 'constants/Footer'
+import {NavigationPaths} from "@/constants/types";
 
 export default function Footer() {
   return <div style={{background: '#1B1B1B'}}>
     <footer className={styles.containerFooter}>
       <div className={styles.aboutProject}>
-        <h1 className={styles.title}>StudyLion</h1>
+        <Link href={NavigationPaths.Home}>
+          <a className={styles.title}>StudyBot</a>
+        </Link>
         <p className={styles.description}>
           Is a project made by students for students.
           <br/><br/>

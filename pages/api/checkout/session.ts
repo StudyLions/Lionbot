@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { getToken } from "next-auth/jwt";
 
 import { DonationsData } from "constants/DonationsData";
+import { NavigationPaths } from "constants/types";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2020-08-27',
@@ -28,7 +29,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     }],
     mode: 'payment',
     success_url: `${req.headers.origin}/result?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${req.headers.origin}/supportUS`,
+    cancel_url: `${req.headers.origin + NavigationPaths.SupportUS}`,
   })
   res.status(200).json({ sessionId: session.id })
 }
