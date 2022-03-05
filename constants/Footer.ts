@@ -9,7 +9,7 @@ export const MenuItems = [
   {
     title: 'Tutorials',
     link: {
-      href: '',
+      href: 'https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707',
       target: '_blank'
     }
   },
@@ -17,21 +17,21 @@ export const MenuItems = [
     title: 'Anki Addon',
     link: {
       href: '',
-      target: '_blank'
+      target: ''
     }
   },
   {
     title: 'Invite the bot',
     link: {
-      href: '',
+      href: 'https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot',
       target: '_blank'
     }
   },
   {
     title: 'Support Us!',
     link: {
-      href: '',
-      target: '_blank'
+      href: '/supportUS',
+      target: ''
     }
   },
 ]
@@ -39,8 +39,10 @@ export const MenuItems = [
 export const LegalItems = [
   {
     title: 'Contact',
-    href: '',
-    target: '_blank'
+    link: {
+      href: 'https://bot.studylions.com/privacy-policy/',
+      target: '_blank'
+    }
   },
   {
     title: 'Privacy Policy',
@@ -60,7 +62,7 @@ export const LegalItems = [
     title: 'Refund Policy',
     link: {
       href: '',
-      target: '_blank'
+      target: ''
     }
   },
   {

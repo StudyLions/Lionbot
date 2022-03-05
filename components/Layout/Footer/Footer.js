@@ -1,3 +1,5 @@
+import Link from 'next/link'
+
 import styles from './Footer.module.scss'
 import {LegalItems, MenuItems} from 'constants/Footer'
 
@@ -20,14 +22,18 @@ export default function Footer() {
       <div className={styles.menuContainer}>
         <h1 className={styles.title}>Menu</h1>
         {MenuItems.map((item, index) => (
-          <a className={styles.item} href={item.link.href} target={item.link.target} key={item.title + index} rel="noreferrer">{item.title}</a>
+          <Link href={item.link.href} key={item.title + index}>
+            <a className={styles.item} target={item.link.target}>{item.title}</a>
+          </Link>
         ))}
       </div>
 
       <div className={styles.legalContainer}>
         <h1 className={styles.title}>Legal</h1>
         {LegalItems.map((item, index) => (
-          <a className={styles.item} href={item.href} key={item.title + index}>{item.title}</a>
+          <Link href={item.link.href} key={item.title + index}>
+            <a className={styles.item} target={item.link.target}>{item.title}</a>
+          </Link>
         ))}
       </div>
     </footer>
