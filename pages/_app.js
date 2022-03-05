@@ -1,5 +1,4 @@
 import {SessionProvider} from 'next-auth/react'
-import 'bootstrap/dist/css/bootstrap.css';
 import 'public/styles/styles.scss'
 
 // Use of the <SessionProvider> is now mandatory to allow components that call

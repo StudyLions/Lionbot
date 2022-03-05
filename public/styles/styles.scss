@@ -1,4 +1,5 @@
 @use "public/styles/globalVariables";
+@use "public/styles/mixinHelper";
 @import 'fonts';
 
 html, body, div, span, applet, object, iframe,
@@ -24,9 +25,18 @@ article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
   display: block;
 }
+
 body {
+  font-family: 'Rubik', sans-serif;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  margin: 0;
+  padding: 0;
+  background: globalVariables.$color-6;
+  color: globalVariables.$color-0;
   line-height: 1;
 }
+
 ol, ul {
   list-style: none;
 }
@@ -43,15 +53,16 @@ table {
   border-spacing: 0;
 }
 
-body {
-  font-family: 'Inter', sans-serif;
-  -webkit-font-smoothing: antialiased !important;
-  -moz-osx-font-smoothing: grayscale !important;
+.alignCenter {
+  @include mixinHelper.center-content;
 }
 
-body {
-  margin: 0;
-  padding: 0;
-  background: globalVariables.$color-6;
-  color: globalVariables.$color-0;
+.container {
+  max-width: 1500px;
+  margin: 0 auto;
+}
+
+a {
+  text-decoration: none;
+  color: white;
 }
