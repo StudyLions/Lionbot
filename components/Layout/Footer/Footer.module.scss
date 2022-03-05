@@ -1,3 +1,4 @@
+@use "public/styles/globalVariables";
 @use 'public/styles/mixinHelper';
 
 @mixin textStyle {
@@ -6,7 +7,7 @@
   font-size: 14px;
   line-height: 22px;
   text-align: justify;
-  color: #939393;
+  color: globalVariables.$color-18;
 }
 
 .containerFooter {
@@ -25,7 +26,7 @@
       font-style: normal;
       font-weight: bold;
       font-size: 45px;
-      color: #D8B025;
+      color: globalVariables.$color-16;
       text-transform: uppercase;
     }
 
@@ -50,7 +51,7 @@
       margin-bottom: 20px;
       font-weight: bold;
       font-size: 20px;
-      color: #E0E0E0;
+      color: globalVariables.$color-19;
     }
 
     .item {

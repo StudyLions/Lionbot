@@ -8,7 +8,7 @@
 }
 
 .homepage_top_content {
-  background: #141414;
+  background: globalVariables.$color-13;
   margin: 0 auto 100px;
 
   .backgroundImage {
@@ -29,7 +29,7 @@
       font-size: 65px;
       line-height: 67px;
       text-transform: uppercase;
-      color: #EEC73C;
+      color: globalVariables.$color-8;
       max-width: 584px;
     }
 
@@ -40,14 +40,14 @@
       font-weight: normal;
       font-size: 20px;
       line-height: 32px;
-      color: #EEEEEE;
+      color: globalVariables.$color-0;
     }
 
     .addToServerButton {
       position: relative;
       top: 20px;
       background: rgba(249, 249, 249, 0.26);
-      border: 1px solid #F1F1F1;
+      border: 1px solid globalVariables.$color-0;
       box-sizing: border-box;
       border-radius: 42.5px;
       padding: 12px 21px;
@@ -81,7 +81,7 @@
 
       .title_card h3 {
         text-align: left;
-        color: #EEC73C;
+        color: globalVariables.$color-8;
         font-size: 58px;
         line-height: 1.16;
         letter-spacing: -0.036em;
@@ -125,7 +125,7 @@
 // StudyLion Communities  (HomepageBottomContent.js)
 .communities {
   &_section {
-    background: linear-gradient(180deg, #27559A 1.1%, #1B2137 84.24%);
+    background: linear-gradient(180deg, globalVariables.$color-12 1.1%, globalVariables.$color-6 84.24%);
   }
 
   &_container {
@@ -167,7 +167,7 @@
         font-style: normal;
         font-weight: 600;
         font-size: 20px;
-        color: #F8F8F8;
+        color: globalVariables.$color-0;
       }
     }
 
@@ -196,7 +196,7 @@
     height: 100px;
     background: #FFFFFF;
     border-radius: 27px;
-    color: #27559A;
+    color: globalVariables.$color-12;
 
     font-style: normal;
     font-weight: 800;
@@ -223,7 +223,7 @@
     font-size: 65px;
     line-height: 47px;
     text-align: center;
-    color: #FFCC15;
+    color: globalVariables.$color-8;
   }
 
   h2 {
@@ -238,13 +238,13 @@
   }
 
   .inviteTheBot_button {
-    background: #FFCC15;
+    background: globalVariables.$color-8;
     border-radius: 42.5px;
     font-weight: 800;
     font-size: 20px;
     line-height: 41px;
     text-align: center;
-    color: #27559A;
+    color: globalVariables.$color-12;
     padding: 5px 21px;
     margin-top: 50px;
     margin-bottom: 150px;
