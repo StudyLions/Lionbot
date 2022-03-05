@@ -1,7 +1,7 @@
 import React, {useState} from "react";
 import Image from "next/image";
 
-import styles from "@/components/Header/Header.module.scss";
+import styles from "@/components/Layout/Header/Header.module.scss";
 
 const supportLinks = [
   {
@@ -23,7 +23,7 @@ export function SupportUsDropdown() {
       style={{gap: '0 5px'}}
     >
       <Image
-        src={require('public/icons/star.svg')}
+        src={require('@/public/icons/star.svg')}
         priority
         alt="Star icon"
         layout="fixed"
@@ -33,7 +33,7 @@ export function SupportUsDropdown() {
       />
       <p style={{color: '#FFB636'}}>Support us</p>
       <Image
-        src={require('public/icons/arrow.svg')}
+        src={require('@/public/icons/arrow.svg')}
         className={`${expanded ? styles.toggle_down : styles.toggle_up}`}
         priority
         alt="Arrow right icon"

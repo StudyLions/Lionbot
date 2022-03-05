@@ -1,13 +1,17 @@
 import React from 'react';
+import Link from 'next/link'
 
 import styles from "./Header.module.scss"
-import {LoginButtonAndMenuDropdown} from "@/components/Header/LoginButtonAndMenuDropdown";
-import {SupportUsDropdown} from "@/components/Header/SupportUsDropdown";
+import {LoginButtonAndMenuDropdown} from "@/components/Layout/Header/LoginButtonAndMenuDropdown";
+import {SupportUsDropdown} from "@/components/Layout/Header/SupportUsDropdown";
+import {NavigationPaths} from "constants/types";
 
 export default function Header() {
   return (
     <header className={`container ${styles.navbar}`}>
-      <h1 className={styles.studyLion}>StudyBot</h1>
+      <Link href={NavigationPaths.Home}>
+        <a className={styles.studyLion}>StudyBot</a>
+      </Link>
       <div className={styles.navbar_links}>
         <p className={styles.navbar_item}>
           <a href={'https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot'} target={'_blank'} rel="noreferrer">

@@ -2,8 +2,8 @@ import React, {useState} from "react";
 import Image from "next/image";
 import {signIn, signOut, useSession} from "next-auth/react";
 
-import styles from "@/components/Header/Header.module.scss";
-import {default as popup_links} from "@/components/Header/popup_links.json";
+import styles from "@/components/Layout/Header/Header.module.scss";
+import {Menu_links} from "@/components/Layout/Header/Menu_links.ts";
 
 export function LoginButtonAndMenuDropdown() {
   const {data: session, status} = useSession()
@@ -27,7 +27,7 @@ export function LoginButtonAndMenuDropdown() {
                  }}
               >
                 <Image
-                  src={require('public/icons/discord.svg')}
+                  src={require('@/public/icons/discord.svg')}
                   alt="Discord icon"
                   layout="fixed"
                   height={30}
@@ -57,7 +57,7 @@ export function LoginButtonAndMenuDropdown() {
           <div className={`${styles.popup}`}
                onMouseLeave={() => setExpanded(false)}
                onClick={() => setExpanded(false)}>
-            {popup_links.map((link, i) => (
+            {Menu_links.map((link, i) => (
               <a
                 key={link.title + i}
                 href={link.href}

@@ -1,4 +1,6 @@
-[
+import { NavigationPaths } from "@/constants/types";
+
+export const Menu_links = [
   {
     "title": "Profile",
     "href": ""
@@ -13,7 +15,7 @@
   },
   {
     "title": "Premium",
-    "href": "/supportUS"
+    "href": NavigationPaths.SupportUS
   },
   {
     "title": "Email",
