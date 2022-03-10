@@ -1,29 +1,34 @@
-FROM node:16.14.0-alpine3.14
+FROM node:16.14.0-alpine3.14 as build
 
-RUN apk add --no-cache libc6-compat
-
-RUN npm i -g npm
-
-#ENV NODE_ENV production
-ENV PORT 3000
-EXPOSE 3000
-
-WORKDIR /home/nextjs/app
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nextjs -u 1001
-
-COPY package.json .
+# Copy in only the parts needed to install dependencies
+# (This avoids rebuilds if the package.json hasn’t changed)
+COPY package.json  .
 COPY package-lock.json .
 
-RUN chown -R nextjs:nodejs /home/nextjs
-
-USER nextjs
-
-# If you are building your code for production
-# RUN npm install --only=production
-
+# Install dependencies (including dev dependencies)
 RUN npm install
-RUN npx browserslist@latest --update-db
-RUN npx next telemetry disable
 
+# Copy in the rest of the project
+# (include node_modules in a .dockerignore file)
 COPY . .
+
+# Build the project
+RUN npm run build
+
+# Second stage: runtime
+FROM node:16.14.0-alpine3.14
+
+ENV NODE_ENV=production
+
+# Again get dependencies, but this time only install
+# runtime dependencies
+COPY package.json  .
+COPY package-lock.json .
+RUN npm install --only=production
+
+# Get the built application from the first stage
+COPY --from=build /home/nextjs/app/.next .
+
+# Set runtime metadata
+ENV PORT 3000
+EXPOSE 3000
