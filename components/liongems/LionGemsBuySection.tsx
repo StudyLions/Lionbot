@@ -5,7 +5,7 @@ import Image from "next/image";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
-export default function MiddleSectionLionGems() {
+export default function LionGemsBuySection() {
   const createPaymentSession = async (price: number) => {
     // Create Checkout session on backend
     const { sessionId } = await fetch('/api/checkout/session', {
@@ -23,7 +23,7 @@ export default function MiddleSectionLionGems() {
     });
   }
 
-  return <div className={ `${ styles.lionGems }` }>
+  return <div className={ `${ styles.buySection }` }>
     <h1 className={ `uppercase text-center mt-28 mb-20 font-bold text-7xl ${ styles.lionGemsTitle }` }>Lion gems</h1>
     <div className={ 'grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center' }>
       { DonationsData.map((product, index) => (

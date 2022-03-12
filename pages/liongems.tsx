@@ -1,11 +1,13 @@
 import Layout from "@/components/Layout/Layout";
-import HeaderContentLionGems from "@/components/liongems/HeaderContentLionGems";
-import MiddleSectionLionGems from "@/components/liongems/MiddleSectionLionGems";
+import LionGemsHeader from "@/components/liongems/LionGemsHeader";
+import LionGemsBuySection from "@/components/liongems/LionGemsBuySection";
+import LionGemsFAQSection from "@/components/liongems/LionGemsFAQSection";
 
 
 export default function Liongems() {
   return <Layout>
-    <HeaderContentLionGems />
-    <MiddleSectionLionGems />
+    <LionGemsHeader/>
+    <LionGemsBuySection/>
+    <LionGemsFAQSection/>
   </Layout>
 }
