@@ -29,7 +29,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     }],
     mode: 'payment',
     success_url: `${req.headers.origin}/result?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${req.headers.origin + NavigationPaths.SupportUS}`,
+    cancel_url: `${req.headers.origin + NavigationPaths.lionGems}`,
   })
   res.status(200).json({ sessionId: session.id })
 }
