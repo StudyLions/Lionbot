@@ -13,7 +13,7 @@
 
   .backgroundImage {
     width: 100%;
-    max-height: 1145px;
+    max-height: 1000px;
     object-fit: cover;
     display: block;
   }
@@ -67,7 +67,6 @@
     @include mixinHelper.container;
     display: flex;
     flex-direction: row;
-    margin: 0 auto;
     padding: 5rem 10px;
     gap: 0 50px;
     min-height: 500px;
@@ -130,7 +129,6 @@
 
   &_container {
     @include mixinHelper.container;
-    margin: 0 auto;
   }
 
   &_heading {
