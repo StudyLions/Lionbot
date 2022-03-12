@@ -1,5 +1,5 @@
 module.exports = {
   images: {
-    domains: ['api-production.s3.amazonaws.com'],
+    domains: ['cdn.discord.study', 'api-production.s3.amazonaws.com'],
   },
 }
