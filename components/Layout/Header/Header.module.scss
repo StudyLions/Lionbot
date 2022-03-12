@@ -3,6 +3,8 @@
 
 .navbar {
   @include mixinHelper.center-content;
+  max-width: 1440px;
+  margin: 0 auto;
   width: auto;
   padding: 22px;
 

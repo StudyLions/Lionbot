@@ -62,8 +62,7 @@ table {
 }
 
 .container {
-  max-width: 1500px;
-  margin: 0 auto;
+  @include mixinHelper.container;
 }
 
 a {
