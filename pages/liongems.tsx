@@ -2,10 +2,11 @@ import Layout from "@/components/Layout/Layout";
 import { loadStripe } from "@stripe/stripe-js";
 import { DonationsData } from "constants/DonationsData";
 import DonationCard from "@/components/DonationCard/DonationCard";
+import HeaderContentLionGems from "@/components/liongems/HeaderContentLionGems";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
 
-export default function SupportUS() {
+export default function Liongems() {
 
   const createPaymentSession = async (price: number) => {
     // Create Checkout session on backend
@@ -25,6 +26,7 @@ export default function SupportUS() {
   }
 
   return <Layout>
+    <HeaderContentLionGems />
     <div className={ `container` }>
       <h1 className={ `mb-5 text-center` }>Support Discord.study Development</h1>
       <div style={ { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "30px", justifyItems: 'center' } }>

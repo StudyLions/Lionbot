@@ -15,7 +15,7 @@ export const Menu_links = [
   },
   {
     "title": "Premium",
-    "href": NavigationPaths.SupportUS
+    "href": NavigationPaths.lionGems
   },
   {
     "title": "Email",

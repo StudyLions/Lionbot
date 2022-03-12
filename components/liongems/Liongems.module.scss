@@ -1,0 +1,10 @@
+@use 'public/styles/mixinHelper';
+
+.header_content{
+  background: linear-gradient(180deg, rgba(118, 79, 182, 0) 0%, rgba(221, 69, 69, 0.94) 107.21%);
+  min-height: 1000px;
+}
+
+.section {
+  @include mixinHelper.container;
+}

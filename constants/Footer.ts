@@ -32,7 +32,7 @@ export const MenuItems = [
   {
     title: 'Support Us!',
     link: {
-      href: NavigationPaths.SupportUS,
+      href: NavigationPaths.lionGems,
       target: ''
     }
   },
