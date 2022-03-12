@@ -9,8 +9,9 @@
   @include mixinHelper.container;
 }
 
-.lionGems {
+.buySection {
   @include mixinHelper.container;
+  margin-bottom: 200px;
   max-width: 1120px;
 
   &Title {
