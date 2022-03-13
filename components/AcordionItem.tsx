@@ -17,7 +17,7 @@ interface IProps {
 export default function AcordionItem({question, answer }: IProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  return <div>
+  return <>
     <div className={ 'flex items-center justify-between' }>
       <button
               className={ `font-bold text-3xl cursor-pointer z-10` }
@@ -42,5 +42,5 @@ export default function AcordionItem({question, answer }: IProps) {
        style={ greyColor }>
       { answer }
     </p>
-  </div>
+  </>
 }
