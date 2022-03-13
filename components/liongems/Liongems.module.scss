@@ -1,0 +1,36 @@
+@use 'public/styles/mixinHelper';
+
+.header_content {
+  background: linear-gradient(180deg, rgba(118, 79, 182, 0) 0%, rgba(221, 69, 69, 0.94) 107.21%);
+  min-height: 1000px;
+}
+
+.section {
+  @include mixinHelper.container;
+}
+
+.buySection {
+  @include mixinHelper.container;
+  margin-bottom: 200px;
+  max-width: 1120px;
+
+  &Title {
+    color: #EEC73C;
+  }
+
+  .donationCard {
+    background: linear-gradient(360deg, #FEE4CC 0%, rgba(255, 233, 212, 0) 100%), #FFFFFF;
+
+    .gems {
+      color: #E04C4C;
+    }
+
+    .gemsBonus {
+      color: #133465;
+    }
+
+    .amountEuros {
+      background-color: #E04C4C;
+    }
+  }
+}

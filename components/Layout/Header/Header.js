@@ -8,7 +8,7 @@ import {NavigationPaths} from "constants/types";
 
 export default function Header() {
   return (
-    <header className={`container ${styles.navbar}`}>
+    <header className={`${styles.navbar}`}>
       <Link href={NavigationPaths.Home}>
         <a className={styles.studyLion}>StudyBot</a>
       </Link>
