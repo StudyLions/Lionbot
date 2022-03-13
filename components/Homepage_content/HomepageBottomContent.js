@@ -3,7 +3,7 @@ import {useOnScreen} from "@/hooks/useOnScreen";
 
 import styles from "@/components/Homepage_content/Homepage.module.scss";
 import {Counters_list, Servers_list} from "constants/Homepage";
-import AnimatedNumberCounter from "@/components/AnimatedNumberCounter";
+import UseAnimatedNumberCounter from "@/hooks/useAnimatedNumberCounter";
 
 function HowToUse() {
   return <>
@@ -54,7 +54,7 @@ function StudyLionCommunities() {
           <h1 ref={ref} className={styles.number_counter}>
             {onScreen ?
               <>
-                <AnimatedNumberCounter number={`${counter.number}`} duration={1}/>
+                <UseAnimatedNumberCounter number={`${counter.number}`} duration={1}/>
                 {counter.last_char}
               </>
               : null }
