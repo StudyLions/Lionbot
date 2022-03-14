@@ -5,7 +5,7 @@ import { getToken } from "next-auth/jwt";
 import { DonationsData } from "constants/DonationsData";
 import { NavigationPaths } from "constants/types";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: '2020-08-27',
 })
 
