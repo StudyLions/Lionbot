@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 
-const AnimatedNumberCounter = (props) => {
+const UseAnimatedNumberCounter = (props) => {
   // number to increment to
   // duration of count in seconds
   const {number, duration} = props
@@ -37,4 +37,4 @@ const AnimatedNumberCounter = (props) => {
   return count;
 }
 
-export default AnimatedNumberCounter;
+export default UseAnimatedNumberCounter;

@@ -4,7 +4,7 @@ export default function LionGemsHeader() {
   return <div className={`alignCenter ${styles.header_content}`}>
     <div className={`grid lg:grid-cols-2 gap-4 sm:grid-cols-1 ${styles.section}`}>
       <img className={'object-contain'} src="https://cdn.discord.study/images/Group+222.png"
-           alt="February collection image"/>
+           alt="February collection image" loading={"lazy"}/>
       <div className={'flex items-start justify-center md:ml-5 sm:ml-0 flex-col'}>
         <h1 className={`uppercase text-7xl font-bold text-amber-400 max-w-min`}>
           February Collection
