@@ -6,6 +6,7 @@ WORKDIR /app
 # (This avoids rebuilds if the package.json hasn’t changed)
 COPY package.json  .
 COPY package-lock.json .
+COPY .env.* .
 
 # Install dependencies (including dev dependencies)
 RUN npm install
@@ -28,6 +29,7 @@ ENV NODE_ENV=production
 # runtime dependencies
 COPY package.json  .
 COPY package-lock.json .
+COPY .env.* .
 RUN npm install --only=production
 
 # Get the built application from the first stage
