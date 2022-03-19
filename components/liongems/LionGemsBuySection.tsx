@@ -23,7 +23,6 @@ export default function LionGemsBuySection() {
   }
 
   return <div className={ `${ styles.buySection }` }>
-    STRIPE_PUBLISHABLE_KEY = {process.env.STRIPE_PUBLISHABLE_KEY}
     <h1 className={ `uppercase text-center mt-28 mb-20 font-bold text-7xl ${ styles.title }` }>Lion gems</h1>
     <div className={ 'grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center' }>
       { DonationsData.map((product, index) => (
