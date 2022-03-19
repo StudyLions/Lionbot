@@ -13,10 +13,9 @@ Server structure:
   - production ([main](https://github.com/StudyLions/Discord-Study) repository)
   - staging ([staging](https://github.com/StudyLions/Discord-Study/tree/staging) repository)
   - secrets
-    - env_production
-      - .env.local
-    - env_staging
-      - .env.local
+    - env
+      - .env.production `# for production folder`
+      - .env.production.local `# for staging folder`
     - nginx
       - [production.conf](https://gist.github.com/EliseiNicolae/03bb019cbf9e76ef48982ccb65c0ded5)
       - [staging.conf](https://gist.github.com/EliseiNicolae/26189c94e2a8ca7e3e290cf1d262d8c5)
