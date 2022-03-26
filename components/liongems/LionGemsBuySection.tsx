@@ -10,7 +10,7 @@ export default function LionGemsBuySection() {
   const {data: session} = useSession()
 
   const createPaymentSession = async (price: number) => {
-    //Reddirect user if is not logged.
+    //Redirect user if is not logged.
     if (!session) {
       await signIn("discord")
       return;
