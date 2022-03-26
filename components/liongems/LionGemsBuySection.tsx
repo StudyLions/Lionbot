@@ -1,11 +1,21 @@
-import { DonationsData } from "@/constants/DonationsData";
+import {signIn, useSession} from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
+
+import { DonationsData } from "@/constants/DonationsData";
 import styles from './Liongems.module.scss'
 
 const stripePromise = loadStripe(`${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`)
 
 export default function LionGemsBuySection() {
+  const {data: session} = useSession()
+
   const createPaymentSession = async (price: number) => {
+    //Reddirect user if is not logged.
+    if (!session) {
+      await signIn("discord")
+      return;
+    }
+
     // Create Checkout session on backend
     const { sessionId } = await fetch('/api/checkout/session', {
       method: 'POST',
