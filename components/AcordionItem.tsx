@@ -20,7 +20,7 @@ export default function AcordionItem({question, answer }: IProps) {
   return <>
     <div className={ 'flex items-center justify-between' }>
       <button
-              className={`font-bold text-3xl cursor-pointer z-0`}
+              className={`font-bold text-3xl cursor-pointer`}
               onClick={() => setIsExpanded(!isExpanded)}
               style={ blueColor }
       >

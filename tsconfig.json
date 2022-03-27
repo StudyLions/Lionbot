@@ -19,6 +19,9 @@
       ],
       "@/utils/*": [
         "utils/*"
+      ],
+      "@/models/*": [
+        "models/*"
       ]
     },
     "lib": [

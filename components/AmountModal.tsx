@@ -1,8 +1,8 @@
 import React, {useRef, useState} from "react";
-import useOnClickOutside from "@/hooks/useOnClickOutside";
-import createPaymentSession from "../utils/createPaymentSession";
 import Image from "next/image";
-import numberWithCommas from "../utils/numberWithCommas";
+import useOnClickOutside from "@/hooks/useOnClickOutside";
+import createPaymentSession from "@/utils/createPaymentSession";
+import numberWithCommas from "@/utils/numberWithCommas";
 
 interface IProps {
   id: string,
@@ -20,7 +20,7 @@ export function AmountModal(props: IProps) {
 
   const QuantityCounter = () => {
     return <>
-      <div className="flex alignCenter text-gray20 border-[1.5px] border-gray20 border-solid rounded-md">
+      <div className="alignCenter text-gray20 border-[1.5px] border-gray20 border-solid rounded-md">
         <button className="px-2 cursor-pointer font-medium text-[20px]"
                 onClick={() => quantity !== 1 && setQuantity(quantity - 1)}>-
         </button>
@@ -64,7 +64,7 @@ export function AmountModal(props: IProps) {
               €{`${quantity > 1 ? (props.amount * quantity).toFixed(2) : props.amount}`}
             </h1>
           </div>
-          <button className={`mt-auto mb-[35px] bg-orange0 h-[35px] rounded-3xl font-bold text-[23px]`}
+          <button className={`mt-auto mb-[35px] bg-orange0 hover:bg-orange3 h-[35px] rounded-3xl font-bold text-[23px]`}
                   onClick={() => createPaymentSession(props.id, quantity)}>
             Confirm
           </button>

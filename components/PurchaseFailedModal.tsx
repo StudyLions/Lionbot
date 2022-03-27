@@ -1,5 +1,7 @@
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import React, {useRef} from "react";
+import createPaymentSession from "@/utils/createPaymentSession";
+import {IBasket} from "@/models/donationData";
 
 interface IProps {
   closeModal: () => void
@@ -8,6 +10,13 @@ interface IProps {
 export function PurchaseFailedModal(props: IProps) {
   const ref = useRef();
   useOnClickOutside(ref, () => props.closeModal());
+
+  const retryPayment = () => {
+    let basket: IBasket = JSON.parse(localStorage.getItem('basket'));
+    if (basket) {
+      createPaymentSession(basket.id, basket.quantity)
+    }
+  }
 
   return <>
     <div className="fixed inset-0 flex justify-center items-center bg-transparentBlack20 z-10">
@@ -24,7 +33,9 @@ export function PurchaseFailedModal(props: IProps) {
                 className="font-medium">contact@discord.study</span>
         </p>
         <div className="flex justify-between gap-[20px] mt-[20px]">
-          <button className="w-full bg-red19 h-[36px] rounded-2xl uppercase font-bold hover:bg-red04">Retry</button>
+          <button className="w-full bg-red19 h-[36px] rounded-2xl uppercase font-bold hover:bg-red04"
+                  onClick={() => retryPayment()}>Retry
+          </button>
           <button className="w-full bg-red19 h-[36px] rounded-2xl uppercase font-bold hover:bg-red04"
                   onClick={() => props.closeModal()}>Close
           </button>

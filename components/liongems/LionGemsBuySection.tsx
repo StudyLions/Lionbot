@@ -5,9 +5,10 @@ import {AmountModal} from "@/components/AmountModal";
 import {useEffect, useState} from "react";
 import {DonationsData} from "@/constants/DonationsData";
 import {signIn, useSession} from "next-auth/react";
-import numberWithCommas from "../../utils/numberWithCommas";
+import numberWithCommas from "@/utils/numberWithCommas";
 import {PurchaseFailedModal} from "@/components/PurchaseFailedModal";
 import {PurchaseCompleteModal} from "@/components/PurchaseCompleteModal";
+import {IDonationItem} from "@/models/donationData";
 
 
 export default function LionGemsBuySection() {
@@ -31,41 +32,47 @@ export default function LionGemsBuySection() {
     router.replace("/liongems", undefined, {shallow: true});
   }), [router.query.payment])
 
+  const openAmountModal = (donationItem: IDonationItem) => {
+    //Redirect user if is not logged.
+    if (!session) {
+      signIn("discord");
+      return;
+    }
+    setCurrentDonationData(donationItem)
+    setIsAmountModalVisible(true)
+  }
+
   return (
           <>
             {isAmountModalVisible && <AmountModal
                     closeModal={() => setIsAmountModalVisible(false)} {...currentDonationData}/>}
             {isPurchaseFailedVisible && <PurchaseFailedModal
-                    closeModal={() => setIsPurchaseFailedVisible(false)}/>}
+                    closeModal={() => {
+                      setIsPurchaseFailedVisible(false);
+                      localStorage.removeItem('basket')
+                    }}/>}
             {isPurchaseCompleteVisible && <PurchaseCompleteModal
-                    closeModal={() => setIsPurchaseCompleteVisible(false)}/>}
-
-
+                    closeModal={() => {
+                      setIsPurchaseCompleteVisible(false);
+                      localStorage.removeItem('basket');
+                    }}/>}
+            
             <div className={`${styles.buySection}`}>
               <h1 className={`uppercase text-center mt-28 mb-20 font-bold text-7xl ${styles.title}`}>Lion gems</h1>
               <div className={"grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center"}>
-                {DonationsData.map((product, index) => (
+                {DonationsData.map((donationItem: IDonationItem, index) => (
                         <div className={`rounded-3xl pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}
-                             key={product.amount + index}
-                        >
-                          <img src={product.image} alt={`Tokens ${product.tokens} image`} loading={"lazy"}/>
-                          <p className={`text-4xl font-bold text-center ${styles.gems}`}>{numberWithCommas(product.tokens)}</p>
-                          <p className={`text-2xl font-bold text-center mb-5 ${+product.tokens_bonus ? styles.gemsBonus : "text-transparent"}`}>
-                            +{numberWithCommas(product.tokens_bonus)} bonus
+                             key={donationItem.amount + index}>
+                          <img src={donationItem.image} alt={`Tokens ${donationItem.tokens} image`} loading={"lazy"}/>
+                          <p className={`text-4xl font-bold text-center ${styles.gems}`}>{numberWithCommas(donationItem.tokens)}</p>
+                          <p className={`text-2xl font-bold text-center mb-5 ${+donationItem.tokens_bonus ? styles.gemsBonus : "text-transparent"}`}>
+                            +{numberWithCommas(donationItem.tokens_bonus)} bonus
                           </p>
-                          <a onClick={() => {
-                            //Redirect user if is not logged.
-                            if (!session) {
-                              signIn("discord");
-                              return;
-                            }
-                            setCurrentDonationData(product)
-                            setIsAmountModalVisible(true)
-                          }}
+                          <a onClick={() => openAmountModal(donationItem)}
                              className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold cursor-pointer
-                             bg-red20 hover:bg-red04`}
+                       bg-red20 hover:bg-red04`}
                           >
-                            €{product.amount}
+                            €{donationItem.amount}
                           </a>
                         </div>
                 ))}
