@@ -4,6 +4,7 @@ import { getToken } from "next-auth/jwt";
 
 import { DonationsData } from "constants/DonationsData";
 import { NavigationPaths } from "constants/types";
+import numberWithCommas from "@/utils/numberWithCommas";
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
@@ -13,20 +14,20 @@ const secret = process.env.SECRET;
 
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   const userID = await getToken({ req, secret });
-  const { quantity, amount } = req.body;
+  const { donationID, quantity } = req.body;
 
-  const donationInfo: any = DonationsData.find((d) => d.amount == amount);
+  const donationInfo: any = DonationsData.find((d) => d.id == donationID);
 
   const session = await stripe.checkout.sessions.create({
     submit_type: "auto",
     payment_method_types: ["card"],
     line_items: [
       {
-        name: `Donation ${userID.name} (${userID.sub})`,
-        amount: amount * 100, // we multiply by 100 because the amount must be in cents.
+        name: `Donation ${ userID.name } (${ userID.sub })`,
+        amount: donationInfo.amount * 100, // we multiply by 100 because the amount must be in cents.
         currency: "eur",
         quantity: quantity,
-        description: `Tokens: ${donationInfo.tokens + donationInfo.tokens_bonus}`,
+        description: `Total tokens: ${ numberWithCommas((donationInfo.tokens + donationInfo.tokens_bonus) * quantity) }`,
       },
     ],
     mode: "payment",

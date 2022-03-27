@@ -16,6 +16,9 @@
       ],
       "@/constants/*": [
         "constants/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
       ]
     },
     "lib": [

@@ -1,14 +1,9 @@
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
 
 const stripePromise = loadStripe(`${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`);
 
-const createPaymentSession = async (price: number, session: any, amount: number) => {
-  //Redirect user if is not logged.
-  if (!session) {
-    await signIn("discord");
-    return;
-  }
+const createPaymentSession = async (id: string, quantity: number) => {
 
   // Create Checkout session on backend
   const { sessionId } = await fetch("/api/checkout/session", {
@@ -16,7 +11,7 @@ const createPaymentSession = async (price: number, session: any, amount: number)
     headers: {
       "content-type": "application/json",
     },
-    body: JSON.stringify({ quantity: 1, amount: price }),
+    body: JSON.stringify({ donationID: id, quantity: quantity }),
   }).then((res) => res.json());
 
   //When the customer clicks on the button, redirect them to Checkout.
