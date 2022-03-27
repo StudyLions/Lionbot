@@ -1,5 +1,6 @@
-import useOnClickOutside from "@/hooks/useOnClickOutside";
 import React, {useRef} from "react";
+
+import useOnClickOutside from "@/hooks/useOnClickOutside";
 
 interface IProps {
   closeModal: () => void

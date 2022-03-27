@@ -1,5 +1,6 @@
-import useOnClickOutside from "@/hooks/useOnClickOutside";
 import React, {useRef} from "react";
+
+import useOnClickOutside from "@/hooks/useOnClickOutside";
 import createPaymentSession from "@/utils/createPaymentSession";
 import {IBasket} from "@/models/donationData";
 
