@@ -3,7 +3,7 @@ import {useOnScreen} from "@/hooks/useOnScreen";
 
 import styles from "@/components/Homepage_content/Homepage.module.scss";
 import {Counters_list, Servers_list} from "constants/Homepage";
-import UseAnimatedNumberCounter from "@/hooks/UseAnimatedNumberCounter";
+import UseAnimatedNumberCounter from "../../hooks/useAnimatedNumberCounter";
 
 function HowToUse() {
   return <>
