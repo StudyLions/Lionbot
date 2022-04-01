@@ -1,56 +1,83 @@
+import {useRouter} from "next/router";
+import {useEffect, useState} from "react";
 import {signIn, useSession} from "next-auth/react";
-import { loadStripe } from "@stripe/stripe-js";
 
-import { DonationsData } from "@/constants/DonationsData";
-import styles from './Liongems.module.scss'
+import {AmountModal} from "@/components/AmountModal";
+import {PurchaseFailedModal} from "@/components/PurchaseFailedModal";
+import {PurchaseCompleteModal} from "@/components/PurchaseCompleteModal";
+import {DonationsData} from "@/constants/DonationsData";
+import numberWithCommas from "@/utils/numberWithCommas";
+import {IDonationItem} from "@/models/donationData";
+import styles from "./Liongems.module.scss";
 
-const stripePromise = loadStripe(`${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`)
 
 export default function LionGemsBuySection() {
   const {data: session} = useSession()
+  const [isAmountModalVisible, setIsAmountModalVisible] = useState(false);
+  const [isPurchaseFailedVisible, setIsPurchaseFailedVisible] = useState(false);
+  const [isPurchaseCompleteVisible, setIsPurchaseCompleteVisible] = useState(false);
+  const [currentDonationData, setCurrentDonationData] = useState(null)
+  const router = useRouter();
 
-  const createPaymentSession = async (price: number) => {
+  useEffect((() => {
+    switch (router.query.payment) {
+      case "success":
+        setIsPurchaseCompleteVisible(true);
+        break;
+      case "failed":
+        setIsPurchaseFailedVisible(true);
+        break;
+      default:
+    }
+    router.replace("/liongems", undefined, {shallow: true});
+  }), [router.query.payment])
+
+  const openAmountModal = (donationItem: IDonationItem) => {
     //Redirect user if is not logged.
     if (!session) {
-      await signIn("discord")
+      signIn("discord");
       return;
     }
-
-    // Create Checkout session on backend
-    const { sessionId } = await fetch('/api/checkout/session', {
-      method: 'POST',
-      headers: {
-        'content-type': "application/json",
-      },
-      body: JSON.stringify({ quantity: 1, amount: price })
-    }).then(res => res.json());
-
-    //When the customer clicks on the button, redirect them to Checkout.
-    const stripe = await stripePromise;
-    const { error } = await stripe.redirectToCheckout({
-      sessionId,
-    });
+    setCurrentDonationData(donationItem)
+    setIsAmountModalVisible(true)
   }
 
-  return <div className={ `${ styles.buySection }` }>
-    <h1 className={ `uppercase text-center mt-28 mb-20 font-bold text-7xl ${ styles.title }` }>Lion gems</h1>
-    <div className={ 'grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center' }>
-      { DonationsData.map((product, index) => (
-              <div className={ `rounded-3xl pt-3 h-fit flex flex-col w-full ${ styles.donationCard }` }
-                   key={ product.amount + index }>
-                <img src={ product.image } alt={ `Tokens ${ product.tokens } image` } loading={"lazy"}/>
-                <p className={ `text-4xl font-bold text-center ${ styles.gems }` }>{ product.tokens }</p>
-                <p className={ `text-2xl font-bold text-center mb-5 
-                                ${ product.tokens_bonus ? styles.gemsBonus : 'text-transparent' }` }>
-                  +{ product.tokens_bonus } bonus
-                </p>
-                <a onClick={ () => createPaymentSession(product.amount) }
-                   className={ `rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold cursor-pointer
-                    ${ styles.amountEuros }` }>
-                  €{ product.amount }
-                </a>
+  return (
+          <>
+            {isAmountModalVisible && <AmountModal
+                    closeModal={() => setIsAmountModalVisible(false)} {...currentDonationData}/>}
+            {isPurchaseFailedVisible && <PurchaseFailedModal
+                    closeModal={() => {
+                      setIsPurchaseFailedVisible(false);
+                      localStorage.removeItem('basket')
+                    }}/>}
+            {isPurchaseCompleteVisible && <PurchaseCompleteModal
+                    closeModal={() => {
+                      setIsPurchaseCompleteVisible(false);
+                      localStorage.removeItem('basket');
+                    }}/>}
+            
+            <div className={`${styles.buySection}`}>
+              <h1 className={`uppercase text-center mt-28 mb-20 font-bold text-7xl ${styles.title}`}>Lion gems</h1>
+              <div className={"grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center"}>
+                {DonationsData.map((donationItem: IDonationItem, index) => (
+                        <div className={`rounded-3xl pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}
+                             key={donationItem.amount + index}>
+                          <img src={donationItem.image} alt={`Tokens ${donationItem.tokens} image`} loading={"lazy"}/>
+                          <p className={`text-4xl font-bold text-center ${styles.gems}`}>{numberWithCommas(donationItem.tokens)}</p>
+                          <p className={`text-2xl font-bold text-center mb-5 ${+donationItem.tokens_bonus ? styles.gemsBonus : "text-transparent"}`}>
+                            +{numberWithCommas(donationItem.tokens_bonus)} bonus
+                          </p>
+                          <a onClick={() => openAmountModal(donationItem)}
+                             className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold cursor-pointer
+                       bg-red20 hover:bg-red04`}
+                          >
+                            €{donationItem.amount}
+                          </a>
+                        </div>
+                ))}
               </div>
-      )) }
-    </div>
-  </div>
+            </div>
+          </>
+  );
 }

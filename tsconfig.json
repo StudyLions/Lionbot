@@ -16,6 +16,12 @@
       ],
       "@/constants/*": [
         "constants/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
+      ],
+      "@/models/*": [
+        "models/*"
       ]
     },
     "lib": [
