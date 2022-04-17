@@ -1,6 +1,9 @@
-import { IPremiumPlan } from "@/models/premiumPlan";
 import styles from "./Liongems.module.scss";
 import numberWithCommas from "@/utils/numberWithCommas";
+import { IPremiumPlan } from "@/models/premiumPlan";
+import Button from "@/components/Button";
+import img from "@/public/icons/star.svg";
+
 let PremiumCards: Array<IPremiumPlan> = [
   {
     lionGems: 4000,
@@ -46,12 +49,8 @@ const LionGemsPremiumPlan = () => {
         <p className={"mt-[30px] max-w-[550px] text-center mt-[20px] text-[#B6B6B6] text-[20px] leading-[42px]"}>
           To purchase and manage your subscription please use the “premium” command and access the interface.
         </p>
-        <div
-          className={
-            "mt-[20px] bg-white text-[#BD4949] py-[10px] px-[30px] rounded-full font-bold text-[20px] leading-[42px] uppercase"
-          }
-        >
-          Get LionGems
+        <div className={"mt-[20px]"}>
+          <Button image={img} label={"Get Liongems"} />
         </div>
       </div>
     </div>

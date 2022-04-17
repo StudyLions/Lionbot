@@ -1,8 +1,34 @@
+import React from "react";
 import styles from "./Liongems.module.scss";
+import { IButton } from "@/models/button";
+import Button from "@/components/Button";
 
-export default function LionGemsHeader() {
+import img from "@/public/icons/star.svg";
+
+let buttonsList: Array<IButton> = [
+  {
+    image: {
+      src: img,
+    },
+    label: "Premium Plans",
+  },
+  {
+    image: {
+      src: img,
+    },
+    label: "Get Liongems",
+  },
+  {
+    image: {
+      src: img,
+    },
+    label: "Browse skins",
+  },
+];
+
+const LionGemsHeader = () => {
   return (
-    <div className={`alignCenter min-h-[1000px] bg-[#1B2137]`}>
+    <div className={`flex flex-col justify-center min-h-[1000px] bg-[#1B2137]`}>
       <div className={`grid lg:grid-cols-2 gap-4 sm:grid-cols-1 ${styles.section}`}>
         <img
           className={"object-contain"}
@@ -19,20 +45,15 @@ export default function LionGemsHeader() {
             Purchase colored skins, gift LionGems to your loved ones, and unlock special perks for your server or
             yourself!
           </p>
-          <div className={`w-full mt-5 gap-5 flex gap-3 text-2xl`}>
-            <a
-              className={
-                "uppercase px-5 py-2 rounded-full bg-amber-500 font-bold text-amber-50 cursor-pointer text-2xl"
-              }
-            >
-              Browse
-            </a>
-            <a className={"uppercase px-5 py-2 rounded-full bg-amber-500 font-bold text-amber-50 cursor-pointer"}>
-              LionGems
-            </a>
-          </div>
         </div>
+      </div>
+      <div className={"flex justify-center items-center gap-[34px] mt-[63px]"}>
+        {buttonsList.map((button) => (
+          <Button key={button.label} {...button} />
+        ))}
       </div>
     </div>
   );
-}
+};
+
+export default LionGemsHeader;
