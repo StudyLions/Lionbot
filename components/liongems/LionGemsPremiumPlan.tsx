@@ -25,7 +25,7 @@ const PremiumCard = (card) => {
       <div className={`alignCenter min-h-[130px] rounded-t-[30px] ${styles.premiumPlan_gradient}`}>
         <div className={"font-semibold text-[50px] leading-[42px]"}>{numberWithCommas(card.lionGems)}</div>
       </div>
-      <div className={"alignCenter mt-[30px] text-[40px] leading-[42px] text-[#333030] uppercase"}>
+      <div className={"alignCenter mt-[30px] text-[40px] leading-[42px] text-[#333030] uppercase font-bold"}>
         {card.typeSubscription}
       </div>
       <div className={"alignCenter mt-[20px] text-[#989595] text-[25px] mb-[30px] font-extralight"}>Subscription</div>

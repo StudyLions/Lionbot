@@ -9,7 +9,7 @@ import Banner from "@/components/Layout/Header/Banner";
 
 export default function Header() {
   return (
-    <div className={"flex flex-col"}>
+    <div className={"flex flex-col bg-[#1B2137]"}>
       <header className={`${styles.navbar}`}>
         <Link href={NavigationPaths.Home}>
           <a className={styles.studyLion}>StudyBot</a>

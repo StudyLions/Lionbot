@@ -28,7 +28,7 @@ let buttonsList: Array<IButton> = [
 
 const LionGemsHeader = () => {
   return (
-    <div className={`flex flex-col justify-center min-h-[1000px] bg-[#1B2137]`}>
+    <div className={`flex flex-col justify-center min-h-[1000px]`}>
       <div className={`grid lg:grid-cols-2 gap-4 sm:grid-cols-1 ${styles.section}`}>
         <img
           className={"object-contain"}
