@@ -1,5 +1,5 @@
 import { loadStripe } from "@stripe/stripe-js";
-import { IBasket } from "@/models/donationData";
+import { IBasket } from "@/models/donation";
 
 const stripePromise = loadStripe(`${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`);
 
@@ -7,9 +7,9 @@ const createPaymentSession = async (id: string, quantity: number) => {
   // Save item in local storage for 'retry' button.
   let basket: IBasket = {
     id: id,
-    quantity: quantity
+    quantity: quantity,
   };
-  localStorage.setItem('basket', JSON.stringify(basket))
+  localStorage.setItem("basket", JSON.stringify(basket));
 
   // Create Checkout session on backend
   const { sessionId } = await fetch("/api/checkout/session", {

@@ -2,6 +2,10 @@
 @use "public/styles/globalVariables";
 @use "public/styles/animations";
 
+.container {
+  background: linear-gradient(178.04deg, #323979 -1.07%, #171827 31.1%, #111A3C 73.88%, #000000 107.69%);
+}
+
 .section {
   width: 100%;
   position: relative;
@@ -30,7 +34,7 @@
       line-height: 67px;
       text-transform: uppercase;
       color: globalVariables.$color-8;
-      max-width: 584px;
+      max-width: 495px;
     }
 
     .smallerText {
@@ -46,8 +50,7 @@
     .addToServerButton {
       position: relative;
       top: 20px;
-      background: rgba(249, 249, 249, 0.26);
-      border: 1px solid globalVariables.$color-0;
+      background: #BD4949;;
       box-sizing: border-box;
       border-radius: 42.5px;
       padding: 12px 21px;
