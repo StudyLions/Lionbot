@@ -1,12 +1,12 @@
-### Deployment: https://discord.study/
-### Staging: https://staging.discord.study/
+### Deployment: https://lionbot.org/
+### Staging: https://staging.lionbot.org/
 
 
 <details>
   <summary>Config docker and deployment on server</summary>
 
 Server structure:
-- home/discordStudy 
+- home/lionbot 
   - [deploy.sh](https://gist.github.com/EliseiNicolae/40f5046eb1aebd157a289f85ae6e2b2a#file-deploy-sh)
   - [docker-compose.yml  ](https://gist.github.com/EliseiNicolae/0b3b5a6b369a04ac92e0d35bbad739f6)
   - [Dockerfile](https://gist.github.com/EliseiNicolae/d79b33ab3f649e854e081b77f6422e68)
@@ -23,7 +23,7 @@ Server structure:
       - discord.study.key
       - discord.study.pem
   
-  For running the deployment you need to write `./deploy.sh` in `discordStudy` folder.
+  For running the deployment you need to write `./deploy.sh` in `lionbot` folder.
 </details>
 
 <details>
