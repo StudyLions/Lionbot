@@ -48,7 +48,6 @@ export default function Header() {
             >
               <Image
                 src={require("@/public/icons/diamond-yellow.svg")}
-                priority
                 alt="Star icon"
                 layout="fixed"
                 height={30}

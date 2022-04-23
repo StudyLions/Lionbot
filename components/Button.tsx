@@ -16,7 +16,6 @@ const Button = ({ image, label, href, target = "_self" }: IButton) => {
           {image && (
             <Image
               src={image.src}
-              priority
               alt="Star icon"
               layout="fixed"
               height={image.height ? image.height : 30}

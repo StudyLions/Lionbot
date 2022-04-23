@@ -30,7 +30,6 @@ export function PremiumDropdown() {
     <div className={`alignCenter ${styles.navbar_item}`} style={{ gap: "0 5px" }}>
       <Image
         src={require("@/public/icons/star.svg")}
-        priority
         alt="Star icon"
         layout="fixed"
         height={30}
@@ -45,7 +44,6 @@ export function PremiumDropdown() {
       <Image
         src={require("@/public/icons/arrow.svg")}
         className={`${expanded ? styles.toggle_down : styles.toggle_up}`}
-        priority
         alt="Arrow right icon"
         layout="fixed"
         height={12}

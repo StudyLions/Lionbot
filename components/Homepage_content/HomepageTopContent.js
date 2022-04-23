@@ -9,6 +9,7 @@ export default function HomepageTopContent() {
           src={"https://cdn.discord.study/images/Homepage_top_image.png"}
           className={styles.backgroundImage}
           alt={"Homepage_content top image."}
+          loading={"lazy"}
         />
 
         <div className={styles.sectionText}>
