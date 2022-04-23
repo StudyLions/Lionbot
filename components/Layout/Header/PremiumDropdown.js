@@ -2,23 +2,24 @@ import React, { useState } from "react";
 import Image from "next/image";
 
 import styles from "@/components/Layout/Header/Header.module.scss";
+import Link from "next/link";
 
 const supportLinks = [
   {
     title: "Perks",
-    href: "",
+    href: "/coming-soon",
   },
   {
     title: "Premium Plans",
-    href: "",
+    href: "/coming-soon",
   },
   {
     title: "Shop",
-    href: "",
+    href: "/coming-soon",
   },
   {
     title: "FAQ",
-    href: "",
+    href: "/coming-soon",
   },
 ];
 
@@ -64,9 +65,9 @@ export function PremiumDropdown() {
       {expanded && (
         <div className={styles.dropdown}>
           {supportLinks.map((link, key) => (
-            <a className={styles.dropdown_link} key={link.title + key}>
-              {link.title}
-            </a>
+            <Link href={link.href} key={link.title + key}>
+              <a className={styles.dropdown_link}>{link.title}</a>
+            </Link>
           ))}
         </div>
       )}
