@@ -34,9 +34,12 @@ export default function Header() {
               Tutorials
             </a>
           </p>
-          <p className={"text-[18px] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"}>
-            Anki Addon
-          </p>
+          <Link href={"/coming-soon"}>
+            <a className={"text-[18px] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"}>
+              Anki Addon
+            </a>
+          </Link>
+
           <Link href={"/liongems"}>
             <a
               className={
