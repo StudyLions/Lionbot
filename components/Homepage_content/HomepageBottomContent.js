@@ -41,7 +41,6 @@ function StudyLionCommunities() {
   const ref = useRef();
   const { width } = useWindowSize();
   const onScreen = useOnScreen(ref, width > 1024 ? "-50px" : "1024px");
-  console.log(width);
 
   return (
     <>
