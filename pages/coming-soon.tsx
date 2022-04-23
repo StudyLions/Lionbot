@@ -1,6 +1,6 @@
 import Layout from "@/components/Layout/Layout";
 
-export default function CommingSoon() {
+export default function ComingSoon() {
   return (
     <>
       <Layout>
