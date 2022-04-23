@@ -16,7 +16,7 @@ function HowToUse() {
       <div className={"relative w-full h-[330px] my-[50px] md:h-[230px]"}>
         <Image
           src={"https://cdn.discord.study/images/how_to_use.png"}
-          alt="LionPet gift card"
+          alt="How to use discord bot."
           layout={"fill"}
           objectFit={"contain"}
         />
