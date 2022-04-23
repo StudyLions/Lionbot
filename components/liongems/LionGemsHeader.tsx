@@ -11,18 +11,21 @@ let buttonsList: Array<IButton> = [
       src: img,
     },
     label: "Premium Plans",
+    href: "#",
   },
   {
     image: {
       src: img,
     },
     label: "Get Liongems",
+    href: "#",
   },
   {
     image: {
       src: img,
     },
     label: "Browse skins",
+    href: "#",
   },
 ];
 

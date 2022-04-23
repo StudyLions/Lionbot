@@ -3,12 +3,15 @@ import Image from "next/image";
 import React from "react";
 import { IButton } from "@/models/button";
 
-const Button = ({ image, label }: IButton) => {
+const Button = ({ image, label, href, target = "_self" }: IButton) => {
   return (
     <>
-      <Link href={"#"}>
+      <Link href={href} passHref>
         <a
-          className={"flex items-center justify-center h-[50px] gap-[10px] bg-white px-[20px] py-[10px] rounded-[24px]"}
+          target={target}
+          className={
+            "flex items-center justify-center h-[50px] gap-[10px] bg-white px-[20px] py-[10px] rounded-[24px] w-fit"
+          }
         >
           {image && (
             <Image

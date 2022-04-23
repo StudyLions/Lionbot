@@ -50,7 +50,7 @@ const LionGemsPremiumPlan = () => {
           To purchase and manage your subscription please use the “premium” command and access the interface.
         </p>
         <div className={"mt-[20px]"}>
-          <Button image={img} label={"Get Liongems"} />
+          <Button image={img} label={"Get Liongems"} href={"#"} />
         </div>
       </div>
     </div>

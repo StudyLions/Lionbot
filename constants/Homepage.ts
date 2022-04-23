@@ -1,153 +1,157 @@
 export const Homepage_sections_middle = [
   {
-    "title": "Statistics",
-    "description_1": "Allow students to check their daily, weekly, monthly and all-time study statistics.",
-    "description_2": " The students can check their summary, get study tips and analyze their progress using our beautiful graphical interface.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section1.png",
-      "alt": "Statistics image"
-    }
+    title: "Statistics",
+    description:
+      "<p>Allow users to check their daily, weekly, monthly and all-time chat and voice activity statistics.</p>" +
+      "<p>The users can check their summary and analyze their progress using our beautiful unique graphical interface.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section1.png",
+      alt: "Statistics image",
+    },
   },
   {
-    "title": "Leaderboards",
-    "description_1": "Allow the students to check their progress and compare it to other members within the same servers, or other servers!",
-    "description_2": "You can reset the leaderboard at any time, which allows you to create your own ‘study seasons’.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section2.png",
-      "alt": "Leaderboards image"
-    }
+    title: "Leaderboards",
+    description:
+      "<p>Allow the users to check their progress and compare it to other members within the same servers, or other servers!</p>" +
+      "<p>You can reset the leaderboard at any time, which allows you to create your own ‘ server seasons’.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section2.png",
+      alt: "Leaderboards image",
+    },
   },
   {
-    "title": "Virtual Study Rooms",
-    "description_1": "Allows the members to create their own private study rooms and invite their friends to join!",
-    "description_2": "Allow Admins to force the usage of a webcam in specific study rooms, to keep the community safe.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section3.png",
-      "alt": "Virtual Study Rooms image"
-    }
+    title: "PRIVATE VOICE ROOMS",
+    description:
+      "<p>Allows the members to create their own private voice rooms and invite their friends to join!</p>" +
+      "<p>Allow Admins to force the usage of a webcam in specific rooms, to keep the community safe.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section3.png",
+      alt: "Virtual Study Rooms image",
+    },
   },
   {
-    "title": "Pomodoro Timers",
-    "description_1": "Show a Pomodoro timer in the title of the study room and play a sound at the start and end of each session.",
-    "description_2": "Highly customizable feature: create your own custom title, timer, and an infinite number of rooms.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section4.png",
-      "alt": "Pomodoro Timers image"
-    }
+    title: "Pomodoro Timers",
+    description:
+      "<p><b>Study/work server? We got your back! </b>" +
+      "Show a Pomodoro timer in the title of the voice room and play a sound at the start and end of each session.</p>" +
+      "<p>Highly customizable feature: create your own custom title, timer, and an infinite number of rooms.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section4.png",
+      alt: "Pomodoro Timers image",
+    },
   },
   {
-    "title": "Profiles",
-    "description_1": "Stunning profile cards for each one of your members.",
-    "description_2": "Users can show their study fields, statistics and achievements using a single command.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section5.png",
-      "alt": "Profiles image"
-    }
+    title: "Profiles",
+    description:
+      "<p>Stunning profile cards for each one of your members.</p>" +
+      "<p>Users can create their own about me section, check their statistics and progress using a single command.</p>" +
+      "<p><b>This feature was highly requested</b></p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section5.png",
+      alt: "Profiles image",
+    },
   },
   {
-    "title": "Economy",
-    "description_1": "Allow users to earn coins the more they study, and spend it in the role shop!",
-    "description_2": "Set the shop prices, roles, colors: rewarding the users who study the most.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section6.png",
-      "alt": "Economy image"
-    }
+    title: "Economy",
+    description:
+      "<p>Allow users to earn coins based on their activity and spend it in the role shop!</p>" +
+      "<p><b>Set the shop prices, roles, colors:</b> rewarding the users which participate the most.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section6.png",
+      alt: "Economy image",
+    },
   },
   {
-    "title": "Study Badges",
-    "description_1": "Give roles to users based on the number of hours they studied. This feature is also completely customizable.",
-    "description_2": "Name your ranks, choose the intervals, and the colours of all of the study badges.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section7.png",
-      "alt": "Study Badges image"
-    }
+    title: "Activity badges",
+    description:
+      "<p>Give roles to users based on their chat and voice activity. This feature is also completely customizable.</p>" +
+      "<p>Name your ranks, choose the intervals, and the colours of all of the badges.</p>" +
+      "<p>*<b>Used by both Study and non-Study servers</b></p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section7.png",
+      alt: "Study Badges image",
+    },
   },
   {
-    "title": "To-do and Reminders",
-    "description_1": "Create todo lists, set weekly and monthly goals that you can keep track of.",
-    "description_2": "Allow your users to develop the accountability and responsibility to complete their tasks while getting use to manage their time.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section8.png",
-      "alt": "To-do and Reminders image"
-    }
+    title: "To-do and Reminders",
+    description:
+      "<p>Create todo lists, set weekly and monthly goals that you can keep track of.</p>" +
+      "<p> Allow your users to develop the accountability and responsibility to complete their tasks while" +
+      " getting use to manage their time.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section8.png",
+      alt: "To-do and Reminders image",
+    },
   },
   {
-    "title": "Scheduled sessions",
-    "description_1": "User can schedule study sessions where they must attend. Not attending will cause the entire study group to lose a bonus.",
-    "description_2": "Allow your users to develop the accountability and responsibility to attend the study session on time.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section9.png",
-      "alt": "Scheduled sessions image"
-    }
+    title: "Scheduled sessions",
+    description:
+      "<p>User can schedule study sessions where they must attend. Not attending will cause the entire study group to lose a bonus.</p>" +
+      "<p>Allow your users to develop the accountability and responsibility to attend the study session on time.</p>",
+    image: {
+      src: "https://cdn.discord.study/images/Homepage_section9.png",
+      alt: "Scheduled sessions image",
+    },
   },
-  {
-    "title": "Utility and Moderation",
-    "description_1": "Dozens of utility and moderation features every study community needs.",
-    "description_2": "Allows you to make sure your community is safe, welcome new members and much more.",
-    "image": {
-      "src": "https://cdn.discord.study/images/Homepage_section10.png",
-      "alt": "Utility and Moderation image"
-    }
-  }
-]
+];
 
 export const Servers_list = [
   {
-    name: 'ENTERMEDSCHOOL',
+    name: "ENTERMEDSCHOOL",
     img: {
-      src: 'https://cdn.discord.study/images/entermedschool_icon.png',
-      alt: 'ENTERMEDSCHOOL server icon'
-    }
+      src: "https://cdn.discord.study/images/entermedschool_icon.png",
+      alt: "ENTERMEDSCHOOL server icon",
+    },
   },
   {
-    name: 'STUDYWITHME',
+    name: "STUDYWITHME",
     img: {
-      src: 'https://cdn.discord.study/images/studywithme_icon.png',
-      alt: 'STUDYWITHME server icon'
-    }
+      src: "https://cdn.discord.study/images/studywithme_icon.png",
+      alt: "STUDYWITHME server icon",
+    },
   },
   {
-    name: 'Rehber Matematik',
+    name: "Rehber Matematik",
     img: {
-      src: 'https://cdn.discord.study/images/rehber_icon.png',
-      alt: 'Rehber Matematik server icon'
-    }
+      src: "https://cdn.discord.study/images/rehber_icon.png",
+      alt: "Rehber Matematik server icon",
+    },
   },
   {
-    name: 'CATIONS',
+    name: "CATIONS",
     img: {
-      src: 'https://cdn.discord.study/images/captions_icon.png',
-      alt: 'CATIONS server icon'
-    }
+      src: "https://cdn.discord.study/images/captions_icon.png",
+      alt: "CATIONS server icon",
+    },
   },
   {
-    name: 'Jintang space',
+    name: "Jintang space",
     img: {
-      src: 'https://cdn.discord.study/images/jintang_icon.png',
-      alt: 'Jintang space server icon'
-    }
+      src: "https://cdn.discord.study/images/jintang_icon.png",
+      alt: "Jintang space server icon",
+    },
   },
-]
+];
 
 export const Counters_list = [
   {
-    name: 'Sessions',
+    name: "Sessions",
     number: 2,
-    last_char: 'm'
+    last_char: "m",
   },
   {
-    name: 'Users',
-    number: 81,
-    last_char: 'k'
+    name: "Users",
+    number: 8,
+    last_char: ".4k",
   },
   {
-    name: 'Tasks',
-    number: 89,
-    last_char: 'k'
-  },
-  {
-    name: 'Timers',
+    name: "Tasks",
     number: 600,
-    last_char: '+'
-  }
-]
+    last_char: "+",
+  },
+  {
+    name: "Timers",
+    number: 1500,
+    last_char: "",
+  },
+];
