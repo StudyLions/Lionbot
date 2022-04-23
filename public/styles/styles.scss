@@ -69,3 +69,15 @@ a {
   text-decoration: none;
   color: white;
 }
+
+body{
+  margin-top: 148px;
+
+  @include mixinHelper.dynamicBreakpoint(1600px){
+    margin-top: 213px;
+  }
+
+  @include mixinHelper.tabletResponsive{
+    margin-top: 0;
+  }
+}

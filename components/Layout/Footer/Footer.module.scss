@@ -8,6 +8,10 @@
   line-height: 22px;
   text-align: justify;
   color: globalVariables.$color-18;
+
+  @include mixinHelper.tabletResponsive{
+    text-align: center;
+  }
 }
 
 .containerFooter {
@@ -17,9 +21,21 @@
   padding-bottom: 75px;
   gap: 0 150px;
 
+  @include mixinHelper.tabletResponsive{
+    flex-direction: column;
+    padding: 50px 30px 0;
+  }
+
   .aboutProject {
     width: 30%;
     margin-right: auto;
+
+    @include mixinHelper.tabletResponsive{
+      width: unset;
+      max-width: 500px;
+      text-align: center;
+      margin: 0 auto;
+    }
 
     .title {
       font-style: normal;
@@ -27,6 +43,10 @@
       font-size: 45px;
       color: globalVariables.$color-16;
       text-transform: uppercase;
+
+      @include mixinHelper.tabletResponsive{
+        text-align: center;
+      }
     }
 
     .description {
@@ -45,6 +65,12 @@
     display: flex;
     flex-direction: column;
     flex-basis: fit-content;
+
+    @include mixinHelper.tabletResponsive{
+      width: unset;
+      margin-top: 60px;
+      text-align: center;
+    }
 
     .title{
       margin-bottom: 20px;

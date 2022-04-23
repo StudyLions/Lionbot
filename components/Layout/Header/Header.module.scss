@@ -3,51 +3,47 @@
 
 .navbar {
   @include mixinHelper.center-content;
-  max-width: 1440px;
+  gap: 0 50px;
   margin: 0 auto;
   width: auto;
   padding: 22px;
 
-  @include mixinHelper.desktopResponsive{
+  @include mixinHelper.dynamicBreakpoint(1600px){
     flex-direction: column;
+    padding: 11px;
   }
 
   .studyLion {
     font-style: normal;
     font-weight: 800;
-    font-size: 40px;
+    font-size: 35px;
     line-height: 36px;
     color: globalVariables.$color-11;
     text-transform: uppercase;
     margin-right: 40px;
 
-    @include mixinHelper.desktopResponsive {
+    @include mixinHelper.dynamicBreakpoint(1600px){
       margin-right: 0;
       padding-bottom: 20px;
+    }
+
+    @include mixinHelper.tabletResponsive{
+      padding-bottom: 0;
     }
   }
 
   .navbar_links {
     @include mixinHelper.center-content;
-    gap: 15px;
+    gap: 30px;
 
     @include mixinHelper.tabletResponsive {
-      flex-direction: column;
+      padding-top: 20px;
+      padding-bottom: 20px;
+      flex-wrap: wrap;
     }
 
-    .navbar_item {
-      font-style: normal;
-      font-weight: 600;
-      font-size: 18px;
-      line-height: 25px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      color: white;
-
-      @include mixinHelper.desktopResponsive {
-        font-size: 15px;
-      }
+    @include mixinHelper.dynamicBreakpoint(450px){
+      flex-direction: column;
     }
   }
 }
