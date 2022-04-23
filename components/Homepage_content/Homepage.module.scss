@@ -13,13 +13,21 @@
 
 .homepage_top_content {
   background: globalVariables.$color-13;
-  margin: 0 auto 100px;
+  margin: 0 auto;
+
+  @include mixinHelper.tabletResponsive{
+    background: unset;
+  }
 
   .backgroundImage {
     width: 100%;
     max-height: 1000px;
     object-fit: cover;
     display: block;
+
+    @include mixinHelper.tabletResponsive{
+      display: none;
+    }
   }
 
   .sectionText {
@@ -27,14 +35,28 @@
     left: 20%;
     top: 10%;
 
+    @include mixinHelper.tabletResponsive{
+      position: unset;
+      padding: 0 30px;
+      text-align: center;
+    }
+
     .bigger_text {
       font-style: normal;
       font-weight: 800;
-      font-size: 65px;
+      font-size: 55px;
       line-height: 67px;
       text-transform: uppercase;
       color: globalVariables.$color-8;
-      max-width: 495px;
+      max-width: 400px;
+
+      @include mixinHelper.tabletResponsive{
+        font-size: 35px;
+        max-width: unset;
+        text-align: center;
+        line-height: 40px;
+        padding-top: 50px;
+      }
     }
 
     .smallerText {
@@ -42,9 +64,14 @@
       max-width: 478px;
       font-style: normal;
       font-weight: normal;
-      font-size: 20px;
+      font-size: 18px;
       line-height: 32px;
       color: globalVariables.$color-0;
+
+      @include mixinHelper.tabletResponsive{
+        margin: 0 auto 30px;
+        max-width: 800px;
+      }
     }
 
     .addToServerButton {
@@ -56,10 +83,14 @@
       padding: 12px 21px;
       font-style: normal;
       font-weight: 800;
-      font-size: 20px;
+      font-size: 16px;
       line-height: 41px;
       color: white;
       cursor: pointer;
+      
+      @include mixinHelper.tabletResponsive{
+        position: unset;
+      }
     }
   }
 }
@@ -74,17 +105,26 @@
     gap: 0 50px;
     min-height: 500px;
 
+    @include mixinHelper.tabletResponsive{
+      flex-direction: column !important;
+    }
+
     .card_text {
       display: flex;
       justify-content: center;
       flex-direction: column;
       width: 50%;
 
+      @include mixinHelper.tabletResponsive {
+        width: 100%;
+        padding: 0 30px;
+      }
+
 
       .title_card h3 {
         text-align: left;
         color: globalVariables.$color-8;
-        font-size: 58px;
+        font-size: 50px;
         line-height: 1.16;
         letter-spacing: -0.036em;
         font-weight: 700;
@@ -92,16 +132,16 @@
         text-transform: uppercase;
 
         @include mixinHelper.mobileResponsive {
-          font-size: 40px;
+          font-size: 35px;
         }
       }
 
       .description_white p {
         color: globalVariables.$color-0;
         font-weight: 400;
-        font-size: 22px;
+        font-size: 18px;
         line-height: 36px;
-        margin: 1rem 0px;
+        margin: 1rem 0;
       }
     }
 
@@ -111,15 +151,24 @@
       margin-bottom: 20px;
       width: 50%;
       height: 100%;
-      min-height: 540px;
+      max-height: 400px;
       position: relative;
       object-fit: contain;
+
+      @include mixinHelper.tabletResponsive {
+        width: 100%;
+        padding: 30px 30px 0;
+      }
     }
   }
 
   &:nth-child(2n) {
     .card {
       flex-direction: row-reverse;
+
+      @include mixinHelper.mobileResponsive{
+        flex-direction: unset;
+      }
     }
   }
 }
@@ -136,7 +185,6 @@
 
   &_heading {
     @include mixinHelper.center-content;
-    font-style: normal;
     font-weight: bold;
     font-size: 58px;
     line-height: 40px;
@@ -148,13 +196,23 @@
 
   &_servers {
     @include mixinHelper.center-content;
+    position: relative;
     align-items: unset;
     min-height: 220px;
     gap: 0 68px;
 
+    @include mixinHelper.tabletResponsive{
+      flex-wrap: wrap;
+    }
+
     .server {
+      @include mixinHelper.center-content;
+      flex-direction: column;
       text-align: center;
       width: 250px;
+      @include mixinHelper.tabletResponsive{
+        height: 250px;
+      }
 
       img {
         width: 168px;
@@ -162,6 +220,7 @@
 
       p {
         display: none;
+        position: absolute;
         text-align: center;
         text-transform: uppercase;
         padding-top: 15px;
@@ -169,6 +228,11 @@
         font-weight: 600;
         font-size: 20px;
         color: globalVariables.$color-0;
+        bottom: -25px;
+        
+        @include mixinHelper.tabletResponsive{
+          position: unset;
+        }
       }
     }
 
@@ -189,12 +253,18 @@
 .counters {
   @include mixinHelper.center-content;
   gap: 0 78px;
-  margin-top: 75px;
+  margin-top: 150px;
+
+  @include mixinHelper.tabletResponsive{
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
 
   .number_counter {
     @include mixinHelper.center-content;
-    width: 175px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     background: #FFFFFF;
     border-radius: 27px;
     color: globalVariables.$color-12;
@@ -216,15 +286,24 @@
   @include mixinHelper.container;
   @include mixinHelper.center-content;
   flex-direction: column;
-  margin: 250px auto 0;
+  margin: 200px auto 0;
+
+  @include mixinHelper.mobileResponsive{
+    margin-top: 100px;
+    padding: 0 30px;
+  }
 
   h1 {
     font-style: normal;
     font-weight: bold;
     font-size: 65px;
-    line-height: 47px;
+    line-height: 57px;
     text-align: center;
     color: globalVariables.$color-8;
+
+    @include mixinHelper.mobileResponsive{
+      font-size: 35px;
+    }
   }
 
   h2 {
@@ -236,16 +315,22 @@
     line-height: 47px;
     text-align: center;
     color: #FFFFFF;
+
+    @include mixinHelper.mobileResponsive{
+      font-size: 20px;
+      line-height: 37px;
+      margin-top: 30px;
+    }
   }
 
   .inviteTheBot_button {
-    background: globalVariables.$color-8;
+    background: #BD4949;
     border-radius: 42.5px;
     font-weight: 800;
     font-size: 20px;
     line-height: 41px;
     text-align: center;
-    color: globalVariables.$color-12;
+    color: white;
     padding: 5px 21px;
     margin-top: 50px;
     margin-bottom: 150px;
