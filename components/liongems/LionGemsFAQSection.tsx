@@ -20,7 +20,7 @@ export default function LionGemsFAQSection() {
         })}
         {/*  Scroll to top button */}
         <div
-          onClick={() => scrollTo({ id: "liongems_page", duration: 1000 })}
+          onClick={() => scrollTo({ id: "donate_page", duration: 1000 })}
           className={
             "absolute bottom-[-100px] right-[-150px] w-[80px] h-[80px] bg-[#595959] alignCenter rounded-[40px] " +
             "cursor-pointer rotate-[-90deg]"

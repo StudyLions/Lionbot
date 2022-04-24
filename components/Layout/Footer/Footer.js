@@ -14,7 +14,8 @@ export default function Footer() {
             <a className={styles.title}>LionBot</a>
           </Link>
           <p className={styles.description}>
-            Is a project made by students for students.
+            Is a project made by Ari Horesh as an open-source study bot and now available for non-study communities as
+            well.
             <br />
             <br />
             We are based in Milan, Italy. You can contact us by sending an email to contact@arihoresh.com, we will get

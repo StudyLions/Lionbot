@@ -23,16 +23,16 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     payment_method_types: ["card"],
     line_items: [
       {
-        name: `Donation ${ userID.name } (${ userID.sub })`,
+        name: `Donation ${userID.name} (${userID.sub})`,
         amount: donationInfo.amount * 100, // we multiply by 100 because the amount must be in cents.
         currency: "eur",
         quantity: quantity,
-        description: `Total tokens: ${ numberWithCommas((donationInfo.tokens + donationInfo.tokens_bonus) * quantity) }`,
+        description: `Total tokens: ${numberWithCommas((donationInfo.tokens + donationInfo.tokens_bonus) * quantity)}`,
       },
     ],
     mode: "payment",
-    success_url: `${req.headers.origin + NavigationPaths.lionGems}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${req.headers.origin + NavigationPaths.lionGems}?payment=failed`,
+    success_url: `${req.headers.origin + NavigationPaths.donate}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${req.headers.origin + NavigationPaths.donate}?payment=failed`,
   });
   res.status(200).json({ sessionId: session.id });
 };

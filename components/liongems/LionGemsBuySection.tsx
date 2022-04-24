@@ -28,7 +28,7 @@ export default function LionGemsBuySection() {
         break;
       default:
     }
-    router.replace("/liongems", undefined, { shallow: true });
+    router.replace("/donate", undefined, { shallow: true });
   }, [router.query.payment]);
 
   const openAmountModal = (donationItem: IDonationItem) => {
