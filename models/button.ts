@@ -5,6 +5,7 @@ export interface IButton {
     width?: number;
   };
   label: string;
-  href: string;
+  href?: string;
   target?: "_blank" | "_self";
+  scrollingElement?: string;
 }

@@ -4,7 +4,6 @@ import { useOnScreen } from "@/hooks/useOnScreen";
 import styles from "@/components/Homepage_content/Homepage.module.scss";
 import { Counters_list, Servers_list } from "constants/Homepage";
 import UseAnimatedNumberCounter from "../../hooks/useAnimatedNumberCounter";
-import Image from "next/image";
 import hand_click_svg from "@/public/icons/hand_click.svg";
 import Button from "@/components/Button";
 import useWindowSize from "@/hooks/useWindowSize";
@@ -14,7 +13,7 @@ function HowToUse() {
     <div className={"flex flex-col items-center py-[5%] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}>
       <h3 className={"text-[#EEC73C] text-[58px] md:text-[35px] uppercase font-bold"}>How to use</h3>
       <div className={"relative w-full h-auto my-[50px]"}>
-        <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." />
+        <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." loading={"lazy"} />
       </div>
       <p className={"text-[20px] max-w-[600px] text-center"}>
         Learn how to use and configure StudyLion on your server! Tutorials are availabe for admins, moderators and

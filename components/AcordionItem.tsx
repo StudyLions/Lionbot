@@ -11,7 +11,7 @@ interface IProps {
 }
 
 export default function AcordionItem({ question, answer }: IProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
 
   return (
     <>
@@ -25,7 +25,6 @@ export default function AcordionItem({ question, answer }: IProps) {
         <Image
           src={require("@/public/icons/arrow_blue.svg")}
           className={`ml-auto cursor-pointer ${isExpanded ? "rotate-0" : "-rotate-90"}`}
-          priority
           alt="Blue arrow icon"
           layout="fixed"
           height={30}

@@ -1,15 +1,20 @@
 import React from "react";
 import styles from "./Homepage.module.scss";
+import Image from "next/image";
 
 export default function HomepageTopContent() {
   return (
     <div>
       <div className={`${styles.section} ${styles.homepage_top_content}`}>
-        <img
-          src={"https://cdn.discord.study/images/Homepage_top_image.png"}
-          className={styles.backgroundImage}
-          alt={"Homepage_content top image."}
-        />
+        <div className={"relative h-[1000px] w-full lg:hidden"}>
+          <Image
+            src={"https://cdn.discord.study/images/Homepage_top_image.png"}
+            alt={"Homepage_content top image."}
+            layout={"fill"}
+            objectFit={"cover"}
+            priority
+          />
+        </div>
 
         <div className={styles.sectionText}>
           <h1 className={styles.bigger_text}>MEET LEO: THE BEST DISCORD BOT</h1>

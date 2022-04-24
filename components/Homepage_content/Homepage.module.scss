@@ -19,17 +19,6 @@
     background: unset;
   }
 
-  .backgroundImage {
-    width: 100%;
-    max-height: 1000px;
-    object-fit: cover;
-    display: block;
-
-    @include mixinHelper.tabletResponsive{
-      display: none;
-    }
-  }
-
   .sectionText {
     position: absolute;
     left: 20%;
@@ -107,6 +96,7 @@
 
     @include mixinHelper.tabletResponsive{
       flex-direction: column !important;
+      align-items: center;
     }
 
     .card_text {
@@ -151,7 +141,6 @@
       margin-bottom: 20px;
       width: 50%;
       height: 100%;
-      max-height: 400px;
       position: relative;
       object-fit: contain;
 

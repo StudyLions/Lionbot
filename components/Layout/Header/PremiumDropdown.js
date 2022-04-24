@@ -26,42 +26,34 @@ const supportLinks = [
 export function PremiumDropdown() {
   const [expanded, setExpanded] = useState(false);
 
-  const ButtonDropDown = () => (
-    <div className={`alignCenter ${styles.navbar_item}`} style={{ gap: "0 5px" }}>
-      <Image
-        src={require("@/public/icons/star.svg")}
-        priority
-        alt="Star icon"
-        layout="fixed"
-        height={30}
-        width={25}
-        objectFit="contain"
-      />
-      <p
-        className={"text-[18px] text-[#FFB636] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"}
-      >
-        Premium
-      </p>
-      <Image
-        src={require("@/public/icons/arrow.svg")}
-        className={`${expanded ? styles.toggle_down : styles.toggle_up}`}
-        priority
-        alt="Arrow right icon"
-        layout="fixed"
-        height={12}
-        width={15}
-        objectFit="contain"
-      />
-    </div>
-  );
-
   return (
     <div
       onMouseEnter={() => setExpanded(true)}
       onMouseLeave={() => setExpanded(false)}
       className={styles.supportUSButton}
     >
-      <ButtonDropDown />
+      <div className={`alignCenter gap-[5px]`}>
+        <Image
+          src={require("@/public/icons/star.svg")}
+          alt="Star icon"
+          layout="fixed"
+          height={30}
+          width={25}
+          objectFit="contain"
+        />
+        <p className={"text-[#FFB636] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"}>
+          Premium
+        </p>
+        <Image
+          src={require("@/public/icons/arrow.svg")}
+          className={`${expanded ? styles.toggle_down : styles.toggle_up}`}
+          alt="Arrow right icon"
+          layout="fixed"
+          height={12}
+          width={15}
+          objectFit="contain"
+        />
+      </div>
       {expanded && (
         <div className={styles.dropdown}>
           {supportLinks.map((link, key) => (
