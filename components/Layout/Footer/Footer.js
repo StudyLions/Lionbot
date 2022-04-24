@@ -17,11 +17,11 @@ export default function Footer() {
             Is a project made by students for students.
             <br />
             <br />
-            We are based in Israel, Tel Aviv. You can contact us by sending an email to contact@discord.study, we will
-            get back to you as soon as possible.
+            We are based in Milan, Italy. You can contact us by sending an email to contact@arihoresh.com, we will get
+            back to you as soon as possible.
             <br />
             <br />
-            Discord.Study is not affiliated with Discord Inc. in any way.
+            LionBot.org is not affiliated with Discord Inc. in any way.
           </p>
           <p className={styles.copyright}>© 2022 Ari Horesh, All Rights Reserved</p>
         </div>
