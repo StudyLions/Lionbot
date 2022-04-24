@@ -64,8 +64,10 @@ export default function LionGemsBuySection() {
       )}
 
       <div className={`${styles.buySection}`}>
-        <h1 className={`uppercase text-center mt-28 mb-20 font-bold text-7xl ${styles.title}`}>Lion gems</h1>
-        <div className={"grid grid-cols-3 xl:gap-x-32 lg:gap-x-20 gap-y-10 items-center place-items-center"}>
+        <h1 className={`uppercase text-center pt-[50px] pb-[40px] font-bold text-7xl`} id={"liongems"}>
+          Lion gems
+        </h1>
+        <div className={"grid grid-cols-3 gap-[70px] items-center place-items-center"}>
           {DonationsData.map((donationItem: IDonationItem, index) => (
             <div
               className={`rounded-3xl pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}
