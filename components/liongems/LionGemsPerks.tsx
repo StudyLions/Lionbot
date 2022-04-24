@@ -3,9 +3,9 @@ import Image from "next/image";
 
 const LionGemsPerks = () => {
   return (
-    <div className={"min-h-[1000px]"}>
+    <>
       <div className={"max-w-[1120px] h-full mx-auto"}>
-        <h1 className={"uppercase font-bold text-7xl text-center pt-[67px] pb-[50px]"}>Perks</h1>
+        <h1 className={"uppercase font-bold text-[55px] text-center pt-[67px] pb-[50px]"}>Perks</h1>
         <div className={"flex flex-row"}>
           <div className={"w-1/2"}>
             <img src={"https://cdn.discord.study/images/LionPic.png"} alt="LionPet gift card" />
@@ -31,7 +31,7 @@ const LionGemsPerks = () => {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

@@ -2,10 +2,11 @@ import Link from "next/link";
 import Image from "next/image";
 import React from "react";
 import { IButton } from "@/models/button";
+import { scrollTo } from "@/utils/scrollTo";
 
-const Button = ({ image, label, href, target = "_self" }: IButton) => {
+const Button = ({ image, label, href = "#", target = "_self", scrollingElement }: IButton) => {
   return (
-    <>
+    <div onClick={() => scrollingElement && scrollTo({ id: scrollingElement, duration: 1000 })}>
       <Link href={href} passHref>
         <a
           target={target}
@@ -26,7 +27,7 @@ const Button = ({ image, label, href, target = "_self" }: IButton) => {
           <span className={"text-[#BD4949] font-bold uppercase"}>{label}</span>
         </a>
       </Link>
-    </>
+    </div>
   );
 };
 
