@@ -19,7 +19,7 @@ let buttonsList: Array<IButton> = [
     image: {
       src: diamond_red,
     },
-    label: "Get Liongems",
+    label: "Get LionGems",
     scrollingElement: "liongems",
   },
   {

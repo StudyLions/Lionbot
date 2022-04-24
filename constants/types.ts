@@ -1,4 +1,4 @@
 export enum NavigationPaths {
-  Home= '/',
-  lionGems = '/liongems'
+  Home = "/",
+  donate = "/donate",
 }
