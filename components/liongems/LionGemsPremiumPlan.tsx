@@ -49,7 +49,7 @@ const LionGemsPremiumPlan = () => {
   return (
     <div className={"flex flex-col pt-[100px] mx-auto"}>
       <h1 className={"font-bold text-[55px] landing-[66px] uppercase text-center"} id={"premium-plans"}>
-        Premium Plans
+        Premium PLANS - COMING SOON!
       </h1>
       <p className={"text-center mt-[20px] leading-[42px]"}>
         You can use LionGems to purchase Premium subscirption for your server!{" "}

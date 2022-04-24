@@ -43,7 +43,7 @@ const LionGemsHeader = () => {
           height={400}
         />
         <div className={"flex items-start justify-center md:ml-5 sm:ml-0 flex-col"}>
-          <h1 className={`uppercase text-[50px] font-bold text-amber-400 max-w-min`}>Premium</h1>
+          <h1 className={`uppercase text-[50px] font-bold text-amber-400`}>Support us</h1>
           <p className={"mt-5 max-w-sm"}>Support the team and keep the project alive by getting some LionGems!</p>
           <p className={"mt-5 max-w-sm"}>
             Purchase colored skins, gift LionGems to your loved ones, and unlock special perks for your server or
