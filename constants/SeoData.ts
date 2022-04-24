@@ -18,3 +18,8 @@ export const HomepageSEO = {
   title: "LionBot - The Best Discord Bot",
   description: "Leo is the best, open-source, all-in-one solution that every Discord community needs.",
 };
+
+export const StudySEO = {
+  title: "Study timer",
+  description: "Study Description",
+};
