@@ -13,9 +13,7 @@ export const questionsAnswers = [
   },
   {
     question: "Can I get an invoice for my payment?",
-    answer:
-      "Discord.Study (StudyLion) is a real company run by real people. LionGems is what keeps it alive." +
-      " We use the money to pay salaries to our developers and to cover hosting costs and taxes",
+    answer: "To get an invoice please contact arihoresh@contact.com",
   },
   {
     question: "What payment methods are supported?",
