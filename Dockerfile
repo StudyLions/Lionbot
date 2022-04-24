@@ -7,6 +7,7 @@ WORKDIR /app
 COPY package.json  .
 COPY package-lock.json .
 COPY .env.* .
+COPY next.config.js .
 
 # Install dependencies (including dev dependencies)
 RUN npm install
@@ -30,6 +31,7 @@ ENV NODE_ENV=production
 COPY package.json  .
 COPY package-lock.json .
 COPY .env.* .
+COPY next.config.js .
 RUN npm install --only=production
 
 # Get the built application from the first stage
