@@ -136,22 +136,22 @@ export const Servers_list = [
 export const Counters_list = [
   {
     name: "Sessions",
-    number: 2,
-    last_char: "m",
+    number: 5,
+    last_char: ".6m",
   },
   {
     name: "Users",
-    number: 8,
-    last_char: ".4k",
+    number: 180,
+    last_char: "k",
   },
   {
     name: "Tasks",
-    number: 600,
-    last_char: "+",
+    number: 100,
+    last_char: "k",
   },
   {
     name: "Timers",
-    number: 1500,
+    number: 1590,
     last_char: "",
   },
 ];

@@ -41,7 +41,7 @@ function StudyLionCommunities() {
       <div className={"bg-[#34267d] pt-[100px] pb-[80px]"}>
         <div className={`${styles.communities_container}`}>
           <h1 className={"text-[55px] md:text-[35px] md:px-[30px] font-bold uppercase text-center pb-[60px]"}>
-            Trusted by 5,100+ study servers
+            Trusted by 9,100+ study servers
           </h1>
           <div className={styles.communities_servers}>
             {Servers_list.map((server, index) => (
@@ -77,7 +77,7 @@ function Participation() {
   return (
     <div className={styles.participation_section}>
       <h1>Join the revolution today!</h1>
-      <h2>Create a Discord co-working environment for your classmates or coworkers!</h2>
+      <h2>Create an active environment for your discord server members</h2>
       <a
         className={styles.inviteTheBot_button}
         href={"https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot"}

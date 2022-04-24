@@ -38,7 +38,7 @@ export default function Header() {
             <a className={"font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"}>Anki Addon</a>
           </Link>
 
-          <Link href={"/liongems"}>
+          <Link href={"/donate"}>
             <a
               className={
                 "alignCenter gap-[10px] text-[#FFB636] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"
