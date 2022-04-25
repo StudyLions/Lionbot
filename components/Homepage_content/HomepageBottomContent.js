@@ -10,9 +10,9 @@ import useWindowSize from "@/hooks/useWindowSize";
 
 function HowToUse() {
   return (
-    <div className={"flex flex-col items-center py-[5%] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}>
-      <h3 className={"text-[#EEC73C] text-[58px] md:text-[35px] uppercase font-bold"}>How to use</h3>
-      <div className={"relative w-full h-auto my-[50px]"}>
+    <div className={"flex flex-col items-center pb-[30px] pt-[60px] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}>
+      <h3 className={"text-[#EEC73C] text-[58px] md:text-[35px] uppercase font-bold lg:mr-auto"}>How to use</h3>
+      <div className={"relative w-full h-auto my-[50px] px-[50px] sm:px-0"}>
         <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." loading={"lazy"} />
       </div>
       <p className={"text-[20px] max-w-[600px] text-center leading-[32px]"}>
