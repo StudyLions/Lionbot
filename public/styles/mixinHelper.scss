@@ -1,0 +1,42 @@
+@mixin center-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin desktopResponsive {
+  @media screen and (max-width: 1378px) {
+    @content;
+  }
+}
+
+@mixin tabletResponsive {
+  @media screen and (max-width: 1023px) {
+    @content;
+  }
+}
+
+@mixin mobileResponsive {
+  @media screen and (max-width: 767px) {
+    @content;
+  }
+}
+
+@mixin dynamicBreakpoint($width) {
+  @media screen and (max-width: $width) {
+    @content;
+  }
+}
+
+@mixin container {
+  max-width: 1280px;
+  margin: 0 auto;
+
+  @include desktopResponsive {
+    max-width: 900px;
+  }
+
+  @include tabletResponsive {
+    max-width: 800px;
+  }
+}

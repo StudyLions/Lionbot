@@ -1,0 +1,39 @@
+// fade in animation
+@mixin fadeInAnimation($seconds) {
+  animation: fadeIn $seconds;
+  -webkit-animation: fadeIn $seconds;
+  -moz-animation: fadeIn $seconds;
+  -o-animation: fadeIn $seconds;
+  -ms-animation: fadeIn $seconds;
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+
+//zoom in animation
+@mixin zoomInAnimation($seconds) {
+  animation: zoom-in-zoom-out $seconds ease infinite;
+  -webkit-animation: zoom-in-zoom-out $seconds ease infinite;
+  -moz-animation: zoom-in-zoom-out $seconds ease infinite;
+  -o-animation: zoom-in-zoom-out $seconds ease infinite;
+  -ms-animation: zoom-in-zoom-out $seconds ease infinite;
+}
+
+@keyframes zoom-in-zoom-out {
+  0% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.1, 1.1);
+  }
+  100% {
+    transform: scale(1, 1);
+  }
+}

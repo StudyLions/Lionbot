@@ -1,0 +1,329 @@
+@use 'public/styles/mixinHelper';
+@use "public/styles/globalVariables";
+@use "public/styles/animations";
+
+.container {
+  background: linear-gradient(178.04deg, #323979 -1.07%, #171827 31.1%, #111A3C 73.88%, #000000 107.69%);
+}
+
+.section {
+  width: 100%;
+  position: relative;
+}
+
+.homepage_top_content {
+  background: globalVariables.$color-13;
+  margin: 0 auto;
+
+  @include mixinHelper.tabletResponsive{
+    background: unset;
+  }
+
+  .sectionText {
+    position: absolute;
+    left: 20%;
+    top: 10%;
+
+    @include mixinHelper.tabletResponsive{
+      position: unset;
+      padding: 0 30px;
+      text-align: center;
+    }
+
+    .bigger_text {
+      font-style: normal;
+      font-weight: 800;
+      font-size: 55px;
+      line-height: 67px;
+      text-transform: uppercase;
+      color: globalVariables.$color-8;
+      max-width: 400px;
+
+      @include mixinHelper.tabletResponsive{
+        font-size: 35px;
+        max-width: unset;
+        text-align: center;
+        line-height: 40px;
+        padding-top: 50px;
+      }
+    }
+
+    .smallerText {
+      margin-top: 20px;
+      max-width: 478px;
+      font-style: normal;
+      font-weight: normal;
+      font-size: 18px;
+      line-height: 32px;
+      color: globalVariables.$color-0;
+
+      @include mixinHelper.tabletResponsive{
+        margin: 0 auto 30px;
+        max-width: 800px;
+      }
+    }
+
+    .addToServerButton {
+      position: relative;
+      top: 20px;
+      background: #BD4949;;
+      box-sizing: border-box;
+      border-radius: 42.5px;
+      padding: 12px 21px;
+      font-style: normal;
+      font-weight: 800;
+      font-size: 16px;
+      line-height: 41px;
+      color: white;
+      cursor: pointer;
+      
+      @include mixinHelper.tabletResponsive{
+        position: unset;
+      }
+    }
+  }
+}
+
+// Sections content
+.container_card {
+  .card {
+    @include mixinHelper.container;
+    display: flex;
+    flex-direction: row;
+    padding: 5rem 10px;
+    gap: 0 50px;
+    min-height: 500px;
+
+    @include mixinHelper.tabletResponsive{
+      flex-direction: column !important;
+      align-items: center;
+    }
+
+    .card_text {
+      display: flex;
+      justify-content: center;
+      flex-direction: column;
+      width: 50%;
+
+      @include mixinHelper.tabletResponsive {
+        width: 100%;
+        padding: 0 30px;
+      }
+
+
+      .title_card h3 {
+        text-align: left;
+        color: globalVariables.$color-8;
+        font-size: 50px;
+        line-height: 1.16;
+        letter-spacing: -0.036em;
+        font-weight: 700;
+        margin: 1rem 0;
+        text-transform: uppercase;
+
+        @include mixinHelper.mobileResponsive {
+          font-size: 35px;
+        }
+      }
+
+      .description_white p {
+        color: globalVariables.$color-0;
+        font-weight: 400;
+        font-size: 18px;
+        line-height: 36px;
+        margin: 1rem 0;
+      }
+    }
+
+
+    .card_image {
+      @include mixinHelper.center-content;
+      margin-bottom: 20px;
+      width: 50%;
+      height: 100%;
+      position: relative;
+      object-fit: contain;
+
+      @include mixinHelper.tabletResponsive {
+        width: 100%;
+        padding: 30px 30px 0;
+      }
+    }
+  }
+
+  &:nth-child(2n) {
+    .card {
+      flex-direction: row-reverse;
+
+      @include mixinHelper.mobileResponsive{
+        flex-direction: unset;
+      }
+    }
+  }
+}
+
+// StudyLion Communities  (HomepageBottomContent.js)
+.communities {
+  &_section {
+    background: linear-gradient(180deg, globalVariables.$color-12 1.1%, globalVariables.$color-6 84.24%);
+  }
+
+  &_container {
+    @include mixinHelper.container;
+  }
+
+  &_heading {
+    @include mixinHelper.center-content;
+    font-weight: bold;
+    font-size: 58px;
+    line-height: 40px;
+    text-transform: uppercase;
+    color: #FFFFFF;
+    padding-top: 150px;
+    padding-bottom: 74px;
+  }
+
+  &_servers {
+    @include mixinHelper.center-content;
+    position: relative;
+    align-items: unset;
+    min-height: 220px;
+    gap: 0 68px;
+
+    @include mixinHelper.tabletResponsive{
+      flex-wrap: wrap;
+    }
+
+    .server {
+      @include mixinHelper.center-content;
+      flex-direction: column;
+      text-align: center;
+      width: 250px;
+      @include mixinHelper.tabletResponsive{
+        height: 250px;
+      }
+
+      img {
+        width: 168px;
+      }
+
+      p {
+        display: none;
+        position: absolute;
+        text-align: center;
+        text-transform: uppercase;
+        padding-top: 15px;
+        font-style: normal;
+        font-weight: 600;
+        font-size: 20px;
+        color: globalVariables.$color-0;
+        bottom: -25px;
+        
+        @include mixinHelper.tabletResponsive{
+          position: unset;
+        }
+      }
+    }
+
+    .server:hover {
+      img{
+        width: 180px;
+        @include animations.zoomInAnimation(1s);
+      }
+
+      p {
+        display: block;
+        @include animations.fadeInAnimation(1s);
+      }
+    }
+  }
+}
+
+.counters {
+  @include mixinHelper.center-content;
+  gap: 0 78px;
+  margin-top: 150px;
+
+  @include mixinHelper.tabletResponsive{
+    flex-wrap: wrap;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+
+  .number_counter {
+    @include mixinHelper.center-content;
+    width: 200px;
+    height: 200px;
+    background: #FFFFFF;
+    border-radius: 27px;
+    color: globalVariables.$color-12;
+
+    font-style: normal;
+    font-weight: 800;
+    font-size: 58px;
+    text-align: center;
+  }
+
+  .name_counter{
+    margin-top: 20px;
+    text-align: center;
+  }
+}
+
+// Participation (HomepageBottomContent.js)
+.participation_section {
+  @include mixinHelper.container;
+  @include mixinHelper.center-content;
+  flex-direction: column;
+  margin: 200px auto 0;
+
+  @include mixinHelper.mobileResponsive{
+    margin-top: 100px;
+    padding: 0 30px;
+  }
+
+  h1 {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 65px;
+    line-height: 57px;
+    text-align: center;
+    color: globalVariables.$color-8;
+
+    @include mixinHelper.mobileResponsive{
+      font-size: 35px;
+    }
+  }
+
+  h2 {
+    margin: 10px auto 0;
+    max-width: 700px;
+    font-style: normal;
+    font-weight: normal;
+    font-size: 29px;
+    line-height: 47px;
+    text-align: center;
+    color: #FFFFFF;
+
+    @include mixinHelper.mobileResponsive{
+      font-size: 20px;
+      line-height: 37px;
+      margin-top: 30px;
+    }
+  }
+
+  .inviteTheBot_button {
+    background: #BD4949;
+    border-radius: 42.5px;
+    font-weight: 800;
+    font-size: 20px;
+    line-height: 41px;
+    text-align: center;
+    color: white;
+    padding: 5px 21px;
+    margin-top: 50px;
+    margin-bottom: 150px;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+}
