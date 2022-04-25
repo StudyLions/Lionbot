@@ -63,9 +63,7 @@ const LionGemsPremiumPlan = () => {
         ))}
       </div>
       <div className={"alignCenter flex-col"}>
-        <p className={"mt-[50px] text-center text-[20px] leading-[42px]"}>
-          To purchase and manage your subscription please
-        </p>
+        <p className={"mt-[50px] text-center text-[20px] leading-[42px]"}>To purchase and manage your subscription</p>
         <p className={"font-bold"}>
           use the <span className={"text-[#FFD469]"}>!premium </span>command and access the interface.
         </p>

@@ -1,9 +1,11 @@
-import {SessionProvider} from 'next-auth/react'
-import 'public/styles/styles.scss'
+import { SessionProvider } from "next-auth/react";
+import Script from "next/script";
+
+import "public/styles/styles.scss";
 
 // Use of the <SessionProvider> is now mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
-export default function App({Component, pageProps}) {
+export default function App({ Component, pageProps }) {
   return (
     <SessionProvider
       // Provider options are not required but can be useful in situations where
@@ -21,10 +23,21 @@ export default function App({Component, pageProps}) {
         //
         // Note: If a session has expired when keep alive is triggered, all open
         // windows / tabs will be updated to reflect the user is signed out.
-        refetchInterval: 0
+        refetchInterval: 0,
       }}
-      session={pageProps.session}>
+      session={pageProps.session}
+    >
+      <Script strategy={"lazyOnload"} src={"https://www.googletagmanager.com/gtag/js?id=G-5YBLTF11VW"} />
+      <Script id="gtag-script" strategy={"lazyOnload"}>
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          
+          gtag('config', 'G-5YBLTF11VW');
+        `}
+      </Script>
       <Component {...pageProps} />
     </SessionProvider>
-  )
+  );
 }
