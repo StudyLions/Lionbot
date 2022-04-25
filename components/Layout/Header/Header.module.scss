@@ -55,6 +55,11 @@
     min-height: 4rem;
     width: 325px;
 
+    @include mixinHelper.dynamicBreakpoint(325px){
+      width: 290px;
+      justify-content: end;
+    }
+
     .loading,
     .loaded {
       position: relative;
@@ -89,6 +94,10 @@
     letter-spacing: 0.2em;
     text-transform: uppercase;
 
+    @include mixinHelper.dynamicBreakpoint(325px){
+      font-size: 13px;
+    }
+
     .text_discord {
       color: globalVariables.$color-0;
       padding-left: 10px;
@@ -120,6 +129,10 @@
   color: black;
   border-radius: 10px;
   font-weight: 500;
+
+  @include mixinHelper.dynamicBreakpoint(325px){
+    right: 15px;
+  }
 
   .button_link {
     text-decoration: none;

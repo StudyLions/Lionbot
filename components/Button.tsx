@@ -10,9 +10,7 @@ const Button = ({ image, label, href = "#", target = "_self", scrollingElement }
       <Link href={href} passHref>
         <a
           target={target}
-          className={
-            "flex items-center justify-center h-[50px] gap-[10px] bg-white px-[20px] py-[10px] rounded-[24px] w-fit"
-          }
+          className={"flex items-center justify-center h-[40px] gap-[10px] bg-white px-[15px] rounded-[24px] w-fit"}
         >
           {image && (
             <Image
@@ -24,7 +22,7 @@ const Button = ({ image, label, href = "#", target = "_self", scrollingElement }
               objectFit="contain"
             />
           )}
-          <span className={"text-[#BD4949] font-bold uppercase"}>{label}</span>
+          <span className={"text-[#BD4949] font-bold uppercase text-[16px]"}>{label}</span>
         </a>
       </Link>
     </div>

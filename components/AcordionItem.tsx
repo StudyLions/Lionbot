@@ -15,9 +15,10 @@ export default function AcordionItem({ question, answer }: IProps) {
 
   return (
     <>
-      <div className={"flex items-center justify-between"}>
+      <div className={"flex items-center justify-between md:gap-[20px] md:items-start"}>
         <button
-          className={`font-bold text-[30px] leading-[50px] cursor-pointer text-[#D0D0D0]`}
+          className={`font-bold text-[25px] leading-[50px] sm:leading-[30px] sm:text-[18px] cursor-pointer text-[#D0D0D0]
+          text-left`}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {question}
@@ -34,7 +35,7 @@ export default function AcordionItem({ question, answer }: IProps) {
         />
       </div>
       <p
-        className={`text-[20px] leading-[32px] w-5/6 mt-2 transition-all text-[#B6B6B6] ${
+        className={`text-[18px] sm:text-[16px] leading-[32px] w-5/6 sm:w-full mt-2 transition-all text-[#B6B6B6] ${
           isExpanded ? "opacity-100 h-full" : "opacity-0 h-0"
         }`}
         style={greyColor}
