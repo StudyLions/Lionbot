@@ -15,7 +15,7 @@ function HowToUse() {
       <div className={"relative w-full h-auto my-[50px]"}>
         <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." loading={"lazy"} />
       </div>
-      <p className={"text-[20px] max-w-[600px] text-center"}>
+      <p className={"text-[20px] max-w-[600px] text-center leading-[32px]"}>
         Learn how to use and configure StudyLion on your server! Tutorials are availabe for admins, moderators and
         users.
       </p>
