@@ -9,6 +9,8 @@ import { DonationsData } from "@/constants/DonationsData";
 import numberWithCommas from "@/utils/numberWithCommas";
 import { IDonationItem } from "@/models/donation";
 import styles from "./Liongems.module.scss";
+import Button from "@/components/Button";
+import magnifying_glass from "@/public/icons/magnifying-glass.svg";
 
 export default function LionGemsBuySection() {
   const { data: session } = useSession();
@@ -91,6 +93,18 @@ export default function LionGemsBuySection() {
               </a>
             </div>
           ))}
+        </div>
+        <div className={"alignCenter flex-col max-w-[750px] mx-auto leading-[42px] text-center"}>
+          <p className={"pt-[37px]"}>
+            Remember, LionGems can be used to purchase skins for yourself and get premium subscription for your own
+            server, but you can also gift them to other members!
+          </p>
+          <p className={"font-bold"}>
+            ✨To gift LionGems, use the <span className={"text-[#ffd469]"}>!gift</span> command✨
+          </p>
+          <div className={"mt-[30px] mb-[100px]"}>
+            <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/coming-soon"} />
+          </div>
         </div>
       </div>
     </>
