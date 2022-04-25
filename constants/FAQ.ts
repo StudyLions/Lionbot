@@ -13,7 +13,7 @@ export const questionsAnswers = [
   },
   {
     question: "Can I get an invoice for my payment?",
-    answer: "To get an invoice please contact arihoresh@contact.com",
+    answer: "To get an invoice please contact contact@arihoresh.com",
   },
   {
     question: "What payment methods are supported?",
