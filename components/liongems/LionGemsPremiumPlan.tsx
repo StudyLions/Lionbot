@@ -23,7 +23,7 @@ let PremiumCards: Array<IPremiumPlan> = [
 
 const PremiumCard = (card) => {
   return (
-    <div className={"min-w-[300px] bg-white rounded-[30px]"}>
+    <div className={"min-w-[300px] bg-white rounded-[30px] lg:min-w-[30%] md:w-full md:max-w-[300px]"}>
       <div className={`alignCenter min-h-[100px] rounded-t-[30px] ${styles.premiumPlan_gradient}`}>
         <h3 className={"alignCenter gap-[10px] font-semibold text-[40px] leading-[35px]"}>
           <Image
@@ -48,13 +48,16 @@ const PremiumCard = (card) => {
 const LionGemsPremiumPlan = () => {
   return (
     <div className={"flex flex-col pt-[100px] mx-auto"}>
-      <h1 className={"font-bold text-[55px] landing-[66px] uppercase text-center"} id={"premium-plans"}>
+      <h1
+        className={"font-bold text-[55px] sm:text-[45px] landing-[66px] uppercase text-center pt-[67px]"}
+        id={"premium-plans"}
+      >
         Premium PLANS - COMING SOON!
       </h1>
-      <p className={"text-center mt-[20px] leading-[42px]"}>
+      <p className={"text-center mt-[10px] leading-[42px]"}>
         You can use LionGems to purchase Premium subscirption for your server!{" "}
       </p>
-      <div className={"alignCenter gap-[40px] mt-[20px]"}>
+      <div className={"alignCenter md:flex-wrap gap-[40px] pt-[40px]"}>
         {PremiumCards.map((card: IPremiumPlan) => (
           <PremiumCard key={card.typeSubscription} {...card} />
         ))}
@@ -66,7 +69,7 @@ const LionGemsPremiumPlan = () => {
         <p className={"font-bold"}>
           use the <span className={"text-[#FFD469]"}>!premium </span>command and access the interface.
         </p>
-        <div className={"mt-[20px]"}>
+        <div className={"mt-[30px]"}>
           <Button image={diamond_red} label={"Get LionGems"} scrollingElement={"liongems"} />
         </div>
       </div>

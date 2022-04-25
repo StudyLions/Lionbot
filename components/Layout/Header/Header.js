@@ -10,7 +10,7 @@ import Image from "next/image";
 
 export default function Header() {
   return (
-    <div className={"fixed lg:relative top-0 inset-x-0 z-50 flex flex-col bg-[#1B2137]"} id={"navbar"}>
+    <div className={"fixed lg:relative top-0 inset-x-0 z-40 flex flex-col bg-[#1B2137]"} id={"navbar"}>
       <header className={`${styles.navbar}`}>
         <Link href={NavigationPaths.Home}>
           <a className={styles.studyLion}>LionBot</a>
