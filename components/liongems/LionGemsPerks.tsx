@@ -4,7 +4,7 @@ import Image from "next/image";
 const LionGemsPerks = () => {
   return (
     <>
-      <div className={"max-w-[1120px] h-full mx-auto"}>
+      <div className={"max-w-[1120px] h-full mx-auto pt-[100px]"}>
         <h1 className={"uppercase font-bold text-[55px] text-center pt-[67px] pb-[50px]"}>Perks</h1>
         <div className={"flex flex-row"}>
           <div className={"w-1/2"}>
@@ -13,7 +13,7 @@ const LionGemsPerks = () => {
           <div className={"w-1/2 flex flex-col"}>
             {PerksData.map((perk: string, index: number) => (
               <div key={index} className={"flex flex-row gap-5 py-[10px]"}>
-                <div className={"relative w-[50px] h-[50px]"}>
+                <div className={"relative w-[40px] h-[40px]"}>
                   <Image
                     src={"https://cdn.discord.study/images/yellow_checkbox.svg"}
                     alt="LionPet gift card"
@@ -22,7 +22,7 @@ const LionGemsPerks = () => {
                   />
                 </div>
                 <div
-                  className={"w-[calc(100%-50px)] font-medium text-[20px] leading-[32px] text-[#F3F3F3]"}
+                  className={"w-[calc(100%-50px)] text-[18px] leading-[32px] text-[#F3F3F3]"}
                   key={index}
                   dangerouslySetInnerHTML={{ __html: perk }}
                 />

@@ -33,7 +33,7 @@ let buttonsList: Array<IButton> = [
 
 const LionGemsHeader = () => {
   return (
-    <div className={`flex flex-col justify-center py-[150px]`}>
+    <div className={`flex flex-col justify-center pt-[150px]`}>
       <div className={`flex flex-row gap-[30px] ${styles.section}`}>
         <img
           className={"object-contain h-[400px]"}

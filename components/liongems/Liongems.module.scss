@@ -11,8 +11,8 @@
 
 .buySection {
   @include mixinHelper.container;
-  margin-bottom: 200px;
   max-width: 1120px;
+  padding-top: 100px;
 
   .donationCard {
     background: linear-gradient(360deg, #FEE4CC 0%, rgba(255, 233, 212, 0) 100%), #FFFFFF;

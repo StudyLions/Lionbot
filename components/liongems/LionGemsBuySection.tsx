@@ -66,19 +66,24 @@ export default function LionGemsBuySection() {
       )}
 
       <div className={`${styles.buySection}`}>
-        <h1 className={`uppercase text-center pt-[50px] pb-[40px] font-bold text-7xl`} id={"liongems"}>
+        <h1 className={`uppercase text-center pt-[50px] pb-[40px] font-bold text-[55px]`} id={"liongems"}>
           Lion gems
         </h1>
-        <div className={"grid grid-cols-3 gap-[70px] items-center place-items-center"}>
+        <div className={"grid grid-cols-3 gap-[30px] items-center place-items-center max-w-[800px] mx-auto"}>
           {DonationsData.map((donationItem: IDonationItem, index) => (
             <div
               className={`rounded-3xl pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}
               key={donationItem.amount + index}
             >
-              <img src={donationItem.image} alt={`Tokens ${donationItem.tokens} image`} loading={"lazy"} />
+              <img
+                className={"max-h-[200px] object-contain"}
+                src={donationItem.image}
+                alt={`Tokens ${donationItem.tokens} image`}
+                loading={"lazy"}
+              />
               <p className={`text-4xl font-bold text-center ${styles.gems}`}>{numberWithCommas(donationItem.tokens)}</p>
               <p
-                className={`text-2xl font-bold text-center mb-5 ${
+                className={`text-[18px] text-center mb-5 ${
                   +donationItem.tokens_bonus ? styles.gemsBonus : "text-transparent"
                 }`}
               >
@@ -102,7 +107,7 @@ export default function LionGemsBuySection() {
           <p className={"font-bold"}>
             ✨To gift LionGems, use the <span className={"text-[#ffd469]"}>!gift</span> command✨
           </p>
-          <div className={"mt-[30px] mb-[100px]"}>
+          <div className={"mt-[30px]"}>
             <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/coming-soon"} />
           </div>
         </div>
