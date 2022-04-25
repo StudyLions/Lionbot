@@ -33,10 +33,10 @@ let buttonsList: Array<IButton> = [
 
 const LionGemsHeader = () => {
   return (
-    <div className={`flex flex-col justify-center pt-[150px]`}>
-      <div className={`flex flex-row gap-[30px] ${styles.section}`}>
+    <div className={`flex flex-col justify-center pt-[150px] md:pt-[30px]`}>
+      <div className={`flex flex-row gap-[30px] md:flex-col ${styles.section}`}>
         <img
-          className={"object-contain h-[400px]"}
+          className={"object-contain h-[400px] lg:h-[320px]"}
           src="https://cdn.discord.study/images/Group+222.png"
           alt="February collection image"
           loading={"lazy"}
@@ -44,14 +44,16 @@ const LionGemsHeader = () => {
         />
         <div className={"flex items-start justify-center md:ml-5 sm:ml-0 flex-col"}>
           <h1 className={`uppercase text-[50px] font-bold text-amber-400`}>Support us</h1>
-          <p className={"mt-5 max-w-sm"}>Support the team and keep the project alive by getting some LionGems!</p>
-          <p className={"mt-5 max-w-sm"}>
+          <p className={"mt-5 max-w-sm md:max-w-full"}>
+            Support the team and keep the project alive by getting some LionGems!
+          </p>
+          <p className={"mt-5 max-w-sm md:max-w-full"}>
             Purchase colored skins, gift LionGems to your loved ones, and unlock special perks for your server or
             yourself!
           </p>
         </div>
       </div>
-      <div className={"flex justify-center items-center gap-[34px] mt-[63px]"}>
+      <div className={"flex flex-wrap justify-center items-center gap-[34px] mt-[63px]"}>
         {buttonsList.map((button) => (
           <Button key={button.label} {...button} />
         ))}

@@ -21,8 +21,12 @@ export function PurchaseFailedModal(props: IProps) {
 
   return (
     <>
-      <div className="fixed inset-0 flex justify-center items-center bg-transparentBlack20 z-10">
-        <div ref={ref} className="relative w-[400px] h-[301px] m-auto bg-cream50 rounded-[30px] px-[37px]">
+      <div className="fixed inset-0 flex justify-center items-center bg-transparentBlack20 z-[99]">
+        <div
+          ref={ref}
+          className="relative w-[400px] m-auto bg-cream50 rounded-[30px] px-[37px]
+        md:mx-[20px] pb-[20px]"
+        >
           <img
             src={"https://cdn.discord.study/images/purchase_failed.png"}
             className="absolute top-[-90px] left-[50%] -translate-x-[50%]"
