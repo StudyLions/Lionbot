@@ -97,6 +97,7 @@
     @include mixinHelper.tabletResponsive{
       flex-direction: column !important;
       align-items: center;
+      padding: 60px 10px 1rem;
     }
 
     .card_text {
@@ -130,7 +131,7 @@
         color: globalVariables.$color-0;
         font-weight: 400;
         font-size: 18px;
-        line-height: 36px;
+        line-height: 32px;
         margin: 1rem 0;
       }
     }

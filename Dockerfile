@@ -36,6 +36,7 @@ RUN npm install --only=production
 
 # Get the built application from the first stage
 COPY --from=build /app/.next/ /app/.next/
+COPY --from=build /app/public ./public
 
 # Set runtime metadata
 ENV PORT 3000
