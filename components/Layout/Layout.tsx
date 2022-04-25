@@ -7,9 +7,9 @@ export default function Layout({ children, SEO }: ILayout) {
   return (
     <>
       <Head>
-        <title>{SEO.title} | StudyBot</title>
+        <title>{SEO.title}</title>
         <meta name="description" content={SEO.description} />
-        <meta itemProp="name" content={SEO.title + " | StudyBot"} />
+        <meta itemProp="name" content={SEO.title} />
         <meta itemProp="description" content={SEO.description} />
         <link rel="icon" href="public/favicon.ico" />
         <link rel="apple-touch-icon" sizes="180x180" href="public/apple-touch-icon.png" />
