@@ -97,6 +97,7 @@
     @include mixinHelper.tabletResponsive{
       flex-direction: column !important;
       align-items: center;
+      padding: 60px 10px 1rem;
     }
 
     .card_text {
