@@ -71,7 +71,7 @@ a {
 }
 
 body{
-  margin-top: 148px;
+  margin-top: 105px;
 
   @include mixinHelper.dynamicBreakpoint(1600px){
     margin-top: 213px;
