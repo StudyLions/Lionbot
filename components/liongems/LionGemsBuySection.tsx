@@ -1,6 +1,5 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { signIn, useSession } from "next-auth/react";
 
 import { AmountModal } from "@/components/AmountModal";
 import { PurchaseFailedModal } from "@/components/PurchaseFailedModal";
@@ -13,7 +12,6 @@ import Button from "@/components/Button";
 import magnifying_glass from "@/public/icons/magnifying-glass.svg";
 
 export default function LionGemsBuySection() {
-  const { data: session } = useSession();
   const [isAmountModalVisible, setIsAmountModalVisible] = useState(false);
   const [isPurchaseFailedVisible, setIsPurchaseFailedVisible] = useState(false);
   const [isPurchaseCompleteVisible, setIsPurchaseCompleteVisible] = useState(false);
@@ -34,11 +32,6 @@ export default function LionGemsBuySection() {
   }, [router.query.payment]);
 
   const openAmountModal = (donationItem: IDonationItem) => {
-    //Redirect user if is not logged.
-    if (!session) {
-      signIn("discord");
-      return;
-    }
     setCurrentDonationData(donationItem);
     setIsAmountModalVisible(true);
   };
