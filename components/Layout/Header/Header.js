@@ -44,6 +44,7 @@ export default function Header() {
                 "alignCenter gap-[10px] text-[#FFB636] font-semibold leading-[25px] tracking-[0.2em] uppercase cursor-pointer"
               }
             >
+              Support Us
               <Image
                 src={require("@/public/icons/diamond-yellow.svg")}
                 alt="Star icon"
@@ -52,10 +53,10 @@ export default function Header() {
                 width={25}
                 objectFit="contain"
               />
-              LionGems
             </a>
           </Link>
-          <PremiumDropdown />
+          {/* TODO: Add me later. */}
+          {/*<PremiumDropdown />*/}
         </div>
         <LoginButtonAndMenuDropdown />
       </header>
