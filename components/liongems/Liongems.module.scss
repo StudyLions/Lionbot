@@ -14,17 +14,24 @@
   max-width: 1120px;
   padding-top: 100px;
 
-  .donationCard {
-    background: linear-gradient(360deg, #FEE4CC 0%, rgba(255, 233, 212, 0) 100%), #FFFFFF;
-
-    .gems {
-      color: #E04C4C;
+  .container_donationCard{
+    &:hover {
+      background-image: linear-gradient(to bottom, #E04C4C 11%, #f4ee5599 40%, #ffe9d41a 73%, transparent 89%);
     }
 
-    .gemsBonus {
-      color: #133465;
+    .donationCard {
+      background: linear-gradient(360deg, #FEE4CC 0%, rgba(255, 233, 212, 0) 100%), #FFFFFF;
+
+      .gems {
+        color: #E04C4C;
+      }
+
+      .gemsBonus {
+        color: #133465;
+      }
     }
   }
+
 }
 
 .blueColor {
