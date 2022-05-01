@@ -70,30 +70,33 @@ export default function LionGemsBuySection() {
         >
           {DonationsData.map((donationItem: IDonationItem, index) => (
             <div
-              className={`rounded-3xl pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}
+              className={`p-[10px] rounded-[25px] cursor-pointer ${styles.container_donationCard}`}
+              onClick={() => openAmountModal(donationItem)}
               key={donationItem.amount + index}
             >
-              <img
-                className={"max-h-[200px] object-contain"}
-                src={donationItem.image}
-                alt={`Tokens ${donationItem.tokens} image`}
-                loading={"lazy"}
-              />
-              <p className={`text-4xl font-bold text-center ${styles.gems}`}>{numberWithCommas(donationItem.tokens)}</p>
-              <p
-                className={`text-[18px] text-center mb-5 ${
-                  +donationItem.tokens_bonus ? styles.gemsBonus : "text-transparent"
-                }`}
-              >
-                +{numberWithCommas(donationItem.tokens_bonus)} bonus
-              </p>
-              <a
-                onClick={() => openAmountModal(donationItem)}
-                className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold cursor-pointer
-                       bg-red20 hover:bg-red04`}
-              >
-                €{donationItem.amount}
-              </a>
+              <div className={`rounded-[25px] pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}>
+                <img
+                  className={"max-h-[200px] px-[20px] object-contain"}
+                  src={donationItem.image}
+                  alt={`Tokens ${donationItem.tokens} image`}
+                  loading={"lazy"}
+                />
+                <p className={`text-4xl font-bold text-center ${styles.gems}`}>
+                  {numberWithCommas(donationItem.tokens)}
+                </p>
+                <p
+                  className={`text-[18px] text-center mb-5 ${
+                    +donationItem.tokens_bonus ? styles.gemsBonus : "text-transparent"
+                  }`}
+                >
+                  +{numberWithCommas(donationItem.tokens_bonus)} bonus
+                </p>
+                <a
+                  className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold bg-red20 hover:bg-red04`}
+                >
+                  €{donationItem.amount}
+                </a>
+              </div>
             </div>
           ))}
         </div>
