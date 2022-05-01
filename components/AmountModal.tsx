@@ -1,5 +1,7 @@
 import React, { useRef, useState } from "react";
 import Image from "next/image";
+import { signIn, useSession } from "next-auth/react";
+
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import createPaymentSession from "@/utils/createPaymentSession";
 import numberWithCommas from "@/utils/numberWithCommas";
@@ -14,6 +16,7 @@ interface IProps {
 }
 
 export function AmountModal(props: IProps) {
+  const { data: isLogged } = useSession();
   const ref = useRef();
   const [quantity, setQuantity] = useState(1);
   useOnClickOutside(ref, () => props.closeModal());
@@ -91,13 +94,23 @@ export function AmountModal(props: IProps) {
                 €{`${quantity > 1 ? (props.amount * quantity).toFixed(2) : props.amount}`}
               </h1>
             </div>
-            <button
-              className={`mt-auto mb-[35px] bg-orange0 hover:bg-orange3 h-[35px] rounded-3xl font-bold text-[23px]
+            {isLogged ? (
+              <button
+                className={`mt-auto mb-[35px] bg-orange0 hover:bg-orange3 h-[35px] rounded-3xl font-bold text-[23px]
               md:mb-[25px] md:mt-[20px]`}
-              onClick={() => createPaymentSession(props.id, quantity)}
-            >
-              Confirm
-            </button>
+                onClick={() => createPaymentSession(props.id, quantity)}
+              >
+                Confirm
+              </button>
+            ) : (
+              <button
+                className={`mt-auto mb-[35px] bg-[#5865F2] hover:bg-[#3645ef] h-[35px] rounded-3xl font-bold text-[23px]
+              md:mb-[25px] md:mt-[20px]`}
+                onClick={() => signIn("discord")}
+              >
+                Log in
+              </button>
+            )}
           </div>
         </div>
       </div>
