@@ -40,7 +40,7 @@ export function PurchaseFailedModal(props: IProps) {
           </p>
           <p className="text-center text-black50 text-base mt-[10px]">
             If it&apos;s a mistake, please contact our support team at{" "}
-            <span className="font-medium">contact@discord.study</span>
+            <span className="font-medium">contact@arihoresh.com</span>
           </p>
           <div className="flex justify-between gap-[20px] mt-[20px]">
             <button
