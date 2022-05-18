@@ -52,10 +52,10 @@ const LionGemsPremiumPlan = () => {
         className={"font-bold text-[55px] sm:text-[45px] landing-[66px] uppercase text-center pt-[67px]"}
         id={"premium-plans"}
       >
-        Premium PLANS - COMING SOON!
+        Premium PLANS
       </h1>
       <p className={"text-center mt-[10px] leading-[42px]"}>
-        You can use LionGems to purchase Premium subscirption for your server!{" "}
+        You can use LionGems to purchase Premium subscription for your server!{" "}
       </p>
       <div className={"alignCenter md:flex-wrap gap-[40px] pt-[40px]"}>
         {PremiumCards.map((card: IPremiumPlan) => (
