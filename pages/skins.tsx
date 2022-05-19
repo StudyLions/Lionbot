@@ -1,6 +1,7 @@
 import Layout from "@/components/Layout/Layout";
 import { SkinsSEO } from "@/constants/SeoData";
 import SkinsHeader from "@/components/lionskins/SkinsHeader";
+import SkinsBrowser from "@/components/lionskins/SkinsBrowser";
 
 export default function Skins() {
   return (
@@ -11,8 +12,8 @@ export default function Skins() {
         id={"donate_page"}
       >
         <SkinsHeader />
+        <SkinsBrowser />
       </div>
     </Layout>
   );
 }
-

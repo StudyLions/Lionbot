@@ -3,11 +3,7 @@ import React, { useRef } from "react";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import Link from "next/link";
 
-interface IProps {
-  closeModal: () => void;
-}
-
-export function PurchaseCompleteModal(props: IProps) {
+export function SkinModal(props) {
   const ref = useRef();
   useOnClickOutside(ref, () => props.closeModal());
 
@@ -22,7 +18,7 @@ export function PurchaseCompleteModal(props: IProps) {
             height={156}
             alt={"Payment failed."}
           />
-          <h1 className="mt-[70px] text-center text-blue0 text-3xl font-extrabold uppercase">Purchase Complete</h1>
+          <h1 className="mt-[70px] text-center text-blue0 text-3xl font-extrabold uppercase">{props.label}</h1>
           <p className="text-center text-black50 text-base mt-[8px] px-[37px]">Thank you for supporting our project.</p>
           <p className="text-center text-black50 text-base mt-[10px] px-[37px]">
             The Gems will be added to your account in the next 24 hours. Make sure to open your DM on Discord
@@ -46,4 +42,3 @@ export function PurchaseCompleteModal(props: IProps) {
     </>
   );
 }
-
