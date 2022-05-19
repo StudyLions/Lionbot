@@ -27,7 +27,7 @@ let buttonsList: Array<IButton> = [
       src: magnifying_glass,
     },
     label: "Browse skins",
-    href: "/coming-soon",
+    href: "/skins",
   },
 ];
 

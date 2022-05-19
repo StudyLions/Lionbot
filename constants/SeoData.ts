@@ -23,3 +23,8 @@ export const StudySEO = {
   title: "Study timer",
   description: "Study Description",
 };
+
+export const SkinsSEO = {
+  title: "Lionbot Skins",
+  description: "View all Colored skins we have built for your server or personal use.",
+};

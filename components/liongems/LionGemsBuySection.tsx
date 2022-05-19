@@ -109,7 +109,7 @@ export default function LionGemsBuySection() {
             ✨To gift LionGems, use the <span className={"text-[#ffd469]"}>!gift</span> command✨
           </p>
           <div className={"mt-[30px]"}>
-            <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/coming-soon"} />
+            <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/skins"} />
           </div>
         </div>
       </div>
