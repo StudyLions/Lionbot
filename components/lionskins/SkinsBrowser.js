@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
+import SkinModal from "./SkinModal";
 
 let skinsList = [
   {
@@ -60,21 +61,34 @@ let skinsList = [
   },
 ];
 
-function SkinsBrowser() {
+const SkinsBrowser = () => {
+  const [openModal, setOpenModal] = useState(false);
+  const [selectedSkin, setSelectedSkin] = useState(null);
+
+  const ExpandModal = (skin) => {
+    setSelectedSkin(skin);
+    setOpenModal(true);
+  };
+
   return (
-    <div className={"flex flex-wrap justify-center items-center gap-[34px] mt-[63px]"}>
+    <div className={"flex flex-wrap justify-center items-center gap-[34px] my-[63px]"}>
       {skinsList.map((skin) => (
-        <div key={skin.id} onClick={() => console.log(skin.label)} {...skin}>
-          <h2>{skin.label}</h2>
+        <div
+          className="flex flex-wrap w-3/12 md:w-6/12 sm:w-11/12 justify-center items-center bg-gradient-to-b from-indigo-900 to-gray-900 py-2 px-5 rounded-2xl"
+          key={skin.id}
+          onClick={() => ExpandModal(skin)}
+        >
+          <h2 className="text-3xl mb-3">{skin.label}</h2>
           <Image
             src={skin.image.imageOne}
             alt={skin.label}
-            layout="fixed"
-            height={600}
-            width={600}
+            layout="intrinsic"
             objectFit="contain"
+            className="my-3"
+            width={`600px`}
+            height={`600px`}
           />
-          <div className="price__holder">
+          <div className="w-4/12 flex flex-wrap justify-between items-center bg-red-400 my-2 p-2 rounded-3xl pulse">
             <Image
               src={require("@/public/icons/diamond-white.svg")}
               alt="Star icon"
@@ -83,12 +97,13 @@ function SkinsBrowser() {
               width={35}
               objectFit="contain"
             />
-            <p>{skin.price}</p>
+            <p>{skin.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
           </div>
         </div>
       ))}
     </div>
   );
-}
+};
 
 export default SkinsBrowser;
+
