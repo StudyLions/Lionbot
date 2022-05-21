@@ -56,7 +56,7 @@ export const LegalItems = [
   {
     title: "Terms and Conditions",
     link: {
-      href: NavigationPaths.termsAnsConditions,
+      href: NavigationPaths.termsAndConditions,
       target: "",
     },
   },
