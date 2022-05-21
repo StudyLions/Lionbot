@@ -54,10 +54,10 @@ export const LegalItems = [
     },
   },
   {
-    title: "Terms of use",
+    title: "Terms and Conditions",
     link: {
-      href: "https://bot.studylions.com/terms-of-use/",
-      target: "_blank",
+      href: NavigationPaths.termsAnsConditions,
+      target: "",
     },
   },
   {
