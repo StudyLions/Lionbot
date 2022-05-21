@@ -23,3 +23,9 @@ export const StudySEO = {
   title: "Study timer",
   description: "Study Description",
 };
+
+export const PrivacyPolicySEO = {
+  title: "Privacy Policy",
+  description:
+    "We know you care about your personal information and we take your privacy seriously. Please read the following to learn more about our Privacy Policy.",
+};
