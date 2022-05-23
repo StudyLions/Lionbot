@@ -8,6 +8,15 @@ let skinsList = [
     image: {
       imageOne: require("@/public/images/skins/platinum/platinum.png"),
       imageTwo: require("@/public/images/skins/platinum/plat_weekly2.png"),
+      imageThree: require("@/public/images/skins/platinum/plat_lb1.png"),
+      imageFour: require("@/public/images/skins/platinum/plat_lb2.png"),
+      imageFive: require("@/public/images/skins/platinum/plat_monthly help.png"),
+      imageSix: require("@/public/images/skins/platinum/plat_monthly1.png"),
+      imageSeven: require("@/public/images/skins/platinum/plat_monthly2.png"),
+      imageEight: require("@/public/images/skins/platinum/plat_todo help.png"),
+      imageNine: require("@/public/images/skins/platinum/plat_todo1.png"),
+      imageTen: require("@/public/images/skins/platinum/plat_todo2.png"),
+      imageEleven: require("@/public/images/skins/platinum/plat_weekly help.png"),
     },
     label: "Original",
     price: 2500,
@@ -111,6 +120,15 @@ const SkinsBrowser = () => {
           label={data.label}
           imageOne={data.image.imageOne.default.src}
           imageTwo={data.image.imageTwo.default.src}
+          imageThree={data.image.imageThree.default.src}
+          imageFour={data.image.imageFour.default.src}
+          imageFive={data.image.imageFive.default.src}
+          imageSix={data.image.imageSix.default.src}
+          imageSeven={data.image.imageSeven.default.src}
+          imageEight={data.image.imageEight.default.src}
+          imageNine={data.image.imageNine.default.src}
+          imageTen={data.image.imageTen.default.src}
+          imageEleven={data.image.imageEleven.default.src}
           price={data.price}
           closeModal={() => setIsOpenModal(false)}
         />
@@ -120,3 +138,4 @@ const SkinsBrowser = () => {
 };
 
 export default SkinsBrowser;
+
