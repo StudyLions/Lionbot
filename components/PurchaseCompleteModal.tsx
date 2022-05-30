@@ -16,11 +16,11 @@ export function PurchaseCompleteModal(props: IProps) {
       <div className="fixed inset-0 flex justify-center items-center bg-transparentBlack20 z-50">
         <div ref={ref} className="relative w-[400px] h-[301px] m-auto bg-orange1 rounded-[30px] sm:h-fit">
           <img
-            src={"https://cdn.discord.study/images/purchase_complete.png"}
+            src={require("@/public/images/pages/donate/purchase_complete.png")}
             className="absolute top-[-90px] left-[50%] -translate-x-[50%]"
             width={156}
             height={156}
-            alt={"Payment failed."}
+            alt={"Payment successful."}
           />
           <h1 className="mt-[70px] text-center text-blue0 text-3xl font-extrabold uppercase">Purchase Complete</h1>
           <p className="text-center text-black50 text-base mt-[8px] px-[37px]">Thank you for supporting our project.</p>
