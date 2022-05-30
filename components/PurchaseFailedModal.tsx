@@ -3,6 +3,7 @@ import React, { useRef } from "react";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
 import createPaymentSession from "@/utils/createPaymentSession";
 import { IBasket } from "@/models/donation";
+import Image from "next/image";
 
 interface IProps {
   closeModal: () => void;
@@ -27,8 +28,8 @@ export function PurchaseFailedModal(props: IProps) {
           className="relative w-[400px] m-auto bg-cream50 rounded-[30px] px-[37px]
         md:mx-[20px] pb-[20px]"
         >
-          <img
-            src={"https://cdn.discord.study/images/purchase_failed.png"}
+          <Image
+            src={require("@/public/images/pages/donate/purchase_failed.png")}
             className="absolute top-[-90px] left-[50%] -translate-x-[50%]"
             width={156}
             height={156}

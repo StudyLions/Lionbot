@@ -62,7 +62,13 @@ export function AmountModal(props: IProps) {
           md:rounded-t-[27px] md:rounded-b-[0px]"
           >
             <h1 className="text-black40 text-[30px] font-bold">Purchase</h1>
-            <img src={props.image} alt={"Image gems"} className="w-fit mt-[30px] md:max-h-[200px] object-contain" />
+            <Image
+              width={300}
+              height={300}
+              src={props.image}
+              alt={"Image gems"}
+              className="w-fit mt-[30px] md:max-h-[200px] object-contain"
+            />
           </div>
           <div
             className="flex flex-col w-full pl-[16px] pr-[26px] pt-[20px] rounded-r-[27px] bg-cream90
