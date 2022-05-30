@@ -2,7 +2,7 @@ import React from "react";
 import styles from "./Liongems.module.scss";
 import { IButton } from "@/models/button";
 import Button from "@/components/Button";
-import Image from "next/Image";
+import Image from "next/image";
 
 import star_red from "@/public/icons/star-red.svg";
 import diamond_red from "@/public/icons/diamond-red.svg";
