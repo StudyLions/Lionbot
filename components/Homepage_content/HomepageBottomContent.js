@@ -7,10 +7,13 @@ import UseAnimatedNumberCounter from "../../hooks/useAnimatedNumberCounter";
 import hand_click_svg from "@/public/icons/hand_click.svg";
 import Button from "@/components/Button";
 import useWindowSize from "@/hooks/useWindowSize";
+import Image from "next/image";
 
 function HowToUse() {
   return (
-    <div className={"flex flex-col items-center pb-[30px] pt-[60px] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}>
+    <div
+      className={"flex flex-col items-center pb-[30px] pt-[60px] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}
+    >
       <h3 className={"text-[#EEC73C] text-[58px] md:text-[35px] uppercase font-bold lg:mr-auto"}>How to use</h3>
       <div className={"relative w-full h-auto my-[50px] px-[50px] sm:px-0"}>
         <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." loading={"lazy"} />
@@ -41,12 +44,19 @@ function StudyLionCommunities() {
       <div className={"bg-[#34267d] pt-[100px] pb-[80px]"}>
         <div className={`${styles.communities_container}`}>
           <h1 className={"text-[55px] md:text-[35px] md:px-[30px] font-bold uppercase text-center pb-[60px]"}>
-            Trusted by 9,100+ study servers
+            Trusted by 10,700+ study servers
           </h1>
           <div className={styles.communities_servers}>
             {Servers_list.map((server, index) => (
               <div className={styles.server} key={server.name + index}>
-                <img src={server.img.src} alt={server.img.alt} loading={"lazy"} />
+                <Image
+                  width={150}
+                  height={150}
+                  objectFit={"contain"}
+                  src={server.img.src}
+                  alt={server.img.alt}
+                  loading={"lazy"}
+                />
                 <p>{server.name}</p>
               </div>
             ))}

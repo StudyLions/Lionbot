@@ -5,7 +5,7 @@ export const Homepage_sections_middle = [
       "<p>Allow users to check their daily, weekly, monthly and all-time chat and voice activity statistics.</p>" +
       "<p>The users can check their summary and analyze their progress using our beautiful unique graphical interface.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section1.png",
+      src: require("@/public/images/pages/homePage/lionbot_statistics.webp"),
       alt: "Statistics image",
     },
   },
@@ -15,7 +15,7 @@ export const Homepage_sections_middle = [
       "<p>Allow the users to check their progress and compare it to other members within the same servers, or other servers!</p>" +
       "<p>You can reset the leaderboard at any time, which allows you to create your own ‘ server seasons’.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section2.png",
+      src: require("@/public/images/pages/homePage/lionbot_leaderboards.webp"),
       alt: "Leaderboards image",
     },
   },
@@ -25,7 +25,7 @@ export const Homepage_sections_middle = [
       "<p>Allows the members to create their own private voice rooms and invite their friends to join!</p>" +
       "<p>Allow Admins to force the usage of a webcam in specific rooms, to keep the community safe.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section3.png",
+      src: require("@/public/images/pages/homePage/lionbot_private_rooms.webp"),
       alt: "Virtual Study Rooms image",
     },
   },
@@ -36,7 +36,7 @@ export const Homepage_sections_middle = [
       "Show a Pomodoro timer in the title of the voice room and play a sound at the start and end of each session.</p>" +
       "<p>Highly customizable feature: create your own custom title, timer, and an infinite number of rooms.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section4.png",
+      src: require("@/public/images/pages/homePage/lionbot_pomodoro_timers.webp"),
       alt: "Pomodoro Timers image",
     },
   },
@@ -47,7 +47,7 @@ export const Homepage_sections_middle = [
       "<p>Users can create their own about me section, check their statistics and progress using a single command.</p>" +
       "<p><b>This feature was highly requested</b></p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section5.png",
+      src: require("@/public/images/pages/homePage/lionbot_profiles.webp"),
       alt: "Profiles image",
     },
   },
@@ -68,7 +68,7 @@ export const Homepage_sections_middle = [
       "<p>Name your ranks, choose the intervals, and the colours of all of the badges.</p>" +
       "<p>*<b>Used by both Study and non-Study servers</b></p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section7.png",
+      src: require("@/public/images/pages/homePage/lionbot_activity_badges.webp"),
       alt: "Study Badges image",
     },
   },
@@ -79,7 +79,7 @@ export const Homepage_sections_middle = [
       "<p> Allow your users to develop the accountability and responsibility to complete their tasks while" +
       " getting use to manage their time.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section8.png",
+      src: require("@/public/images/pages/homePage/lionbot_todo_reminders.webp"),
       alt: "To-do and Reminders image",
     },
   },
@@ -89,7 +89,7 @@ export const Homepage_sections_middle = [
       "<p>User can schedule study sessions where they must attend. Not attending will cause the entire study group to lose a bonus.</p>" +
       "<p>Allow your users to develop the accountability and responsibility to attend the study session on time.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section9.png",
+      src: require("@/public/images/pages/homePage/lionbot_scheduled_sessions.webp"),
       alt: "Scheduled sessions image",
     },
   },
@@ -99,35 +99,35 @@ export const Servers_list = [
   {
     name: "ENTERMEDSCHOOL",
     img: {
-      src: "https://cdn.discord.study/images/entermedschool_icon.png",
+      src: require("@/public/images/pages/homePage/featured_ems.png"),
       alt: "ENTERMEDSCHOOL server icon",
     },
   },
   {
     name: "STUDYWITHME",
     img: {
-      src: "https://cdn.discord.study/images/studywithme_icon.png",
+      src: require("@/public/images/pages/homePage/featured_studywithme.png"),
       alt: "STUDYWITHME server icon",
     },
   },
   {
     name: "Rehber Matematik",
     img: {
-      src: "https://cdn.discord.study/images/rehber_icon.png",
+      src: require("@/public/images/pages/homePage/featured_rehber.png"),
       alt: "Rehber Matematik server icon",
     },
   },
   {
     name: "CATIONS",
     img: {
-      src: "https://cdn.discord.study/images/captions_icon.png",
+      src: require("@/public/images/pages/homePage/featured_cations.png"),
       alt: "CATIONS server icon",
     },
   },
   {
     name: "Jintang space",
     img: {
-      src: "https://cdn.discord.study/images/jintang_icon.png",
+      src: require("@/public/images/pages/homePage/featured_jintagspace.png"),
       alt: "Jintang space server icon",
     },
   },
@@ -136,22 +136,22 @@ export const Servers_list = [
 export const Counters_list = [
   {
     name: "Sessions",
-    number: 5,
-    last_char: ".6m",
+    number: 8,
+    last_char: ".1m",
   },
   {
     name: "Users",
-    number: 180,
+    number: 240,
     last_char: "k",
   },
   {
     name: "Tasks",
-    number: 100,
+    number: 230,
     last_char: "k",
   },
   {
     name: "Timers",
-    number: 1590,
+    number: 2030,
     last_char: "",
   },
 ];
