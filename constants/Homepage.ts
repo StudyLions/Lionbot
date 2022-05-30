@@ -57,7 +57,7 @@ export const Homepage_sections_middle = [
       "<p>Allow users to earn coins based on their activity and spend it in the role shop!</p>" +
       "<p><b>Set the shop prices, roles, colors:</b> rewarding the users which participate the most.</p>",
     image: {
-      src: "https://cdn.discord.study/images/Homepage_section6.png",
+      src: require("@/public/images/pages/homePage/lionbot_economy.webp"),
       alt: "Economy image",
     },
   },

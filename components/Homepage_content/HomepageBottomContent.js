@@ -15,8 +15,15 @@ function HowToUse() {
       className={"flex flex-col items-center pb-[30px] pt-[60px] lg:px-[30px] justify-center max-w-[1280px] mx-auto"}
     >
       <h3 className={"text-[#EEC73C] text-[58px] md:text-[35px] uppercase font-bold lg:mr-auto"}>How to use</h3>
-      <div className={"relative w-full h-auto my-[50px] px-[50px] sm:px-0"}>
-        <img src={"https://cdn.discord.study/images/how_to_use.png"} alt="How to use discord bot." loading={"lazy"} />
+      <div className={"relative w-full h-auto px-[50px] my-[50px] sm:px-0"}>
+        <Image
+          src={require("@/public/images/pages/homePage/lionbot_how_to_use.png")}
+          width={1280}
+          height={400}
+          objectFit={"contain"}
+          alt="How to use discord bot."
+          loading={"lazy"}
+        />
       </div>
       <p className={"text-[20px] max-w-[600px] text-center leading-[32px]"}>
         Learn how to use and configure StudyLion on your server! Tutorials are availabe for admins, moderators and
