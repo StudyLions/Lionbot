@@ -29,7 +29,7 @@ export function PurchaseFailedModal(props: IProps) {
         md:mx-[20px] pb-[20px]"
         >
           <Image
-            src={require("@/public/images/pages/donate/purchase_failed.png")}
+            src={require("@/public/images/pages/donate/purchase_failed.PNG")}
             className="absolute top-[-90px] left-[50%] -translate-x-[50%]"
             width={156}
             height={156}
