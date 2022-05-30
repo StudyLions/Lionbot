@@ -99,7 +99,7 @@ export const Servers_list = [
   {
     name: "ENTERMEDSCHOOL",
     img: {
-      src: require("@/public/images/pages/homePage/featured_ems.png"),
+      src: require("@/public/images/pages/homePage/featured_ems.PNG"),
       alt: "ENTERMEDSCHOOL server icon",
     },
   },
@@ -113,21 +113,21 @@ export const Servers_list = [
   {
     name: "Rehber Matematik",
     img: {
-      src: require("@/public/images/pages/homePage/featured_rehber.png"),
+      src: require("@/public/images/pages/homePage/featured_rehber.PNG"),
       alt: "Rehber Matematik server icon",
     },
   },
   {
     name: "CATIONS",
     img: {
-      src: require("@/public/images/pages/homePage/featured_cations.png"),
+      src: require("@/public/images/pages/homePage/featured_cations.PNG"),
       alt: "CATIONS server icon",
     },
   },
   {
     name: "Jintang space",
     img: {
-      src: require("@/public/images/pages/homePage/featured_jintagspace.png"),
+      src: require("@/public/images/pages/homePage/featured_jintagspace.PNG"),
       alt: "Jintang space server icon",
     },
   },
