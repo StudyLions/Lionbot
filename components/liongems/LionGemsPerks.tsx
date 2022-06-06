@@ -8,9 +8,12 @@ const LionGemsPerks = () => {
         <h1 className={"uppercase font-bold text-[55px] sm:text-[45px] text-center pt-[67px] pb-[50px]"}>Perks</h1>
         <div className={"flex flex-row md:flex-col"}>
           <div className={"w-1/2 md:w-full md:mb-[30px]"}>
-            <img
+            <Image
+              width={500}
+              height={500}
+              objectFit={"contain"}
               className={"md:mx-auto"}
-              src={"https://cdn.discord.study/images/LionPic.png"}
+              src={require("@/public/images/pages/donate/lionbot_gift_wrapped.png")}
               alt="LionPet gift card"
             />
           </div>
@@ -19,7 +22,7 @@ const LionGemsPerks = () => {
               <div key={index} className={"flex flex-row gap-5 py-[10px]"}>
                 <div className={"relative w-[40px] h-[40px]"}>
                   <Image
-                    src={"https://cdn.discord.study/images/yellow_checkbox.svg"}
+                    src={require("@/public/images/pages/donate/yellow_checkbox.svg")}
                     alt="LionPet gift card"
                     layout={"fill"}
                     objectFit={"contain"}

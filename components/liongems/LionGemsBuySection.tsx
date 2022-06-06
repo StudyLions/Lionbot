@@ -10,6 +10,7 @@ import { IDonationItem } from "@/models/donation";
 import styles from "./Liongems.module.scss";
 import Button from "@/components/Button";
 import magnifying_glass from "@/public/icons/magnifying-glass.svg";
+import Image from "next/image";
 
 export default function LionGemsBuySection() {
   const [isAmountModalVisible, setIsAmountModalVisible] = useState(false);
@@ -75,7 +76,9 @@ export default function LionGemsBuySection() {
               key={donationItem.amount + index}
             >
               <div className={`rounded-[25px] pt-3 h-fit flex flex-col w-full ${styles.donationCard}`}>
-                <img
+                <Image
+                  width={300}
+                  height={300}
                   className={"max-h-[200px] px-[20px] object-contain"}
                   src={donationItem.image}
                   alt={`Tokens ${donationItem.tokens} image`}
