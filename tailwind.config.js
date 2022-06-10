@@ -41,6 +41,15 @@ module.exports = {
       ex_sm: { max: "325px" },
       // => @media (max-width: 325px) { ... }
     },
+    borderWidth: {
+      DEFAULT: "0.5px",
+      0: "0",
+      2: "2px",
+      3: "3px",
+      4: "4px",
+      6: "6px",
+      8: "8px",
+    },
   },
   variants: {},
   plugins: [],
