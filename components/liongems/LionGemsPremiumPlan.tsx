@@ -47,7 +47,7 @@ const PremiumCard = (card) => {
 
 const LionGemsPremiumPlan = () => {
   return (
-    <div className={"flex flex-col pt-[100px] mx-auto"}>
+    <div id="premiumPlans" className={"flex flex-col pt-[100px] mx-auto"}>
       <h1
         className={"font-bold text-[55px] sm:text-[45px] landing-[66px] uppercase text-center pt-[67px]"}
         id={"premium-plans"}

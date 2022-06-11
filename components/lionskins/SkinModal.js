@@ -1,13 +1,16 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import useOnClickOutside from "@/hooks/useOnClickOutside";
+import useWindowSize from "@/hooks/useWindowSize";
+import { NavigationPaths } from "@/constants/types";
 
 const SkinModal = (props) => {
+  const { width } = useWindowSize();
   const ref = useRef();
   useOnClickOutside(ref, () => props.closeModal());
 
-  // Grab window width
-  const windowWidth = window.innerWidth;
+  // create an event listener
+
   // Define various classes later to be used
   let fluidHeight;
   let fluidWidth;
@@ -17,56 +20,61 @@ const SkinModal = (props) => {
   let modalWidth;
   let fluidJustify;
 
+  const handleRefresh = () => {
+    // Grab window width
+    if (width >= 1920) {
+      modalWidth = `w-[1000px]`;
+      fluidWidth = 90;
+      fluidHeight = 90;
+      fluidWidthClass = "w-11/12";
+      fluidJustify = `justify-between`;
+      fluidImageContainer = "w-6/12";
+      fluidInfoContainer = "w-6/12";
+    } else if (width > 1280 && width < 1919) {
+      modalWidth = `w-8/12`;
+      fluidWidth = 100;
+      fluidHeight = 100;
+      fluidWidthClass = "w-11/12";
+      fluidJustify = `justify-between`;
+      fluidImageContainer = "w-5/12";
+      fluidInfoContainer = "w-7/12";
+    } else if (width > 967) {
+      modalWidth = `w-11/12`;
+      fluidWidth = 100;
+      fluidHeight = 100;
+      fluidWidthClass = "w-11/12";
+      fluidJustify = `justify-between`;
+      fluidImageContainer = "w-5/12";
+      fluidInfoContainer = "w-7/12";
+    } else if (width > 767) {
+      modalWidth = `w-11/12`;
+      fluidWidth = 140;
+      fluidHeight = 140;
+      fluidWidthClass = "w-full";
+      fluidJustify = `justify-center`;
+      fluidImageContainer = "w-11/12";
+      fluidInfoContainer = "w-11/12";
+    } else if (width > 650) {
+      modalWidth = `w-11/12`;
+      fluidWidth = 60;
+      fluidHeight = 60;
+      fluidWidthClass = `w-full`;
+      fluidJustify = `justify-center`;
+      fluidImageContainer = "w-11/12";
+      fluidInfoContainer = "w-11/12";
+    } else {
+      modalWidth = `w-full`;
+      fluidWidth = 100;
+      fluidHeight = 100;
+      fluidWidthClass = `w-full`;
+      fluidJustify = "justify-center";
+      fluidImageContainer = "w-5/12";
+      fluidInfoContainer = "w-7/12";
+    }
+  };
+
+  handleRefresh();
   // Calculate various classes depending on the window width
-  if (windowWidth >= 1920) {
-    modalWidth = `w-[1000px]`;
-    fluidWidth = 90;
-    fluidHeight = 90;
-    fluidWidthClass = "w-11/12";
-    fluidJustify = `justify-between`;
-    fluidImageContainer = "w-6/12";
-    fluidInfoContainer = "w-6/12";
-  } else if (windowWidth > 1280 && windowWidth < 1919) {
-    modalWidth = `w-8/12`;
-    fluidWidth = 100;
-    fluidHeight = 100;
-    fluidWidthClass = "w-11/12";
-    fluidJustify = `justify-between`;
-    fluidImageContainer = "w-5/12";
-    fluidInfoContainer = "w-7/12";
-  } else if (windowWidth > 967) {
-    modalWidth = `w-11/12`;
-    fluidWidth = 100;
-    fluidHeight = 100;
-    fluidWidthClass = "w-11/12";
-    fluidJustify = `justify-between`;
-    fluidImageContainer = "w-5/12";
-    fluidInfoContainer = "w-7/12";
-  } else if (windowWidth > 767) {
-    modalWidth = `w-11/12`;
-    fluidWidth = 140;
-    fluidHeight = 140;
-    fluidWidthClass = "w-full";
-    fluidJustify = `justify-center`;
-    fluidImageContainer = "w-11/12";
-    fluidInfoContainer = "w-11/12";
-  } else if (windowWidth > 650) {
-    modalWidth = `w-11/12`;
-    fluidWidth = 100;
-    fluidHeight = 100;
-    fluidWidthClass = `w-full`;
-    fluidJustify = `justify-center`;
-    fluidImageContainer = "w-11/12";
-    fluidInfoContainer = "w-11/12";
-  } else {
-    modalWidth = `w-full`;
-    fluidWidth = 70;
-    fluidHeight = 70;
-    fluidWidthClass = `w-full`;
-    fluidJustify = "justify-center";
-    fluidImageContainer = "w-5/12";
-    fluidInfoContainer = "w-7/12";
-  }
 
   let thumbnailImageWidth = fluidWidth;
   let thumbnailImageHeight = fluidHeight;
@@ -185,7 +193,10 @@ const SkinModal = (props) => {
               To purchase, use the command <span className="font-black">!skin</span>
             </p>
             <div className="flex flex-wrap justify-evenly items-center ex_sm:flex-col">
-              <p className="flex flex-wrap justify-evenly items-center w-6/12 p-2 border-solid border-b border-l border-r border-t rounded-3xl border-[#fff] text-[#fff] font-medium text-sm uppercase">
+              <a
+                href={NavigationPaths.donate + "#premiumPlans"}
+                className="flex flex-wrap justify-evenly items-center w-6/12 p-2 border-solid border-b border-l border-r border-t rounded-3xl border-[#fff] text-[#fff] font-medium text-sm uppercase"
+              >
                 <Image
                   src={require("@/public/icons/diamond-white.svg")}
                   alt="Star icon"
@@ -195,8 +206,11 @@ const SkinModal = (props) => {
                   objectFit="contain"
                 />{" "}
                 Get Liongems
-              </p>
-              <p className="flex flex-wrap justify-evenly items-center w-5/12 p-2 border-solid border-b border-l border-r border-t rounded-3xl border-[#fff] text-[#fff] font-semibold text-sm uppercase">
+              </a>
+              <a
+                href={NavigationPaths.donate + "#getLionsGems"}
+                className="flex flex-wrap justify-evenly items-center w-5/12 p-2 border-solid border-b border-l border-r border-t rounded-3xl border-[#fff] text-[#fff] font-semibold text-sm uppercase"
+              >
                 <Image
                   src={require("@/public/icons/star-white.svg")}
                   alt="Star icon"
@@ -206,16 +220,15 @@ const SkinModal = (props) => {
                   objectFit="contain"
                 />{" "}
                 Go Premium
-              </p>
+              </a>
             </div>
           </div>
         </div>
         <button
-          className="w-2/12 sm:w-6/12 absolute sm:bottom-0 bottom-100 left-0 sm:left-auto sm:fixed bg-red-500 h-[36px] rounded-3xl uppercase font-bold hover:bg-red-700"
+          className="w-2/12 sm:w-6/12 absolute sm:bottom-0 bottom-100 left-0 sm:left-auto lg:fixed bg-red-500 h-[36px] rounded-3xl uppercase font-bold hover:bg-red-700"
           onClick={() => props.closeModal()}
         >
           Close Modal
-          {/* {windowWidth < 600 ? "X" : "Close Modal"} */}
         </button>
       </div>
       {/* </div> */}
