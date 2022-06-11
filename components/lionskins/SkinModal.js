@@ -56,16 +56,16 @@ const SkinModal = (props) => {
       fluidInfoContainer = "w-11/12";
     } else if (width > 650) {
       modalWidth = `w-11/12`;
-      fluidWidth = 60;
-      fluidHeight = 60;
+      fluidWidth = 100;
+      fluidHeight = 100;
       fluidWidthClass = `w-full`;
       fluidJustify = `justify-center`;
       fluidImageContainer = "w-11/12";
       fluidInfoContainer = "w-11/12";
     } else {
       modalWidth = `w-full`;
-      fluidWidth = 100;
-      fluidHeight = 100;
+      fluidWidth = 70;
+      fluidHeight = 70;
       fluidWidthClass = `w-full`;
       fluidJustify = "justify-center";
       fluidImageContainer = "w-5/12";
