@@ -7,35 +7,43 @@ const SkinsBrowser = () => {
   const [isModalOpen, setIsOpenModal] = useState(false);
   const [data, setData] = useState(null);
   return (
-    <div className={"flex flex-wrap justify-center items-center gap-[34px] my-6 py-20"}>
+    <div className={"flex flex-wrap justify-center items-center gap-[20px] my-6 py-20"}>
       {SkinsList.map((skin) => (
         <div
-          className="cursor-zoom-in flex flex-wrap w-3/12 lg:w-5/12 md:w-6/12 sm:w-11/12 justify-center items-center bg-gradient-to-b from-indigo-900 to-gray-900 py-2 px-5 rounded-3xl"
-          key={skin.id}
-          onClick={() => {
-            setIsOpenModal(true);
-            setData(skin);
+          className="flex flex-wrap w-3/12 lg:w-5/12 md:w-6/12 sm:w-11/12 justify-center items-center rounded-3xl p-2"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom, #e5c05f 10%, #b28b4b 40%, rgba(255, 233, 212, 0.1019607843) 85%, transparent 89%)",
           }}
         >
-          <h2 className="text-3xl mb-3 uppercase">{skin.label}</h2>
-          <Image
-            src={skin.image.imageOne}
-            alt={skin.label}
-            objectFit="contain"
-            className="my-3"
-            width={600}
-            height={600}
-          />
-          <div className="w-5/12 flex flex-wrap justify-between items-center bg-red-400 my-2 p-2 rounded-3xl pulse">
+          <div
+            className="cursor-zoom-in flex flex-wrap justify-center items-center bg-gradient-to-b from-indigo-900 to-gray-900 p-4  rounded-3xl"
+            key={skin.id}
+            onClick={() => {
+              setIsOpenModal(true);
+              setData(skin);
+            }}
+          >
+            <h2 className="text-3xl mb-3 text-gray-300">{skin.label}</h2>
             <Image
-              src={require("@/public/icons/diamond-white.svg")}
-              alt="Star icon"
-              layout="fixed"
-              height={20}
-              width={20}
+              src={skin.image.imageOne}
+              alt={skin.label}
               objectFit="contain"
+              className="my-3"
+              width={600}
+              height={600}
             />
-            <p>{skin.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+            <div className="w-6/12 sm:w-8/12 flex flex-wrap justify-center items-center bg-red-500 my-2 p-2 rounded-3xl pulse">
+              <Image
+                src={require("@/public/icons/diamond-white.svg")}
+                alt="Star icon"
+                layout="fixed"
+                height={20}
+                width={20}
+                objectFit="contain"
+              />
+              <p className="ml-4">{skin.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</p>
+            </div>
           </div>
         </div>
       ))}
