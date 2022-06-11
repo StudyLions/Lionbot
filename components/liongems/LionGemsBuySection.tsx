@@ -95,7 +95,7 @@ export default function LionGemsBuySection() {
                   +{numberWithCommas(donationItem.tokens_bonus)} bonus
                 </p>
                 <a
-                  className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold bg-red20 hover:bg-red04`}
+                  className={`rounded-3xl block text-2xl mx-5 mb-5 text-center py-1 font-bold bg-red20 hover:bg-red04`}
                 >
                   €{donationItem.amount}
                 </a>
