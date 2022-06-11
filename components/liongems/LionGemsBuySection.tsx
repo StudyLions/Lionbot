@@ -59,7 +59,7 @@ export default function LionGemsBuySection() {
         />
       )}
 
-      <div className={`${styles.buySection}`}>
+      <div id="getLionsGems" className={`${styles.buySection}`}>
         <h1
           className={`uppercase text-center pt-[50px] pb-[40px] font-bold text-[55px] sm:text-[45px]`}
           id={"liongems"}
