@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Image from "next/image";
 import SkinModal from "./SkinModal";
 import { SkinsList } from "@/constants/SkinsList";
+import styles from "./Skins.module.scss";
 
 const SkinsBrowser = () => {
   const [isModalOpen, setIsOpenModal] = useState(false);
@@ -10,11 +11,7 @@ const SkinsBrowser = () => {
     <div className={"flex flex-wrap justify-center items-center gap-[20px] my-6 py-20"}>
       {SkinsList.map((skin) => (
         <div
-          className="flex flex-wrap w-3/12 lg:w-5/12 md:w-6/12 sm:w-11/12 justify-center items-center rounded-3xl p-2"
-          style={{
-            backgroundImage:
-              "linear-gradient(to bottom, #e5c05f 10%, #b28b4b 40%, rgba(255, 233, 212, 0.1019607843) 85%, transparent 89%)",
-          }}
+          className={`flex flex-wrap w-3/12 lg:w-5/12 md:w-6/12 sm:w-11/12 justify-center items-center rounded-3xl p-2 ${styles.gradientBackground}`}
         >
           <div
             className="cursor-zoom-in flex flex-wrap justify-center items-center bg-gradient-to-b from-indigo-900 to-gray-900 p-4  rounded-3xl"
