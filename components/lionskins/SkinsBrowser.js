@@ -8,7 +8,7 @@ const SkinsBrowser = () => {
   const [isModalOpen, setIsOpenModal] = useState(false);
   const [data, setData] = useState(null);
   return (
-    <div className={"flex flex-wrap justify-center items-center gap-[20px] my-6 py-20"}>
+    <div className={"flex flex-wrap justify-center items-center gap-[20px]  py-20"}>
       {SkinsList.map((skin) => (
         <div
           className={`flex flex-wrap w-3/12 lg:w-5/12 md:w-6/12 sm:w-11/12 justify-center items-center rounded-3xl p-2 ${styles.gradientBackground}`}
