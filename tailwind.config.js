@@ -32,6 +32,9 @@ module.exports = {
       lg: { max: "1023px" },
       // => @media (max-width: 1023px) { ... }
 
+      mdlg: { max: "967px" },
+      // => @media (max-width: 967px) { ... }
+
       md: { max: "767px" },
       // => @media (max-width: 767px) { ... }
 
@@ -40,15 +43,6 @@ module.exports = {
 
       ex_sm: { max: "325px" },
       // => @media (max-width: 325px) { ... }
-    },
-    borderRadius: {
-      DEFAULT: "0px",
-      sm: "5px",
-      md: "7.5px",
-      lg: "10px",
-      xl: "20px",
-      "2xl": "30px",
-      "3xl": "50px",
     },
     borderWidth: {
       DEFAULT: "0.5px",

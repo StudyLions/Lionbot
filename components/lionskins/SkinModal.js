@@ -224,12 +224,18 @@ const SkinModal = (props) => {
             </div>
           </div>
         </div>
-        <button
-          className="w-2/12 sm:w-6/12 absolute sm:bottom-0 bottom-100 left-0 sm:left-auto lg:fixed bg-red-500 h-[36px] rounded-3xl uppercase font-bold hover:bg-red-700"
+        <div
+          className="absolute mdlg:fixed mdlg:bg-indigo-400 mdlg:p-2 mdlg:rounded-md right-5 top-2 cursor-pointer"
           onClick={() => props.closeModal()}
         >
-          Close Modal
-        </button>
+          <Image
+            src={require("@/public/icons/close-white.svg")}
+            alt="Close icon"
+            height={16}
+            width={16}
+            objectFit="contain"
+          />
+        </div>
       </div>
       {/* </div> */}
     </div>
