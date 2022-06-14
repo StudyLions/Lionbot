@@ -11,3 +11,4 @@ const SkinsHeader = () => {
 };
 
 export default SkinsHeader;
+
