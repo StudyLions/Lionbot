@@ -4,7 +4,7 @@ import { PrivacyPolicySEO } from "@/constants/SeoData";
 export default function PrivacyPolicy() {
   return (
     <Layout SEO={PrivacyPolicySEO}>
-      <div className="container py-4">
+      <div className="container p-4">
         <h1 className="text-3xl mb-4">Privacy Policy:</h1>
         <p className="my-2 leading-6">
           We know you care about your personal information and we take your privacy seriously. Please read the following

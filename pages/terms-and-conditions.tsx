@@ -4,7 +4,7 @@ import { TermsAndConditionsSEO } from "@/constants/SeoData";
 export default function TermsAndConditions() {
   return (
     <Layout SEO={TermsAndConditionsSEO}>
-      <div className="container flex flex-wrap flex-col">
+      <div className="container p-4 flex flex-wrap flex-col">
         <h1 className="text-3xl my-4">
           Welcome to “LionBot.org”. Please read on to learn the rules and restrictions that govern your use of our
           website(s), products, services, proprietary bots, as well as any related services on which these Terms appear:
