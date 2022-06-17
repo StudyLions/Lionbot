@@ -24,7 +24,12 @@ export const StudySEO = {
   description: "Study Description",
 };
 
-export const TermsAndConditionsSEO = {
+export const PrivacyPolicySEO = {
+  title: "Privacy Policy",
+  description:
+    "We know you care about your personal information and we take your privacy seriously. Please read the following to learn more about our Privacy Policy.",
+};
+  export const TermsAndConditionsSEO = {
   title: "Terms and Conditions",
   description:
     "Welcome to “LionBot.org”. Please read on to learn the rules and restrictions that govern your use of our website(s), products, services, proprietary bots, as well as any related services on which these Terms appear: Such as our Discord, Anki addon, Desktop widgets and mobile applications",

@@ -49,8 +49,8 @@ export const LegalItems = [
   {
     title: "Privacy Policy",
     link: {
-      href: "https://bot.studylions.com/privacy-policy/",
-      target: "_blank",
+      href: NavigationPaths.privacyPolicy,
+      target: "",
     },
   },
   {
