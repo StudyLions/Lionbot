@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./Liongems.module.scss";
 import { IButton } from "@/models/button";
 import Button from "@/components/Button";
+import Image from "next/image";
 
 import star_red from "@/public/icons/star-red.svg";
 import diamond_red from "@/public/icons/diamond-red.svg";
@@ -27,7 +28,7 @@ let buttonsList: Array<IButton> = [
       src: magnifying_glass,
     },
     label: "Browse skins",
-    href: "/coming-soon",
+    href: "/skins",
   },
 ];
 
@@ -35,12 +36,13 @@ const LionGemsHeader = () => {
   return (
     <div className={`flex flex-col justify-center pt-[150px] md:pt-[30px]`}>
       <div className={`flex flex-row gap-[30px] md:flex-col ${styles.section}`}>
-        <img
+        <Image
           className={"object-contain h-[400px] lg:h-[320px]"}
-          src="https://cdn.discord.study/images/Group+222.png"
+          src={require("@/public/images/pages/donate/lionbot_profile.webp")}
           alt="February collection image"
           loading={"lazy"}
-          height={400}
+          width={500}
+          height={500}
         />
         <div className={"flex items-start justify-center md:ml-5 sm:ml-0 flex-col"}>
           <h1 className={`uppercase text-[50px] font-bold text-amber-400`}>Support us</h1>

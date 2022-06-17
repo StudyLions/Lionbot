@@ -1,5 +1,5 @@
 export interface IDonationItem {
-  id: string,
+  id: string;
   amount: number;
   tokens: number;
   tokens_bonus: number;
@@ -7,6 +7,7 @@ export interface IDonationItem {
 }
 
 export interface IBasket {
-  id: string,
-  quantity: number
+  id: string;
+  quantity: number;
 }
+

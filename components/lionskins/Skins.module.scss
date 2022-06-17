@@ -1,0 +1,12 @@
+.gradientBackground {
+  &:hover {
+    background-image: linear-gradient(
+      to bottom,
+      #e5c05f 10%,
+      #b28b4b 40%,
+      rgba(255, 233, 212, 0.1019607843) 85%,
+      transparent 89%
+    );
+  }
+}
+
