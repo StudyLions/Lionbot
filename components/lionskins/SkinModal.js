@@ -225,7 +225,7 @@ const SkinModal = (props) => {
           </div>
         </div>
         <div
-          className="absolute mdlg:fixed mdlg:bg-indigo-400 mdlg:p-2 mdlg:rounded-md right-5 top-2 cursor-pointer"
+          className="absolute mdlg:fixed mdlg:bg-indigo-400 mdlg:p-2 mdlg:rounded-md right-5 top-3 cursor-pointer"
           onClick={() => props.closeModal()}
         >
           <Image
