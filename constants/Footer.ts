@@ -63,7 +63,7 @@ export const LegalItems = [
   {
     title: "Refund Policy",
     link: {
-      href: "/coming-soon",
+      href: NavigationPaths.termsAndConditions,
       target: "",
     },
   },
