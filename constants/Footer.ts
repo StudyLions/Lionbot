@@ -49,21 +49,21 @@ export const LegalItems = [
   {
     title: "Privacy Policy",
     link: {
-      href: "https://bot.studylions.com/privacy-policy/",
-      target: "_blank",
+      href: NavigationPaths.privacyPolicy,
+      target: "",
     },
   },
   {
-    title: "Terms of use",
+    title: "Terms and Conditions",
     link: {
-      href: "https://bot.studylions.com/terms-of-use/",
-      target: "_blank",
+      href: NavigationPaths.termsAndConditions,
+      target: "",
     },
   },
   {
     title: "Refund Policy",
     link: {
-      href: "/coming-soon",
+      href: NavigationPaths.termsAndConditions,
       target: "",
     },
   },

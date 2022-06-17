@@ -59,7 +59,7 @@ export default function LionGemsBuySection() {
         />
       )}
 
-      <div className={`${styles.buySection}`}>
+      <div id="getLionsGems" className={`${styles.buySection}`}>
         <h1
           className={`uppercase text-center pt-[50px] pb-[40px] font-bold text-[55px] sm:text-[45px]`}
           id={"liongems"}
@@ -95,7 +95,7 @@ export default function LionGemsBuySection() {
                   +{numberWithCommas(donationItem.tokens_bonus)} bonus
                 </p>
                 <a
-                  className={`rounded-full block text-2xl mx-5 mb-5 text-center py-1 font-bold bg-red20 hover:bg-red04`}
+                  className={`rounded-3xl block text-2xl mx-5 mb-5 text-center py-1 font-bold bg-red20 hover:bg-red04`}
                 >
                   €{donationItem.amount}
                 </a>
@@ -112,7 +112,7 @@ export default function LionGemsBuySection() {
             ✨To gift LionGems, use the <span className={"text-[#ffd469]"}>!gift</span> command✨
           </p>
           <div className={"mt-[30px]"}>
-            <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/coming-soon"} />
+            <Button image={magnifying_glass} label={"BROWSE SKINS"} href={"/skins"} />
           </div>
         </div>
       </div>

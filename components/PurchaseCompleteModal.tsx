@@ -30,7 +30,7 @@ export function PurchaseCompleteModal(props: IProps) {
             The Gems will be added to your account in the next 24 hours. Make sure to open your DM on Discord
           </p>
           <div className="flex justify-between gap-[20px] mt-[20px] px-[37px] ex_sm:flex-col md:pb-[20px]">
-            <Link href={"/coming-soon"}>
+            <Link href={"/skins"}>
               <a className="alignCenter w-full bg-blue0 h-[36px] rounded-2xl uppercase font-bold hover:bg-blue1">
                 Browse skins
               </a>
