@@ -29,3 +29,8 @@ export const TermsAndConditionsSEO = {
   description:
     "Welcome to “LionBot.org”. Please read on to learn the rules and restrictions that govern your use of our website(s), products, services, proprietary bots, as well as any related services on which these Terms appear: Such as our Discord, Anki addon, Desktop widgets and mobile applications",
 };
+
+  export const SkinsSEO = {
+  title: "Lionbot Skins",
+  description: "View all Colored skins we have built for your server or personal use.",
+};

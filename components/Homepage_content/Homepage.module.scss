@@ -1,9 +1,9 @@
-@use 'public/styles/mixinHelper';
+@use "public/styles/mixinHelper";
 @use "public/styles/globalVariables";
 @use "public/styles/animations";
 
 .container {
-  background: linear-gradient(178.04deg, #323979 -1.07%, #171827 31.1%, #111A3C 73.88%, #000000 107.69%);
+  background: linear-gradient(178.04deg, #323979 -1.07%, #171827 31.1%, #111a3c 73.88%, #000000 107.69%);
 }
 
 .section {
@@ -15,7 +15,7 @@
   background: globalVariables.$color-13;
   margin: 0 auto;
 
-  @include mixinHelper.tabletResponsive{
+  @include mixinHelper.tabletResponsive {
     background: unset;
   }
 
@@ -24,7 +24,7 @@
     left: 20%;
     top: 10%;
 
-    @include mixinHelper.tabletResponsive{
+    @include mixinHelper.tabletResponsive {
       position: unset;
       padding: 0 30px;
       text-align: center;
@@ -39,7 +39,7 @@
       color: globalVariables.$color-8;
       max-width: 400px;
 
-      @include mixinHelper.tabletResponsive{
+      @include mixinHelper.tabletResponsive {
         font-size: 35px;
         max-width: unset;
         text-align: center;
@@ -57,7 +57,7 @@
       line-height: 32px;
       color: globalVariables.$color-0;
 
-      @include mixinHelper.tabletResponsive{
+      @include mixinHelper.tabletResponsive {
         margin: 0 auto 30px;
         max-width: 800px;
       }
@@ -66,7 +66,7 @@
     .addToServerButton {
       position: relative;
       top: 20px;
-      background: #BD4949;;
+      background: #bd4949;
       box-sizing: border-box;
       border-radius: 42.5px;
       padding: 12px 21px;
@@ -76,8 +76,8 @@
       line-height: 41px;
       color: white;
       cursor: pointer;
-      
-      @include mixinHelper.tabletResponsive{
+
+      @include mixinHelper.tabletResponsive {
         position: unset;
       }
     }
@@ -94,7 +94,7 @@
     gap: 0 50px;
     min-height: 500px;
 
-    @include mixinHelper.tabletResponsive{
+    @include mixinHelper.tabletResponsive {
       flex-direction: column !important;
       align-items: center;
       padding: 60px 10px 1rem;
@@ -110,7 +110,6 @@
         width: 100%;
         padding: 0 30px;
       }
-
 
       .title_card h3 {
         text-align: left;
@@ -136,7 +135,6 @@
       }
     }
 
-
     .card_image {
       @include mixinHelper.center-content;
       margin-bottom: 20px;
@@ -156,7 +154,7 @@
     .card {
       flex-direction: row-reverse;
 
-      @include mixinHelper.mobileResponsive{
+      @include mixinHelper.mobileResponsive {
         flex-direction: unset;
       }
     }
@@ -179,7 +177,7 @@
     font-size: 58px;
     line-height: 40px;
     text-transform: uppercase;
-    color: #FFFFFF;
+    color: #ffffff;
     padding-top: 150px;
     padding-bottom: 74px;
   }
@@ -191,7 +189,7 @@
     min-height: 220px;
     gap: 0 68px;
 
-    @include mixinHelper.tabletResponsive{
+    @include mixinHelper.tabletResponsive {
       flex-wrap: wrap;
     }
 
@@ -200,12 +198,13 @@
       flex-direction: column;
       text-align: center;
       width: 250px;
-      @include mixinHelper.tabletResponsive{
+      @include mixinHelper.tabletResponsive {
         height: 250px;
       }
 
       img {
-        width: 168px;
+        width: 150px;
+        padding: 10px !important;
       }
 
       p {
@@ -219,15 +218,15 @@
         font-size: 20px;
         color: globalVariables.$color-0;
         bottom: -25px;
-        
-        @include mixinHelper.tabletResponsive{
+
+        @include mixinHelper.tabletResponsive {
           position: unset;
         }
       }
     }
 
     .server:hover {
-      img{
+      img {
         width: 180px;
         @include animations.zoomInAnimation(1s);
       }
@@ -245,7 +244,7 @@
   gap: 0 78px;
   margin-top: 150px;
 
-  @include mixinHelper.tabletResponsive{
+  @include mixinHelper.tabletResponsive {
     flex-wrap: wrap;
     gap: 30px;
     margin-bottom: 30px;
@@ -255,7 +254,7 @@
     @include mixinHelper.center-content;
     width: 200px;
     height: 200px;
-    background: #FFFFFF;
+    background: #ffffff;
     border-radius: 27px;
     color: globalVariables.$color-12;
 
@@ -265,7 +264,7 @@
     text-align: center;
   }
 
-  .name_counter{
+  .name_counter {
     margin-top: 20px;
     text-align: center;
   }
@@ -278,7 +277,7 @@
   flex-direction: column;
   margin: 200px auto 0;
 
-  @include mixinHelper.mobileResponsive{
+  @include mixinHelper.mobileResponsive {
     margin-top: 100px;
     padding: 0 30px;
   }
@@ -291,7 +290,7 @@
     text-align: center;
     color: globalVariables.$color-8;
 
-    @include mixinHelper.mobileResponsive{
+    @include mixinHelper.mobileResponsive {
       font-size: 35px;
     }
   }
@@ -304,9 +303,9 @@
     font-size: 29px;
     line-height: 47px;
     text-align: center;
-    color: #FFFFFF;
+    color: #ffffff;
 
-    @include mixinHelper.mobileResponsive{
+    @include mixinHelper.mobileResponsive {
       font-size: 20px;
       line-height: 37px;
       margin-top: 30px;
@@ -314,7 +313,7 @@
   }
 
   .inviteTheBot_button {
-    background: #BD4949;
+    background: #bd4949;
     border-radius: 42.5px;
     font-weight: 800;
     font-size: 20px;

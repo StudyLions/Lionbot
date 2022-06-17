@@ -8,7 +8,7 @@ export default function HomepageTopContent() {
       <div className={`${styles.section} ${styles.homepage_top_content}`}>
         <div className={"relative h-[1000px] w-full lg:hidden"}>
           <Image
-            src={"https://cdn.discord.study/images/Homepage_top_image.png"}
+            src={require("@/public/images/pages/homePage/lionbot_banner.webp")}
             alt={"Homepage_content top image."}
             layout={"fill"}
             objectFit={"cover"}
