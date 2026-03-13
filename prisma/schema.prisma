@@ -1,0 +1,1158 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model app_config {
+  appname    String      @id
+  created_at DateTime    @default(now()) @db.Timestamptz(6)
+  bot_config bot_config?
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model autoroles {
+  guildid BigInt
+  roleid  BigInt
+
+  @@index([guildid], map: "autoroles_guilds")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model bot_autoroles {
+  guildid BigInt
+  roleid  BigInt
+
+  @@index([guildid], map: "bot_autoroles_guilds")
+  @@ignore
+}
+
+model bot_config {
+  appname                     String                       @id
+  sponsor_prompt              String?
+  sponsor_message             String?
+  default_skin                String?
+  app_config                  app_config                   @relation(fields: [appname], references: [appname], onDelete: Cascade, onUpdate: NoAction)
+  bot_config_experience_rates bot_config_experience_rates?
+  bot_config_presence         bot_config_presence?
+  shard_data                  shard_data[]
+}
+
+model bot_config_experience_rates {
+  appname          String     @id
+  period_length    Int?
+  xp_per_period    Int?
+  xp_per_centiword Int?
+  bot_config       bot_config @relation(fields: [appname], references: [appname], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model bot_config_presence {
+  appname       String        @id
+  online_status onlinestatus?
+  activity_type activitytype?
+  activity_name String?
+  bot_config    bot_config    @relation(fields: [appname], references: [appname], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model channel_webhooks {
+  channelid BigInt @id
+  webhookid BigInt
+  token     String
+}
+
+model coin_transactions {
+  transactionid                                                                             Int                               @id @default(autoincrement())
+  transactiontype                                                                           cointransactiontype
+  guildid                                                                                   BigInt
+  actorid                                                                                   BigInt
+  amount                                                                                    Int
+  bonus                                                                                     Int                               @default(0)
+  from_account                                                                              BigInt?
+  to_account                                                                                BigInt?
+  refunds                                                                                   Int?
+  created_at                                                                                DateTime                          @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamptz(6)
+  guild_config                                                                              guild_config                      @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions                                                                         coin_transactions?                @relation("coin_transactionsTocoin_transactions", fields: [refunds], references: [transactionid], onUpdate: NoAction)
+  other_coin_transactions                                                                   coin_transactions[]               @relation("coin_transactionsTocoin_transactions")
+  coin_transactions_admin_actions                                                           coin_transactions_admin_actions[]
+  coin_transactions_shop                                                                    coin_transactions_shop?
+  coin_transactions_tasks                                                                   coin_transactions_tasks?
+  member_experience                                                                         member_experience[]
+  member_inventory                                                                          member_inventory[]
+  role_menu_history                                                                         role_menu_history[]
+  schedule_session_members_schedule_session_members_book_transactionidTocoin_transactions   schedule_session_members[]        @relation("schedule_session_members_book_transactionidTocoin_transactions")
+  schedule_session_members_schedule_session_members_reward_transactionidTocoin_transactions schedule_session_members[]        @relation("schedule_session_members_reward_transactionidTocoin_transactions")
+  voice_sessions                                                                            voice_sessions[]
+
+  @@index([guildid], map: "coin_transaction_guilds")
+}
+
+model coin_transactions_admin_actions {
+  actionid              Int
+  transactionid         Int
+  economy_admin_actions economy_admin_actions @relation(fields: [actionid], references: [actionid], onDelete: NoAction, onUpdate: NoAction)
+  coin_transactions     coin_transactions     @relation(fields: [transactionid], references: [transactionid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([actionid, transactionid])
+  @@index([transactionid], map: "coin_transactions_admin_actions_transactionid")
+}
+
+model coin_transactions_shop {
+  transactionid     Int               @id
+  itemid            Int
+  shop_items        shop_items        @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions coin_transactions @relation(fields: [transactionid], references: [transactionid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model coin_transactions_tasks {
+  transactionid     Int               @id
+  count             Int
+  coin_transactions coin_transactions @relation(fields: [transactionid], references: [transactionid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model customised_skin_properties {
+  custom_skin_id               Int
+  property_id                  Int
+  value                        String
+  customised_skins             customised_skins             @relation(fields: [custom_skin_id], references: [custom_skin_id], onDelete: NoAction, onUpdate: NoAction)
+  customised_skin_property_ids customised_skin_property_ids @relation(fields: [property_id], references: [property_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([custom_skin_id, property_id])
+  @@index([custom_skin_id], map: "customised_skin_property_skin_id")
+}
+
+model customised_skin_property_ids {
+  property_id                Int                          @id @default(autoincrement())
+  card_id                    String
+  property_name              String
+  customised_skin_properties customised_skin_properties[]
+
+  @@unique([card_id, property_name])
+}
+
+model customised_skins {
+  custom_skin_id             Int                          @id @default(autoincrement())
+  base_skin_id               Int?
+  timestamp                  DateTime?                    @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  customised_skin_properties customised_skin_properties[]
+  global_available_skins     global_available_skins?      @relation(fields: [base_skin_id], references: [skin_id], onDelete: NoAction, onUpdate: NoAction)
+  premium_guilds             premium_guilds[]
+  user_skin_inventory        user_skin_inventory[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model donator_roles {
+  guildid BigInt
+  roleid  BigInt
+
+  @@index([guildid], map: "donator_roles_guilds")
+  @@ignore
+}
+
+model economy_admin_actions {
+  actionid                        Int                               @id @default(autoincrement())
+  target_type                     econadmintarget
+  action_type                     econadminaction
+  targetid                        Int
+  amount                          Int
+  coin_transactions_admin_actions coin_transactions_admin_actions[]
+}
+
+model gem_transactions {
+  transactionid               Int                           @id @default(autoincrement())
+  transaction_type            gemtransactiontype
+  actorid                     BigInt
+  from_account                BigInt?
+  to_account                  BigInt?
+  amount                      Int
+  description                 String
+  note                        String?
+  reference                   String?
+  timestamp                   DateTime?                     @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  premium_guild_contributions premium_guild_contributions[]
+  user_skin_inventory         user_skin_inventory[]
+
+  @@index([from_account], map: "gem_transactions_from")
+}
+
+model global_available_skins {
+  skin_id          Int                @id @default(autoincrement())
+  skin_name        String
+  customised_skins customised_skins[]
+
+  @@index([skin_name], map: "global_available_skin_names")
+}
+
+model global_guild_blacklist {
+  guildid    BigInt    @id
+  ownerid    BigInt
+  reason     String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model global_user_blacklist {
+  userid     BigInt    @id
+  ownerid    BigInt
+  reason     String
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model guild_config {
+  guildid                 BigInt                    @id
+  admin_role              BigInt?
+  mod_role                BigInt?
+  event_log_channel       BigInt?
+  mod_log_channel         BigInt?
+  alert_channel           BigInt?
+  studyban_role           BigInt?
+  min_workout_length      Int?
+  workout_reward          Int?
+  max_tasks               Int?
+  task_reward             Int?
+  task_reward_limit       Int?
+  study_hourly_reward     Int?
+  study_hourly_live_bonus Int?
+  renting_price           Int?
+  renting_category        BigInt?
+  renting_cap             Int?
+  renting_role            BigInt?
+  renting_sync_perms      Boolean?
+  accountability_category BigInt?
+  accountability_lobby    BigInt?
+  accountability_bonus    Int?
+  accountability_reward   Int?
+  accountability_price    Int?
+  video_studyban          Boolean?
+  video_grace_period      Int?
+  greeting_channel        BigInt?
+  greeting_message        String?
+  returning_message       String?
+  starting_funds          Int?
+  persist_roles           Boolean?
+  daily_study_cap         Int?
+  pomodoro_channel        BigInt?
+  name                    String?
+  locale                  String?
+  force_locale            Boolean?
+  allow_transfers         Boolean?
+  season_start            DateTime?                 @db.Timestamptz(6)
+  xp_per_period           Int?
+  xp_per_centiword        Int?
+  coins_per_centixp       Int?
+  timezone                String?
+  rank_type               ranktype?
+  rank_channel            BigInt?
+  dm_ranks                Boolean?
+  renting_visible         Boolean?
+  first_joined_at         DateTime?                 @default(now()) @db.Timestamptz(6)
+  left_at                 DateTime?                 @db.Timestamptz(6)
+  coin_transactions       coin_transactions[]
+  members                 members[]
+  msg_ranks               msg_ranks[]
+  premium_guilds          premium_guilds?
+  role_menus              role_menus[]
+  schedule_guild_config   schedule_guild_config?
+  tasklist_channels       tasklist_channels[]       @ignore
+  timers                  timers[]
+  tracked_channels        tracked_channels[]
+  untracked_text_channels untracked_text_channels[]
+  video_exempt_roles      video_exempt_roles[]
+  visible_statistics      visible_statistics[]      @ignore
+  voice_ranks             voice_ranks[]
+  xp_ranks                xp_ranks[]
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model ignored_members {
+  guildid BigInt
+  userid  BigInt
+
+  @@index([guildid], map: "ignored_member_guilds")
+  @@ignore
+}
+
+model member_experience {
+  member_expid      BigInt             @id @default(autoincrement())
+  guildid           BigInt
+  userid            BigInt
+  earned_at         DateTime           @default(dbgenerated("(now() AT TIME ZONE 'UTC'::text)")) @db.Timestamptz(6)
+  amount            Int
+  exp_type          experiencetype
+  transactionid     Int?
+  members           members            @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions coin_transactions? @relation(fields: [transactionid], references: [transactionid], onUpdate: NoAction)
+  text_sessions     text_sessions[]
+
+  @@index([guildid, earned_at], map: "member_experience_guilds")
+  @@index([guildid, userid, earned_at], map: "member_experience_members")
+}
+
+model member_inventory {
+  inventoryid       Int                @id @default(autoincrement())
+  transactionid     Int?
+  guildid           BigInt
+  userid            BigInt
+  itemid            Int
+  shop_items        shop_items         @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions coin_transactions? @relation(fields: [transactionid], references: [transactionid], onUpdate: NoAction)
+
+  @@index([guildid, userid], map: "member_inventory_members")
+}
+
+model member_monthly_goal_tasks {
+  taskid               Int                  @id @default(autoincrement())
+  guildid              BigInt
+  userid               BigInt
+  monthid              Int
+  content              String
+  completed            Boolean              @default(false)
+  timestamp            DateTime?            @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  member_monthly_goals member_monthly_goals @relation(fields: [monthid, guildid, userid], references: [monthid, guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, userid, monthid], map: "member_monthly_goal_tasks_members_monthly")
+}
+
+model member_monthly_goals {
+  guildid                   BigInt
+  userid                    BigInt
+  monthid                   Int
+  study_goal                Int?
+  task_goal                 Int?
+  review_goal               Int?
+  message_goal              Int?
+  timestamp                 DateTime?                   @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  member_monthly_goal_tasks member_monthly_goal_tasks[]
+  members                   members                     @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guildid, userid, monthid])
+  @@index([guildid, userid], map: "member_monthly_goals_members")
+}
+
+model member_profile_tags {
+  tagid     Int       @id @default(autoincrement())
+  guildid   BigInt
+  userid    BigInt
+  tag       String
+  timestamp DateTime? @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  members   members   @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([guildid, userid], map: "member_profile_tags_members")
+}
+
+model member_ranks {
+  guildid              BigInt
+  userid               BigInt
+  current_xp_rankid    Int?
+  current_voice_rankid Int?
+  current_msg_rankid   Int?
+  last_roleid          BigInt?
+  msg_ranks            msg_ranks?   @relation(fields: [current_msg_rankid], references: [rankid], onUpdate: NoAction)
+  voice_ranks          voice_ranks? @relation(fields: [current_voice_rankid], references: [rankid], onUpdate: NoAction)
+  xp_ranks             xp_ranks?    @relation(fields: [current_xp_rankid], references: [rankid], onUpdate: NoAction)
+  members              members      @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([guildid, userid])
+}
+
+model member_weekly_goal_tasks {
+  taskid              Int                 @id @default(autoincrement())
+  guildid             BigInt
+  userid              BigInt
+  weekid              Int
+  content             String
+  completed           Boolean             @default(false)
+  timestamp           DateTime?           @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  member_weekly_goals member_weekly_goals @relation(fields: [weekid, guildid, userid], references: [weekid, guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, userid, weekid], map: "member_weekly_goal_tasks_members_weekly")
+}
+
+model member_weekly_goals {
+  guildid                  BigInt
+  userid                   BigInt
+  weekid                   Int
+  study_goal               Int?
+  task_goal                Int?
+  review_goal              Int?
+  message_goal             Int?
+  timestamp                DateTime?                  @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  member_weekly_goal_tasks member_weekly_goal_tasks[]
+  members                  members                    @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guildid, userid, weekid])
+  @@index([guildid, userid], map: "member_weekly_goals_members")
+}
+
+model members {
+  guildid                  BigInt
+  userid                   BigInt
+  tracked_time             Int?                       @default(0)
+  coins                    Int?                       @default(0)
+  workout_count            Int?                       @default(0)
+  revision_mute_count      Int?                       @default(0)
+  last_workout_start       DateTime?                  @db.Timestamp(6)
+  last_study_badgeid       Int?
+  video_warned             Boolean?                   @default(false)
+  display_name             String?
+  first_joined             DateTime?                  @default(now()) @db.Timestamptz(6)
+  last_left                DateTime?                  @db.Timestamptz(6)
+  timestamp                DateTime?                  @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @map("_timestamp") @db.Timestamp(6)
+  member_experience        member_experience[]
+  member_monthly_goals     member_monthly_goals[]
+  member_profile_tags      member_profile_tags[]
+  member_ranks             member_ranks?
+  member_weekly_goals      member_weekly_goals[]
+  guild_config             guild_config               @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction, map: "fk_members_guilds")
+  user_config              user_config                @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction, map: "fk_members_users")
+  study_badges             study_badges?              @relation(fields: [last_study_badgeid], references: [badgeid], onUpdate: NoAction)
+  past_member_roles        past_member_roles[]        @ignore
+  rented_rooms             rented_rooms[]
+  schedule_session_members schedule_session_members[]
+  season_stats             season_stats?
+  text_sessions            text_sessions[]
+  voice_sessions           voice_sessions[]
+  voice_sessions_ongoing   voice_sessions_ongoing?
+
+  @@id([guildid, userid])
+  @@index([timestamp], map: "member_timestamps")
+}
+
+model msg_ranks {
+  rankid       Int            @id @default(autoincrement())
+  roleid       BigInt         @unique(map: "msg_ranks_roleid")
+  guildid      BigInt
+  required     Int
+  reward       Int
+  message      String?
+  member_ranks member_ranks[]
+  guild_config guild_config   @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, required], map: "msg_ranks_guild_required")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model past_member_roles {
+  guildid   BigInt
+  userid    BigInt
+  roleid    BigInt
+  timestamp DateTime? @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  members   members   @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([guildid, userid], map: "member_role_persistence_members")
+  @@ignore
+}
+
+model premium_guild_contributions {
+  contributionid   Int               @id @default(autoincrement())
+  userid           BigInt
+  guildid          BigInt
+  transactionid    Int?
+  duration         Int
+  timestamp        DateTime?         @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  premium_guilds   premium_guilds    @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+  gem_transactions gem_transactions? @relation(fields: [transactionid], references: [transactionid], onDelete: NoAction, onUpdate: NoAction)
+  user_config      user_config       @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model premium_guilds {
+  guildid                     BigInt                        @id
+  premium_since               DateTime                      @default(now()) @db.Timestamptz(6)
+  premium_until               DateTime                      @default(now()) @db.Timestamptz(6)
+  custom_skin_id              Int?
+  premium_guild_contributions premium_guild_contributions[]
+  customised_skins            customised_skins?             @relation(fields: [custom_skin_id], references: [custom_skin_id], onDelete: NoAction, onUpdate: NoAction)
+  guild_config                guild_config                  @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model reminders {
+  reminderid   Int         @id @default(autoincrement())
+  userid       BigInt
+  remind_at    DateTime    @db.Timestamptz(6)
+  content      String
+  message_link String?
+  interval     Int?
+  failed       Boolean?
+  created_at   DateTime?   @default(now()) @db.Timestamptz(6)
+  title        String?
+  footer       String?
+  user_config  user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid], map: "reminder_users")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model rented_members {
+  channelid    BigInt
+  userid       BigInt
+  rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([channelid], map: "rented_members_channels")
+  @@index([userid], map: "rented_members_users")
+  @@ignore
+}
+
+model rented_rooms {
+  channelid      BigInt           @id
+  guildid        BigInt
+  ownerid        BigInt
+  created_at     DateTime?        @default(now()) @db.Timestamptz(6)
+  deleted_at     DateTime?        @db.Timestamptz(6)
+  coin_balance   Int              @default(0)
+  name           String?
+  last_tick      DateTime?        @db.Timestamptz(6)
+  contribution   Int              @default(0)
+  rented_members rented_members[] @ignore
+  members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, ownerid], map: "rented_owners")
+}
+
+model role_menu_history {
+  equipid           Int                @id @default(autoincrement())
+  menuid            Int
+  roleid            BigInt
+  userid            BigInt
+  obtained_at       DateTime           @db.Timestamptz(6)
+  transactionid     Int?
+  expires_at        DateTime?          @db.Timestamptz(6)
+  removed_at        DateTime?          @db.Timestamptz(6)
+  role_menus        role_menus         @relation(fields: [menuid], references: [menuid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions coin_transactions? @relation(fields: [transactionid], references: [transactionid], onUpdate: NoAction)
+
+  @@index([menuid], map: "role_menu_history_menuid")
+  @@index([roleid], map: "role_menu_history_roleid")
+}
+
+model role_menu_roles {
+  menuroleid  Int        @id @default(autoincrement())
+  menuid      Int
+  roleid      BigInt
+  label       String
+  emoji       String?
+  description String?
+  price       Int?
+  duration    Int?
+  rawreply    String?
+  role_menus  role_menus @relation(fields: [menuid], references: [menuid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([menuid], map: "role_menu_roles_menuid")
+  @@index([roleid], map: "role_menu_roles_roleid")
+}
+
+model role_menus {
+  menuid            Int                 @id @default(autoincrement())
+  guildid           BigInt
+  channelid         BigInt?
+  messageid         BigInt?
+  name              String
+  enabled           Boolean             @default(true)
+  required_roleid   BigInt?
+  sticky            Boolean?
+  refunds           Boolean?
+  obtainable        Int?
+  menutype          rolemenutype
+  templateid        Int?
+  rawmessage        String?
+  default_price     Int?
+  event_log         Boolean?
+  role_menu_history role_menu_history[]
+  role_menu_roles   role_menu_roles[]
+  guild_config      guild_config        @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid], map: "role_menu_guildid")
+}
+
+model schedule_channels {
+  guildid               BigInt
+  channelid             BigInt
+  schedule_guild_config schedule_guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guildid, channelid])
+}
+
+model schedule_guild_config {
+  guildid           BigInt              @id
+  schedule_cost     Int?
+  reward            Int?
+  bonus_reward      Int?
+  min_attendance    Int?
+  lobby_channel     BigInt?
+  room_channel      BigInt?
+  blacklist_after   Int?
+  blacklist_role    BigInt?
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  schedule_channels schedule_channels[]
+  guild_config      guild_config        @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+  schedule_sessions schedule_sessions[]
+}
+
+model schedule_session_members {
+  guildid                                                                            BigInt
+  userid                                                                             BigInt
+  slotid                                                                             Int
+  booked_at                                                                          DateTime           @default(now()) @db.Timestamptz(6)
+  attended                                                                           Boolean            @default(false)
+  clock                                                                              Int                @default(0)
+  book_transactionid                                                                 Int?
+  reward_transactionid                                                               Int?
+  coin_transactions_schedule_session_members_book_transactionidTocoin_transactions   coin_transactions? @relation("schedule_session_members_book_transactionidTocoin_transactions", fields: [book_transactionid], references: [transactionid], onDelete: NoAction, onUpdate: NoAction)
+  schedule_sessions                                                                  schedule_sessions  @relation(fields: [guildid, slotid], references: [guildid, slotid], onDelete: Cascade, onUpdate: NoAction)
+  members                                                                            members            @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions_schedule_session_members_reward_transactionidTocoin_transactions coin_transactions? @relation("schedule_session_members_reward_transactionidTocoin_transactions", fields: [reward_transactionid], references: [transactionid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([guildid, userid, slotid])
+  @@index([userid, slotid], map: "schedule_session_members_users")
+}
+
+model schedule_sessions {
+  guildid                  BigInt
+  slotid                   Int
+  opened_at                DateTime?                  @db.Timestamptz(6)
+  closed_at                DateTime?                  @db.Timestamptz(6)
+  messageid                BigInt?
+  created_at               DateTime?                  @default(now()) @db.Timestamptz(6)
+  schedule_session_members schedule_session_members[]
+  schedule_guild_config    schedule_guild_config      @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+  schedule_slots           schedule_slots             @relation(fields: [slotid], references: [slotid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guildid, slotid])
+}
+
+model schedule_slots {
+  slotid            Int                 @id
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  schedule_sessions schedule_sessions[]
+}
+
+model season_stats {
+  guildid       BigInt
+  userid        BigInt
+  voice_stats   Int       @default(0)
+  xp_stats      Int       @default(0)
+  message_stats Int       @default(0)
+  season_start  DateTime? @db.Timestamptz(6)
+  updated_at    DateTime  @default(now()) @db.Timestamptz(6)
+  members       members   @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([guildid, userid])
+}
+
+model shard_data {
+  shardname   String      @id
+  appname     String?
+  shard_id    Int
+  shard_count Int
+  last_login  DateTime?   @db.Timestamptz(6)
+  guild_count Int?
+  bot_config  bot_config? @relation(fields: [appname], references: [appname], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model shop_items {
+  itemid                  Int                      @id @default(autoincrement())
+  guildid                 BigInt
+  item_type               shopitemtype
+  price                   Int
+  purchasable             Boolean?                 @default(true)
+  deleted                 Boolean?                 @default(false)
+  created_at              DateTime?                @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
+  coin_transactions_shop  coin_transactions_shop[]
+  member_inventory        member_inventory[]
+  shop_items_colour_roles shop_items_colour_roles?
+
+  @@index([guildid], map: "guild_shop_items")
+}
+
+model shop_items_colour_roles {
+  itemid     Int        @id
+  roleid     BigInt
+  shop_items shop_items @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model sponsor_guild_whitelist {
+  appid   String
+  guildid BigInt
+
+  @@id([appid, guildid])
+}
+
+model study_badges {
+  badgeid       Int       @id @default(autoincrement())
+  guildid       BigInt
+  roleid        BigInt
+  required_time Int
+  members       members[]
+
+  @@unique([guildid, required_time], map: "study_badge_guilds")
+}
+
+model studyban_durations {
+  rowid    Int    @id @default(autoincrement())
+  guildid  BigInt
+  duration Int
+
+  @@index([guildid], map: "studyban_durations_guilds")
+}
+
+model tasklist {
+  taskid          Int         @id @default(autoincrement())
+  userid          BigInt
+  content         String
+  rewarded        Boolean?    @default(false)
+  deleted_at      DateTime?   @db.Timestamptz(6)
+  completed_at    DateTime?   @db.Timestamptz(6)
+  created_at      DateTime?   @db.Timestamptz(6)
+  last_updated_at DateTime?   @db.Timestamptz(6)
+  parentid        Int?
+  user_config     user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasklist_users")
+  tasklist        tasklist?   @relation("tasklistTotasklist", fields: [parentid], references: [taskid], onUpdate: NoAction)
+  other_tasklist  tasklist[]  @relation("tasklistTotasklist")
+
+  @@index([userid], map: "tasklist_users")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tasklist_channels {
+  guildid      BigInt
+  channelid    BigInt
+  guild_config guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction, map: "fk_tasklist_channels_guilds")
+
+  @@index([guildid], map: "tasklist_channels_guilds")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model tasklist_reward_history {
+  userid       BigInt
+  reward_time  DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
+  reward_count Int?
+
+  @@index([userid, reward_time], map: "tasklist_reward_history_users")
+  @@ignore
+}
+
+model text_sessions {
+  sessionid         BigInt             @id @default(autoincrement())
+  guildid           BigInt
+  userid            BigInt
+  start_time        DateTime           @db.Timestamptz(6)
+  duration          Int
+  messages          Int
+  words             Int
+  periods           Int
+  user_expid        BigInt?
+  member_expid      BigInt?
+  end_time          DateTime?          @default(dbgenerated("((start_time AT TIME ZONE 'UTC'::text) + ((duration)::double precision * '00:00:01'::interval))")) @db.Timestamp(6)
+  members           members            @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+  member_experience member_experience? @relation(fields: [member_expid], references: [member_expid], onDelete: NoAction, onUpdate: NoAction)
+  user_experience   user_experience?   @relation(fields: [user_expid], references: [user_expid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([end_time], map: "text_sessions_end_time")
+  @@index([guildid, userid], map: "text_sessions_members")
+  @@index([start_time], map: "text_sessions_start_time")
+}
+
+model tickets {
+  ticketid        Int         @id @default(autoincrement())
+  guildid         BigInt
+  targetid        BigInt
+  ticket_type     tickettype
+  ticket_state    ticketstate @default(OPEN)
+  moderator_id    BigInt
+  log_msg_id      BigInt?
+  created_at      DateTime?   @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
+  auto            Boolean?    @default(false)
+  content         String?
+  context         String?
+  addendum        String?
+  duration        Int?
+  file_name       String?
+  file_data       Bytes?
+  expiry          DateTime?   @db.Timestamptz(6)
+  pardoned_by     BigInt?
+  pardoned_at     DateTime?   @db.Timestamptz(6)
+  pardoned_reason String?
+
+  @@index([guildid, targetid, ticket_type], map: "tickets_members_types")
+  @@index([ticket_state], map: "tickets_states")
+}
+
+model timers {
+  channelid              BigInt       @id
+  guildid                BigInt
+  notification_channelid BigInt?
+  focus_length           Int
+  break_length           Int
+  last_started           DateTime?    @db.Timestamptz(6)
+  inactivity_threshold   Int?
+  channel_name           String?
+  pretty_name            String?
+  ownerid                BigInt?
+  manager_roleid         BigInt?
+  last_messageid         BigInt?
+  voice_alerts           Boolean?
+  auto_restart           Boolean?
+  guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+  user_config            user_config? @relation(fields: [ownerid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([guildid], map: "timers_guilds")
+}
+
+model topgg {
+  voteid           Int      @id @default(autoincrement())
+  userid           BigInt
+  boostedtimestamp DateTime @db.Timestamptz(6)
+
+  @@index([userid, boostedtimestamp], map: "topgg_userid_timestamp")
+}
+
+model topgg_guild_whitelist {
+  appid   String
+  guildid BigInt
+
+  @@id([appid, guildid])
+}
+
+model tracked_channels {
+  channelid              BigInt                   @id
+  guildid                BigInt
+  deleted                Boolean?                 @default(false)
+  timestamp              DateTime                 @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @map("_timestamp") @db.Timestamptz(6)
+  guild_config           guild_config             @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+  voice_sessions         voice_sessions[]
+  voice_sessions_ongoing voice_sessions_ongoing[]
+
+  @@index([guildid], map: "tracked_channels_guilds")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model unranked_roles {
+  guildid BigInt
+  roleid  BigInt
+
+  @@index([guildid], map: "unranked_roles_guilds")
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model untracked_channels {
+  guildid   BigInt
+  channelid BigInt
+
+  @@index([guildid], map: "untracked_channels_guilds")
+  @@ignore
+}
+
+model untracked_text_channels {
+  channelid    BigInt       @id
+  guildid      BigInt
+  timestamp    DateTime     @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @map("_timestamp") @db.Timestamptz(6)
+  guild_config guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid], map: "untracked_text_channels_guilds")
+}
+
+model user_config {
+  userid                      BigInt                        @id
+  timezone                    String?
+  name                        String?
+  topgg_vote_reminder         Boolean?
+  avatar_hash                 String?
+  api_timestamp               BigInt?
+  gems                        Int?                          @default(0)
+  first_seen                  DateTime?                     @default(now()) @db.Timestamptz(6)
+  last_seen                   DateTime?                     @db.Timestamptz(6)
+  locale_hint                 String?
+  locale                      String?
+  show_global_stats           Boolean?
+  members                     members[]
+  premium_guild_contributions premium_guild_contributions[]
+  reminders                   reminders[]
+  tasklist                    tasklist[]
+  timers                      timers[]
+  user_experience             user_experience[]
+  user_monthly_goals          user_monthly_goals[]
+  user_skin_inventory         user_skin_inventory[]
+  user_weekly_goals           user_weekly_goals[]
+}
+
+model user_experience {
+  user_expid    BigInt          @id @default(autoincrement())
+  userid        BigInt
+  earned_at     DateTime        @default(dbgenerated("(now() AT TIME ZONE 'UTC'::text)")) @db.Timestamptz(6)
+  amount        Int
+  exp_type      experiencetype
+  text_sessions text_sessions[]
+  user_config   user_config     @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid, earned_at], map: "user_experience_users")
+}
+
+model user_monthly_goals {
+  userid       BigInt
+  monthid      Int
+  task_goal    Int?
+  study_goal   Int?
+  review_goal  Int?
+  message_goal Int?
+  timestamp    DateTime?   @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  user_config  user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userid, monthid])
+  @@index([userid], map: "user_monthly_goals_users")
+}
+
+model user_skin_inventory {
+  itemid           Int               @id @default(autoincrement())
+  userid           BigInt
+  custom_skin_id   Int
+  transactionid    Int?
+  active           Boolean           @default(false)
+  acquired_at      DateTime?         @default(now()) @db.Timestamptz(6)
+  expires_at       DateTime?         @db.Timestamptz(6)
+  customised_skins customised_skins  @relation(fields: [custom_skin_id], references: [custom_skin_id], onDelete: Cascade, onUpdate: NoAction)
+  gem_transactions gem_transactions? @relation(fields: [transactionid], references: [transactionid], onDelete: NoAction, onUpdate: NoAction)
+  user_config      user_config       @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid], map: "user_skin_inventory_users")
+}
+
+model user_weekly_goals {
+  userid       BigInt
+  weekid       Int
+  task_goal    Int?
+  study_goal   Int?
+  review_goal  Int?
+  message_goal Int?
+  timestamp    DateTime?   @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  user_config  user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userid, weekid])
+  @@index([userid], map: "user_weekly_goals_users")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model versionhistory {
+  version Int
+  time    DateTime @default(now()) @db.Timestamptz(6)
+  author  String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model video_channels {
+  guildid   BigInt
+  channelid BigInt
+
+  @@index([guildid], map: "video_channels_guilds")
+  @@ignore
+}
+
+model video_exempt_roles {
+  guildid      BigInt
+  roleid       BigInt
+  timestamp    DateTime     @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  guild_config guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade)
+
+  @@id([guildid, roleid])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model visible_statistics {
+  guildid      BigInt
+  stat_type    statistictype
+  guild_config guild_config  @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid], map: "visible_statistics_guilds")
+  @@ignore
+}
+
+model voice_ranks {
+  rankid       Int            @id @default(autoincrement())
+  roleid       BigInt         @unique(map: "voice_ranks_roleid")
+  guildid      BigInt
+  required     Int
+  reward       Int
+  message      String?
+  member_ranks member_ranks[]
+  guild_config guild_config   @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, required], map: "voice_ranks_guild_required")
+}
+
+model voice_sessions {
+  sessionid         Int                @id @default(autoincrement())
+  guildid           BigInt
+  userid            BigInt
+  channelid         BigInt?
+  rating            Int?
+  tag               String?
+  start_time        DateTime           @db.Timestamptz(6)
+  duration          Int
+  live_duration     Int?               @default(0)
+  stream_duration   Int?               @default(0)
+  video_duration    Int?               @default(0)
+  transactionid     Int?
+  tracked_channels  tracked_channels?  @relation(fields: [channelid], references: [channelid], onDelete: NoAction, onUpdate: NoAction)
+  members           members            @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+  coin_transactions coin_transactions? @relation(fields: [transactionid], references: [transactionid], onDelete: Cascade)
+
+  @@index([guildid, start_time], map: "voice_session_guild_time")
+  @@index([guildid, userid, start_time], map: "voice_session_members")
+  @@index([userid, start_time], map: "voice_session_user_time")
+}
+
+model voice_sessions_ongoing {
+  guildid          BigInt
+  userid           BigInt
+  channelid        BigInt?
+  rating           Int?
+  tag              String?
+  start_time       DateTime?         @default(dbgenerated("(now() AT TIME ZONE 'UTC'::text)")) @db.Timestamptz(6)
+  live_duration    Int               @default(0)
+  video_duration   Int               @default(0)
+  stream_duration  Int               @default(0)
+  coins_earned     Int               @default(0)
+  last_update      DateTime?         @default(dbgenerated("(now() AT TIME ZONE 'UTC'::text)")) @db.Timestamptz(6)
+  live_stream      Boolean           @default(false)
+  live_video       Boolean           @default(false)
+  hourly_coins     Float             @default(0)
+  tracked_channels tracked_channels? @relation(fields: [channelid], references: [channelid], onDelete: NoAction, onUpdate: NoAction)
+  members          members           @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([guildid, userid], map: "voice_sessions_ongoing_members")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model workout_channels {
+  guildid   BigInt
+  channelid BigInt
+
+  @@index([guildid], map: "workout_channels_guilds")
+  @@ignore
+}
+
+model workout_sessions {
+  sessionid  Int       @id @default(autoincrement())
+  guildid    BigInt
+  userid     BigInt
+  start_time DateTime? @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
+  duration   Int?
+  channelid  BigInt?
+
+  @@index([guildid, userid], map: "workout_sessions_members")
+}
+
+model xp_ranks {
+  rankid       Int            @id @default(autoincrement())
+  roleid       BigInt         @unique(map: "xp_ranks_roleid")
+  guildid      BigInt
+  required     Int
+  reward       Int
+  message      String?
+  member_ranks member_ranks[]
+  guild_config guild_config   @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid, required], map: "xp_ranks_guild_required")
+}
+
+enum activitytype {
+  PLAYING
+  WATCHING
+  LISTENING
+  STREAMING
+}
+
+enum cointransactiontype {
+  REFUND
+  TRANSFER
+  SHOP_PURCHASE
+  VOICE_SESSION
+  TEXT_SESSION
+  ADMIN
+  TASKS
+  SCHEDULE_BOOK
+  SCHEDULE_REWARD
+  OTHER
+}
+
+enum econadminaction {
+  SET
+  ADD
+}
+
+enum econadmintarget {
+  ROLE
+  USER
+  GUILD
+}
+
+enum experiencetype {
+  VOICE_XP
+  TEXT_XP
+  QUEST_XP
+  ACHIEVEMENT_XP
+  BONUS_XP
+}
+
+enum gemtransactiontype {
+  ADMIN
+  GIFT
+  PURCHASE
+  AUTOMATIC
+}
+
+enum onlinestatus {
+  ONLINE
+  IDLE
+  DND
+  OFFLINE
+}
+
+enum ranktype {
+  XP
+  VOICE
+  MESSAGE
+}
+
+enum rolemenutype {
+  REACTION
+  BUTTON
+  DROPDOWN
+}
+
+enum sessionchanneltype {
+  STANDARD
+  ACCOUNTABILITY
+  RENTED
+  EXTERNAL
+}
+
+enum shopitemtype {
+  COLOUR_ROLE
+}
+
+enum statistictype {
+  VOICE
+  TEXT
+  ANKI
+}
+
+enum ticketstate {
+  OPEN
+  EXPIRING
+  EXPIRED
+  PARDONED
+}
+
+enum tickettype {
+  NOTE
+  STUDY_BAN
+  MESSAGE_CENSOR
+  INVITE_CENSOR
+  WARNING
+}

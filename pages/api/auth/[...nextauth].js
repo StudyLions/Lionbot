@@ -9,7 +9,10 @@ export default NextAuth({
     DiscordProvider({
       clientId: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      authorization: {params: {scope: 'identify email'}},
+      // --- AI-MODIFIED (2026-03-13) ---
+      // Purpose: added 'guilds' scope for dashboard server list
+      authorization: {params: {scope: 'identify email guilds'}},
+      // --- END AI-MODIFIED ---
     })
   ],
   // The secret should be set to a reasonably long random string.
@@ -59,12 +62,21 @@ export default NextAuth({
   // Callbacks are asynchronous functions you can use to control what happens
   // when an action is performed.
   // https://next-auth.js.org/configuration/callbacks
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: expose Discord user ID in the session for dashboard API routes
   callbacks: {
-    // async signIn({ user, account, profile, email, credentials }) { return true },
-    // async redirect({ url, baseUrl }) { return baseUrl },
-    // async session({ session, token, user }) { return session },
-    // async jwt({ token, user, account, profile, isNewUser }) { return token }
+    async jwt({ token, account, profile }) {
+      if (account) {
+        token.discordId = account.providerAccountId;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      session.discordId = token.discordId;
+      return session;
+    },
   },
+  // --- END AI-MODIFIED ---
 
   // Events are useful for logging
   // https://next-auth.js.org/configuration/events

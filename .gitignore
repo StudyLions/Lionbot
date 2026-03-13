@@ -111,3 +111,4 @@ dist
 .idea
 /.server_hetzner/
 package-lock.json
+/generated/prisma
