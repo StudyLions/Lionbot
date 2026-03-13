@@ -18,21 +18,32 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
   const donationInfo: any = DonationsData.find((d) => d.id == donationID);
 
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: added metadata so the Stripe webhook can identify the Discord user and gem amount
+  const totalGems = (donationInfo.tokens + donationInfo.tokens_bonus) * quantity;
+
   const session = await stripe.checkout.sessions.create({
     submit_type: "auto",
     payment_method_types: ["card"],
     line_items: [
       {
         name: `Donation ${userID.name} (${userID.sub})`,
-        amount: donationInfo.amount * 100, // we multiply by 100 because the amount must be in cents.
+        amount: donationInfo.amount * 100,
         currency: "eur",
         quantity: quantity,
-        description: `Total tokens: ${numberWithCommas((donationInfo.tokens + donationInfo.tokens_bonus) * quantity)}`,
+        description: `Total tokens: ${numberWithCommas(totalGems)}`,
       },
     ],
+    metadata: {
+      discordId: String(userID.sub),
+      discordName: String(userID.name),
+      donationID: donationID,
+      totalGems: String(totalGems),
+    },
     mode: "payment",
     success_url: `${req.headers.origin + NavigationPaths.donate}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${req.headers.origin + NavigationPaths.donate}?payment=failed`,
   });
+  // --- END AI-MODIFIED ---
   res.status(200).json({ sessionId: session.id });
 };

@@ -26,9 +26,12 @@ export function PurchaseCompleteModal(props: IProps) {
           </div>
           <h1 className="mt-[70px] text-center text-blue0 text-3xl font-extrabold uppercase">Purchase Complete</h1>
           <p className="text-center text-black50 text-base mt-[8px] px-[37px]">Thank you for supporting our project.</p>
+          {/* --- AI-MODIFIED (2026-03-13) --- */}
+          {/* Purpose: gems are now credited instantly via Stripe webhook */}
           <p className="text-center text-black50 text-base mt-[10px] px-[37px]">
-            The Gems will be added to your account in the next 24 hours. Make sure to open your DM on Discord
+            Your LionGems have been added to your account!
           </p>
+          {/* --- END AI-MODIFIED --- */}
           <div className="flex justify-between gap-[20px] mt-[20px] px-[37px] ex_sm:flex-col md:pb-[20px]">
             <Link href={"/skins"}>
               <a className="alignCenter w-full bg-blue0 h-[36px] rounded-2xl uppercase font-bold hover:bg-blue1">
