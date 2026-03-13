@@ -138,17 +138,33 @@ export default function Dashboard() {
           </div>
 
           {/* Quick Links */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
             <Link href="/dashboard/servers">
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-indigo-500 transition-colors cursor-pointer">
-                <h3 className="text-xl font-semibold text-white mb-2">My Servers</h3>
-                <p className="text-gray-400">View your stats across {data?.stats.serverCount || 0} servers, leaderboards, and manage settings.</p>
+              <div className="bg-gradient-to-br from-indigo-500/10 to-indigo-600/5 bg-gray-800 rounded-2xl p-5 border border-indigo-500/20 hover:border-indigo-400/40 transition-all cursor-pointer group">
+                <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">🏠</span>
+                <h3 className="text-base font-semibold text-white">My Servers</h3>
+                <p className="text-gray-500 text-xs mt-1">{data?.stats.serverCount || 0} servers</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/tasks">
+              <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 bg-gray-800 rounded-2xl p-5 border border-emerald-500/20 hover:border-emerald-400/40 transition-all cursor-pointer group">
+                <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">✅</span>
+                <h3 className="text-base font-semibold text-white">My Tasks</h3>
+                <p className="text-gray-500 text-xs mt-1">Manage your to-do list</p>
+              </div>
+            </Link>
+            <Link href="/dashboard/history">
+              <div className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 bg-gray-800 rounded-2xl p-5 border border-purple-500/20 hover:border-purple-400/40 transition-all cursor-pointer group">
+                <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">📖</span>
+                <h3 className="text-base font-semibold text-white">Study History</h3>
+                <p className="text-gray-500 text-xs mt-1">Session log & stats</p>
               </div>
             </Link>
             <Link href="/donate">
-              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-amber-500 transition-colors cursor-pointer">
-                <h3 className="text-xl font-semibold text-white mb-2">Get LionGems</h3>
-                <p className="text-gray-400">Purchase gems, unlock premium skins, and support LionBot development.</p>
+              <div className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 bg-gray-800 rounded-2xl p-5 border border-amber-500/20 hover:border-amber-400/40 transition-all cursor-pointer group">
+                <span className="text-2xl mb-2 block group-hover:scale-110 transition-transform">💎</span>
+                <h3 className="text-base font-semibold text-white">LionGems</h3>
+                <p className="text-gray-500 text-xs mt-1">Premium & skins</p>
               </div>
             </Link>
           </div>

@@ -63,16 +63,18 @@ export default NextAuth({
   // when an action is performed.
   // https://next-auth.js.org/configuration/callbacks
   // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: expose Discord user ID in the session for dashboard API routes
+  // Purpose: expose Discord user ID and access token in the session for dashboard API routes
   callbacks: {
-    async jwt({ token, account, profile }) {
+    async jwt({ token, account }) {
       if (account) {
         token.discordId = account.providerAccountId;
+        token.accessToken = account.access_token;
       }
       return token;
     },
     async session({ session, token }) {
       session.discordId = token.discordId;
+      session.accessToken = token.accessToken;
       return session;
     },
   },
