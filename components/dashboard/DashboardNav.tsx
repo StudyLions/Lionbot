@@ -11,6 +11,9 @@ const navItems = [
   { href: "/dashboard/servers", label: "Servers", icon: "🏠" },
   { href: "/dashboard/tasks", label: "Tasks", icon: "✅" },
   { href: "/dashboard/history", label: "History", icon: "📖" },
+  { href: "/dashboard/reminders", label: "Reminders", icon: "⏰" },
+  { href: "/dashboard/inventory", label: "Inventory", icon: "🎨" },
+  { href: "/dashboard/profile", label: "Profile", icon: "👤" },
 ]
 
 export default function DashboardNav() {

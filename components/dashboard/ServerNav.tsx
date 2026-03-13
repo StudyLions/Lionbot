@@ -26,6 +26,8 @@ const modLinks = [
 const adminLinks = [
   { href: "/settings", label: "Settings", icon: "⚙️" },
   { href: "/ranks", label: "Ranks", icon: "🏆" },
+  { href: "/shop", label: "Shop", icon: "🛍️" },
+  { href: "/rolemenus", label: "Role Menus", icon: "📋" },
 ]
 
 export default function ServerNav({ serverId, serverName, isAdmin, isMod }: ServerNavProps) {

@@ -1,0 +1,111 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-03-13
+// Purpose: CRUD for server shop items (colour roles)
+// ============================================================
+import type { NextApiRequest, NextApiResponse } from "next"
+import { prisma } from "@/utils/prisma"
+import { requireModerator, requireAdmin } from "@/utils/adminAuth"
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const guildId = BigInt(req.query.id as string)
+
+  if (req.method === "GET") {
+    const auth = await requireModerator(req, res, guildId)
+    if (!auth) return
+
+    const items = await prisma.shop_items.findMany({
+      where: { guildid: guildId, deleted: { not: true } },
+      include: { shop_items_colour_roles: true },
+      orderBy: { created_at: "desc" },
+    })
+
+    return res.status(200).json({
+      items: items.map((item) => ({
+        id: item.itemid,
+        type: item.item_type,
+        price: item.price,
+        purchasable: item.purchasable ?? true,
+        createdAt: item.created_at,
+        roleId: item.shop_items_colour_roles?.roleid?.toString() || null,
+      })),
+    })
+  }
+
+  if (req.method === "POST") {
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const { roleId, price } = req.body
+    if (!roleId || typeof price !== "number" || price < 0) {
+      return res.status(400).json({ error: "roleId and price (non-negative number) are required" })
+    }
+
+    const item = await prisma.shop_items.create({
+      data: {
+        guildid: guildId,
+        item_type: "COLOUR_ROLE",
+        price,
+        purchasable: true,
+        deleted: false,
+        shop_items_colour_roles: {
+          create: { roleid: BigInt(roleId) },
+        },
+      },
+      include: { shop_items_colour_roles: true },
+    })
+
+    return res.status(201).json({
+      id: item.itemid,
+      type: item.item_type,
+      price: item.price,
+      purchasable: item.purchasable,
+      roleId: item.shop_items_colour_roles?.roleid?.toString() || null,
+    })
+  }
+
+  if (req.method === "PATCH") {
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const { itemId, price, purchasable } = req.body
+    if (!itemId) return res.status(400).json({ error: "itemId required" })
+
+    const existing = await prisma.shop_items.findUnique({ where: { itemid: itemId } })
+    if (!existing || existing.guildid !== guildId) {
+      return res.status(404).json({ error: "Item not found" })
+    }
+
+    const updates: Record<string, any> = {}
+    if (typeof price === "number") updates.price = price
+    if (typeof purchasable === "boolean") updates.purchasable = purchasable
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" })
+    }
+
+    await prisma.shop_items.update({ where: { itemid: itemId }, data: updates })
+    return res.status(200).json({ success: true })
+  }
+
+  if (req.method === "DELETE") {
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const { itemId } = req.body
+    if (!itemId) return res.status(400).json({ error: "itemId required" })
+
+    const existing = await prisma.shop_items.findUnique({ where: { itemid: itemId } })
+    if (!existing || existing.guildid !== guildId) {
+      return res.status(404).json({ error: "Item not found" })
+    }
+
+    await prisma.shop_items.update({
+      where: { itemid: itemId },
+      data: { deleted: true },
+    })
+    return res.status(200).json({ success: true })
+  }
+
+  return res.status(405).json({ error: "Method not allowed" })
+}
