@@ -3,6 +3,9 @@
 // Created: 2026-03-13
 // Purpose: Goals page - weekly and monthly study goals
 // ============================================================
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -14,7 +17,7 @@ import {
   toast,
 } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
+import { useDashboard } from "@/hooks/useDashboard"
 import { Target, TrendingUp, Calendar } from "lucide-react"
 
 interface GoalItem {
@@ -48,12 +51,12 @@ function ProgressBar({
     return (
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
-          <span className="text-gray-400">{label}</span>
+          <span className="text-muted-foreground">{label}</span>
           <span className="text-gray-300">{current} / —</span>
         </div>
-        <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
-            className="h-full bg-gray-600 rounded-full"
+            className="h-full bg-muted/80 rounded-full"
             style={{ width: "0%" }}
           />
         </div>
@@ -74,12 +77,12 @@ function ProgressBar({
   return (
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
-        <span className="text-gray-400">{label}</span>
+        <span className="text-muted-foreground">{label}</span>
         <span className="text-gray-300">
           {current} / {goal}
         </span>
       </div>
-      <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-muted rounded-full overflow-hidden">
         <div
           className={`h-full ${barColor} rounded-full transition-all duration-300`}
           style={{ width: `${pct}%` }}
@@ -91,20 +94,10 @@ function ProgressBar({
 
 export default function GoalsPage() {
   const { data: session } = useSession()
-  const [data, setData] = useState<GoalsData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    if (!session) return
-    fetch("/api/dashboard/goals")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load goals")
-        return res.json()
-      })
-      .then(setData)
-      .catch(() => toast.error("Failed to load goals"))
-      .finally(() => setLoading(false))
-  }, [session])
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data, error, isLoading: loading, mutate } = useDashboard<GoalsData>(session ? "/api/dashboard/goals" : null)
+  // --- END AI-MODIFIED ---
 
   const hasGoals =
     data &&
@@ -118,7 +111,7 @@ export default function GoalsPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0 max-w-4xl">
@@ -133,12 +126,22 @@ export default function GoalsPage() {
 
               {loading ? (
                 <div className="space-y-6">
-                  <div className="h-48 bg-gray-800 rounded-2xl animate-pulse" />
-                  <div className="h-48 bg-gray-800 rounded-2xl animate-pulse" />
+                  <div className="h-48 bg-card rounded-2xl animate-pulse" />
+                  <div className="h-48 bg-card rounded-2xl animate-pulse" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <p className="text-red-400">{error.message}</p>
+                  <button
+                    onClick={() => mutate()}
+                    className="text-primary hover:text-primary text-sm"
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : !hasGoals ? (
                 <EmptyState
-                  icon={<Target size={48} strokeWidth={1} className="text-gray-500" />}
+                  icon={<Target size={48} strokeWidth={1} className="text-muted-foreground" />}
                   title="No goals set yet"
                   description="Set weekly and monthly study goals in Discord using LionBot commands to see your progress here."
                 />
@@ -154,10 +157,10 @@ export default function GoalsPage() {
                       {data!.weekly.map((g) => (
                         <div
                           key={`${g.guildId}-${g.weekid}`}
-                          className="p-4 bg-gray-800/50 rounded-xl border border-gray-700/50"
+                          className="p-4 bg-card/50 rounded-xl border border-border/50"
                         >
                           <div className="flex items-center gap-2 mb-4">
-                            <span className="font-medium text-white">
+                            <span className="font-medium text-foreground">
                               {g.serverName}
                             </span>
                             <Badge variant="info" size="sm">
@@ -191,10 +194,10 @@ export default function GoalsPage() {
                       {data!.monthly.map((g) => (
                         <div
                           key={`${g.guildId}-${g.monthid}`}
-                          className="p-4 bg-gray-800/50 rounded-xl border border-gray-700/50"
+                          className="p-4 bg-card/50 rounded-xl border border-border/50"
                         >
                           <div className="flex items-center gap-2 mb-4">
-                            <span className="font-medium text-white">
+                            <span className="font-medium text-foreground">
                               {g.serverName}
                             </span>
                             <Badge variant="purple" size="sm">

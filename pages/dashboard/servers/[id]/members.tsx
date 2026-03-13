@@ -9,9 +9,10 @@ import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader, DataTable, Badge, toast,
 } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Users, Download } from "lucide-react"
 import type { Column } from "@/components/dashboard/ui"
 
@@ -31,61 +32,46 @@ interface Pagination {
   totalPages: number
 }
 
+interface MembersResponse {
+  members: Member[]
+  pagination: Pagination
+}
+
 export default function MembersPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
-  const [members, setMembers] = useState<Member[]>([])
-  const [pagination, setPagination] = useState<Pagination | null>(null)
-  const [loading, setLoading] = useState(true)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState("")
   const [searchInput, setSearchInput] = useState("")
   const [sort, setSort] = useState("tracked_time")
   const [order, setOrder] = useState<"asc" | "desc">("desc")
-  const [serverName, setServerName] = useState("")
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const fetchMembers = useCallback(async (page = 1) => {
-    if (!id || !session) return
-    setLoading(true)
-    const params = new URLSearchParams({
-      page: page.toString(),
-      sort,
-      order,
-      ...(search ? { search } : {}),
-    })
-    try {
-      const res = await fetch(`/api/dashboard/servers/${id}/members?${params}`)
-      if (!res.ok) return
-      const data = await res.json()
-      setMembers(data.members)
-      setPagination(data.pagination)
-    } catch {
-      toast.error("Failed to load members")
-    }
-    setLoading(false)
-  }, [id, session, sort, order, search])
+  const membersKey =
+    id && session
+      ? `/api/dashboard/servers/${id}/members?page=${currentPage}&sort=${sort}&order=${order}${search ? `&search=${encodeURIComponent(search)}` : ""}`
+      : null
+  const { data: membersData, error, isLoading: loading } = useDashboard<MembersResponse>(membersKey)
+  const { data: serverData } = useDashboard(id && session ? `/api/dashboard/servers/${id}` : null)
 
-  useEffect(() => { fetchMembers() }, [fetchMembers])
+  const members = membersData?.members ?? []
+  const pagination = membersData?.pagination ?? null
+  const serverName = serverData?.server?.name ?? "Server"
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     searchTimeoutRef.current = setTimeout(() => {
       setSearch(searchInput)
+      setCurrentPage(1)
     }, 300)
     return () => {
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
     }
   }, [searchInput])
-
-  useEffect(() => {
-    if (id && session) {
-      fetch(`/api/dashboard/servers/${id}`)
-        .then(r => r.json())
-        .then(d => setServerName(d.server?.name || "Server"))
-        .catch(() => {})
-    }
-  }, [id, session])
+  // --- END AI-MODIFIED ---
 
   const exportCSV = () => {
     const header = "User ID,Display Name,Study Hours,Coins,Workouts,First Joined\n"
@@ -117,26 +103,26 @@ export default function MembersPage() {
       key: "trackedTimeHours",
       label: "Study Time",
       sortable: true,
-      render: (m) => <span className="text-emerald-400 font-mono">{m.trackedTimeHours}h</span>,
+      render: (m) => <span className="text-success font-mono">{m.trackedTimeHours}h</span>,
     },
     {
       key: "coins",
       label: "Coins",
       sortable: true,
-      render: (m) => <span className="text-amber-400 font-mono">{m.coins.toLocaleString()}</span>,
+      render: (m) => <span className="text-warning font-mono">{m.coins.toLocaleString()}</span>,
     },
     {
       key: "workoutCount",
       label: "Workouts",
       sortable: true,
-      render: (m) => <span className="text-gray-300 font-mono">{m.workoutCount}</span>,
+      render: (m) => <span className="text-foreground/80 font-mono">{m.workoutCount}</span>,
     },
     {
       key: "firstJoined",
       label: "Joined",
       sortable: true,
       render: (m) => (
-        <span className="text-gray-400 text-sm">
+        <span className="text-muted-foreground text-sm">
           {m.firstJoined ? new Date(m.firstJoined).toLocaleDateString() : "—"}
         </span>
       ),
@@ -151,13 +137,13 @@ export default function MembersPage() {
           placeholder="Search members..."
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          className="w-full pl-9 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-lg text-sm text-white placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
-        <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+        <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
       </div>
       <button
         onClick={exportCSV}
-        className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 rounded-lg text-sm transition-colors"
+        className="flex items-center gap-2 px-4 py-2 bg-card border border-border text-foreground/80 hover:text-white hover:border-border rounded-lg text-sm transition-colors"
       >
         <Download size={16} />
         Export CSV
@@ -168,10 +154,10 @@ export default function MembersPage() {
   return (
     <Layout SEO={{ title: `Members - ${serverName} - LionBot`, description: "Server members" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
-          <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav serverId={id as string} serverName={serverName} isAdmin isMod />
-
+            <div className="flex-1 min-w-0">
             <PageHeader
               title="Members"
               description="View and search server members. Study time, coins, and workout stats are tracked per member."
@@ -187,8 +173,12 @@ export default function MembersPage() {
             {loading ? (
               <div className="space-y-3">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse h-14" />
+                  <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse h-14" />
                 ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-12 text-destructive">
+                {error.message || "Failed to load members"}
               </div>
             ) : (
               <DataTable<Member>
@@ -203,28 +193,29 @@ export default function MembersPage() {
             )}
 
             {!loading && pagination && pagination.totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4 text-sm text-gray-400">
+              <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
                 <span>
                   Page {pagination.page} of {pagination.totalPages}
                 </span>
                 <div className="flex gap-2">
                   <button
-                    onClick={() => fetchMembers(pagination.page - 1)}
+                    onClick={() => setCurrentPage((p) => p - 1)}
                     disabled={pagination.page <= 1}
-                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 bg-card border border-border text-foreground/80 rounded-lg text-sm hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     Previous
                   </button>
                   <button
-                    onClick={() => fetchMembers(pagination.page + 1)}
+                    onClick={() => setCurrentPage((p) => p + 1)}
                     disabled={pagination.page >= pagination.totalPages}
-                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 bg-card border border-border text-foreground/80 rounded-lg text-sm hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
                   >
                     Next
                   </button>
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
       </AdminGuard>

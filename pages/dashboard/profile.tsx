@@ -3,6 +3,9 @@
 // Created: 2026-03-13
 // Purpose: User profile - rebuilt with shared UI
 // ============================================================
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -17,7 +20,8 @@ import {
 } from "@/components/dashboard/ui"
 import { User, Globe, Languages, BarChart3 } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
+import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 
 interface ProfileData {
   userId: string
@@ -66,26 +70,22 @@ const LOCALE_OPTIONS = [
 
 export default function ProfilePage() {
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: profileData, error, isLoading: loading, mutate } = useDashboard<ProfileData>(
+    session ? "/api/dashboard/profile" : null
+  )
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [original, setOriginal] = useState<ProfileData | null>(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/profile")
-      if (res.ok) {
-        const data = await res.json()
-        setProfile(data)
-        setOriginal(data)
-      }
-    } catch {}
-    setLoading(false)
-  }, [])
-
   useEffect(() => {
-    if (session) fetchData()
-  }, [session, fetchData])
+    if (profileData) {
+      setProfile(profileData)
+      setOriginal(profileData)
+    }
+  }, [profileData])
+  // --- END AI-MODIFIED ---
 
   const hasChanges =
     profile &&
@@ -104,15 +104,10 @@ export default function ProfilePage() {
       updates.show_global_stats = profile.showGlobalStats
 
     try {
-      const res = await fetch("/api/dashboard/profile", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
-      })
-      if (res.ok) {
-        toast.success("Profile saved")
-        setOriginal({ ...profile })
-      } else toast.error("Failed to save")
+      await dashboardMutate("PATCH", "/api/dashboard/profile", updates)
+      toast.success("Profile saved")
+      setOriginal({ ...profile })
+      mutate()
     } catch {
       toast.error("Error saving")
     }
@@ -131,7 +126,7 @@ export default function ProfilePage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0 max-w-3xl">
@@ -146,11 +141,15 @@ export default function ProfilePage() {
 
               {loading ? (
                 <div className="space-y-4">
-                  <div className="bg-gray-800 rounded-2xl p-6 animate-pulse h-32" />
-                  <div className="bg-gray-800 rounded-2xl p-6 animate-pulse h-48" />
+                  <div className="bg-card rounded-2xl p-6 animate-pulse h-32" />
+                  <div className="bg-card rounded-2xl p-6 animate-pulse h-48" />
+                </div>
+              ) : error ? (
+                <div className="text-center py-20 text-red-400">
+                  {error.message}
                 </div>
               ) : !profile ? (
-                <div className="text-center py-20 text-gray-400">
+                <div className="text-center py-20 text-muted-foreground">
                   Unable to load profile
                 </div>
               ) : (
@@ -164,7 +163,7 @@ export default function ProfilePage() {
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
                       <div>
-                        <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
                           Username
                         </p>
                         <p className="text-white font-medium">
@@ -174,26 +173,26 @@ export default function ProfilePage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
                           Discord ID
                         </p>
-                        <p className="text-gray-300 font-mono text-sm">
+                        <p className="text-foreground/80 font-mono text-sm">
                           {profile.userId}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
                           LionGems
                         </p>
-                        <p className="text-amber-400 font-bold text-xl">
+                        <p className="text-warning font-bold text-xl">
                           {profile.gems.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-gray-400 text-xs uppercase tracking-wide mb-1">
+                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
                           Member Since
                         </p>
-                        <p className="text-gray-300 text-sm">
+                        <p className="text-foreground/80 text-sm">
                           {profile.firstSeen
                             ? new Date(
                                 profile.firstSeen

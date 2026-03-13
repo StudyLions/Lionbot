@@ -6,6 +6,65 @@
 @tailwind components;
 @tailwind utilities;
 
+/* --- AI-MODIFIED (2026-03-13) ---
+   Purpose: shadcn/ui design tokens - dark theme CSS variables */
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+    --card: 224 40% 14%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 40% 14%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 60%;
+    --primary-foreground: 222 47% 11%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 22%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 71% 45%;
+    --success-foreground: 222 47% 11%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --border: 217 33% 20%;
+    --input: 217 33% 20%;
+    --ring: 217 91% 60%;
+    --radius: 0.625rem;
+  }
+}
+/* --- END AI-MODIFIED --- */
+
+/* --- AI-MODIFIED (2026-03-13) ---
+   Purpose: scroll-smooth for smoother scrolling, touch-friendly tap targets on mobile */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (max-width: 768px) {
+    button, [role="button"], a {
+      min-height: 44px;
+    }
+  }
+}
+/* --- END AI-MODIFIED --- */
+
+/* --- AI-MODIFIED (2026-03-13) ---
+   Purpose: scrollbar-hide utility for cleaner mobile UI */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+/* --- END AI-MODIFIED --- */
+
 html, body, div, span, applet, object, iframe,
 h1, h2, h3, h4, h5, h6, p, blockquote, pre,
 a, abbr, acronym, address, big, cite, code,

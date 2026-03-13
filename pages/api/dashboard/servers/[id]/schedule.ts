@@ -6,6 +6,10 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+import { apiHandler } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 const EDITABLE_FIELDS = [
   "lobby_channel",
@@ -44,10 +48,11 @@ function toResponse(config: typeof DEFAULTS | null, scheduleChannels: { channeli
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const guildId = BigInt(req.query.id as string)
-
-  if (req.method === "GET") {
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -66,9 +71,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const payload = toResponse(config, scheduleChannels)
 
     return res.status(200).json(payload)
-  }
-
-  if (req.method === "PATCH") {
+  },
+  async PATCH(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -94,7 +99,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    if (Object.keys(updates).length === 0) {
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: support updating schedule_channels (add/remove)
+    const hasScheduleChannels = "schedule_channels" in body
+    if (Object.keys(updates).length === 0 && !hasScheduleChannels) {
       return res.status(400).json({ error: "No valid fields to update" })
     }
 
@@ -105,10 +113,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       include: { schedule_channels: true },
     })
 
-    const payload = toResponse(config, config.schedule_channels)
+    if (hasScheduleChannels && Array.isArray(body.schedule_channels)) {
+      await prisma.schedule_channels.deleteMany({ where: { guildid: guildId } })
+      const newChannels = body.schedule_channels
+        .filter((ch: any) => ch && ch.channelid)
+        .map((ch: any) => ({
+          guildid: guildId,
+          channelid: BigInt(ch.channelid),
+        }))
+      if (newChannels.length > 0) {
+        await prisma.schedule_channels.createMany({ data: newChannels })
+      }
+    }
+
+    const updated = await prisma.schedule_guild_config.findUnique({
+      where: { guildid: guildId },
+      include: { schedule_channels: true },
+    })
+
+    const payload = toResponse(updated, updated?.schedule_channels ?? [])
 
     return res.status(200).json(payload)
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    // --- END AI-MODIFIED ---
+  },
+})
+// --- END AI-MODIFIED ---

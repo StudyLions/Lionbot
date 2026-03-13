@@ -8,14 +8,16 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
-  SearchSelect, ChannelSelect, SaveBar, PageHeader, toast,
+  SearchSelect, ChannelSelect, RoleSelect, SaveBar, PageHeader, toast,
+  clearRoleCache, clearChannelCache,
 } from "@/components/dashboard/ui"
+import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
 import {
   BookOpen, Coins, CheckSquare, Lock, Users, Trophy,
-  Shield, Globe, MessageSquare, Dumbbell
+  Shield, Globe, MessageSquare, Dumbbell, Hash, UserCog, Calendar
 } from "lucide-react"
 
 const TIMEZONE_OPTIONS = [
@@ -72,26 +74,39 @@ export default function ServerSettings() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: configData, error, isLoading: loading, mutate } = useDashboard<Record<string, any>>(
+    id && session ? `/api/dashboard/servers/${id}/config` : null
+  )
   const [config, setConfig] = useState<Record<string, any> | null>(null)
   const [original, setOriginal] = useState<Record<string, any> | null>(null)
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: auto-detect timezone when field is empty for smart defaults
+  const [detectedTimezone, setDetectedTimezone] = useState<string | null>(null)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (tz) setDetectedTimezone(tz)
+      } catch {
+        setDetectedTimezone(null)
+      }
+    }
+  }, [])
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
-    if (id && session) {
-      fetch(`/api/dashboard/servers/${id}/config`)
-        .then((r) => {
-          if (!r.ok) throw new Error(r.status === 403 ? "You're not an admin of this server" : "Failed to load")
-          return r.json()
-        })
-        .then((data) => {
-          setConfig(data)
-          setOriginal({ ...data })
-        })
-        .catch(() => setConfig(null))
-        .finally(() => setLoading(false))
+    if (configData) {
+      setConfig(configData)
+      setOriginal({ ...configData })
+    } else if (!loading && !configData) {
+      setConfig(null)
+      setOriginal(null)
     }
-  }, [id, session])
+  }, [configData, loading])
+  // --- END AI-MODIFIED ---
 
   const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -100,7 +115,7 @@ export default function ServerSettings() {
   const hasChanges = config && original && JSON.stringify(config) !== JSON.stringify(original)
 
   const handleSave = async () => {
-    if (!config || !original || !hasChanges) return
+    if (!config || !original || !hasChanges || !id) return
     setSaving(true)
     const changes: Record<string, any> = {}
     for (const key of Object.keys(config)) {
@@ -109,13 +124,11 @@ export default function ServerSettings() {
       }
     }
     try {
-      const res = await fetch(`/api/dashboard/servers/${id}/config`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(changes),
-      })
-      if (!res.ok) throw new Error("Save failed")
+      await dashboardMutate("PATCH", `/api/dashboard/servers/${id}/config`, changes)
       setOriginal({ ...config })
+      mutate()
+      clearRoleCache(guildId)
+      clearChannelCache(guildId)
       toast.success("Settings saved successfully")
     } catch {
       toast.error("Failed to save. Check your permissions.")
@@ -132,11 +145,10 @@ export default function ServerSettings() {
   return (
     <Layout SEO={{ title: `Settings - ${config?.name || "Server"} - LionBot`, description: "Server settings" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
+            <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />
             <div className="flex-1 min-w-0">
-              <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />
-
               <PageHeader
                 title="Server Settings"
                 description="Configure how LionBot works in your server. Changes are saved when you click Save. Hover over the question mark icons for more details about each setting."
@@ -145,18 +157,18 @@ export default function ServerSettings() {
               {loading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse">
-                      <div className="h-5 bg-gray-700 rounded w-1/4 mb-4" />
+                    <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                      <div className="h-5 bg-muted rounded w-1/4 mb-4" />
                       <div className="space-y-3">
-                        <div className="h-10 bg-gray-700 rounded" />
-                        <div className="h-10 bg-gray-700 rounded w-3/4" />
+                        <div className="h-10 bg-muted rounded" />
+                        <div className="h-10 bg-muted rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !config ? (
                 <div className="text-center py-20">
-                  <p className="text-gray-400">Unable to load settings. You may not have admin permissions.</p>
+                  <p className="text-muted-foreground">Unable to load settings. You may not have admin permissions.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -172,7 +184,7 @@ export default function ServerSettings() {
                       tooltip="Members receive this amount of coins for every hour they spend in a voice study channel. Higher values encourage more study time."
                       defaultBadge={String(DEFAULTS.study_hourly_reward)}
                     >
-                      <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull />
+                      <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull placeholder={`Default: ${DEFAULTS.study_hourly_reward}`} />
                     </SettingRow>
                     <SettingRow
                       label="Camera Bonus"
@@ -180,7 +192,7 @@ export default function ServerSettings() {
                       tooltip="Members who turn on their camera while studying earn this bonus on top of the hourly reward. Great for accountability."
                       defaultBadge={String(DEFAULTS.study_hourly_live_bonus)}
                     >
-                      <NumberInput value={config.study_hourly_live_bonus} onChange={(v) => set("study_hourly_live_bonus", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_live_bonus} allowNull />
+                      <NumberInput value={config.study_hourly_live_bonus} onChange={(v) => set("study_hourly_live_bonus", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_live_bonus} allowNull placeholder={`Default: ${DEFAULTS.study_hourly_live_bonus}`} />
                     </SettingRow>
                     <SettingRow
                       label="Daily Study Cap"
@@ -204,7 +216,7 @@ export default function ServerSettings() {
                       tooltip="Every new member starts with this many coins. Set to 0 if you want members to earn everything from scratch."
                       defaultBadge={String(DEFAULTS.starting_funds)}
                     >
-                      <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull />
+                      <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull placeholder={`Default: ${DEFAULTS.starting_funds}`} />
                     </SettingRow>
                     <SettingRow
                       label="Allow Transfers"
@@ -219,7 +231,7 @@ export default function ServerSettings() {
                       tooltip="This sets the conversion rate between XP and coins. Higher values make coins easier to earn. XP is earned through voice study and text activity."
                       defaultBadge={String(DEFAULTS.coins_per_centixp)}
                     >
-                      <NumberInput value={config.coins_per_centixp} onChange={(v) => set("coins_per_centixp", v)} unit="coins" min={0} defaultValue={DEFAULTS.coins_per_centixp} allowNull />
+                      <NumberInput value={config.coins_per_centixp} onChange={(v) => set("coins_per_centixp", v)} unit="coins" min={0} defaultValue={DEFAULTS.coins_per_centixp} allowNull placeholder={`Default: ${DEFAULTS.coins_per_centixp}`} />
                     </SettingRow>
                   </SectionCard>
 
@@ -235,7 +247,7 @@ export default function ServerSettings() {
                       tooltip="Limits how many to-do items each member can create. Prevents list clutter."
                       defaultBadge={String(DEFAULTS.max_tasks)}
                     >
-                      <NumberInput value={config.max_tasks} onChange={(v) => set("max_tasks", v)} min={1} max={100} defaultValue={DEFAULTS.max_tasks} allowNull />
+                      <NumberInput value={config.max_tasks} onChange={(v) => set("max_tasks", v)} min={1} max={100} defaultValue={DEFAULTS.max_tasks} allowNull placeholder={`Default: ${DEFAULTS.max_tasks}`} />
                     </SettingRow>
                     <SettingRow
                       label="Task Reward"
@@ -243,7 +255,7 @@ export default function ServerSettings() {
                       tooltip="Each time a member marks a task as complete, they receive this many coins."
                       defaultBadge={String(DEFAULTS.task_reward)}
                     >
-                      <NumberInput value={config.task_reward} onChange={(v) => set("task_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.task_reward} allowNull />
+                      <NumberInput value={config.task_reward} onChange={(v) => set("task_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.task_reward} allowNull placeholder={`Default: ${DEFAULTS.task_reward}`} />
                     </SettingRow>
                     <SettingRow
                       label="Daily Reward Limit"
@@ -251,7 +263,7 @@ export default function ServerSettings() {
                       tooltip="Prevents members from farming coins by creating and completing many small tasks."
                       defaultBadge={String(DEFAULTS.task_reward_limit)}
                     >
-                      <NumberInput value={config.task_reward_limit} onChange={(v) => set("task_reward_limit", v)} min={0} defaultValue={DEFAULTS.task_reward_limit} allowNull />
+                      <NumberInput value={config.task_reward_limit} onChange={(v) => set("task_reward_limit", v)} min={0} defaultValue={DEFAULTS.task_reward_limit} allowNull placeholder={`Default: ${DEFAULTS.task_reward_limit}`} />
                     </SettingRow>
                   </SectionCard>
 
@@ -267,14 +279,14 @@ export default function ServerSettings() {
                       tooltip="Members pay this amount daily to keep their private study room. The room is auto-deleted when they run out of coins."
                       defaultBadge={String(DEFAULTS.renting_price)}
                     >
-                      <NumberInput value={config.renting_price} onChange={(v) => set("renting_price", v)} unit="coins/day" min={0} defaultValue={DEFAULTS.renting_price} allowNull />
+                      <NumberInput value={config.renting_price} onChange={(v) => set("renting_price", v)} unit="coins/day" min={0} defaultValue={DEFAULTS.renting_price} allowNull placeholder={`Default: ${DEFAULTS.renting_price}`} />
                     </SettingRow>
                     <SettingRow
                       label="Max Members"
                       description="Maximum people allowed in a private room"
                       defaultBadge={String(DEFAULTS.renting_cap)}
                     >
-                      <NumberInput value={config.renting_cap} onChange={(v) => set("renting_cap", v)} min={1} defaultValue={DEFAULTS.renting_cap} allowNull />
+                      <NumberInput value={config.renting_cap} onChange={(v) => set("renting_cap", v)} min={1} defaultValue={DEFAULTS.renting_cap} allowNull placeholder={`Default: ${DEFAULTS.renting_cap}`} />
                     </SettingRow>
                     <SettingRow
                       label="Visible to Others"
@@ -297,14 +309,14 @@ export default function ServerSettings() {
                       tooltip="Members pay this to schedule a session. They get it back (plus rewards) if they attend."
                       defaultBadge={String(DEFAULTS.accountability_price)}
                     >
-                      <NumberInput value={config.accountability_price} onChange={(v) => set("accountability_price", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_price} allowNull />
+                      <NumberInput value={config.accountability_price} onChange={(v) => set("accountability_price", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_price} allowNull placeholder={`Default: ${DEFAULTS.accountability_price}`} />
                     </SettingRow>
                     <SettingRow
                       label="Attendance Reward"
                       description="Coins earned for attending a booked session"
                       defaultBadge={String(DEFAULTS.accountability_reward)}
                     >
-                      <NumberInput value={config.accountability_reward} onChange={(v) => set("accountability_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_reward} allowNull />
+                      <NumberInput value={config.accountability_reward} onChange={(v) => set("accountability_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_reward} allowNull placeholder={`Default: ${DEFAULTS.accountability_reward}`} />
                     </SettingRow>
                     <SettingRow
                       label="Full Group Bonus"
@@ -312,7 +324,7 @@ export default function ServerSettings() {
                       tooltip="All members in the session get this bonus if 100% attendance is achieved."
                       defaultBadge={String(DEFAULTS.accountability_bonus)}
                     >
-                      <NumberInput value={config.accountability_bonus} onChange={(v) => set("accountability_bonus", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_bonus} allowNull />
+                      <NumberInput value={config.accountability_bonus} onChange={(v) => set("accountability_bonus", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_bonus} allowNull placeholder={`Default: ${DEFAULTS.accountability_bonus}`} />
                     </SettingRow>
                   </SectionCard>
 
@@ -349,7 +361,7 @@ export default function ServerSettings() {
                       tooltip="Every few minutes in a voice channel, members earn this much XP. Higher values make ranking up faster."
                       defaultBadge={String(DEFAULTS.xp_per_period)}
                     >
-                      <NumberInput value={config.xp_per_period} onChange={(v) => set("xp_per_period", v)} unit="XP" min={0} defaultValue={DEFAULTS.xp_per_period} allowNull />
+                      <NumberInput value={config.xp_per_period} onChange={(v) => set("xp_per_period", v)} unit="XP" min={0} defaultValue={DEFAULTS.xp_per_period} allowNull placeholder={`Default: ${DEFAULTS.xp_per_period}`} />
                     </SettingRow>
                   </SectionCard>
 
@@ -372,7 +384,7 @@ export default function ServerSettings() {
                       tooltip="When a member joins a video-required channel without camera, they get this many seconds to turn it on before being disconnected."
                       defaultBadge={`${DEFAULTS.video_grace_period}s`}
                     >
-                      <NumberInput value={config.video_grace_period} onChange={(v) => set("video_grace_period", v)} unit="seconds" min={10} defaultValue={DEFAULTS.video_grace_period} allowNull />
+                      <NumberInput value={config.video_grace_period} onChange={(v) => set("video_grace_period", v)} unit="seconds" min={10} defaultValue={DEFAULTS.video_grace_period} allowNull placeholder={`Default: ${DEFAULTS.video_grace_period}`} />
                     </SettingRow>
                     <SettingRow
                       label="Persist Roles"
@@ -395,12 +407,33 @@ export default function ServerSettings() {
                       tooltip="All times shown by LionBot (schedules, session logs, etc.) will use this timezone. Pick the timezone where most of your members are."
                       defaultBadge="UTC"
                     >
-                      <SearchSelect
-                        options={TIMEZONE_OPTIONS}
-                        value={config.timezone || null}
-                        onChange={(v) => set("timezone", v)}
-                        placeholder="Select timezone"
-                      />
+                      <div className="space-y-2">
+                        <SearchSelect
+                          options={
+                            detectedTimezone && !TIMEZONE_OPTIONS.some((o) => o.value === detectedTimezone)
+                              ? [{ value: detectedTimezone, label: detectedTimezone.replace(/_/g, " ") }, ...TIMEZONE_OPTIONS]
+                              : TIMEZONE_OPTIONS
+                          }
+                          value={config.timezone || null}
+                          onChange={(v) => set("timezone", v)}
+                          placeholder="Select timezone"
+                        />
+                        {/* --- AI-MODIFIED (2026-03-13) ---
+                            Purpose: show detected timezone suggestion when empty */}
+                        {(!config.timezone || config.timezone === "") && detectedTimezone && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <span>Detected: {detectedTimezone.replace(/_/g, " ")}</span>
+                            <button
+                              type="button"
+                              onClick={() => set("timezone", detectedTimezone)}
+                              className="text-primary hover:text-primary/90 font-medium"
+                            >
+                              Use this
+                            </button>
+                          </div>
+                        )}
+                        {/* --- END AI-MODIFIED --- */}
+                      </div>
                     </SettingRow>
                     <SettingRow
                       label="Language"
@@ -435,14 +468,52 @@ export default function ServerSettings() {
                       description="Sent when a new member joins. You can use: {mention}, {user_name}, {server_name}"
                       tooltip="This message is sent as an embed when someone joins for the first time. Leave empty to disable. Use {mention} to ping the new member."
                     >
-                      <TextInput
-                        value={config.greeting_message || ""}
-                        onChange={(v) => set("greeting_message", v || null)}
-                        multiline
-                        rows={3}
-                        placeholder="Welcome to {server_name}, {mention}! Start studying to earn coins."
-                        maxLength={2000}
-                      />
+                      <div className="space-y-2">
+                        <TextInput
+                          value={config.greeting_message || ""}
+                          onChange={(v) => set("greeting_message", v || null)}
+                          multiline
+                          rows={3}
+                          placeholder="Welcome to {server_name}, {mention}! Start studying to earn coins."
+                          maxLength={2000}
+                        />
+                        {/* --- AI-MODIFIED (2026-03-13) ---
+                            Purpose: welcome message template buttons for quick setup */}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              set(
+                                "greeting_message",
+                                `Welcome to {server_name}, {mention}! We're glad you're here. Start studying to earn coins and climb the leaderboard!`
+                              )
+                            }
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Friendly
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => set("greeting_message", "Hey {mention}, welcome! Use /profile to see your stats.")}
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Simple
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              set(
+                                "greeting_message",
+                                "{mention} just joined {server_name}! Ready to level up your study game? Join a voice channel to start tracking your progress."
+                              )
+                            }
+                            className="text-xs px-2.5 py-1.5 rounded-md bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
+                          >
+                            Motivational
+                          </button>
+                        </div>
+                        {/* --- END AI-MODIFIED --- */}
+                      </div>
                     </SettingRow>
                     <SettingRow
                       label="Returning Member Message"
@@ -472,16 +543,181 @@ export default function ServerSettings() {
                       tooltip="Workouts shorter than this won't earn any coins. Prevents gaming the system with very short sessions."
                       defaultBadge={`${DEFAULTS.min_workout_length} min`}
                     >
-                      <NumberInput value={config.min_workout_length} onChange={(v) => set("min_workout_length", v)} unit="minutes" min={1} defaultValue={DEFAULTS.min_workout_length} allowNull />
+                      <NumberInput value={config.min_workout_length} onChange={(v) => set("min_workout_length", v)} unit="minutes" min={1} defaultValue={DEFAULTS.min_workout_length} allowNull placeholder={`Default: ${DEFAULTS.min_workout_length}`} />
                     </SettingRow>
                     <SettingRow
                       label="Workout Reward"
                       description="Coins earned per workout session"
                       defaultBadge={String(DEFAULTS.workout_reward)}
                     >
-                      <NumberInput value={config.workout_reward} onChange={(v) => set("workout_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.workout_reward} allowNull />
+                      <NumberInput value={config.workout_reward} onChange={(v) => set("workout_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.workout_reward} allowNull placeholder={`Default: ${DEFAULTS.workout_reward}`} />
                     </SettingRow>
                   </SectionCard>
+
+                  {/* --- AI-MODIFIED (2026-03-13) --- */}
+                  {/* Purpose: added Channels, Roles, and extended Rooms settings sections */}
+
+                  {/* Channels */}
+                  <SectionCard
+                    title="Channels"
+                    description="Log and notification channels"
+                    icon={<Hash size={18} />}
+                  >
+                    <SettingRow
+                      label="Event Log Channel"
+                      description="Channel for audit-style event logs"
+                      tooltip="LionBot logs server events (joins, leaves, rank changes, etc.) to this channel."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.event_log_channel ?? null}
+                        onChange={(v) => set("event_log_channel", (v as string) || null)}
+                        channelTypes={[0, 5]}
+                        placeholder="Select event log channel"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Moderation Log Channel"
+                      description="Channel for moderation ticket logs"
+                      tooltip="Tickets (warnings, bans, notes) are logged to this channel for moderator review."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.mod_log_channel ?? null}
+                        onChange={(v) => set("mod_log_channel", (v as string) || null)}
+                        channelTypes={[0, 5]}
+                        placeholder="Select mod log channel"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Alert Channel"
+                      description="Channel for bot alerts and warnings"
+                      tooltip="Critical bot alerts (errors, unusual activity) are sent here."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.alert_channel ?? null}
+                        onChange={(v) => set("alert_channel", (v as string) || null)}
+                        channelTypes={[0, 5]}
+                        placeholder="Select alert channel"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Greeting Channel"
+                      description="Channel where welcome messages are sent"
+                      tooltip="When a new member joins, the welcome/returning message is sent here. If not set, no welcome message is sent."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.greeting_channel ?? null}
+                        onChange={(v) => set("greeting_channel", (v as string) || null)}
+                        channelTypes={[0, 5]}
+                        placeholder="Select greeting channel"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Rank-Up Channel"
+                      description="Fallback channel for rank-up announcements"
+                      tooltip="When DM notifications fail, rank-up messages are sent to this channel instead."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.rank_channel ?? null}
+                        onChange={(v) => set("rank_channel", (v as string) || null)}
+                        channelTypes={[0, 5]}
+                        placeholder="Select rank-up channel"
+                      />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Roles */}
+                  <SectionCard
+                    title="Roles"
+                    description="Admin and moderator role assignments"
+                    icon={<UserCog size={18} />}
+                  >
+                    <SettingRow
+                      label="Admin Role"
+                      description="Role that grants admin access to LionBot"
+                      tooltip="Members with this role can access all admin commands and dashboard settings, even without the Discord ADMINISTRATOR permission."
+                    >
+                      <RoleSelect
+                        guildId={guildId}
+                        value={config.admin_role ?? null}
+                        onChange={(v) => set("admin_role", (v as string) || null)}
+                        placeholder="Select admin role"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Moderator Role"
+                      description="Role that grants moderator access to LionBot"
+                      tooltip="Members with this role can access moderation commands and view member data, even without MANAGE_GUILD permission."
+                    >
+                      <RoleSelect
+                        guildId={guildId}
+                        value={config.mod_role ?? null}
+                        onChange={(v) => set("mod_role", (v as string) || null)}
+                        placeholder="Select moderator role"
+                      />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Rooms (extended) */}
+                  <SectionCard
+                    title="Rooms (Advanced)"
+                    description="Additional private room settings"
+                    icon={<Lock size={18} />}
+                  >
+                    <SettingRow
+                      label="Room Category"
+                      description="Discord category where private rooms are created"
+                      tooltip="New private study rooms will be created as voice channels under this category. If not set, rooms are created at the top of the channel list."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={config.renting_category ?? null}
+                        onChange={(v) => set("renting_category", (v as string) || null)}
+                        channelTypes={[4]}
+                        placeholder="Select room category"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Sync Permissions"
+                      description="Sync room permissions with the category"
+                      tooltip="When enabled, private room permissions are synced with the parent category. Useful for inheriting channel visibility rules."
+                    >
+                      <Toggle checked={config.renting_sync_perms ?? false} onChange={(v) => set("renting_sync_perms", v)} />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Season & XP */}
+                  <SectionCard
+                    title="Season & XP"
+                    description="Season tracking and text XP settings"
+                    icon={<Calendar size={18} />}
+                  >
+                    <SettingRow
+                      label="Season Start Date"
+                      description="When the current ranking season started"
+                      tooltip="Leaderboards and rank progress are reset at the start of each season. Set a date to begin a new season, or leave empty for all-time tracking."
+                    >
+                      <input
+                        type="date"
+                        value={config.season_start ? new Date(config.season_start).toISOString().split('T')[0] : ""}
+                        onChange={(e) => set("season_start", e.target.value ? new Date(e.target.value).toISOString() : null)}
+                        className="bg-background border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="XP per Word"
+                      description="Text XP earned per word in messages"
+                      tooltip="Members earn this much XP for every word in their messages. Higher values make text activity more rewarding relative to voice."
+                    >
+                      <NumberInput value={config.xp_per_centiword} onChange={(v) => set("xp_per_centiword", v)} unit="XP/word" min={0} allowNull />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               )}
 

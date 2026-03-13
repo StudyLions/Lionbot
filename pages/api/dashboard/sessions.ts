@@ -6,14 +6,16 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" })
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  const auth = await requireAuth(req, res)
-  if (!auth) return
-
-  const page = parseInt(req.query.page as string) || 1
+    const page = parseInt(req.query.page as string) || 1
   const pageSize = Math.min(parseInt(req.query.pageSize as string) || 20, 50)
   const guildFilter = req.query.guild ? BigInt(req.query.guild as string) : undefined
 
@@ -49,7 +51,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }),
   ])
 
-  return res.status(200).json({
+  res.status(200).json({
     sessions: sessions.map((s) => ({
       id: s.sessionid,
       guildId: s.guildid.toString(),
@@ -65,4 +67,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       sessionCount: weeklyStats._count,
     },
   })
-}
+  },
+})
+// --- END AI-MODIFIED ---

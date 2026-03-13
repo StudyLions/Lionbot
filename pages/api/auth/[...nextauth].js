@@ -63,18 +63,54 @@ export default NextAuth({
   // when an action is performed.
   // https://next-auth.js.org/configuration/callbacks
   // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: expose Discord user ID and access token in the session for dashboard API routes
+  // Purpose: expose Discord user ID, access token, and auto-refresh expired tokens
   callbacks: {
     async jwt({ token, account }) {
       if (account) {
         token.discordId = account.providerAccountId;
         token.accessToken = account.access_token;
+        token.refreshToken = account.refresh_token;
+        token.expiresAt = account.expires_at
+          ? account.expires_at * 1000
+          : Date.now() + 604800000;
       }
+
+      if (token.expiresAt && Date.now() < token.expiresAt - 60000) {
+        return token;
+      }
+
+      if (token.refreshToken) {
+        try {
+          const params = new URLSearchParams({
+            client_id: process.env.DISCORD_CLIENT_ID,
+            client_secret: process.env.DISCORD_CLIENT_SECRET,
+            grant_type: "refresh_token",
+            refresh_token: token.refreshToken,
+          });
+          const res = await fetch("https://discord.com/api/oauth2/token", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: params.toString(),
+          });
+          if (res.ok) {
+            const data = await res.json();
+            token.accessToken = data.access_token;
+            token.refreshToken = data.refresh_token || token.refreshToken;
+            token.expiresAt = Date.now() + data.expires_in * 1000;
+          } else {
+            token.error = "RefreshTokenError";
+          }
+        } catch {
+          token.error = "RefreshTokenError";
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
       session.discordId = token.discordId;
       session.accessToken = token.accessToken;
+      if (token.error) session.error = token.error;
       return session;
     },
   },

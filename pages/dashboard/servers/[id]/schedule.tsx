@@ -17,6 +17,7 @@ import {
   FirstTimeBanner,
   toast,
 } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
@@ -55,29 +56,28 @@ export default function SchedulePage() {
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: scheduleData, isLoading: loading, mutate } = useDashboard<ScheduleData>(
+    id && session ? `/api/dashboard/servers/${id}/schedule` : null
+  )
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    id && session ? `/api/dashboard/servers/${id}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
   const [data, setData] = useState<ScheduleData | null>(null)
   const [original, setOriginal] = useState<ScheduleData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [serverName, setServerName] = useState("")
-
   useEffect(() => {
-    if (!id || !session) return
-    Promise.all([
-      fetch(`/api/dashboard/servers/${id}/schedule`),
-      fetch(`/api/dashboard/servers/${id}`),
-    ])
-      .then(async ([scheduleRes, serverRes]) => {
-        if (!scheduleRes.ok) throw new Error(scheduleRes.status === 403 ? "You're not a moderator" : "Failed to load")
-        const scheduleData = await scheduleRes.json()
-        setData(scheduleData)
-        setOriginal({ ...scheduleData })
-        const serverData = await serverRes.json()
-        setServerName(serverData.server?.name || "Server")
-      })
-      .catch(() => setData(null))
-      .finally(() => setLoading(false))
-  }, [id, session])
+    if (scheduleData) {
+      setData(scheduleData)
+      setOriginal({ ...scheduleData })
+    } else if (scheduleData === undefined && !loading) {
+      setData(null)
+      setOriginal(null)
+    }
+  }, [scheduleData, loading])
+  // --- END AI-MODIFIED ---
+  const [saving, setSaving] = useState(false)
 
   const set = useCallback((key: keyof ScheduleData, value: unknown) => {
     setData((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -88,13 +88,21 @@ export default function SchedulePage() {
   const handleSave = async () => {
     if (!data || !original || !hasChanges) return
     setSaving(true)
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: include schedule_channels in save payload
     const changes: Record<string, unknown> = {}
     for (const key of Object.keys(data) as (keyof ScheduleData)[]) {
-      if (key === "schedule_channels") continue
+      if (key === "schedule_channels") {
+        if (JSON.stringify(data[key]) !== JSON.stringify(original[key])) {
+          changes.schedule_channels = data.schedule_channels
+        }
+        continue
+      }
       if (JSON.stringify(data[key]) !== JSON.stringify(original[key])) {
         changes[key] = data[key]
       }
     }
+    // --- END AI-MODIFIED ---
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/schedule`, {
         method: "PATCH",
@@ -105,6 +113,7 @@ export default function SchedulePage() {
       const updated = await res.json()
       setData(updated)
       setOriginal({ ...updated })
+      mutate()
       toast.success("Schedule settings saved successfully")
     } catch {
       toast.error("Failed to save. Check your permissions (admin required).")
@@ -119,11 +128,10 @@ export default function SchedulePage() {
   return (
     <Layout SEO={{ title: `Schedule - ${serverName} - LionBot`, description: "Schedule configuration" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
+            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
             <div className="flex-1 min-w-0">
-              <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
-
               <PageHeader
                 title="Schedule"
                 description="Configure scheduled study sessions. Members can book time slots, pay coins to reserve, and earn rewards for attending. Set the lobby and room channels, plus rewards and attendance rules."
@@ -141,18 +149,18 @@ export default function SchedulePage() {
               {loading ? (
                 <div className="space-y-4">
                   {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse">
-                      <div className="h-5 bg-gray-700 rounded w-1/4 mb-4" />
+                    <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                      <div className="h-5 bg-muted rounded w-1/4 mb-4" />
                       <div className="space-y-3">
-                        <div className="h-10 bg-gray-700 rounded" />
-                        <div className="h-10 bg-gray-700 rounded w-3/4" />
+                        <div className="h-10 bg-muted rounded" />
+                        <div className="h-10 bg-muted rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !data ? (
                 <div className="text-center py-20">
-                  <p className="text-gray-400">Unable to load schedule settings. You may not have moderator permissions.</p>
+                  <p className="text-muted-foreground">Unable to load schedule settings. You may not have moderator permissions.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -187,6 +195,26 @@ export default function SchedulePage() {
                         placeholder="Select session room"
                       />
                     </SettingRow>
+                    {/* --- AI-MODIFIED (2026-03-13) --- */}
+                    {/* Purpose: added schedule_channels multi-select editor */}
+                    <SettingRow
+                      label="Schedule Channels"
+                      description="Voice channels where scheduled sessions can take place"
+                      tooltip="Select which voice channels are available for scheduled study sessions. Members will be able to book sessions in these channels."
+                    >
+                      <ChannelSelect
+                        guildId={guildId}
+                        value={data.schedule_channels.map((ch) => ch.channelid)}
+                        onChange={(v) => {
+                          const ids = Array.isArray(v) ? v : v ? [v] : []
+                          set("schedule_channels", ids.map((channelid: string) => ({ channelid })))
+                        }}
+                        channelTypes={[2]}
+                        multiple
+                        placeholder="Select schedule channels"
+                      />
+                    </SettingRow>
+                    {/* --- END AI-MODIFIED --- */}
                   </SectionCard>
 
                   <SectionCard

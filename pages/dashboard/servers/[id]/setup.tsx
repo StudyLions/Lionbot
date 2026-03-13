@@ -13,12 +13,11 @@ import {
   Toggle,
   NumberInput,
   SearchSelect,
-  ChannelSelect,
-  RoleSelect,
   Badge,
   TextInput,
   toast,
 } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
@@ -43,6 +42,18 @@ import {
 
 const TOTAL_STEPS = 6
 const STEP_LABELS = ["Basics", "Study Rewards", "Ranks", "Economy", "Optional Features", "Summary"]
+
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: step descriptions for onboarding clarity
+const STEP_DESCRIPTIONS: Record<number, string> = {
+  1: "Set your server's timezone, language, and welcome message so new members feel at home.",
+  2: "Configure how members earn coins from studying. These rewards drive engagement in your study channels.",
+  3: "Choose how members rank up. Ranks reward activity and give members goals to work toward.",
+  4: "Control the economy: starting coins, transfers, and XP-to-coin conversion.",
+  5: "Explore optional features like the shop, role menus, and video channels. You can configure these later.",
+  6: "Review your configuration and finish setup.",
+}
+// --- END AI-MODIFIED ---
 
 const TIMEZONE_OPTIONS = [
   "US/Eastern",
@@ -145,28 +156,40 @@ export default function SetupWizard() {
   const [step, setStep] = useState(1)
   const [config, setConfig] = useState<Record<string, any> | null>(null)
   const [perms, setPerms] = useState<{ isAdmin: boolean; isModerator: boolean }>({ isAdmin: false, isModerator: false })
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: store detected timezone for Quick Setup
+  const [detectedTimezone, setDetectedTimezone] = useState<string>("UTC")
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (tz) setDetectedTimezone(tz)
+      } catch {
+        setDetectedTimezone("UTC")
+      }
+    }
+  }, [])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: configData, isLoading: configLoading, mutate } = useDashboard<Record<string, any>>(
+    id && session ? `/api/dashboard/servers/${id}/config` : null
+  )
+  const { data: permData, isLoading: permLoading } = useDashboard<{ isAdmin: boolean; isModerator: boolean }>(
+    id && session ? `/api/dashboard/servers/${id}/permissions` : null
+  )
+  const loading = configLoading || permLoading
 
   useEffect(() => {
-    if (id && session) {
-      Promise.all([
-        fetch(`/api/dashboard/servers/${id}/config`).then((r) => {
-          if (!r.ok) throw new Error(r.status === 403 ? "You're not a moderator of this server" : "Failed to load")
-          return r.json()
-        }),
-        fetch(`/api/dashboard/servers/${id}/permissions`).then((r) =>
-          r.ok ? r.json() : { isMember: true, isModerator: false, isAdmin: false }
-        ),
-      ])
-        .then(([configData, permData]) => {
-          setConfig(configData)
-          setPerms({ isAdmin: permData.isAdmin, isModerator: permData.isModerator })
-        })
-        .catch(() => setConfig(null))
-        .finally(() => setLoading(false))
-    }
-  }, [id, session])
+    if (configData) setConfig(configData)
+  }, [configData])
+
+  useEffect(() => {
+    if (permData) setPerms({ isAdmin: permData.isAdmin, isModerator: permData.isModerator })
+  }, [permData])
+  // --- END AI-MODIFIED ---
 
   const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -222,6 +245,7 @@ export default function SetupWizard() {
     if (updates && step < 5) {
       const ok = await saveStep(updates)
       if (!ok) return
+      mutate() // revalidate config after successful PATCH
     }
 
     if (step < TOTAL_STEPS) setStep(step + 1)
@@ -235,15 +259,50 @@ export default function SetupWizard() {
     if (s >= 1 && s <= TOTAL_STEPS) setStep(s)
   }
 
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: Quick Setup applies sensible defaults and skips to Summary
+  const handleQuickSetup = async () => {
+    if (!id) return
+    const quickDefaults = {
+      timezone: detectedTimezone,
+      locale: "en_GB",
+      study_hourly_reward: 100,
+      study_hourly_live_bonus: 25,
+      starting_funds: 0,
+      allow_transfers: true,
+      rank_type: "XP",
+      dm_ranks: true,
+      xp_per_period: 5,
+    }
+    setConfig((prev) => (prev ? { ...prev, ...quickDefaults } : prev))
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(quickDefaults),
+      })
+      if (!res.ok) throw new Error("Save failed")
+      mutate()
+      toast.success("Quick setup applied! Review your settings below.")
+      setStep(6)
+    } catch {
+      toast.error("Failed to apply quick setup. Check your admin permissions.")
+    } finally {
+      setSaving(false)
+    }
+  }
+  // --- END AI-MODIFIED ---
+
   const guildId = id as string
 
   return (
     <Layout SEO={{ title: `Setup - ${config?.name || "Server"} - LionBot`, description: "Server setup wizard" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
-          <div className="max-w-3xl mx-auto">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+          <div className="max-w-3xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin={perms.isAdmin} isMod={perms.isModerator} />
-
+            <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-4 mb-6">
               <PageHeader
                 title="Setup Wizard"
@@ -251,7 +310,7 @@ export default function SetupWizard() {
               />
               <Link
                 href={`/dashboard/servers/${id}`}
-                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors whitespace-nowrap"
+                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
               >
                 <ArrowLeft size={14} />
                 Skip to dashboard
@@ -267,17 +326,17 @@ export default function SetupWizard() {
                     type="button"
                     onClick={() => step >= s && goToStep(s)}
                     className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium transition-all ${
-                      s === step ? "bg-indigo-600 text-white ring-2 ring-indigo-400 ring-offset-2 ring-offset-gray-900" : s < step ? "bg-indigo-600/60 text-white" : "bg-gray-700 text-gray-500"
-                    } ${step >= s ? "cursor-pointer hover:bg-indigo-500" : "cursor-default"}`}
+                      s === step ? "bg-primary text-foreground ring-2 ring-primary ring-offset-2 ring-offset-background" : s < step ? "bg-primary/60 text-foreground" : "bg-muted text-muted-foreground"
+                    } ${step >= s ? "cursor-pointer hover:bg-primary/90" : "cursor-default"}`}
                     title={STEP_LABELS[s - 1]}
                   >
                     {s < step ? <Check size={16} /> : s}
                   </button>
                 ))}
               </div>
-              <div className="flex justify-between text-xs text-gray-500 px-1">
+              <div className="flex justify-between text-xs text-muted-foreground px-1">
                 {STEP_LABELS.map((label, i) => (
-                  <span key={i} className={`flex-1 text-center truncate ${i === step - 1 ? "text-indigo-400 font-medium" : ""}`} style={{ maxWidth: "4rem" }}>
+                  <span key={i} className={`flex-1 text-center truncate ${i === step - 1 ? "text-primary font-medium" : ""}`} style={{ maxWidth: "4rem" }}>
                     {label}
                   </span>
                 ))}
@@ -285,17 +344,17 @@ export default function SetupWizard() {
             </div>
 
             {loading ? (
-              <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-8 animate-pulse">
-                <div className="h-6 bg-gray-700 rounded w-1/3 mb-6" />
+              <div className="bg-card/50 border border-border rounded-xl p-8 animate-pulse">
+                <div className="h-6 bg-muted rounded w-1/3 mb-6" />
                 <div className="space-y-4">
-                  <div className="h-12 bg-gray-700 rounded" />
-                  <div className="h-12 bg-gray-700 rounded w-2/3" />
+                  <div className="h-12 bg-muted rounded" />
+                  <div className="h-12 bg-muted rounded w-2/3" />
                 </div>
               </div>
             ) : !config ? (
               <div className="text-center py-20">
-                <p className="text-gray-400">Unable to load settings. You may not have moderator permissions.</p>
-                <Link href={`/dashboard/servers/${id}`} className="mt-4 inline-block text-indigo-400 hover:text-indigo-300">
+                <p className="text-muted-foreground">Unable to load settings. You may not have moderator permissions.</p>
+                <Link href={`/dashboard/servers/${id}`} className="mt-4 inline-block text-primary hover:text-primary">
                   Go to dashboard
                 </Link>
               </div>
@@ -303,7 +362,22 @@ export default function SetupWizard() {
               <>
                 {/* Step 1: Basics */}
                 {step === 1 && (
-                  <SectionCard title="Basics" description="Timezone, language, and welcome message" icon={<Globe size={18} />} defaultOpen>
+                  <SectionCard title="Basics" description={STEP_DESCRIPTIONS[1]} icon={<Globe size={18} />} defaultOpen>
+                    {/* --- AI-MODIFIED (2026-03-13) ---
+                        Purpose: Quick Setup button for one-click sensible defaults */}
+                    <div className="mb-6">
+                      <button
+                        type="button"
+                        onClick={handleQuickSetup}
+                        disabled={saving}
+                        className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary/20 hover:bg-primary/30 text-primary font-medium border border-primary/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Wand2 size={18} />
+                        Quick Setup
+                      </button>
+                      <p className="text-xs text-muted-foreground mt-1.5">Apply sensible defaults and skip to Summary</p>
+                    </div>
+                    {/* --- END AI-MODIFIED --- */}
                     <SettingRow label="Timezone" description="Server timezone for schedules and time displays">
                       <SearchSelect options={TIMEZONE_OPTIONS} value={config.timezone || null} onChange={(v) => set("timezone", v)} placeholder="Select timezone" />
                     </SettingRow>
@@ -318,7 +392,7 @@ export default function SetupWizard() {
 
                 {/* Step 2: Study Rewards */}
                 {step === 2 && (
-                  <SectionCard title="Study Rewards" description="How members earn coins from studying" icon={<BookOpen size={18} />} defaultOpen>
+                  <SectionCard title="Study Rewards" description={STEP_DESCRIPTIONS[2]} icon={<BookOpen size={18} />} defaultOpen>
                     <SettingRow label="Hourly Reward" description="Coins earned per hour of study in voice channels" defaultBadge={String(DEFAULTS.study_hourly_reward)}>
                       <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull />
                     </SettingRow>
@@ -333,7 +407,7 @@ export default function SetupWizard() {
 
                 {/* Step 3: Ranks */}
                 {step === 3 && (
-                  <SectionCard title="Ranks" description="Activity-based rank progression" icon={<Trophy size={18} />} defaultOpen>
+                  <SectionCard title="Ranks" description={STEP_DESCRIPTIONS[3]} icon={<Trophy size={18} />} defaultOpen>
                     <SettingRow label="Rank Type" description={RANK_DESCRIPTIONS[config.rank_type || "XP"] || ""}>
                       <SearchSelect options={RANK_TYPE_OPTIONS} value={config.rank_type || null} onChange={(v) => set("rank_type", v)} placeholder="Select rank type" />
                     </SettingRow>
@@ -348,7 +422,7 @@ export default function SetupWizard() {
 
                 {/* Step 4: Economy */}
                 {step === 4 && (
-                  <SectionCard title="Economy" description="Starting coins and transfer rules" icon={<Coins size={18} />} defaultOpen>
+                  <SectionCard title="Economy" description={STEP_DESCRIPTIONS[4]} icon={<Coins size={18} />} defaultOpen>
                     <SettingRow label="Starting Coins" description="Coins given to new members when they join" defaultBadge={String(DEFAULTS.starting_funds)}>
                       <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull />
                     </SettingRow>
@@ -363,17 +437,17 @@ export default function SetupWizard() {
 
                 {/* Step 5: Optional Features */}
                 {step === 5 && (
-                  <SectionCard title="Optional Features" description="Configure these later for more control" icon={<Wand2 size={18} />} defaultOpen>
+                  <SectionCard title="Optional Features" description={STEP_DESCRIPTIONS[5]} icon={<Wand2 size={18} />} defaultOpen>
                     <div className="pt-4 space-y-3">
                       {OPTIONAL_FEATURES.map((feat) => (
                         <Link key={feat.id} href={`/dashboard/servers/${id}/${feat.href}`}>
-                          <span className="flex items-center gap-4 p-4 rounded-lg bg-gray-700/30 hover:bg-gray-700/50 border border-gray-600 hover:border-gray-500 transition-all cursor-pointer">
-                            <span className="text-gray-400 flex-shrink-0">{feat.icon}</span>
+                          <span className="flex items-center gap-4 p-4 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border hover:border-border transition-all cursor-pointer">
+                            <span className="text-muted-foreground flex-shrink-0">{feat.icon}</span>
                             <div className="flex-1 min-w-0">
-                              <div className="font-medium text-white">{feat.title}</div>
-                              <p className="text-sm text-gray-400 mt-0.5">{feat.description}</p>
+                              <div className="font-medium text-foreground">{feat.title}</div>
+                              <p className="text-sm text-muted-foreground mt-0.5">{feat.description}</p>
                             </div>
-                            <ChevronRight size={18} className="text-gray-500 flex-shrink-0" />
+                            <ChevronRight size={18} className="text-muted-foreground flex-shrink-0" />
                           </span>
                         </Link>
                       ))}
@@ -383,57 +457,82 @@ export default function SetupWizard() {
 
                 {/* Step 6: Summary */}
                 {step === 6 && (
-                  <SectionCard title="All Set!" description="Review your configuration" icon={<Check size={18} />} defaultOpen>
+                  <SectionCard title="All Set!" description={STEP_DESCRIPTIONS[6]} icon={<Check size={18} />} defaultOpen>
                     <div className="pt-4 space-y-6">
-                      <div className="flex items-center justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Basics</span>
-                        <button type="button" onClick={() => goToStep(1)} className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Basics</span>
+                        <button type="button" onClick={() => goToStep(1)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
-                      <div className="text-sm text-gray-300 space-y-1">
+                      <div className="text-sm text-foreground/80 space-y-1">
                         <p>Timezone: {config.timezone || "UTC"}</p>
                         <p>Language: {LOCALE_OPTIONS.find((o) => o.value === config.locale)?.label || "English"}</p>
                         <p>Welcome: {config.greeting_message ? "Set" : "Not set"}</p>
                       </div>
 
-                      <div className="flex items-center justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Study Rewards</span>
-                        <button type="button" onClick={() => goToStep(2)} className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Study Rewards</span>
+                        <button type="button" onClick={() => goToStep(2)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
-                      <div className="text-sm text-gray-300 space-y-1">
+                      <div className="text-sm text-foreground/80 space-y-1">
                         <p>Hourly: {config.study_hourly_reward ?? 100} coins, Camera: +{config.study_hourly_live_bonus ?? 25}, Cap: {config.daily_study_cap ?? "None"}</p>
                       </div>
 
-                      <div className="flex items-center justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Ranks</span>
-                        <button type="button" onClick={() => goToStep(3)} className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Ranks</span>
+                        <button type="button" onClick={() => goToStep(3)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
-                      <div className="text-sm text-gray-300 space-y-1">
+                      <div className="text-sm text-foreground/80 space-y-1">
                         <p>Type: {config.rank_type || "XP"}, DM: {config.dm_ranks ?? true ? "Yes" : "No"}, XP/period: {config.xp_per_period ?? 5}</p>
                       </div>
 
-                      <div className="flex items-center justify-between py-2 border-b border-gray-700">
-                        <span className="text-gray-400">Economy</span>
-                        <button type="button" onClick={() => goToStep(4)} className="flex items-center gap-1 text-indigo-400 hover:text-indigo-300 text-sm cursor-pointer">
+                      <div className="flex items-center justify-between py-2 border-b border-border">
+                        <span className="text-muted-foreground">Economy</span>
+                        <button type="button" onClick={() => goToStep(4)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
-                      <div className="text-sm text-gray-300 space-y-1">
+                      <div className="text-sm text-foreground/80 space-y-1">
                         <p>Starting: {config.starting_funds ?? 0} coins, Transfers: {config.allow_transfers ?? true ? "Yes" : "No"}, Coins/100 XP: {config.coins_per_centixp ?? 50}</p>
                       </div>
 
-                      <Link href={`/dashboard/servers/${id}/settings`} className="flex items-center gap-1 text-sm text-gray-400 hover:text-white">
+                      <Link href={`/dashboard/servers/${id}/settings`} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
                         Full settings page →
                       </Link>
 
+                      {/* --- AI-MODIFIED (2026-03-13) ---
+                          Purpose: What's Next section with links to key config pages */}
+                      <div className="pt-4 border-t border-border">
+                        <p className="text-sm font-medium text-foreground mb-3">What&apos;s Next?</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          <Link href={`/dashboard/servers/${id}/ranks`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                            <Trophy size={16} className="text-primary" />
+                            Set up ranks
+                          </Link>
+                          <Link href={`/dashboard/servers/${id}/shop`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                            <ShoppingBag size={16} className="text-primary" />
+                            Add shop items
+                          </Link>
+                          <Link href={`/dashboard/servers/${id}/rolemenus`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                            <ListChecks size={16} className="text-primary" />
+                            Create role menus
+                          </Link>
+                          <Link href={`/dashboard/servers/${id}/videochannels`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                            <Video size={16} className="text-primary" />
+                            Configure video channels
+                          </Link>
+                        </div>
+                      </div>
+                      {/* --- END AI-MODIFIED --- */}
+
                       <Link
                         href={`/dashboard/servers/${id}`}
-                        className="flex items-center justify-center gap-2 w-full py-4 px-6 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-lg transition-colors"
+                        className="flex items-center justify-center gap-2 w-full py-4 px-6 rounded-xl bg-primary hover:bg-primary/90 text-foreground font-semibold text-lg transition-colors"
                       >
                         Go to Dashboard
                         <ArrowLeft size={20} className="rotate-180" />
@@ -444,12 +543,12 @@ export default function SetupWizard() {
 
                 {/* Back / Next */}
                 {step < 6 && (
-                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-700">
+                  <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
                     <button
                       type="button"
                       onClick={handleBack}
                       disabled={step === 1}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent transition-colors"
                     >
                       <ChevronLeft size={18} />
                       Back
@@ -458,7 +557,7 @@ export default function SetupWizard() {
                       type="button"
                       onClick={handleNext}
                       disabled={saving}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {saving ? "Saving..." : step === 5 ? "Finish" : "Next"}
                       <ChevronRight size={18} />
@@ -467,6 +566,7 @@ export default function SetupWizard() {
                 )}
               </>
             )}
+            </div>
           </div>
         </div>
       </AdminGuard>

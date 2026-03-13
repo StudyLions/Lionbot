@@ -44,7 +44,15 @@ interface ChannelSelectProps {
   channelTypes?: number[]
 }
 
-let channelCache = new Map<string, { channels: DiscordChannel[]; expiresAt: number }>()
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: export cache map and clearCache for invalidation after config changes
+const channelCache = new Map<string, { channels: DiscordChannel[]; expiresAt: number }>()
+
+export function clearChannelCache(guildId?: string) {
+  if (guildId) channelCache.delete(guildId)
+  else channelCache.clear()
+}
+// --- END AI-MODIFIED ---
 
 export default function ChannelSelect({
   guildId,

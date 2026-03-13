@@ -6,6 +6,8 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: Phase 2E - add Create Timer form and Delete button on each timer
 import {
   PageHeader,
   SectionCard,
@@ -15,11 +17,15 @@ import {
   Toggle,
   EmptyState,
   FirstTimeBanner,
+  ConfirmModal,
+  ChannelSelect,
   toast,
 } from "@/components/dashboard/ui"
+// --- END AI-MODIFIED ---
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback } from "react"
+import { useState, useCallback } from "react"
 import { Timer } from "lucide-react"
 
 interface PomodoroTimer {
@@ -47,29 +53,26 @@ export default function PomodoroPage() {
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
-  const [data, setData] = useState<PomodoroData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [serverName, setServerName] = useState("")
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data, error, isLoading: loading, mutate } = useDashboard<PomodoroData>(
+    id && session ? `/api/dashboard/servers/${id}/pomodoro` : null
+  )
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    id && session ? `/api/dashboard/servers/${id}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
+  // --- END AI-MODIFIED ---
   const [editingTimers, setEditingTimers] = useState<Record<string, Partial<PomodoroTimer>>>({})
   const [saving, setSaving] = useState<Record<string, boolean>>({})
-
-  const fetchData = useCallback(async () => {
-    if (!id || !session) return
-    try {
-      const [pomodoroRes, serverRes] = await Promise.all([
-        fetch(`/api/dashboard/servers/${id}/pomodoro`),
-        fetch(`/api/dashboard/servers/${id}`),
-      ])
-      if (pomodoroRes.ok) setData(await pomodoroRes.json())
-      const serverData = await serverRes.json()
-      setServerName(serverData.server?.name || "Server")
-    } catch {}
-    setLoading(false)
-  }, [id, session])
-
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
+  const [createForm, setCreateForm] = useState({
+    channelid: "" as string | null,
+    focus_length: 25,
+    break_length: 5,
+  })
+  const [creating, setCreating] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<PomodoroTimer | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const setTimerField = useCallback((timerId: string, field: keyof PomodoroTimer, value: unknown) => {
     setEditingTimers((prev) => ({
@@ -102,19 +105,12 @@ export default function PomodoroPage() {
       })
       if (!res.ok) throw new Error("Save failed")
       const { timer: updated } = await res.json()
-      setData((prev) =>
-        prev
-          ? {
-              ...prev,
-              timers: prev.timers.map((t) => (t.timerid === timer.timerid ? updated : t)),
-            }
-          : prev
-      )
       setEditingTimers((prev) => {
         const next = { ...prev }
         delete next[timer.timerid]
         return next
       })
+      mutate()
       toast.success("Timer settings saved")
     } catch {
       toast.error("Failed to save. Check your permissions.")
@@ -130,14 +126,63 @@ export default function PomodoroPage() {
     })
   }
 
+  const handleCreate = async () => {
+    if (!createForm.channelid) return
+    setCreating(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/pomodoro`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          channelid: createForm.channelid,
+          focus_length: createForm.focus_length,
+          break_length: createForm.break_length,
+        }),
+      })
+      if (res.ok) {
+        toast.success("Timer created")
+        setCreateForm({ channelid: null, focus_length: 25, break_length: 5 })
+        mutate()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || "Failed to create timer")
+      }
+    } catch {
+      toast.error("Failed to create timer")
+    }
+    setCreating(false)
+  }
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/pomodoro`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelid: deleteTarget.channelid }),
+      })
+      if (res.ok) {
+        toast.success("Timer deleted")
+        setDeleteTarget(null)
+        mutate()
+      } else {
+        const err = await res.json()
+        toast.error(err.error || "Failed to delete timer")
+      }
+    } catch {
+      toast.error("Failed to delete timer")
+    }
+    setDeleting(false)
+  }
+
   return (
     <Layout SEO={{ title: `Pomodoro - ${serverName || "Server"} - LionBot`, description: "Pomodoro timer configuration" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
+            <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
             <div className="flex-1 min-w-0">
-              <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
-
               <PageHeader
                 title="Pomodoro Timers"
                 description="Configure Pomodoro study timers for your server. Each timer runs in a voice channel and helps members stay focused with work/break cycles."
@@ -153,18 +198,18 @@ export default function PomodoroPage() {
               {loading ? (
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
-                    <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse">
-                      <div className="h-5 bg-gray-700 rounded w-1/4 mb-4" />
+                    <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                      <div className="h-5 bg-muted rounded w-1/4 mb-4" />
                       <div className="space-y-3">
-                        <div className="h-10 bg-gray-700 rounded" />
-                        <div className="h-10 bg-gray-700 rounded w-3/4" />
+                        <div className="h-10 bg-muted rounded" />
+                        <div className="h-10 bg-muted rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !data ? (
                 <div className="text-center py-20">
-                  <p className="text-gray-400">Unable to load Pomodoro settings. You may not have moderator permissions.</p>
+                  <p className="text-muted-foreground">Unable to load Pomodoro settings. You may not have moderator permissions.</p>
                 </div>
               ) : data.timers.length === 0 ? (
                 <EmptyState
@@ -256,30 +301,100 @@ export default function PomodoroPage() {
                           />
                         </SettingRow>
                       </div>
-                      {hasChanges(timer) && (
-                        <div className="flex gap-2 mt-4 pt-4 border-t border-gray-700/50">
-                          <button
-                            onClick={() => handleSave(timer)}
-                            disabled={saving[timer.timerid]}
-                            className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {saving[timer.timerid] ? "Saving..." : "Save changes"}
-                          </button>
-                          <button
-                            onClick={() => handleReset(timer)}
-                            className="px-4 py-2 text-sm font-medium text-gray-300 hover:text-white rounded-lg transition-colors"
-                          >
-                            Reset
-                          </button>
-                        </div>
-                      )}
+                      <div className="flex gap-2 mt-4 pt-4 border-t border-border/50 flex-wrap">
+                        {hasChanges(timer) && (
+                          <>
+                            <button
+                              onClick={() => handleSave(timer)}
+                              disabled={saving[timer.timerid]}
+                              className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {saving[timer.timerid] ? "Saving..." : "Save changes"}
+                            </button>
+                            <button
+                              onClick={() => handleReset(timer)}
+                              className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-white rounded-lg transition-colors"
+                            >
+                              Reset
+                            </button>
+                          </>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setDeleteTarget(timer)}
+                          className="px-4 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </SectionCard>
                   ))}
                 </div>
               )}
+
+              {data && (
+              <div className="mt-8 bg-card/50 border border-border rounded-xl p-6">
+                <h3 className="text-sm font-semibold text-foreground mb-1">Create Timer</h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Add a new Pomodoro timer to a voice channel. Members can join the channel to study with focus/break cycles.
+                </p>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                  <ChannelSelect
+                    guildId={guildId}
+                    value={createForm.channelid}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, channelid: (v as string) || null }))}
+                    channelTypes={[2]}
+                    label="Voice channel"
+                    placeholder="Select voice channel..."
+                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-foreground/80 mb-1">Focus length (min)</label>
+                      <input
+                        type="number"
+                        value={createForm.focus_length}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, focus_length: parseInt(e.target.value, 10) || 25 }))}
+                        min={1}
+                        max={120}
+                        className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-foreground/80 mb-1">Break length (min)</label>
+                      <input
+                        type="number"
+                        value={createForm.break_length}
+                        onChange={(e) => setCreateForm((f) => ({ ...f, break_length: parseInt(e.target.value, 10) || 5 }))}
+                        min={1}
+                        max={60}
+                        className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCreate}
+                  disabled={creating || !createForm.channelid}
+                  className="mt-4 px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {creating ? "Creating..." : "Create Timer"}
+                </button>
+              </div>
+              )}
             </div>
           </div>
         </div>
+
+        <ConfirmModal
+          open={!!deleteTarget}
+          onConfirm={handleDelete}
+          onCancel={() => setDeleteTarget(null)}
+          title="Delete Timer"
+          message="This will remove the Pomodoro timer from this voice channel. The timer will stop and members will need to re-create it via the bot."
+          confirmLabel="Delete Timer"
+          variant="danger"
+          loading={deleting}
+        />
       </AdminGuard>
     </Layout>
   )

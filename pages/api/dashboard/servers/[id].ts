@@ -9,20 +9,23 @@ import { prisma } from "@/utils/prisma"
 // Purpose: switched to requireAuth for rate limiting consistency
 import { requireAuth } from "@/utils/adminAuth"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+import { apiHandler } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" })
+export default apiHandler({
+  async GET(req, res) {
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: use requireAuth instead of getDiscordId for rate limiting
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: use requireAuth instead of getDiscordId for rate limiting
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+    const userId = BigInt(auth.discordId)
+    // --- END AI-MODIFIED ---
+    const guildId = BigInt(req.query.id as string)
 
-  const userId = BigInt(auth.discordId)
-  // --- END AI-MODIFIED ---
-  const guildId = BigInt(req.query.id as string)
-
-  const [membership, guildConfig, leaderboard, userRank] = await Promise.all([
+    const [membership, guildConfig, leaderboard, userRank] = await Promise.all([
     prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: userId } },
       select: {
@@ -69,13 +72,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         current_msg_rankid: true,
       },
     }),
-  ])
+    ])
 
-  if (!membership) {
-    return res.status(404).json({ error: "You are not a member of this server" })
-  }
+    if (!membership) {
+      return res.status(404).json({ error: "You are not a member of this server" })
+    }
 
-  return res.status(200).json({
+    return res.status(200).json({
     server: {
       id: guildId.toString(),
       name: guildConfig?.name || "Unknown Server",
@@ -113,5 +116,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       coins: m.coins || 0,
       isYou: m.userid === userId,
     })),
-  })
-}
+    })
+  },
+})

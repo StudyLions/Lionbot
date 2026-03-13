@@ -6,17 +6,14 @@
 import { useSession, signIn } from "next-auth/react"
 import { ReactNode } from "react"
 
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: removed unused requiredLevel and fallbackMessage props
 interface AdminGuardProps {
   children: ReactNode
-  requiredLevel?: "member" | "moderator" | "admin"
-  fallbackMessage?: string
 }
 
-export default function AdminGuard({
-  children,
-  requiredLevel = "member",
-  fallbackMessage = "You need additional permissions to access this page.",
-}: AdminGuardProps) {
+export default function AdminGuard({ children }: AdminGuardProps) {
+// --- END AI-MODIFIED ---
   const { status } = useSession()
 
   if (status === "loading") {

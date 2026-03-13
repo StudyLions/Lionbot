@@ -31,7 +31,15 @@ interface RoleSelectProps {
   excludeEveryone?: boolean
 }
 
-let roleCache = new Map<string, { roles: DiscordRole[]; expiresAt: number }>()
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: export cache map and clearCache for invalidation after config changes
+const roleCache = new Map<string, { roles: DiscordRole[]; expiresAt: number }>()
+
+export function clearRoleCache(guildId?: string) {
+  if (guildId) roleCache.delete(guildId)
+  else roleCache.clear()
+}
+// --- END AI-MODIFIED ---
 
 export default function RoleSelect({
   guildId,

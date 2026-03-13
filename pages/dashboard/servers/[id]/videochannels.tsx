@@ -18,10 +18,11 @@ import {
   SaveBar,
   toast,
 } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
-import { Video, ShieldAlert } from "lucide-react"
+import { Video, ShieldAlert, Plus, X } from "lucide-react"
 
 interface VideoChannelsData {
   videoGracePeriod: number | null
@@ -36,44 +37,44 @@ export default function VideoChannelsPage() {
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: vcData, error, isLoading: loading, mutate } = useDashboard<VideoChannelsData>(
+    id && session ? `/api/dashboard/servers/${id}/videochannels` : null
+  )
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    id && session ? `/api/dashboard/servers/${id}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
   const [data, setData] = useState<VideoChannelsData | null>(null)
   const [original, setOriginal] = useState<VideoChannelsData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [serverName, setServerName] = useState("")
-
-  const fetchData = useCallback(async () => {
-    if (!id || !session) return
-    try {
-      const [videoRes, serverRes] = await Promise.all([
-        fetch(`/api/dashboard/servers/${id}/videochannels`),
-        fetch(`/api/dashboard/servers/${id}`),
-      ])
-      if (videoRes.ok) {
-        const d = await videoRes.json()
-        setData(d)
-        setOriginal(d)
-      }
-      const serverData = await serverRes.json()
-      setServerName(serverData.server?.name || "Server")
-    } catch {}
-    setLoading(false)
-  }, [id, session])
-
   useEffect(() => {
-    fetchData()
-  }, [fetchData])
+    if (vcData) {
+      setData(vcData)
+      setOriginal({ ...vcData })
+    } else if (vcData === undefined && !loading) {
+      setData(null)
+      setOriginal(null)
+    }
+  }, [vcData, loading])
+  // --- END AI-MODIFIED ---
+  const [saving, setSaving] = useState(false)
 
   const set = useCallback((updates: Partial<VideoChannelsData>) => {
     setData((prev) => (prev ? { ...prev, ...updates } : prev))
   }, [])
 
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: include studybanRole and studybanDurations in change detection
   const hasChanges =
     data &&
     original &&
     (data.videoGracePeriod !== original.videoGracePeriod ||
+      data.studybanRole !== original.studybanRole ||
       JSON.stringify(data.videoChannelIds?.sort()) !== JSON.stringify(original.videoChannelIds?.sort()) ||
-      JSON.stringify(data.exemptRoleIds?.sort()) !== JSON.stringify(original.exemptRoleIds?.sort()))
+      JSON.stringify(data.exemptRoleIds?.sort()) !== JSON.stringify(original.exemptRoleIds?.sort()) ||
+      JSON.stringify(data.studybanDurations?.map(d => d.duration).sort()) !== JSON.stringify(original.studybanDurations?.map(d => d.duration).sort()))
+  // --- END AI-MODIFIED ---
 
   const handleSave = async () => {
     if (!data || !original || !hasChanges) return
@@ -82,14 +83,20 @@ export default function VideoChannelsPage() {
       const res = await fetch(`/api/dashboard/servers/${id}/videochannels`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
+        // --- AI-MODIFIED (2026-03-13) ---
+        // Purpose: include studybanRole and studybanDurations in save
         body: JSON.stringify({
           videoGracePeriod: data.videoGracePeriod,
+          studybanRole: data.studybanRole,
           videoChannelIds: data.videoChannelIds || [],
           exemptRoleIds: data.exemptRoleIds || [],
+          studybanDurations: data.studybanDurations?.map(d => d.duration) || [],
         }),
+        // --- END AI-MODIFIED ---
       })
       if (!res.ok) throw new Error("Save failed")
       setOriginal({ ...data })
+      mutate()
       toast.success("Video channels settings saved")
     } catch {
       toast.error("Failed to save. Check your permissions.")
@@ -109,11 +116,10 @@ export default function VideoChannelsPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
+            <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
             <div className="flex-1 min-w-0">
-              <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
-
               <PageHeader
                 title="Video Channels"
                 description="Configure which voice channels require members to have their camera on. Members without camera get a grace period before being disconnected. Exempt roles skip this requirement."
@@ -131,19 +137,19 @@ export default function VideoChannelsPage() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse"
+                      className="bg-card/50 border border-border rounded-xl p-6 animate-pulse"
                     >
-                      <div className="h-5 bg-gray-700 rounded w-1/4 mb-4" />
+                      <div className="h-5 bg-muted rounded w-1/4 mb-4" />
                       <div className="space-y-3">
-                        <div className="h-10 bg-gray-700 rounded" />
-                        <div className="h-10 bg-gray-700 rounded w-3/4" />
+                        <div className="h-10 bg-muted rounded" />
+                        <div className="h-10 bg-muted rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : !data ? (
                 <div className="text-center py-20">
-                  <p className="text-gray-400">
+                  <p className="text-muted-foreground">
                     Unable to load video channels. You may not have moderator permissions.
                   </p>
                 </div>
@@ -208,20 +214,73 @@ export default function VideoChannelsPage() {
                         allowNull
                       />
                     </SettingRow>
-                    {data.studybanDurations && data.studybanDurations.length > 0 && (
-                      <SettingRow
-                        label="Study Ban Durations"
-                        description="Configured ban durations for repeat camera violations"
-                      >
+                    {/* --- AI-MODIFIED (2026-03-13) --- */}
+                    {/* Purpose: added studyban role selector and editable durations */}
+                    <SettingRow
+                      label="Study Ban Role"
+                      description="Role assigned to members who get study-banned"
+                      tooltip="When a member is study-banned for camera violations, they receive this role to restrict channel access."
+                    >
+                      <RoleSelect
+                        guildId={guildId}
+                        value={data.studybanRole}
+                        onChange={(v) => set({ studybanRole: (v as string) || null })}
+                        placeholder="Select studyban role"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Study Ban Durations"
+                      description="Ban durations for each successive violation (in seconds). First offense uses the first value, second offense uses the second, etc."
+                    >
+                      <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
-                          {data.studybanDurations.map((d) => (
-                            <Badge key={d.rowid} variant="info">
-                              {`${d.duration}s`}
-                            </Badge>
+                          {(data.studybanDurations || []).map((d, i) => (
+                            <div key={i} className="flex items-center gap-1 bg-muted rounded-lg px-2 py-1">
+                              <input
+                                type="number"
+                                value={d.duration}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0
+                                  const updated = [...(data.studybanDurations || [])]
+                                  updated[i] = { ...updated[i], duration: val }
+                                  set({ studybanDurations: updated })
+                                }}
+                                className="w-20 bg-card border border-border text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                min={1}
+                              />
+                              <span className="text-muted-foreground text-xs">s</span>
+                              <button
+                                onClick={() => {
+                                  const updated = (data.studybanDurations || []).filter((_, j) => j !== i)
+                                  set({ studybanDurations: updated })
+                                }}
+                                className="p-0.5 text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
                           ))}
                         </div>
-                      </SettingRow>
-                    )}
+                        <button
+                          onClick={() => {
+                            const last = data.studybanDurations?.length
+                              ? data.studybanDurations[data.studybanDurations.length - 1].duration * 2
+                              : 300
+                            set({
+                              studybanDurations: [
+                                ...(data.studybanDurations || []),
+                                { rowid: 0, duration: last },
+                              ],
+                            })
+                          }}
+                          className="flex items-center gap-1 text-sm text-indigo-400 hover:text-primary transition-colors"
+                        >
+                          <Plus size={14} />
+                          Add duration
+                        </button>
+                      </div>
+                    </SettingRow>
+                    {/* --- END AI-MODIFIED --- */}
                   </SectionCard>
                 </div>
               )}

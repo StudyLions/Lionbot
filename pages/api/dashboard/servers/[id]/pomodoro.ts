@@ -6,6 +6,10 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+import { apiHandler } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 const PATCHABLE_FIELDS = [
   "focus_length",
@@ -46,10 +50,11 @@ function serializeTimer(t: {
   }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const guildId = BigInt(req.query.id as string)
-
-  if (req.method === "GET") {
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -70,9 +75,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       timers: serialized,
       pomodoro_channel: guildConfig.pomodoro_channel?.toString() ?? null,
     })
-  }
-
-  if (req.method === "PATCH") {
+  },
+  async PATCH(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -108,7 +113,88 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
 
     return res.status(200).json({ success: true, timer: serializeTimer(updated) })
-  }
+  },
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: Phase 2E - POST create timer, DELETE remove timer
+  async POST(req, res) {
+    const guildId = BigInt(req.query.id as string)
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
 
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    const {
+      channelid,
+      focus_length,
+      break_length,
+      notification_channelid,
+      inactivity_threshold,
+      voice_alerts,
+      auto_restart,
+      manager_roleid,
+    } = req.body
+
+    if (!channelid) return res.status(400).json({ error: "channelid is required" })
+    const channelId = BigInt(channelid)
+    const focus = typeof focus_length === "number" ? focus_length : parseInt(String(focus_length), 10)
+    const breakLen = typeof break_length === "number" ? break_length : parseInt(String(break_length), 10)
+    if (isNaN(focus) || focus < 1 || focus > 120) {
+      return res.status(400).json({ error: "focus_length must be 1-120" })
+    }
+    if (isNaN(breakLen) || breakLen < 1 || breakLen > 60) {
+      return res.status(400).json({ error: "break_length must be 1-60" })
+    }
+
+    const guildConfig = await prisma.guild_config.findUnique({
+      where: { guildid: guildId },
+    })
+    if (!guildConfig) return res.status(404).json({ error: "Server not found" })
+
+    const existing = await prisma.timers.findUnique({
+      where: { channelid: channelId },
+    })
+    if (existing) return res.status(409).json({ error: "A timer already exists for this channel" })
+
+    const timer = await prisma.timers.create({
+      data: {
+        channelid: channelId,
+        guildid: guildId,
+        focus_length: focus,
+        break_length: breakLen,
+        notification_channelid:
+          notification_channelid != null && notification_channelid !== ""
+            ? BigInt(notification_channelid)
+            : null,
+        inactivity_threshold:
+          inactivity_threshold != null && inactivity_threshold !== ""
+            ? parseInt(String(inactivity_threshold), 10)
+            : null,
+        voice_alerts: voice_alerts ?? false,
+        auto_restart: auto_restart ?? false,
+        manager_roleid:
+          manager_roleid != null && manager_roleid !== ""
+            ? BigInt(manager_roleid)
+            : null,
+      },
+    })
+    return res.status(201).json({ success: true, timer: serializeTimer(timer) })
+  },
+  async DELETE(req, res) {
+    const guildId = BigInt(req.query.id as string)
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const { channelid } = req.body
+    if (!channelid) return res.status(400).json({ error: "channelid is required" })
+    const channelId = BigInt(channelid)
+
+    const existing = await prisma.timers.findFirst({
+      where: { channelid: channelId, guildid: guildId },
+    })
+    if (!existing) return res.status(404).json({ error: "Timer not found" })
+
+    await prisma.timers.delete({
+      where: { channelid: channelId },
+    })
+    return res.status(200).json({ success: true })
+  },
+  // --- END AI-MODIFIED ---
+})

@@ -7,11 +7,16 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+import { apiHandler } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const guildId = BigInt(req.query.id as string)
-
-  if (req.method === "GET") {
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -44,22 +49,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       exemptRoleIds: exemptRoles.map((r) => r.roleid.toString()),
       studybanDurations: studybanDurations.map((d) => ({ rowid: d.rowid, duration: d.duration })),
     })
-  }
-
-  if (req.method === "PATCH") {
+  },
+  async PATCH(req, res) {
+    const guildId = BigInt(req.query.id as string)
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: added studybanRole and studybanDurations editing support
     const body = req.body as {
       videoGracePeriod?: number | null
+      studybanRole?: string | null
       videoChannelIds?: string[]
       exemptRoleIds?: string[]
+      studybanDurations?: number[]
     }
 
-    const updates: { video_grace_period?: number | null } = {}
+    const updates: { video_grace_period?: number | null; studyban_role?: bigint | null } = {}
     if ("videoGracePeriod" in body) {
       updates.video_grace_period = body.videoGracePeriod ?? null
     }
+    if ("studybanRole" in body) {
+      updates.studyban_role = body.studybanRole ? BigInt(body.studybanRole) : null
+    }
+    // --- END AI-MODIFIED ---
 
     if (Object.keys(updates).length > 0) {
       await prisma.guild_config.update({
@@ -91,8 +104,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     }
 
-    return res.status(200).json({ success: true })
-  }
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: support editing studyban durations
+    if ("studybanDurations" in body && Array.isArray(body.studybanDurations)) {
+      await prisma.studyban_durations.deleteMany({ where: { guildid: guildId } })
+      for (const duration of body.studybanDurations) {
+        if (typeof duration === "number" && duration > 0) {
+          await prisma.studyban_durations.create({
+            data: { guildid: guildId, duration },
+          })
+        }
+      }
+    }
+    // --- END AI-MODIFIED ---
 
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    return res.status(200).json({ success: true })
+  },
+})
+// --- END AI-MODIFIED ---

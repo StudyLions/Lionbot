@@ -6,16 +6,15 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method !== "GET") {
-    return res.status(405).json({ error: "Method not allowed" })
-  }
-
-  try {
     const userId = auth.userId
 
     // Gem balance from user_config
@@ -58,13 +57,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })
     const premiumGuildIds = contributions.map((c) => c.guildid.toString())
 
-    return res.status(200).json({
+    res.status(200).json({
       gemBalance,
       transactions,
       premiumGuildIds,
     })
-  } catch (err) {
-    console.error("[gems] Error:", err)
-    return res.status(500).json({ error: "Failed to load gems data" })
-  }
-}
+  },
+})
+// --- END AI-MODIFIED ---

@@ -6,11 +6,14 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+import { apiHandler } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" })
-
-  const guildId = BigInt(req.query.id as string)
+export default apiHandler({
+  async GET(req, res) {
+    const guildId = BigInt(req.query.id as string)
   const auth = await requireModerator(req, res, guildId)
   if (!auth) return
 
@@ -70,4 +73,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })),
     pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
   })
-}
+  },
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: Phase 2D - PATCH handler to pardon a ticket
+  async PATCH(req, res) {
+    const guildId = BigInt(req.query.id as string)
+    const auth = await requireModerator(req, res, guildId)
+    if (!auth) return
+
+    const { ticketId, reason } = req.body
+    if (!ticketId) return res.status(400).json({ error: "ticketId is required" })
+    const reasonStr = typeof reason === "string" ? reason.trim() : ""
+
+    const existing = await prisma.tickets.findFirst({
+      where: { ticketid: ticketId, guildid: guildId },
+    })
+    if (!existing) return res.status(404).json({ error: "Ticket not found" })
+
+    await prisma.tickets.update({
+      where: { ticketid: ticketId },
+      data: {
+        ticket_state: "PARDONED",
+        pardoned_by: auth.userId,
+        pardoned_at: new Date(),
+        pardoned_reason: reasonStr || null,
+      },
+    })
+    return res.status(200).json({ success: true })
+  },
+  // --- END AI-MODIFIED ---
+})

@@ -6,12 +6,15 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method === "GET") {
     const tasks = await prisma.tasklist.findMany({
       where: { userid: auth.userId, deleted_at: null },
       orderBy: { created_at: "asc" },
@@ -26,7 +29,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     })
 
-    return res.status(200).json({
+    res.status(200).json({
       tasks: tasks.map((t) => ({
         id: t.taskid,
         content: t.content,
@@ -38,9 +41,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         rewarded: t.rewarded,
       })),
     })
-  }
+  },
 
-  if (req.method === "POST") {
+  async POST(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { content, parentId } = req.body
     if (!content || typeof content !== "string" || content.length > 200) {
       return res.status(400).json({ error: "Content required (max 200 chars)" })
@@ -54,10 +60,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     })
 
-    return res.status(201).json({ id: task.taskid, content: task.content })
-  }
+    res.status(201).json({ id: task.taskid, content: task.content })
+  },
 
-  if (req.method === "PATCH") {
+  async PATCH(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { taskId, content, completed } = req.body
     if (!taskId) return res.status(400).json({ error: "taskId required" })
 
@@ -71,10 +80,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     await prisma.tasklist.update({ where: { taskid: taskId }, data: updates })
-    return res.status(200).json({ success: true })
-  }
+    res.status(200).json({ success: true })
+  },
 
-  if (req.method === "DELETE") {
+  async DELETE(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { taskId } = req.body
     if (!taskId) return res.status(400).json({ error: "taskId required" })
 
@@ -85,8 +97,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where: { taskid: taskId },
       data: { deleted_at: new Date() },
     })
-    return res.status(200).json({ success: true })
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    res.status(200).json({ success: true })
+  },
+})
+// --- END AI-MODIFIED ---

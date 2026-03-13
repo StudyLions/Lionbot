@@ -3,6 +3,9 @@
 // Created: 2026-03-13
 // Purpose: Reminders - rebuilt with shared UI
 // ============================================================
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -13,9 +16,10 @@ import {
   EmptyState,
   toast,
 } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { Bell, Plus, Trash2, Clock, Repeat } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useCallback } from "react"
+import { useState } from "react"
 
 interface Reminder {
   id: number
@@ -42,8 +46,13 @@ function toLocalDatetimeStr(iso: string): string {
 
 export default function RemindersPage() {
   const { data: session } = useSession()
-  const [reminders, setReminders] = useState<Reminder[]>([])
-  const [loading, setLoading] = useState(true)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data: remindersData, isLoading: loading, mutate } = useDashboard<{ reminders: Reminder[] }>(
+    session ? "/api/dashboard/reminders" : null
+  )
+  const reminders = remindersData?.reminders || []
+  // --- END AI-MODIFIED ---
   const [saving, setSaving] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
@@ -56,18 +65,6 @@ export default function RemindersPage() {
     intervalValue: "",
     intervalUnit: "minutes" as "minutes" | "hours",
   })
-
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/reminders")
-      if (res.ok) setReminders((await res.json()).reminders || [])
-    } catch {}
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (session) fetchData()
-  }, [session, fetchData])
 
   const now = new Date()
   const upcoming = reminders.filter((r) => new Date(r.remindAt) > now)
@@ -127,7 +124,7 @@ export default function RemindersPage() {
         if (res.ok) {
           toast.success("Reminder updated")
           resetForm()
-          fetchData()
+          mutate()
         } else toast.error("Failed to update")
       } else {
         const res = await fetch("/api/dashboard/reminders", {
@@ -138,7 +135,7 @@ export default function RemindersPage() {
         if (res.ok) {
           toast.success("Reminder created")
           resetForm()
-          fetchData()
+          mutate()
         } else toast.error("Failed to create")
       }
     } catch {
@@ -157,7 +154,7 @@ export default function RemindersPage() {
         body: JSON.stringify({ reminderId: deleteTarget }),
       })
       if (res.ok) {
-        setReminders((prev) => prev.filter((r) => r.id !== deleteTarget))
+        mutate()
         toast.success("Reminder deleted")
         setDeleteTarget(null)
       } else toast.error("Failed to delete")
@@ -175,20 +172,20 @@ export default function RemindersPage() {
     isPast?: boolean
   }) => (
     <div
-      className={`bg-gray-800 rounded-xl border border-gray-700 p-4 group transition-all hover:border-gray-600 ${
+      className={`bg-card rounded-xl border border-border p-4 group transition-all hover:border-gray-600 ${
         isPast ? "opacity-60" : ""
       } ${r.failed ? "border-red-500/30" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           {r.title && (
-            <h4 className="text-white font-medium text-sm mb-1 truncate">
+            <h4 className="text-foreground font-medium text-sm mb-1 truncate">
               {r.title}
             </h4>
           )}
-          <p className="text-gray-300 text-sm">{r.content}</p>
+          <p className="text-foreground/80 text-sm">{r.content}</p>
           <div className="flex items-center gap-3 mt-2 flex-wrap">
-            <span className="text-xs text-gray-500 flex items-center gap-1">
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock size={12} />
               {new Date(r.remindAt).toLocaleString()}
             </span>
@@ -211,13 +208,13 @@ export default function RemindersPage() {
         <div className="flex gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
             onClick={() => startEdit(r)}
-            className="text-indigo-400 hover:text-indigo-300 text-sm px-2 py-1"
+            className="text-primary hover:text-primary text-sm px-2 py-1"
           >
             Edit
           </button>
           <button
             onClick={() => setDeleteTarget(r.id)}
-            className="text-red-400 hover:text-red-300 text-sm px-2 py-1 flex items-center gap-1"
+            className="text-destructive hover:text-destructive/80 text-sm px-2 py-1 flex items-center gap-1"
           >
             <Trash2 size={14} />
             Delete
@@ -235,7 +232,7 @@ export default function RemindersPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0 max-w-3xl">
@@ -252,7 +249,7 @@ export default function RemindersPage() {
                       resetForm()
                       setShowForm(true)
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-medium transition-all active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
                   >
                     <Plus size={18} />
                     New Reminder
@@ -262,8 +259,8 @@ export default function RemindersPage() {
 
               {/* Add/Edit form */}
               {showForm && (
-                <div className="bg-gray-800 rounded-2xl border border-indigo-500/30 p-5 mb-6">
-                  <h3 className="text-white font-medium mb-4 flex items-center gap-2">
+                <div className="bg-card rounded-2xl border border-indigo-500/30 p-5 mb-6">
+                  <h3 className="text-foreground font-medium mb-4 flex items-center gap-2">
                     <Bell size={18} />
                     {editingId ? "Edit Reminder" : "New Reminder"}
                   </h3>
@@ -275,7 +272,7 @@ export default function RemindersPage() {
                       onChange={(e) =>
                         setForm((f) => ({ ...f, title: e.target.value }))
                       }
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                     />
                     <textarea
                       placeholder="Reminder content *"
@@ -284,11 +281,11 @@ export default function RemindersPage() {
                       onChange={(e) =>
                         setForm((f) => ({ ...f, content: e.target.value }))
                       }
-                      className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                      className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
-                        <label className="text-gray-400 text-xs block mb-1">
+                        <label className="text-muted-foreground text-xs block mb-1">
                           Remind at *
                         </label>
                         <input
@@ -297,11 +294,11 @@ export default function RemindersPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, remindAt: e.target.value }))
                           }
-                          className="w-full bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                          className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                         />
                       </div>
                       <div>
-                        <label className="text-gray-400 text-xs block mb-1">
+                        <label className="text-muted-foreground text-xs block mb-1">
                           Recurring interval (optional)
                         </label>
                         <div className="flex gap-2">
@@ -316,7 +313,7 @@ export default function RemindersPage() {
                                 intervalValue: e.target.value,
                               }))
                             }
-                            className="flex-1 bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            className="flex-1 bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
                           />
                           <select
                             value={form.intervalUnit}
@@ -327,14 +324,14 @@ export default function RemindersPage() {
                                   .value as "minutes" | "hours",
                               }))
                             }
-                            className="bg-gray-700 border border-gray-600 text-white rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="bg-muted border border-gray-600 text-foreground rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
                           >
                             <option value="minutes">minutes</option>
                             <option value="hours">hours</option>
                           </select>
                         </div>
                         {form.intervalValue && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             Every {form.intervalValue}{" "}
                             {form.intervalUnit === "minutes"
                               ? parseInt(form.intervalValue) === 1
@@ -353,13 +350,13 @@ export default function RemindersPage() {
                         disabled={
                           saving || !form.content || !form.remindAt
                         }
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl text-sm font-medium transition-all active:scale-95"
+                        className="px-5 py-2.5 bg-indigo-600 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
                       >
                         {saving ? "Saving..." : editingId ? "Update" : "Create"}
                       </button>
                       <button
                         onClick={resetForm}
-                        className="px-5 py-2.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-xl text-sm font-medium transition-all"
+                        className="px-5 py-2.5 bg-muted hover:bg-muted/80 text-foreground/80 rounded-xl text-sm font-medium transition-all"
                       >
                         Cancel
                       </button>
@@ -373,15 +370,15 @@ export default function RemindersPage() {
                   {[1, 2, 3].map((i) => (
                     <div
                       key={i}
-                      className="bg-gray-800 rounded-xl p-4 animate-pulse"
+                      className="bg-card rounded-xl p-4 animate-pulse"
                     >
-                      <div className="h-4 bg-gray-700 rounded w-3/4" />
+                      <div className="h-4 bg-muted rounded w-3/4" />
                     </div>
                   ))}
                 </div>
               ) : reminders.length === 0 ? (
                 <EmptyState
-                  icon={<Bell size={48} strokeWidth={1} className="text-gray-500" />}
+                  icon={<Bell size={48} strokeWidth={1} className="text-muted-foreground" />}
                   title="No reminders yet"
                   description="Create your first reminder to stay on track!"
                   action={{
@@ -397,7 +394,7 @@ export default function RemindersPage() {
                   {/* Upcoming */}
                   {upcoming.length > 0 && (
                     <div className="mb-8">
-                      <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                      <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         Upcoming
                         <Badge variant="success" size="sm">
                           {String(upcoming.length)}
@@ -414,7 +411,7 @@ export default function RemindersPage() {
                   {/* Past */}
                   {past.length > 0 && (
                     <div>
-                      <h2 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
+                      <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         Past
                         <Badge variant="default" size="sm">
                           {String(past.length)}

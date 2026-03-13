@@ -6,12 +6,15 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method === "GET") {
     const items = await prisma.user_skin_inventory.findMany({
       where: { userid: auth.userId },
       include: {
@@ -24,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderBy: { acquired_at: "desc" },
     })
 
-    return res.status(200).json({
+    res.status(200).json({
       skins: items.map((item) => ({
         id: item.itemid,
         active: item.active,
@@ -34,9 +37,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         baseSkinId: item.customised_skins?.base_skin_id,
       })),
     })
-  }
+  },
 
-  if (req.method === "PATCH") {
+  async PATCH(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { itemId, active } = req.body
     if (!itemId || typeof active !== "boolean") {
       return res.status(400).json({ error: "itemId and active (boolean) required" })
@@ -65,8 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       })
     }
 
-    return res.status(200).json({ success: true })
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    res.status(200).json({ success: true })
+  },
+})
+// --- END AI-MODIFIED ---

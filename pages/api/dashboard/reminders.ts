@@ -6,18 +6,21 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method === "GET") {
     const reminders = await prisma.reminders.findMany({
       where: { userid: auth.userId },
       orderBy: { remind_at: "asc" },
     })
 
-    return res.status(200).json({
+    res.status(200).json({
       reminders: reminders.map((r) => ({
         id: r.reminderid,
         title: r.title,
@@ -28,9 +31,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         createdAt: r.created_at?.toISOString() || null,
       })),
     })
-  }
+  },
 
-  if (req.method === "POST") {
+  async POST(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { title, content, remindAt, interval } = req.body
     if (!content || !remindAt) {
       return res.status(400).json({ error: "content and remindAt are required" })
@@ -51,16 +57,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     })
 
-    return res.status(201).json({
+    res.status(201).json({
       id: reminder.reminderid,
       title: reminder.title,
       content: reminder.content,
       remindAt: reminder.remind_at.toISOString(),
       interval: reminder.interval,
     })
-  }
+  },
 
-  if (req.method === "PATCH") {
+  async PATCH(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { reminderId, title, content, remindAt, interval } = req.body
     if (!reminderId) return res.status(400).json({ error: "reminderId required" })
 
@@ -84,10 +93,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     await prisma.reminders.update({ where: { reminderid: reminderId }, data: updates })
-    return res.status(200).json({ success: true })
-  }
+    res.status(200).json({ success: true })
+  },
 
-  if (req.method === "DELETE") {
+  async DELETE(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { reminderId } = req.body
     if (!reminderId) return res.status(400).json({ error: "reminderId required" })
 
@@ -97,8 +109,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     await prisma.reminders.delete({ where: { reminderid: reminderId } })
-    return res.status(200).json({ success: true })
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    res.status(200).json({ success: true })
+  },
+})
+// --- END AI-MODIFIED ---

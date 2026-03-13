@@ -9,19 +9,18 @@ import { prisma } from "@/utils/prisma"
 // Purpose: switched to requireAuth for rate limiting consistency
 import { requireAuth } from "@/utils/adminAuth"
 // --- END AI-MODIFIED ---
+import { apiHandler } from "@/utils/apiHandler"
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" })
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: use requireAuth instead of getDiscordId for rate limiting
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+    const userId = BigInt(auth.discordId)
 
-  const userId = BigInt(auth.discordId)
-  // --- END AI-MODIFIED ---
-
-  const [userConfig, totalStudyTime, serverCount, recentSessions] = await Promise.all([
+    const [userConfig, totalStudyTime, serverCount, recentSessions] = await Promise.all([
     prisma.user_config.findUnique({
       where: { userid: userId },
       select: {
@@ -93,5 +92,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     })),
   }
 
-  return res.status(200).json(serializable)
-}
+  res.status(200).json(serializable)
+  },
+})
+// --- END AI-MODIFIED ---

@@ -3,6 +3,12 @@
 // Created: 2026-03-13
 // Purpose: LionGems/Premium page
 // ============================================================
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
+// --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: prominent balance, quick-buy buttons, Premium for Your Server section
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -16,9 +22,21 @@ import {
 } from "@/components/dashboard/ui"
 import type { Column } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useCallback } from "react"
+import { useDashboard } from "@/hooks/useDashboard"
 import Link from "next/link"
-import { Gem, Star, CreditCard, Gift } from "lucide-react"
+import { Gem, Star, CreditCard, Gift, Server } from "lucide-react"
+
+const QUICK_BUY_PACKS = [
+  { gems: 300, label: "300 gems" },
+  { gems: 1550, label: "1,550 gems" },
+  { gems: 5100, label: "5,100 gems" },
+]
+
+const PREMIUM_PLANS = [
+  { gems: 1500, period: "Monthly", description: "Premium features for one server" },
+  { gems: 4000, period: "3 Months", description: "Best value – save 11%" },
+  { gems: 12000, period: "1 Year", description: "Best savings – 33% off" },
+]
 
 interface GemTransaction {
   transactionId: number
@@ -47,26 +65,10 @@ const txTypeConfig: Record<string, { label: string; variant: "success" | "warnin
 
 export default function GemsPage() {
   const { data: session } = useSession()
-  const [data, setData] = useState<GemsData | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const fetchData = useCallback(async () => {
-    try {
-      const res = await fetch("/api/dashboard/gems")
-      if (res.ok) {
-        setData(await res.json())
-      } else {
-        toast.error("Failed to load gems data")
-      }
-    } catch {
-      toast.error("Failed to load gems data")
-    }
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    if (session) fetchData()
-  }, [session, fetchData])
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data, error, isLoading: loading } = useDashboard<GemsData>(session ? "/api/dashboard/gems" : null)
+  // --- END AI-MODIFIED ---
 
   const transactionColumns: Column<GemTransaction>[] = [
     {
@@ -83,7 +85,7 @@ export default function GemsPage() {
       label: "Description",
       sortable: false,
       render: (row) => (
-        <span className="text-gray-300">{row.description || "—"}</span>
+        <span className="text-foreground/80">{row.description || "—"}</span>
       ),
     },
     {
@@ -93,7 +95,7 @@ export default function GemsPage() {
       render: (row) => (
         <span
           className={`font-mono font-medium ${
-            row.userAmount >= 0 ? "text-emerald-400" : "text-red-400"
+            row.userAmount >= 0 ? "text-success" : "text-destructive"
           }`}
         >
           {row.userAmount >= 0 ? "+" : ""}
@@ -106,7 +108,7 @@ export default function GemsPage() {
       label: "Date",
       sortable: true,
       render: (row) => (
-        <span className="text-gray-400 text-xs">
+        <span className="text-muted-foreground text-xs">
           {row.timestamp
             ? new Date(row.timestamp).toLocaleDateString(undefined, {
                 year: "numeric",
@@ -127,7 +129,7 @@ export default function GemsPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0">
@@ -142,36 +144,91 @@ export default function GemsPage() {
 
               {loading ? (
                 <div className="space-y-6">
-                  <div className="bg-gray-800 rounded-xl p-8 animate-pulse h-32" />
-                  <div className="bg-gray-800 rounded-xl p-6 animate-pulse h-48" />
-                  <div className="bg-gray-800 rounded-xl p-6 animate-pulse h-64" />
+                  <div className="bg-card rounded-xl p-8 animate-pulse h-32" />
+                  <div className="bg-card rounded-xl p-6 animate-pulse h-48" />
+                  <div className="bg-card rounded-xl p-6 animate-pulse h-64" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4">
+                  <p className="text-destructive">{error.message}</p>
                 </div>
               ) : (
                 <>
-                  {/* Gem balance card */}
-                  <div className="bg-gradient-to-br from-amber-900/30 to-amber-800/10 border border-amber-600/30 rounded-xl p-6 mb-6">
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="p-2 rounded-lg bg-amber-500/20">
-                        <Gem size={24} className="text-amber-400" />
+                  {/* Prominent gem balance */}
+                  <div className="relative overflow-hidden rounded-2xl mb-8 bg-gradient-to-br from-amber-600/40 via-amber-700/30 to-amber-900/50 border border-amber-500/40 p-8 shadow-xl">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(251,191,36,0.15),transparent_50%)]" />
+                    <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+                      <div className="flex items-center gap-4">
+                        <div className="p-4 rounded-2xl bg-amber-500/25">
+                          <Gem size={40} className="text-amber-300" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-amber-200/90 uppercase tracking-wider mb-1">
+                            Your Balance
+                          </p>
+                          <p className="text-4xl sm:text-5xl font-bold text-amber-50">
+                            {(data?.gemBalance ?? 0).toLocaleString()}
+                            <span className="text-2xl font-normal text-amber-200/80 ml-2">gems</span>
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-sm font-medium text-amber-200/80">
-                        Your Balance
-                      </span>
+                      <Link
+                        href="/donate"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium bg-amber-500/30 text-amber-100 hover:bg-amber-500/40 border border-amber-400/40 transition-colors shrink-0"
+                      >
+                        <CreditCard size={20} />
+                        Get more gems
+                      </Link>
                     </div>
-                    <p className="text-3xl font-bold text-amber-100">
-                      {(data?.gemBalance ?? 0).toLocaleString()}{" "}
-                      <span className="text-lg font-normal text-amber-200/70">
-                        gems
-                      </span>
-                    </p>
+                  </div>
+
+                  {/* Quick-buy packs */}
+                  <div className="mb-8">
+                    <h3 className="text-base font-semibold text-foreground mb-3">Quick buy</h3>
+                    <div className="flex flex-wrap gap-3">
+                      {QUICK_BUY_PACKS.map((pack) => (
+                        <Link
+                          key={pack.gems}
+                          href="/donate"
+                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
+                        >
+                          <Gem size={18} className="text-amber-500" />
+                          <span className="font-medium text-foreground">{pack.label}</span>
+                          <span className="text-sm text-muted-foreground">Buy</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Premium for Your Server */}
+                  <SectionCard
+                    title="Premium for Your Server"
+                    description="Contribute gems to unlock premium features for a Discord server"
+                    icon={<Server size={18} />}
+                    defaultOpen={true}
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {PREMIUM_PLANS.map((plan) => (
+                        <div
+                          key={plan.period}
+                          className="p-4 rounded-xl bg-muted/50 border border-border"
+                        >
+                          <p className="font-semibold text-foreground">{plan.period}</p>
+                          <p className="text-2xl font-bold text-amber-500 mt-1">
+                            {plan.gems.toLocaleString()} gems
+                          </p>
+                          <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
+                        </div>
+                      ))}
+                    </div>
                     <Link
                       href="/donate"
-                      className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-amber-300 hover:text-amber-200 transition-colors"
+                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors"
                     >
                       <CreditCard size={16} />
-                      Get more gems
+                      Purchase gems for premium
                     </Link>
-                  </div>
+                  </SectionCard>
 
                   {/* Premium Benefits */}
                   <SectionCard
@@ -180,7 +237,7 @@ export default function GemsPage() {
                     icon={<Star size={18} />}
                     defaultOpen={true}
                   >
-                    <ul className="space-y-2 text-sm text-gray-300">
+                    <ul className="space-y-2 text-sm text-foreground/80">
                       <li className="flex items-center gap-2">
                         <Gift size={16} className="text-amber-500 flex-shrink-0" />
                         Buy custom profile skins from the skin shop
@@ -196,7 +253,7 @@ export default function GemsPage() {
                     </ul>
                     <Link
                       href="/donate"
-                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
+                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors"
                     >
                       <CreditCard size={16} />
                       Purchase gems
@@ -213,7 +270,7 @@ export default function GemsPage() {
                     {!data?.transactions?.length ? (
                       <EmptyState
                         icon={
-                          <Gem size={48} className="text-gray-500" strokeWidth={1} />
+                          <Gem size={48} className="text-muted-foreground" strokeWidth={1} />
                         }
                         title="No transactions yet"
                         description="Your gem purchases and activity will appear here."

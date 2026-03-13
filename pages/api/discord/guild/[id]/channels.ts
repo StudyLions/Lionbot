@@ -43,6 +43,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
     )
 
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: handle Discord 429 rate limits with retry
+    if (response.status === 429) {
+      const retryAfter = parseFloat(response.headers.get("retry-after") || "2")
+      await new Promise((r) => setTimeout(r, retryAfter * 1000))
+      const retry = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/channels`,
+        { headers: { Authorization: `Bot ${BOT_TOKEN}` } }
+      )
+      if (!retry.ok) {
+        return res.status(retry.status).json({ error: "Discord rate limited" })
+      }
+      const retryRaw = await retry.json()
+      const retryChannels: DiscordChannel[] = retryRaw.map((ch: any) => ({
+        id: ch.id, name: ch.name, type: ch.type, position: ch.position, parent_id: ch.parent_id,
+      }))
+      cache.set(cacheKey, { data: retryChannels, expiresAt: Date.now() + 300000 })
+      return res.status(200).json(retryChannels)
+    }
+    // --- END AI-MODIFIED ---
+
     if (!response.ok) {
       const text = await response.text()
       return res.status(response.status).json({ error: `Discord API error: ${text}` })

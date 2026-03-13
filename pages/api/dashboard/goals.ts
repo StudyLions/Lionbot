@@ -6,6 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
 /** UTC timestamp of start of week (Monday) */
 function getWeekId(date: Date): number {
@@ -40,11 +41,13 @@ function getMonthBounds(monthId: number): { start: Date; end: Date } {
   return { start, end }
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method === "GET") {
     const now = new Date()
     const weekId = getWeekId(now)
     const monthId = getMonthId(now)
@@ -138,15 +141,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
     })
 
-    return res.status(200).json({
+    res.status(200).json({
       weekid: weekId,
       monthid: monthId,
       weekly,
       monthly,
     })
-  }
+  },
 
-  if (req.method === "PATCH") {
+  async PATCH(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const { guildId, weekid, monthid, type, study_goal, task_goal } = req.body
 
     if (!guildId || !type) {
@@ -203,8 +209,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ success: true })
     }
 
-    return res.status(400).json({ error: "type must be 'weekly' or 'monthly'" })
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    res.status(400).json({ error: "type must be 'weekly' or 'monthly'" })
+  },
+})
+// --- END AI-MODIFIED ---

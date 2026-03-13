@@ -6,20 +6,23 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
 
 const EDITABLE_FIELDS = ["timezone", "show_global_stats", "locale"] as const
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const auth = await requireAuth(req, res)
-  if (!auth) return
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: wrapped with apiHandler for error handling and method validation
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
 
-  if (req.method === "GET") {
     const profile = await prisma.user_config.findUnique({
       where: { userid: auth.userId },
     })
 
     if (!profile) {
-      return res.status(200).json({
+      res.status(200).json({
         userId: auth.discordId,
         name: null,
         timezone: null,
@@ -29,9 +32,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         firstSeen: null,
         lastSeen: null,
       })
+      return
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       userId: profile.userid.toString(),
       name: profile.name,
       timezone: profile.timezone,
@@ -41,9 +45,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       firstSeen: profile.first_seen?.toISOString() || null,
       lastSeen: profile.last_seen?.toISOString() || null,
     })
-  }
+  },
 
-  if (req.method === "PATCH") {
+  async PATCH(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
     const updates: Record<string, any> = {}
     const body = req.body
 
@@ -54,12 +61,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     if (Object.keys(updates).length === 0) {
-      return res.status(400).json({ error: "No valid fields to update" })
+      res.status(400).json({ error: "No valid fields to update" })
+      return
     }
 
     if (updates.timezone !== undefined && updates.timezone !== null) {
       if (typeof updates.timezone !== "string" || updates.timezone.length > 50) {
-        return res.status(400).json({ error: "Invalid timezone" })
+        res.status(400).json({ error: "Invalid timezone" })
+        return
       }
     }
 
@@ -69,8 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       create: { userid: auth.userId, ...updates },
     })
 
-    return res.status(200).json({ success: true, updated: Object.keys(updates) })
-  }
-
-  return res.status(405).json({ error: "Method not allowed" })
-}
+    res.status(200).json({ success: true, updated: Object.keys(updates) })
+  },
+})
+// --- END AI-MODIFIED ---

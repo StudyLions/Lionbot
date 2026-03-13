@@ -6,11 +6,11 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
-import { PageHeader, Badge, DataTable, toast } from "@/components/dashboard/ui"
+import { PageHeader, Badge, DataTable } from "@/components/dashboard/ui"
 import type { Column } from "@/components/dashboard/ui"
+import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState } from "react"
 import { Coins, TrendingUp, Users, ArrowUpDown } from "lucide-react"
 
 interface EconomyData {
@@ -42,34 +42,27 @@ export default function EconomyPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
-  const [data, setData] = useState<EconomyData | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [serverName, setServerName] = useState("")
-
-  useEffect(() => {
-    if (id && session) {
-      fetch(`/api/dashboard/servers/${id}/economy`)
-        .then(r => r.ok ? r.json() : null)
-        .then(setData)
-        .catch(() => {})
-        .finally(() => setLoading(false))
-      fetch(`/api/dashboard/servers/${id}`)
-        .then(r => r.json())
-        .then(d => setServerName(d.server?.name || "Server"))
-        .catch(() => {})
-    }
-  }, [id, session])
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  const { data, error, isLoading: loading } = useDashboard<EconomyData>(
+    id && session ? `/api/dashboard/servers/${id}/economy` : null
+  )
+  const { data: serverData } = useDashboard(
+    id && session ? `/api/dashboard/servers/${id}` : null
+  )
+  const serverName = serverData?.server?.name ?? "Server"
+  // --- END AI-MODIFIED ---
 
   const topHoldersWithRank = data?.topHolders.map((h, i) => ({ ...h, rank: i + 1 })) ?? []
 
   const topHolderColumns: Column<typeof topHoldersWithRank[0]>[] = [
     { key: "rank", label: "#", sortable: false, render: (row) => (
       <span className={`font-bold w-6 ${
-        row.rank === 1 ? "text-amber-400" : row.rank === 2 ? "text-gray-300" : row.rank === 3 ? "text-amber-700" : "text-gray-500"
+        row.rank === 1 ? "text-amber-400" : row.rank === 2 ? "text-foreground/80" : row.rank === 3 ? "text-amber-700" : "text-muted-foreground"
       }`}>#{row.rank}</span>
     )},
     { key: "displayName", label: "Member", sortable: false, render: (row) => (
-      <span className="text-white">{row.displayName || `...${row.userId.slice(-4)}`}</span>
+      <span className="text-foreground">{row.displayName || `...${row.userId.slice(-4)}`}</span>
     )},
     { key: "coins", label: "Coins", sortable: true, render: (row) => (
       <span className="text-amber-400 font-mono">{(row.coins || 0).toLocaleString()}</span>
@@ -82,12 +75,12 @@ export default function EconomyPage() {
       return <Badge variant={cfg.variant}>{cfg.label}</Badge>
     }},
     { key: "createdAt", label: "Date", sortable: true, render: (row) => (
-      <span className="text-gray-400 text-xs">
+      <span className="text-muted-foreground text-xs">
         {row.createdAt ? new Date(row.createdAt).toLocaleDateString() : ""}
       </span>
     )},
     { key: "amount", label: "Amount", sortable: true, render: (row) => (
-      <span className={`font-mono font-medium ${row.amount >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+      <span className={`font-mono font-medium ${row.amount >= 0 ? "text-success" : "text-destructive"}`}>
         {row.amount >= 0 ? "+" : ""}{row.amount}
       </span>
     )},
@@ -96,10 +89,10 @@ export default function EconomyPage() {
   return (
     <Layout SEO={{ title: `Economy - ${serverName} - LionBot`, description: "Server economy" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
-          <div className="max-w-6xl mx-auto">
+        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav serverId={id as string} serverName={serverName} isAdmin isMod />
-
+            <div className="flex-1 min-w-0">
             <PageHeader
               title="Economy"
               description="View total coins in circulation, top coin holders, and recent transactions. The economy rewards members for studying, completing tasks, and participating in server activities."
@@ -108,54 +101,58 @@ export default function EconomyPage() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse h-32" />
+                  <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse h-32" />
                 ))}
               </div>
+            ) : error ? (
+              <div className="text-center py-20 text-destructive">
+                {error.message || "Unable to load economy data"}
+              </div>
             ) : !data ? (
-              <div className="text-center py-20 text-gray-400">Unable to load economy data</div>
+              <div className="text-center py-20 text-muted-foreground">Unable to load economy data</div>
             ) : (
               <>
                 {/* Stats cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                  <div className="bg-card/50 border border-border rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-2">
                       <Coins size={20} className="text-amber-400" />
-                      <p className="text-gray-400 text-xs uppercase tracking-wide">Total Coins</p>
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Total Coins</p>
                     </div>
-                    <p className="text-2xl font-bold text-white">{data.overview.totalCoins.toLocaleString()}</p>
-                    <p className="text-gray-500 text-sm mt-1">in circulation</p>
+                    <p className="text-2xl font-bold text-foreground">{data.overview.totalCoins.toLocaleString()}</p>
+                    <p className="text-muted-foreground text-sm mt-1">in circulation</p>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                  <div className="bg-card/50 border border-border rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-2">
-                      <Users size={20} className="text-indigo-400" />
-                      <p className="text-gray-400 text-xs uppercase tracking-wide">Members</p>
+                      <Users size={20} className="text-primary" />
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Members</p>
                     </div>
-                    <p className="text-2xl font-bold text-white">{data.overview.memberCount.toLocaleString()}</p>
-                    <p className="text-gray-500 text-sm mt-1">with economy data</p>
+                    <p className="text-2xl font-bold text-foreground">{data.overview.memberCount.toLocaleString()}</p>
+                    <p className="text-muted-foreground text-sm mt-1">with economy data</p>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                  <div className="bg-card/50 border border-border rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-2">
-                      <TrendingUp size={20} className="text-emerald-400" />
-                      <p className="text-gray-400 text-xs uppercase tracking-wide">Shop Items</p>
+                      <TrendingUp size={20} className="text-success" />
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Shop Items</p>
                     </div>
-                    <p className="text-2xl font-bold text-white">{data.shopItems.length}</p>
-                    <p className="text-gray-500 text-sm mt-1">{data.shopItems.filter(s => s.purchasable).length} purchasable</p>
+                    <p className="text-2xl font-bold text-foreground">{data.shopItems.length}</p>
+                    <p className="text-muted-foreground text-sm mt-1">{data.shopItems.filter(s => s.purchasable).length} purchasable</p>
                   </div>
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
+                  <div className="bg-card/50 border border-border rounded-xl p-6">
                     <div className="flex items-center gap-3 mb-2">
-                      <ArrowUpDown size={20} className="text-gray-400" />
-                      <p className="text-gray-400 text-xs uppercase tracking-wide">Transactions</p>
+                      <ArrowUpDown size={20} className="text-muted-foreground" />
+                      <p className="text-muted-foreground text-xs uppercase tracking-wide">Transactions</p>
                     </div>
-                    <p className="text-2xl font-bold text-white">{data.recentTransactions.length}</p>
-                    <p className="text-gray-500 text-sm mt-1">recent</p>
+                    <p className="text-2xl font-bold text-foreground">{data.recentTransactions.length}</p>
+                    <p className="text-muted-foreground text-sm mt-1">recent</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Top holders */}
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
-                    <div className="p-5 border-b border-gray-700">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
+                    <div className="p-5 border-b border-border">
+                      <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
                         <TrendingUp size={20} className="text-amber-400" />
                         Top Coin Holders
                       </h3>
@@ -172,10 +169,10 @@ export default function EconomyPage() {
                   </div>
 
                   {/* Recent transactions */}
-                  <div className="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
-                    <div className="p-5 border-b border-gray-700">
-                      <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <ArrowUpDown size={20} className="text-gray-400" />
+                  <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
+                    <div className="p-5 border-b border-border">
+                      <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                        <ArrowUpDown size={20} className="text-muted-foreground" />
                         Recent Transactions
                       </h3>
                     </div>
@@ -192,6 +189,7 @@ export default function EconomyPage() {
                 </div>
               </>
             )}
+            </div>
           </div>
         </div>
       </AdminGuard>

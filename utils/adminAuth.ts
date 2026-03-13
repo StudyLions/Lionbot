@@ -71,10 +71,20 @@ async function getUserGuilds(accessToken: string, userId: string): Promise<Disco
   }
 
   try {
-    const res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: handle Discord 429 rate limits with retry
+    let res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
+    if (res.status === 429) {
+      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+      await new Promise((r) => setTimeout(r, retryAfter * 1000))
+      res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+    }
     if (!res.ok) return []
+    // --- END AI-MODIFIED ---
     const guilds = (await res.json()) as DiscordGuild[]
     guildCache.set(userId, { guilds, expiresAt: Date.now() + 60000 })
     return guilds
@@ -102,11 +112,22 @@ async function getUserGuildRoles(guildId: bigint, userId: string): Promise<strin
   if (!botToken) return []
 
   try {
-    const res = await fetch(
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: handle Discord 429 rate limits with retry
+    let res = await fetch(
       `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
       { headers: { Authorization: `Bot ${botToken}` } }
     )
+    if (res.status === 429) {
+      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+      await new Promise((r) => setTimeout(r, retryAfter * 1000))
+      res = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+        { headers: { Authorization: `Bot ${botToken}` } }
+      )
+    }
     if (!res.ok) return []
+    // --- END AI-MODIFIED ---
     const member = (await res.json()) as GuildMemberInfo
     const roles = member.roles || []
     memberRoleCache.set(cacheKey, { roles, expiresAt: Date.now() + 60000 })
