@@ -308,12 +308,11 @@ export default function SetupWizard() {
                 title="Setup Wizard"
                 description="Configure your server step by step. Each step saves when you click Next."
               />
-              <Link
-                href={`/dashboard/servers/${id}`}
-                className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
-              >
-                <ArrowLeft size={14} />
-                Skip to dashboard
+              <Link href={`/dashboard/servers/${id}`}>
+                <a className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap">
+                  <ArrowLeft size={14} />
+                  Skip to dashboard
+                </a>
               </Link>
             </div>
 
@@ -510,21 +509,29 @@ export default function SetupWizard() {
                       <div className="pt-4 border-t border-border">
                         <p className="text-sm font-medium text-foreground mb-3">What&apos;s Next?</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          <Link href={`/dashboard/servers/${id}/ranks`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
-                            <Trophy size={16} className="text-primary" />
-                            Set up ranks
+                          <Link href={`/dashboard/servers/${id}/ranks`}>
+                            <a className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                              <Trophy size={16} className="text-primary" />
+                              Set up ranks
+                            </a>
                           </Link>
-                          <Link href={`/dashboard/servers/${id}/shop`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
-                            <ShoppingBag size={16} className="text-primary" />
-                            Add shop items
+                          <Link href={`/dashboard/servers/${id}/shop`}>
+                            <a className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                              <ShoppingBag size={16} className="text-primary" />
+                              Add shop items
+                            </a>
                           </Link>
-                          <Link href={`/dashboard/servers/${id}/rolemenus`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
-                            <ListChecks size={16} className="text-primary" />
-                            Create role menus
+                          <Link href={`/dashboard/servers/${id}/rolemenus`}>
+                            <a className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                              <ListChecks size={16} className="text-primary" />
+                              Create role menus
+                            </a>
                           </Link>
-                          <Link href={`/dashboard/servers/${id}/videochannels`} className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
-                            <Video size={16} className="text-primary" />
-                            Configure video channels
+                          <Link href={`/dashboard/servers/${id}/videochannels`}>
+                            <a className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 border border-border transition-colors text-sm">
+                              <Video size={16} className="text-primary" />
+                              Configure video channels
+                            </a>
                           </Link>
                         </div>
                       </div>

@@ -172,12 +172,11 @@ export default function GemsPage() {
                           </p>
                         </div>
                       </div>
-                      <Link
-                        href="/donate"
-                        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium bg-amber-500/30 text-amber-100 hover:bg-amber-500/40 border border-amber-400/40 transition-colors shrink-0"
-                      >
-                        <CreditCard size={20} />
-                        Get more gems
+                      <Link href="/donate">
+                        <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium bg-amber-500/30 text-amber-100 hover:bg-amber-500/40 border border-amber-400/40 transition-colors shrink-0">
+                          <CreditCard size={20} />
+                          Get more gems
+                        </a>
                       </Link>
                     </div>
                   </div>
@@ -187,14 +186,12 @@ export default function GemsPage() {
                     <h3 className="text-base font-semibold text-foreground mb-3">Quick buy</h3>
                     <div className="flex flex-wrap gap-3">
                       {QUICK_BUY_PACKS.map((pack) => (
-                        <Link
-                          key={pack.gems}
-                          href="/donate"
-                          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
-                        >
-                          <Gem size={18} className="text-amber-500" />
-                          <span className="font-medium text-foreground">{pack.label}</span>
-                          <span className="text-sm text-muted-foreground">Buy</span>
+                        <Link key={pack.gems} href="/donate">
+                          <a className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+                            <Gem size={18} className="text-amber-500" />
+                            <span className="font-medium text-foreground">{pack.label}</span>
+                            <span className="text-sm text-muted-foreground">Buy</span>
+                          </a>
                         </Link>
                       ))}
                     </div>
@@ -221,12 +218,11 @@ export default function GemsPage() {
                         </div>
                       ))}
                     </div>
-                    <Link
-                      href="/donate"
-                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors"
-                    >
-                      <CreditCard size={16} />
-                      Purchase gems for premium
+                    <Link href="/donate">
+                      <a className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors">
+                        <CreditCard size={16} />
+                        Purchase gems for premium
+                      </a>
                     </Link>
                   </SectionCard>
 
@@ -251,12 +247,11 @@ export default function GemsPage() {
                         Unlock exclusive profile card customizations
                       </li>
                     </ul>
-                    <Link
-                      href="/donate"
-                      className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors"
-                    >
-                      <CreditCard size={16} />
-                      Purchase gems
+                    <Link href="/donate">
+                      <a className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors">
+                        <CreditCard size={16} />
+                        Purchase gems
+                      </a>
                     </Link>
                   </SectionCard>
 

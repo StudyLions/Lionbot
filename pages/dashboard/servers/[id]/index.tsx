@@ -467,19 +467,21 @@ function SetupCheckItem({
   href: string
 }) {
   return (
-    <Link href={href} className="flex items-center justify-between px-5 py-4 hover:bg-accent transition-colors">
-      <div className="flex items-center gap-3">
-        {configured ? (
-          <CheckCircle2 size={20} className="text-success flex-shrink-0" />
-        ) : (
-          <XCircle size={20} className="text-muted-foreground flex-shrink-0" />
-        )}
-        <div>
-          <p className="text-foreground font-medium">{label}</p>
-          <p className="text-sm text-muted-foreground">{detail}</p>
+    <Link href={href}>
+      <a className="flex items-center justify-between px-5 py-4 hover:bg-accent transition-colors">
+        <div className="flex items-center gap-3">
+          {configured ? (
+            <CheckCircle2 size={20} className="text-success flex-shrink-0" />
+          ) : (
+            <XCircle size={20} className="text-muted-foreground flex-shrink-0" />
+          )}
+          <div>
+            <p className="text-foreground font-medium">{label}</p>
+            <p className="text-sm text-muted-foreground">{detail}</p>
+          </div>
         </div>
-      </div>
-      <ChevronRight size={18} className="text-muted-foreground" />
+        <ChevronRight size={18} className="text-muted-foreground" />
+      </a>
     </Link>
   )
 }

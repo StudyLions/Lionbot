@@ -340,11 +340,10 @@ export default function InventoryPage() {
                     <p className="text-destructive font-medium mb-2">
                       Need {(previewSkin.price - gems).toLocaleString()} more gems
                     </p>
-                    <Link
-                      href="/donate"
-                      className="inline-flex items-center gap-2 text-primary hover:underline"
-                    >
-                      Get gems
+                    <Link href="/donate">
+                      <a className="inline-flex items-center gap-2 text-primary hover:underline">
+                        Get gems
+                      </a>
                     </Link>
                   </div>
                 )}
