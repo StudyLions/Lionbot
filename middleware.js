@@ -1,3 +1,9 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-03-13
+// Purpose: Moved from pages/_middleware.js to root middleware.js
+//          for Next.js 12.2+ compatibility
+// ============================================================
 import {getToken} from "next-auth/jwt"
 import {NextResponse} from "next/server"
 
@@ -11,9 +17,6 @@ export async function middleware(req) {
         process.env.NEXTAUTH_URL?.startsWith("https://") ??
         !!process.env.VERCEL_URL,
     })
-    // You could also check for any property on the session object,
-    // like role === "admin" or name === "John Doe", etc.
-    if (!session) return NextResponse.redirect("/api/auth/signin")
-    // If user is authenticated, continue.
+    if (!session) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
   }
 }
