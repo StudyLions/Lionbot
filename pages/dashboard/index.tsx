@@ -40,6 +40,7 @@ import {
   Dumbbell,
   TrendingUp,
   ThumbsUp,
+  Timer,
 } from "lucide-react"
 
 interface MeData {
@@ -74,6 +75,17 @@ interface StatsData {
   }>
   voteCount: number
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add Pomodoro stats interface for dashboard overview
+interface PomodoroStats {
+  totalSessions: number
+  totalFocusMinutes: number
+  todayMinutes: number
+  weekMinutes: number
+  currentStreak: number
+}
+// --- END AI-MODIFIED ---
 
 const ACHIEVEMENT_ICONS: Record<string, React.ElementType> = {
   VoiceHours: Clock,
@@ -110,6 +122,12 @@ export default function Dashboard() {
   const { data: stats, error: statsError, isLoading: statsLoading } = useDashboard<StatsData>(
     session ? "/api/dashboard/stats" : null
   )
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: fetch Pomodoro-specific stats for dashboard overview
+  const { data: pomStats } = useDashboard<PomodoroStats>(
+    session ? "/api/dashboard/pomodoro-stats" : null
+  )
+  // --- END AI-MODIFIED ---
 
   const loading = meLoading || statsLoading
   const error = meError?.message ?? statsError?.message
@@ -279,6 +297,36 @@ export default function Dashboard() {
                       </CardContent>
                     </Card>
                   </div>
+
+                  {/* --- AI-MODIFIED (2026-03-14) --- */}
+                  {/* Purpose: add Pomodoro Focus section between Achievements and Quick Links */}
+                  {pomStats && pomStats.totalSessions > 0 && (
+                    <div className="bg-card border border-border rounded-xl p-5">
+                      <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+                        <Timer size={16} />
+                        Pomodoro Focus
+                      </h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">{Math.round(pomStats.todayMinutes)}</p>
+                          <p className="text-xs text-muted-foreground">minutes today</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">{pomStats.totalSessions}</p>
+                          <p className="text-xs text-muted-foreground">total sessions</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">{Math.round(pomStats.weekMinutes / 60 * 10) / 10}h</p>
+                          <p className="text-xs text-muted-foreground">this week</p>
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold text-foreground">{pomStats.currentStreak}</p>
+                          <p className="text-xs text-muted-foreground">day streak</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Quick Links */}
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

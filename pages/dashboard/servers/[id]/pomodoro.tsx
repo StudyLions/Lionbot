@@ -6,6 +6,7 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+import { cn } from "@/lib/utils"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: Phase 2E - add Create Timer form and Delete button on each timer
 import {
@@ -25,28 +26,66 @@ import {
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useCallback } from "react"
-import { Timer } from "lucide-react"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: add useEffect for pomodoro_channel state init
+import { useState, useCallback, useEffect } from "react"
+// --- END AI-MODIFIED ---
+import { Timer, Activity } from "lucide-react"
+import CountdownRing from "@/components/dashboard/CountdownRing"
 
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: add last_started, clarify focus/break in minutes, inactivity in cycles
 interface PomodoroTimer {
   timerid: string
   guildid: string
   channelid: string
   notification_channelid: string | null
-  focus_length: number
-  break_length: number
+  focus_length: number  // now in MINUTES (API converts)
+  break_length: number  // now in MINUTES
   voice_alerts: boolean
-  inactivity_threshold: number | null
+  inactivity_threshold: number | null  // in CYCLES not minutes
   manager_roleid: string | null
   channel_name: string | null
   pretty_name: string | null
   auto_restart: boolean
+  last_started: string | null  // ISO datetime
 }
+// --- END AI-MODIFIED ---
 
 interface PomodoroData {
   timers: PomodoroTimer[]
   pomodoro_channel: string | null
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: live timer status from bot renderer
+interface TimerStatusItem {
+  channelid: string
+  channelName: string | null
+  prettyName: string
+  running: boolean
+  stage: "focus" | "break" | null
+  focusLength: number
+  breakLength: number
+  stageStartedAt: string | null
+  stageEndsAt: string | null
+  remainingSeconds: number
+  stageDurationSeconds: number
+  membersInChannel: number
+  autoRestart: boolean
+  voiceAlerts: boolean
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: timer presets for Create form
+const PRESETS = [
+  { label: "Classic", focus: 25, break: 5, description: "The original Pomodoro technique" },
+  { label: "Long Focus", focus: 50, break: 10, description: "Deep work sessions" },
+  { label: "Short Sprint", focus: 15, break: 3, description: "Quick study bursts" },
+  { label: "Lecture", focus: 45, break: 10, description: "University-style blocks" },
+]
+// --- END AI-MODIFIED ---
 
 export default function PomodoroPage() {
   const { data: session } = useSession()
@@ -61,18 +100,76 @@ export default function PomodoroPage() {
   const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
     id && session ? `/api/dashboard/servers/${id}` : null
   )
+  const { data: timerStatus, mutate: mutateTimerStatus } = useDashboard<{ timers: TimerStatusItem[] }>(
+    id && session ? `/api/dashboard/servers/${id}/timer-status` : null,
+    { refreshInterval: 15000 }
+  )
   const serverName = serverData?.server?.name || "Server"
   // --- END AI-MODIFIED ---
   const [editingTimers, setEditingTimers] = useState<Record<string, Partial<PomodoroTimer>>>({})
   const [saving, setSaving] = useState<Record<string, boolean>>({})
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: complete create form with all timer options
   const [createForm, setCreateForm] = useState({
     channelid: "" as string | null,
     focus_length: 25,
     break_length: 5,
+    pretty_name: "",
+    notification_channelid: null as string | null,
+    voice_alerts: true,
+    auto_restart: true,
+    inactivity_threshold: "" as string | number,
+    manager_roleid: null as string | null,
+    channel_name: "",
   })
+  // --- END AI-MODIFIED ---
   const [creating, setCreating] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<PomodoroTimer | null>(null)
   const [deleting, setDeleting] = useState(false)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: guild default pomodoro notification channel
+  const [pomodoroChannel, setPomodoroChannel] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (data) setPomodoroChannel(data.pomodoro_channel)
+  }, [data])
+
+  const controlTimer = async (channelid: string, action: string) => {
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/timer-control`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ channelid, action }),
+      })
+      if (res.ok) {
+        toast.success(action === "start" ? "Timer started" : "Timer stopped")
+        mutateTimerStatus()
+      } else {
+        const err = await res.json()
+        toast.error(err.reason || err.error || `Failed to ${action} timer`)
+      }
+    } catch {
+      toast.error(`Failed to ${action} timer`)
+    }
+  }
+
+  const handleSetPomodoroChannel = async (channelId: string | null) => {
+    setPomodoroChannel(channelId)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pomodoro_channel: channelId }),
+      })
+      if (res.ok) {
+        toast.success("Default notification channel updated")
+        mutate()
+      } else toast.error("Failed to update")
+    } catch {
+      toast.error("Failed to update")
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   const setTimerField = useCallback((timerId: string, field: keyof PomodoroTimer, value: unknown) => {
     setEditingTimers((prev) => ({
@@ -126,6 +223,8 @@ export default function PomodoroPage() {
     })
   }
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: include all timer options in POST, reset to full defaults, notify bot to reload
   const handleCreate = async () => {
     if (!createForm.channelid) return
     setCreating(true)
@@ -137,12 +236,35 @@ export default function PomodoroPage() {
           channelid: createForm.channelid,
           focus_length: createForm.focus_length,
           break_length: createForm.break_length,
+          pretty_name: createForm.pretty_name || null,
+          notification_channelid: createForm.notification_channelid,
+          voice_alerts: createForm.voice_alerts,
+          auto_restart: createForm.auto_restart,
+          inactivity_threshold: createForm.inactivity_threshold || null,
+          manager_roleid: createForm.manager_roleid,
+          channel_name: createForm.channel_name || null,
         }),
       })
       if (res.ok) {
         toast.success("Timer created")
-        setCreateForm({ channelid: null, focus_length: 25, break_length: 5 })
+        setCreateForm({
+          channelid: null,
+          focus_length: 25,
+          break_length: 5,
+          pretty_name: "",
+          notification_channelid: null,
+          voice_alerts: true,
+          auto_restart: true,
+          inactivity_threshold: "",
+          manager_roleid: null,
+          channel_name: "",
+        })
         mutate()
+        fetch(`/api/dashboard/servers/${id}/timer-control`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channelid: createForm.channelid, action: "reload" }),
+        }).catch(() => {})
       } else {
         const err = await res.json()
         toast.error(err.error || "Failed to create timer")
@@ -152,9 +274,13 @@ export default function PomodoroPage() {
     }
     setCreating(false)
   }
+  // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: notify bot to unload timer after successful delete
   const handleDelete = async () => {
     if (!deleteTarget) return
+    const channelidToUnload = deleteTarget.channelid
     setDeleting(true)
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/pomodoro`, {
@@ -166,6 +292,11 @@ export default function PomodoroPage() {
         toast.success("Timer deleted")
         setDeleteTarget(null)
         mutate()
+        fetch(`/api/dashboard/servers/${id}/timer-control`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ channelid: channelidToUnload, action: "unload" }),
+        }).catch(() => {})
       } else {
         const err = await res.json()
         toast.error(err.error || "Failed to delete timer")
@@ -175,6 +306,7 @@ export default function PomodoroPage() {
     }
     setDeleting(false)
   }
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: `Pomodoro - ${serverName || "Server"} - LionBot`, description: "Pomodoro timer configuration" }}>
@@ -195,6 +327,76 @@ export default function PomodoroPage() {
                 storageKey="pomodoro_intro"
               />
 
+              {/* --- AI-MODIFIED (2026-03-13) --- */}
+              {/* Purpose: guild default pomodoro notification channel */}
+              {data && (
+                <div className="bg-card/50 border border-border rounded-xl p-5 mb-6">
+                  <h3 className="text-sm font-semibold text-foreground mb-1">Default Notification Channel</h3>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Fallback channel for timer notifications when a timer doesn&apos;t have its own notification channel set.
+                  </p>
+                  <ChannelSelect
+                    guildId={guildId}
+                    value={pomodoroChannel}
+                    onChange={(v) => handleSetPomodoroChannel((v as string) || null)}
+                    channelTypes={[0, 5]}
+                    placeholder="No default (use voice channel)"
+                  />
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
+              {/* --- AI-MODIFIED (2026-03-14) --- */}
+              {/* Purpose: live timer status section */}
+              {timerStatus?.timers?.length > 0 && (
+                <div className="space-y-4 mb-8">
+                  <h3 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                    <Activity size={20} className="text-success" />
+                    Live Timers
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {timerStatus.timers.map((t) => (
+                      <div key={t.channelid} className="bg-card border border-border rounded-xl p-5">
+                        <div className="flex items-start gap-5">
+                          <CountdownRing
+                            totalSeconds={t.stageDurationSeconds}
+                            remainingSeconds={t.remainingSeconds}
+                            stage={t.stage}
+                            size={100}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-semibold text-foreground truncate">{t.prettyName}</h4>
+                            <p className="text-sm text-muted-foreground">{t.channelName}</p>
+                            <div className="flex items-center gap-3 mt-2 text-sm">
+                              <span className="text-muted-foreground">{t.membersInChannel} studying</span>
+                              <span className="text-muted-foreground">{t.focusLength}/{t.breakLength} min</span>
+                            </div>
+                            <div className="flex gap-2 mt-3">
+                              {t.running ? (
+                                <button
+                                  onClick={() => controlTimer(t.channelid, "stop")}
+                                  className="px-3 py-1.5 text-xs font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 rounded-md transition-colors"
+                                >
+                                  Stop
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => controlTimer(t.channelid, "start")}
+                                  className="px-3 py-1.5 text-xs font-medium text-success bg-success/10 hover:bg-success/20 rounded-md transition-colors"
+                                >
+                                  Start
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {loading ? (
                 <div className="space-y-4">
                   {[1, 2].map((i) => (
@@ -212,11 +414,15 @@ export default function PomodoroPage() {
                   <p className="text-muted-foreground">Unable to load Pomodoro settings. You may not have moderator permissions.</p>
                 </div>
               ) : data.timers.length === 0 ? (
-                <EmptyState
-                  icon={<Timer size={48} strokeWidth={1} />}
-                  title="No Pomodoro timers configured"
-                  description="Pomodoro timers are created via the bot. Use the bot commands in Discord to set up a timer in a voice channel, then come back here to configure its settings."
-                />
+                <>
+                  {/* --- AI-MODIFIED (2026-03-13) --- */}
+                  <EmptyState
+                    icon={<Timer size={48} strokeWidth={1} />}
+                    title="No Pomodoro timers configured"
+                    description="No Pomodoro timers configured yet. Create one below by selecting a voice channel and setting focus/break durations."
+                  />
+                  {/* --- END AI-MODIFIED --- */}
+                </>
               ) : (
                 <div className="space-y-4">
                   {data.timers.map((timer) => (
@@ -228,6 +434,36 @@ export default function PomodoroPage() {
                       badge={hasChanges(timer) ? "Unsaved" : undefined}
                     >
                       <div className="space-y-0">
+                        {/* --- AI-MODIFIED (2026-03-13) --- */}
+                        {/* Purpose: add pretty_name and channel_name as first settings */}
+                        <SettingRow
+                          label="Timer name"
+                          description="Display name shown in the timer card and channel name"
+                        >
+                          <input
+                            type="text"
+                            value={(getTimerValue(timer, "pretty_name") as string | null) ?? timer.pretty_name ?? ""}
+                            onChange={(e) => setTimerField(timer.timerid, "pretty_name", e.target.value || null)}
+                            placeholder="e.g. Main Study Timer"
+                            maxLength={100}
+                            className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Channel name format"
+                          description="Format for the voice channel name. Variables: {name}, {stage}, {remaining}, {pattern}, {members}"
+                          tooltip="The bot updates the voice channel name with this format. {name} = timer name, {stage} = FOCUS/BREAK, {remaining} = minutes left, {pattern} = 25/5, {members} = member count."
+                        >
+                          <input
+                            type="text"
+                            value={(getTimerValue(timer, "channel_name") as string | null) ?? timer.channel_name ?? ""}
+                            onChange={(e) => setTimerField(timer.timerid, "channel_name", e.target.value || null)}
+                            placeholder="{name} {pattern} - {stage}"
+                            maxLength={100}
+                            className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                         <SettingRow
                           label="Focus length"
                           description="Duration of each focus period in minutes"
@@ -264,20 +500,23 @@ export default function PomodoroPage() {
                             onChange={(v) => setTimerField(timer.timerid, "auto_restart", v)}
                           />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-03-13) --- */}
                         <SettingRow
-                          label="Inactivity threshold"
-                          description="Minutes of no activity before timer pauses"
-                          tooltip="If no one is in the channel for this many minutes, the timer pauses. Leave empty for no auto-pause."
+                          label="Inactivity cycles"
+                          description="Focus+break cycles a member can be inactive before being removed from the channel"
+                          tooltip="Number of focus+break cycles a member can be inactive before being removed from the channel. Leave empty for no limit."
                         >
                           <NumberInput
                             value={(getTimerValue(timer, "inactivity_threshold") as number | null) ?? timer.inactivity_threshold}
                             onChange={(v) => setTimerField(timer.timerid, "inactivity_threshold", v)}
-                            unit="min"
+                            unit="cycles"
                             min={1}
+                            max={64}
                             allowNull
                             placeholder="No limit"
                           />
                         </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                         <SettingRow
                           label="Voice alerts"
                           description="Play sounds when focus/break periods change"
@@ -300,6 +539,21 @@ export default function PomodoroPage() {
                             placeholder="Anyone"
                           />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-03-13) --- */}
+                        <SettingRow
+                          label="Notification channel"
+                          description="Channel where timer status cards and alerts are posted"
+                          tooltip="Leave empty to use the server's default pomodoro channel or the voice channel itself."
+                        >
+                          <ChannelSelect
+                            guildId={guildId}
+                            value={(getTimerValue(timer, "notification_channelid") as string | null) ?? timer.notification_channelid}
+                            onChange={(v) => setTimerField(timer.timerid, "notification_channelid", (v as string) || null)}
+                            channelTypes={[0, 5]}
+                            placeholder="Default channel"
+                          />
+                        </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                       </div>
                       <div className="flex gap-2 mt-4 pt-4 border-t border-border/50 flex-wrap">
                         {hasChanges(timer) && (
@@ -338,6 +592,27 @@ export default function PomodoroPage() {
                 <p className="text-xs text-muted-foreground mb-4">
                   Add a new Pomodoro timer to a voice channel. Members can join the channel to study with focus/break cycles.
                 </p>
+                {/* --- AI-MODIFIED (2026-03-14) --- */}
+                {/* Purpose: timer presets above channel selector */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {PRESETS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => setCreateForm((f) => ({ ...f, focus_length: p.focus, break_length: p.break }))}
+                      className={cn(
+                        "px-3 py-2 rounded-lg text-sm border transition-colors",
+                        createForm.focus_length === p.focus && createForm.break_length === p.break
+                          ? "border-primary bg-primary/10 text-primary"
+                          : "border-border bg-card text-muted-foreground hover:text-foreground hover:border-border"
+                      )}
+                    >
+                      <span className="font-medium">{p.label}</span>
+                      <span className="text-xs ml-1.5 opacity-70">{p.focus}/{p.break}</span>
+                    </button>
+                  ))}
+                </div>
+                {/* --- END AI-MODIFIED --- */}
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <ChannelSelect
                     guildId={guildId}
@@ -372,6 +647,53 @@ export default function PomodoroPage() {
                     </div>
                   </div>
                 </div>
+                {/* --- AI-MODIFIED (2026-03-14) --- */}
+                {/* Purpose: complete create form - timer name, notification channel, toggles, manager role */}
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-foreground/80 mb-1">Timer name</label>
+                    <input
+                      type="text"
+                      value={createForm.pretty_name}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, pretty_name: e.target.value }))}
+                      placeholder="e.g. Main Study Timer"
+                      maxLength={100}
+                      className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                  <ChannelSelect
+                    guildId={guildId}
+                    value={createForm.notification_channelid}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, notification_channelid: (v as string) || null }))}
+                    channelTypes={[0, 5]}
+                    label="Notification channel"
+                    placeholder="Default (voice channel)"
+                  />
+                  <div className="flex items-center gap-6">
+                    <label className="flex items-center gap-2 text-sm text-foreground/80">
+                      <Toggle
+                        checked={createForm.voice_alerts}
+                        onChange={(v) => setCreateForm((f) => ({ ...f, voice_alerts: v }))}
+                      />
+                      Voice alerts
+                    </label>
+                    <label className="flex items-center gap-2 text-sm text-foreground/80">
+                      <Toggle
+                        checked={createForm.auto_restart}
+                        onChange={(v) => setCreateForm((f) => ({ ...f, auto_restart: v }))}
+                      />
+                      Auto restart
+                    </label>
+                  </div>
+                  <RoleSelect
+                    guildId={guildId}
+                    value={createForm.manager_roleid}
+                    onChange={(v) => setCreateForm((f) => ({ ...f, manager_roleid: (v as string) || null }))}
+                    label="Manager role"
+                    placeholder="Anyone can control"
+                  />
+                </div>
+                {/* --- END AI-MODIFIED --- */}
                 <button
                   onClick={handleCreate}
                   disabled={creating || !createForm.channelid}

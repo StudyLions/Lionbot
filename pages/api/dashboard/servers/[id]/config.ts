@@ -22,7 +22,7 @@ const EDITABLE_FIELDS = [
   'renting_category', 'renting_sync_perms',
   'accountability_bonus', 'accountability_reward', 'accountability_price',
   'rank_type', 'dm_ranks', 'xp_per_period', 'xp_per_centiword',
-  'rank_channel',
+  'rank_channel', 'pomodoro_channel', // AI-MODIFIED (2026-03-13): guild default pomodoro notification channel
   'video_studyban', 'video_grace_period', 'persist_roles',
   'greeting_message', 'returning_message', 'greeting_channel',
   'min_workout_length', 'workout_reward',
@@ -33,7 +33,7 @@ const EDITABLE_FIELDS = [
 
 const BIGINT_FIELDS = new Set([
   'event_log_channel', 'mod_log_channel', 'alert_channel',
-  'greeting_channel', 'rank_channel', 'renting_category',
+  'greeting_channel', 'rank_channel', 'pomodoro_channel', 'renting_category', // AI-MODIFIED: pomodoro_channel
   'admin_role', 'mod_role',
 ])
 // --- END AI-MODIFIED ---
