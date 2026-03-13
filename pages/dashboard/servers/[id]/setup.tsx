@@ -353,8 +353,10 @@ export default function SetupWizard() {
             ) : !config ? (
               <div className="text-center py-20">
                 <p className="text-muted-foreground">Unable to load settings. You may not have moderator permissions.</p>
-                <Link href={`/dashboard/servers/${id}`} className="mt-4 inline-block text-primary hover:text-primary">
-                  Go to dashboard
+                <Link href={`/dashboard/servers/${id}`}>
+                  <a className="mt-4 inline-block text-primary hover:text-primary">
+                    Go to dashboard
+                  </a>
                 </Link>
               </div>
             ) : (
@@ -500,8 +502,10 @@ export default function SetupWizard() {
                         <p>Starting: {config.starting_funds ?? 0} coins, Transfers: {config.allow_transfers ?? true ? "Yes" : "No"}, Coins/100 XP: {config.coins_per_centixp ?? 50}</p>
                       </div>
 
-                      <Link href={`/dashboard/servers/${id}/settings`} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-                        Full settings page →
+                      <Link href={`/dashboard/servers/${id}/settings`}>
+                        <a className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+                          Full settings page &rarr;
+                        </a>
                       </Link>
 
                       {/* --- AI-MODIFIED (2026-03-13) ---

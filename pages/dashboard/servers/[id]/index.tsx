@@ -178,12 +178,11 @@ export default function ServerDetail() {
                   ]}
                   actions={
                     perms.isAdmin && (
-                      <Link
-                        href={`/dashboard/servers/${id}/setup`}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-foreground text-sm font-medium transition-colors"
-                      >
-                        <Wand2 size={16} />
-                        Run Setup Wizard
+                      <Link href={`/dashboard/servers/${id}/setup`}>
+                        <a className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-foreground text-sm font-medium transition-colors">
+                          <Wand2 size={16} />
+                          Run Setup Wizard
+                        </a>
                       </Link>
                     )
                   }
