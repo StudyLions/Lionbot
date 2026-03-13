@@ -5,6 +5,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import DashboardNav from "@/components/dashboard/DashboardNav"
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
@@ -49,8 +50,10 @@ export default function HistoryPage() {
   return (
     <Layout SEO={{ title: "Study History - LionBot Dashboard", description: "Your study session history" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
-          <div className="max-w-4xl mx-auto">
+        <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-8">
+            <DashboardNav />
+            <div className="flex-1 min-w-0 max-w-4xl">
             <div className="flex items-center gap-4 mb-6">
               <Link href="/dashboard">
                 <span className="text-gray-400 hover:text-white cursor-pointer text-sm">&larr; Dashboard</span>
@@ -154,6 +157,7 @@ export default function HistoryPage() {
                   )}
                 </>
               )}
+            </div>
             </div>
           </div>
         </div>

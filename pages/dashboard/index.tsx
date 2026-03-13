@@ -4,6 +4,7 @@
 // Purpose: Dashboard overview page - user profile and stats
 // ============================================================
 import Layout from "@/components/Layout/Layout"
+import DashboardNav from "@/components/dashboard/DashboardNav"
 import { useSession, signIn } from "next-auth/react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -102,8 +103,10 @@ export default function Dashboard() {
 
   return (
     <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot study statistics" }}>
-      <div className="min-h-screen bg-gray-900 pt-8 pb-16 px-4">
-        <div className="max-w-6xl mx-auto">
+      <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
+        <div className="max-w-6xl mx-auto flex gap-8">
+          <DashboardNav />
+          <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-8">
             <h1 className="text-3xl font-bold text-white">
               Welcome back, {data?.user.name || session?.user?.name || "Studier"}
@@ -198,6 +201,7 @@ export default function Dashboard() {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </Layout>
