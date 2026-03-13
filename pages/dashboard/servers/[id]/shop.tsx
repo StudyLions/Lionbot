@@ -1,36 +1,40 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: Shop editor for colour role items
+// Purpose: Shop editor - rebuilt with RoleSelect, role color preview
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+import {
+  PageHeader, Badge, ConfirmModal, RoleSelect, EmptyState, toast,
+} from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
+import { ShoppingBag, Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight, Coins } from "lucide-react"
 
 interface ShopItem {
-  id: number
-  type: string
+  itemId: number
+  roleId: string
   price: number
   purchasable: boolean
-  roleId: string | null
-  createdAt: string | null
+  itemType: string
 }
 
 export default function ShopPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
+  const guildId = id as string
   const [items, setItems] = useState<ShopItem[]>([])
   const [loading, setLoading] = useState(true)
   const [serverName, setServerName] = useState("")
-  const [toast, setToast] = useState("")
-  const [saving, setSaving] = useState(false)
   const [addForm, setAddForm] = useState({ roleId: "", price: "" })
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<ShopItem | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!id || !session) return
@@ -40,8 +44,8 @@ export default function ShopPage() {
         fetch(`/api/dashboard/servers/${id}`),
       ])
       if (shopRes.ok) {
-        const d = await shopRes.json()
-        setItems(d.items || [])
+        const data = await shopRes.json()
+        setItems(data.items || [])
       }
       const serverData = await serverRes.json()
       setServerName(serverData.server?.name || "Server")
@@ -51,7 +55,44 @@ export default function ShopPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000) }
+  const togglePurchasable = async (item: ShopItem) => {
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: item.itemId, purchasable: !item.purchasable }),
+      })
+      if (res.ok) { toast.success(item.purchasable ? "Item hidden from shop" : "Item visible in shop"); fetchData() }
+    } catch { toast.error("Failed to update") }
+  }
+
+  const savePrice = async (itemId: number) => {
+    const price = parseInt(editPrice)
+    if (isNaN(price) || price < 0) return
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId, price }),
+      })
+      if (res.ok) { toast.success("Price updated"); setEditingId(null); fetchData() }
+    } catch { toast.error("Failed to update price") }
+    setSaving(false)
+  }
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ itemId: deleteTarget.itemId }),
+      })
+      if (res.ok) { toast.success("Item removed"); fetchData() }
+    } catch { toast.error("Failed to delete") }
+    setDeleteTarget(null)
+  }
 
   const addItem = async () => {
     if (!addForm.roleId || !addForm.price) return
@@ -63,157 +104,121 @@ export default function ShopPage() {
         body: JSON.stringify({ roleId: addForm.roleId, price: parseInt(addForm.price) }),
       })
       if (res.ok) {
-        showToast("Item added")
+        toast.success("Shop item added")
         setAddForm({ roleId: "", price: "" })
         fetchData()
       } else {
         const err = await res.json()
-        showToast(err.error || "Failed to add")
+        toast.error(err.error || "Failed to add item")
       }
-    } catch { showToast("Error adding item") }
+    } catch { toast.error("Error adding item") }
     setSaving(false)
   }
 
-  const togglePurchasable = async (item: ShopItem) => {
-    try {
-      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId: item.id, purchasable: !item.purchasable }),
-      })
-      if (res.ok) {
-        setItems(prev => prev.map(i => i.id === item.id ? { ...i, purchasable: !i.purchasable } : i))
-        showToast(item.purchasable ? "Disabled" : "Enabled")
-      }
-    } catch { showToast("Error toggling") }
-  }
-
-  const savePrice = async (itemId: number) => {
-    const price = parseInt(editPrice)
-    if (isNaN(price) || price < 0) return
-    try {
-      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId, price }),
-      })
-      if (res.ok) {
-        setItems(prev => prev.map(i => i.id === itemId ? { ...i, price } : i))
-        setEditingId(null)
-        showToast("Price updated")
-      }
-    } catch { showToast("Error updating") }
-  }
-
-  const deleteItem = async (itemId: number) => {
-    if (!confirm("Remove this shop item?")) return
-    try {
-      const res = await fetch(`/api/dashboard/servers/${id}/shop`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ itemId }),
-      })
-      if (res.ok) { setItems(prev => prev.filter(i => i.id !== itemId)); showToast("Item removed") }
-    } catch { showToast("Error removing") }
-  }
-
   return (
-    <Layout SEO={{ title: `Shop - ${serverName} - LionBot`, description: "Manage server shop" }}>
+    <Layout SEO={{ title: `Shop - ${serverName} - LionBot`, description: "Manage shop items" }}>
       <AdminGuard>
         <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            <ServerNav serverId={id as string} serverName={serverName} isAdmin isMod />
+          <div className="max-w-5xl mx-auto">
+            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
+
+            <PageHeader
+              title="Shop"
+              description="Shop items let members spend their coins. Members can buy colour roles that change their name color in the server."
+            />
 
             {loading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                {[1,2,3].map(i => <div key={i} className="bg-gray-800 rounded-2xl p-6 animate-pulse h-36" />)}
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-1">
+                {[1, 2, 3].map((i) => <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-5 animate-pulse h-24" />)}
               </div>
             ) : (
               <>
-                {/* Item grid */}
                 {items.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-800 rounded-2xl border border-gray-700 mb-6">
-                    <span className="text-4xl block mb-3">🛍️</span>
-                    <p className="text-gray-400">No shop items yet</p>
-                    <p className="text-gray-500 text-sm mt-1">Add colour role items below</p>
-                  </div>
+                  <EmptyState
+                    icon={<ShoppingBag size={48} strokeWidth={1} />}
+                    title="No shop items yet"
+                    description="Add your first colour role item below. Members will be able to purchase it with their coins."
+                  />
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                  <div className="grid grid-cols-1 gap-3 mb-6">
                     {items.map((item) => (
-                      <div key={item.id} className={`bg-gray-800 rounded-2xl border p-5 transition-all ${
-                        item.purchasable ? "border-gray-700" : "border-red-500/20 opacity-70"
-                      }`}>
-                        <div className="flex items-start justify-between mb-3">
-                          <span className="text-xs font-medium bg-pink-500/20 text-pink-300 px-2.5 py-1 rounded-lg">
-                            Colour Role
-                          </span>
-                          <button onClick={() => deleteItem(item.id)}
-                            className="text-gray-500 hover:text-red-400 transition-all text-sm">✕</button>
+                      <div key={item.itemId} className={`bg-gray-800/50 border rounded-xl p-4 flex items-center gap-4 transition-all sm:flex-col sm:items-start ${item.purchasable ? "border-gray-700" : "border-red-500/20 opacity-60"}`}>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant={item.purchasable ? "success" : "error"}>{item.purchasable ? "Available" : "Hidden"}</Badge>
+                            <Badge variant="info">Colour Role</Badge>
+                          </div>
+                          <p className="text-xs text-gray-400 font-mono">Role ID: {item.roleId}</p>
                         </div>
-
-                        <div className="mb-3">
-                          <p className="text-gray-400 text-xs mb-1">Role ID</p>
-                          <p className="text-white text-sm font-mono">{item.roleId || "—"}</p>
-                        </div>
-
-                        <div className="mb-4">
-                          <p className="text-gray-400 text-xs mb-1">Price</p>
-                          {editingId === item.id ? (
-                            <div className="flex gap-2">
-                              <input type="number" value={editPrice}
-                                onChange={e => setEditPrice(e.target.value)}
-                                className="w-24 bg-gray-700 border border-gray-600 text-white rounded px-2 py-1 text-sm"
-                                onKeyDown={e => e.key === "Enter" && savePrice(item.id)} />
-                              <button onClick={() => savePrice(item.id)} className="text-emerald-400 text-sm">Save</button>
-                              <button onClick={() => setEditingId(null)} className="text-gray-400 text-sm">Cancel</button>
+                        <div className="flex items-center gap-3">
+                          {editingId === item.itemId ? (
+                            <div className="flex items-center gap-2">
+                              <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)}
+                                className="w-24 bg-gray-700 border border-gray-600 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                              <button onClick={() => savePrice(item.itemId)} className="p-1.5 text-emerald-400 hover:bg-emerald-400/10 rounded-lg"><Check size={16} /></button>
+                              <button onClick={() => setEditingId(null)} className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-lg"><X size={16} /></button>
                             </div>
                           ) : (
-                            <p className="text-amber-400 text-lg font-bold cursor-pointer hover:text-amber-300"
-                              onClick={() => { setEditingId(item.id); setEditPrice(item.price.toString()) }}>
-                              {item.price.toLocaleString()} coins
-                            </p>
+                            <button onClick={() => { setEditingId(item.itemId); setEditPrice(String(item.price)) }}
+                              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-700/50 rounded-lg text-sm text-amber-400 hover:bg-gray-700 transition-colors" title="Click to edit price">
+                              <Coins size={14} /> {item.price} coins
+                            </button>
                           )}
+                          <button onClick={() => togglePurchasable(item)}
+                            className={`p-1.5 rounded-lg transition-colors ${item.purchasable ? "text-emerald-400 hover:bg-emerald-400/10" : "text-gray-400 hover:bg-gray-700"}`}
+                            title={item.purchasable ? "Hide from shop" : "Show in shop"}>
+                            {item.purchasable ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                          </button>
+                          <button onClick={() => setDeleteTarget(item)}
+                            className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
+                            <Trash2 size={15} />
+                          </button>
                         </div>
-
-                        <button onClick={() => togglePurchasable(item)}
-                          className={`w-full py-2 rounded-xl text-sm font-medium transition-all ${
-                            item.purchasable
-                              ? "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
-                              : "bg-red-500/20 text-red-400 hover:bg-red-500/30"
-                          }`}>
-                          {item.purchasable ? "Purchasable" : "Disabled"}
-                        </button>
                       </div>
                     ))}
                   </div>
                 )}
 
                 {/* Add item form */}
-                <div className="bg-gray-800 rounded-2xl border border-gray-700 p-5">
-                  <h3 className="text-white font-medium mb-4">Add Colour Role Item</h3>
-                  <div className="flex gap-3 flex-wrap">
-                    <input type="text" placeholder="Role ID" value={addForm.roleId}
-                      onChange={e => setAddForm(f => ({ ...f, roleId: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none flex-1 min-w-[180px]" />
-                    <input type="number" placeholder="Price" value={addForm.price}
-                      onChange={e => setAddForm(f => ({ ...f, price: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-pink-500 focus:border-transparent outline-none w-32" />
-                    <button onClick={addItem} disabled={saving || !addForm.roleId || !addForm.price}
-                      className="px-5 py-2.5 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl text-sm font-medium transition-all active:scale-95">
-                      {saving ? "Adding..." : "Add Item"}
-                    </button>
+                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+                    <Plus size={16} /> Add Shop Item
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-4">Select a role and set its price. Members can then buy this role with their coins.</p>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-1">
+                    <RoleSelect
+                      guildId={guildId}
+                      value={addForm.roleId}
+                      onChange={(v) => setAddForm((f) => ({ ...f, roleId: (v as string) || "" }))}
+                      label="Role"
+                      placeholder="Select a role..."
+                    />
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1">Price</label>
+                      <input type="number" value={addForm.price} onChange={(e) => setAddForm((f) => ({ ...f, price: e.target.value }))}
+                        placeholder="e.g. 5000"
+                        className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    </div>
                   </div>
+                  <button onClick={addItem} disabled={saving || !addForm.roleId || !addForm.price}
+                    className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-all">
+                    <Plus size={16} /> {saving ? "Adding..." : "Add Item"}
+                  </button>
                 </div>
               </>
             )}
           </div>
         </div>
 
-        {toast && (
-          <div className="fixed bottom-6 right-6 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-xl border border-gray-700 text-sm z-50 animate-pulse">
-            {toast}
-          </div>
-        )}
+        <ConfirmModal
+          open={!!deleteTarget}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          title="Remove Shop Item"
+          message="This will remove this item from the shop. Members who already purchased the role will keep it."
+          confirmLabel="Remove Item"
+          variant="danger"
+        />
       </AdminGuard>
     </Layout>
   )

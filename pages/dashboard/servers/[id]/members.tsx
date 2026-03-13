@@ -1,14 +1,19 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: Member management page with searchable table
+// Purpose: Members list - rebuilt with DataTable and shared UI
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+import {
+  PageHeader, DataTable, Badge, toast,
+} from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
+import { Users, Download } from "lucide-react"
+import type { Column } from "@/components/dashboard/ui"
 
 interface Member {
   userId: string
@@ -34,9 +39,11 @@ export default function MembersPage() {
   const [pagination, setPagination] = useState<Pagination | null>(null)
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
+  const [searchInput, setSearchInput] = useState("")
   const [sort, setSort] = useState("tracked_time")
   const [order, setOrder] = useState<"asc" | "desc">("desc")
   const [serverName, setServerName] = useState("")
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const fetchMembers = useCallback(async (page = 1) => {
     if (!id || !session) return
@@ -53,11 +60,24 @@ export default function MembersPage() {
       const data = await res.json()
       setMembers(data.members)
       setPagination(data.pagination)
-    } catch {}
+    } catch {
+      toast.error("Failed to load members")
+    }
     setLoading(false)
   }, [id, session, sort, order, search])
 
   useEffect(() => { fetchMembers() }, [fetchMembers])
+
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    searchTimeoutRef.current = setTimeout(() => {
+      setSearch(searchInput)
+    }, 300)
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [searchInput])
+
   useEffect(() => {
     if (id && session) {
       fetch(`/api/dashboard/servers/${id}`)
@@ -67,24 +87,10 @@ export default function MembersPage() {
     }
   }, [id, session])
 
-  const toggleSort = (field: string) => {
-    if (sort === field) {
-      setOrder(order === "desc" ? "asc" : "desc")
-    } else {
-      setSort(field)
-      setOrder("desc")
-    }
-  }
-
-  const sortIcon = (field: string) => {
-    if (sort !== field) return "↕"
-    return order === "desc" ? "↓" : "↑"
-  }
-
   const exportCSV = () => {
     const header = "User ID,Display Name,Study Hours,Coins,Workouts,First Joined\n"
     const rows = members.map(m =>
-      `${m.userId},"${m.displayName || ""}",${m.trackedTimeHours},${m.coins},${m.workoutCount},${m.firstJoined || ""}`
+      `${m.userId},"${(m.displayName || "").replace(/"/g, '""')}",${m.trackedTimeHours},${m.coins},${m.workoutCount},${m.firstJoined || ""}`
     ).join("\n")
     const blob = new Blob([header + rows], { type: "text/csv" })
     const url = URL.createObjectURL(blob)
@@ -92,7 +98,72 @@ export default function MembersPage() {
     a.href = url
     a.download = `members-${id}.csv`
     a.click()
+    URL.revokeObjectURL(url)
+    toast.success("CSV exported")
   }
+
+  const columns: Column<Member>[] = [
+    {
+      key: "displayName",
+      label: "Member",
+      sortable: true,
+      render: (m) => (
+        <span className="text-white font-medium">
+          {m.displayName || `User ...${m.userId.slice(-4)}`}
+        </span>
+      ),
+    },
+    {
+      key: "trackedTimeHours",
+      label: "Study Time",
+      sortable: true,
+      render: (m) => <span className="text-emerald-400 font-mono">{m.trackedTimeHours}h</span>,
+    },
+    {
+      key: "coins",
+      label: "Coins",
+      sortable: true,
+      render: (m) => <span className="text-amber-400 font-mono">{m.coins.toLocaleString()}</span>,
+    },
+    {
+      key: "workoutCount",
+      label: "Workouts",
+      sortable: true,
+      render: (m) => <span className="text-gray-300 font-mono">{m.workoutCount}</span>,
+    },
+    {
+      key: "firstJoined",
+      label: "Joined",
+      sortable: true,
+      render: (m) => (
+        <span className="text-gray-400 text-sm">
+          {m.firstJoined ? new Date(m.firstJoined).toLocaleDateString() : "—"}
+        </span>
+      ),
+    },
+  ]
+
+  const headerActions = (
+    <div className="flex items-center gap-3 flex-wrap sm:flex-col sm:items-stretch">
+      <div className="relative flex-1 min-w-[180px] max-w-xs sm:max-w-none">
+        <input
+          type="text"
+          placeholder="Search members..."
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          className="w-full pl-9 pr-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        />
+        <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
+      </div>
+      <button
+        onClick={exportCSV}
+        className="flex items-center gap-2 px-4 py-2 bg-gray-800 border border-gray-700 text-gray-300 hover:text-white hover:border-gray-600 rounded-lg text-sm transition-colors"
+      >
+        <Download size={16} />
+        Export CSV
+      </button>
+    </div>
+  )
 
   return (
     <Layout SEO={{ title: `Members - ${serverName} - LionBot`, description: "Server members" }}>
@@ -101,113 +172,59 @@ export default function MembersPage() {
           <div className="max-w-6xl mx-auto">
             <ServerNav serverId={id as string} serverName={serverName} isAdmin isMod />
 
-            <div className="flex items-center gap-3 mb-4 sm:flex-col sm:items-stretch">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Search members..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-gray-800 border border-gray-700 text-white rounded-xl px-4 py-2.5 pl-10 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                />
-                <span className="absolute left-3 top-3 text-gray-500">🔍</span>
-              </div>
-              <button
-                onClick={exportCSV}
-                className="px-4 py-2.5 bg-gray-800 border border-gray-700 text-gray-300 hover:text-white rounded-xl text-sm transition-colors"
-              >
-                Export CSV
-              </button>
-            </div>
+            <PageHeader
+              title="Members"
+              description="View and search server members. Study time, coins, and workout stats are tracked per member."
+              actions={
+                pagination && (
+                  <Badge variant="info" size="md">
+                    {`${pagination.total.toLocaleString()} member${pagination.total !== 1 ? "s" : ""}`}
+                  </Badge>
+                )
+              }
+            />
 
-            <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-700">
-                      {[
-                        { key: "display_name", label: "Member" },
-                        { key: "tracked_time", label: "Study Time" },
-                        { key: "coins", label: "Coins" },
-                        { key: "workout_count", label: "Workouts" },
-                        { key: "first_joined", label: "Joined" },
-                      ].map(col => (
-                        <th
-                          key={col.key}
-                          onClick={() => toggleSort(col.key)}
-                          className="text-left px-4 py-3 text-xs uppercase tracking-wide text-gray-400 cursor-pointer hover:text-white transition-colors select-none"
-                        >
-                          {col.label} <span className="text-gray-600">{sortIcon(col.key)}</span>
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loading ? (
-                      Array.from({ length: 5 }).map((_, i) => (
-                        <tr key={i} className="border-b border-gray-700/50">
-                          <td colSpan={5} className="px-4 py-3">
-                            <div className="h-4 bg-gray-700 rounded animate-pulse" />
-                          </td>
-                        </tr>
-                      ))
-                    ) : members.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="text-center py-12 text-gray-500">
-                          {search ? "No members match your search" : "No members found"}
-                        </td>
-                      </tr>
-                    ) : (
-                      members.map((m, i) => (
-                        <tr
-                          key={m.userId}
-                          className={`border-b border-gray-700/50 hover:bg-gray-750 transition-colors ${
-                            i % 2 === 0 ? "bg-gray-800" : "bg-gray-800/50"
-                          }`}
-                        >
-                          <td className="px-4 py-3 text-white font-medium">
-                            {m.displayName || `User ...${m.userId.slice(-4)}`}
-                          </td>
-                          <td className="px-4 py-3 text-emerald-400 font-mono">{m.trackedTimeHours}h</td>
-                          <td className="px-4 py-3 text-amber-400 font-mono">{m.coins.toLocaleString()}</td>
-                          <td className="px-4 py-3 text-gray-300 font-mono">{m.workoutCount}</td>
-                          <td className="px-4 py-3 text-gray-400 text-sm">
-                            {m.firstJoined ? new Date(m.firstJoined).toLocaleDateString() : "—"}
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
+            {loading ? (
+              <div className="space-y-3">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse h-14" />
+                ))}
               </div>
+            ) : (
+              <DataTable<Member>
+                data={members}
+                columns={columns}
+                keyExtractor={(m) => m.userId}
+                searchable={false}
+                pageSize={pagination?.pageSize ?? 25}
+                emptyMessage={search ? "No members match your search" : "No members found"}
+                headerActions={headerActions}
+              />
+            )}
 
-              {pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between px-4 py-3 border-t border-gray-700">
-                  <span className="text-gray-400 text-sm">
-                    {pagination.total} members total
-                  </span>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => fetchMembers(pagination.page - 1)}
-                      disabled={pagination.page <= 1}
-                      className="px-3 py-1.5 bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-30"
-                    >
-                      Prev
-                    </button>
-                    <span className="px-3 py-1.5 text-gray-400 text-sm">
-                      {pagination.page} / {pagination.totalPages}
-                    </span>
-                    <button
-                      onClick={() => fetchMembers(pagination.page + 1)}
-                      disabled={pagination.page >= pagination.totalPages}
-                      className="px-3 py-1.5 bg-gray-700 text-gray-300 rounded-lg text-sm disabled:opacity-30"
-                    >
-                      Next
-                    </button>
-                  </div>
+            {!loading && pagination && pagination.totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4 text-sm text-gray-400">
+                <span>
+                  Page {pagination.page} of {pagination.totalPages}
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => fetchMembers(pagination.page - 1)}
+                    disabled={pagination.page <= 1}
+                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Previous
+                  </button>
+                  <button
+                    onClick={() => fetchMembers(pagination.page + 1)}
+                    disabled={pagination.page >= pagination.totalPages}
+                    className="px-3 py-1.5 bg-gray-800 border border-gray-700 text-gray-300 rounded-lg text-sm hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Next
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </AdminGuard>

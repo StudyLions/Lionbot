@@ -83,6 +83,40 @@ async function getUserGuilds(accessToken: string, userId: string): Promise<Disco
   }
 }
 
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: fetch guild member roles via bot token for mod_role/admin_role checking
+interface GuildMemberInfo {
+  roles: string[]
+}
+
+let memberRoleCache = new Map<string, { roles: string[]; expiresAt: number }>()
+
+async function getUserGuildRoles(guildId: bigint, userId: string): Promise<string[]> {
+  const cacheKey = `${guildId}-${userId}`
+  const cached = memberRoleCache.get(cacheKey)
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.roles
+  }
+
+  const botToken = process.env.DISCORD_BOT_TOKEN
+  if (!botToken) return []
+
+  try {
+    const res = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+      { headers: { Authorization: `Bot ${botToken}` } }
+    )
+    if (!res.ok) return []
+    const member = (await res.json()) as GuildMemberInfo
+    const roles = member.roles || []
+    memberRoleCache.set(cacheKey, { roles, expiresAt: Date.now() + 60000 })
+    return roles
+  } catch {
+    return []
+  }
+}
+// --- END AI-MODIFIED ---
+
 export async function isMember(userId: bigint, guildId: bigint): Promise<boolean> {
   const member = await prisma.members.findUnique({
     where: { guildid_userid: { guildid: guildId, userid: userId } },
@@ -91,6 +125,8 @@ export async function isMember(userId: bigint, guildId: bigint): Promise<boolean
   return !!member
 }
 
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: check mod_role/admin_role from guild_config against user's actual roles
 export async function isModerator(
   auth: AuthContext,
   guildId: bigint
@@ -109,9 +145,18 @@ export async function isModerator(
   })
   if (!guildConfig) return false
 
+  if (guildConfig.mod_role || guildConfig.admin_role) {
+    const userRoles = await getUserGuildRoles(guildId, auth.discordId)
+    if (guildConfig.admin_role && userRoles.includes(guildConfig.admin_role.toString())) return true
+    if (guildConfig.mod_role && userRoles.includes(guildConfig.mod_role.toString())) return true
+  }
+
   return false
 }
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: check admin_role from guild_config against user's actual roles
 export async function isAdmin(
   auth: AuthContext,
   guildId: bigint
@@ -123,8 +168,18 @@ export async function isAdmin(
   const perms = BigInt(guild.permissions)
   if (perms & BigInt(ADMINISTRATOR)) return true
 
+  const guildConfig = await prisma.guild_config.findUnique({
+    where: { guildid: guildId },
+    select: { admin_role: true },
+  })
+  if (guildConfig?.admin_role) {
+    const userRoles = await getUserGuildRoles(guildId, auth.discordId)
+    if (userRoles.includes(guildConfig.admin_role.toString())) return true
+  }
+
   return false
 }
+// --- END AI-MODIFIED ---
 
 export async function requireAuth(
   req: NextApiRequest,

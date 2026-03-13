@@ -20,16 +20,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderBy: { created_at: "desc" },
     })
 
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: renamed id->itemId, type->itemType to match shop.tsx interface
     return res.status(200).json({
       items: items.map((item) => ({
-        id: item.itemid,
-        type: item.item_type,
+        itemId: item.itemid,
+        itemType: item.item_type,
         price: item.price,
         purchasable: item.purchasable ?? true,
         createdAt: item.created_at,
         roleId: item.shop_items_colour_roles?.roleid?.toString() || null,
       })),
     })
+    // --- END AI-MODIFIED ---
   }
 
   if (req.method === "POST") {
@@ -55,13 +58,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       include: { shop_items_colour_roles: true },
     })
 
+    // --- AI-MODIFIED (2026-03-13) ---
+    // Purpose: renamed id->itemId, type->itemType to match shop.tsx interface
     return res.status(201).json({
-      id: item.itemid,
-      type: item.item_type,
+      itemId: item.itemid,
+      itemType: item.item_type,
       price: item.price,
       purchasable: item.purchasable,
       roleId: item.shop_items_colour_roles?.roleid?.toString() || null,
     })
+    // --- END AI-MODIFIED ---
   }
 
   if (req.method === "PATCH") {

@@ -1,7 +1,11 @@
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: Added ToastProvider for dashboard notifications
 import { SessionProvider } from "next-auth/react";
 import Script from "next/script";
+import { ToastProvider } from "@/components/dashboard/ui/Toast";
 
 import "public/styles/styles.scss";
+// --- END AI-MODIFIED ---
 
 // Use of the <SessionProvider> is now mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
@@ -38,6 +42,7 @@ export default function App({ Component, pageProps }) {
         `}
       </Script>
       <Component {...pageProps} />
+      <ToastProvider />
     </SessionProvider>
   );
 }

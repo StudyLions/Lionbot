@@ -19,4 +19,8 @@ export async function middleware(req) {
     })
     if (!session) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
   }
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: explicitly pass through non-protected routes
+  return NextResponse.next()
+  // --- END AI-MODIFIED ---
 }

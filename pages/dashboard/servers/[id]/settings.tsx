@@ -1,148 +1,72 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: Server settings page - grouped config editor
+// Purpose: Server settings page - fully rebuilt with shared UI components
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+import {
+  SectionCard, SettingRow, Toggle, NumberInput, TextInput,
+  SearchSelect, ChannelSelect, SaveBar, PageHeader, toast,
+} from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
+import {
+  BookOpen, Coins, CheckSquare, Lock, Users, Trophy,
+  Shield, Globe, MessageSquare, Dumbbell
+} from "lucide-react"
 
-interface SettingGroup {
-  title: string
-  icon: string
-  description: string
-  color: string
-  fields: SettingField[]
-}
+const TIMEZONE_OPTIONS = [
+  "US/Eastern", "US/Central", "US/Mountain", "US/Pacific",
+  "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Istanbul",
+  "Asia/Tokyo", "Asia/Shanghai", "Asia/Kolkata", "Asia/Dubai",
+  "Australia/Sydney", "Pacific/Auckland", "America/Sao_Paulo",
+  "America/Mexico_City", "Africa/Cairo", "Asia/Jerusalem", "UTC",
+].map((tz) => ({ value: tz, label: tz.replace(/_/g, " ") }))
 
-interface SettingField {
-  key: string
-  label: string
-  type: "number" | "boolean" | "text" | "select" | "textarea"
-  description?: string
-  options?: { value: string; label: string }[]
-  min?: number
-  max?: number
-  placeholder?: string
-}
-
-const settingGroups: SettingGroup[] = [
-  {
-    title: "Study Rewards",
-    icon: "📚",
-    description: "Configure how members earn coins from studying",
-    color: "from-emerald-500/10 to-emerald-600/5 border-emerald-500/20",
-    fields: [
-      { key: "study_hourly_reward", label: "Hourly Reward", type: "number", description: "Coins earned per hour of study", min: 0 },
-      { key: "study_hourly_live_bonus", label: "Camera Bonus", type: "number", description: "Extra coins for camera-on study", min: 0 },
-      { key: "daily_study_cap", label: "Daily Cap (hours)", type: "number", description: "Max rewarded hours per day (null = unlimited)", min: 0 },
-    ],
-  },
-  {
-    title: "Economy",
-    icon: "💰",
-    description: "Manage the server coin economy",
-    color: "from-amber-500/10 to-amber-600/5 border-amber-500/20",
-    fields: [
-      { key: "starting_funds", label: "Starting Coins", type: "number", description: "Coins given to new members", min: 0 },
-      { key: "allow_transfers", label: "Allow Transfers", type: "boolean", description: "Let members send coins to each other" },
-      { key: "coins_per_centixp", label: "Coins per 100 XP", type: "number", description: "Coin-to-XP conversion rate", min: 0 },
-    ],
-  },
-  {
-    title: "Tasks",
-    icon: "✅",
-    description: "Task completion rewards",
-    color: "from-blue-500/10 to-blue-600/5 border-blue-500/20",
-    fields: [
-      { key: "max_tasks", label: "Max Tasks", type: "number", description: "Maximum tasks per member", min: 1, max: 100 },
-      { key: "task_reward", label: "Task Reward", type: "number", description: "Coins per completed task", min: 0 },
-      { key: "task_reward_limit", label: "Daily Reward Limit", type: "number", description: "Max task rewards per day", min: 0 },
-    ],
-  },
-  {
-    title: "Private Rooms",
-    icon: "🔒",
-    description: "Private study room settings",
-    color: "from-purple-500/10 to-purple-600/5 border-purple-500/20",
-    fields: [
-      { key: "renting_price", label: "Daily Rent", type: "number", description: "Coins per day to rent a room", min: 0 },
-      { key: "renting_cap", label: "Max Members", type: "number", description: "Maximum members per room", min: 1 },
-      { key: "renting_visible", label: "Visible", type: "boolean", description: "Rooms visible to non-members" },
-    ],
-  },
-  {
-    title: "Accountability",
-    icon: "🤝",
-    description: "Scheduled accountability sessions",
-    color: "from-rose-500/10 to-rose-600/5 border-rose-500/20",
-    fields: [
-      { key: "accountability_price", label: "Booking Cost", type: "number", description: "Coins to book a session", min: 0 },
-      { key: "accountability_reward", label: "Attendance Reward", type: "number", description: "Coins for attending", min: 0 },
-      { key: "accountability_bonus", label: "Full Group Bonus", type: "number", description: "Bonus when everyone attends", min: 0 },
-    ],
-  },
-  {
-    title: "Ranks",
-    icon: "🏆",
-    description: "Activity rank progression",
-    color: "from-indigo-500/10 to-indigo-600/5 border-indigo-500/20",
-    fields: [
-      { key: "rank_type", label: "Rank Stat", type: "select", options: [
-        { value: "XP", label: "XP (Combined)" },
-        { value: "VOICE", label: "Voice Time" },
-        { value: "MESSAGE", label: "Messages" },
-      ], description: "Which stat drives rank progression" },
-      { key: "dm_ranks", label: "DM Rank Ups", type: "boolean", description: "Send rank-up notifications via DM" },
-      { key: "xp_per_period", label: "XP per Period", type: "number", description: "Voice XP earned per tracking period", min: 0 },
-    ],
-  },
-  {
-    title: "Moderation",
-    icon: "🛡️",
-    description: "Moderation and video room settings",
-    color: "from-red-500/10 to-red-600/5 border-red-500/20",
-    fields: [
-      { key: "video_studyban", label: "Video Study Ban", type: "boolean", description: "Ban from study for camera violations" },
-      { key: "video_grace_period", label: "Grace Period (sec)", type: "number", description: "Seconds before camera kick", min: 0 },
-      { key: "persist_roles", label: "Persist Roles", type: "boolean", description: "Restore roles when members rejoin" },
-    ],
-  },
-  {
-    title: "General",
-    icon: "🌍",
-    description: "Language and timezone",
-    color: "from-cyan-500/10 to-cyan-600/5 border-cyan-500/20",
-    fields: [
-      { key: "timezone", label: "Timezone", type: "text", placeholder: "e.g. US/Eastern, Europe/London" },
-      { key: "locale", label: "Language", type: "text", placeholder: "e.g. en_GB, pt_BR" },
-      { key: "force_locale", label: "Force Language", type: "boolean", description: "Override member language preferences" },
-    ],
-  },
-  {
-    title: "Welcome Messages",
-    icon: "👋",
-    description: "Greet new and returning members",
-    color: "from-pink-500/10 to-pink-600/5 border-pink-500/20",
-    fields: [
-      { key: "greeting_message", label: "Welcome Message", type: "textarea", placeholder: "Use {mention}, {user_name}, {server_name}" },
-      { key: "returning_message", label: "Returning Message", type: "textarea", placeholder: "Message for returning members" },
-    ],
-  },
-  {
-    title: "Workouts",
-    icon: "💪",
-    description: "Workout tracking settings",
-    color: "from-orange-500/10 to-orange-600/5 border-orange-500/20",
-    fields: [
-      { key: "min_workout_length", label: "Min Length (min)", type: "number", description: "Minimum workout duration in minutes", min: 1 },
-      { key: "workout_reward", label: "Reward", type: "number", description: "Coins per workout session", min: 0 },
-    ],
-  },
+const LOCALE_OPTIONS = [
+  { value: "en_GB", label: "English" },
+  { value: "pt_BR", label: "Portuguese (Brazil)" },
+  { value: "he_IL", label: "Hebrew" },
+  { value: "tr", label: "Turkish" },
 ]
+
+const RANK_TYPE_OPTIONS = [
+  { value: "XP", label: "XP (Combined)" },
+  { value: "VOICE", label: "Voice Time" },
+  { value: "MESSAGE", label: "Messages" },
+]
+
+const DEFAULTS: Record<string, any> = {
+  study_hourly_reward: 100,
+  study_hourly_live_bonus: 25,
+  daily_study_cap: null,
+  starting_funds: 0,
+  allow_transfers: true,
+  coins_per_centixp: 50,
+  max_tasks: 20,
+  task_reward: 50,
+  task_reward_limit: 10,
+  renting_price: 1000,
+  renting_cap: 25,
+  renting_visible: true,
+  accountability_price: 100,
+  accountability_reward: 200,
+  accountability_bonus: 200,
+  rank_type: "XP",
+  dm_ranks: true,
+  xp_per_period: 5,
+  video_studyban: true,
+  video_grace_period: 90,
+  persist_roles: false,
+  timezone: "UTC",
+  locale: "en_GB",
+  force_locale: false,
+  min_workout_length: 10,
+  workout_reward: 50,
+}
 
 export default function ServerSettings() {
   const { data: session } = useSession()
@@ -152,7 +76,6 @@ export default function ServerSettings() {
   const [original, setOriginal] = useState<Record<string, any> | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   useEffect(() => {
     if (id && session) {
@@ -170,7 +93,7 @@ export default function ServerSettings() {
     }
   }, [id, session])
 
-  const handleChange = useCallback((key: string, value: any) => {
+  const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
   }, [])
 
@@ -193,159 +116,382 @@ export default function ServerSettings() {
       })
       if (!res.ok) throw new Error("Save failed")
       setOriginal({ ...config })
-      setToast({ type: "success", message: "Settings saved!" })
+      toast.success("Settings saved successfully")
     } catch {
-      setToast({ type: "error", message: "Failed to save. Check your permissions." })
+      toast.error("Failed to save. Check your permissions.")
     }
     setSaving(false)
-    setTimeout(() => setToast(null), 3000)
   }
 
   const handleReset = () => {
     if (original) setConfig({ ...original })
   }
 
+  const guildId = id as string
+
   return (
     <Layout SEO={{ title: `Settings - ${config?.name || "Server"} - LionBot`, description: "Server settings" }}>
       <AdminGuard>
         <div className="min-h-screen bg-gray-900 pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto">
-            <ServerNav serverId={id as string} serverName={config?.name || "..."} isAdmin isMod />
+          <div className="max-w-5xl mx-auto flex gap-8">
+            <div className="flex-1 min-w-0">
+              <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />
 
-            {loading ? (
-              <div className="space-y-6">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-gray-800 rounded-2xl p-6 animate-pulse">
-                    <div className="h-6 bg-gray-700 rounded w-1/4 mb-4" />
-                    <div className="space-y-3">
-                      <div className="h-10 bg-gray-700 rounded" />
-                      <div className="h-10 bg-gray-700 rounded" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : !config ? (
-              <div className="text-center py-20">
-                <p className="text-gray-400 text-lg">Unable to load settings. You may not have admin permissions.</p>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-6">
-                  {settingGroups.map((group) => (
-                    <div
-                      key={group.title}
-                      className={`bg-gradient-to-br ${group.color} bg-gray-800 rounded-2xl border overflow-hidden transition-all`}
-                    >
-                      <div className="p-5 sm:p-4">
-                        <div className="flex items-center gap-3 mb-1">
-                          <span className="text-2xl">{group.icon}</span>
-                          <h3 className="text-lg font-bold text-white">{group.title}</h3>
-                        </div>
-                        <p className="text-gray-400 text-sm ml-11 sm:ml-0 mb-4">{group.description}</p>
+              <PageHeader
+                title="Server Settings"
+                description="Configure how LionBot works in your server. Changes are saved when you click Save. Hover over the question mark icons for more details about each setting."
+              />
 
-                        <div className="grid gap-4 sm:gap-3">
-                          {group.fields.map((field) => (
-                            <div key={field.key} className="flex items-center justify-between gap-4 sm:flex-col sm:items-start">
-                              <div className="flex-1 min-w-0">
-                                <label className="text-white text-sm font-medium">{field.label}</label>
-                                {field.description && (
-                                  <p className="text-gray-500 text-xs mt-0.5">{field.description}</p>
-                                )}
-                              </div>
-                              <div className="w-48 sm:w-full flex-shrink-0">
-                                {field.type === "boolean" ? (
-                                  <button
-                                    onClick={() => handleChange(field.key, !config[field.key])}
-                                    className={`relative w-14 h-7 rounded-full transition-colors ${
-                                      config[field.key] ? "bg-emerald-500" : "bg-gray-600"
-                                    }`}
-                                  >
-                                    <span
-                                      className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform ${
-                                        config[field.key] ? "translate-x-7" : ""
-                                      }`}
-                                    />
-                                  </button>
-                                ) : field.type === "select" ? (
-                                  <select
-                                    value={config[field.key] || ""}
-                                    onChange={(e) => handleChange(field.key, e.target.value || null)}
-                                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                                  >
-                                    <option value="">Not set</option>
-                                    {field.options?.map((opt) => (
-                                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                    ))}
-                                  </select>
-                                ) : field.type === "textarea" ? (
-                                  <textarea
-                                    value={config[field.key] || ""}
-                                    onChange={(e) => handleChange(field.key, e.target.value || null)}
-                                    placeholder={field.placeholder}
-                                    rows={3}
-                                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
-                                  />
-                                ) : (
-                                  <input
-                                    type={field.type}
-                                    value={config[field.key] ?? ""}
-                                    onChange={(e) =>
-                                      handleChange(
-                                        field.key,
-                                        field.type === "number"
-                                          ? e.target.value === "" ? null : parseInt(e.target.value)
-                                          : e.target.value || null
-                                      )
-                                    }
-                                    placeholder={field.placeholder}
-                                    min={field.min}
-                                    max={field.max}
-                                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-                                  />
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse">
+                      <div className="h-5 bg-gray-700 rounded w-1/4 mb-4" />
+                      <div className="space-y-3">
+                        <div className="h-10 bg-gray-700 rounded" />
+                        <div className="h-10 bg-gray-700 rounded w-3/4" />
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : !config ? (
+                <div className="text-center py-20">
+                  <p className="text-gray-400">Unable to load settings. You may not have admin permissions.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Study Rewards */}
+                  <SectionCard
+                    title="Study Rewards"
+                    description="Control how members earn coins from studying"
+                    icon={<BookOpen size={18} />}
+                  >
+                    <SettingRow
+                      label="Hourly Reward"
+                      description="How many coins a member earns for each hour of study time"
+                      tooltip="Members receive this amount of coins for every hour they spend in a voice study channel. Higher values encourage more study time."
+                      defaultBadge={String(DEFAULTS.study_hourly_reward)}
+                    >
+                      <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Camera Bonus"
+                      description="Extra coins per hour when studying with camera on"
+                      tooltip="Members who turn on their camera while studying earn this bonus on top of the hourly reward. Great for accountability."
+                      defaultBadge={String(DEFAULTS.study_hourly_live_bonus)}
+                    >
+                      <NumberInput value={config.study_hourly_live_bonus} onChange={(v) => set("study_hourly_live_bonus", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_live_bonus} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Daily Study Cap"
+                      description="Maximum hours of study that earn rewards per day"
+                      tooltip="After this many hours of study in a day, members stop earning coins. Leave empty for no limit. Prevents coin inflation."
+                      defaultBadge="No limit"
+                    >
+                      <NumberInput value={config.daily_study_cap} onChange={(v) => set("daily_study_cap", v)} unit="hours" min={1} placeholder="No limit" allowNull />
+                    </SettingRow>
+                  </SectionCard>
 
-                {/* Sticky save bar */}
-                {hasChanges && (
-                  <div className="fixed bottom-0 left-0 right-0 bg-gray-800/95 backdrop-blur-sm border-t border-gray-700 p-4 z-50">
-                    <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-                      <p className="text-amber-400 text-sm font-medium">You have unsaved changes</p>
-                      <div className="flex gap-3">
-                        <button
-                          onClick={handleReset}
-                          className="px-4 py-2 text-gray-300 hover:text-white border border-gray-600 rounded-xl text-sm transition-colors"
-                        >
-                          Reset
-                        </button>
-                        <button
-                          onClick={handleSave}
-                          disabled={saving}
-                          className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-600 text-white rounded-xl text-sm font-medium transition-all hover:shadow-lg hover:shadow-emerald-500/25 active:scale-95"
-                        >
-                          {saving ? "Saving..." : "Save Changes"}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+                  {/* Economy */}
+                  <SectionCard
+                    title="Economy"
+                    description="Manage the server's coin economy"
+                    icon={<Coins size={18} />}
+                  >
+                    <SettingRow
+                      label="Starting Coins"
+                      description="Coins given to new members when they join"
+                      tooltip="Every new member starts with this many coins. Set to 0 if you want members to earn everything from scratch."
+                      defaultBadge={String(DEFAULTS.starting_funds)}
+                    >
+                      <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Allow Transfers"
+                      description="Let members send coins to each other"
+                      tooltip="When enabled, members can use the /transfer command to give coins to other members. Disable if you want a closed economy."
+                    >
+                      <Toggle checked={config.allow_transfers ?? true} onChange={(v) => set("allow_transfers", v)} />
+                    </SettingRow>
+                    <SettingRow
+                      label="Coins per 100 XP"
+                      description="How many coins 100 XP is worth"
+                      tooltip="This sets the conversion rate between XP and coins. Higher values make coins easier to earn. XP is earned through voice study and text activity."
+                      defaultBadge={String(DEFAULTS.coins_per_centixp)}
+                    >
+                      <NumberInput value={config.coins_per_centixp} onChange={(v) => set("coins_per_centixp", v)} unit="coins" min={0} defaultValue={DEFAULTS.coins_per_centixp} allowNull />
+                    </SettingRow>
+                  </SectionCard>
 
-            {/* Toast notification */}
-            {toast && (
-              <div className={`fixed top-6 right-6 px-5 py-3 rounded-xl shadow-2xl z-50 text-sm font-medium transition-all animate-[slideIn_0.3s_ease-out] ${
-                toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
-              }`}>
-                {toast.message}
-              </div>
-            )}
+                  {/* Tasks */}
+                  <SectionCard
+                    title="Tasks"
+                    description="Task completion rewards and limits"
+                    icon={<CheckSquare size={18} />}
+                  >
+                    <SettingRow
+                      label="Max Tasks"
+                      description="Maximum number of tasks a member can have at once"
+                      tooltip="Limits how many to-do items each member can create. Prevents list clutter."
+                      defaultBadge={String(DEFAULTS.max_tasks)}
+                    >
+                      <NumberInput value={config.max_tasks} onChange={(v) => set("max_tasks", v)} min={1} max={100} defaultValue={DEFAULTS.max_tasks} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Task Reward"
+                      description="Coins earned when a member completes a task"
+                      tooltip="Each time a member marks a task as complete, they receive this many coins."
+                      defaultBadge={String(DEFAULTS.task_reward)}
+                    >
+                      <NumberInput value={config.task_reward} onChange={(v) => set("task_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.task_reward} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Daily Reward Limit"
+                      description="Max task rewards a member can earn per day"
+                      tooltip="Prevents members from farming coins by creating and completing many small tasks."
+                      defaultBadge={String(DEFAULTS.task_reward_limit)}
+                    >
+                      <NumberInput value={config.task_reward_limit} onChange={(v) => set("task_reward_limit", v)} min={0} defaultValue={DEFAULTS.task_reward_limit} allowNull />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Private Rooms */}
+                  <SectionCard
+                    title="Private Rooms"
+                    description="Settings for rentable private study rooms"
+                    icon={<Lock size={18} />}
+                  >
+                    <SettingRow
+                      label="Daily Rent"
+                      description="Coins it costs to rent a private room per day"
+                      tooltip="Members pay this amount daily to keep their private study room. The room is auto-deleted when they run out of coins."
+                      defaultBadge={String(DEFAULTS.renting_price)}
+                    >
+                      <NumberInput value={config.renting_price} onChange={(v) => set("renting_price", v)} unit="coins/day" min={0} defaultValue={DEFAULTS.renting_price} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Max Members"
+                      description="Maximum people allowed in a private room"
+                      defaultBadge={String(DEFAULTS.renting_cap)}
+                    >
+                      <NumberInput value={config.renting_cap} onChange={(v) => set("renting_cap", v)} min={1} defaultValue={DEFAULTS.renting_cap} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Visible to Others"
+                      description="Non-members can see private rooms (but can't join)"
+                      tooltip="When enabled, private rooms appear in the channel list for everyone but only room members can connect."
+                    >
+                      <Toggle checked={config.renting_visible ?? true} onChange={(v) => set("renting_visible", v)} />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Accountability / Schedule */}
+                  <SectionCard
+                    title="Accountability Sessions"
+                    description="Settings for scheduled group study sessions"
+                    icon={<Users size={18} />}
+                  >
+                    <SettingRow
+                      label="Booking Cost"
+                      description="Coins to book a study session"
+                      tooltip="Members pay this to schedule a session. They get it back (plus rewards) if they attend."
+                      defaultBadge={String(DEFAULTS.accountability_price)}
+                    >
+                      <NumberInput value={config.accountability_price} onChange={(v) => set("accountability_price", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_price} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Attendance Reward"
+                      description="Coins earned for attending a booked session"
+                      defaultBadge={String(DEFAULTS.accountability_reward)}
+                    >
+                      <NumberInput value={config.accountability_reward} onChange={(v) => set("accountability_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_reward} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Full Group Bonus"
+                      description="Extra coins when every booked member shows up"
+                      tooltip="All members in the session get this bonus if 100% attendance is achieved."
+                      defaultBadge={String(DEFAULTS.accountability_bonus)}
+                    >
+                      <NumberInput value={config.accountability_bonus} onChange={(v) => set("accountability_bonus", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_bonus} allowNull />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Ranks */}
+                  <SectionCard
+                    title="Ranks"
+                    description="Configure activity-based rank progression"
+                    icon={<Trophy size={18} />}
+                    badge={config.rank_type || "XP"}
+                  >
+                    <SettingRow
+                      label="Rank Type"
+                      description="Which activity drives rank progression"
+                      tooltip="XP: combines voice and text activity. Voice: only study time counts. Messages: only text messages count. Choose based on what your community values most."
+                      defaultBadge={DEFAULTS.rank_type}
+                    >
+                      <SearchSelect
+                        options={RANK_TYPE_OPTIONS}
+                        value={config.rank_type || null}
+                        onChange={(v) => set("rank_type", v)}
+                        placeholder="Select rank type"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="DM Rank-Up Notifications"
+                      description="Send members a DM when they reach a new rank"
+                      tooltip="When enabled, LionBot sends a congratulatory DM when a member levels up. Some members disable DMs, so this won't always work."
+                    >
+                      <Toggle checked={config.dm_ranks ?? true} onChange={(v) => set("dm_ranks", v)} />
+                    </SettingRow>
+                    <SettingRow
+                      label="XP per Period"
+                      description="Voice XP earned per tracking interval"
+                      tooltip="Every few minutes in a voice channel, members earn this much XP. Higher values make ranking up faster."
+                      defaultBadge={String(DEFAULTS.xp_per_period)}
+                    >
+                      <NumberInput value={config.xp_per_period} onChange={(v) => set("xp_per_period", v)} unit="XP" min={0} defaultValue={DEFAULTS.xp_per_period} allowNull />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Moderation */}
+                  <SectionCard
+                    title="Moderation"
+                    description="Moderation and enforcement settings"
+                    icon={<Shield size={18} />}
+                  >
+                    <SettingRow
+                      label="Video Study Ban"
+                      description="Ban members from study channels for camera violations"
+                      tooltip="When enabled, members who repeatedly disable their camera in video-required channels get temporarily banned from those channels."
+                    >
+                      <Toggle checked={config.video_studyban ?? true} onChange={(v) => set("video_studyban", v)} />
+                    </SettingRow>
+                    <SettingRow
+                      label="Camera Grace Period"
+                      description="Seconds before a member is kicked for no camera"
+                      tooltip="When a member joins a video-required channel without camera, they get this many seconds to turn it on before being disconnected."
+                      defaultBadge={`${DEFAULTS.video_grace_period}s`}
+                    >
+                      <NumberInput value={config.video_grace_period} onChange={(v) => set("video_grace_period", v)} unit="seconds" min={10} defaultValue={DEFAULTS.video_grace_period} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Persist Roles"
+                      description="Restore member roles when they rejoin the server"
+                      tooltip="When a member leaves and comes back, LionBot will reassign the roles they had before. Useful for preventing punishment evasion."
+                    >
+                      <Toggle checked={config.persist_roles ?? false} onChange={(v) => set("persist_roles", v)} />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* General */}
+                  <SectionCard
+                    title="General"
+                    description="Language, timezone, and regional settings"
+                    icon={<Globe size={18} />}
+                  >
+                    <SettingRow
+                      label="Timezone"
+                      description="Server timezone for schedules and time displays"
+                      tooltip="All times shown by LionBot (schedules, session logs, etc.) will use this timezone. Pick the timezone where most of your members are."
+                      defaultBadge="UTC"
+                    >
+                      <SearchSelect
+                        options={TIMEZONE_OPTIONS}
+                        value={config.timezone || null}
+                        onChange={(v) => set("timezone", v)}
+                        placeholder="Select timezone"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Language"
+                      description="Bot language for this server"
+                      tooltip="LionBot will respond in this language. Members can override this with their personal language preference unless Force Language is enabled."
+                      defaultBadge="English"
+                    >
+                      <SearchSelect
+                        options={LOCALE_OPTIONS}
+                        value={config.locale || null}
+                        onChange={(v) => set("locale", v)}
+                        placeholder="Select language"
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Force Language"
+                      description="Override individual member language preferences"
+                      tooltip="When enabled, all members see the server language regardless of their personal setting. Useful for servers where you want a consistent experience."
+                    >
+                      <Toggle checked={config.force_locale ?? false} onChange={(v) => set("force_locale", v)} />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Welcome Messages */}
+                  <SectionCard
+                    title="Welcome Messages"
+                    description="Greet new and returning members automatically"
+                    icon={<MessageSquare size={18} />}
+                  >
+                    <SettingRow
+                      label="Welcome Message"
+                      description="Sent when a new member joins. You can use: {mention}, {user_name}, {server_name}"
+                      tooltip="This message is sent as an embed when someone joins for the first time. Leave empty to disable. Use {mention} to ping the new member."
+                    >
+                      <TextInput
+                        value={config.greeting_message || ""}
+                        onChange={(v) => set("greeting_message", v || null)}
+                        multiline
+                        rows={3}
+                        placeholder="Welcome to {server_name}, {mention}! Start studying to earn coins."
+                        maxLength={2000}
+                      />
+                    </SettingRow>
+                    <SettingRow
+                      label="Returning Member Message"
+                      description="Sent when a member who previously left rejoins"
+                      tooltip="This message is sent when someone who was previously a member comes back. Leave empty to use the regular welcome message."
+                    >
+                      <TextInput
+                        value={config.returning_message || ""}
+                        onChange={(v) => set("returning_message", v || null)}
+                        multiline
+                        rows={3}
+                        placeholder="Welcome back, {mention}! Good to see you again."
+                        maxLength={2000}
+                      />
+                    </SettingRow>
+                  </SectionCard>
+
+                  {/* Workouts */}
+                  <SectionCard
+                    title="Workouts"
+                    description="Workout tracking and rewards"
+                    icon={<Dumbbell size={18} />}
+                  >
+                    <SettingRow
+                      label="Minimum Length"
+                      description="Shortest workout that counts for a reward"
+                      tooltip="Workouts shorter than this won't earn any coins. Prevents gaming the system with very short sessions."
+                      defaultBadge={`${DEFAULTS.min_workout_length} min`}
+                    >
+                      <NumberInput value={config.min_workout_length} onChange={(v) => set("min_workout_length", v)} unit="minutes" min={1} defaultValue={DEFAULTS.min_workout_length} allowNull />
+                    </SettingRow>
+                    <SettingRow
+                      label="Workout Reward"
+                      description="Coins earned per workout session"
+                      defaultBadge={String(DEFAULTS.workout_reward)}
+                    >
+                      <NumberInput value={config.workout_reward} onChange={(v) => set("workout_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.workout_reward} allowNull />
+                    </SettingRow>
+                  </SectionCard>
+                </div>
+              )}
+
+              <SaveBar
+                show={!!hasChanges}
+                onSave={handleSave}
+                onReset={handleReset}
+                saving={saving}
+              />
+            </div>
           </div>
         </div>
       </AdminGuard>

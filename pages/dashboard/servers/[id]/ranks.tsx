@@ -1,14 +1,18 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: Ranks editor with tabbed view for XP/Voice/Message
+// Purpose: Ranks editor - rebuilt with RoleSelect, ConfirmModal, proper design
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+import {
+  PageHeader, Badge, ConfirmModal, RoleSelect, EmptyState, FirstTimeBanner, toast,
+} from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
+import { Trophy, Plus, Pencil, Trash2, X, Check } from "lucide-react"
 
 interface Rank {
   rankId: number
@@ -29,25 +33,26 @@ interface RanksData {
 
 type TabKey = "XP" | "VOICE" | "MESSAGE"
 
-const tabs: { key: TabKey; label: string; color: string }[] = [
-  { key: "XP", label: "XP Ranks", color: "emerald" },
-  { key: "VOICE", label: "Voice Ranks", color: "indigo" },
-  { key: "MESSAGE", label: "Message Ranks", color: "amber" },
-]
+const TAB_CONFIG: Record<TabKey, { label: string; unit: string; description: string; activeClass: string }> = {
+  XP: { label: "XP Ranks", unit: "XP", description: "Combined voice and text activity", activeClass: "bg-emerald-600 text-white shadow-lg shadow-emerald-600/20" },
+  VOICE: { label: "Voice Ranks", unit: "hours", description: "Study time in voice channels", activeClass: "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20" },
+  MESSAGE: { label: "Message Ranks", unit: "messages", description: "Total text messages sent", activeClass: "bg-amber-600 text-white shadow-lg shadow-amber-600/20" },
+}
 
 export default function RanksPage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
+  const guildId = id as string
   const [data, setData] = useState<RanksData | null>(null)
   const [loading, setLoading] = useState(true)
   const [serverName, setServerName] = useState("")
   const [activeTab, setActiveTab] = useState<TabKey>("XP")
-  const [toast, setToast] = useState("")
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editForm, setEditForm] = useState({ required: 0, reward: 0, message: "" })
   const [addForm, setAddForm] = useState({ roleId: "", required: "", reward: "", message: "" })
   const [saving, setSaving] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Rank | null>(null)
 
   const fetchData = useCallback(async () => {
     if (!id || !session) return
@@ -65,11 +70,11 @@ export default function RanksPage() {
 
   useEffect(() => { fetchData() }, [fetchData])
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000) }
-
   const currentRanks = data
     ? activeTab === "XP" ? data.xpRanks : activeTab === "VOICE" ? data.voiceRanks : data.msgRanks
     : []
+
+  const tabConfig = TAB_CONFIG[activeTab]
 
   const startEdit = (rank: Rank) => {
     setEditingId(rank.rankId)
@@ -84,23 +89,24 @@ export default function RanksPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ rankType: activeTab, rankId, ...editForm }),
       })
-      if (res.ok) { showToast("Rank updated"); setEditingId(null); fetchData() }
-      else showToast("Failed to update")
-    } catch { showToast("Error saving") }
+      if (res.ok) { toast.success("Rank updated"); setEditingId(null); fetchData() }
+      else toast.error("Failed to update rank")
+    } catch { toast.error("Error saving rank") }
     setSaving(false)
   }
 
-  const deleteRank = async (rankId: number) => {
-    if (!confirm("Delete this rank tier?")) return
+  const confirmDelete = async () => {
+    if (!deleteTarget) return
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/ranks`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rankType: activeTab, rankId }),
+        body: JSON.stringify({ rankType: activeTab, rankId: deleteTarget.rankId }),
       })
-      if (res.ok) { showToast("Rank deleted"); fetchData() }
-      else showToast("Failed to delete")
-    } catch { showToast("Error deleting") }
+      if (res.ok) { toast.success("Rank deleted"); fetchData() }
+      else toast.error("Failed to delete")
+    } catch { toast.error("Error deleting") }
+    setDeleteTarget(null)
   }
 
   const addRank = async () => {
@@ -119,120 +125,121 @@ export default function RanksPage() {
         }),
       })
       if (res.ok) {
-        showToast("Rank added")
+        toast.success("Rank tier added")
         setAddForm({ roleId: "", required: "", reward: "", message: "" })
         fetchData()
       } else {
         const err = await res.json()
-        showToast(err.error || "Failed to add")
+        toast.error(err.error || "Failed to add rank")
       }
-    } catch { showToast("Error adding") }
+    } catch { toast.error("Error adding rank") }
     setSaving(false)
   }
-
-  const tabColor = tabs.find(t => t.key === activeTab)?.color || "emerald"
 
   return (
     <Layout SEO={{ title: `Ranks - ${serverName} - LionBot`, description: "Manage rank tiers" }}>
       <AdminGuard>
         <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
-          <div className="max-w-6xl mx-auto">
-            <ServerNav serverId={id as string} serverName={serverName} isAdmin isMod />
+          <div className="max-w-5xl mx-auto">
+            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
 
-            {/* Active rank type badge */}
+            <PageHeader
+              title="Ranks"
+              description="Ranks reward members as they study. When a member reaches the required threshold, they automatically receive the role and a coin reward."
+            />
+
             {data?.rankType && (
-              <div className="mb-4 flex items-center gap-2">
-                <span className="text-gray-400 text-sm">Active rank system:</span>
-                <span className="text-xs font-medium bg-indigo-500/20 text-indigo-300 px-3 py-1 rounded-full">
-                  {data.rankType}
-                </span>
-                {data.dmRanks && (
-                  <span className="text-xs font-medium bg-purple-500/20 text-purple-300 px-3 py-1 rounded-full">
-                    DM Notifications
-                  </span>
-                )}
+              <div className="flex items-center gap-2 mb-6">
+                <Badge variant="info" dot>{`Active: ${data.rankType}`}</Badge>
+                {data.dmRanks && <Badge variant="purple" dot>DM Notifications On</Badge>}
               </div>
             )}
 
             {/* Tabs */}
             <div className="flex gap-2 mb-6">
-              {tabs.map((tab) => (
+              {(Object.keys(TAB_CONFIG) as TabKey[]).map((key) => (
                 <button
-                  key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); setEditingId(null) }}
-                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    activeTab === tab.key
-                      ? `bg-${tab.color}-600 text-white shadow-lg`
-                      : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  key={key}
+                  onClick={() => { setActiveTab(key); setEditingId(null) }}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    activeTab === key ? TAB_CONFIG[key].activeClass : "text-gray-400 hover:text-white hover:bg-gray-800"
                   }`}
                 >
-                  {tab.label}
+                  {TAB_CONFIG[key].label}
                 </button>
               ))}
             </div>
 
             {loading ? (
               <div className="space-y-3">
-                {[1,2,3].map(i => <div key={i} className="bg-gray-800 rounded-xl p-6 animate-pulse h-16" />)}
+                {[1, 2, 3].map((i) => <div key={i} className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 animate-pulse h-16" />)}
               </div>
             ) : !data ? (
               <div className="text-center py-20 text-gray-400">Unable to load ranks data</div>
             ) : (
               <>
-                {/* Ranks table */}
                 {currentRanks.length === 0 ? (
-                  <div className="text-center py-12 bg-gray-800 rounded-2xl border border-gray-700 mb-6">
-                    <span className="text-4xl block mb-3">🏆</span>
-                    <p className="text-gray-400">No {activeTab.toLowerCase()} ranks configured yet</p>
-                  </div>
+                  <EmptyState
+                    icon={<Trophy size={48} strokeWidth={1} />}
+                    title={`No ${activeTab.toLowerCase()} ranks configured`}
+                    description={`Add your first rank tier below. Members will earn this role when they reach the required ${tabConfig.unit}.`}
+                  />
                 ) : (
-                  <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden mb-6">
-                    <table className="w-full">
+                  <div className="overflow-x-auto rounded-xl border border-gray-700 mb-6">
+                    <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-700 text-left">
-                          <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400">Role ID</th>
-                          <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400">Required</th>
-                          <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400">Reward</th>
-                          <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400">Message</th>
-                          <th className="px-5 py-3 text-xs uppercase tracking-wide text-gray-400 text-right">Actions</th>
+                        <tr className="border-b border-gray-700 bg-gray-800/80">
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Role</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Required ({tabConfig.unit})</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Reward</th>
+                          <th className="px-4 py-3 text-left text-xs font-medium text-gray-400 uppercase">Message</th>
+                          <th className="px-4 py-3 text-right text-xs font-medium text-gray-400 uppercase w-28">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-700/50">
                         {currentRanks.map((rank) => (
-                          <tr key={rank.rankId} className="hover:bg-gray-750/50">
+                          <tr key={rank.rankId} className="hover:bg-gray-800/30 transition-colors">
                             {editingId === rank.rankId ? (
                               <>
-                                <td className="px-5 py-3 text-sm text-gray-300 font-mono">{rank.roleId}</td>
-                                <td className="px-5 py-3">
-                                  <input type="number" value={editForm.required} onChange={e => setEditForm(f => ({ ...f, required: parseInt(e.target.value) || 0 }))}
-                                    className="w-24 bg-gray-700 border border-gray-600 text-white rounded px-2 py-1 text-sm" />
+                                <td className="px-4 py-3 text-gray-300 font-mono text-xs">{rank.roleId}</td>
+                                <td className="px-4 py-3">
+                                  <input type="number" value={editForm.required} onChange={(e) => setEditForm((f) => ({ ...f, required: parseInt(e.target.value) || 0 }))}
+                                    className="w-24 bg-gray-700 border border-gray-600 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                 </td>
-                                <td className="px-5 py-3">
-                                  <input type="number" value={editForm.reward} onChange={e => setEditForm(f => ({ ...f, reward: parseInt(e.target.value) || 0 }))}
-                                    className="w-24 bg-gray-700 border border-gray-600 text-white rounded px-2 py-1 text-sm" />
+                                <td className="px-4 py-3">
+                                  <input type="number" value={editForm.reward} onChange={(e) => setEditForm((f) => ({ ...f, reward: parseInt(e.target.value) || 0 }))}
+                                    className="w-24 bg-gray-700 border border-gray-600 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                                 </td>
-                                <td className="px-5 py-3">
-                                  <input type="text" value={editForm.message} onChange={e => setEditForm(f => ({ ...f, message: e.target.value }))}
-                                    className="w-full bg-gray-700 border border-gray-600 text-white rounded px-2 py-1 text-sm" placeholder="Optional message" />
+                                <td className="px-4 py-3">
+                                  <input type="text" value={editForm.message} onChange={(e) => setEditForm((f) => ({ ...f, message: e.target.value }))}
+                                    className="w-full bg-gray-700 border border-gray-600 text-white rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Optional" />
                                 </td>
-                                <td className="px-5 py-3 text-right space-x-2">
-                                  <button onClick={() => saveEdit(rank.rankId)} disabled={saving}
-                                    className="text-emerald-400 hover:text-emerald-300 text-sm font-medium">Save</button>
-                                  <button onClick={() => setEditingId(null)}
-                                    className="text-gray-400 hover:text-white text-sm">Cancel</button>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button onClick={() => saveEdit(rank.rankId)} disabled={saving} className="p-1.5 text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-colors">
+                                      <Check size={16} />
+                                    </button>
+                                    <button onClick={() => setEditingId(null)} className="p-1.5 text-gray-400 hover:bg-gray-700 rounded-lg transition-colors">
+                                      <X size={16} />
+                                    </button>
+                                  </div>
                                 </td>
                               </>
                             ) : (
                               <>
-                                <td className="px-5 py-3 text-sm text-gray-300 font-mono">{rank.roleId}</td>
-                                <td className="px-5 py-3 text-sm text-white font-medium">{rank.required.toLocaleString()}</td>
-                                <td className="px-5 py-3 text-sm text-amber-400">{rank.reward} coins</td>
-                                <td className="px-5 py-3 text-sm text-gray-400 truncate max-w-[200px]">{rank.message || "—"}</td>
-                                <td className="px-5 py-3 text-right space-x-2">
-                                  <button onClick={() => startEdit(rank)}
-                                    className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">Edit</button>
-                                  <button onClick={() => deleteRank(rank.rankId)}
-                                    className="text-red-400 hover:text-red-300 text-sm font-medium">Delete</button>
+                                <td className="px-4 py-3 text-gray-300 font-mono text-xs">{rank.roleId}</td>
+                                <td className="px-4 py-3 text-white font-medium">{rank.required.toLocaleString()} {tabConfig.unit}</td>
+                                <td className="px-4 py-3 text-amber-400">{rank.reward} coins</td>
+                                <td className="px-4 py-3 text-gray-400 truncate max-w-[200px]">{rank.message || "—"}</td>
+                                <td className="px-4 py-3 text-right">
+                                  <div className="flex items-center justify-end gap-1">
+                                    <button onClick={() => startEdit(rank)} className="p-1.5 text-gray-400 hover:text-indigo-400 hover:bg-indigo-400/10 rounded-lg transition-colors" title="Edit">
+                                      <Pencil size={15} />
+                                    </button>
+                                    <button onClick={() => setDeleteTarget(rank)} className="p-1.5 text-gray-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Delete">
+                                      <Trash2 size={15} />
+                                    </button>
+                                  </div>
                                 </td>
                               </>
                             )}
@@ -244,24 +251,46 @@ export default function RanksPage() {
                 )}
 
                 {/* Add rank form */}
-                <div className="bg-gray-800 rounded-2xl border border-gray-700 p-5">
-                  <h3 className="text-white font-medium mb-4">Add New {activeTab} Rank</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <input type="text" placeholder="Role ID" value={addForm.roleId}
-                      onChange={e => setAddForm(f => ({ ...f, roleId: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
-                    <input type="number" placeholder="Required threshold" value={addForm.required}
-                      onChange={e => setAddForm(f => ({ ...f, required: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
-                    <input type="number" placeholder="Coin reward" value={addForm.reward}
-                      onChange={e => setAddForm(f => ({ ...f, reward: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
-                    <input type="text" placeholder="Message (optional)" value={addForm.message}
-                      onChange={e => setAddForm(f => ({ ...f, message: e.target.value }))}
-                      className="bg-gray-700 border border-gray-600 text-white rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
+                <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-5">
+                  <h3 className="text-sm font-semibold text-white mb-1 flex items-center gap-2">
+                    <Plus size={16} />
+                    Add New {activeTab} Rank
+                  </h3>
+                  <p className="text-xs text-gray-400 mb-4">Select the role members will receive and set the requirement threshold.</p>
+                  <div className="grid grid-cols-1 gap-4 sm:gap-3">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+                      <RoleSelect
+                        guildId={guildId}
+                        value={addForm.roleId}
+                        onChange={(v) => setAddForm((f) => ({ ...f, roleId: (v as string) || "" }))}
+                        label="Role"
+                        placeholder="Select a role..."
+                      />
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Required ({tabConfig.unit})</label>
+                        <input type="number" value={addForm.required} onChange={(e) => setAddForm((f) => ({ ...f, required: e.target.value }))}
+                          placeholder={`e.g. ${activeTab === "XP" ? "1000" : activeTab === "VOICE" ? "10" : "500"}`}
+                          className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-1">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Coin Reward</label>
+                        <input type="number" value={addForm.reward} onChange={(e) => setAddForm((f) => ({ ...f, reward: e.target.value }))}
+                          placeholder="e.g. 500"
+                          className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-1">Rank-Up Message (optional)</label>
+                        <input type="text" value={addForm.message} onChange={(e) => setAddForm((f) => ({ ...f, message: e.target.value }))}
+                          placeholder="Congratulations! You reached..."
+                          className="w-full bg-gray-800 border border-gray-600 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                      </div>
+                    </div>
                   </div>
                   <button onClick={addRank} disabled={saving || !addForm.roleId || !addForm.required || !addForm.reward}
-                    className="mt-4 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-xl text-sm font-medium transition-all active:scale-95">
+                    className="mt-4 flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-700 disabled:text-gray-500 text-white rounded-lg text-sm font-medium transition-all">
+                    <Plus size={16} />
                     {saving ? "Adding..." : "Add Rank"}
                   </button>
                 </div>
@@ -270,12 +299,15 @@ export default function RanksPage() {
           </div>
         </div>
 
-        {/* Toast */}
-        {toast && (
-          <div className="fixed bottom-6 right-6 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-xl border border-gray-700 text-sm z-50 animate-pulse">
-            {toast}
-          </div>
-        )}
+        <ConfirmModal
+          open={!!deleteTarget}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+          title="Delete Rank Tier"
+          message={`This will permanently remove this rank tier. Members who already have this role will keep it, but no new members will earn it.`}
+          confirmLabel="Delete Rank"
+          variant="danger"
+        />
       </AdminGuard>
     </Layout>
   )

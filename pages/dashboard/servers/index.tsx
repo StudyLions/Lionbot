@@ -3,11 +3,17 @@
 // Created: 2026-03-13
 // Purpose: Server list page - shows all servers the user is in
 // ============================================================
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: added DashboardNav, EmptyState, toast, error handling, Lucide icons
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import DashboardNav from "@/components/dashboard/DashboardNav"
+import { EmptyState, toast } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Server } from "lucide-react"
+// --- END AI-MODIFIED ---
 
 interface Server {
   guildId: string
@@ -24,23 +30,30 @@ export default function Servers() {
   const [servers, setServers] = useState<Server[]>([])
   const [loading, setLoading] = useState(true)
 
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: added res.ok check and toast error feedback
   useEffect(() => {
     if (status === "authenticated") {
       fetch("/api/dashboard/servers")
-        .then(res => res.json())
+        .then(res => {
+          if (!res.ok) throw new Error("Failed to load servers")
+          return res.json()
+        })
         .then(data => setServers(data.servers || []))
-        .catch(() => {})
+        .catch(() => { toast.error("Failed to load your servers") })
         .finally(() => setLoading(false))
     } else if (status === "unauthenticated") {
       setLoading(false)
     }
   }, [status])
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: "My Servers - LionBot Dashboard", description: "Your LionBot servers" }}>
       <AdminGuard>
         <div className="min-h-screen bg-gray-900 pt-6 pb-16 px-4">
           <div className="max-w-6xl mx-auto">
+            <DashboardNav />
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
                 <Link href="/dashboard">
@@ -58,11 +71,11 @@ export default function Servers() {
                 ))}
               </div>
             ) : servers.length === 0 ? (
-              <div className="text-center py-20 bg-gray-800 rounded-2xl border border-gray-700">
-                <span className="text-5xl block mb-4">🦁</span>
-                <p className="text-gray-400 text-lg">No servers found</p>
-                <p className="text-gray-500 text-sm mt-2">Make sure LionBot is in your Discord server and you have some tracked activity.</p>
-              </div>
+              <EmptyState
+                icon={<Server size={48} strokeWidth={1} />}
+                title="No servers found"
+                description="Make sure LionBot is in your Discord server and you have some tracked activity."
+              />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {servers.map(server => (

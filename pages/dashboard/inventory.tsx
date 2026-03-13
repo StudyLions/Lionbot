@@ -1,14 +1,16 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: Skin inventory page with activate/deactivate toggle
+// Purpose: Skin inventory - rebuilt with shared UI
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
+import { PageHeader, Badge, ConfirmModal, EmptyState, toast } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback } from "react"
-import Link from "next/link"
+import { useRouter } from "next/router"
+import { Palette, Star, Clock, ShoppingBag } from "lucide-react"
 
 interface SkinItem {
   id: number
@@ -20,24 +22,32 @@ interface SkinItem {
 }
 
 export default function InventoryPage() {
+  const router = useRouter()
   const { data: session } = useSession()
   const [skins, setSkins] = useState<SkinItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [toast, setToast] = useState("")
+  const [confirmItem, setConfirmItem] = useState<SkinItem | null>(null)
+  const [confirmAction, setConfirmAction] = useState<"activate" | "deactivate" | null>(null)
+  const [loadingToggle, setLoadingToggle] = useState(false)
 
   const fetchData = useCallback(async () => {
     try {
       const res = await fetch("/api/dashboard/inventory")
       if (res.ok) setSkins((await res.json()).skins || [])
-    } catch {}
+    } catch {
+      toast.error("Failed to load inventory")
+    }
     setLoading(false)
   }, [])
 
-  useEffect(() => { if (session) fetchData() }, [session, fetchData])
+  useEffect(() => {
+    if (session) fetchData()
+  }, [session, fetchData])
 
-  const showToast = (msg: string) => { setToast(msg); setTimeout(() => setToast(""), 3000) }
-
-  const toggleActive = async (item: SkinItem) => {
+  const handleToggle = async (item: SkinItem) => {
+    setConfirmItem(null)
+    setConfirmAction(null)
+    setLoadingToggle(true)
     try {
       const res = await fetch("/api/dashboard/inventory", {
         method: "PATCH",
@@ -48,11 +58,17 @@ export default function InventoryPage() {
         if (!item.active) {
           setSkins(prev => prev.map(s => ({ ...s, active: s.id === item.id })))
         } else {
-          setSkins(prev => prev.map(s => s.id === item.id ? { ...s, active: false } : s))
+          setSkins(prev => prev.map(s => (s.id === item.id ? { ...s, active: false } : s)))
         }
-        showToast(item.active ? "Skin deactivated" : "Skin activated")
+        toast.success(item.active ? "Skin deactivated" : "Skin activated")
+      } else {
+        toast.error("Failed to update skin")
       }
-    } catch { showToast("Error toggling skin") }
+    } catch {
+      toast.error("Error toggling skin")
+    } finally {
+      setLoadingToggle(false)
+    }
   }
 
   const activeSkin = skins.find(s => s.active)
@@ -64,86 +80,89 @@ export default function InventoryPage() {
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-4 mb-6">
-                <Link href="/dashboard">
-                  <span className="text-gray-400 hover:text-white cursor-pointer text-sm">&larr; Dashboard</span>
-                </Link>
-                <h1 className="text-2xl font-bold text-white">My Inventory</h1>
-              </div>
-
-              {/* Active skin banner */}
-              {activeSkin && (
-                <div className="bg-gradient-to-r from-purple-500/10 to-indigo-500/10 bg-gray-800 rounded-2xl p-5 border border-purple-500/20 mb-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-purple-400/70 text-xs uppercase tracking-wide mb-1">Active Skin</p>
-                      <p className="text-xl font-bold text-white">{activeSkin.skinName}</p>
-                    </div>
-                    <span className="text-3xl">🎨</span>
-                  </div>
-                </div>
-              )}
+              <PageHeader
+                title="My Skins"
+                description="Your skin collection. Activate a skin to use it on your profile card across servers."
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "Inventory" },
+                ]}
+              />
 
               {loading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {[1,2,3].map(i => <div key={i} className="bg-gray-800 rounded-2xl p-6 animate-pulse h-40" />)}
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="bg-gray-800 rounded-xl p-6 animate-pulse h-44" />
+                  ))}
                 </div>
               ) : skins.length === 0 ? (
-                <div className="text-center py-16 bg-gray-800 rounded-2xl border border-gray-700">
-                  <span className="text-5xl mb-4 block">🎨</span>
-                  <p className="text-gray-400 text-lg mb-2">No skins in your inventory</p>
-                  <p className="text-gray-500 text-sm mb-6">Browse the skin shop or earn gems to unlock custom profile cards!</p>
-                  <Link href="/skins">
-                    <span className="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-sm font-medium transition-all cursor-pointer">
-                      Browse Skins
-                    </span>
-                  </Link>
+                <div className="bg-gray-800 rounded-xl border border-gray-700">
+                  <EmptyState
+                    icon={<Palette size={48} className="text-gray-500" strokeWidth={1} />}
+                    title="No skins in your inventory"
+                    description="Browse the skin shop or earn gems to unlock custom profile cards."
+                    action={{
+                      label: "Browse Skins",
+                      onClick: () => router.push("/skins"),
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                   {skins.map((item) => {
                     const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date()
+                    const isActive = item.active
                     return (
-                      <div key={item.id} className={`bg-gray-800 rounded-2xl border p-5 transition-all hover:shadow-lg ${
-                        item.active ? "border-purple-500/50 shadow-purple-500/10" : "border-gray-700"
-                      } ${isExpired ? "opacity-50" : ""}`}>
+                      <div
+                        key={item.id}
+                        className={`bg-gray-800 rounded-xl p-5 border transition-all ${
+                          isActive ? "border-indigo-500 shadow-indigo-500/10" : "border-gray-700"
+                        } ${isExpired ? "opacity-50" : ""}`}
+                      >
                         <div className="flex items-start justify-between mb-4">
-                          <div className="text-3xl">🖼️</div>
-                          {item.active && (
-                            <span className="text-xs font-medium bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-lg">
-                              Active
-                            </span>
-                          )}
-                          {isExpired && (
-                            <span className="text-xs font-medium bg-red-500/20 text-red-300 px-2.5 py-1 rounded-lg">
-                              Expired
-                            </span>
-                          )}
+                          <div className="p-2 rounded-lg bg-gray-700/50">
+                            <Palette size={20} className="text-gray-300" />
+                          </div>
+                          <div className="flex gap-2">
+                            {isActive && <Badge variant="purple">Active</Badge>}
+                            {isExpired && <Badge variant="error">Expired</Badge>}
+                          </div>
                         </div>
 
-                        <h3 className="text-white font-medium mb-2">{item.skinName}</h3>
+                        <h3 className="text-white font-medium mb-1">{item.skinName}</h3>
+                        <p className="text-gray-500 text-sm mb-3">
+                          Custom profile card skin
+                        </p>
 
-                        <div className="space-y-1 mb-4">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-4">
                           {item.acquiredAt && (
-                            <p className="text-gray-500 text-xs">
-                              Acquired: {new Date(item.acquiredAt).toLocaleDateString()}
-                            </p>
+                            <span className="flex items-center gap-1">
+                              <Clock size={12} />
+                              {new Date(item.acquiredAt).toLocaleDateString()}
+                            </span>
                           )}
-                          {item.expiresAt && (
-                            <p className={`text-xs ${isExpired ? "text-red-400" : "text-gray-500"}`}>
-                              {isExpired ? "Expired" : "Expires"}: {new Date(item.expiresAt).toLocaleDateString()}
-                            </p>
+                          {item.expiresAt && !isExpired && (
+                            <span className="flex items-center gap-1">
+                              <Star size={12} />
+                              Expires {new Date(item.expiresAt).toLocaleDateString()}
+                            </span>
                           )}
                         </div>
 
                         {!isExpired && (
-                          <button onClick={() => toggleActive(item)}
-                            className={`w-full py-2 rounded-xl text-sm font-medium transition-all ${
-                              item.active
+                          <button
+                            onClick={() => {
+                              setConfirmItem(item)
+                              setConfirmAction(isActive ? "deactivate" : "activate")
+                            }}
+                            className={`w-full py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                              isActive
                                 ? "bg-gray-700 text-gray-300 hover:bg-gray-600"
-                                : "bg-purple-600 text-white hover:bg-purple-700"
-                            }`}>
-                            {item.active ? "Deactivate" : "Activate"}
+                                : "bg-indigo-600 text-white hover:bg-indigo-700"
+                            }`}
+                          >
+                            <ShoppingBag size={14} />
+                            {isActive ? "Deactivate" : "Activate"}
                           </button>
                         )}
                       </div>
@@ -155,11 +174,23 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        {toast && (
-          <div className="fixed bottom-6 right-6 bg-gray-800 text-white px-5 py-3 rounded-xl shadow-xl border border-gray-700 text-sm z-50 animate-pulse">
-            {toast}
-          </div>
-        )}
+        <ConfirmModal
+          open={!!confirmItem && !!confirmAction}
+          onConfirm={() => confirmItem && handleToggle(confirmItem)}
+          onCancel={() => {
+            setConfirmItem(null)
+            setConfirmAction(null)
+          }}
+          title={confirmAction === "deactivate" ? "Deactivate skin?" : "Activate skin?"}
+          message={
+            confirmAction === "deactivate"
+              ? `This will deactivate "${confirmItem?.skinName}". You can reactivate it anytime.`
+              : `Activate "${confirmItem?.skinName}" as your profile card skin?`
+          }
+          confirmLabel={confirmAction === "deactivate" ? "Deactivate" : "Activate"}
+          variant={confirmAction === "deactivate" ? "warning" : "info"}
+          loading={loadingToggle}
+        />
       </AdminGuard>
     </Layout>
   )

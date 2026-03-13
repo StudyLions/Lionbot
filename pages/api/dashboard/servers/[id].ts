@@ -5,15 +5,21 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
+// --- AI-MODIFIED (2026-03-13) ---
+// Purpose: switched to requireAuth for rate limiting consistency
+import { requireAuth } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).json({ error: "Method not allowed" })
 
-  const discordId = await getDiscordId(req)
-  if (!discordId) return unauthorized(res)
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: use requireAuth instead of getDiscordId for rate limiting
+  const auth = await requireAuth(req, res)
+  if (!auth) return
 
-  const userId = BigInt(discordId)
+  const userId = BigInt(auth.discordId)
+  // --- END AI-MODIFIED ---
   const guildId = BigInt(req.query.id as string)
 
   const [membership, guildConfig, leaderboard, userRank] = await Promise.all([
@@ -90,7 +96,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       displayName: membership.display_name,
       workoutCount: membership.workout_count,
       firstJoined: membership.first_joined,
-      ranks: userRank,
+      // --- AI-MODIFIED (2026-03-13) ---
+      // Purpose: serialize BigInt rank IDs to prevent JSON.stringify crash
+      ranks: userRank ? {
+        currentXpRankId: userRank.current_xp_rankid?.toString() || null,
+        currentVoiceRankId: userRank.current_voice_rankid?.toString() || null,
+        currentMsgRankId: userRank.current_msg_rankid?.toString() || null,
+      } : null,
+      // --- END AI-MODIFIED ---
     },
     leaderboard: leaderboard.map((m, i) => ({
       rank: i + 1,
