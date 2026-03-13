@@ -32,15 +32,15 @@ export default function Tooltip({ content, className = "" }: TooltipProps) {
         onClick={() => setOpen(!open)}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
-        className="text-gray-500 hover:text-gray-300 transition-colors focus:outline-none focus:text-gray-300"
+        className="text-muted-foreground hover:text-foreground/80 transition-colors focus:outline-none focus:text-foreground/80"
         aria-label="More info"
       >
         <HelpCircle size={15} />
       </button>
       {open && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 text-xs text-gray-200 bg-gray-800 border border-gray-600 rounded-lg shadow-xl">
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 px-3 py-2 text-xs text-foreground/90 bg-card border border-input rounded-lg shadow-xl">
           {content}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-800" />
+          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-border" />
         </div>
       )}
     </div>

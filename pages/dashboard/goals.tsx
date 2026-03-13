@@ -52,7 +52,7 @@ function ProgressBar({
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-muted-foreground">{label}</span>
-          <span className="text-gray-300">{current} / —</span>
+          <span className="text-foreground/80">{current} / —</span>
         </div>
         <div className="h-2 bg-muted rounded-full overflow-hidden">
           <div
@@ -78,7 +78,7 @@ function ProgressBar({
     <div className="space-y-1">
       <div className="flex justify-between text-xs">
         <span className="text-muted-foreground">{label}</span>
-        <span className="text-gray-300">
+        <span className="text-foreground/80">
           {current} / {goal}
         </span>
       </div>

@@ -85,22 +85,22 @@ export default function HistoryPage() {
 
               {/* Weekly summary stats */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                <div className="bg-card rounded-2xl p-5 border border-gray-700">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <div className="bg-card rounded-2xl p-5 border border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                     <Clock size={16} />
                     Total hours this week
                   </div>
                   <p className="text-2xl font-bold text-foreground">{weeklyHours}h</p>
                 </div>
-                <div className="bg-card rounded-2xl p-5 border border-gray-700">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <div className="bg-card rounded-2xl p-5 border border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                     <History size={16} />
                     Sessions this week
                   </div>
                   <p className="text-2xl font-bold text-foreground">{weeklyStats.sessionCount}</p>
                 </div>
-                <div className="bg-card rounded-2xl p-5 border border-gray-700">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm mb-1">
+                <div className="bg-card rounded-2xl p-5 border border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-1">
                     <Calendar size={16} />
                     Avg session length
                   </div>
@@ -111,8 +111,8 @@ export default function HistoryPage() {
               </div>
 
               {/* Session list */}
-              <div className="bg-card rounded-2xl border border-gray-700 overflow-hidden">
-                <div className="p-5 border-b border-gray-700">
+              <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                <div className="p-5 border-b border-border">
                   <h3 className="text-lg font-bold text-foreground">Session Log</h3>
                 </div>
 
@@ -193,22 +193,22 @@ export default function HistoryPage() {
 
                     {/* Pagination controls */}
                     {totalPages > 1 && (
-                      <div className="flex items-center justify-center gap-3 p-4 border-t border-gray-700">
+                      <div className="flex items-center justify-center gap-3 p-4 border-t border-border">
                         <button
                           onClick={() => setPage((p) => Math.max(1, p - 1))}
                           disabled={page <= 1}
-                          className="px-4 py-2 bg-muted text-gray-300 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-muted/80 flex items-center gap-1"
+                          className="px-4 py-2 bg-muted text-foreground/80 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-muted/80 flex items-center gap-1"
                         >
                           <ChevronLeft size={16} />
                           Previous
                         </button>
-                        <span className="text-gray-400 text-sm">
+                        <span className="text-muted-foreground text-sm">
                           {page} / {totalPages}
                         </span>
                         <button
                           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                           disabled={page >= totalPages}
-                          className="px-4 py-2 bg-muted text-gray-300 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-muted/80 flex items-center gap-1"
+                          className="px-4 py-2 bg-muted text-foreground/80 rounded-xl text-sm disabled:opacity-30 disabled:cursor-not-allowed transition-colors hover:bg-muted/80 flex items-center gap-1"
                         >
                           Next
                           <ChevronRight size={16} />

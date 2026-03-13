@@ -22,8 +22,9 @@ import {
 } from "@/components/dashboard/ui"
 import type { Column } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
-import { useDashboard } from "@/hooks/useDashboard"
+import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import Link from "next/link"
+import { useState } from "react"
 import { Gem, Star, CreditCard, Gift, Server } from "lucide-react"
 
 const QUICK_BUY_PACKS = [
@@ -33,9 +34,9 @@ const QUICK_BUY_PACKS = [
 ]
 
 const PREMIUM_PLANS = [
-  { gems: 1500, period: "Monthly", description: "Premium features for one server" },
-  { gems: 4000, period: "3 Months", description: "Best value – save 11%" },
-  { gems: 12000, period: "1 Year", description: "Best savings – 33% off" },
+  { gems: 1500, period: "Monthly", plan: "monthly", description: "Premium features for one server" },
+  { gems: 4000, period: "3 Months", plan: "quarterly", description: "Best value – save 11%" },
+  { gems: 12000, period: "1 Year", plan: "yearly", description: "Best savings – 33% off" },
 ]
 
 interface GemTransaction {
@@ -68,6 +69,41 @@ export default function GemsPage() {
   // --- AI-MODIFIED (2026-03-13) ---
   // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
   const { data, error, isLoading: loading } = useDashboard<GemsData>(session ? "/api/dashboard/gems" : null)
+  const { data: serversData } = useDashboard<{ servers: { guildId: string; guildName: string }[] }>(
+    session ? "/api/dashboard/servers" : null
+  )
+  const [selectedServer, setSelectedServer] = useState<string>("")
+  const [purchasing, setPurchasing] = useState(false)
+
+  const buyPremium = async (plan: string) => {
+    if (!selectedServer) {
+      toast.error("Select a server first")
+      return
+    }
+    setPurchasing(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${selectedServer}/premium`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        if (result.needed) {
+          toast.error(`Need ${result.needed - result.balance} more gems`)
+        } else {
+          toast.error(result.error || "Purchase failed")
+        }
+        return
+      }
+      toast.success(`Premium activated until ${new Date(result.premiumUntil).toLocaleDateString()}!`)
+      invalidate("/api/dashboard/gems")
+    } catch {
+      toast.error("Purchase failed")
+    } finally {
+      setPurchasing(false)
+    }
+  }
   // --- END AI-MODIFIED ---
 
   const transactionColumns: Column<GemTransaction>[] = [
@@ -204,6 +240,25 @@ export default function GemsPage() {
                     icon={<Server size={18} />}
                     defaultOpen={true}
                   >
+                    {/* --- AI-MODIFIED (2026-03-13) --- */}
+                    {/* Purpose: server selector and working buy buttons for premium plans */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        Select server
+                      </label>
+                      <select
+                        value={selectedServer}
+                        onChange={(e) => setSelectedServer(e.target.value)}
+                        className="w-full max-w-xs px-4 py-2 rounded-lg bg-muted border border-border text-foreground text-sm"
+                      >
+                        <option value="">Choose a server...</option>
+                        {serversData?.servers?.map((s) => (
+                          <option key={s.guildId} value={s.guildId}>
+                            {s.guildName}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {PREMIUM_PLANS.map((plan) => (
                         <div
@@ -215,15 +270,17 @@ export default function GemsPage() {
                             {plan.gems.toLocaleString()} gems
                           </p>
                           <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
+                          <button
+                            onClick={() => buyPremium(plan.plan)}
+                            disabled={!selectedServer || purchasing}
+                            className="mt-3 w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-foreground text-sm font-medium transition-colors"
+                          >
+                            {purchasing ? "Processing..." : "Buy"}
+                          </button>
                         </div>
                       ))}
                     </div>
-                    <Link href="/donate">
-                      <a className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors">
-                        <CreditCard size={16} />
-                        Purchase gems for premium
-                      </a>
-                    </Link>
+                    {/* --- END AI-MODIFIED --- */}
                   </SectionCard>
 
                   {/* Premium Benefits */}

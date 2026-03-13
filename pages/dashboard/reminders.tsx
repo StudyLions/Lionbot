@@ -172,7 +172,7 @@ export default function RemindersPage() {
     isPast?: boolean
   }) => (
     <div
-      className={`bg-card rounded-xl border border-border p-4 group transition-all hover:border-gray-600 ${
+      className={`bg-card rounded-xl border border-border p-4 group transition-all hover:border-border ${
         isPast ? "opacity-60" : ""
       } ${r.failed ? "border-red-500/30" : ""}`}
     >
@@ -249,7 +249,7 @@ export default function RemindersPage() {
                       resetForm()
                       setShowForm(true)
                     }}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
                   >
                     <Plus size={18} />
                     New Reminder
@@ -272,7 +272,7 @@ export default function RemindersPage() {
                       onChange={(e) =>
                         setForm((f) => ({ ...f, title: e.target.value }))
                       }
-                      className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                      className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
                     />
                     <textarea
                       placeholder="Reminder content *"
@@ -281,7 +281,7 @@ export default function RemindersPage() {
                       onChange={(e) =>
                         setForm((f) => ({ ...f, content: e.target.value }))
                       }
-                      className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                      className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div>
@@ -294,7 +294,7 @@ export default function RemindersPage() {
                           onChange={(e) =>
                             setForm((f) => ({ ...f, remindAt: e.target.value }))
                           }
-                          className="w-full bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                          className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
                         />
                       </div>
                       <div>
@@ -313,7 +313,7 @@ export default function RemindersPage() {
                                 intervalValue: e.target.value,
                               }))
                             }
-                            className="flex-1 bg-muted border border-gray-600 text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                            className="flex-1 bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none"
                           />
                           <select
                             value={form.intervalUnit}
@@ -324,7 +324,7 @@ export default function RemindersPage() {
                                   .value as "minutes" | "hours",
                               }))
                             }
-                            className="bg-muted border border-gray-600 text-foreground rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                            className="bg-muted border border-input text-foreground rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-ring outline-none"
                           >
                             <option value="minutes">minutes</option>
                             <option value="hours">hours</option>
@@ -350,7 +350,7 @@ export default function RemindersPage() {
                         disabled={
                           saving || !form.content || !form.remindAt
                         }
-                        className="px-5 py-2.5 bg-indigo-600 hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
+                        className="px-5 py-2.5 bg-primary hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground text-foreground rounded-xl text-sm font-medium transition-all active:scale-95"
                       >
                         {saving ? "Saving..." : editingId ? "Update" : "Create"}
                       </button>

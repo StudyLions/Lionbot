@@ -183,7 +183,7 @@ export default function TasksPage() {
                   {rootTasks.map((task) => (
                     <div key={task.id}>
                       <div
-                        className={`bg-card rounded-xl border border-border p-4 flex items-center gap-3 group transition-all hover:border-gray-600 ${
+                        className={`bg-card rounded-xl border border-border p-4 flex items-center gap-3 group transition-all hover:border-border ${
                           task.completed ? "opacity-60" : ""
                         }`}
                       >
@@ -192,7 +192,7 @@ export default function TasksPage() {
                           className={`w-6 h-6 rounded-lg border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                             task.completed
                               ? "bg-emerald-500 border-emerald-500 text-foreground"
-                              : "border-gray-600 hover:border-emerald-500"
+                              : "border-input hover:border-emerald-500"
                           }`}
                         >
                           {task.completed ? (
@@ -228,7 +228,7 @@ export default function TasksPage() {
                             className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-all ${
                               child.completed
                                 ? "bg-emerald-500 border-emerald-500 text-foreground"
-                                : "border-gray-600 hover:border-emerald-500"
+                                : "border-input hover:border-emerald-500"
                             }`}
                           >
                             {child.completed ? (

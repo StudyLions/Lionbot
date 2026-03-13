@@ -20,6 +20,7 @@ import Link from "next/link"
 import {
   Clock,
   Coins,
+  Crown,
   Trophy,
   Dumbbell,
   Settings,
@@ -98,6 +99,12 @@ export default function ServerDetail() {
   }>(
     status === "authenticated" && id ? `/api/dashboard/stats?guildId=${id}` : null
   )
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: premium status card for server overview
+  const { data: premiumData } = useDashboard<{ isPremium: boolean; premiumUntil: string | null }>(
+    id && status === "authenticated" ? `/api/dashboard/servers/${id}/branding` : null
+  )
+  // --- END AI-MODIFIED ---
   const perms = permsData ?? { isMember: false, isModerator: false, isAdmin: false }
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const [leaderboardPeriod, setLeaderboardPeriod] = useState<"today" | "week" | "month" | "all">("all")
@@ -223,6 +230,32 @@ export default function ServerDetail() {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* --- AI-MODIFIED (2026-03-13) --- */}
+                {/* Premium Status */}
+                <div className={`rounded-xl border p-5 mb-6 ${premiumData?.isPremium ? 'border-amber-500/40 bg-amber-500/5' : 'border-border bg-card'}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Crown size={20} className={premiumData?.isPremium ? 'text-amber-400' : 'text-muted-foreground'} />
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {premiumData?.isPremium ? 'Premium Server' : 'Free Server'}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {premiumData?.isPremium && premiumData.premiumUntil
+                            ? `Premium until ${new Date(premiumData.premiumUntil).toLocaleDateString()}`
+                            : 'Upgrade for custom branding and exclusive features'}
+                        </p>
+                      </div>
+                    </div>
+                    <Link href={`/dashboard/servers/${id}/branding`}>
+                      <a className="px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-foreground text-sm font-medium transition-colors">
+                        {premiumData?.isPremium ? 'Edit Branding' : 'Upgrade'}
+                      </a>
+                    </Link>
+                  </div>
+                </div>
+                {/* --- END AI-MODIFIED --- */}
 
                 {/* Your Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">

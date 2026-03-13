@@ -122,12 +122,12 @@ export default function SearchSelect({
           onClick={() => handleSelect(opt.value)}
           className={`
             w-full flex items-center gap-2.5 px-3 py-2 text-left text-sm transition-colors
-            ${isSelected ? "bg-indigo-600/20 text-indigo-300" : "text-gray-300 hover:bg-gray-700/50"}
+            ${isSelected ? "bg-primary/20 text-primary" : "text-muted-foreground hover:bg-accent/30"}
             ${opt.disabled ? "opacity-40 cursor-not-allowed" : "cursor-pointer"}
           `}
         >
           {multiple && (
-            <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] ${isSelected ? "bg-indigo-600 border-indigo-600 text-white" : "border-gray-500"}`}>
+            <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center text-[10px] ${isSelected ? "bg-primary border-primary text-foreground" : "border-gray-500"}`}>
               {isSelected && "✓"}
             </span>
           )}
@@ -147,7 +147,7 @@ export default function SearchSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label className="block text-sm font-medium text-gray-300 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-muted-foreground mb-1">{label}</label>
       )}
       <button
         type="button"
@@ -155,51 +155,51 @@ export default function SearchSelect({
         disabled={disabled || loading}
         onClick={() => setOpen(!open)}
         className={`
-          w-full flex items-center justify-between gap-2 px-3 py-2 bg-gray-800 border rounded-lg text-sm text-left
+          w-full flex items-center justify-between gap-2 px-3 py-2 bg-card border rounded-lg text-sm text-left
           transition-colors
-          ${open ? "border-indigo-500 ring-2 ring-indigo-500/20" : "border-gray-600 hover:border-gray-500"}
+          ${open ? "border-primary ring-2 ring-ring/20" : "border-input hover:border-border"}
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
         `}
       >
-        <span className={hasValue ? "text-white truncate" : "text-gray-500 truncate"}>
+        <span className={hasValue ? "text-foreground truncate" : "text-muted-foreground truncate"}>
           {loading ? "Loading..." : hasValue ? selectedLabel : placeholder}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
           {clearable && hasValue && !disabled && (
-            <span onClick={handleClear} className="p-0.5 hover:bg-gray-700 rounded transition-colors">
-              <X size={14} className="text-gray-400" />
+            <span onClick={handleClear} className="p-0.5 hover:bg-accent rounded transition-colors">
+              <X size={14} className="text-muted-foreground" />
             </span>
           )}
-          <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+          <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
       </button>
 
       {open && (
-        <div className="absolute z-50 mt-1 w-full bg-gray-800 border border-gray-600 rounded-lg shadow-xl overflow-hidden">
+        <div className="absolute z-50 mt-1 w-full bg-card border border-input rounded-lg shadow-xl overflow-hidden">
           {options.length > 5 && (
-            <div className="p-2 border-b border-gray-700">
+            <div className="p-2 border-b border-border">
               <div className="relative">
-                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500" />
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   ref={inputRef}
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-gray-700/50 border-0 rounded text-sm text-white placeholder:text-gray-500 focus:outline-none"
+                  className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border-0 rounded text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                 />
               </div>
             </div>
           )}
           <div className="max-h-60 overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-center text-sm text-gray-500">{emptyMessage}</div>
+              <div className="px-3 py-4 text-center text-sm text-muted-foreground">{emptyMessage}</div>
             ) : (
               <>
                 {ungrouped.length > 0 && renderOptions(ungrouped)}
                 {groups.map((group) => (
                   <div key={group}>
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-500 uppercase tracking-wider bg-gray-800/50">
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-card/50">
                       {group}
                     </div>
                     {renderOptions(filtered.filter((o) => o.group === group))}

@@ -53,7 +53,7 @@ export default function Servers() {
             {loading ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[1,2,3,4,5,6].map(i => (
-                  <div key={i} className="bg-card rounded-2xl p-5 h-36 animate-pulse border border-gray-700" />
+                  <div key={i} className="bg-card rounded-2xl p-5 h-36 animate-pulse border border-border" />
                 ))}
               </div>
             ) : error ? (
@@ -70,7 +70,7 @@ export default function Servers() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {servers.map(server => (
                   <Link key={server.guildId} href={`/dashboard/servers/${server.guildId}`}>
-                    <div className="bg-card rounded-2xl p-5 border border-gray-700 hover:border-indigo-500/50 transition-all cursor-pointer h-full group">
+                    <div className="bg-card rounded-2xl p-5 border border-border hover:border-indigo-500/50 transition-all cursor-pointer h-full group">
                       <div className="flex items-start justify-between mb-3">
                         <h3 className="text-base font-semibold text-foreground truncate group-hover:text-indigo-300 transition-colors pr-2">
                           {server.guildName}
@@ -92,7 +92,7 @@ export default function Servers() {
                         {server.firstJoined && (
                           <div>
                             <p className="text-muted-foreground text-xs">Joined</p>
-                            <p className="text-gray-400 text-sm">{new Date(server.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}</p>
+                            <p className="text-muted-foreground text-sm">{new Date(server.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}</p>
                           </div>
                         )}
                       </div>

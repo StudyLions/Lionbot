@@ -36,17 +36,17 @@ export default function TextInput({
   const isDefault = defaultValue !== undefined && value === defaultValue
 
   const sharedClasses = `
-    w-full px-3 py-2 bg-gray-800 border rounded-lg text-sm text-white
-    placeholder:text-gray-500
-    focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+    w-full px-3 py-2 bg-card border rounded-lg text-sm text-foreground
+    placeholder:text-muted-foreground
+    focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
     disabled:opacity-50 disabled:cursor-not-allowed
-    ${isDefault ? "border-gray-600" : value ? "border-indigo-500/50" : "border-gray-600"}
+    ${isDefault ? "border-input" : value ? "border-indigo-500/50" : "border-input"}
   `
 
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-300">
+        <label htmlFor={inputId} className="text-sm font-medium text-muted-foreground">
           {label}
         </label>
       )}
@@ -80,7 +80,7 @@ export default function TextInput({
       </div>
       <div className="flex items-center justify-between">
         {maxLength && (
-          <span className={`text-xs ${value.length > maxLength * 0.9 ? "text-amber-400" : "text-gray-500"}`}>
+          <span className={`text-xs ${value.length > maxLength * 0.9 ? "text-amber-400" : "text-muted-foreground"}`}>
             {value.length}/{maxLength}
           </span>
         )}
@@ -88,7 +88,7 @@ export default function TextInput({
           <button
             type="button"
             onClick={() => onChange(defaultValue)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors"
           >
             Reset to default
           </button>

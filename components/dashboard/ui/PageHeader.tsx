@@ -23,16 +23,16 @@ export default function PageHeader({ title, description, breadcrumbs, actions }:
   return (
     <div className="mb-8">
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex items-center gap-1 text-xs text-gray-400 mb-3">
+        <nav className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
           {breadcrumbs.map((crumb, i) => (
             <span key={i} className="flex items-center gap-1">
-              {i > 0 && <ChevronRight size={12} className="text-gray-600" />}
+              {i > 0 && <ChevronRight size={12} className="text-muted-foreground" />}
               {crumb.href ? (
                 <Link href={crumb.href}>
-                  <span className="hover:text-white transition-colors cursor-pointer">{crumb.label}</span>
+                  <span className="hover:text-foreground transition-colors cursor-pointer">{crumb.label}</span>
                 </Link>
               ) : (
-                <span className="text-gray-300">{crumb.label}</span>
+                <span className="text-muted-foreground">{crumb.label}</span>
               )}
             </span>
           ))}
@@ -40,9 +40,9 @@ export default function PageHeader({ title, description, breadcrumbs, actions }:
       )}
       <div className="flex items-start justify-between gap-4 sm:flex-col">
         <div>
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           {description && (
-            <p className="mt-1 text-sm text-gray-400 max-w-2xl leading-relaxed">{description}</p>
+            <p className="mt-1 text-sm text-muted-foreground max-w-2xl leading-relaxed">{description}</p>
           )}
         </div>
         {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
   Gem, User, Menu, Trophy,
@@ -83,6 +84,12 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-13) ---
+  // Purpose: add gem balance display in sidebar
+  const { data: gemsData } = useDashboard<{ gemBalance: number }>(
+    session ? "/api/dashboard/gems" : null
+  )
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="flex flex-col h-full">
@@ -103,6 +110,18 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         </div>
       )}
+      {/* --- AI-MODIFIED (2026-03-13) --- */}
+      {/* Purpose: gem balance display linking to gems page */}
+      {gemsData && (
+        <Link href="/dashboard/gems">
+          <a className="flex items-center gap-2 px-4 py-2 mx-3 mb-1 rounded-md bg-amber-500/10 text-amber-400 hover:bg-amber-500/15 transition-colors text-sm">
+            <Gem size={14} />
+            <span className="font-medium">{gemsData.gemBalance.toLocaleString()}</span>
+            <span className="text-amber-400/60 text-xs">gems</span>
+          </a>
+        </Link>
+      )}
+      {/* --- END AI-MODIFIED --- */}
       <Separator />
       <ScrollArea className="flex-1 px-3 py-3">
         {sections.map((section) => (

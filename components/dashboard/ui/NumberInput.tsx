@@ -52,7 +52,7 @@ export default function NumberInput({
   return (
     <div className="flex flex-col gap-1">
       {label && (
-        <label htmlFor={inputId} className="text-sm font-medium text-gray-300">
+        <label htmlFor={inputId} className="text-sm font-medium text-muted-foreground">
           {label}
         </label>
       )}
@@ -68,18 +68,18 @@ export default function NumberInput({
           step={step}
           disabled={disabled}
           className={`
-            w-32 px-3 py-2 bg-gray-800 border rounded-lg text-sm text-white
-            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent
+            w-32 px-3 py-2 bg-card border rounded-lg text-sm text-foreground
+            focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
             disabled:opacity-50 disabled:cursor-not-allowed
-            ${isDefault ? "border-gray-600" : "border-indigo-500/50"}
+            ${isDefault ? "border-input" : "border-indigo-500/50"}
           `}
         />
-        {unit && <span className="text-xs text-gray-400">{unit}</span>}
+        {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
         {defaultValue !== undefined && defaultValue !== null && !isDefault && (
           <button
             type="button"
             onClick={() => onChange(defaultValue)}
-            className="text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-xs text-muted-foreground hover:text-foreground/80 transition-colors"
             title={`Reset to default (${defaultValue})`}
           >
             Default: {defaultValue}

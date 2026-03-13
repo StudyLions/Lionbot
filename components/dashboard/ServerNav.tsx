@@ -14,7 +14,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
-  Wand2, ArrowLeft, Menu, Server,
+  Wand2, ArrowLeft, Menu, Server, Paintbrush,
 } from "lucide-react"
 
 interface ServerNavProps {
@@ -69,6 +69,7 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/schedule", label: "Schedule", icon: <Calendar size={16} /> },
         { href: "/pomodoro", label: "Pomodoro", icon: <Timer size={16} /> },
         { href: "/videochannels", label: "Video Channels", icon: <Video size={16} /> },
+        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} /> },
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
       ],
     })

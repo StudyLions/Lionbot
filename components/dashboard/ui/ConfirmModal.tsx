@@ -48,7 +48,7 @@ export default function ConfirmModal({
   const colors = {
     danger: { bg: "bg-red-500/10", border: "border-red-500/30", btn: "bg-red-600 hover:bg-red-700", icon: "text-red-400" },
     warning: { bg: "bg-amber-500/10", border: "border-amber-500/30", btn: "bg-amber-600 hover:bg-amber-700", icon: "text-amber-400" },
-    info: { bg: "bg-indigo-500/10", border: "border-indigo-500/30", btn: "bg-indigo-600 hover:bg-indigo-700", icon: "text-indigo-400" },
+    info: { bg: "bg-indigo-500/10", border: "border-indigo-500/30", btn: "bg-primary hover:bg-primary/90", icon: "text-primary" },
   }[variant]
 
   return (
@@ -57,7 +57,7 @@ export default function ConfirmModal({
       <div className={`relative w-full max-w-md ${colors.bg} border ${colors.border} rounded-xl shadow-2xl`}>
         <button
           onClick={onCancel}
-          className="absolute top-3 right-3 text-gray-400 hover:text-white transition-colors"
+          className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"
         >
           <X size={18} />
         </button>
@@ -67,15 +67,15 @@ export default function ConfirmModal({
               <AlertTriangle size={22} />
             </div>
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-white mb-1">{title}</h3>
-              <p className="text-sm text-gray-300 leading-relaxed">{message}</p>
+              <h3 className="text-base font-semibold text-foreground mb-1">{title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={onCancel}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-accent rounded-lg transition-colors"
             >
               {cancelLabel}
             </button>
@@ -83,7 +83,7 @@ export default function ConfirmModal({
               ref={confirmRef}
               onClick={onConfirm}
               disabled={loading}
-              className={`px-4 py-2 text-sm font-medium text-white ${colors.btn} rounded-lg transition-colors disabled:opacity-50`}
+              className={`px-4 py-2 text-sm font-medium text-foreground ${colors.btn} rounded-lg transition-colors disabled:opacity-50`}
             >
               {loading ? "Processing..." : confirmLabel}
             </button>

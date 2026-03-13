@@ -26,32 +26,32 @@ export default function SectionCard({
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="bg-gray-800/50 border border-gray-700 rounded-xl overflow-hidden">
+    <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-700/30 transition-colors"
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-accent/30 transition-colors"
       >
-        {icon && <span className="text-gray-400 flex-shrink-0">{icon}</span>}
+        {icon && <span className="text-muted-foreground flex-shrink-0">{icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-white">{title}</h3>
             {badge && (
-              <span className="text-[10px] px-2 py-0.5 bg-indigo-500/20 text-indigo-300 rounded-full font-medium">
+              <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full font-medium">
                 {badge}
               </span>
             )}
           </div>
           {description && (
-            <p className="mt-0.5 text-xs text-gray-400 line-clamp-1">{description}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{description}</p>
           )}
         </div>
         <ChevronDown
           size={18}
-          className={`text-gray-400 transition-transform duration-200 flex-shrink-0 ${open ? "rotate-180" : ""}`}
+          className={`text-muted-foreground transition-transform duration-200 flex-shrink-0 ${open ? "rotate-180" : ""}`}
         />
       </button>
-      {open && <div className="px-5 pb-5 border-t border-gray-700/50">{children}</div>}
+      {open && <div className="px-5 pb-5 border-t border-border/50">{children}</div>}
     </div>
   )
 }

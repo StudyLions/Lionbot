@@ -1,11 +1,8 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-13
-// Purpose: User profile - rebuilt with shared UI
+// Purpose: Profile page - hero card, stats at a glance, skins carousel, preferences
 // ============================================================
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
-// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -18,10 +15,28 @@ import {
   SaveBar,
   toast,
 } from "@/components/dashboard/ui"
-import { User, Globe, Languages, BarChart3 } from "lucide-react"
+import { Globe } from "lucide-react"
 import { useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
+import ProfileCard, {
+  SKIN_PRESETS,
+  DEFAULT_SKIN,
+  type ProfileCardSkin,
+} from "@/components/dashboard/ProfileCard"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import {
+  Clock,
+  Flame,
+  ThumbsUp,
+  Gem,
+  Palette,
+  RefreshCw,
+  Trophy,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface ProfileData {
   userId: string
@@ -32,6 +47,41 @@ interface ProfileData {
   gems: number
   firstSeen: string | null
   lastSeen: string | null
+}
+
+interface StatsData {
+  studyTime: {
+    todayMinutes: number
+    thisWeekMinutes: number
+    thisMonthMinutes: number
+    allTimeMinutes: number
+  }
+  streaks: { currentStreak: number; longestStreak: number; activeDays: string[] }
+  achievements: Array<{ id: string; unlocked: boolean }>
+  voteCount: number
+}
+
+interface RendererData {
+  username: string
+  avatarUrl?: string | null
+  coins: number
+  gems: number
+  studyHours: number
+  currentRank: string | null
+  rankProgress: number
+  nextRank: string | null
+  achievements: Array<{ id: string; unlocked: boolean }>
+  currentStreak: number
+  voteCount: number
+}
+
+interface SkinItem {
+  id: number
+  active: boolean
+  acquiredAt: string | null
+  expiresAt: string | null
+  skinName: string
+  baseSkinId: number | null
 }
 
 const NONE = "__none__"
@@ -68,16 +118,52 @@ const LOCALE_OPTIONS = [
   { value: "tr", label: "Turkish" },
 ]
 
+function formatMinutes(m: number): string {
+  if (m < 60) return `${m}m`
+  const h = Math.floor(m / 60)
+  const rem = m % 60
+  return rem > 0 ? `${h}h ${rem}m` : `${h}h`
+}
+
+function normalizeSkinId(name: string): string {
+  return name?.toLowerCase().replace(/\s+/g, "_") ?? ""
+}
+
 export default function ProfilePage() {
   const { data: session } = useSession()
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
   const { data: profileData, error, isLoading: loading, mutate } = useDashboard<ProfileData>(
     session ? "/api/dashboard/profile" : null
   )
+  const { data: serversData } = useDashboard<{ servers: { guildId: string; guildName: string }[] }>(
+    session ? "/api/dashboard/servers" : null
+  )
+  const { data: stats } = useDashboard<StatsData>(session ? "/api/dashboard/stats" : null)
+  const { data: gemsData } = useDashboard<{ gemBalance: number }>(session ? "/api/dashboard/gems" : null)
+  const { data: invData } = useDashboard<{ skins: SkinItem[] }>(
+    session ? "/api/dashboard/inventory" : null
+  )
+  const { data: rendererData } = useDashboard<RendererData>(session ? "/api/dashboard/renderer-data" : null)
+
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [original, setOriginal] = useState<ProfileData | null>(null)
   const [saving, setSaving] = useState(false)
+  const [cardError, setCardError] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const firstGuildId = serversData?.servers?.[0]?.guildId
+  const cardSrc =
+    firstGuildId && !cardError
+      ? `/api/dashboard/card-image?type=profile&guildId=${firstGuildId}&_t=${refreshKey}`
+      : null
+
+  const handleCardError = useCallback(() => {
+    setCardError(true)
+  }, [])
+
+  const handleRefreshPreview = useCallback(() => {
+    setCardError(false)
+    setRefreshKey((k) => k + 1)
+  }, [])
 
   useEffect(() => {
     if (profileData) {
@@ -85,7 +171,6 @@ export default function ProfilePage() {
       setOriginal(profileData)
     }
   }, [profileData])
-  // --- END AI-MODIFIED ---
 
   const hasChanges =
     profile &&
@@ -118,21 +203,50 @@ export default function ProfilePage() {
     if (original) setProfile({ ...original })
   }
 
+  const skins = invData?.skins ?? []
+  const gems = gemsData?.gemBalance ?? 0
+  const studyTime = stats?.studyTime
+  const currentStreak = stats?.streaks?.currentStreak ?? 0
+  const voteCount = stats?.voteCount ?? 0
+  const achievementCount = stats?.achievements?.filter((a) => a.unlocked).length ?? 0
+  const totalAchievements = 8
+
+  const profileCardData = rendererData
+    ? {
+        username: rendererData.username,
+        avatarUrl: rendererData.avatarUrl,
+        coins: rendererData.coins,
+        gems: rendererData.gems,
+        studyHours: rendererData.studyHours,
+        currentRank: rendererData.currentRank,
+        rankProgress: rendererData.rankProgress,
+        nextRank: rendererData.nextRank,
+        achievements: rendererData.achievements,
+        currentStreak: rendererData.currentStreak,
+        voteCount: rendererData.voteCount,
+      }
+    : null
+
+  const activeSkin = skins.find((s) => s.active)
+  const skinForCard = activeSkin
+    ? (SKIN_PRESETS[normalizeSkinId(activeSkin.skinName)] ?? DEFAULT_SKIN) as ProfileCardSkin
+    : DEFAULT_SKIN
+
   return (
     <Layout
       SEO={{
         title: "Profile - LionBot Dashboard",
-        description: "Edit your profile",
+        description: "View your profile card, stats, and preferences",
       }}
     >
       <AdminGuard>
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-3xl">
+            <div className="flex-1 min-w-0 space-y-8">
               <PageHeader
                 title="Profile"
-                description="View your account info and customize your preferences. Your timezone and language affect how LionBot displays times and messages."
+                description="Your profile card, study stats, skins, and preferences. Your timezone and language affect how LionBot displays times and messages."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "Profile" },
@@ -140,68 +254,241 @@ export default function ProfilePage() {
               />
 
               {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="bg-card rounded-2xl p-6 animate-pulse h-80" />
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="bg-card rounded-xl h-24 animate-pulse" />
+                      ))}
+                    </div>
+                  </div>
                   <div className="bg-card rounded-2xl p-6 animate-pulse h-32" />
-                  <div className="bg-card rounded-2xl p-6 animate-pulse h-48" />
                 </div>
               ) : error ? (
-                <div className="text-center py-20 text-red-400">
-                  {error.message}
-                </div>
+                <div className="text-center py-20 text-red-400">{error.message}</div>
               ) : !profile ? (
-                <div className="text-center py-20 text-muted-foreground">
-                  Unable to load profile
-                </div>
+                <div className="text-center py-20 text-muted-foreground">Unable to load profile</div>
               ) : (
-                <div className="space-y-4">
-                  {/* Account Info */}
-                  <SectionCard
-                    title="Account Info"
-                    description="Read-only account details"
-                    icon={<User size={18} />}
-                    defaultOpen={true}
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
-                      <div>
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
-                          Username
-                        </p>
-                        <p className="text-white font-medium">
-                          {profile.name ||
-                            (session?.user?.name as string) ||
-                            "Unknown"}
-                        </p>
+                <>
+                  {/* Hero Section - Profile Card + Stats */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {/* Left: Profile Card */}
+                    <div>
+                      <div className="flex justify-center lg:justify-start">
+                        {cardSrc ? (
+                          <div className="relative w-full max-w-[440px] rounded-xl overflow-hidden shadow-2xl bg-card">
+                            <img
+                              src={cardSrc}
+                              alt="Profile card"
+                              className="w-full h-auto block"
+                              onError={handleCardError}
+                            />
+                          </div>
+                        ) : profileCardData ? (
+                          <ProfileCard skin={skinForCard} data={profileCardData} />
+                        ) : (
+                          <div className="w-full max-w-[440px] aspect-[440/280] rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground">
+                            Loading card…
+                          </div>
+                        )}
                       </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
-                          Discord ID
-                        </p>
-                        <p className="text-foreground/80 font-mono text-sm">
-                          {profile.userId}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
-                          LionGems
-                        </p>
-                        <p className="text-warning font-bold text-xl">
-                          {profile.gems.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground text-xs uppercase tracking-wide mb-1">
-                          Member Since
-                        </p>
-                        <p className="text-foreground/80 text-sm">
-                          {profile.firstSeen
-                            ? new Date(
-                                profile.firstSeen
-                              ).toLocaleDateString()
-                            : "Unknown"}
-                        </p>
+                      <div className="flex gap-3 mt-4">
+                        <Link href="/dashboard/inventory">
+                          <a>
+                            <Button variant="outline" size="sm">
+                              <Palette size={14} className="mr-2" />
+                              Change Skin
+                            </Button>
+                          </a>
+                        </Link>
+                        <Button variant="ghost" size="sm" onClick={handleRefreshPreview}>
+                          <RefreshCw size={14} className="mr-2" />
+                          Refresh Preview
+                        </Button>
                       </div>
                     </div>
-                  </SectionCard>
+
+                    {/* Right: Stats at a glance */}
+                    <div className="space-y-4">
+                      {studyTime && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                Today
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xl font-bold text-foreground">
+                                {formatMinutes(studyTime.todayMinutes)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                This Week
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xl font-bold text-foreground">
+                                {formatMinutes(studyTime.thisWeekMinutes)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                This Month
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xl font-bold text-foreground">
+                                {formatMinutes(studyTime.thisMonthMinutes)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1">
+                                <Clock size={12} />
+                                All Time
+                              </CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <p className="text-xl font-bold text-foreground">
+                                {formatMinutes(studyTime.allTimeMinutes)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )}
+                      <Card>
+                        <CardContent className="pt-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <Flame className="text-amber-500" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                              Current Streak
+                            </p>
+                            <p className="text-lg font-bold text-foreground">
+                              {currentStreak} day{currentStreak !== 1 ? "s" : ""}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <ThumbsUp className="text-primary" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                              Top.gg Votes
+                            </p>
+                            <p className="text-lg font-bold text-foreground">{voteCount}</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <Gem className="text-amber-500" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                              LionGems
+                            </p>
+                            <p className="text-lg font-bold text-foreground">
+                              {gems.toLocaleString()}
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardContent className="pt-4 flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
+                            <Trophy className="text-primary" size={20} />
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                              Achievements
+                            </p>
+                            <p className="text-lg font-bold text-foreground">
+                              {achievementCount} of {totalAchievements} unlocked
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </div>
+
+                  {/* Your Skins - horizontal scroll */}
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground mb-4">Your Skins</h3>
+                    <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 scrollbar-thin">
+                      {/* Base skin (always available) */}
+                      <Link href="/dashboard/inventory">
+                        <a
+                          className={cn(
+                            "shrink-0 w-28 h-32 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:border-primary/50",
+                            !activeSkin
+                              ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                              : "border-border bg-card hover:bg-card/80"
+                          )}
+                        >
+                          <div
+                            className="w-12 h-12 rounded-lg shrink-0"
+                            style={{
+                              background: `linear-gradient(135deg, ${DEFAULT_SKIN.primaryColor}, ${DEFAULT_SKIN.secondaryColor})`,
+                            }}
+                          />
+                          <span className="text-xs font-medium text-foreground truncate w-full px-2 text-center">
+                            Default
+                          </span>
+                        </a>
+                      </Link>
+                      {skins.map((item) => {
+                        const preset = SKIN_PRESETS[normalizeSkinId(item.skinName)] ?? DEFAULT_SKIN
+                        const isActive = item.active
+                        return (
+                          <Link href="/dashboard/inventory" key={item.id}>
+                            <a
+                              className={cn(
+                                "shrink-0 w-28 h-32 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:border-primary/50",
+                                isActive
+                                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
+                                  : "border-border bg-card hover:bg-card/80"
+                              )}
+                            >
+                              <div
+                                className="w-12 h-12 rounded-lg shrink-0"
+                                style={{
+                                  background: `linear-gradient(135deg, ${preset.primaryColor}, ${preset.secondaryColor})`,
+                                }}
+                              />
+                              <span className="text-xs font-medium text-foreground truncate w-full px-2 text-center">
+                                {item.skinName}
+                              </span>
+                            </a>
+                          </Link>
+                        )
+                      })}
+                      <Link href="/dashboard/inventory">
+                        <a className="shrink-0 w-28 h-32 rounded-xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-muted/50 transition-all">
+                          <Palette size={24} className="text-muted-foreground" />
+                          <span className="text-xs font-medium text-muted-foreground">
+                            Browse more
+                          </span>
+                        </a>
+                      </Link>
+                    </div>
+                  </div>
 
                   {/* Preferences */}
                   <SectionCard
@@ -224,8 +511,7 @@ export default function ProfilePage() {
                             p
                               ? {
                                   ...p,
-                                  timezone:
-                                    v === NONE || v === null ? null : (v as string),
+                                  timezone: v === NONE || v === null ? null : (v as string),
                                 }
                               : p
                           )
@@ -247,8 +533,7 @@ export default function ProfilePage() {
                             p
                               ? {
                                   ...p,
-                                  locale:
-                                    v === NONE || v === null ? null : (v as string),
+                                  locale: v === NONE || v === null ? null : (v as string),
                                 }
                               : p
                           )
@@ -263,15 +548,13 @@ export default function ProfilePage() {
                       <Toggle
                         checked={profile.showGlobalStats ?? true}
                         onChange={(v) =>
-                          setProfile((p) =>
-                            p ? { ...p, showGlobalStats: v } : p
-                          )
+                          setProfile((p) => (p ? { ...p, showGlobalStats: v } : p))
                         }
                         id="profile-show-global-stats"
                       />
                     </SettingRow>
                   </SectionCard>
-                </div>
+                </>
               )}
 
               <SaveBar
