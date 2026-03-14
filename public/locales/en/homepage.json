@@ -8,13 +8,18 @@
   "features": {
     "title": "Everything Your Server Needs",
     "subtitle": "Packed with features to keep your community engaged and productive.",
+    "andMore": "And more...",
     "statistics": {
       "title": "Statistics",
-      "description": "Track daily, weekly, monthly and all-time chat and voice activity. Beautiful graphical summaries to analyze progress."
+      "description": "Track daily, weekly, monthly and all-time chat and voice activity. Beautiful graphical summaries to analyze progress.",
+      "highlight1": "Daily, weekly, monthly & all-time",
+      "highlight2": "Beautiful graphical summaries"
     },
     "leaderboards": {
       "title": "Leaderboards",
-      "description": "Compare progress across members and servers. Reset to create your own server seasons."
+      "description": "Compare progress across members and servers. Reset to create your own server seasons.",
+      "highlight1": "Cross-server comparisons",
+      "highlight2": "Custom server seasons"
     },
     "voiceRooms": {
       "title": "Private Voice Rooms",
@@ -22,7 +27,9 @@
     },
     "pomodoro": {
       "title": "Pomodoro Timers",
-      "description": "Built-in focus timers with customizable work and break intervals to boost productivity."
+      "description": "Built-in focus timers with customizable work and break intervals to boost productivity.",
+      "highlight1": "Timer in voice channel titles",
+      "highlight2": "Customizable intervals & sounds"
     },
     "profiles": {
       "title": "Profiles",
@@ -30,7 +37,9 @@
     },
     "economy": {
       "title": "Economy",
-      "description": "Earn coins through activity, spend in the role shop, and reward your most active members."
+      "description": "Earn coins through activity, spend in the role shop, and reward your most active members.",
+      "highlight1": "Activity-based coin rewards",
+      "highlight2": "Configurable role shop"
     },
     "badges": {
       "title": "Activity Badges",
@@ -49,7 +58,7 @@
     "title": "Trusted by {{count}}+ Communities",
     "sessions": "Sessions",
     "users": "Users",
-    "tasks": "Tasks",
+    "studyingNow": "Studying Now",
     "timers": "Active Timers"
   },
   "howItWorks": {
