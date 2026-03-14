@@ -38,15 +38,19 @@ export default apiHandler({
       transactionsToday,
       topEarnerResult,
     ] = await Promise.all([
+      // --- AI-MODIFIED (2026-03-14) ---
+      // Purpose: include tag field for session tags display on members page
       prisma.voice_sessions_ongoing.findMany({
         where: { guildid: guildId },
         select: {
           userid: true,
           channelid: true,
           start_time: true,
+          tag: true,
           members: { select: { display_name: true } },
         },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(DISTINCT userid) as count
@@ -113,6 +117,7 @@ export default apiHandler({
           displayName: s.members?.display_name || `User ...${s.userid.toString().slice(-4)}`,
           channelId: s.channelid?.toString() || null,
           startTime: s.start_time?.toISOString() || null,
+          tag: s.tag || null,
         })),
       },
       activity: {

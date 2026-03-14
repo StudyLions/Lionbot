@@ -5,7 +5,7 @@
 //          actions, economy editing, and bulk operations
 // ============================================================
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: full redesign with checkboxes, detail panel, action modals, filters, bulk bar
+// Purpose: polish pass - avatars, filters, last active, record dots, active-now, session tags
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
@@ -18,7 +18,7 @@ import {
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useRef, useCallback, createRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import {
   Users, Download, MoreHorizontal, AlertTriangle, Coins,
   Eye, ChevronLeft, ChevronRight, Search, Filter,
@@ -30,11 +30,14 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 interface Member {
   userId: string
   displayName: string | null
+  avatarUrl: string
   trackedTimeHours: number
   coins: number
   workoutCount: number
   firstJoined: string | null
   lastLeft: string | null
+  lastActive: string | null
+  activeRecordCount: number
 }
 
 interface Pagination {
@@ -49,8 +52,31 @@ interface MembersResponse {
   pagination: Pagination
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: action menu uses fixed positioning to escape table overflow:hidden
+interface ActiveUser {
+  userId: string
+  displayName: string
+  channelId: string | null
+  startTime: string | null
+  tag: string | null
+}
+
+interface OverviewStats {
+  activeNow: { count: number; users: ActiveUser[] }
+}
+
+function formatRelativeTime(dateStr: string | null): string {
+  if (!dateStr) return "--"
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days}d ago`
+  return "30d+ ago"
+}
+
 function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
   isOpen: boolean; onToggle: () => void; onClose: () => void
   onView: () => void; onWarn: () => void; onCoins: () => void
@@ -67,20 +93,13 @@ function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
 
   return (
     <>
-      <button
-        ref={btnRef}
-        onClick={onToggle}
-        className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-      >
+      <button ref={btnRef} onClick={onToggle} className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
         <MoreHorizontal size={16} />
       </button>
       {isOpen && (
         <>
           <div className="fixed inset-0 z-[90]" onClick={onClose} />
-          <div
-            className="fixed z-[95] w-44 bg-card border border-border rounded-lg shadow-xl py-1"
-            style={{ top: pos.top, left: pos.left }}
-          >
+          <div className="fixed z-[95] w-44 bg-card border border-border rounded-lg shadow-xl py-1" style={{ top: pos.top, left: pos.left }}>
             <button onClick={onView} className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"><Eye size={14} /> View Profile</button>
             <button onClick={onWarn} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><AlertTriangle size={14} /> Add Warning</button>
             <button onClick={onCoins} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><Coins size={14} /> Adjust Coins</button>
@@ -90,7 +109,13 @@ function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
     </>
   )
 }
-// --- END AI-MODIFIED ---
+
+const filterOptions = [
+  { value: "", label: "All Members" },
+  { value: "has_records", label: "Has Active Records" },
+  { value: "studied_week", label: "Studied This Week" },
+  { value: "inactive_30d", label: "Inactive 30+ Days" },
+]
 
 export default function MembersPage() {
   const { data: session } = useSession()
@@ -102,6 +127,7 @@ export default function MembersPage() {
   const [searchInput, setSearchInput] = useState("")
   const [sort, setSort] = useState("tracked_time")
   const [order, setOrder] = useState<"asc" | "desc">("desc")
+  const [filter, setFilter] = useState("")
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
@@ -116,12 +142,16 @@ export default function MembersPage() {
   const [bulkOp, setBulkOp] = useState<"coins" | "warn" | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
+  const filterParam = filter ? `&filter=${filter}` : ""
   const membersKey = id && session
-    ? `/api/dashboard/servers/${id}/members?page=${currentPage}&sort=${sort}&order=${order}${search ? `&search=${encodeURIComponent(search)}` : ""}`
+    ? `/api/dashboard/servers/${id}/members?page=${currentPage}&sort=${sort}&order=${order}${search ? `&search=${encodeURIComponent(search)}` : ""}${filterParam}`
     : null
   const { data: membersData, error, isLoading: loading } = useDashboard<MembersResponse>(membersKey)
   const { data: serverData } = useDashboard(id && session ? `/api/dashboard/servers/${id}` : null)
   const { data: permsData } = useDashboard(id && session ? `/api/dashboard/servers/${id}/permissions` : null)
+  const { data: overviewStats } = useDashboard<OverviewStats>(
+    id && session ? `/api/dashboard/servers/${id}/overview-stats` : null
+  )
 
   const panelDetailKey = panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
   const { data: panelData, isLoading: panelLoading } = useDashboard(panelDetailKey)
@@ -130,6 +160,11 @@ export default function MembersPage() {
   const pagination = membersData?.pagination ?? null
   const serverName = (serverData as any)?.server?.name ?? "Server"
   const isAdmin = (permsData as any)?.isAdmin ?? false
+
+  const activeUserMap = new Map<string, ActiveUser>()
+  if (overviewStats?.activeNow?.users) {
+    overviewStats.activeNow.users.forEach((u) => activeUserMap.set(u.userId, u))
+  }
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
@@ -213,9 +248,9 @@ export default function MembersPage() {
                 actions={pagination && <Badge variant="info" size="md">{`${pagination.total.toLocaleString()} members`}</Badge>}
               />
 
-              {/* Search + Actions Bar */}
+              {/* Search + Filter + Actions Bar */}
               <div className="flex items-center gap-3 mb-4 flex-wrap">
-                <div className="relative flex-1 min-w-[200px] max-w-sm">
+                <div className="relative flex-1 min-w-[180px] max-w-sm">
                   <input
                     type="text"
                     placeholder="Search by name or user ID..."
@@ -225,11 +260,23 @@ export default function MembersPage() {
                   />
                   <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 </div>
+                <div className="relative">
+                  <select
+                    value={filter}
+                    onChange={(e) => { setFilter(e.target.value); setCurrentPage(1) }}
+                    className="appearance-none pl-8 pr-8 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
+                  >
+                    {filterOptions.map((opt) => (
+                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                  </select>
+                  <Filter size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                </div>
                 <button
                   onClick={exportCSV}
                   className="flex items-center gap-2 px-3 py-2 bg-card border border-border text-muted-foreground hover:text-foreground rounded-lg text-sm transition-colors"
                 >
-                  <Download size={14} /> Export CSV
+                  <Download size={14} /> Export
                 </button>
               </div>
 
@@ -248,17 +295,12 @@ export default function MembersPage() {
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="w-10 py-3 px-3">
-                          <input
-                            type="checkbox"
-                            checked={members.length > 0 && selectedIds.size === members.length}
-                            onChange={toggleAll}
-                            className="rounded border-border accent-primary"
-                          />
+                          <input type="checkbox" checked={members.length > 0 && selectedIds.size === members.length} onChange={toggleAll} className="rounded border-border accent-primary" />
                         </th>
                         <th className="text-left py-3 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Member</th>
                         <th className="text-right py-3 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Study</th>
                         <th className="text-right py-3 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Coins</th>
-                        <th className="text-right py-3 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Joined</th>
+                        <th className="text-right py-3 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden md:table-cell">Last Active</th>
                         <th className="w-10 py-3 px-3"></th>
                       </tr>
                     </thead>
@@ -266,46 +308,68 @@ export default function MembersPage() {
                       {members.length === 0 ? (
                         <tr><td colSpan={6} className="text-center py-12 text-muted-foreground">{search ? "No members match your search" : "No members found"}</td></tr>
                       ) : (
-                        members.map((m) => (
-                          <tr
-                            key={m.userId}
-                            onClick={() => openMemberPanel(m.userId)}
-                            className={`border-b border-border/30 last:border-0 cursor-pointer transition-colors ${
-                              selectedIds.has(m.userId) ? "bg-primary/10" : "hover:bg-accent"
-                            }`}
-                          >
-                            <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
-                              <input
-                                type="checkbox"
-                                checked={selectedIds.has(m.userId)}
-                                onChange={() => toggleSelect(m.userId)}
-                                className="rounded border-border accent-primary"
-                              />
-                            </td>
-                            <td className="py-3 px-3">
-                              <span className="text-foreground font-medium">{m.displayName || `User ...${m.userId.slice(-4)}`}</span>
-                            </td>
-                            <td className="py-3 px-3 text-right hidden sm:table-cell">
-                              <span className="text-success font-mono text-sm">{m.trackedTimeHours}h</span>
-                            </td>
-                            <td className="py-3 px-3 text-right hidden sm:table-cell">
-                              <span className="text-warning font-mono text-sm">{m.coins.toLocaleString()}</span>
-                            </td>
-                            <td className="py-3 px-3 text-right hidden md:table-cell">
-                              <span className="text-muted-foreground text-sm">{m.firstJoined ? new Date(m.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "--"}</span>
-                            </td>
-                            <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
-                              <ActionMenu
-                                isOpen={actionMenuId === m.userId}
-                                onToggle={() => setActionMenuId(actionMenuId === m.userId ? null : m.userId)}
-                                onClose={() => setActionMenuId(null)}
-                                onView={() => { openMemberPanel(m.userId); setActionMenuId(null) }}
-                                onWarn={() => { setWarnTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }}
-                                onCoins={() => { setCoinTarget({ userId: m.userId, name: m.displayName || m.userId, balance: m.coins }); setActionMenuId(null) }}
-                              />
-                            </td>
-                          </tr>
-                        ))
+                        members.map((m) => {
+                          const activeUser = activeUserMap.get(m.userId)
+                          const isActive = !!activeUser
+                          return (
+                            <tr
+                              key={m.userId}
+                              onClick={() => openMemberPanel(m.userId)}
+                              className={`border-b border-border/30 last:border-0 cursor-pointer transition-colors ${selectedIds.has(m.userId) ? "bg-primary/10" : "hover:bg-accent"}`}
+                            >
+                              <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
+                                <input type="checkbox" checked={selectedIds.has(m.userId)} onChange={() => toggleSelect(m.userId)} className="rounded border-border accent-primary" />
+                              </td>
+                              <td className="py-2.5 px-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="relative flex-shrink-0">
+                                    <img src={m.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" />
+                                    {isActive && (
+                                      <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                        <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500 border-2 border-card" />
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-foreground font-medium truncate">{m.displayName || `User ...${m.userId.slice(-4)}`}</span>
+                                      {m.activeRecordCount > 0 && (
+                                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4.5 h-4.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold leading-none px-1">
+                                          {m.activeRecordCount}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {isActive && activeUser?.tag && (
+                                      <span className="text-[10px] text-indigo-400 truncate block">{activeUser.tag}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-2.5 px-3 text-right hidden sm:table-cell">
+                                <span className="text-success font-mono text-sm">{m.trackedTimeHours}h</span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right hidden sm:table-cell">
+                                <span className="text-warning font-mono text-sm">{m.coins.toLocaleString()}</span>
+                              </td>
+                              <td className="py-2.5 px-3 text-right hidden md:table-cell">
+                                <span className={`text-sm ${isActive ? "text-emerald-400" : "text-muted-foreground"}`}>
+                                  {isActive ? "Online now" : formatRelativeTime(m.lastActive)}
+                                </span>
+                              </td>
+                              <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
+                                <ActionMenu
+                                  isOpen={actionMenuId === m.userId}
+                                  onToggle={() => setActionMenuId(actionMenuId === m.userId ? null : m.userId)}
+                                  onClose={() => setActionMenuId(null)}
+                                  onView={() => { openMemberPanel(m.userId); setActionMenuId(null) }}
+                                  onWarn={() => { setWarnTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }}
+                                  onCoins={() => { setCoinTarget({ userId: m.userId, name: m.displayName || m.userId, balance: m.coins }); setActionMenuId(null) }}
+                                />
+                              </td>
+                            </tr>
+                          )
+                        })
                       )}
                     </tbody>
                   </table>
@@ -353,96 +417,20 @@ export default function MembersPage() {
           onClose={() => setPanelUserId(null)}
           data={panelData as any}
           loading={panelLoading}
-          onWarn={() => {
-            if (panelData) setWarnTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId })
-          }}
-          onNote={() => {
-            if (panelData) setNoteTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId })
-          }}
-          onRestrict={() => {
-            if (panelData) setRestrictTarget({
-              userId: (panelData as any).member.userId,
-              name: (panelData as any).member.displayName || (panelData as any).member.userId,
-              priorRestrictions: (panelData as any).restrictionEscalation.priorRestrictions,
-              nextDuration: (panelData as any).restrictionEscalation.nextDuration,
-            })
-          }}
-          onResolve={(ticketIds) => {
-            if (panelData) setResolveTarget({ userId: (panelData as any).member.userId, ticketIds })
-          }}
-          onAdjustCoins={() => {
-            if (panelData) setCoinTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId, balance: (panelData as any).member.coins })
-          }}
+          onWarn={() => { if (panelData) setWarnTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId }) }}
+          onNote={() => { if (panelData) setNoteTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId }) }}
+          onRestrict={() => { if (panelData) setRestrictTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId, priorRestrictions: (panelData as any).restrictionEscalation.priorRestrictions, nextDuration: (panelData as any).restrictionEscalation.nextDuration }) }}
+          onResolve={(ticketIds) => { if (panelData) setResolveTarget({ userId: (panelData as any).member.userId, ticketIds }) }}
+          onAdjustCoins={() => { if (panelData) setCoinTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId, balance: (panelData as any).member.coins }) }}
         />
 
         {/* Action Modals */}
-        <WarnModal
-          open={!!warnTarget}
-          onClose={() => setWarnTarget(null)}
-          loading={actionLoading}
-          memberName={warnTarget?.name || ""}
-          onConfirm={(reason) => {
-            apiAction(`/api/dashboard/servers/${id}/members/${warnTarget?.userId}/warn`, "POST", { reason })
-              .then(() => setWarnTarget(null))
-          }}
-        />
-        <NoteModal
-          open={!!noteTarget}
-          onClose={() => setNoteTarget(null)}
-          loading={actionLoading}
-          memberName={noteTarget?.name || ""}
-          onConfirm={(content) => {
-            apiAction(`/api/dashboard/servers/${id}/members/${noteTarget?.userId}/note`, "POST", { content })
-              .then(() => setNoteTarget(null))
-          }}
-        />
-        <RestrictModal
-          open={!!restrictTarget}
-          onClose={() => setRestrictTarget(null)}
-          loading={actionLoading}
-          memberName={restrictTarget?.name || ""}
-          priorRestrictions={restrictTarget?.priorRestrictions ?? 0}
-          nextEscalationDuration={restrictTarget?.nextDuration ?? "N/A"}
-          onConfirm={(durationHours, reason) => {
-            apiAction(`/api/dashboard/servers/${id}/members/${restrictTarget?.userId}/restrict`, "POST", { durationHours, reason })
-              .then(() => setRestrictTarget(null))
-          }}
-        />
-        <CoinAdjustModal
-          open={!!coinTarget}
-          onClose={() => setCoinTarget(null)}
-          loading={actionLoading}
-          memberName={coinTarget?.name || ""}
-          currentBalance={coinTarget?.balance ?? 0}
-          onConfirm={(action, amount) => {
-            apiAction(`/api/dashboard/servers/${id}/members/${coinTarget?.userId}/coins`, "PATCH", { action, amount })
-              .then(() => setCoinTarget(null))
-          }}
-        />
-        <ResolveModal
-          open={!!resolveTarget}
-          onClose={() => setResolveTarget(null)}
-          loading={actionLoading}
-          ticketCount={resolveTarget?.ticketIds.length ?? 0}
-          onConfirm={(reason) => {
-            apiAction(`/api/dashboard/servers/${id}/members/${resolveTarget?.userId}/resolve`, "PATCH", { ticketIds: resolveTarget?.ticketIds, reason })
-              .then(() => setResolveTarget(null))
-          }}
-        />
-        <BulkActionModal
-          open={!!bulkOp}
-          onClose={() => setBulkOp(null)}
-          loading={actionLoading}
-          selectedCount={selectedIds.size}
-          operation={bulkOp || "coins"}
-          onConfirm={(data) => {
-            apiAction(`/api/dashboard/servers/${id}/members/bulk`, "PATCH", {
-              userIds: Array.from(selectedIds),
-              operation: bulkOp,
-              ...data,
-            }).then(() => { setBulkOp(null); setSelectedIds(new Set()) })
-          }}
-        />
+        <WarnModal open={!!warnTarget} onClose={() => setWarnTarget(null)} loading={actionLoading} memberName={warnTarget?.name || ""} onConfirm={(reason) => { apiAction(`/api/dashboard/servers/${id}/members/${warnTarget?.userId}/warn`, "POST", { reason }).then(() => setWarnTarget(null)) }} />
+        <NoteModal open={!!noteTarget} onClose={() => setNoteTarget(null)} loading={actionLoading} memberName={noteTarget?.name || ""} onConfirm={(content) => { apiAction(`/api/dashboard/servers/${id}/members/${noteTarget?.userId}/note`, "POST", { content }).then(() => setNoteTarget(null)) }} />
+        <RestrictModal open={!!restrictTarget} onClose={() => setRestrictTarget(null)} loading={actionLoading} memberName={restrictTarget?.name || ""} priorRestrictions={restrictTarget?.priorRestrictions ?? 0} nextEscalationDuration={restrictTarget?.nextDuration ?? "N/A"} onConfirm={(durationHours, reason) => { apiAction(`/api/dashboard/servers/${id}/members/${restrictTarget?.userId}/restrict`, "POST", { durationHours, reason }).then(() => setRestrictTarget(null)) }} />
+        <CoinAdjustModal open={!!coinTarget} onClose={() => setCoinTarget(null)} loading={actionLoading} memberName={coinTarget?.name || ""} currentBalance={coinTarget?.balance ?? 0} onConfirm={(action, amount) => { apiAction(`/api/dashboard/servers/${id}/members/${coinTarget?.userId}/coins`, "PATCH", { action, amount }).then(() => setCoinTarget(null)) }} />
+        <ResolveModal open={!!resolveTarget} onClose={() => setResolveTarget(null)} loading={actionLoading} ticketCount={resolveTarget?.ticketIds.length ?? 0} onConfirm={(reason) => { apiAction(`/api/dashboard/servers/${id}/members/${resolveTarget?.userId}/resolve`, "PATCH", { ticketIds: resolveTarget?.ticketIds, reason }).then(() => setResolveTarget(null)) }} />
+        <BulkActionModal open={!!bulkOp} onClose={() => setBulkOp(null)} loading={actionLoading} selectedCount={selectedIds.size} operation={bulkOp || "coins"} onConfirm={(data) => { apiAction(`/api/dashboard/servers/${id}/members/bulk`, "PATCH", { userIds: Array.from(selectedIds), operation: bulkOp, ...data }).then(() => { setBulkOp(null); setSelectedIds(new Set()) }) }} />
       </AdminGuard>
     </Layout>
   )

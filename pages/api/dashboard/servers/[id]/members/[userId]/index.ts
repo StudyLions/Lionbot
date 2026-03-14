@@ -32,6 +32,8 @@ export default apiHandler({
       taskStats,
       savedRolesResult,
     ] = await Promise.all([
+      // --- AI-MODIFIED (2026-03-14) ---
+      // Purpose: join user_config for avatar_hash
       prisma.members.findUnique({
         where: { guildid_userid: { guildid: guildId, userid: targetUserId } },
         select: {
@@ -45,8 +47,12 @@ export default apiHandler({
           timestamp: true,
           video_warned: true,
           revision_mute_count: true,
+          user_config: {
+            select: { avatar_hash: true },
+          },
         },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.member_ranks.findUnique({
         where: { guildid_userid: { guildid: guildId, userid: targetUserId } },
@@ -227,10 +233,24 @@ export default apiHandler({
 
     const totalTasks = taskStats._count.taskid
 
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: build avatar URL from user_config.avatar_hash
+    const uid = member.userid.toString()
+    const avatarHash = (member as any).user_config?.avatar_hash ?? null
+    let avatarUrl: string
+    if (avatarHash) {
+      const ext = avatarHash.startsWith("a_") ? "gif" : "webp"
+      avatarUrl = `https://cdn.discordapp.com/avatars/${uid}/${avatarHash}.${ext}?size=64`
+    } else {
+      avatarUrl = `https://cdn.discordapp.com/embed/avatars/${Number(member.userid % BigInt(5))}.png`
+    }
+    // --- END AI-MODIFIED ---
+
     res.status(200).json({
       member: {
-        userId: member.userid.toString(),
+        userId: uid,
         displayName: member.display_name,
+        avatarUrl,
         trackedTimeHours: Math.round(((member.tracked_time || 0) / 3600) * 10) / 10,
         coins: member.coins || 0,
         workoutCount: member.workout_count || 0,

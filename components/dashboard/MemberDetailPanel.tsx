@@ -17,9 +17,9 @@ import { useState } from "react"
 
 interface MemberDetail {
   member: {
-    userId: string; displayName: string | null; trackedTimeHours: number
-    coins: number; workoutCount: number; firstJoined: string | null
-    lastLeft: string | null; lastActive: string | null
+    userId: string; displayName: string | null; avatarUrl?: string
+    trackedTimeHours: number; coins: number; workoutCount: number
+    firstJoined: string | null; lastLeft: string | null; lastActive: string | null
     videoWarned: boolean; revisionMuteCount: number
   }
   ranks: { currentXpRankId: string | null; currentVoiceRankId: string | null; currentMsgRankId: string | null } | null
@@ -137,11 +137,15 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
               {/* Header */}
               <SheetHeader className="p-6 pb-4 border-b border-border">
                 <div className="flex items-start gap-3 pr-8">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-border/50">
-                    <span className="text-lg font-bold text-foreground/80">
-                      {(data.member.displayName || "?").charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                  {data.member.avatarUrl ? (
+                    <img src={data.member.avatarUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" loading="lazy" />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-border/50">
+                      <span className="text-lg font-bold text-foreground/80">
+                        {(data.member.displayName || "?").charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                  )}
                   <div className="min-w-0">
                     <SheetTitle className="text-lg truncate">
                       {data.member.displayName || `User ...${data.member.userId.slice(-4)}`}
