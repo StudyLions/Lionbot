@@ -79,11 +79,20 @@ module.exports = {
           from: { opacity: "0", transform: "translateY(4px)" },
           to: { opacity: "1", transform: "translateY(0)" },
         },
+        // --- AI-MODIFIED (2026-03-14) ---
+        // Purpose: checkbox pop animation for task completion
+        "check-pop": {
+          "0%": { transform: "scale(1)" },
+          "40%": { transform: "scale(1.3)" },
+          "100%": { transform: "scale(1)" },
+        },
+        // --- END AI-MODIFIED ---
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
+        "check-pop": "check-pop 0.3s ease-out",
       },
     },
     screens: {
