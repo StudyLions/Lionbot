@@ -47,12 +47,17 @@ export default apiHandler({
 
     const discordGuildMap = new Map(discordGuilds.map((g) => [g.id, g]))
 
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: skip memberships for servers the user is no longer in (stale DB records)
+    const activeMemberships = memberships.filter((m) => discordGuildMap.has(m.guildid.toString()))
+
     const servers = await Promise.all(
-      memberships.map(async (m) => {
+      activeMemberships.map(async (m) => {
         const guildIdStr = m.guildid.toString()
-        const discordGuild = discordGuildMap.get(guildIdStr)
+        const discordGuild = discordGuildMap.get(guildIdStr)!
 
         let role: ServerRole = "member"
+    // --- END AI-MODIFIED ---
         if (discordGuild) {
           const perms = BigInt(discordGuild.permissions)
           if (perms & BigInt(ADMINISTRATOR)) {
