@@ -1,11 +1,26 @@
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Complete header rewrite - mobile-first with Sheet drawer, sticky positioning,
-// proper z-index, Next.js Link usage, dashboard design system alignment
+// Purpose: Header redesign - branded logo with "by Ari Horesh", Radix DropdownMenu for user account,
+// CTA button hierarchy (Invite Bot primary, Donate accent), sectioned mobile Sheet,
+// mobile hamburger hidden on dashboard pages to prevent conflict with DashboardNav
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Menu, ExternalLink, Diamond, LogIn, LogOut, LayoutDashboard, ChevronRight, User, Globe } from "lucide-react";
+import {
+  Menu,
+  ExternalLink,
+  Diamond,
+  LogIn,
+  LogOut,
+  LayoutDashboard,
+  User,
+  Globe,
+  Crown,
+  Home,
+  Palette,
+  BookOpen,
+  Bot,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -14,41 +29,53 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import Banner from "@/components/Layout/Header/Banner";
 
 const NAV_LINKS = [
-  { label: "Home", href: "/" },
-  { label: "Donate", href: "/donate", accent: true },
-  { label: "Skins", href: "/skins" },
+  { label: "Home", href: "/", icon: Home, matchExact: true },
+  { label: "Skins", href: "/skins", icon: Palette },
+  { label: "Tutorials", href: "/tutorials", icon: BookOpen },
 ];
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Moved Tutorials from external Notion link to internal /tutorials page
-const EXTERNAL_LINKS = [
-  {
-    label: "Invite Bot",
-    href: "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot",
-  },
-];
-
-const INTERNAL_EXTRA_LINKS = [
-  { label: "Tutorials", href: "/tutorials" },
-];
-// --- END AI-MODIFIED ---
+const INVITE_URL =
+  "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
 
 export default function Header() {
   const { data: session } = useSession();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const isDashboard = router.pathname.startsWith("/dashboard");
+
+  function isActive(href: string, exact?: boolean) {
+    return exact ? router.pathname === href : router.pathname.startsWith(href);
+  }
 
   return (
     <div className="sticky top-0 z-50 flex flex-col">
       <header className="w-full border-b border-border bg-background/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto flex items-center justify-between h-14 px-4 lg:h-16 lg:px-6">
+          {/* Brand */}
           <Link href="/">
-            <a className="text-xl font-bold text-foreground tracking-wide">
-              LionBot
+            <a className="flex items-center gap-2.5 group">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
+                <Crown className="h-4 w-4 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-foreground leading-tight tracking-wide">
+                  LionBot
+                </span>
+                <span className="text-[10px] text-muted-foreground leading-tight font-medium">
+                  by Ari Horesh
+                </span>
+              </div>
             </a>
           </Link>
 
@@ -59,24 +86,7 @@ export default function Header() {
                 <a
                   className={cn(
                     "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    router.pathname === link.href
-                      ? "text-foreground bg-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                    link.accent && router.pathname !== link.href && "text-primary"
-                  )}
-                >
-                  {link.label}
-                </a>
-              </Link>
-            ))}
-            {/* --- AI-MODIFIED (2026-03-14) --- */}
-            {/* Purpose: Render Tutorials as internal link, Invite Bot as external */}
-            {INTERNAL_EXTRA_LINKS.map((link) => (
-              <Link key={link.href} href={link.href}>
-                <a
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    router.pathname.startsWith(link.href)
+                    isActive(link.href, link.matchExact)
                       ? "text-foreground bg-accent"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
@@ -85,25 +95,41 @@ export default function Header() {
                 </a>
               </Link>
             ))}
-            {EXTERNAL_LINKS.map((link) => (
+
+            {/* Donate — golden accent */}
+            <Link href="/donate">
               <a
-                key={link.href}
-                href={link.href}
-                target="_blank"
-                rel="noreferrer"
-                className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors inline-flex items-center gap-1.5"
+                className={cn(
+                  "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5",
+                  isActive("/donate", true)
+                    ? "text-amber-400 bg-amber-500/15"
+                    : "text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10"
+                )}
               >
-                {link.label}
-                <ExternalLink className="h-3 w-3 opacity-50" />
+                <Diamond className="h-3.5 w-3.5" />
+                Donate
               </a>
-            ))}
-            {/* --- END AI-MODIFIED --- */}
+            </Link>
+
+            <div className="w-px h-5 bg-border mx-1" aria-hidden="true" />
+
+            {/* Invite Bot — primary CTA */}
+            <a
+              href={INVITE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="ml-0.5 px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors inline-flex items-center gap-2 shadow-sm shadow-primary/20"
+            >
+              <Bot className="h-4 w-4" />
+              Invite Bot
+            </a>
+
             {session && (
               <Link href="/dashboard">
                 <a
                   className={cn(
                     "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5",
-                    router.pathname.startsWith("/dashboard")
+                    isDashboard
                       ? "text-foreground bg-accent"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                   )}
@@ -116,93 +142,85 @@ export default function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {/* Desktop auth */}
+            {/* Desktop auth — Radix DropdownMenu */}
             <div className="hidden lg:block">
               {session ? (
-                <div className="relative">
-                  <button
-                    onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-primary/30 transition-all"
-                  >
-                    {session.user?.image && (
-                      <img
-                        src={session.user.image}
-                        alt="Avatar"
-                        className="h-8 w-8 rounded-full"
-                      />
-                    )}
-                  </button>
-                  {dropdownOpen && (
-                    <>
-                      <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setDropdownOpen(false)}
-                      />
-                      <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-border bg-popover shadow-2xl shadow-black/50 animate-in fade-in-0 zoom-in-95 duration-150 py-2">
-                        {/* User info */}
-                        <div className="flex items-center gap-3 px-4 py-2.5">
-                          {session.user?.image && (
-                            <img src={session.user.image} alt="" className="h-9 w-9 rounded-full" />
-                          )}
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">
-                              {session.user?.name || "User"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">Signed in</p>
-                          </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-primary/30 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+                      {session.user?.image ? (
+                        <img
+                          src={session.user.image}
+                          alt="Avatar"
+                          className="h-8 w-8 rounded-full"
+                        />
+                      ) : (
+                        <div className="h-8 w-8 rounded-full bg-accent flex items-center justify-center">
+                          <User className="h-4 w-4 text-muted-foreground" />
                         </div>
-                        <div className="my-1 border-t border-border" />
-                        {/* Links */}
-                        <Link href="/dashboard">
-                          <a
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
-                            onClick={() => setDropdownOpen(false)}
-                          >
-                            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
-                            Dashboard
-                          </a>
-                        </Link>
-                        <Link href="/dashboard/profile">
-                          <a
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
-                            onClick={() => setDropdownOpen(false)}
-                          >
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            Profile
-                          </a>
-                        </Link>
-                        <div className="my-1 border-t border-border" />
-                        {/* Language (placeholder row) */}
-                        <div className="flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-3">
-                            <Globe className="h-4 w-4" />
-                            Language
-                          </div>
-                          <div className="flex items-center gap-1 text-xs">
-                            EN
-                            <ChevronRight className="h-3 w-3" />
-                          </div>
+                      )}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex items-center gap-3 py-1">
+                        {session.user?.image && (
+                          <img
+                            src={session.user.image}
+                            alt=""
+                            className="h-9 w-9 rounded-full"
+                          />
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {session.user?.name || "User"}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Signed in
+                          </p>
                         </div>
-                        <div className="my-1 border-t border-border" />
-                        {/* Sign out */}
-                        <button
-                          onClick={() => {
-                            setDropdownOpen(false);
-                            signOut();
-                          }}
-                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-destructive hover:bg-accent transition-colors"
-                        >
-                          <LogOut className="h-4 w-4" />
-                          Log out
-                        </button>
                       </div>
-                    </>
-                  )}
-                </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => router.push("/dashboard")}
+                      className="cursor-pointer gap-3"
+                    >
+                      <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => router.push("/dashboard/profile")}
+                      className="cursor-pointer gap-3"
+                    >
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="justify-between text-muted-foreground"
+                      disabled
+                    >
+                      <span className="flex items-center gap-3">
+                        <Globe className="h-4 w-4" />
+                        Language
+                      </span>
+                      <span className="text-xs">EN</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onSelect={() => signOut()}
+                      className="cursor-pointer gap-3 text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <button
                   onClick={() => signIn("discord")}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium border border-border text-foreground hover:bg-accent transition-colors"
                 >
                   <LogIn className="h-4 w-4" />
                   Sign In
@@ -210,109 +228,141 @@ export default function Header() {
               )}
             </div>
 
-            {/* Mobile hamburger */}
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <button
-                  className="lg:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
-                  aria-label="Open menu"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72 p-0">
-                <SheetHeader className="p-6 pb-2">
-                  <SheetTitle>Menu</SheetTitle>
-                </SheetHeader>
-                <nav className="flex flex-col px-4 pb-6">
-                  {NAV_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href}>
+            {/* Mobile hamburger — hidden on dashboard pages to avoid overlap with DashboardNav */}
+            {!isDashboard && (
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <button
+                    className="lg:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                    aria-label="Open menu"
+                  >
+                    <Menu className="h-5 w-5" />
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72 p-0">
+                  <SheetHeader className="p-6 pb-2">
+                    <SheetTitle className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
+                        <Crown className="h-3.5 w-3.5 text-white" />
+                      </div>
+                      <span>LionBot</span>
+                    </SheetTitle>
+                  </SheetHeader>
+                  <nav className="flex flex-col px-4 pb-6">
+                    <p className="px-3 mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      Navigate
+                    </p>
+                    {NAV_LINKS.map((link) => {
+                      const Icon = link.icon;
+                      return (
+                        <Link key={link.href} href={link.href}>
+                          <a
+                            className={cn(
+                              "flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors",
+                              isActive(link.href, link.matchExact)
+                                ? "text-foreground bg-accent"
+                                : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                            )}
+                            onClick={() => setMobileOpen(false)}
+                          >
+                            <Icon className="h-4 w-4 opacity-70" />
+                            {link.label}
+                          </a>
+                        </Link>
+                      );
+                    })}
+                    <Link href="/donate">
                       <a
                         className={cn(
-                          "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors",
-                          router.pathname === link.href
-                            ? "text-foreground bg-accent"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                          link.accent && router.pathname !== link.href && "text-primary"
+                          "flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium transition-colors",
+                          isActive("/donate", true)
+                            ? "text-amber-400 bg-amber-500/15"
+                            : "text-amber-400/80 hover:text-amber-400 hover:bg-amber-500/10"
                         )}
                         onClick={() => setMobileOpen(false)}
                       >
-                        {link.accent && <Diamond className="h-4 w-4 mr-2" />}
-                        {link.label}
+                        <Diamond className="h-4 w-4" />
+                        Donate
                       </a>
                     </Link>
-                  ))}
-                  {/* --- AI-MODIFIED (2026-03-14) --- */}
-                  {/* Purpose: Tutorials as internal link in mobile nav */}
-                  {INTERNAL_EXTRA_LINKS.map((link) => (
-                    <Link key={link.href} href={link.href}>
-                      <a
-                        className={cn(
-                          "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors",
-                          router.pathname.startsWith(link.href)
-                            ? "text-foreground bg-accent"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                        )}
-                        onClick={() => setMobileOpen(false)}
-                      >
-                        {link.label}
-                      </a>
-                    </Link>
-                  ))}
-                  {EXTERNAL_LINKS.map((link) => (
+
+                    <div className="my-3 border-t border-border" />
+
+                    <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                      Quick Actions
+                    </p>
                     <a
-                      key={link.href}
-                      href={link.href}
+                      href={INVITE_URL}
                       target="_blank"
                       rel="noreferrer"
-                      className="flex items-center gap-2 px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                      className="flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium text-primary hover:bg-primary/10 transition-colors"
                       onClick={() => setMobileOpen(false)}
                     >
-                      {link.label}
-                      <ExternalLink className="h-3 w-3 opacity-50" />
+                      <Bot className="h-4 w-4" />
+                      Invite Bot
+                      <ExternalLink className="h-3 w-3 opacity-50 ml-auto" />
                     </a>
-                  ))}
-                  {/* --- END AI-MODIFIED --- */}
 
-                  <div className="my-3 border-t border-border" />
-
-                  {session ? (
-                    <>
+                    {session && (
                       <Link href="/dashboard">
                         <a
-                          className="flex items-center gap-2 px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                          className="flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
                           onClick={() => setMobileOpen(false)}
                         >
                           <LayoutDashboard className="h-4 w-4" />
                           Dashboard
                         </a>
                       </Link>
+                    )}
+
+                    <div className="my-3 border-t border-border" />
+
+                    {session ? (
+                      <>
+                        <div className="flex items-center gap-3 px-3 py-2 mb-1">
+                          {session.user?.image && (
+                            <img
+                              src={session.user.image}
+                              alt=""
+                              className="h-8 w-8 rounded-full"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {session.user?.name}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Signed in
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            setMobileOpen(false);
+                            signOut();
+                          }}
+                          className="flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors w-full"
+                        >
+                          <LogOut className="h-4 w-4" />
+                          Sign Out
+                        </button>
+                      </>
+                    ) : (
                       <button
                         onClick={() => {
                           setMobileOpen(false);
-                          signOut();
+                          signIn("discord");
                         }}
-                        className="flex items-center gap-2 px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors w-full"
+                        className="flex items-center justify-center gap-2 mx-1 mt-2 px-4 py-3 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                       >
-                        <LogOut className="h-4 w-4" />
-                        Sign Out
+                        <LogIn className="h-4 w-4" />
+                        Sign In with Discord
                       </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setMobileOpen(false);
-                        signIn("discord");
-                      }}
-                      className="flex items-center justify-center gap-2 mx-3 mt-2 px-4 py-3 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                    >
-                      <LogIn className="h-4 w-4" />
-                      Sign In with Discord
-                    </button>
-                  )}
-                </nav>
-              </SheetContent>
-            </Sheet>
+                    )}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
       </header>

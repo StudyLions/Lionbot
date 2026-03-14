@@ -2,7 +2,7 @@
 // Purpose: Complete footer rewrite - modern dark theme, 4-column grid, updated links, Tailwind
 import React from "react";
 import Link from "next/link";
-import { Github } from "lucide-react";
+import { Github, Crown } from "lucide-react";
 
 const DISCORD_INVITE = "https://discord.com/invite/studylions";
 const GITHUB_URL = "https://github.com/StudyLions/StudyLion/";
@@ -76,8 +76,18 @@ export default function Footer() {
           {/* Brand column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/">
-              <a className="text-xl font-bold text-foreground tracking-wide">
-                LionBot
+              <a className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm shadow-amber-500/20">
+                  <Crown className="h-4 w-4 text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-lg font-bold text-foreground leading-tight tracking-wide">
+                    LionBot
+                  </span>
+                  <span className="text-[10px] text-muted-foreground leading-tight font-medium">
+                    by Ari Horesh
+                  </span>
+                </div>
               </a>
             </Link>
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">

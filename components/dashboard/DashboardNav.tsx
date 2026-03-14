@@ -200,8 +200,8 @@ export default function DashboardNav() {
         <NavContent />
       </nav>
 
-      {/* Mobile trigger */}
-      <div className="fixed top-4 left-4 z-40 lg:hidden">
+      {/* Mobile trigger — positioned below the sticky Header (h-14 = 56px) */}
+      <div className="fixed top-16 left-4 z-40 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="bg-card shadow-lg">

@@ -10,12 +10,8 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import useSWR from "swr";
 import {
-  BarChart3,
-  Trophy,
   Mic,
-  Timer,
   User,
-  Coins,
   Award,
   ListTodo,
   CalendarClock,
@@ -25,16 +21,22 @@ import {
 import Layout from "@/components/Layout/Layout";
 import { HomepageSEO } from "@/constants/SeoData";
 import { Servers_list } from "@/constants/Homepage";
+import {
+  StatisticsDemo,
+  LeaderboardDemo,
+  PomodoroDemo,
+  EconomyDemo,
+} from "@/components/homepage/FeatureDemos";
 
 const INVITE_URL =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
 const DISCORD_SERVER = "https://discord.com/invite/studylions";
 
 const heroFeatures = [
-  { Icon: BarChart3, key: "statistics", gradient: "from-blue-500/20 to-blue-600/5", iconColor: "text-blue-400", ringColor: "ring-blue-500/20", glowFrom: "from-blue-500/15", dotColor: "bg-blue-400" },
-  { Icon: Trophy, key: "leaderboards", gradient: "from-amber-500/20 to-amber-600/5", iconColor: "text-amber-400", ringColor: "ring-amber-500/20", glowFrom: "from-amber-500/15", dotColor: "bg-amber-400" },
-  { Icon: Timer, key: "pomodoro", gradient: "from-rose-500/20 to-rose-600/5", iconColor: "text-rose-400", ringColor: "ring-rose-500/20", glowFrom: "from-rose-500/15", dotColor: "bg-rose-400" },
-  { Icon: Coins, key: "economy", gradient: "from-emerald-500/20 to-emerald-600/5", iconColor: "text-emerald-400", ringColor: "ring-emerald-500/20", glowFrom: "from-emerald-500/15", dotColor: "bg-emerald-400" },
+  { key: "statistics", Demo: StatisticsDemo, glowFrom: "from-blue-500/15", dotColor: "bg-blue-400" },
+  { key: "leaderboards", Demo: LeaderboardDemo, glowFrom: "from-amber-500/15", dotColor: "bg-amber-400" },
+  { key: "pomodoro", Demo: PomodoroDemo, glowFrom: "from-rose-500/15", dotColor: "bg-rose-400" },
+  { key: "economy", Demo: EconomyDemo, glowFrom: "from-emerald-500/15", dotColor: "bg-emerald-400" },
 ];
 
 const compactFeatures = [
@@ -156,62 +158,65 @@ function StatCounter({
   );
 }
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Hero image now spans full section as background with gradient overlay for readability
 function HeroSection({ guildCount }: { guildCount?: number }) {
   const { t } = useTranslation("homepage");
   const displayGuilds = guildCount ? formatGuildCount(guildCount) : "10,700";
   return (
-    <section className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent" />
-      <div className="max-w-6xl mx-auto px-4 pt-20 pb-16 lg:px-6 lg:pt-32 lg:pb-28">
-        <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-20">
-          <div className="flex-1 text-center lg:text-left">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8">
-              <Sparkles className="h-3.5 w-3.5" />
-              Trusted by {displayGuilds}+ servers
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] tracking-tight">
-              {t("hero.title")}
-            </h1>
-            <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
-              {t("hero.subtitle")}
-            </p>
-            <div className="flex flex-col sm:flex-row items-center gap-3 mt-10 justify-center lg:justify-start">
-              <a
-                href={INVITE_URL}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-              >
-                {t("hero.addToDiscord")}
-                <ArrowRight className="h-4 w-4" />
-              </a>
-              <Link href="/dashboard">
-                <a className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border text-foreground font-medium hover:bg-accent hover:border-primary/30 transition-all duration-200">
-                  {t("hero.viewDashboard")}
-                </a>
-              </Link>
-            </div>
+    <section className="relative overflow-hidden min-h-[480px] lg:min-h-[560px]">
+      {/* Full-bleed background image */}
+      <div className="absolute inset-0">
+        <Image
+          src={require("@/public/images/pages/homePage/lionbot_banner.webp")}
+          alt=""
+          layout="fill"
+          objectFit="cover"
+          objectPosition="right center"
+          priority
+          className="opacity-30 lg:opacity-40"
+        />
+        {/* Gradient overlays for text readability */}
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/40 lg:to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-primary/4 to-transparent" />
+      </div>
+
+      {/* Content */}
+      <div className="relative max-w-6xl mx-auto px-4 pt-20 pb-16 lg:px-6 lg:pt-32 lg:pb-28">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 backdrop-blur-sm">
+            <Sparkles className="h-3.5 w-3.5" />
+            Trusted by {displayGuilds}+ servers
           </div>
-          <div className="flex-1 w-full relative">
-            {/* Glow behind image */}
-            <div className="absolute -inset-8 bg-[radial-gradient(ellipse_at_center,_rgba(59,130,246,0.15),_transparent_70%)] blur-xl" />
-            <div className="relative">
-              <Image
-                src={require("@/public/images/pages/homePage/lionbot_banner.webp")}
-                alt="LionBot Discord Bot"
-                width={600}
-                height={400}
-                layout="responsive"
-                priority
-                className="rounded-xl"
-              />
-            </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] tracking-tight">
+            {t("hero.title")}
+          </h1>
+          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
+            {t("hero.subtitle")}
+          </p>
+          <div className="flex flex-col sm:flex-row items-center gap-3 mt-10">
+            <a
+              href={INVITE_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+            >
+              {t("hero.addToDiscord")}
+              <ArrowRight className="h-4 w-4" />
+            </a>
+            <Link href="/dashboard">
+              <a className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border/80 text-foreground font-medium hover:bg-accent/80 hover:border-primary/30 transition-all duration-200 backdrop-blur-sm">
+                {t("hero.viewDashboard")}
+              </a>
+            </Link>
           </div>
         </div>
       </div>
     </section>
   );
 }
+// --- END AI-MODIFIED ---
 
 function FeaturesSection() {
   const { t } = useTranslation("homepage");
@@ -239,10 +244,8 @@ function FeaturesSection() {
                 <div className="flex-shrink-0 flex items-center justify-center">
                   <div className="relative">
                     <div className={`absolute -inset-6 bg-gradient-to-br ${feature.glowFrom} to-transparent rounded-3xl blur-2xl opacity-40`} />
-                    <div className={`relative w-36 h-36 lg:w-44 lg:h-44 rounded-2xl bg-gradient-to-br ${feature.gradient} ring-1 ${feature.ringColor} flex items-center justify-center`}>
-                      <div className={`absolute top-3 right-3 w-2 h-2 rounded-full ${feature.dotColor} opacity-30`} />
-                      <div className={`absolute bottom-3 left-3 w-1.5 h-1.5 rounded-full ${feature.dotColor} opacity-20`} />
-                      <feature.Icon className={`h-14 w-14 lg:h-16 lg:w-16 ${feature.iconColor}`} strokeWidth={1.5} />
+                    <div className="relative">
+                      <feature.Demo />
                     </div>
                   </div>
                 </div>
