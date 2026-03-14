@@ -1,40 +1,33 @@
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Skins page with profile card preview overlays on skin backgrounds
+// Purpose: Skins page using bot-rendered static preview images
 import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
-import { useSession } from "next-auth/react";
 import { Diamond, X, Search } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { SkinsSEO } from "@/constants/SeoData";
-import { SkinsList } from "@/constants/SkinsList";
-import { SkinCardPreview } from "@/components/SkinCardPreview";
+
+const SKINS = [
+  { id: "original", label: "Default", price: 0, preview: require("@/public/images/skins/previews/profile_original.png") },
+  { id: "obsidian", label: "Obsidian", price: 1500, preview: require("@/public/images/skins/previews/profile_obsidian.png") },
+  { id: "platinum", label: "Platinum", price: 750, preview: require("@/public/images/skins/previews/profile_platinum.png") },
+  { id: "blue_bayoux", label: "Blue Bayoux", price: 1500, preview: require("@/public/images/skins/previews/profile_blue_bayoux.png") },
+  { id: "boston_blue", label: "Boston Blue", price: 750, preview: require("@/public/images/skins/previews/profile_boston_blue.png") },
+  { id: "bubble_gum", label: "Bubble Gum", price: 1500, preview: require("@/public/images/skins/previews/profile_bubble_gum.png") },
+  { id: "cotton_candy", label: "Cotton Candy", price: 1500, preview: require("@/public/images/skins/previews/profile_cotton_candy.png") },
+];
 
 function SkinModal({
   skin,
   onClose,
 }: {
-  skin: (typeof SkinsList)[0];
+  skin: (typeof SKINS)[0];
   onClose: () => void;
 }) {
   const { t } = useTranslation("skins");
-  const { data: session } = useSession();
-  const cardBgs = [
-    { src: skin.image.imageOne, label: "Profile" },
-    { src: skin.image.imageTwo, label: "Weekly Activity" },
-    { src: skin.image.imageFour, label: "Monthly Stats" },
-    { src: skin.image.imageFive, label: "Leaderboard" },
-  ];
-  const [selectedBg, setSelectedBg] = useState(0);
-
-  const userData = session?.user ? {
-    username: session.user.name || "User",
-    discriminator: "",
-    avatarUrl: session.user.image || null,
-  } : null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -54,50 +47,34 @@ function SkinModal({
               <div className="flex items-center gap-2 mt-1">
                 <Diamond className="h-4 w-4 text-primary" />
                 <span className="text-lg font-semibold text-primary">
-                  {skin.price.toLocaleString()} gems
+                  {skin.price === 0 ? "Free" : `${skin.price.toLocaleString()} gems`}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Full card preview */}
-          <div className="rounded-xl overflow-hidden shadow-lg mb-4">
-            <SkinCardPreview
-              backgroundSrc={cardBgs[selectedBg].src}
-              skinName={skin.label}
-              userData={userData}
+          <div className="rounded-xl overflow-hidden shadow-lg mb-6">
+            <Image
+              src={skin.preview}
+              alt={`${skin.label} profile card preview`}
+              layout="responsive"
+              width={1540}
+              height={730}
+              objectFit="contain"
             />
           </div>
 
-          {/* Card type selector */}
-          <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-hide">
-            {cardBgs.map((bg, i) => (
-              <button
-                key={i}
-                onClick={() => setSelectedBg(i)}
-                className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                  i === selectedBg
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {bg.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="border-t border-border my-4" />
-
           <p className="text-sm text-muted-foreground mb-4">
             To purchase, use the <span className="font-semibold text-foreground">/skin</span> command in Discord.
-            {!session && " Sign in to see a preview with your own data."}
           </p>
-          <Link href="/donate#gems">
-            <a className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
-              <Diamond className="h-4 w-4" />
-              {t("modal.getPurchase")}
-            </a>
-          </Link>
+          {skin.price > 0 && (
+            <Link href="/donate#gems">
+              <a className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors">
+                <Diamond className="h-4 w-4" />
+                {t("modal.getPurchase")}
+              </a>
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -106,10 +83,10 @@ function SkinModal({
 
 export default function Skins() {
   const { t } = useTranslation("skins");
-  const [selectedSkin, setSelectedSkin] = useState<(typeof SkinsList)[0] | null>(null);
+  const [selectedSkin, setSelectedSkin] = useState<(typeof SKINS)[0] | null>(null);
   const [search, setSearch] = useState("");
 
-  const filtered = SkinsList.filter((skin) =>
+  const filtered = SKINS.filter((skin) =>
     skin.label.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -144,26 +121,30 @@ export default function Skins() {
                 {t("browser.noResults")}
               </p>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {filtered.map((skin) => (
                   <button
                     key={skin.id}
                     onClick={() => setSelectedSkin(skin)}
-                    className="group rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] transition-all duration-200 overflow-hidden text-left"
+                    className="group rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] transition-all duration-200 overflow-hidden text-left"
                   >
-                    <div className="overflow-hidden group-hover:scale-[1.02] transition-transform duration-300">
-                      <SkinCardPreview
-                        backgroundSrc={skin.image.imageOne}
-                        skinName={skin.label}
-                        compact
+                    <div className="overflow-hidden">
+                      <Image
+                        src={skin.preview}
+                        alt={`${skin.label} skin preview`}
+                        layout="responsive"
+                        width={1540}
+                        height={730}
+                        objectFit="contain"
+                        className="group-hover:scale-[1.02] transition-transform duration-300"
                       />
                     </div>
-                    <div className="p-3.5">
-                      <h3 className="font-semibold text-foreground text-sm">{skin.label}</h3>
-                      <div className="flex items-center gap-1 mt-1.5">
+                    <div className="p-4">
+                      <h3 className="font-semibold text-foreground">{skin.label}</h3>
+                      <div className="flex items-center gap-1.5 mt-1">
                         <Diamond className="h-3.5 w-3.5 text-primary" />
                         <span className="text-sm text-primary font-medium">
-                          {skin.price.toLocaleString()}
+                          {skin.price === 0 ? "Free" : skin.price.toLocaleString()}
                         </span>
                       </div>
                     </div>

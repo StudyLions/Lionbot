@@ -31,18 +31,28 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { SkinsList } from "@/constants/SkinsList"
-import { SkinCardPreview } from "@/components/SkinCardPreview"
 import Image from "next/image"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
-const skinImageMap: Record<string, any> = {}
-SkinsList.forEach((s) => { skinImageMap[s.id] = s.image.imageOne })
-
-function getSkinImage(skinId: string) {
-  return skinImageMap[skinId] || skinImageMap["obsidian"] || null
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Static bot-rendered skin preview images
+const skinPreviewMap: Record<string, any> = {
+  base: require("@/public/images/skins/previews/profile_original.png"),
+  original: require("@/public/images/skins/previews/profile_original.png"),
+  obsidian: require("@/public/images/skins/previews/profile_obsidian.png"),
+  platinum: require("@/public/images/skins/previews/profile_platinum.png"),
+  blue_bayoux: require("@/public/images/skins/previews/profile_blue_bayoux.png"),
+  boston_blue: require("@/public/images/skins/previews/profile_boston_blue.png"),
+  bubble_gum: require("@/public/images/skins/previews/profile_bubble_gum.png"),
+  bubblegum: require("@/public/images/skins/previews/profile_bubble_gum.png"),
+  cotton_candy: require("@/public/images/skins/previews/profile_cotton_candy.png"),
 }
+
+function getSkinPreview(skinId: string) {
+  return skinPreviewMap[skinId] || skinPreviewMap["original"] || null
+}
+// --- END AI-MODIFIED ---
 
 interface SkinItem {
   id: number
@@ -78,7 +88,7 @@ function BotRenderedPreview({
   alt: string
   className?: string
 }) {
-  const imgSrc = getSkinImage(skinId)
+  const imgSrc = getSkinPreview(skinId)
   if (!imgSrc) {
     return (
       <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground p-8 ${className}`}>
@@ -88,7 +98,7 @@ function BotRenderedPreview({
   }
   return (
     <div className={className}>
-      <SkinCardPreview backgroundSrc={imgSrc} skinName={alt} compact />
+      <Image src={imgSrc} alt={alt} layout="responsive" width={1540} height={730} objectFit="contain" />
     </div>
   )
 }
@@ -108,7 +118,7 @@ function UserDataPreview({
   className?: string
   refreshKey: number
 }) {
-  const imgSrc = getSkinImage(skinId)
+  const imgSrc = getSkinPreview(skinId)
   if (!imgSrc) {
     return (
       <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground p-8 ${className}`}>
@@ -120,8 +130,8 @@ function UserDataPreview({
     )
   }
   return (
-    <div className={`relative ${className}`}>
-      <Image src={imgSrc} alt={alt} width={400} height={400} objectFit="contain" />
+    <div className={className}>
+      <Image src={imgSrc} alt={alt} layout="responsive" width={1540} height={730} objectFit="contain" />
     </div>
   )
 }

@@ -29,14 +29,16 @@ interface NavSection {
   items: NavItem[]
 }
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: removed Servers from sections -- it now has its own prominent slot
 const sections: NavSection[] = [
   {
     title: "Dashboard",
     items: [
       { href: "/dashboard", label: "Overview", icon: <BarChart3 size={16} /> },
-      { href: "/dashboard/servers", label: "Servers", icon: <Server size={16} /> },
     ],
   },
+// --- END AI-MODIFIED ---
   {
     title: "Activity",
     items: [
@@ -121,6 +123,30 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </a>
         </Link>
       )}
+      {/* --- END AI-MODIFIED --- */}
+      {/* --- AI-MODIFIED (2026-03-14) --- */}
+      {/* Purpose: prominent Servers button with accent styling, separate from regular nav */}
+      <div className="px-3 py-2">
+        <Link href="/dashboard/servers" onClick={onNavigate}>
+          <span
+            className={cn(
+              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all border",
+              router.pathname.startsWith("/dashboard/servers")
+                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold"
+                : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/15 hover:border-indigo-500/30"
+            )}
+            aria-current={router.pathname.startsWith("/dashboard/servers") ? "page" : undefined}
+          >
+            <Server size={20} className="flex-shrink-0" />
+            <div className="min-w-0">
+              <span className="block leading-tight">Servers</span>
+              <span className="block text-[10px] text-indigo-400/60 font-normal leading-tight">
+                Server Management
+              </span>
+            </div>
+          </span>
+        </Link>
+      </div>
       {/* --- END AI-MODIFIED --- */}
       <Separator />
       <ScrollArea className="flex-1 px-3 py-3">

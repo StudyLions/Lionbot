@@ -1,61 +1,54 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-14
-// Purpose: Public API to serve bot-rendered skin preview images
-//          (sample data, no auth required)
+// Purpose: Proxy to the bot's RenderAPI on the Hetzner server.
+//          Fetches bot-rendered profile/stats card PNGs for skin previews.
+//          Caches responses for 24 hours.
 // ============================================================
-import type { NextApiRequest, NextApiResponse } from "next"
+import type { NextApiRequest, NextApiResponse } from "next";
 
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
-const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
+const BOT_RENDER_URL = "http://65.109.163.156:7100";
 
-const SKIN_ID_MAP: Record<string, string> = {
-  base: "original",
-}
-
-const previewCache = new Map<string, { data: Buffer; expiresAt: number }>()
-const CACHE_TTL = 3600000
+const VALID_TYPES = ["profile", "stats"];
+const VALID_SKINS = [
+  "original", "base", "obsidian", "platinum", "blue_bayoux",
+  "boston_blue", "bubble_gum", "cotton_candy", "bubblegum",
+];
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
-    res.setHeader("Allow", "GET")
-    return res.status(405).json({ error: "Method not allowed" })
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const skinParam = String(req.query.skin ?? "original")
-  const typeParam = String(req.query.type ?? "profile")
-  const botSkinId = SKIN_ID_MAP[skinParam] ?? skinParam
+  const skin = (req.query.skin as string) || "original";
+  const type = (req.query.type as string) || "profile";
 
-  const cacheKey = `${typeParam}-${botSkinId}`
-  const cached = previewCache.get(cacheKey)
-  if (cached && Date.now() < cached.expiresAt) {
-    res.setHeader("Content-Type", "image/png")
-    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
-    return res.send(cached.data)
+  if (!VALID_TYPES.includes(type)) {
+    return res.status(400).json({ error: "Invalid type" });
+  }
+
+  if (!VALID_SKINS.includes(skin)) {
+    return res.status(400).json({ error: "Invalid skin" });
   }
 
   try {
-    const params = new URLSearchParams({ type: typeParam, skin: botSkinId })
-    const headers: Record<string, string> = {}
-    if (BOT_RENDER_AUTH) headers["Authorization"] = BOT_RENDER_AUTH
-
-    const response = await fetch(`${BOT_RENDER_URL}/render-sample?${params}`, {
-      headers,
-      signal: AbortSignal.timeout(20000),
-    })
+    const url = `${BOT_RENDER_URL}/render-sample?type=${encodeURIComponent(type)}&skin=${encodeURIComponent(skin)}`;
+    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
 
     if (!response.ok) {
-      const text = await response.text()
-      return res.status(response.status).json({ error: `Render failed: ${text}` })
+      const text = await response.text().catch(() => "Unknown error");
+      return res.status(response.status).json({ error: text });
     }
 
-    const buffer = Buffer.from(await response.arrayBuffer())
-    previewCache.set(cacheKey, { data: buffer, expiresAt: Date.now() + CACHE_TTL })
+    const buffer = Buffer.from(await response.arrayBuffer());
 
-    res.setHeader("Content-Type", "image/png")
-    res.setHeader("Cache-Control", "public, max-age=3600, stale-while-revalidate=86400")
-    return res.send(buffer)
-  } catch {
-    return res.status(503).json({ error: "Skin preview service unavailable" })
+    res.setHeader("Content-Type", "image/png");
+    res.setHeader("Cache-Control", "public, max-age=86400, s-maxage=86400, stale-while-revalidate=3600");
+    res.send(buffer);
+  } catch (err: any) {
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      return res.status(504).json({ error: "Bot render server timeout" });
+    }
+    return res.status(502).json({ error: "Could not reach bot render server" });
   }
 }

@@ -57,14 +57,19 @@ export function rateLimited(res: NextApiResponse) {
   return res.status(429).json({ error: "Too many requests. Please slow down." })
 }
 
-interface DiscordGuild {
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: export DiscordGuild (with icon field) and getUserGuilds for reuse in servers API
+export interface DiscordGuild {
   id: string
+  name: string
+  icon: string | null
   permissions: string
 }
 
 let guildCache = new Map<string, { guilds: DiscordGuild[]; expiresAt: number }>()
 
-async function getUserGuilds(accessToken: string, userId: string): Promise<DiscordGuild[]> {
+export async function getUserGuilds(accessToken: string, userId: string): Promise<DiscordGuild[]> {
+// --- END AI-MODIFIED ---
   const cached = guildCache.get(userId)
   if (cached && Date.now() < cached.expiresAt) {
     return cached.guilds
@@ -101,7 +106,10 @@ interface GuildMemberInfo {
 
 let memberRoleCache = new Map<string, { roles: string[]; expiresAt: number }>()
 
-async function getUserGuildRoles(guildId: bigint, userId: string): Promise<string[]> {
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: export getUserGuildRoles for reuse in servers API
+export async function getUserGuildRoles(guildId: bigint, userId: string): Promise<string[]> {
+// --- END AI-MODIFIED ---
   const cacheKey = `${guildId}-${userId}`
   const cached = memberRoleCache.get(cacheKey)
   if (cached && Date.now() < cached.expiresAt) {

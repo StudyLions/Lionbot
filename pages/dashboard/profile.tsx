@@ -36,15 +36,25 @@ import {
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
-import { SkinsList } from "@/constants/SkinsList"
 import Image from "next/image"
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: add i18n imports and static skin image map
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
-const skinImageMap: Record<string, any> = {}
-SkinsList.forEach((s) => { skinImageMap[s.id] = s.image.imageOne })
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Static bot-rendered skin preview map
+const skinPreviewMap: Record<string, any> = {
+  base: require("@/public/images/skins/previews/profile_original.png"),
+  original: require("@/public/images/skins/previews/profile_original.png"),
+  obsidian: require("@/public/images/skins/previews/profile_obsidian.png"),
+  platinum: require("@/public/images/skins/previews/profile_platinum.png"),
+  blue_bayoux: require("@/public/images/skins/previews/profile_blue_bayoux.png"),
+  boston_blue: require("@/public/images/skins/previews/profile_boston_blue.png"),
+  bubble_gum: require("@/public/images/skins/previews/profile_bubble_gum.png"),
+  bubblegum: require("@/public/images/skins/previews/profile_bubble_gum.png"),
+  cotton_candy: require("@/public/images/skins/previews/profile_cotton_candy.png"),
+}
 // --- END AI-MODIFIED ---
 
 interface ProfileData {
@@ -147,7 +157,7 @@ export default function ProfilePage() {
   const firstGuildId = serversData?.servers?.[0]?.guildId
   const currentSkin = invData?.skins?.find(s => s.active)
   const currentSkinId = currentSkin?.skinName?.toLowerCase().replace(/\s+/g, "_") ?? "base"
-  const cardSrc = skinImageMap[currentSkinId] || skinImageMap["obsidian"] || null
+  const cardSrc = skinPreviewMap[currentSkinId] || skinPreviewMap["original"] || null
 
   const handleCardError = useCallback(() => {
     setCardError(true)
@@ -421,8 +431,8 @@ export default function ProfilePage() {
                               : "border-border hover:bg-card/80"
                           )}
                         >
-                          <div className="bg-muted/30 overflow-hidden flex items-center justify-center p-3">
-                            <Palette className="h-8 w-8 text-muted-foreground" />
+                          <div className="bg-muted/30 overflow-hidden">
+                            <Image src={skinPreviewMap["original"]} alt="Default skin" width={144} height={68} objectFit="cover" />
                           </div>
                           <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
                             Default
@@ -443,10 +453,10 @@ export default function ProfilePage() {
                               )}
                             >
                               <div className="bg-muted/30 overflow-hidden">
-                                {skinImageMap[skinKey] ? (
-                                  <Image src={skinImageMap[skinKey]} alt={`${item.skinName} skin`} width={144} height={90} objectFit="cover" />
+                                {skinPreviewMap[skinKey] ? (
+                                  <Image src={skinPreviewMap[skinKey]} alt={`${item.skinName} skin`} width={144} height={68} objectFit="cover" />
                                 ) : (
-                                  <div className="w-full h-20 flex items-center justify-center"><Palette className="h-6 w-6 text-muted-foreground" /></div>
+                                  <div className="w-full h-16 flex items-center justify-center"><Palette className="h-6 w-6 text-muted-foreground" /></div>
                                 )}
                               </div>
                               <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
