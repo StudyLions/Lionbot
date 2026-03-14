@@ -19,11 +19,8 @@ import { Globe } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useCallback } from "react"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
-import ProfileCard, {
-  SKIN_PRESETS,
-  DEFAULT_SKIN,
-  type ProfileCardSkin,
-} from "@/components/dashboard/ProfileCard"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Remove React ProfileCard fallback, use real bot-rendered images everywhere
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
@@ -35,7 +32,9 @@ import {
   Palette,
   RefreshCw,
   Trophy,
+  ImageOff,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: add i18n imports for serverSideTranslations
@@ -63,20 +62,6 @@ interface StatsData {
   }
   streaks: { currentStreak: number; longestStreak: number; activeDays: string[] }
   achievements: Array<{ id: string; unlocked: boolean }>
-  voteCount: number
-}
-
-interface RendererData {
-  username: string
-  avatarUrl?: string | null
-  coins: number
-  gems: number
-  studyHours: number
-  currentRank: string | null
-  rankProgress: number
-  nextRank: string | null
-  achievements: Array<{ id: string; unlocked: boolean }>
-  currentStreak: number
   voteCount: number
 }
 
@@ -147,7 +132,6 @@ export default function ProfilePage() {
   const { data: invData } = useDashboard<{ skins: SkinItem[] }>(
     session ? "/api/dashboard/inventory" : null
   )
-  const { data: rendererData } = useDashboard<RendererData>(session ? "/api/dashboard/renderer-data" : null)
 
   const [profile, setProfile] = useState<ProfileData | null>(null)
   const [original, setOriginal] = useState<ProfileData | null>(null)
@@ -216,26 +200,7 @@ export default function ProfilePage() {
   const achievementCount = stats?.achievements?.filter((a) => a.unlocked).length ?? 0
   const totalAchievements = 8
 
-  const profileCardData = rendererData
-    ? {
-        username: rendererData.username,
-        avatarUrl: rendererData.avatarUrl,
-        coins: rendererData.coins,
-        gems: rendererData.gems,
-        studyHours: rendererData.studyHours,
-        currentRank: rendererData.currentRank,
-        rankProgress: rendererData.rankProgress,
-        nextRank: rendererData.nextRank,
-        achievements: rendererData.achievements,
-        currentStreak: rendererData.currentStreak,
-        voteCount: rendererData.voteCount,
-      }
-    : null
-
   const activeSkin = skins.find((s) => s.active)
-  const skinForCard = activeSkin
-    ? (SKIN_PRESETS[normalizeSkinId(activeSkin.skinName)] ?? DEFAULT_SKIN) as ProfileCardSkin
-    : DEFAULT_SKIN
 
   return (
     <Layout
@@ -280,8 +245,10 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {/* Left: Profile Card */}
                     <div>
+                      {/* --- AI-MODIFIED (2026-03-14) --- */}
+                      {/* Purpose: Use only real bot-rendered images, no React approximation fallback */}
                       <div className="flex justify-center lg:justify-start">
-                        {cardSrc ? (
+                        {cardSrc && !cardError ? (
                           <div className="relative w-full max-w-[440px] rounded-xl overflow-hidden shadow-2xl bg-card">
                             <img
                               src={cardSrc}
@@ -290,14 +257,22 @@ export default function ProfilePage() {
                               onError={handleCardError}
                             />
                           </div>
-                        ) : profileCardData ? (
-                          <ProfileCard skin={skinForCard} data={profileCardData} />
+                        ) : cardError ? (
+                          <div className="w-full max-w-[440px] aspect-[2/1] rounded-xl bg-card border border-border flex flex-col items-center justify-center text-muted-foreground gap-3 p-6">
+                            <ImageOff className="h-10 w-10" />
+                            <p className="text-sm text-center">Profile card preview unavailable</p>
+                            <Button variant="outline" size="sm" onClick={handleRefreshPreview}>
+                              <RefreshCw size={14} className="mr-2" />
+                              Try again
+                            </Button>
+                          </div>
                         ) : (
-                          <div className="w-full max-w-[440px] aspect-[440/280] rounded-xl bg-card border border-border flex items-center justify-center text-muted-foreground">
-                            Loading card…
+                          <div className="w-full max-w-[440px] aspect-[2/1] rounded-xl bg-card border border-border flex items-center justify-center">
+                            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                           </div>
                         )}
                       </div>
+                      {/* --- END AI-MODIFIED --- */}
                       <div className="flex gap-3 mt-4">
                         <Link href="/dashboard/inventory">
                           <a>
@@ -433,51 +408,53 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  {/* Your Skins - horizontal scroll */}
+                  {/* --- AI-MODIFIED (2026-03-14) --- */}
+                  {/* Purpose: Use real bot-rendered skin thumbnails */}
                   <div>
                     <h3 className="text-lg font-semibold text-foreground mb-4">Your Skins</h3>
                     <div className="flex gap-4 overflow-x-auto pb-4 -mx-1 scrollbar-thin">
-                      {/* Base skin (always available) */}
                       <Link href="/dashboard/inventory">
                         <a
                           className={cn(
-                            "shrink-0 w-28 h-32 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:border-primary/50",
+                            "shrink-0 w-36 rounded-xl border-2 overflow-hidden flex flex-col transition-all hover:border-primary/50",
                             !activeSkin
-                              ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                              : "border-border bg-card hover:bg-card/80"
+                              ? "border-primary ring-2 ring-primary/30"
+                              : "border-border hover:bg-card/80"
                           )}
                         >
-                          <div
-                            className="w-12 h-12 rounded-lg shrink-0"
-                            style={{
-                              background: `linear-gradient(135deg, ${DEFAULT_SKIN.primaryColor}, ${DEFAULT_SKIN.secondaryColor})`,
-                            }}
-                          />
-                          <span className="text-xs font-medium text-foreground truncate w-full px-2 text-center">
+                          <div className="bg-muted/30 overflow-hidden">
+                            <img
+                              src="/api/skins/preview?skin=base&type=profile"
+                              alt="Default skin"
+                              className="w-full h-auto block"
+                            />
+                          </div>
+                          <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
                             Default
                           </span>
                         </a>
                       </Link>
                       {skins.map((item) => {
-                        const preset = SKIN_PRESETS[normalizeSkinId(item.skinName)] ?? DEFAULT_SKIN
+                        const skinKey = normalizeSkinId(item.skinName)
                         const isActive = item.active
                         return (
                           <Link href="/dashboard/inventory" key={item.id}>
                             <a
                               className={cn(
-                                "shrink-0 w-28 h-32 rounded-xl border-2 flex flex-col items-center justify-center gap-2 transition-all hover:border-primary/50",
+                                "shrink-0 w-36 rounded-xl border-2 overflow-hidden flex flex-col transition-all hover:border-primary/50",
                                 isActive
-                                  ? "border-primary bg-primary/10 ring-2 ring-primary/30"
-                                  : "border-border bg-card hover:bg-card/80"
+                                  ? "border-primary ring-2 ring-primary/30"
+                                  : "border-border hover:bg-card/80"
                               )}
                             >
-                              <div
-                                className="w-12 h-12 rounded-lg shrink-0"
-                                style={{
-                                  background: `linear-gradient(135deg, ${preset.primaryColor}, ${preset.secondaryColor})`,
-                                }}
-                              />
-                              <span className="text-xs font-medium text-foreground truncate w-full px-2 text-center">
+                              <div className="bg-muted/30 overflow-hidden">
+                                <img
+                                  src={`/api/skins/preview?skin=${skinKey}&type=profile`}
+                                  alt={`${item.skinName} skin`}
+                                  className="w-full h-auto block"
+                                />
+                              </div>
+                              <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
                                 {item.skinName}
                               </span>
                             </a>
@@ -485,7 +462,7 @@ export default function ProfilePage() {
                         )
                       })}
                       <Link href="/dashboard/inventory">
-                        <a className="shrink-0 w-28 h-32 rounded-xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-muted/50 transition-all">
+                        <a className="shrink-0 w-36 h-32 rounded-xl border-2 border-dashed border-border bg-muted/30 flex flex-col items-center justify-center gap-2 hover:border-primary/50 hover:bg-muted/50 transition-all">
                           <Palette size={24} className="text-muted-foreground" />
                           <span className="text-xs font-medium text-muted-foreground">
                             Browse more
@@ -494,6 +471,7 @@ export default function ProfilePage() {
                       </Link>
                     </div>
                   </div>
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Preferences */}
                   <SectionCard

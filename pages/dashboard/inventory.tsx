@@ -3,6 +3,10 @@
 // Created: 2026-03-13
 // Purpose: Premium skin shop with try-before-you-buy experience
 // ============================================================
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Replace React ProfileCard/StatsCard approximations with
+//          real bot-rendered PNG previews via /api/skins/preview
+//          and /api/dashboard/card-image
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -18,13 +22,8 @@ import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import Link from "next/link"
-import { Palette, Gem, ShoppingBag, Check } from "lucide-react"
-import ProfileCard, {
-  SKIN_PRESETS,
-  DEFAULT_SKIN,
-  type ProfileCardSkin,
-} from "@/components/dashboard/ProfileCard"
-import StatsCard from "@/components/dashboard/StatsCard"
+import { Palette, Gem, ShoppingBag, Check, ImageOff } from "lucide-react"
+import { SKIN_PRESETS, DEFAULT_SKIN } from "@/components/dashboard/ProfileCard"
 import {
   Dialog,
   DialogContent,
@@ -34,11 +33,8 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add i18n imports for serverSideTranslations
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-// --- END AI-MODIFIED ---
 
 interface SkinItem {
   id: number
@@ -47,34 +43,6 @@ interface SkinItem {
   expiresAt: string | null
   skinName: string
   baseSkinId: number | null
-}
-
-interface RendererData {
-  username: string
-  avatarUrl?: string | null
-  coins: number
-  gems: number
-  studyHours: number
-  currentRank: string | null
-  rankProgress: number
-  nextRank: string | null
-  achievements: Array<{ id: string; unlocked: boolean }>
-  currentStreak: number
-  voteCount: number
-}
-
-interface StatsData {
-  studyTime: {
-    todayMinutes: number
-    thisWeekMinutes: number
-    thisMonthMinutes: number
-    allTimeMinutes: number
-  }
-  streaks: {
-    currentStreak: number
-    longestStreak: number
-    activeDays: string[]
-  }
 }
 
 interface GemsData {
@@ -91,51 +59,91 @@ const SHOP_SKINS = [
   { id: "bubblegum", name: "Bubblegum", price: 1500, description: "Bold and playful pink" },
 ]
 
-const SAMPLE_PROFILE_DATA = {
-  username: "Sample User",
-  avatarUrl: null as string | null,
-  coins: 1250,
-  gems: 500,
-  studyHours: 42.5,
-  currentRank: "Scholar",
-  rankProgress: 65,
-  nextRank: "Expert",
-  achievements: [
-    { id: "VoiceHours", unlocked: true },
-    { id: "VoiceStreak", unlocked: true },
-    { id: "VoiceDays", unlocked: false },
-    { id: "Workout", unlocked: false },
-    { id: "TasksComplete", unlocked: true },
-    { id: "ScheduledSessions", unlocked: false },
-    { id: "MonthlyHours", unlocked: false },
-    { id: "Voting", unlocked: false },
-  ],
-  currentStreak: 7,
-  voteCount: 12,
-}
+function BotRenderedPreview({
+  skinId,
+  cardType,
+  alt,
+  className = "",
+}: {
+  skinId: string
+  cardType: string
+  alt: string
+  className?: string
+}) {
+  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
 
-const SAMPLE_STATS_DATA = {
-  todayMinutes: 45,
-  weekMinutes: 320,
-  monthMinutes: 1250,
-  allTimeMinutes: 2550,
-  activeDays: ["2026-03-01", "2026-03-03", "2026-03-05", "2026-03-07", "2026-03-10", "2026-03-12"],
-  currentStreak: 7,
-  longestStreak: 14,
-  leaderboardPosition: 12,
-}
-
-function buildStatsDataFromApi(stats: StatsData) {
-  return {
-    todayMinutes: stats.studyTime.todayMinutes,
-    weekMinutes: stats.studyTime.thisWeekMinutes,
-    monthMinutes: stats.studyTime.thisMonthMinutes,
-    allTimeMinutes: stats.studyTime.allTimeMinutes,
-    activeDays: stats.streaks.activeDays,
-    currentStreak: stats.streaks.currentStreak,
-    longestStreak: stats.streaks.longestStreak,
-    leaderboardPosition: undefined as number | undefined,
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground ${className}`}>
+        <ImageOff className="h-8 w-8" />
+      </div>
+    )
   }
+
+  return (
+    <div className={`relative ${className}`}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <img
+        src={`/api/skins/preview?skin=${skinId}&type=${cardType}`}
+        alt={alt}
+        className="w-full h-auto block"
+        onError={() => setError(true)}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
+  )
+}
+
+function UserDataPreview({
+  skinId,
+  cardType,
+  guildId,
+  alt,
+  className = "",
+  refreshKey,
+}: {
+  skinId: string
+  cardType: string
+  guildId: string
+  alt: string
+  className?: string
+  refreshKey: number
+}) {
+  const [error, setError] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  if (error) {
+    return (
+      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground p-8 ${className}`}>
+        <div className="text-center space-y-2">
+          <ImageOff className="h-8 w-8 mx-auto" />
+          <p className="text-sm">Could not load preview with your data</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`relative ${className}`}>
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+      <img
+        src={`/api/dashboard/card-image?type=${cardType}&guildId=${guildId}&skin=${skinId}&_t=${refreshKey}`}
+        alt={alt}
+        className="w-full h-auto block"
+        onError={() => setError(true)}
+        onLoad={() => setLoading(false)}
+      />
+    </div>
+  )
 }
 
 export default function InventoryPage() {
@@ -143,14 +151,14 @@ export default function InventoryPage() {
   const { data: invData, error, isLoading: loadingInv, mutate } = useDashboard<{ skins: SkinItem[] }>(
     session ? "/api/dashboard/inventory" : null
   )
-  const { data: rendererData } = useDashboard<RendererData>(
-    session ? "/api/dashboard/renderer-data" : null
-  )
   const { data: gemsData } = useDashboard<GemsData>(session ? "/api/dashboard/gems" : null)
-  const { data: statsData } = useDashboard<StatsData>(session ? "/api/dashboard/stats" : null)
+  const { data: serversData } = useDashboard<{ servers: { guildId: string; guildName: string }[] }>(
+    session ? "/api/dashboard/servers" : null
+  )
 
   const skins = invData?.skins ?? []
   const gems = gemsData?.gemBalance ?? 0
+  const firstGuildId = serversData?.servers?.[0]?.guildId ?? ""
   const normalizeSkinId = (name: string) => name?.toLowerCase().replace(/\s+/g, "_") ?? ""
   const ownedSkinIds = new Set(
     skins.map((s) => normalizeSkinId(s.skinName)).filter(Boolean)
@@ -161,13 +169,10 @@ export default function InventoryPage() {
   const [confirmAction, setConfirmAction] = useState<"activate" | "deactivate" | null>(null)
   const [loadingToggle, setLoadingToggle] = useState(false)
   const [previewSkin, setPreviewSkin] = useState<(typeof SHOP_SKINS)[number] | null>(null)
-  const [previewWithMyData, setPreviewWithMyData] = useState(true)
+  const [previewWithMyData, setPreviewWithMyData] = useState(false)
   const [previewTab, setPreviewTab] = useState<"profile" | "stats">("profile")
   const [purchasing, setPurchasing] = useState(false)
-
-  const profileData = previewWithMyData && rendererData ? rendererData : SAMPLE_PROFILE_DATA
-  const statsDataForCard =
-    previewWithMyData && statsData ? buildStatsDataFromApi(statsData) : SAMPLE_STATS_DATA
+  const [refreshKey, setRefreshKey] = useState(0)
 
   const handleToggle = async (item: SkinItem) => {
     setConfirmItem(null)
@@ -233,7 +238,7 @@ export default function InventoryPage() {
             <div className="flex-1 min-w-0 space-y-8">
               <PageHeader
                 title="Skin Shop"
-                description="Try before you buy. Preview skins on your profile card, then purchase with gems."
+                description="Preview real bot-rendered card skins, then purchase with gems."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "Inventory" },
@@ -258,7 +263,6 @@ export default function InventoryPage() {
                 <h2 className="text-lg font-semibold text-foreground mb-4">Browse Skins</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {SHOP_SKINS.map((shopSkin) => {
-                    const preset = SKIN_PRESETS[shopSkin.id] ?? DEFAULT_SKIN
                     const owned = ownedSkinIds.has(shopSkin.id)
                     return (
                       <div
@@ -269,14 +273,13 @@ export default function InventoryPage() {
                           "border-border"
                         )}
                       >
-                        <div className="p-4 flex justify-center bg-muted/30 min-h-[180px]">
-                          <div className="scale-[0.45] origin-top">
-                            <ProfileCard
-                              skin={preset as ProfileCardSkin}
-                              data={profileData}
-                              className="w-[440px]"
-                            />
-                          </div>
+                        <div className="bg-muted/30 overflow-hidden">
+                          <BotRenderedPreview
+                            skinId={shopSkin.id}
+                            cardType="profile"
+                            alt={`${shopSkin.name} profile card preview`}
+                            className="w-full"
+                          />
                         </div>
                         <div className="p-4 border-t border-border">
                           <div className="flex items-start justify-between gap-2 mb-3">
@@ -291,7 +294,11 @@ export default function InventoryPage() {
                           <Button
                             variant={owned ? "secondary" : "default"}
                             className="w-full"
-                            onClick={() => setPreviewSkin(shopSkin)}
+                            onClick={() => {
+                              setPreviewSkin(shopSkin)
+                              setPreviewWithMyData(false)
+                              setRefreshKey((k) => k + 1)
+                            }}
                           >
                             {owned ? (
                               <>
@@ -345,7 +352,7 @@ export default function InventoryPage() {
                         />
                         <div>
                           <p className="font-medium text-foreground">Default</p>
-                          <p className="text-xs text-muted-foreground">Free • Classic look</p>
+                          <p className="text-xs text-muted-foreground">Free &bull; Classic look</p>
                         </div>
                       </div>
                       <Button
@@ -374,6 +381,7 @@ export default function InventoryPage() {
                       skins.map((item) => {
                         const isExpired = item.expiresAt && new Date(item.expiresAt) < new Date()
                         const isActive = item.active
+                        const preset = SKIN_PRESETS[normalizeSkinId(item.skinName)] ?? DEFAULT_SKIN
                         return (
                           <div
                             key={item.id}
@@ -387,12 +395,7 @@ export default function InventoryPage() {
                               <div
                                 className="w-10 h-10 rounded-lg shrink-0"
                                 style={{
-                                  background: (() => {
-                                    const preset = SKIN_PRESETS[normalizeSkinId(item.skinName)]
-                                    if (preset)
-                                      return `linear-gradient(135deg, ${preset.primaryColor}, ${preset.secondaryColor})`
-                                    return "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                                  })(),
+                                  background: `linear-gradient(135deg, ${preset.primaryColor}, ${preset.secondaryColor})`,
                                 }}
                               />
                               <div>
@@ -456,7 +459,7 @@ export default function InventoryPage() {
             </DialogHeader>
             {previewSkin && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                {/* Left: Card preview with tabs */}
+                {/* Left: Real bot-rendered card preview with tabs */}
                 <div className="space-y-4">
                   <Tabs value={previewTab} onValueChange={(v) => setPreviewTab(v as "profile" | "stats")}>
                     <TabsList className="w-full">
@@ -468,24 +471,51 @@ export default function InventoryPage() {
                       </TabsTrigger>
                     </TabsList>
                     <TabsContent value="profile" className="mt-4">
-                      <div className="flex justify-center">
-                        <ProfileCard
-                          skin={(SKIN_PRESETS[previewSkin.id] ?? DEFAULT_SKIN) as ProfileCardSkin}
-                          data={profileData}
-                          className="max-w-[320px]"
-                        />
+                      <div className="flex justify-center rounded-xl overflow-hidden bg-muted/20">
+                        {previewWithMyData && firstGuildId ? (
+                          <UserDataPreview
+                            skinId={previewSkin.id}
+                            cardType="profile"
+                            guildId={firstGuildId}
+                            alt={`${previewSkin.name} profile card with your data`}
+                            className="max-w-full"
+                            refreshKey={refreshKey}
+                          />
+                        ) : (
+                          <BotRenderedPreview
+                            skinId={previewSkin.id}
+                            cardType="profile"
+                            alt={`${previewSkin.name} profile card preview`}
+                            className="max-w-full"
+                          />
+                        )}
                       </div>
                     </TabsContent>
                     <TabsContent value="stats" className="mt-4">
-                      <div className="flex justify-center">
-                        <StatsCard
-                          skin={(SKIN_PRESETS[previewSkin.id] ?? DEFAULT_SKIN) as ProfileCardSkin}
-                          data={statsDataForCard}
-                          className="max-w-[320px]"
-                        />
+                      <div className="flex justify-center rounded-xl overflow-hidden bg-muted/20">
+                        {previewWithMyData && firstGuildId ? (
+                          <UserDataPreview
+                            skinId={previewSkin.id}
+                            cardType="stats"
+                            guildId={firstGuildId}
+                            alt={`${previewSkin.name} stats card with your data`}
+                            className="max-w-full"
+                            refreshKey={refreshKey}
+                          />
+                        ) : (
+                          <BotRenderedPreview
+                            skinId={previewSkin.id}
+                            cardType="stats"
+                            alt={`${previewSkin.name} stats card preview`}
+                            className="max-w-full"
+                          />
+                        )}
                       </div>
                     </TabsContent>
                   </Tabs>
+                  <p className="text-xs text-muted-foreground text-center">
+                    Real bot-rendered preview — exactly what you see in Discord
+                  </p>
                 </div>
 
                 {/* Right: Info and purchase */}
@@ -497,15 +527,20 @@ export default function InventoryPage() {
                     {previewSkin.price === 0 ? "Free" : `${previewSkin.price.toLocaleString()} gems`}
                   </div>
 
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={previewWithMyData}
-                      onChange={(e) => setPreviewWithMyData(e.target.checked)}
-                      className="rounded border-border"
-                    />
-                    <span className="text-sm text-muted-foreground">Preview with my data</span>
-                  </label>
+                  {firstGuildId && (
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={previewWithMyData}
+                        onChange={(e) => {
+                          setPreviewWithMyData(e.target.checked)
+                          setRefreshKey((k) => k + 1)
+                        }}
+                        className="rounded border-border"
+                      />
+                      <span className="text-sm text-muted-foreground">Preview with my data</span>
+                    </label>
+                  )}
 
                   <div className="pt-4 border-t border-border">
                     {ownedSkinIds.has(previewSkin.id) ? (
@@ -576,8 +611,6 @@ export default function InventoryPage() {
   )
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add getServerSideProps for i18n serverSideTranslations
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),

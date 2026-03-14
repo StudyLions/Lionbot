@@ -10,6 +10,11 @@ import { apiHandler } from "@/utils/apiHandler"
 const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: map website skin IDs to bot skin IDs
+const SKIN_ID_MAP: Record<string, string> = { base: "original" }
+// --- END AI-MODIFIED ---
+
 const imageCache = new Map<string, { data: Buffer; expiresAt: number }>()
 
 export default apiHandler({
@@ -17,11 +22,16 @@ export default apiHandler({
     const auth = await requireAuth(req, res)
     if (!auth) return
 
-    const { type = "profile", guildId } = req.query
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: accept optional skin query param for skin preview with user data
+    const { type = "profile", guildId, skin } = req.query
     const cardType = String(type)
     const guildIdStr = guildId ? String(guildId) : ""
+    const skinParam = skin ? String(skin) : ""
+    const botSkinId = skinParam ? (SKIN_ID_MAP[skinParam] ?? skinParam) : ""
 
-    const cacheKey = `${auth.discordId}-${cardType}-${guildIdStr}`
+    const cacheKey = `${auth.discordId}-${cardType}-${guildIdStr}-${botSkinId}`
+    // --- END AI-MODIFIED ---
     const cached = imageCache.get(cacheKey)
     if (cached && Date.now() < cached.expiresAt) {
       res.setHeader("Content-Type", "image/png")
@@ -34,6 +44,7 @@ export default apiHandler({
         type: cardType,
         userid: auth.discordId,
         ...(guildIdStr ? { guildid: guildIdStr } : {}),
+        ...(botSkinId ? { skin: botSkinId } : {}),
       })
 
       const headers: Record<string, string> = {}
