@@ -32,12 +32,8 @@ function SkinModal({
 
   const userData = session?.user ? {
     username: session.user.name || "User",
+    discriminator: "",
     avatarUrl: session.user.image || null,
-    level: 42,
-    rank: "Gold III",
-    coins: 12500,
-    gems: 3200,
-    studyHours: 847,
   } : null;
 
   return (
