@@ -9,16 +9,42 @@ import { useTranslation } from "next-i18next";
 import { Diamond, X, Search } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { SkinsSEO } from "@/constants/SeoData";
+import { SkinsList } from "@/constants/SkinsList";
+
+const botRenderedPreviews: Record<string, any> = {
+  original: require("@/public/images/skins/previews/profile_original.png"),
+  obsidian: require("@/public/images/skins/previews/profile_obsidian.png"),
+  platinum: require("@/public/images/skins/previews/profile_platinum.png"),
+  blue_bayoux: require("@/public/images/skins/previews/profile_blue_bayoux.png"),
+  boston_blue: require("@/public/images/skins/previews/profile_boston_blue.png"),
+  bubble_gum: require("@/public/images/skins/previews/profile_bubble_gum.png"),
+  cotton_candy: require("@/public/images/skins/previews/profile_cotton_candy.png"),
+};
 
 const SKINS = [
-  { id: "original", label: "Default", price: 0, preview: require("@/public/images/skins/previews/profile_original.png") },
-  { id: "obsidian", label: "Obsidian", price: 1500, preview: require("@/public/images/skins/previews/profile_obsidian.png") },
-  { id: "platinum", label: "Platinum", price: 750, preview: require("@/public/images/skins/previews/profile_platinum.png") },
-  { id: "blue_bayoux", label: "Blue Bayoux", price: 1500, preview: require("@/public/images/skins/previews/profile_blue_bayoux.png") },
-  { id: "boston_blue", label: "Boston Blue", price: 750, preview: require("@/public/images/skins/previews/profile_boston_blue.png") },
-  { id: "bubble_gum", label: "Bubble Gum", price: 1500, preview: require("@/public/images/skins/previews/profile_bubble_gum.png") },
-  { id: "cotton_candy", label: "Cotton Candy", price: 1500, preview: require("@/public/images/skins/previews/profile_cotton_candy.png") },
+  { id: "original", label: "Default", price: 0 },
+  ...SkinsList.map((s) => ({ id: s.id, label: s.label, price: s.price })),
 ];
+
+const CARD_TYPE_LABELS = [
+  "Profile", "Weekly Activity", "Monthly Activity", "Monthly Stats",
+  "Leaderboard", "Leaderboard Top", "Todo Profile", "Todo Tasks",
+];
+
+function getSkinGallery(skinId: string) {
+  const skin = SkinsList.find((s) => s.id === skinId);
+  if (!skin) return [];
+  return [
+    { full: skin.image.imageOne, thumb: skin.image.imageOneThumbnail },
+    { full: skin.image.imageTwo, thumb: skin.image.imageTwoThumbnail },
+    { full: skin.image.imageThree, thumb: skin.image.imageThreeThumbnail },
+    { full: skin.image.imageFour, thumb: skin.image.imageFourThumbnail },
+    { full: skin.image.imageFive, thumb: skin.image.imageFiveThumbnail },
+    { full: skin.image.imageSix, thumb: skin.image.imageSixThumbnail },
+    { full: skin.image.imageSeven, thumb: skin.image.imageSevenThumbnail },
+    { full: skin.image.imageEight, thumb: skin.image.imageEightThumbnail },
+  ];
+}
 
 function SkinModal({
   skin,
@@ -28,11 +54,18 @@ function SkinModal({
   onClose: () => void;
 }) {
   const { t } = useTranslation("skins");
+  const gallery = getSkinGallery(skin.id);
+  const botPreview = botRenderedPreviews[skin.id];
+  const [selectedImage, setSelectedImage] = useState(-1);
+
+  const mainImage = selectedImage >= 0 && gallery[selectedImage]
+    ? gallery[selectedImage].full
+    : botPreview || (gallery[0]?.full ?? null);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-50 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
+      <div className="relative z-50 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-border bg-card shadow-2xl">
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-10 p-2 rounded-md bg-card/80 text-muted-foreground hover:text-foreground transition-colors"
@@ -53,16 +86,57 @@ function SkinModal({
             </div>
           </div>
 
-          <div className="rounded-xl overflow-hidden shadow-lg mb-6">
-            <Image
-              src={skin.preview}
-              alt={`${skin.label} profile card preview`}
-              layout="responsive"
-              width={1540}
-              height={730}
-              objectFit="contain"
-            />
-          </div>
+          {/* Main preview */}
+          {mainImage && (
+            <div className="rounded-xl overflow-hidden shadow-lg mb-4 bg-background/50">
+              <Image
+                src={mainImage}
+                alt={`${skin.label} ${selectedImage >= 0 ? CARD_TYPE_LABELS[selectedImage] : "profile card"} preview`}
+                layout="responsive"
+                width={1540}
+                height={730}
+                objectFit="contain"
+              />
+            </div>
+          )}
+
+          {/* Card type selector */}
+          {gallery.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider font-medium">Card Previews</p>
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
+                {/* Bot-rendered profile card (main) */}
+                {botPreview && (
+                  <button
+                    onClick={() => setSelectedImage(-1)}
+                    className={`rounded-lg overflow-hidden border-2 transition-colors ${
+                      selectedImage === -1 ? "border-primary" : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <Image src={botPreview} alt="Profile card" width={120} height={57} objectFit="cover" />
+                    <p className="text-[9px] text-center py-0.5 text-muted-foreground bg-card">Profile</p>
+                  </button>
+                )}
+                {/* Static skin card type previews */}
+                {gallery.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedImage(i)}
+                    className={`rounded-lg overflow-hidden border-2 transition-colors ${
+                      i === selectedImage ? "border-primary" : "border-border hover:border-primary/30"
+                    }`}
+                  >
+                    <Image src={img.thumb} alt={CARD_TYPE_LABELS[i]} width={120} height={57} objectFit="cover" />
+                    <p className="text-[9px] text-center py-0.5 text-muted-foreground bg-card truncate px-1">
+                      {CARD_TYPE_LABELS[i]}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div className="border-t border-border my-4" />
 
           <p className="text-sm text-muted-foreground mb-4">
             To purchase, use the <span className="font-semibold text-foreground">/skin</span> command in Discord.
@@ -129,15 +203,21 @@ export default function Skins() {
                     className="group rounded-xl border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] transition-all duration-200 overflow-hidden text-left"
                   >
                     <div className="overflow-hidden">
-                      <Image
-                        src={skin.preview}
-                        alt={`${skin.label} skin preview`}
-                        layout="responsive"
-                        width={1540}
-                        height={730}
-                        objectFit="contain"
-                        className="group-hover:scale-[1.02] transition-transform duration-300"
-                      />
+                      {botRenderedPreviews[skin.id] ? (
+                        <Image
+                          src={botRenderedPreviews[skin.id]}
+                          alt={`${skin.label} skin preview`}
+                          layout="responsive"
+                          width={1540}
+                          height={730}
+                          objectFit="contain"
+                          className="group-hover:scale-[1.02] transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="aspect-[2.1/1] bg-muted/30 flex items-center justify-center">
+                          <Diamond className="h-8 w-8 text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="font-semibold text-foreground">{skin.label}</h3>
