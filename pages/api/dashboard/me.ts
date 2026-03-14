@@ -35,10 +35,13 @@ export default apiHandler({
       },
     }),
 
-    prisma.members.aggregate({
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: tracked_time is not populated; aggregate voice_sessions duration instead
+    prisma.voice_sessions.aggregate({
       where: { userid: userId },
-      _sum: { tracked_time: true },
+      _sum: { duration: true },
     }),
+    // --- END AI-MODIFIED ---
 
     prisma.members.count({
       where: { userid: userId },
@@ -89,8 +92,11 @@ export default apiHandler({
       locale: userConfig.locale,
     },
     stats: {
-      totalStudyTimeSeconds: totalStudyTime._sum.tracked_time || 0,
-      totalStudyTimeHours: Math.round((totalStudyTime._sum.tracked_time || 0) / 3600 * 10) / 10,
+      // --- AI-MODIFIED (2026-03-14) ---
+      // Purpose: use voice_sessions duration aggregate instead of tracked_time
+      totalStudyTimeSeconds: totalStudyTime._sum.duration || 0,
+      totalStudyTimeHours: Math.round((totalStudyTime._sum.duration || 0) / 3600 * 10) / 10,
+      // --- END AI-MODIFIED ---
       serverCount,
     },
     // --- AI-MODIFIED (2026-03-14) ---

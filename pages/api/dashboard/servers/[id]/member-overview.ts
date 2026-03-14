@@ -173,10 +173,17 @@ export default apiHandler({
         ? memberRank?.current_voice_rankid
         : memberRank?.current_msg_rankid
 
+      // --- AI-MODIFIED (2026-03-14) ---
+      // Purpose: tracked_time is not populated; aggregate voice_sessions for VOICE rank value
       let currentValue = 0
       if (rankType === "VOICE") {
-        currentValue = Math.round((membership.tracked_time || 0) / 3600)
+        const voiceAgg = await prisma.voice_sessions.aggregate({
+          where: { guildid: guildId, userid: userId },
+          _sum: { duration: true },
+        })
+        currentValue = Math.round((voiceAgg._sum?.duration || 0) / 3600)
       } else if (rankType === "MESSAGE") {
+      // --- END AI-MODIFIED ---
         currentValue = textAgg._sum?.messages || 0
       } else {
         const xpAgg = await prisma.member_experience.aggregate({
@@ -216,14 +223,24 @@ export default apiHandler({
     }
 
     // --- Leaderboard Position ---
-    const higherCount = await prisma.members.count({
-      where: {
-        guildid: guildId,
-        tracked_time: { gt: membership.tracked_time || 0 },
-      },
-    })
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: tracked_time is always 0; compute leaderboard position from voice_sessions
+    const userTotalDurResult = await prisma.$queryRaw<[{ total: number }]>`
+      SELECT COALESCE(SUM(duration), 0)::int as total
+      FROM voice_sessions WHERE guildid = ${guildId} AND userid = ${userId}
+    `
+    const userTotalDur = Number(userTotalDurResult?.[0]?.total || 0)
+
+    const higherCountResult = await prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(*) as count FROM (
+        SELECT userid FROM voice_sessions WHERE guildid = ${guildId}
+        GROUP BY userid HAVING SUM(duration) > ${userTotalDur}
+      ) sub
+    `
+    const higherCount = Number(higherCountResult?.[0]?.count || 0)
     const totalMembers = await prisma.members.count({ where: { guildid: guildId } })
     const leaderboardPosition = { rank: higherCount + 1, total: totalMembers }
+    // --- END AI-MODIFIED ---
 
     // --- Goals Progress ---
     const weekBounds = getWeekBounds(getWeekId(now))

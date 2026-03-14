@@ -48,6 +48,19 @@ export default apiHandler({
     const discordGuildMap = new Map(discordGuilds.map((g) => [g.id, g]))
 
     // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: tracked_time is not populated; batch aggregate voice_sessions per guild
+    const studyByGuild = await prisma.$queryRaw<Array<{ guildid: bigint; total: number }>>`
+      SELECT guildid, COALESCE(SUM(duration), 0)::int as total
+      FROM voice_sessions
+      WHERE userid = ${userId}
+      GROUP BY guildid
+    `.catch(() => [] as Array<{ guildid: bigint; total: number }>)
+    const studyMap = new Map(
+      (Array.isArray(studyByGuild) ? studyByGuild : []).map((r) => [r.guildid.toString(), Number(r.total)])
+    )
+    // --- END AI-MODIFIED ---
+
+    // --- AI-MODIFIED (2026-03-14) ---
     // Purpose: skip memberships for servers the user is no longer in (stale DB records)
     const activeMemberships = memberships.filter((m) => discordGuildMap.has(m.guildid.toString()))
 
@@ -94,8 +107,11 @@ export default apiHandler({
           guildId: guildIdStr,
           guildName: discordGuild?.name || m.guild_config?.name || "Unknown Server",
           displayName: m.display_name,
-          trackedTimeSeconds: m.tracked_time || 0,
-          trackedTimeHours: Math.round(((m.tracked_time || 0) / 3600) * 10) / 10,
+          // --- AI-MODIFIED (2026-03-14) ---
+          // Purpose: use voice_sessions aggregate instead of members.tracked_time
+          trackedTimeSeconds: studyMap.get(m.guildid.toString()) || 0,
+          trackedTimeHours: Math.round(((studyMap.get(m.guildid.toString()) || 0) / 3600) * 10) / 10,
+          // --- END AI-MODIFIED ---
           coins: m.coins || 0,
           firstJoined: m.first_joined,
           role,

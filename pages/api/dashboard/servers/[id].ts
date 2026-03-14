@@ -27,7 +27,7 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-14) ---
     // Purpose: fetch Discord guild data for icon and banner URLs
-    const [membership, guildConfig, leaderboard, userRank, discordGuilds] = await Promise.all([
+    const [membership, guildConfig, leaderboard, userRank, discordGuilds, userStudyTime] = await Promise.all([
     prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: userId } },
       select: {
@@ -54,17 +54,19 @@ export default apiHandler({
       },
     }),
 
-    prisma.members.findMany({
-      where: { guildid: guildId },
-      orderBy: { tracked_time: "desc" },
-      take: 25,
-      select: {
-        userid: true,
-        display_name: true,
-        tracked_time: true,
-        coins: true,
-      },
-    }),
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: tracked_time is not populated; aggregate voice_sessions for leaderboard
+    prisma.$queryRaw<Array<{ userid: bigint; display_name: string | null; total_seconds: number; coins: number }>>`
+      SELECT v.userid, m.display_name, SUM(v.duration)::int as total_seconds, COALESCE(m.coins, 0)::int as coins
+      FROM voice_sessions v
+      JOIN members m ON m.guildid = v.guildid AND m.userid = v.userid
+      WHERE v.guildid = ${guildId}
+      GROUP BY v.userid, m.display_name, m.coins
+      HAVING SUM(v.duration) > 0
+      ORDER BY total_seconds DESC
+      LIMIT 25
+    `.catch(() => []),
+    // --- END AI-MODIFIED ---
 
     prisma.member_ranks.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: userId } },
@@ -76,6 +78,15 @@ export default apiHandler({
     }),
 
     getUserGuilds(auth.accessToken, auth.discordId),
+
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: compute user's total study seconds from voice_sessions
+    prisma.$queryRaw<[{ total: number }]>`
+      SELECT COALESCE(SUM(duration), 0)::int as total
+      FROM voice_sessions
+      WHERE guildid = ${guildId} AND userid = ${userId}
+    `.catch(() => [{ total: 0 }]),
+    // --- END AI-MODIFIED ---
     ])
     // --- END AI-MODIFIED ---
 
@@ -115,9 +126,11 @@ export default apiHandler({
         timezone: guildConfig.timezone,
       } : null,
     },
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: use voice_sessions aggregate instead of members.tracked_time (which is always 0)
     you: {
-      trackedTimeSeconds: membership.tracked_time || 0,
-      trackedTimeHours: Math.round((membership.tracked_time || 0) / 3600 * 10) / 10,
+      trackedTimeSeconds: Number(userStudyTime?.[0]?.total || 0),
+      trackedTimeHours: Math.round(Number(userStudyTime?.[0]?.total || 0) / 3600 * 10) / 10,
       coins: membership.coins || 0,
       displayName: membership.display_name,
       workoutCount: membership.workout_count,
@@ -131,14 +144,17 @@ export default apiHandler({
       } : null,
       // --- END AI-MODIFIED ---
     },
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: use voice_sessions aggregation result fields
     leaderboard: leaderboard.map((m, i) => ({
       rank: i + 1,
       userId: m.userid.toString(),
       displayName: m.display_name,
-      trackedTimeHours: Math.round((m.tracked_time || 0) / 3600 * 10) / 10,
-      coins: m.coins || 0,
+      trackedTimeHours: Math.round(Number(m.total_seconds || 0) / 3600 * 10) / 10,
+      coins: Number(m.coins || 0),
       isYou: m.userid === userId,
     })),
+    // --- END AI-MODIFIED ---
     })
   },
 })
