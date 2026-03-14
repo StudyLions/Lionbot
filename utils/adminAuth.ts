@@ -146,6 +146,41 @@ export async function getUserGuildRoles(guildId: bigint, userId: string): Promis
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: check if the bot is actually present in a guild via Discord API (cached 5 min)
+const botPresenceCache = new Map<string, { present: boolean; expiresAt: number }>()
+
+export async function checkBotInGuild(guildId: string): Promise<boolean> {
+  const cached = botPresenceCache.get(guildId)
+  if (cached && Date.now() < cached.expiresAt) {
+    return cached.present
+  }
+
+  const botToken = process.env.DISCORD_BOT_TOKEN
+  if (!botToken) return false
+
+  try {
+    let res = await fetch(
+      `https://discord.com/api/v10/guilds/${guildId}`,
+      { headers: { Authorization: `Bot ${botToken}` } }
+    )
+    if (res.status === 429) {
+      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+      await new Promise((r) => setTimeout(r, retryAfter * 1000))
+      res = await fetch(
+        `https://discord.com/api/v10/guilds/${guildId}`,
+        { headers: { Authorization: `Bot ${botToken}` } }
+      )
+    }
+    const present = res.ok
+    botPresenceCache.set(guildId, { present, expiresAt: Date.now() + 300000 })
+    return present
+  } catch {
+    return false
+  }
+}
+// --- END AI-MODIFIED ---
+
 export async function isMember(userId: bigint, guildId: bigint): Promise<boolean> {
   const member = await prisma.members.findUnique({
     where: { guildid_userid: { guildid: guildId, userid: userId } },

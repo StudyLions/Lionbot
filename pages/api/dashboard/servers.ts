@@ -4,7 +4,7 @@
 // Purpose: Dashboard API - list servers the user belongs to
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { requireAuth, getUserGuilds, getUserGuildRoles } from "@/utils/adminAuth"
+import { requireAuth, getUserGuilds, getUserGuildRoles, checkBotInGuild } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
 const ADMINISTRATOR = 0x8
@@ -82,7 +82,9 @@ export default apiHandler({
         }
 
         // --- AI-MODIFIED (2026-03-14) ---
-        // Purpose: add botPresent flag based on guild_config existence
+        // Purpose: check actual bot presence via Discord API instead of stale guild_config
+        const botPresent = await checkBotInGuild(guildIdStr)
+
         return {
           guildId: guildIdStr,
           guildName: discordGuild?.name || m.guild_config?.name || "Unknown Server",
@@ -93,7 +95,7 @@ export default apiHandler({
           firstJoined: m.first_joined,
           role,
           iconUrl,
-          botPresent: !!m.guild_config,
+          botPresent,
         }
         // --- END AI-MODIFIED ---
       })
