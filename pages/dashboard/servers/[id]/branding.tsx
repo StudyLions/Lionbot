@@ -22,9 +22,10 @@ import {
   Paintbrush, Heart, Crown, Sparkles, User, BarChart3,
   CalendarDays, CalendarRange, Target, Trophy, LayoutList,
   RotateCcw, Undo2, Redo2, Copy, Palette, ChevronDown,
-  ChevronRight, Eye, EyeOff, Loader2, AlertTriangle,
+  ChevronRight, Eye, EyeOff, Loader2, AlertTriangle, X,
 } from "lucide-react"
 import { ColorPicker } from "@/components/ui/color-picker"
+import { getDefaultColor } from "@/lib/skinDefaults"
 import {
   Dialog,
   DialogContent,
@@ -584,6 +585,33 @@ export default function BrandingPage() {
     pushHistory({ baseSkinName, properties: { ...properties, [cardId]: { ...properties[cardId], [key]: value } } })
   }, [baseSkinName, properties, pushHistory])
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: reset individual property to base skin default
+  const resetProp = useCallback((cardId: string, key: string, compound?: string[]) => {
+    setProperties((prev) => {
+      const next = { ...prev }
+      if (next[cardId]) {
+        next[cardId] = { ...next[cardId] }
+        delete next[cardId][key]
+        if (compound) {
+          for (const ck of compound) delete next[cardId][ck]
+        }
+        if (Object.keys(next[cardId]).length === 0) delete next[cardId]
+      }
+      return next
+    })
+    const newProps = JSON.parse(JSON.stringify(properties))
+    if (newProps[cardId]) {
+      delete newProps[cardId][key]
+      if (compound) {
+        for (const ck of compound) delete newProps[cardId][ck]
+      }
+      if (Object.keys(newProps[cardId]).length === 0) delete newProps[cardId]
+    }
+    pushHistory({ baseSkinName, properties: newProps })
+  }, [baseSkinName, properties, pushHistory])
+  // --- END AI-MODIFIED ---
+
   const handleBaseSkinChange = useCallback((skin: string) => {
     setBaseSkinName(skin)
     pushHistory({ baseSkinName: skin, properties })
@@ -865,7 +893,7 @@ export default function BrandingPage() {
               </div>
 
               {/* Card type tabs */}
-              <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-1 scrollbar-thin">
+              <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 scrollbar-thin bg-muted/30 rounded-xl p-1">
                 {CARD_TYPES.map((ct) => {
                   const changeCount = cardChangeCounts[ct.id] || 0
                   return (
@@ -874,16 +902,16 @@ export default function BrandingPage() {
                       type="button"
                       onClick={() => setActiveCardType(ct.id)}
                       className={cn(
-                        "flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap relative",
+                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap relative",
                         activeCardType === ct.id
-                          ? "bg-primary/15 text-primary shadow-sm"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          ? "bg-background text-foreground shadow-sm border border-border"
+                          : "text-muted-foreground hover:text-foreground"
                       )}
                     >
                       {ct.icon}
                       {ct.label}
                       {changeCount > 0 && (
-                        <span className="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1 right-1" />
                       )}
                     </button>
                   )
@@ -894,15 +922,16 @@ export default function BrandingPage() {
                 {/* Left: Editor panel */}
                 <div className="space-y-4">
                   {/* Toolbar */}
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-border bg-muted/30 p-1">
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={undo}
                       disabled={historyIndex <= 0}
                       title="Undo (Ctrl+Z)"
+                      className="h-7 px-2 text-xs"
                     >
-                      <Undo2 size={14} className="mr-1" /> Undo
+                      <Undo2 size={12} className="mr-1" /> Undo
                     </Button>
                     <Button
                       variant="ghost"
@@ -910,17 +939,19 @@ export default function BrandingPage() {
                       onClick={redo}
                       disabled={historyIndex >= history.length - 1}
                       title="Redo (Ctrl+Y)"
+                      className="h-7 px-2 text-xs"
                     >
-                      <Redo2 size={14} className="mr-1" /> Redo
+                      <Redo2 size={12} className="mr-1" /> Redo
                     </Button>
-                    <div className="w-px h-5 bg-border" />
+                    <div className="w-px h-4 bg-border" />
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={handleResetCardType}
                       title="Reset this card type to defaults"
+                      className="h-7 px-2 text-xs"
                     >
-                      <RotateCcw size={14} className="mr-1" /> Reset Card
+                      <RotateCcw size={12} className="mr-1" /> Reset Card
                     </Button>
 
                     {/* Copy from dropdown */}
@@ -929,19 +960,20 @@ export default function BrandingPage() {
                         variant="ghost"
                         size="sm"
                         onClick={() => setCopyFrom(copyFrom ? "" : "open")}
+                        className="h-7 px-2 text-xs"
                       >
-                        <Copy size={14} className="mr-1" /> Copy from...
+                        <Copy size={12} className="mr-1" /> Copy from...
                       </Button>
                       {copyFrom === "open" && (
                         <>
                           <div className="fixed inset-0 z-40" onClick={() => setCopyFrom("")} />
-                          <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-lg z-50 py-1 min-w-[140px]">
+                          <div className="absolute top-full left-0 mt-1 bg-card border border-border rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
                             {CARD_TYPES.filter((c) => c.id !== activeCardType).map((ct) => (
                               <button
                                 key={ct.id}
                                 type="button"
                                 onClick={() => handleCopyFrom(ct.id)}
-                                className="w-full text-left px-3 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2"
+                                className="w-full text-left px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-accent flex items-center gap-2"
                               >
                                 {ct.icon} {ct.label}
                               </button>
@@ -951,13 +983,16 @@ export default function BrandingPage() {
                       )}
                     </div>
 
+                    <div className="w-px h-4 bg-border" />
+
                     {/* Palette generator */}
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setPaletteOpen(!paletteOpen)}
+                      className="h-7 px-2 text-xs"
                     >
-                      <Palette size={14} className="mr-1" /> Generate Palette
+                      <Palette size={12} className="mr-1" /> Palette
                     </Button>
                   </div>
 
@@ -996,8 +1031,9 @@ export default function BrandingPage() {
                   )}
 
                   {/* Base skin selector */}
-                  <SectionCard title="Base Skin" defaultOpen>
-                    <div className="flex flex-wrap gap-2 pt-2">
+                  <div className="rounded-xl border border-border bg-card/50 p-3">
+                    <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Base Skin</p>
+                    <div className="flex flex-wrap gap-1.5">
                       {AVAILABLE_SKINS.map((skinId) => {
                         const colors = SKIN_COLORS[skinId] || ["#444", "#222"]
                         return (
@@ -1006,54 +1042,83 @@ export default function BrandingPage() {
                             type="button"
                             onClick={() => handleBaseSkinChange(skinId)}
                             className={cn(
-                              "flex items-center gap-2 px-3 py-2 rounded-lg border transition-all",
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all text-xs",
                               baseSkinName === skinId
-                                ? "border-primary bg-primary/15 shadow-sm"
-                                : "border-border hover:bg-accent"
+                                ? "border-primary bg-primary/15 text-foreground font-medium shadow-sm"
+                                : "border-transparent hover:bg-accent text-muted-foreground hover:text-foreground"
                             )}
                           >
                             <div
-                              className="w-5 h-5 rounded shrink-0"
+                              className="w-4 h-4 rounded shrink-0 shadow-sm"
                               style={{
                                 background: `linear-gradient(135deg, ${colors[0]}, ${colors[1]})`,
                               }}
                             />
-                            <span className="text-sm capitalize">
+                            <span className="capitalize">
                               {skinId.replace(/_/g, " ")}
                             </span>
                           </button>
                         )
                       })}
                     </div>
-                  </SectionCard>
+                  </div>
 
                   {/* Property groups */}
                   {activeCard.groups.map((group) => {
                     const isCollapsed = collapsedGroups.has(group.id)
+                    const editedCount = group.properties.filter((p) => !!cardProperties[p.key]).length
                     return (
                       <div key={group.id} className="rounded-xl border border-border bg-card/50 overflow-hidden">
                         <button
                           type="button"
                           onClick={() => toggleGroup(group.id)}
-                          className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors"
+                          className="w-full flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent/50 transition-colors"
                         >
                           {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                           {group.label}
-                          <span className="text-xs text-muted-foreground ml-auto">
-                            {group.properties.length} {group.properties.length === 1 ? "color" : "colors"}
+                          <span className="ml-auto flex items-center gap-2">
+                            {editedCount > 0 && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 font-medium">
+                                {editedCount} edited
+                              </span>
+                            )}
+                            <span className="text-[11px] text-muted-foreground">
+                              {group.properties.length}
+                            </span>
                           </span>
                         </button>
                         {!isCollapsed && (
-                          <div className="px-4 pb-4 space-y-2.5">
-                            {group.properties.map((prop) => (
-                              <ColorPicker
-                                key={prop.key}
-                                compact
-                                label={prop.label + (prop.compound ? " *" : "")}
-                                value={cardProperties[prop.key] || "#FFFFFF"}
-                                onChange={(v) => setProp(activeCardType, prop.key, v, prop.compound)}
-                              />
-                            ))}
+                          <div className="px-4 pb-3 space-y-1">
+                            {group.properties.map((prop) => {
+                              const customValue = cardProperties[prop.key]
+                              const defaultColor = getDefaultColor(baseSkinName, activeCardType, prop.key)
+                              const displayValue = customValue || defaultColor
+                              const isCustomized = !!customValue
+                              return (
+                                <div key={prop.key} className="flex items-center gap-1 group/prop">
+                                  <div className="flex-1 min-w-0">
+                                    <ColorPicker
+                                      compact
+                                      label={prop.label + (prop.compound ? " *" : "")}
+                                      value={displayValue}
+                                      onChange={(v) => setProp(activeCardType, prop.key, v, prop.compound)}
+                                    />
+                                  </div>
+                                  {isCustomized ? (
+                                    <button
+                                      type="button"
+                                      onClick={() => resetProp(activeCardType, prop.key, prop.compound)}
+                                      className="w-5 h-5 rounded flex items-center justify-center text-muted-foreground/50 hover:text-foreground hover:bg-destructive/20 transition-all opacity-0 group-hover/prop:opacity-100"
+                                      title="Reset to default"
+                                    >
+                                      <X size={10} />
+                                    </button>
+                                  ) : (
+                                    <span className="w-5" />
+                                  )}
+                                </div>
+                              )
+                            })}
                           </div>
                         )}
                       </div>

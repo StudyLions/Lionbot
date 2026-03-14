@@ -95,12 +95,14 @@ export function ColorPicker({
     onChange(result)
   }
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: improved compact mode with larger swatch, better alignment, cleaner layout
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div className={cn("flex items-center gap-2 py-0.5", className)}>
         <div className="relative">
           <div
-            className="h-7 w-7 shrink-0 rounded-md border border-input cursor-pointer transition-transform hover:scale-105"
+            className="h-7 w-7 shrink-0 rounded-md border border-input cursor-pointer transition-all hover:scale-110 hover:shadow-md shadow-sm"
             style={{
               backgroundColor: isValid ? value : "#6b7280",
               backgroundImage: hasAlpha
@@ -126,7 +128,7 @@ export function ColorPicker({
           />
         </div>
         {label && (
-          <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate">{label}</span>
+          <span className="text-xs text-muted-foreground flex-1 min-w-0 truncate leading-tight">{label}</span>
         )}
         <input
           type="text"
@@ -134,7 +136,7 @@ export function ColorPicker({
           onChange={handleInputChange}
           placeholder="#FF5733"
           className={cn(
-            "h-7 w-[5.5rem] rounded-md border bg-background px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            "h-7 w-[5.5rem] rounded-md border bg-muted/50 px-2 py-1 text-xs font-mono text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring focus-visible:bg-background transition-colors",
             "border-input",
             !isValid && inputValue !== "" && "border-destructive"
           )}
@@ -154,6 +156,7 @@ export function ColorPicker({
       </div>
     )
   }
+  // --- END AI-MODIFIED ---
 
   return (
     <div className={cn("space-y-2", className)}>
