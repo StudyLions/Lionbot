@@ -458,16 +458,72 @@ export default function BrandingPage() {
   const previewTimer = useRef<NodeJS.Timeout | null>(null)
   const previewAbort = useRef<AbortController | null>(null)
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: persist draft designs in localStorage so non-supporters don't lose progress
+  const draftKey = guildId ? `lionbot-branding-draft-${guildId}` : null
+
+  const saveDraft = useCallback((skin: string, props: Record<string, Record<string, string>>) => {
+    if (!draftKey) return
+    try {
+      localStorage.setItem(draftKey, JSON.stringify({ baseSkinName: skin, properties: props, savedAt: Date.now() }))
+    } catch {}
+  }, [draftKey])
+
+  const loadDraft = useCallback((): HistoryEntry | null => {
+    if (!draftKey) return null
+    try {
+      const raw = localStorage.getItem(draftKey)
+      if (!raw) return null
+      const parsed = JSON.parse(raw)
+      if (parsed.baseSkinName && parsed.properties) return parsed
+    } catch {}
+    return null
+  }, [draftKey])
+
+  const clearDraft = useCallback(() => {
+    if (!draftKey) return
+    try { localStorage.removeItem(draftKey) } catch {}
+  }, [draftKey])
+
   useEffect(() => {
     if (brandingData) {
-      const base = brandingData.baseSkinName || "obsidian"
-      setBaseSkinName(base)
-      setProperties(brandingData.properties || {})
-      setOriginal({ baseSkinName: base, properties: brandingData.properties || {} })
-      setHistory([{ baseSkinName: base, properties: brandingData.properties || {} }])
-      setHistoryIndex(0)
+      const serverBase = brandingData.baseSkinName || "obsidian"
+      const serverProps = brandingData.properties || {}
+
+      setOriginal({ baseSkinName: serverBase, properties: serverProps })
+
+      const draft = loadDraft()
+      if (draft && JSON.stringify(draft.properties) !== JSON.stringify(serverProps)) {
+        setBaseSkinName(draft.baseSkinName)
+        setProperties(draft.properties)
+        setHistory([
+          { baseSkinName: serverBase, properties: serverProps },
+          { baseSkinName: draft.baseSkinName, properties: draft.properties },
+        ])
+        setHistoryIndex(1)
+        toast.success("Restored your unsaved design from last visit")
+      } else {
+        setBaseSkinName(serverBase)
+        setProperties(serverProps)
+        setHistory([{ baseSkinName: serverBase, properties: serverProps }])
+        setHistoryIndex(0)
+      }
     }
   }, [brandingData])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: auto-save draft to localStorage on every change
+  const draftSaveTimer = useRef<NodeJS.Timeout | null>(null)
+  useEffect(() => {
+    if (!original) return
+    if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current)
+    draftSaveTimer.current = setTimeout(() => {
+      saveDraft(baseSkinName, properties)
+    }, 1000)
+    return () => { if (draftSaveTimer.current) clearTimeout(draftSaveTimer.current) }
+  }, [baseSkinName, properties, original, saveDraft])
+  // --- END AI-MODIFIED ---
 
   const pushHistory = useCallback((newState: HistoryEntry) => {
     if (historyTimer.current) clearTimeout(historyTimer.current)
@@ -625,6 +681,7 @@ export default function BrandingPage() {
         properties,
       })
       setOriginal({ baseSkinName, properties: JSON.parse(JSON.stringify(properties)) })
+      clearDraft()
       mutate()
       toast.success("Branding saved! Changes will apply to new card renders.")
     } catch {
@@ -1067,6 +1124,11 @@ export default function BrandingPage() {
                         }
                         {" "}· Rendered by the actual bot engine
                       </p>
+                      {hasChanges && (
+                        <p className="text-[10px] text-emerald-400/60 text-center mt-0.5">
+                          Your design progress is auto-saved
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
