@@ -2,7 +2,9 @@
 // AI-GENERATED FILE
 // Created: 2026-03-14
 // Purpose: Public stats API for homepage - returns live bot statistics
-//          with in-memory caching to avoid excessive DB queries
+//          with in-memory caching to avoid excessive DB queries.
+//          Uses pg_class.reltuples for large tables (instant) and
+//          exact counts only for small real-time tables.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/utils/prisma";
@@ -14,6 +16,11 @@ interface PublicStats {
   tasks: number;
   studyingNow: number;
   activeTimers: number;
+}
+
+interface RowEstimate {
+  relname: string;
+  estimate: number;
 }
 
 let cachedStats: PublicStats | null = null;
@@ -38,28 +45,28 @@ export default async function handler(
   }
 
   try {
-    const [
-      voiceSessionCount,
-      textSessionCount,
-      userCount,
-      taskCount,
-      studyingNowCount,
-      timerCount,
-      guildCount,
-    ] = await Promise.all([
-      prisma.voice_sessions.count(),
-      prisma.text_sessions.count(),
-      prisma.user_config.count(),
-      prisma.tasklist.count({ where: { deleted_at: null } }),
-      prisma.voice_sessions_ongoing.count(),
-      prisma.timers.count(),
-      prisma.guild_config.count({ where: { left_at: null } }),
-    ]);
+    const [estimates, studyingNowCount, timerCount, guildCount] =
+      await Promise.all([
+        prisma.$queryRaw<RowEstimate[]>`
+          SELECT relname, reltuples::bigint AS estimate
+          FROM pg_class
+          WHERE relname IN ('voice_sessions', 'text_sessions', 'user_config', 'tasklist')
+        `,
+        prisma.voice_sessions_ongoing.count(),
+        prisma.timers.count(),
+        prisma.guild_config.count({ where: { left_at: null } }),
+      ]);
+
+    const estMap: Record<string, number> = {};
+    for (const row of estimates) {
+      estMap[row.relname] = Number(row.estimate);
+    }
 
     const stats: PublicStats = {
-      sessions: voiceSessionCount + textSessionCount,
-      users: userCount,
-      tasks: taskCount,
+      sessions:
+        (estMap["voice_sessions"] || 0) + (estMap["text_sessions"] || 0),
+      users: estMap["user_config"] || 0,
+      tasks: estMap["tasklist"] || 0,
       studyingNow: studyingNowCount,
       activeTimers: timerCount,
       guilds: guildCount,
