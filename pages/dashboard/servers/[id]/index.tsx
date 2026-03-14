@@ -155,16 +155,18 @@ export default function ServerDetail() {
   const { data: premiumData } = useDashboard<{ isPremium: boolean; premiumUntil: string | null }>(
     id && status === "authenticated" ? `/api/dashboard/servers/${id}/branding` : null
   )
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: fetch overview-stats optimistically (API handles auth), avoid loading waterfall
   const perms = permsData ?? { isMember: false, isModerator: false, isAdmin: false }
+  const permsLoading = permsData === undefined && !permsError
   const { data: adminStats } = useDashboard<OverviewStats>(
-    status === "authenticated" && id && (permsData?.isModerator || permsData?.isAdmin)
-      ? `/api/dashboard/servers/${id}/overview-stats`
-      : null
+    status === "authenticated" && id ? `/api/dashboard/servers/${id}/overview-stats` : null
   )
 
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
-  const loading = isLoading || (permsData === undefined && !permsError)
+  const loading = isLoading
   const error = fetchError?.message ?? null
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!perms.isAdmin || !id) return
@@ -318,8 +320,8 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* Admin Control Panel */}
-                      {(perms.isModerator || perms.isAdmin) && (
+                      {/* Admin Control Panel -- show skeleton while permissions load */}
+                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="px-5 py-4 border-b border-border">
                             <h3 className="text-base font-bold text-foreground">Server Control Panel</h3>
@@ -433,8 +435,8 @@ export default function ServerDetail() {
                         <StatCard icon={<Trophy size={14} />} label="Reward Rate" value={`${data.server.settings?.studyHourlyReward ?? 0}/hr`} color="text-cyan-400/70" />
                       </div>
 
-                      {/* Setup Checklist (admin only) */}
-                      {perms.isAdmin && setupStatus && (
+                      {/* Setup Checklist */}
+                      {(perms.isAdmin || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="p-5 border-b border-border">
                             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -442,23 +444,31 @@ export default function ServerDetail() {
                               Server Setup
                             </h3>
                           </div>
-                          <div className="divide-y divide-border/50">
-                            <SetupCheckItem configured={setupStatus.settings} label="Settings" detail={setupStatus.settings ? "Configured" : "Not configured"} href={`/dashboard/servers/${id}/settings`} />
-                            <SetupCheckItem configured={setupStatus.ranksCount > 0} label="Ranks" detail={setupStatus.ranksCount > 0 ? `${setupStatus.ranksCount} tiers` : "Not set up"} href={`/dashboard/servers/${id}/ranks`} />
-                            <SetupCheckItem configured={setupStatus.shopCount > 0} label="Shop" detail={setupStatus.shopCount > 0 ? `${setupStatus.shopCount} items` : "Empty"} href={`/dashboard/servers/${id}/shop`} />
-                            <SetupCheckItem configured={setupStatus.roleMenusCount > 0} label="Role Menus" detail={setupStatus.roleMenusCount > 0 ? `${setupStatus.roleMenusCount} menus` : "None"} href={`/dashboard/servers/${id}/rolemenus`} />
-                          </div>
+                          {!setupStatus ? (
+                            <div className="p-5 space-y-3">
+                              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14" />)}
+                            </div>
+                          ) : (
+                            <div className="divide-y divide-border/50">
+                              <SetupCheckItem configured={setupStatus.settings} label="Settings" detail={setupStatus.settings ? "Configured" : "Not configured"} href={`/dashboard/servers/${id}/settings`} />
+                              <SetupCheckItem configured={setupStatus.ranksCount > 0} label="Ranks" detail={setupStatus.ranksCount > 0 ? `${setupStatus.ranksCount} tiers` : "Not set up"} href={`/dashboard/servers/${id}/ranks`} />
+                              <SetupCheckItem configured={setupStatus.shopCount > 0} label="Shop" detail={setupStatus.shopCount > 0 ? `${setupStatus.shopCount} items` : "Empty"} href={`/dashboard/servers/${id}/shop`} />
+                              <SetupCheckItem configured={setupStatus.roleMenusCount > 0} label="Role Menus" detail={setupStatus.roleMenusCount > 0 ? `${setupStatus.roleMenusCount} menus` : "None"} href={`/dashboard/servers/${id}/rolemenus`} />
+                            </div>
+                          )}
                         </div>
                       )}
 
                       {/* Quick Admin Actions */}
-                      {(perms.isModerator || perms.isAdmin) && (
+                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {perms.isAdmin && (
-                            <button onClick={() => router.push(`/dashboard/servers/${id}/settings`)} className="bg-card rounded-2xl p-4 border border-border hover:border-indigo-500/50 transition-all text-left cursor-pointer flex items-start gap-3">
-                              <Settings size={20} className="text-primary flex-shrink-0 mt-0.5" />
-                              <div><p className="text-foreground text-sm font-medium">Settings</p><p className="text-muted-foreground text-xs">Configure bot</p></div>
-                            </button>
+                          {(perms.isAdmin || permsLoading) && (
+                            permsLoading ? <Skeleton className="h-[68px] rounded-2xl" /> : (
+                              <button onClick={() => router.push(`/dashboard/servers/${id}/settings`)} className="bg-card rounded-2xl p-4 border border-border hover:border-indigo-500/50 transition-all text-left cursor-pointer flex items-start gap-3">
+                                <Settings size={20} className="text-primary flex-shrink-0 mt-0.5" />
+                                <div><p className="text-foreground text-sm font-medium">Settings</p><p className="text-muted-foreground text-xs">Configure bot</p></div>
+                              </button>
+                            )
                           )}
                           <button onClick={() => router.push(`/dashboard/servers/${id}/members`)} className="bg-card rounded-2xl p-4 border border-border hover:border-blue-500/50 transition-all text-left cursor-pointer flex items-start gap-3">
                             <Users size={20} className="text-blue-400 flex-shrink-0 mt-0.5" />
@@ -479,7 +489,7 @@ export default function ServerDetail() {
                     {/* ====== ACTIVITY TAB ====== */}
                     <TabsContent value="activity" className="space-y-6">
                       {/* Currently Studying */}
-                      {(perms.isModerator || perms.isAdmin) && (
+                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="px-5 py-4 border-b border-border flex items-center gap-3">
                             <span className="relative flex h-2.5 w-2.5">
