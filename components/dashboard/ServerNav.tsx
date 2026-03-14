@@ -11,11 +11,14 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add Sparkles icon for supporter perk highlight
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
-  Wand2, ArrowLeft, Menu, Server, Paintbrush,
+  Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 
 interface ServerNavProps {
   serverId: string
@@ -24,11 +27,15 @@ interface ServerNavProps {
   isMod?: boolean
 }
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add supporterPerk flag for cosmetic feature highlighting
 interface NavLink {
   href: string
   label: string
   icon: React.ReactNode
+  supporterPerk?: boolean
 }
+// --- END AI-MODIFIED ---
 
 interface NavSection {
   title: string
@@ -69,7 +76,7 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/schedule", label: "Schedule", icon: <Calendar size={16} /> },
         { href: "/pomodoro", label: "Pomodoro", icon: <Timer size={16} /> },
         { href: "/videochannels", label: "Video Channels", icon: <Video size={16} /> },
-        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} /> },
+        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
       ],
     })
@@ -116,22 +123,32 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
                 const isActive = link.href === ""
                   ? router.asPath === fullPath || router.asPath === fullPath + "/"
                   : router.asPath.startsWith(fullPath)
+                // --- AI-MODIFIED (2026-03-14) ---
+                // Purpose: supporter perk visual highlight for cosmetic features
                 return (
                   <Link key={link.href} href={fullPath} onClick={onNavigate}>
                     <span
                       className={cn(
                         "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
                         isActive
-                          ? "bg-primary/15 text-primary font-medium"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                          ? link.supporterPerk
+                            ? "bg-amber-500/15 text-amber-400 font-medium"
+                            : "bg-primary/15 text-primary font-medium"
+                          : link.supporterPerk
+                            ? "text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
                       )}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <span className="flex-shrink-0 opacity-70">{link.icon}</span>
-                      {link.label}
+                      <span className="flex-1">{link.label}</span>
+                      {link.supporterPerk && (
+                        <Sparkles size={12} className="text-amber-400/60 flex-shrink-0" />
+                      )}
                     </span>
                   </Link>
                 )
+                // --- END AI-MODIFIED ---
               })}
             </div>
           </div>

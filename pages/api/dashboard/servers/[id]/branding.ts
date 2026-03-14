@@ -35,10 +35,12 @@ export default apiHandler({
     const isPremium = premium && premium.premium_until > now
     const premiumUntil = premium?.premium_until?.toISOString() ?? null
 
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: return saved properties even if premium expired (so users see their old design on renewal)
     let baseSkinName: string | null = null
     const properties: Record<string, Record<string, string>> = {}
 
-    if (isPremium && premium.custom_skin_id) {
+    if (premium?.custom_skin_id) {
       const skin = await prisma.customised_skins.findUnique({
         where: { custom_skin_id: premium.custom_skin_id },
         include: {
@@ -66,6 +68,7 @@ export default apiHandler({
         }
       }
     }
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       isPremium,
