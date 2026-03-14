@@ -13,7 +13,18 @@ interface SectionCardProps {
   children: ReactNode
   defaultOpen?: boolean
   badge?: string
+  badgeVariant?: "primary" | "gray" | "amber" | "green"
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: support colored badge variants for setup progress indicators
+const BADGE_STYLES: Record<string, string> = {
+  primary: "bg-primary/20 text-primary",
+  gray: "bg-gray-500/15 text-gray-400",
+  amber: "bg-amber-500/15 text-amber-400",
+  green: "bg-emerald-500/15 text-emerald-400",
+}
+// --- END AI-MODIFIED ---
 
 export default function SectionCard({
   title,
@@ -22,6 +33,7 @@ export default function SectionCard({
   children,
   defaultOpen = true,
   badge,
+  badgeVariant = "primary",
 }: SectionCardProps) {
   const [open, setOpen] = useState(defaultOpen)
 
@@ -37,7 +49,7 @@ export default function SectionCard({
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-white">{title}</h3>
             {badge && (
-              <span className="text-[10px] px-2 py-0.5 bg-primary/20 text-primary rounded-full font-medium">
+              <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${BADGE_STYLES[badgeVariant] || BADGE_STYLES.primary}`}>
                 {badge}
               </span>
             )}

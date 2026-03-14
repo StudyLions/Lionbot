@@ -513,6 +513,111 @@ export default function ServerSettings() {
 
   const ctx = contextData || {} as Record<string, number>
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: calculated impact previews, dependency warnings, and setup progress
+  const calcPreviews = useMemo(() => {
+    if (!config) return {} as Record<string, string>
+    const hr = config.study_hourly_reward ?? DEFAULTS.study_hourly_reward
+    const cam = config.study_hourly_live_bonus ?? DEFAULTS.study_hourly_live_bonus
+    const cap = config.daily_study_cap
+    const taskR = config.task_reward ?? DEFAULTS.task_reward
+    const taskL = config.task_reward_limit ?? DEFAULTS.task_reward_limit
+    const rent = config.renting_price ?? DEFAULTS.renting_price
+    const accP = config.accountability_price ?? DEFAULTS.accountability_price
+    const accR = config.accountability_reward ?? DEFAULTS.accountability_reward
+    const funds = config.starting_funds ?? DEFAULTS.starting_funds
+    const minW = config.min_workout_length ?? DEFAULTS.min_workout_length
+    const wReward = config.workout_reward ?? DEFAULTS.workout_reward
+
+    const p: Record<string, string> = {}
+    if (hr > 0) p.study_hourly_reward = `3 hours of study earns ~${(hr * 3).toLocaleString()} coins (${((hr + cam) * 3).toLocaleString()} with camera)`
+    if (cam > 0 && hr > 0) p.study_hourly_live_bonus = `Camera adds ${Math.round((cam / hr) * 100)}% bonus on top of base reward`
+    p.daily_study_cap = cap != null && hr > 0 ? `Caps daily study earnings at ~${(cap * hr).toLocaleString()} coins` : "No limit on daily study earnings"
+    if (taskR > 0 && taskL > 0) p.task_reward = `Members can earn up to ${(taskR * taskL).toLocaleString()} coins/day from tasks`
+    if (rent > 0 && hr > 0) p.renting_price = `Room owners need ~${Math.ceil(rent / hr)}h of study to cover daily rent`
+    if (accP > 0 || accR > 0) {
+      const profit = accR - accP
+      p.accountability_price = profit >= 0 ? `Members profit ${profit.toLocaleString()} coins if they attend` : `Members lose ${Math.abs(profit).toLocaleString()} coins even when attending`
+    }
+    if (funds > 0 && rent > 0) p.starting_funds = `New members can afford ${Math.floor(funds / rent)} day${Math.floor(funds / rent) !== 1 ? "s" : ""} of room rent`
+    if (wReward > 0 && minW > 0) p.workout_reward = `A ${minW}-minute workout earns ${wReward} coins`
+    return p
+  }, [config])
+
+  const warnings = useMemo(() => {
+    if (!config) return [] as Array<{ sectionId: string; message: string }>
+    const hr = config.study_hourly_reward ?? DEFAULTS.study_hourly_reward
+    const taskR = config.task_reward ?? DEFAULTS.task_reward
+    const accP = config.accountability_price ?? DEFAULTS.accountability_price
+    const accR = config.accountability_reward ?? DEFAULTS.accountability_reward
+    const rent = config.renting_price ?? DEFAULTS.renting_price
+    const funds = config.starting_funds ?? DEFAULTS.starting_funds
+    const w: Array<{ sectionId: string; message: string }> = []
+    if (hr > 200 && config.daily_study_cap == null) w.push({ sectionId: "study-rewards", message: "High hourly reward with no daily cap could lead to rapid coin inflation." })
+    if (taskR > hr && hr > 0) w.push({ sectionId: "tasks", message: "Task reward is higher than hourly study reward -- members may prefer spamming tasks over studying." })
+    if (config.allow_transfers !== false && funds > 100) w.push({ sectionId: "economy", message: "Transfers enabled with high starting funds -- members could create alt accounts to funnel coins." })
+    if (config.video_studyban === false && (ctx.videoChannelCount ?? 0) > 0) w.push({ sectionId: "moderation", message: `Video study ban is off but you have ${ctx.videoChannelCount} video-required channels -- violations won't be penalized.` })
+    if (accP > accR && accR > 0) w.push({ sectionId: "schedule", message: `Booking cost (${accP}) exceeds attendance reward (${accR}) -- members lose coins even when they attend.` })
+    if (rent > 0 && hr === 0) w.push({ sectionId: "rooms", message: "Room rent costs coins but hourly study reward is 0 -- members can't earn coins to pay rent." })
+    return w
+  }, [config, ctx])
+
+  const getWarnings = useCallback((sectionId: string) => warnings.filter((w) => w.sectionId === sectionId), [warnings])
+
+  const REQUIRED_SELECTORS: Record<string, string[]> = {
+    channels: ["event_log_channel", "mod_log_channel"],
+    roles: ["admin_role", "mod_role"],
+  }
+
+  const setupStatuses = useMemo(() => {
+    if (!config) return {} as Record<string, "defaults" | "configured" | "partial">
+    const s: Record<string, "defaults" | "configured" | "partial"> = {}
+    for (const sec of SECTION_DEFS) {
+      if (sec.id === "danger") continue
+      const req = REQUIRED_SELECTORS[sec.id]
+      if (req) {
+        const anyNull = req.some((k) => config[k] == null)
+        const anySet = req.some((k) => config[k] != null) || sec.settings.some((k) => k in DEFAULTS && JSON.stringify(config[k]) !== JSON.stringify(DEFAULTS[k]))
+        s[sec.id] = anySet ? (anyNull ? "partial" : "configured") : "defaults"
+      } else if (sec.settings.length === 0) {
+        s[sec.id] = "configured"
+      } else {
+        s[sec.id] = sec.settings.some((k) => k in DEFAULTS && JSON.stringify(config[k]) !== JSON.stringify(DEFAULTS[k])) ? "configured" : "defaults"
+      }
+    }
+    return s
+  }, [config])
+
+  function badgeProps(sectionId: string, modCount?: number): { badge?: string; badgeVariant?: "primary" | "gray" | "amber" | "green" } {
+    if (modCount) return { badge: `${modCount} modified`, badgeVariant: "primary" }
+    const st = setupStatuses[sectionId]
+    if (st === "partial") return { badge: "Needs setup", badgeVariant: "amber" }
+    if (st === "defaults") return { badge: "All defaults", badgeVariant: "gray" }
+    if (st === "configured") return { badge: "Configured", badgeVariant: "green" }
+    return {}
+  }
+
+  function combineImpact(ctxText: string | undefined, calcKey: string): string | undefined {
+    const parts = [ctxText, calcPreviews[calcKey]].filter(Boolean)
+    return parts.length > 0 ? parts.join(" · ") : undefined
+  }
+
+  function WarningBanners({ sectionId }: { sectionId: string }) {
+    const sectionWarnings = getWarnings(sectionId)
+    if (sectionWarnings.length === 0) return null
+    return (
+      <div className="space-y-2 mb-3">
+        {sectionWarnings.map((w, i) => (
+          <div key={i} className="flex items-start gap-2 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
+            <AlertTriangle size={14} className="text-amber-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-300/90 leading-relaxed">{w.message}</p>
+          </div>
+        ))}
+      </div>
+    )
+  }
+  // --- END AI-MODIFIED ---
+
   return (
     <Layout SEO={{ title: `Settings - ${config?.name || "Server"} - LionBot`, description: "Server settings" }}>
       <AdminGuard>
@@ -618,8 +723,9 @@ export default function ServerSettings() {
                         title="Study Rewards"
                         description="Control how members earn coins from studying"
                         icon={<BookOpen size={18} />}
-                        badge={modifiedCounts["study-rewards"] ? `${modifiedCounts["study-rewards"]} modified` : undefined}
+                        {...badgeProps("study-rewards", modifiedCounts["study-rewards"])}
                       >
+                        <WarningBanners sectionId="study-rewards" />
                         <SettingRow
                           label="Hourly Reward"
                           description="How many coins a member earns for each hour of study time"
@@ -627,7 +733,7 @@ export default function ServerSettings() {
                           defaultBadge={String(DEFAULTS.study_hourly_reward)}
                           isModified={isModified("study_hourly_reward")}
                           onReset={() => resetField("study_hourly_reward")}
-                          impactText={ctx.activeMembersWeek ? `${ctx.activeMembersWeek} members studied this week` : undefined}
+                          impactText={combineImpact(ctx.activeMembersWeek ? `${ctx.activeMembersWeek} members studied this week` : undefined, "study_hourly_reward")}
                         >
                           <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull placeholder={`Default: ${DEFAULTS.study_hourly_reward}`} />
                         </SettingRow>
@@ -638,6 +744,7 @@ export default function ServerSettings() {
                           defaultBadge={String(DEFAULTS.study_hourly_live_bonus)}
                           isModified={isModified("study_hourly_live_bonus")}
                           onReset={() => resetField("study_hourly_live_bonus")}
+                          impactText={calcPreviews.study_hourly_live_bonus}
                         >
                           <NumberInput value={config.study_hourly_live_bonus} onChange={(v) => set("study_hourly_live_bonus", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_live_bonus} allowNull placeholder={`Default: ${DEFAULTS.study_hourly_live_bonus}`} />
                         </SettingRow>
@@ -648,7 +755,7 @@ export default function ServerSettings() {
                           defaultBadge="No limit"
                           isModified={isModified("daily_study_cap")}
                           onReset={() => resetField("daily_study_cap")}
-                          impactText={ctx.avgDailyStudyHours ? `Members average ${ctx.avgDailyStudyHours}h/day of study` : undefined}
+                          impactText={combineImpact(ctx.avgDailyStudyHours ? `Members average ${ctx.avgDailyStudyHours}h/day of study` : undefined, "daily_study_cap")}
                         >
                           <NumberInput value={config.daily_study_cap} onChange={(v) => set("daily_study_cap", v)} unit="hours" min={1} placeholder="No limit" allowNull />
                         </SettingRow>
@@ -663,8 +770,9 @@ export default function ServerSettings() {
                         title="Economy"
                         description="Manage the server's coin economy"
                         icon={<Coins size={18} />}
-                        badge={modifiedCounts["economy"] ? `${modifiedCounts["economy"]} modified` : undefined}
+                        {...badgeProps("economy", modifiedCounts["economy"])}
                       >
+                        <WarningBanners sectionId="economy" />
                         <SettingRow
                           label="Starting Coins"
                           description="Coins given to new members when they join"
@@ -672,7 +780,7 @@ export default function ServerSettings() {
                           defaultBadge={String(DEFAULTS.starting_funds)}
                           isModified={isModified("starting_funds")}
                           onReset={() => resetField("starting_funds")}
-                          impactText={ctx.totalCoins ? `${ctx.totalCoins.toLocaleString()} total coins in circulation` : undefined}
+                          impactText={combineImpact(ctx.totalCoins ? `${ctx.totalCoins.toLocaleString()} total coins in circulation` : undefined, "starting_funds")}
                         >
                           <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull placeholder={`Default: ${DEFAULTS.starting_funds}`} />
                         </SettingRow>
@@ -707,12 +815,13 @@ export default function ServerSettings() {
                         title="Tasks"
                         description="Task completion rewards and limits"
                         icon={<CheckSquare size={18} />}
-                        badge={modifiedCounts["tasks"] ? `${modifiedCounts["tasks"]} modified` : undefined}
+                        {...badgeProps("tasks", modifiedCounts["tasks"])}
                       >
+                        <WarningBanners sectionId="tasks" />
                         <SettingRow label="Max Tasks" description="Maximum number of tasks a member can have at once" tooltip="Limits how many to-do items each member can create." defaultBadge={String(DEFAULTS.max_tasks)} isModified={isModified("max_tasks")} onReset={() => resetField("max_tasks")}>
                           <NumberInput value={config.max_tasks} onChange={(v) => set("max_tasks", v)} min={1} max={100} defaultValue={DEFAULTS.max_tasks} allowNull placeholder={`Default: ${DEFAULTS.max_tasks}`} />
                         </SettingRow>
-                        <SettingRow label="Task Reward" description="Coins earned when a member completes a task" defaultBadge={String(DEFAULTS.task_reward)} isModified={isModified("task_reward")} onReset={() => resetField("task_reward")} impactText={ctx.taskRewardsToday ? `${ctx.taskRewardsToday} task rewards given today` : undefined}>
+                        <SettingRow label="Task Reward" description="Coins earned when a member completes a task" defaultBadge={String(DEFAULTS.task_reward)} isModified={isModified("task_reward")} onReset={() => resetField("task_reward")} impactText={combineImpact(ctx.taskRewardsToday ? `${ctx.taskRewardsToday} task rewards given today` : undefined, "task_reward")}>
                           <NumberInput value={config.task_reward} onChange={(v) => set("task_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.task_reward} allowNull placeholder={`Default: ${DEFAULTS.task_reward}`} />
                         </SettingRow>
                         <SettingRow label="Daily Reward Limit" description="Max task rewards a member can earn per day" tooltip="Prevents members from farming coins by creating and completing many small tasks." defaultBadge={String(DEFAULTS.task_reward_limit)} isModified={isModified("task_reward_limit")} onReset={() => resetField("task_reward_limit")}>
@@ -729,9 +838,10 @@ export default function ServerSettings() {
                         title="Private Rooms"
                         description="Settings for rentable private study rooms"
                         icon={<Lock size={18} />}
-                        badge={modifiedCounts["rooms"] ? `${modifiedCounts["rooms"]} modified` : undefined}
+                        {...badgeProps("rooms", modifiedCounts["rooms"])}
                       >
-                        <SettingRow label="Daily Rent" description="Coins it costs to rent a private room per day" tooltip="Members pay this amount daily to keep their private study room." defaultBadge={String(DEFAULTS.renting_price)} isModified={isModified("renting_price")} onReset={() => resetField("renting_price")} impactText={ctx.activeRooms ? `${ctx.activeRooms} active rooms using this price` : undefined}>
+                        <WarningBanners sectionId="rooms" />
+                        <SettingRow label="Daily Rent" description="Coins it costs to rent a private room per day" tooltip="Members pay this amount daily to keep their private study room." defaultBadge={String(DEFAULTS.renting_price)} isModified={isModified("renting_price")} onReset={() => resetField("renting_price")} impactText={combineImpact(ctx.activeRooms ? `${ctx.activeRooms} active rooms using this price` : undefined, "renting_price")}>
                           <NumberInput value={config.renting_price} onChange={(v) => set("renting_price", v)} unit="coins/day" min={0} defaultValue={DEFAULTS.renting_price} allowNull placeholder={`Default: ${DEFAULTS.renting_price}`} />
                         </SettingRow>
                         <SettingRow label="Max Members" description="Maximum people allowed in a private room" defaultBadge={String(DEFAULTS.renting_cap)} isModified={isModified("renting_cap")} onReset={() => resetField("renting_cap")}>
@@ -753,8 +863,9 @@ export default function ServerSettings() {
                   {/* Accountability Sessions */}
                   {filteredSections.includes("schedule") && (
                     <div id="schedule">
-                      <SectionCard title="Accountability Sessions" description="Settings for scheduled group study sessions" icon={<Users size={18} />} badge={modifiedCounts["schedule"] ? `${modifiedCounts["schedule"]} modified` : undefined}>
-                        <SettingRow label="Booking Cost" description="Coins to book a study session" tooltip="Members pay this to schedule a session. They get it back (plus rewards) if they attend." defaultBadge={String(DEFAULTS.accountability_price)} isModified={isModified("accountability_price")} onReset={() => resetField("accountability_price")}>
+                      <SectionCard title="Accountability Sessions" description="Settings for scheduled group study sessions" icon={<Users size={18} />} {...badgeProps("schedule", modifiedCounts["schedule"])}>
+                        <WarningBanners sectionId="schedule" />
+                        <SettingRow label="Booking Cost" description="Coins to book a study session" tooltip="Members pay this to schedule a session. They get it back (plus rewards) if they attend." defaultBadge={String(DEFAULTS.accountability_price)} isModified={isModified("accountability_price")} onReset={() => resetField("accountability_price")} impactText={calcPreviews.accountability_price}>
                           <NumberInput value={config.accountability_price} onChange={(v) => set("accountability_price", v)} unit="coins" min={0} defaultValue={DEFAULTS.accountability_price} allowNull placeholder={`Default: ${DEFAULTS.accountability_price}`} />
                         </SettingRow>
                         <SettingRow label="Attendance Reward" description="Coins earned for attending a booked session" defaultBadge={String(DEFAULTS.accountability_reward)} isModified={isModified("accountability_reward")} onReset={() => resetField("accountability_reward")}>
@@ -770,7 +881,7 @@ export default function ServerSettings() {
                   {/* Ranks */}
                   {filteredSections.includes("ranks") && (
                     <div id="ranks">
-                      <SectionCard title="Ranks" description="Configure activity-based rank progression" icon={<Trophy size={18} />} badge={modifiedCounts["ranks"] ? `${modifiedCounts["ranks"]} modified` : undefined}>
+                      <SectionCard title="Ranks" description="Configure activity-based rank progression" icon={<Trophy size={18} />} {...badgeProps("ranks", modifiedCounts["ranks"])}>
                         <SettingRow label="Rank Type" description="Which activity drives rank progression" tooltip="XP: combines voice and text activity. Voice: only study time counts. Messages: only text messages count." defaultBadge={DEFAULTS.rank_type} isModified={isModified("rank_type")} onReset={() => resetField("rank_type")} impactText={ctx.rankUpsThisWeek ? `${ctx.rankUpsThisWeek} rank-ups this week` : undefined}>
                           <SearchSelect options={RANK_TYPE_OPTIONS} value={config.rank_type || null} onChange={(v) => set("rank_type", v)} placeholder="Select rank type" />
                         </SettingRow>
@@ -790,7 +901,8 @@ export default function ServerSettings() {
                   {/* Moderation */}
                   {filteredSections.includes("moderation") && (
                     <div id="moderation">
-                      <SectionCard title="Moderation" description="Moderation and enforcement settings" icon={<Shield size={18} />} badge={modifiedCounts["moderation"] ? `${modifiedCounts["moderation"]} modified` : undefined}>
+                      <SectionCard title="Moderation" description="Moderation and enforcement settings" icon={<Shield size={18} />} {...badgeProps("moderation", modifiedCounts["moderation"])}>
+                        <WarningBanners sectionId="moderation" />
                         <SettingRow label="Video Study Ban" description="Ban members from study channels for camera violations" tooltip="When enabled, members who repeatedly disable their camera in video-required channels get temporarily banned from those channels." isModified={isModified("video_studyban")} onReset={() => resetField("video_studyban")} impactText={ctx.videoChannelCount ? `${ctx.videoChannelCount} video-required channels` : undefined}>
                           <Toggle checked={config.video_studyban ?? true} onChange={(v) => set("video_studyban", v)} />
                         </SettingRow>
@@ -807,7 +919,7 @@ export default function ServerSettings() {
                   {/* General */}
                   {filteredSections.includes("general") && (
                     <div id="general">
-                      <SectionCard title="General" description="Language, timezone, and regional settings" icon={<Globe size={18} />} badge={modifiedCounts["general"] ? `${modifiedCounts["general"]} modified` : undefined}>
+                      <SectionCard title="General" description="Language, timezone, and regional settings" icon={<Globe size={18} />} {...badgeProps("general", modifiedCounts["general"])}>
                         <SettingRow label="Timezone" description="Server timezone for schedules and time displays" defaultBadge="UTC" isModified={isModified("timezone")} onReset={() => resetField("timezone")}>
                           <div className="space-y-2">
                             <SearchSelect
@@ -841,7 +953,7 @@ export default function ServerSettings() {
                   {/* Welcome Messages */}
                   {filteredSections.includes("welcome") && (
                     <div id="welcome">
-                      <SectionCard title="Welcome Messages" description="Greet new and returning members automatically" icon={<MessageSquare size={18} />} badge={modifiedCounts["welcome"] ? `${modifiedCounts["welcome"]} modified` : undefined}>
+                      <SectionCard title="Welcome Messages" description="Greet new and returning members automatically" icon={<MessageSquare size={18} />} {...badgeProps("welcome", modifiedCounts["welcome"])}>
                         <SettingRow label="Greeting Channel" description="Channel where welcome messages are sent" tooltip="When a new member joins, the welcome/returning message is sent here.">
                           <ChannelSelect guildId={guildId} value={config.greeting_channel ?? null} onChange={(v) => set("greeting_channel", (v as string) || null)} channelTypes={[0, 5]} placeholder="Select greeting channel" />
                         </SettingRow>
@@ -871,11 +983,11 @@ export default function ServerSettings() {
                   {/* Workouts */}
                   {filteredSections.includes("workouts") && (
                     <div id="workouts">
-                      <SectionCard title="Workouts" description="Workout tracking and rewards" icon={<Dumbbell size={18} />} badge={modifiedCounts["workouts"] ? `${modifiedCounts["workouts"]} modified` : undefined}>
+                      <SectionCard title="Workouts" description="Workout tracking and rewards" icon={<Dumbbell size={18} />} {...badgeProps("workouts", modifiedCounts["workouts"])}>
                         <SettingRow label="Minimum Length" description="Shortest workout that counts for a reward" defaultBadge={`${DEFAULTS.min_workout_length} min`} isModified={isModified("min_workout_length")} onReset={() => resetField("min_workout_length")}>
                           <NumberInput value={config.min_workout_length} onChange={(v) => set("min_workout_length", v)} unit="minutes" min={1} defaultValue={DEFAULTS.min_workout_length} allowNull placeholder={`Default: ${DEFAULTS.min_workout_length}`} />
                         </SettingRow>
-                        <SettingRow label="Workout Reward" description="Coins earned per workout session" defaultBadge={String(DEFAULTS.workout_reward)} isModified={isModified("workout_reward")} onReset={() => resetField("workout_reward")}>
+                        <SettingRow label="Workout Reward" description="Coins earned per workout session" defaultBadge={String(DEFAULTS.workout_reward)} isModified={isModified("workout_reward")} onReset={() => resetField("workout_reward")} impactText={calcPreviews.workout_reward}>
                           <NumberInput value={config.workout_reward} onChange={(v) => set("workout_reward", v)} unit="coins" min={0} defaultValue={DEFAULTS.workout_reward} allowNull placeholder={`Default: ${DEFAULTS.workout_reward}`} />
                         </SettingRow>
                       </SectionCard>
@@ -885,7 +997,7 @@ export default function ServerSettings() {
                   {/* Channels */}
                   {filteredSections.includes("channels") && (
                     <div id="channels">
-                      <SectionCard title="Channels" description="Log and notification channels" icon={<Hash size={18} />}>
+                      <SectionCard title="Channels" description="Log and notification channels" icon={<Hash size={18} />} {...badgeProps("channels", modifiedCounts["channels"])}>
                         <SettingRow label="Event Log Channel" description="Channel for audit-style event logs" tooltip="LionBot logs server events (joins, leaves, rank changes, etc.) to this channel.">
                           <ChannelSelect guildId={guildId} value={config.event_log_channel ?? null} onChange={(v) => set("event_log_channel", (v as string) || null)} channelTypes={[0, 5]} placeholder="Select event log channel" />
                         </SettingRow>
@@ -905,7 +1017,7 @@ export default function ServerSettings() {
                   {/* Roles */}
                   {filteredSections.includes("roles") && (
                     <div id="roles">
-                      <SectionCard title="Roles" description="Admin and moderator role assignments" icon={<UserCog size={18} />}>
+                      <SectionCard title="Roles" description="Admin and moderator role assignments" icon={<UserCog size={18} />} {...badgeProps("roles", modifiedCounts["roles"])}>
                         <SettingRow label="Admin Role" description="Role that grants admin access to LionBot" tooltip="Members with this role can access all admin commands and dashboard settings.">
                           <RoleSelect guildId={guildId} value={config.admin_role ?? null} onChange={(v) => set("admin_role", (v as string) || null)} placeholder="Select admin role" excludeManaged excludeEveryone />
                         </SettingRow>
@@ -919,7 +1031,7 @@ export default function ServerSettings() {
                   {/* Tracking (new) */}
                   {filteredSections.includes("tracking") && (
                     <div id="tracking">
-                      <SectionCard title="Tracking Exclusions" description="Channels excluded from study and XP tracking" icon={<EyeOff size={18} />}>
+                      <SectionCard title="Tracking Exclusions" description="Channels excluded from study and XP tracking" icon={<EyeOff size={18} />} {...badgeProps("tracking", modifiedCounts["tracking"])}>
                         <SettingRow
                           label="Untracked Voice Channels"
                           description="Voice channels where study time is not counted"
@@ -943,7 +1055,7 @@ export default function ServerSettings() {
                   {/* Auto-Roles (new) */}
                   {filteredSections.includes("autoroles") && (
                     <div id="autoroles">
-                      <SectionCard title="Auto-Roles" description="Roles automatically assigned to new members and bots" icon={<Bot size={18} />}>
+                      <SectionCard title="Auto-Roles" description="Roles automatically assigned to new members and bots" icon={<Bot size={18} />} {...badgeProps("autoroles", modifiedCounts["autoroles"])}>
                         <SettingRow
                           label="Member Auto-Roles"
                           description="Roles automatically given to new human members when they join"
@@ -966,7 +1078,7 @@ export default function ServerSettings() {
                   {/* Season & Stats (extended) */}
                   {filteredSections.includes("statistics") && (
                     <div id="statistics">
-                      <SectionCard title="Season & Statistics" description="Season tracking, text XP, and leaderboard settings" icon={<BarChart3 size={18} />} badge={modifiedCounts["statistics"] ? `${modifiedCounts["statistics"]} modified` : undefined}>
+                      <SectionCard title="Season & Statistics" description="Season tracking, text XP, and leaderboard settings" icon={<BarChart3 size={18} />} {...badgeProps("statistics", modifiedCounts["statistics"])}>
                         <SettingRow label="Season Start Date" description="When the current ranking season started" tooltip="Leaderboards and rank progress are reset at the start of each season. Set a date to begin a new season, or leave empty for all-time tracking." isModified={isModified("season_start")} onReset={() => resetField("season_start")}>
                           <input
                             type="date"
