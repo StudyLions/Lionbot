@@ -1,113 +1,291 @@
 // ============================================================
 // AI-GENERATED FILE
-// Created: 2026-03-13
-// Purpose: Schedule configuration page
+// Created: 2026-03-14
+// Purpose: Schedule Command Center - analytics, session
+//          history, member leaderboards, booking heatmap,
+//          and configuration
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
-  PageHeader,
-  SectionCard,
-  SettingRow,
-  ChannelSelect,
-  RoleSelect,
-  NumberInput,
-  SaveBar,
-  FirstTimeBanner,
-  toast,
+  PageHeader, SectionCard, SettingRow, ChannelSelect,
+  RoleSelect, NumberInput, SaveBar, toast,
 } from "@/components/dashboard/ui"
+import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback } from "react"
-import { Calendar, Clock } from "lucide-react"
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add i18n imports for serverSideTranslations
+import { useState, useCallback, useEffect, useMemo } from "react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-// --- END AI-MODIFIED ---
+import {
+  Calendar, Clock, Users, TrendingUp, TrendingDown, Coins,
+  ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
+  CheckCircle, XCircle, Settings, BarChart3, Award,
+  AlertTriangle, ArrowRight, Zap,
+} from "lucide-react"
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RechartsTooltip, ResponsiveContainer, Legend,
+} from "recharts"
 
-interface ScheduleData {
-  lobby_channel: string | null
-  room_channel: string | null
-  schedule_cost: number | null
-  reward: number | null
-  bonus_reward: number | null
-  min_attendance: number | null
-  blacklist_role: string | null
-  blacklist_after: number | null
+// ---- Types ----
+
+interface ScheduleStats {
+  summary: {
+    totalSessions: number; totalBookings: number; totalAttended: number
+    totalMissed: number; attendanceRate: number; uniqueMembers: number
+    sessionsThisWeek: number; bookingsThisWeek: number
+    attendedThisWeek: number; activeThisWeek: number
+  }
+  dailyTrend: Array<{ date: string; bookings: number; attended: number; missed: number; rate: number }>
+  heatmap: Array<{ dayOfWeek: number; hour: number; count: number }>
+  topMembers: {
+    mostReliable: Array<{ userId: string; name: string; avatarUrl: string; totalBooked: number; totalAttended: number; rate: number }>
+    mostActive: Array<{ userId: string; name: string; avatarUrl: string; totalBooked: number }>
+    mostNoShows: Array<{ userId: string; name: string; avatarUrl: string; totalMissed: number; totalBooked: number }>
+  }
+  upcoming: Array<{
+    slotid: number; slotTime: string; memberCount: number
+    members: Array<{ userId: string; name: string; avatarUrl: string; bookedAt: string }>
+  }>
+  coinFlow: { totalSpent: number; totalEarned: number; netFlow: number }
+}
+
+interface SessionHistory {
+  sessions: Array<{
+    slotid: number; slotTime: string; openedAt: string | null; closedAt: string | null
+    totalBooked: number; totalAttended: number; totalMissed: number; attendanceRate: number
+    members: Array<{
+      userId: string; name: string; avatarUrl: string
+      attended: boolean; clock: number; bookedAt: string
+    }>
+  }>
+  totalCount: number; page: number; pageSize: number
+}
+
+interface ScheduleConfig {
+  lobby_channel: string | null; room_channel: string | null
+  schedule_cost: number | null; reward: number | null
+  bonus_reward: number | null; min_attendance: number | null
+  blacklist_role: string | null; blacklist_after: number | null
   schedule_channels: { channelid: string }[]
 }
 
-const DEFAULTS: ScheduleData = {
-  lobby_channel: null,
-  room_channel: null,
-  schedule_cost: null,
-  reward: null,
-  bonus_reward: null,
-  min_attendance: null,
-  blacklist_role: null,
-  blacklist_after: null,
-  schedule_channels: [],
+// ---- Helpers ----
+
+const TABS = [
+  { id: "overview", label: "Overview", icon: <BarChart3 size={14} /> },
+  { id: "sessions", label: "Sessions", icon: <Calendar size={14} /> },
+  { id: "members", label: "Members", icon: <Users size={14} /> },
+  { id: "settings", label: "Settings", icon: <Settings size={14} /> },
+] as const
+
+type TabId = typeof TABS[number]["id"]
+
+const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+function formatClock(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
 }
 
-function isConfigured(data: ScheduleData): boolean {
-  return !!(data.lobby_channel || data.room_channel || data.schedule_cost != null || data.reward != null)
+function formatSlotTime(iso: string): string {
+  const d = new Date(iso)
+  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }) +
+    " " + d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
 }
+
+function formatDateShort(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00Z")
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
+}
+
+// ---- Stat Card ----
+
+function StatCard({ label, value, sub, icon, color = "text-primary" }: {
+  label: string; value: string | number; sub?: string; icon: React.ReactNode; color?: string
+}) {
+  return (
+    <div className="bg-card/50 border border-border rounded-xl p-4 flex items-start gap-3">
+      <div className={`p-2 rounded-lg bg-gray-800 ${color}`}>{icon}</div>
+      <div className="min-w-0">
+        <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
+        <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
+        {sub && <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>}
+      </div>
+    </div>
+  )
+}
+
+// ---- Booking Heatmap ----
+
+function BookingHeatmap({ data }: { data: Array<{ dayOfWeek: number; hour: number; count: number }> }) {
+  const grid = useMemo(() => {
+    const matrix: number[][] = Array.from({ length: 7 }, () => Array(24).fill(0))
+    let max = 0
+    for (const { dayOfWeek, hour, count } of data) {
+      matrix[dayOfWeek][hour] = count
+      if (count > max) max = count
+    }
+    return { matrix, max }
+  }, [data])
+
+  const getColor = (count: number) => {
+    if (count === 0) return "bg-gray-800/50"
+    const intensity = count / Math.max(grid.max, 1)
+    if (intensity > 0.75) return "bg-indigo-500"
+    if (intensity > 0.5) return "bg-indigo-500/70"
+    if (intensity > 0.25) return "bg-indigo-500/40"
+    return "bg-indigo-500/20"
+  }
+
+  const [tooltip, setTooltip] = useState<{ day: number; hour: number; count: number } | null>(null)
+
+  return (
+    <div className="relative">
+      <div className="flex gap-1">
+        <div className="flex flex-col gap-1 pr-1 pt-6">
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+            <div key={d} className="h-5 flex items-center text-[10px] text-muted-foreground font-medium">
+              {DAY_LABELS[d]}
+            </div>
+          ))}
+        </div>
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex gap-1 mb-1">
+            {Array.from({ length: 24 }, (_, h) => (
+              <div key={h} className="w-5 text-center text-[9px] text-muted-foreground font-medium">
+                {h}
+              </div>
+            ))}
+          </div>
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+            <div key={d} className="flex gap-1 mb-1">
+              {Array.from({ length: 24 }, (_, h) => (
+                <div
+                  key={h}
+                  className={`w-5 h-5 rounded-sm cursor-pointer transition-all hover:ring-1 hover:ring-white/30 ${getColor(grid.matrix[d][h])}`}
+                  onMouseEnter={() => setTooltip({ day: d, hour: h, count: grid.matrix[d][h] })}
+                  onMouseLeave={() => setTooltip(null)}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+      {tooltip && (
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-border rounded-lg px-3 py-1.5 text-xs text-foreground shadow-lg pointer-events-none whitespace-nowrap z-10">
+          {DAY_LABELS[tooltip.day]} {tooltip.hour}:00 &mdash; <span className="font-bold">{tooltip.count}</span> bookings
+        </div>
+      )}
+      <div className="flex items-center gap-2 mt-3 justify-end">
+        <span className="text-[10px] text-muted-foreground">Less</span>
+        <div className="w-4 h-4 rounded-sm bg-gray-800/50" />
+        <div className="w-4 h-4 rounded-sm bg-indigo-500/20" />
+        <div className="w-4 h-4 rounded-sm bg-indigo-500/40" />
+        <div className="w-4 h-4 rounded-sm bg-indigo-500/70" />
+        <div className="w-4 h-4 rounded-sm bg-indigo-500" />
+        <span className="text-[10px] text-muted-foreground">More</span>
+      </div>
+    </div>
+  )
+}
+
+// ---- Member Avatar ----
+
+function MemberAvatar({ url, name, size = 28 }: { url: string; name: string; size?: number }) {
+  return (
+    <img
+      src={url}
+      alt={name}
+      width={size}
+      height={size}
+      className="rounded-full bg-gray-700 flex-shrink-0"
+      onError={(e) => { (e.target as HTMLImageElement).src = `https://cdn.discordapp.com/embed/avatars/0.png` }}
+    />
+  )
+}
+
+// ---- Main Page ----
 
 export default function SchedulePage() {
   const { data: session } = useSession()
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
-  const { data: scheduleData, isLoading: loading, mutate } = useDashboard<ScheduleData>(
-    id && session ? `/api/dashboard/servers/${id}/schedule` : null
-  )
+  const [tab, setTab] = useState<TabId>("overview")
+  const [panelUserId, setPanelUserId] = useState<string | null>(null)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set())
+
+  // Data fetching
   const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
     id && session ? `/api/dashboard/servers/${id}` : null
   )
   const serverName = serverData?.server?.name || "Server"
-  const [data, setData] = useState<ScheduleData | null>(null)
-  const [original, setOriginal] = useState<ScheduleData | null>(null)
+
+  const { data: stats, isLoading: statsLoading } = useDashboard<ScheduleStats>(
+    id && session ? `/api/dashboard/servers/${id}/schedule-stats` : null
+  )
+
+  const { data: history, isLoading: historyLoading } = useDashboard<SessionHistory>(
+    id && session && tab === "sessions"
+      ? `/api/dashboard/servers/${id}/schedule-history?page=${historyPage}&pageSize=20`
+      : null
+  )
+
+  const { data: configData, isLoading: configLoading, mutate: mutateConfig } = useDashboard<ScheduleConfig>(
+    id && session ? `/api/dashboard/servers/${id}/schedule` : null
+  )
+
+  const { data: panelData, isLoading: panelLoading, error: panelError } = useDashboard(
+    panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
+  )
+
   useEffect(() => {
-    if (scheduleData) {
-      setData(scheduleData)
-      setOriginal({ ...scheduleData })
-    } else if (scheduleData === undefined && !loading) {
-      setData(null)
-      setOriginal(null)
+    if (panelError && panelUserId) {
+      toast.error("Could not load member details")
+      setPanelUserId(null)
     }
-  }, [scheduleData, loading])
-  // --- END AI-MODIFIED ---
+  }, [panelError, panelUserId])
+
+  // Config editing state
+  const [config, setConfig] = useState<ScheduleConfig | null>(null)
+  const [origConfig, setOrigConfig] = useState<ScheduleConfig | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const set = useCallback((key: keyof ScheduleData, value: unknown) => {
-    setData((prev) => (prev ? { ...prev, [key]: value } : prev))
+  useEffect(() => {
+    if (configData) {
+      setConfig(configData)
+      setOrigConfig({ ...configData })
+    }
+  }, [configData])
+
+  const setField = useCallback((key: keyof ScheduleConfig, value: unknown) => {
+    setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
   }, [])
 
-  const hasChanges = data && original && JSON.stringify(data) !== JSON.stringify(original)
+  const configChanged = config && origConfig && JSON.stringify(config) !== JSON.stringify(origConfig)
 
   const handleSave = async () => {
-    if (!data || !original || !hasChanges) return
+    if (!config || !origConfig || !configChanged) return
     setSaving(true)
-    // --- AI-MODIFIED (2026-03-13) ---
-    // Purpose: include schedule_channels in save payload
     const changes: Record<string, unknown> = {}
-    for (const key of Object.keys(data) as (keyof ScheduleData)[]) {
+    for (const key of Object.keys(config) as (keyof ScheduleConfig)[]) {
       if (key === "schedule_channels") {
-        if (JSON.stringify(data[key]) !== JSON.stringify(original[key])) {
-          changes.schedule_channels = data.schedule_channels
+        if (JSON.stringify(config[key]) !== JSON.stringify(origConfig[key])) {
+          changes.schedule_channels = config.schedule_channels
         }
         continue
       }
-      if (JSON.stringify(data[key]) !== JSON.stringify(original[key])) {
-        changes[key] = data[key]
+      if (JSON.stringify(config[key]) !== JSON.stringify(origConfig[key])) {
+        changes[key] = config[key]
       }
     }
-    // --- END AI-MODIFIED ---
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/schedule`, {
         method: "PATCH",
@@ -116,22 +294,32 @@ export default function SchedulePage() {
       })
       if (!res.ok) throw new Error("Save failed")
       const updated = await res.json()
-      setData(updated)
-      setOriginal({ ...updated })
-      mutate()
-      toast.success("Schedule settings saved successfully")
+      setConfig(updated)
+      setOrigConfig({ ...updated })
+      mutateConfig()
+      toast.success("Schedule settings saved")
     } catch {
-      toast.error("Failed to save. Check your permissions (admin required).")
+      toast.error("Failed to save settings")
     }
     setSaving(false)
   }
 
-  const handleReset = () => {
-    if (original) setData({ ...original })
+  const handleReset = () => { if (origConfig) setConfig({ ...origConfig }) }
+
+  const toggleSession = (slotid: number) => {
+    setExpandedSessions((prev) => {
+      const next = new Set(prev)
+      if (next.has(slotid)) next.delete(slotid)
+      else next.add(slotid)
+      return next
+    })
   }
 
+  const isEmpty = stats && stats.summary.totalSessions === 0
+  const totalHistoryPages = history ? Math.ceil(history.totalCount / history.pageSize) : 0
+
   return (
-    <Layout SEO={{ title: `Schedule - ${serverName} - LionBot`, description: "Schedule configuration" }}>
+    <Layout SEO={{ title: `Schedule - ${serverName} - LionBot`, description: "Schedule command center" }}>
       <AdminGuard>
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
@@ -139,201 +327,604 @@ export default function SchedulePage() {
             <div className="flex-1 min-w-0">
               <PageHeader
                 title="Schedule"
-                description="Configure scheduled study sessions. Members can book time slots, pay coins to reserve, and earn rewards for attending. Set the lobby and room channels, plus rewards and attendance rules."
+                description="Manage scheduled study sessions. Track attendance, view analytics, and configure session rules."
               />
 
-              {!loading && data && !isConfigured(data) && (
-                <FirstTimeBanner
-                  storageKey="schedule_config"
-                  title="What are scheduled sessions?"
-                  description="Scheduled sessions let members book study time slots in advance. They pay coins to reserve a slot, then join a lobby channel when it's time. If they attend, they get their coins back plus rewards. Configure the lobby and room channels below to get started."
-                  icon={<Calendar size={22} />}
-                />
+              {/* Tabs */}
+              <div className="flex gap-1 mb-6 bg-card/30 border border-border rounded-xl p-1">
+                {TABS.map((t) => (
+                  <button
+                    key={t.id}
+                    onClick={() => setTab(t.id)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                      tab === t.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground hover:bg-gray-800/50"
+                    }`}
+                  >
+                    {t.icon} {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Empty state */}
+              {isEmpty && tab !== "settings" && (
+                <div className="bg-card/50 border border-border rounded-xl p-8 text-center">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                    <Calendar size={28} className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">No sessions yet</h3>
+                  <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                    Scheduled study sessions let members book hourly time slots in advance. They pay coins to reserve,
+                    then earn rewards for showing up. Configure the lobby and room channels to get started.
+                  </p>
+                  <button
+                    onClick={() => setTab("settings")}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    <Settings size={14} /> Go to Settings
+                  </button>
+                </div>
               )}
 
-              {loading ? (
+              {/* ============= OVERVIEW TAB ============= */}
+              {tab === "overview" && !isEmpty && (
                 <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
-                      <div className="h-5 bg-muted rounded w-1/4 mb-4" />
-                      <div className="space-y-3">
-                        <div className="h-10 bg-muted rounded" />
-                        <div className="h-10 bg-muted rounded w-3/4" />
-                      </div>
+                  {statsLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                          <div className="h-5 bg-muted rounded w-1/4 mb-4" />
+                          <div className="h-12 bg-muted rounded w-1/2" />
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              ) : !data ? (
-                <div className="text-center py-20">
-                  <p className="text-muted-foreground">Unable to load schedule settings. You may not have moderator permissions.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <SectionCard
-                    title="Session Channels"
-                    description="Where members wait and where sessions are held"
-                    icon={<Clock size={18} />}
-                  >
-                    <SettingRow
-                      label="Lobby Channel"
-                      description="Where members wait before joining a session"
-                      tooltip="Members join this voice channel when their session time arrives. They wait here until they're moved to the session room."
-                    >
-                      <ChannelSelect
-                        guildId={guildId}
-                        value={data.lobby_channel}
-                        onChange={(v) => set("lobby_channel", (v as string) || null)}
-                        channelTypes={[2]}
-                        placeholder="Select lobby channel"
-                      />
-                    </SettingRow>
-                    <SettingRow
-                      label="Session Room"
-                      description="Where the actual study session takes place"
-                      tooltip="After the lobby, members are moved to this voice channel for the study session. Attendance is tracked here."
-                    >
-                      <ChannelSelect
-                        guildId={guildId}
-                        value={data.room_channel}
-                        onChange={(v) => set("room_channel", (v as string) || null)}
-                        channelTypes={[2]}
-                        placeholder="Select session room"
-                      />
-                    </SettingRow>
-                    {/* --- AI-MODIFIED (2026-03-13) --- */}
-                    {/* Purpose: added schedule_channels multi-select editor */}
-                    <SettingRow
-                      label="Schedule Channels"
-                      description="Voice channels where scheduled sessions can take place"
-                      tooltip="Select which voice channels are available for scheduled study sessions. Members will be able to book sessions in these channels."
-                    >
-                      <ChannelSelect
-                        guildId={guildId}
-                        value={data.schedule_channels.map((ch) => ch.channelid)}
-                        onChange={(v) => {
-                          const ids = Array.isArray(v) ? v : v ? [v] : []
-                          set("schedule_channels", ids.map((channelid: string) => ({ channelid })))
-                        }}
-                        channelTypes={[2]}
-                        multiple
-                        placeholder="Select schedule channels"
-                      />
-                    </SettingRow>
-                    {/* --- END AI-MODIFIED --- */}
-                  </SectionCard>
+                  ) : stats ? (
+                    <>
+                      {/* Stat Cards */}
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                        <StatCard
+                          label="Total Sessions"
+                          value={stats.summary.totalSessions.toLocaleString()}
+                          sub={`${stats.summary.sessionsThisWeek} this week`}
+                          icon={<Calendar size={18} />}
+                          color="text-indigo-400"
+                        />
+                        <StatCard
+                          label="Total Bookings"
+                          value={stats.summary.totalBookings.toLocaleString()}
+                          sub={`${stats.summary.bookingsThisWeek} this week`}
+                          icon={<Users size={18} />}
+                          color="text-blue-400"
+                        />
+                        <StatCard
+                          label="Attendance Rate"
+                          value={`${stats.summary.attendanceRate}%`}
+                          sub={`${stats.summary.totalAttended} attended, ${stats.summary.totalMissed} missed`}
+                          icon={<CheckCircle size={18} />}
+                          color={stats.summary.attendanceRate >= 70 ? "text-emerald-400" : stats.summary.attendanceRate >= 40 ? "text-amber-400" : "text-red-400"}
+                        />
+                        <StatCard
+                          label="Active This Week"
+                          value={stats.summary.activeThisWeek}
+                          sub={`${stats.summary.uniqueMembers} all-time members`}
+                          icon={<Zap size={18} />}
+                          color="text-amber-400"
+                        />
+                        <StatCard
+                          label="Net Coin Flow"
+                          value={`${stats.coinFlow.netFlow >= 0 ? "+" : ""}${stats.coinFlow.netFlow.toLocaleString()}`}
+                          sub={`${stats.coinFlow.totalSpent.toLocaleString()} spent, ${stats.coinFlow.totalEarned.toLocaleString()} earned`}
+                          icon={stats.coinFlow.netFlow >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
+                          color={stats.coinFlow.netFlow >= 0 ? "text-emerald-400" : "text-red-400"}
+                        />
+                      </div>
 
-                  <SectionCard
-                    title="Rewards"
-                    description="Coins for booking and attending"
-                    icon={<Calendar size={18} />}
-                  >
-                    <SettingRow
-                      label="Booking Cost"
-                      description="Coins to book a session slot"
-                      tooltip="Members pay this amount when they reserve a slot. They get it back (plus rewards) if they attend."
-                    >
-                      <NumberInput
-                        value={data.schedule_cost}
-                        onChange={(v) => set("schedule_cost", v)}
-                        unit="coins"
-                        min={0}
-                        allowNull
-                      />
-                    </SettingRow>
-                    <SettingRow
-                      label="Attendance Reward"
-                      description="Coins earned for attending a booked session"
-                      tooltip="Members who show up for their session receive this reward on top of their refunded booking cost."
-                    >
-                      <NumberInput
-                        value={data.reward}
-                        onChange={(v) => set("reward", v)}
-                        unit="coins"
-                        min={0}
-                        allowNull
-                      />
-                    </SettingRow>
-                    <SettingRow
-                      label="Full Group Bonus"
-                      description="Extra coins when every booked member shows up"
-                      tooltip="If all members who booked a session attend, everyone gets this bonus on top of the attendance reward."
-                    >
-                      <NumberInput
-                        value={data.bonus_reward}
-                        onChange={(v) => set("bonus_reward", v)}
-                        unit="coins"
-                        min={0}
-                        allowNull
-                      />
-                    </SettingRow>
-                  </SectionCard>
+                      {/* Attendance Trend Chart */}
+                      <SectionCard title="Attendance Trend" description="Bookings and attendance over the last 30 days" icon={<BarChart3 size={18} />}>
+                        {stats.dailyTrend.some((d) => d.bookings > 0) ? (
+                          <div className="h-64">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart data={stats.dailyTrend} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="date" tickFormatter={formatDateShort} tick={{ fontSize: 10, fill: "#9ca3af" }} interval="preserveStartEnd" />
+                                <YAxis yAxisId="left" tick={{ fontSize: 10, fill: "#9ca3af" }} />
+                                <YAxis yAxisId="right" orientation="right" domain={[0, 100]} tick={{ fontSize: 10, fill: "#9ca3af" }} tickFormatter={(v) => `${v}%`} />
+                                <RechartsTooltip
+                                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px", fontSize: "12px" }}
+                                  labelStyle={{ color: "#9ca3af" }}
+                                  labelFormatter={formatDateShort}
+                                />
+                                <Legend wrapperStyle={{ fontSize: "11px" }} />
+                                <Bar yAxisId="left" dataKey="bookings" fill="#6366f1" opacity={0.3} name="Bookings" radius={[2, 2, 0, 0]} />
+                                <Bar yAxisId="left" dataKey="attended" fill="#22c55e" opacity={0.6} name="Attended" radius={[2, 2, 0, 0]} />
+                                <Line yAxisId="right" dataKey="rate" stroke="#f59e0b" strokeWidth={2} dot={false} name="Rate (%)" />
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-8">No session data in the last 30 days</p>
+                        )}
+                      </SectionCard>
 
-                  <SectionCard
-                    title="Attendance Rules"
-                    description="Minimum attendance and blacklist settings"
-                    icon={<Clock size={18} />}
-                  >
-                    <SettingRow
-                      label="Minimum Attendance"
-                      description="Minimum members required for a session to count"
-                      tooltip="If fewer than this many members attend, the session may not count for rewards. Set to 1 to allow solo sessions."
-                    >
-                      <NumberInput
-                        value={data.min_attendance}
-                        onChange={(v) => set("min_attendance", v)}
-                        min={1}
-                        allowNull
-                        placeholder="e.g. 2"
-                      />
-                    </SettingRow>
-                    <SettingRow
-                      label="Blacklist Role"
-                      description="Role to assign after too many no-shows"
-                      tooltip="Members who miss sessions repeatedly get this role, which can restrict their ability to book future sessions."
-                    >
-                      <RoleSelect
-                        guildId={guildId}
-                        value={data.blacklist_role}
-                        onChange={(v) => set("blacklist_role", (v as string) || null)}
-                        placeholder="Select blacklist role"
-                      />
-                    </SettingRow>
-                    <SettingRow
-                      label="Blacklist After"
-                      description="Number of no-shows before blacklist"
-                      tooltip="After this many missed sessions without attending, a member receives the blacklist role."
-                    >
-                      <NumberInput
-                        value={data.blacklist_after}
-                        onChange={(v) => set("blacklist_after", v)}
-                        min={1}
-                        allowNull
-                        placeholder="e.g. 3"
-                      />
-                    </SettingRow>
-                  </SectionCard>
+                      {/* Heatmap + Upcoming side by side */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <SectionCard title="Booking Heatmap" description="When members prefer to study (UTC)" icon={<Clock size={18} />}>
+                          {stats.heatmap.length > 0 ? (
+                            <BookingHeatmap data={stats.heatmap} />
+                          ) : (
+                            <p className="text-sm text-muted-foreground text-center py-8">No booking data yet</p>
+                          )}
+                        </SectionCard>
+
+                        <SectionCard title="Upcoming Sessions" description="Sessions in the next 24 hours" icon={<Calendar size={18} />}>
+                          {stats.upcoming.length > 0 ? (
+                            <div className="space-y-3">
+                              {stats.upcoming.map((s) => (
+                                <div key={s.slotid} className="bg-gray-800/40 rounded-lg p-3">
+                                  <div className="flex items-center justify-between mb-2">
+                                    <span className="text-sm font-medium text-foreground">{formatSlotTime(s.slotTime)}</span>
+                                    <span className="text-xs text-muted-foreground">{s.memberCount} booked</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 flex-wrap">
+                                    {s.members.slice(0, 8).map((m) => (
+                                      <button key={m.userId} onClick={() => setPanelUserId(m.userId)} title={m.name}>
+                                        <MemberAvatar url={m.avatarUrl} name={m.name} size={24} />
+                                      </button>
+                                    ))}
+                                    {s.members.length > 8 && (
+                                      <span className="text-xs text-muted-foreground ml-1">+{s.members.length - 8}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8">
+                              <Calendar size={24} className="mx-auto text-muted-foreground/40 mb-2" />
+                              <p className="text-sm text-muted-foreground">No upcoming sessions</p>
+                            </div>
+                          )}
+                        </SectionCard>
+                      </div>
+
+                      {/* Coin Flow Summary */}
+                      <SectionCard title="Coin Flow" description="How coins move through the schedule system" icon={<Coins size={18} />}>
+                        <div className="flex items-center justify-around py-4">
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Booking Costs</p>
+                            <p className="text-2xl font-bold text-red-400">{stats.coinFlow.totalSpent.toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">coins collected</p>
+                          </div>
+                          <ArrowRight size={24} className="text-muted-foreground/40" />
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Rewards Paid</p>
+                            <p className="text-2xl font-bold text-emerald-400">{stats.coinFlow.totalEarned.toLocaleString()}</p>
+                            <p className="text-xs text-muted-foreground">coins distributed</p>
+                          </div>
+                          <ArrowRight size={24} className="text-muted-foreground/40" />
+                          <div className="text-center">
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Net Flow</p>
+                            <p className={`text-2xl font-bold ${stats.coinFlow.netFlow >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                              {stats.coinFlow.netFlow >= 0 ? "+" : ""}{stats.coinFlow.netFlow.toLocaleString()}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{stats.coinFlow.netFlow >= 0 ? "members earn more" : "coin sink"}</p>
+                          </div>
+                        </div>
+                      </SectionCard>
+                    </>
+                  ) : null}
                 </div>
               )}
 
-              <SaveBar
-                show={!!hasChanges}
-                onSave={handleSave}
-                onReset={handleReset}
-                saving={saving}
-              />
+              {/* ============= SESSIONS TAB ============= */}
+              {tab === "sessions" && !isEmpty && (
+                <div className="space-y-4">
+                  {historyLoading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3, 4].map((i) => (
+                        <div key={i} className="bg-card/50 border border-border rounded-xl p-5 animate-pulse">
+                          <div className="h-4 bg-muted rounded w-1/3 mb-3" />
+                          <div className="h-3 bg-muted rounded w-1/2" />
+                        </div>
+                      ))}
+                    </div>
+                  ) : history && history.sessions.length > 0 ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">{history.totalCount} total sessions</p>
+                      {history.sessions.map((s) => {
+                        const expanded = expandedSessions.has(s.slotid)
+                        const rateColor = s.attendanceRate === 100 ? "text-emerald-400" : s.attendanceRate >= 50 ? "text-amber-400" : "text-red-400"
+                        const barColor = s.attendanceRate === 100 ? "bg-emerald-500" : s.attendanceRate >= 50 ? "bg-amber-500" : "bg-red-500"
+                        const isOpen = !s.closedAt
+                        return (
+                          <div key={s.slotid} className="bg-card/50 border border-border rounded-xl overflow-hidden">
+                            <button
+                              onClick={() => toggleSession(s.slotid)}
+                              className="w-full p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-colors text-left"
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <span className="text-sm font-medium text-foreground">{formatSlotTime(s.slotTime)}</span>
+                                  {isOpen && (
+                                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-medium">LIVE</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <span>{s.totalBooked} booked</span>
+                                  <span className="text-emerald-400">{s.totalAttended} attended</span>
+                                  {s.totalMissed > 0 && <span className="text-red-400">{s.totalMissed} missed</span>}
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="w-20">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className={`text-xs font-bold ${rateColor}`}>{s.attendanceRate}%</span>
+                                  </div>
+                                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                    <div className={`h-full rounded-full ${barColor}`} style={{ width: `${s.attendanceRate}%` }} />
+                                  </div>
+                                </div>
+                                {expanded ? <ChevronUp size={16} className="text-muted-foreground" /> : <ChevronDown size={16} className="text-muted-foreground" />}
+                              </div>
+                            </button>
+                            {expanded && (
+                              <div className="border-t border-border px-4 py-3 bg-gray-800/20">
+                                {s.members.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {s.members.map((m) => (
+                                      <div key={m.userId} className="flex items-center gap-3 py-1">
+                                        <button onClick={() => setPanelUserId(m.userId)} className="flex items-center gap-2 min-w-0 flex-1 hover:opacity-80 text-left">
+                                          <MemberAvatar url={m.avatarUrl} name={m.name} size={24} />
+                                          <span className="text-sm text-foreground truncate">{m.name}</span>
+                                        </button>
+                                        <span className="text-xs text-muted-foreground">{formatClock(m.clock)}</span>
+                                        {m.attended ? (
+                                          <span className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle size={12} /> Attended</span>
+                                        ) : (
+                                          <span className="flex items-center gap-1 text-xs text-red-400"><XCircle size={12} /> Missed</span>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground">No members booked for this session</p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+
+                      {/* Pagination */}
+                      {totalHistoryPages > 1 && (
+                        <div className="flex items-center justify-center gap-2 pt-2">
+                          <button
+                            onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                            disabled={historyPage <= 1}
+                            className="p-2 rounded-lg hover:bg-gray-800 disabled:opacity-30 transition-colors"
+                          >
+                            <ChevronLeft size={16} />
+                          </button>
+                          <span className="text-sm text-muted-foreground">
+                            Page {historyPage} of {totalHistoryPages}
+                          </span>
+                          <button
+                            onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
+                            disabled={historyPage >= totalHistoryPages}
+                            className="p-2 rounded-lg hover:bg-gray-800 disabled:opacity-30 transition-colors"
+                          >
+                            <ChevronRight size={16} />
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-center py-12">
+                      <p className="text-sm text-muted-foreground">No session history found</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ============= MEMBERS TAB ============= */}
+              {tab === "members" && !isEmpty && (
+                <div className="space-y-4">
+                  {statsLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                          <div className="h-5 bg-muted rounded w-1/4 mb-4" />
+                          <div className="space-y-3">
+                            <div className="h-8 bg-muted rounded" />
+                            <div className="h-8 bg-muted rounded" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : stats ? (
+                    <>
+                      {/* Most Reliable */}
+                      <SectionCard title="Most Reliable" description="Highest attendance rate (minimum 3 sessions)" icon={<Award size={18} />} badge={`${stats.topMembers.mostReliable.length}`}>
+                        {stats.topMembers.mostReliable.length > 0 ? (
+                          <div className="space-y-1">
+                            {stats.topMembers.mostReliable.map((m, i) => (
+                              <button
+                                key={m.userId}
+                                onClick={() => setPanelUserId(m.userId)}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                              >
+                                <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
+                                <MemberAvatar url={m.avatarUrl} name={m.name} />
+                                <span className="text-sm text-foreground truncate flex-1">{m.name}</span>
+                                <span className="text-xs text-muted-foreground">{m.totalAttended}/{m.totalBooked} sessions</span>
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                  m.rate === 100 ? "bg-emerald-500/15 text-emerald-400" : "bg-amber-500/15 text-amber-400"
+                                }`}>
+                                  {m.rate}%
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-6">No members with 3+ sessions yet</p>
+                        )}
+                      </SectionCard>
+
+                      {/* Most Active */}
+                      <SectionCard title="Most Active Bookers" description="Members who book the most sessions" icon={<TrendingUp size={18} />} badge={`${stats.topMembers.mostActive.length}`}>
+                        {stats.topMembers.mostActive.length > 0 ? (
+                          <div className="space-y-1">
+                            {stats.topMembers.mostActive.map((m, i) => (
+                              <button
+                                key={m.userId}
+                                onClick={() => setPanelUserId(m.userId)}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                              >
+                                <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
+                                <MemberAvatar url={m.avatarUrl} name={m.name} />
+                                <span className="text-sm text-foreground truncate flex-1">{m.name}</span>
+                                <span className="text-xs font-bold text-primary">{m.totalBooked} bookings</span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-6">No bookings yet</p>
+                        )}
+                      </SectionCard>
+
+                      {/* Biggest No-Shows */}
+                      <SectionCard title="Most No-Shows" description="Members who missed the most sessions" icon={<AlertTriangle size={18} />} badge={`${stats.topMembers.mostNoShows.length}`}>
+                        {stats.topMembers.mostNoShows.length > 0 ? (
+                          <div className="space-y-1">
+                            {stats.topMembers.mostNoShows.map((m, i) => (
+                              <button
+                                key={m.userId}
+                                onClick={() => setPanelUserId(m.userId)}
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                              >
+                                <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
+                                <MemberAvatar url={m.avatarUrl} name={m.name} />
+                                <span className="text-sm text-foreground truncate flex-1">{m.name}</span>
+                                <span className="text-xs text-muted-foreground">{m.totalBooked} booked</span>
+                                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-400">
+                                  {m.totalMissed} missed
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-6">No missed sessions</p>
+                        )}
+                      </SectionCard>
+
+                      {/* Blacklist Info */}
+                      {config?.blacklist_role && (
+                        <SectionCard title="Blacklist Settings" description="Auto-restriction for repeated no-shows" icon={<AlertTriangle size={18} />}>
+                          <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-4 text-sm text-amber-200/80">
+                            Members who miss <span className="font-bold text-amber-400">{config.blacklist_after || "?"}</span> sessions
+                            within 24 hours will automatically receive the blacklist role and be blocked from future bookings.
+                          </div>
+                        </SectionCard>
+                      )}
+                    </>
+                  ) : null}
+                </div>
+              )}
+
+              {/* ============= SETTINGS TAB ============= */}
+              {tab === "settings" && (
+                <div className="space-y-4">
+                  {configLoading ? (
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                          <div className="h-5 bg-muted rounded w-1/4 mb-4" />
+                          <div className="space-y-3">
+                            <div className="h-10 bg-muted rounded" />
+                            <div className="h-10 bg-muted rounded w-3/4" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : !config ? (
+                    <div className="text-center py-20">
+                      <p className="text-muted-foreground">Unable to load schedule settings.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <SectionCard
+                        title="Session Channels"
+                        description="Where members wait and where sessions are held"
+                        icon={<Clock size={18} />}
+                      >
+                        <SettingRow
+                          label="Lobby Channel"
+                          description="Text channel for session announcements and status updates"
+                          impactText={stats && stats.summary.sessionsThisWeek > 0 ? `${stats.summary.sessionsThisWeek} sessions announced this week` : undefined}
+                        >
+                          <ChannelSelect
+                            guildId={guildId}
+                            value={config.lobby_channel}
+                            onChange={(v) => setField("lobby_channel", (v as string) || null)}
+                            channelTypes={[0, 2]}
+                            placeholder="Select lobby channel"
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Session Room"
+                          description="Voice channel (or category) for the study session"
+                          impactText={config.room_channel ? undefined : "Not set -- sessions cannot run without a room"}
+                        >
+                          <ChannelSelect
+                            guildId={guildId}
+                            value={config.room_channel}
+                            onChange={(v) => setField("room_channel", (v as string) || null)}
+                            channelTypes={[2, 4]}
+                            placeholder="Select session room"
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Schedule Channels"
+                          description="Voice channels that count for attendance tracking"
+                        >
+                          <ChannelSelect
+                            guildId={guildId}
+                            value={config.schedule_channels.map((ch) => ch.channelid)}
+                            onChange={(v) => {
+                              const ids = Array.isArray(v) ? v : v ? [v] : []
+                              setField("schedule_channels", ids.map((channelid: string) => ({ channelid })))
+                            }}
+                            channelTypes={[2]}
+                            multiple
+                            placeholder="Select schedule channels"
+                          />
+                        </SettingRow>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Rewards"
+                        description="Coins for booking and attending sessions"
+                        icon={<Coins size={18} />}
+                      >
+                        <SettingRow
+                          label="Booking Cost"
+                          description="Coins deducted when a member books a slot"
+                          impactText={stats ? `${stats.coinFlow.totalSpent.toLocaleString()} coins collected from bookings all-time` : undefined}
+                        >
+                          <NumberInput
+                            value={config.schedule_cost}
+                            onChange={(v) => setField("schedule_cost", v)}
+                            unit="coins"
+                            min={0}
+                            allowNull
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Attendance Reward"
+                          description="Coins earned for attending a booked session"
+                          impactText={stats ? `${stats.coinFlow.totalEarned.toLocaleString()} coins paid in rewards all-time` : undefined}
+                        >
+                          <NumberInput
+                            value={config.reward}
+                            onChange={(v) => setField("reward", v)}
+                            unit="coins"
+                            min={0}
+                            allowNull
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Full Group Bonus"
+                          description="Extra coins when every booked member attends"
+                        >
+                          <NumberInput
+                            value={config.bonus_reward}
+                            onChange={(v) => setField("bonus_reward", v)}
+                            unit="coins"
+                            min={0}
+                            allowNull
+                          />
+                        </SettingRow>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Attendance Rules"
+                        description="Minimum attendance and no-show penalties"
+                        icon={<Clock size={18} />}
+                      >
+                        <SettingRow
+                          label="Minimum Attendance"
+                          description="Minutes in voice to count as attended (1-60)"
+                        >
+                          <NumberInput
+                            value={config.min_attendance}
+                            onChange={(v) => setField("min_attendance", v)}
+                            unit="minutes"
+                            min={1}
+                            max={60}
+                            allowNull
+                            placeholder="e.g. 10"
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Blacklist Role"
+                          description="Role assigned after too many no-shows, blocking future bookings"
+                        >
+                          <RoleSelect
+                            guildId={guildId}
+                            value={config.blacklist_role}
+                            onChange={(v) => setField("blacklist_role", (v as string) || null)}
+                            placeholder="Select blacklist role"
+                          />
+                        </SettingRow>
+                        <SettingRow
+                          label="Blacklist After"
+                          description="Missed sessions within 24 hours before auto-blacklist"
+                        >
+                          <NumberInput
+                            value={config.blacklist_after}
+                            onChange={(v) => setField("blacklist_after", v)}
+                            min={1}
+                            max={24}
+                            allowNull
+                            placeholder="e.g. 3"
+                          />
+                        </SettingRow>
+                      </SectionCard>
+                    </>
+                  )}
+
+                  <SaveBar
+                    show={!!configChanged}
+                    onSave={handleSave}
+                    onReset={handleReset}
+                    saving={saving}
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
+
+        {/* Member Detail Panel */}
+        <MemberDetailPanel
+          open={!!panelUserId}
+          onClose={() => setPanelUserId(null)}
+          data={panelData as any}
+          loading={panelLoading}
+          onWarn={() => {}}
+          onNote={() => {}}
+          onRestrict={() => {}}
+          onResolve={() => {}}
+          onAdjustCoins={() => {}}
+        />
       </AdminGuard>
     </Layout>
   )
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add getServerSideProps for i18n serverSideTranslations
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
   },
 })
-// --- END AI-MODIFIED ---
