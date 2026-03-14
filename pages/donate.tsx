@@ -168,11 +168,15 @@ export default function Donate() {
                 </div>
               </div>
               <div className="flex-1 max-w-sm flex items-center justify-center">
-                <div className="p-8 rounded-2xl bg-card border border-border">
-                  <Diamond className="h-24 w-24 text-primary mx-auto" />
-                  <p className="text-center text-muted-foreground mt-4 text-sm">
-                    LionGems
-                  </p>
+                <div className="relative">
+                  <div className="absolute -inset-6 bg-[radial-gradient(ellipse_at_center,_rgba(59,130,246,0.12),_transparent_70%)] blur-lg" />
+                  <div className="relative grid grid-cols-2 gap-3 max-w-[280px]">
+                    {DonationsData.slice(2, 6).map((item, i) => (
+                      <div key={i} className="rounded-xl border border-border/50 bg-card/50 backdrop-blur-sm p-3 flex items-center justify-center">
+                        <Image src={item.image} alt={`${item.tokens} gems`} width={100} height={100} objectFit="contain" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -180,9 +184,9 @@ export default function Donate() {
         </section>
 
         {/* Perks */}
-        <section className="py-12 lg:py-16 border-t border-border bg-card/30">
+        <section className="py-16 lg:py-20 border-t border-border bg-card/30">
           <div className="max-w-6xl mx-auto px-4 lg:px-6">
-            <h2 className="text-2xl font-bold text-foreground text-center mb-8">
+            <h2 className="text-2xl font-bold text-foreground text-center mb-10">
               {t("perks.title")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -194,15 +198,15 @@ export default function Donate() {
               ].map(({ icon: Icon, key }) => (
                 <div
                   key={key}
-                  className="rounded-lg border border-border bg-card p-5 hover:border-primary/30 transition-colors"
+                  className="rounded-lg border border-border bg-card p-6 hover:border-primary/30 hover:shadow-md hover:translate-y-[-2px] transition-all duration-200"
                 >
-                  <div className="p-2 rounded-lg bg-primary/10 w-fit mb-3">
-                    <Icon className="h-5 w-5 text-primary" />
+                  <div className="p-3 rounded-lg bg-primary/10 w-fit mb-4">
+                    <Icon className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="font-semibold text-foreground mb-1">
+                  <h3 className="font-semibold text-foreground mb-1.5">
                     {t(`perks.${key}`)}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
                     {t(`perks.${key}Desc`)}
                   </p>
                 </div>
@@ -212,31 +216,31 @@ export default function Donate() {
         </section>
 
         {/* Premium Plans */}
-        <section id="premium" className="py-12 lg:py-16 scroll-mt-20">
+        <section id="premium" className="py-16 lg:py-20 scroll-mt-20">
           <div className="max-w-4xl mx-auto px-4 lg:px-6">
             <h2 className="text-2xl font-bold text-foreground text-center">
               {t("premium.title")}
             </h2>
-            <p className="text-muted-foreground text-center mt-2 mb-8">
+            <p className="text-muted-foreground text-center mt-2 mb-10">
               {t("premium.subtitle")}
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {premiumPlans.map((plan) => (
                 <div
                   key={plan.duration}
-                  className={`rounded-lg border p-6 text-center transition-colors ${
+                  className={`rounded-xl border p-6 text-center transition-all duration-200 ${
                     plan.popular
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border bg-card hover:border-primary/30"
+                      ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-lg shadow-primary/10 scale-[1.02]"
+                      : "border-border bg-card hover:border-primary/30 hover:translate-y-[-2px]"
                   }`}
                 >
                   {plan.popular && (
-                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/15 text-primary mb-3">
+                    <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-primary text-primary-foreground mb-4">
                       <Star className="h-3 w-3" />
                       {t("premium.mostPopular")}
                     </span>
                   )}
-                  <div className="text-3xl font-bold text-foreground">
+                  <div className="text-4xl font-bold text-foreground">
                     <Diamond className="h-5 w-5 inline text-primary mr-1" />
                     {numberWithCommas(plan.gems)}
                   </div>
@@ -265,7 +269,7 @@ export default function Donate() {
         </section>
 
         {/* Gem Packages */}
-        <section id="gems" className="py-12 lg:py-16 border-t border-border bg-card/30 scroll-mt-20">
+        <section id="gems" className="py-16 lg:py-20 border-t border-border bg-card/30 scroll-mt-20">
           <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <h2 className="text-2xl font-bold text-foreground text-center mb-8">
               {t("gems.title")}
@@ -275,7 +279,7 @@ export default function Donate() {
                 <button
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-lg transition-all p-5 text-left group"
+                  className="rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] transition-all duration-200 p-5 text-left group"
                 >
                   <div className="flex items-center justify-center h-36 mb-4">
                     <Image

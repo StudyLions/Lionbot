@@ -5,7 +5,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { signIn, signOut, useSession } from "next-auth/react";
-import { Menu, ExternalLink, Diamond, LogIn, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
+import { Menu, ExternalLink, Diamond, LogIn, LogOut, LayoutDashboard, ChevronRight, User, Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Sheet,
@@ -118,25 +118,62 @@ export default function Header() {
                         className="fixed inset-0 z-40"
                         onClick={() => setDropdownOpen(false)}
                       />
-                      <div className="absolute right-0 top-12 z-50 w-48 rounded-lg border border-border bg-popover shadow-lg py-1">
+                      <div className="absolute right-0 top-12 z-50 w-56 rounded-xl border border-border bg-popover shadow-2xl shadow-black/50 animate-in fade-in-0 zoom-in-95 duration-150 py-2">
+                        {/* User info */}
+                        <div className="flex items-center gap-3 px-4 py-2.5">
+                          {session.user?.image && (
+                            <img src={session.user.image} alt="" className="h-9 w-9 rounded-full" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-foreground truncate">
+                              {session.user?.name || "User"}
+                            </p>
+                            <p className="text-xs text-muted-foreground">Signed in</p>
+                          </div>
+                        </div>
+                        <div className="my-1 border-t border-border" />
+                        {/* Links */}
                         <Link href="/dashboard">
                           <a
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
                             onClick={() => setDropdownOpen(false)}
                           >
-                            <LayoutDashboard className="h-4 w-4" />
+                            <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                             Dashboard
                           </a>
                         </Link>
+                        <Link href="/dashboard/profile">
+                          <a
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
+                            onClick={() => setDropdownOpen(false)}
+                          >
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            Profile
+                          </a>
+                        </Link>
+                        <div className="my-1 border-t border-border" />
+                        {/* Language (placeholder row) */}
+                        <div className="flex items-center justify-between px-4 py-2.5 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-3">
+                            <Globe className="h-4 w-4" />
+                            Language
+                          </div>
+                          <div className="flex items-center gap-1 text-xs">
+                            EN
+                            <ChevronRight className="h-3 w-3" />
+                          </div>
+                        </div>
+                        <div className="my-1 border-t border-border" />
+                        {/* Sign out */}
                         <button
                           onClick={() => {
                             setDropdownOpen(false);
                             signOut();
                           }}
-                          className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-popover-foreground hover:bg-accent transition-colors"
+                          className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-destructive hover:bg-accent transition-colors"
                         >
                           <LogOut className="h-4 w-4" />
-                          Sign Out
+                          Log out
                         </button>
                       </div>
                     </>
