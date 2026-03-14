@@ -13,13 +13,19 @@ import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
 // --- Types ---
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add trend comparison fields to studyTime for overview redesign
 interface StatsResponse {
   studyTime: {
     todayMinutes: number
+    yesterdayMinutes: number
     thisWeekMinutes: number
+    lastWeekMinutes: number
     thisMonthMinutes: number
+    lastMonthMinutes: number
     allTimeMinutes: number
   }
+// --- END AI-MODIFIED ---
   dailyStudy: Array<{ date: string; minutes: number }>
   streaks: {
     currentStreak: number
@@ -125,11 +131,28 @@ export default apiHandler({
       ? { userid: userId, guildid: guildId }
       : { userid: userId }
     const voiceWhereWithTime = (start: Date) => ({ ...voiceWhere, start_time: { gte: start } })
+    const voiceWhereWithRange = (start: Date, end: Date) => ({
+      ...voiceWhere,
+      start_time: { gte: start, lt: end },
+    })
 
-    // 1. Study time aggregates
-    const [todayAgg, weekAgg, monthAgg, allTimeAgg] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: add yesterday/lastWeek/lastMonth aggregates for trend comparisons
+    const yesterdayStart = new Date(todayStart)
+    yesterdayStart.setUTCDate(yesterdayStart.getUTCDate() - 1)
+
+    const lastWeekStart = new Date(weekStart)
+    lastWeekStart.setUTCDate(lastWeekStart.getUTCDate() - 7)
+
+    const lastMonthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1))
+
+    const [todayAgg, yesterdayAgg, weekAgg, lastWeekAgg, monthAgg, lastMonthAgg, allTimeAgg] = await Promise.all([
       prisma.voice_sessions.aggregate({
         where: voiceWhereWithTime(todayStart),
+        _sum: { duration: true },
+      }),
+      prisma.voice_sessions.aggregate({
+        where: voiceWhereWithRange(yesterdayStart, todayStart),
         _sum: { duration: true },
       }),
       prisma.voice_sessions.aggregate({
@@ -137,7 +160,15 @@ export default apiHandler({
         _sum: { duration: true },
       }),
       prisma.voice_sessions.aggregate({
+        where: voiceWhereWithRange(lastWeekStart, weekStart),
+        _sum: { duration: true },
+      }),
+      prisma.voice_sessions.aggregate({
         where: voiceWhereWithTime(monthStart),
+        _sum: { duration: true },
+      }),
+      prisma.voice_sessions.aggregate({
+        where: voiceWhereWithRange(lastMonthStart, monthStart),
         _sum: { duration: true },
       }),
       prisma.voice_sessions.aggregate({
@@ -145,12 +176,16 @@ export default apiHandler({
         _sum: { duration: true },
       }),
     ])
+    // --- END AI-MODIFIED ---
 
     const toMinutes = (s: number | null) => Math.round((s ?? 0) / 60)
     const studyTime = {
       todayMinutes: toMinutes(todayAgg._sum.duration),
+      yesterdayMinutes: toMinutes(yesterdayAgg._sum.duration),
       thisWeekMinutes: toMinutes(weekAgg._sum.duration),
+      lastWeekMinutes: toMinutes(lastWeekAgg._sum.duration),
       thisMonthMinutes: toMinutes(monthAgg._sum.duration),
+      lastMonthMinutes: toMinutes(lastMonthAgg._sum.duration),
       allTimeMinutes: toMinutes(allTimeAgg._sum.duration),
     }
 

@@ -66,6 +66,18 @@ export default apiHandler({
     return res.status(404).json({ error: "User not found in LionBot database" })
   }
 
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: enrich recent sessions with guild names for the overview activity feed
+  const uniqueGuildIds = Array.from(new Set(recentSessions.map(s => s.guildid)))
+  const guildConfigs = uniqueGuildIds.length > 0
+    ? await prisma.guild_config.findMany({
+        where: { guildid: { in: uniqueGuildIds } },
+        select: { guildid: true, name: true },
+      })
+    : []
+  const guildNameMap = new Map(guildConfigs.map(g => [g.guildid.toString(), g.name]))
+  // --- END AI-MODIFIED ---
+
   const serializable = {
     user: {
       id: userConfig.userid.toString(),
@@ -81,15 +93,21 @@ export default apiHandler({
       totalStudyTimeHours: Math.round((totalStudyTime._sum.tracked_time || 0) / 3600 * 10) / 10,
       serverCount,
     },
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: include guildName, videoDurationMinutes, streamDurationMinutes in session data
     recentSessions: recentSessions.map(s => ({
       id: s.sessionid,
       guildId: s.guildid.toString(),
+      guildName: guildNameMap.get(s.guildid.toString()) || null,
       startTime: s.start_time,
       durationMinutes: Math.round(s.duration / 60),
       liveDurationMinutes: Math.round((s.live_duration || 0) / 60),
+      videoDurationMinutes: Math.round((s.video_duration || 0) / 60),
+      streamDurationMinutes: Math.round((s.stream_duration || 0) / 60),
       tag: s.tag,
       rating: s.rating,
     })),
+    // --- END AI-MODIFIED ---
   }
 
   res.status(200).json(serializable)
