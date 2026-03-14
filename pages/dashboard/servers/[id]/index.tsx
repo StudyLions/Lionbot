@@ -13,16 +13,17 @@ import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import {
   Clock, Coins, Crown, Trophy, Dumbbell, Settings, Users, Shield,
-  Wallet, Wand2, CheckCircle2, XCircle, ChevronRight, Radio,
+  Wallet, Wand2, CheckCircle2, XCircle, ChevronRight, ChevronLeft, Radio,
   AlertTriangle, Ban, ArrowRightLeft, TrendingUp, UserPlus,
   Sparkles, Zap, Palette, HeadphonesIcon,
   MessageSquare, Target, Calendar, Camera, Monitor, Info,
   ArrowUp, ArrowDown, Minus, Medal, ChevronUp,
+  Search, Award, ArrowRight,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -332,6 +333,61 @@ export default function ServerDetail() {
 
   const isMod = perms.isModerator || perms.isAdmin
   const userRank = memberData?.leaderboardPosition
+
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: leaderboard tab state + API
+  type SLBType = "study" | "messages" | "coins"
+  type SLBPeriod = "all" | "season" | "month" | "week" | "today"
+  const [lbType, setLbType] = useState<SLBType>("study")
+  const [lbPeriod, setLbPeriod] = useState<SLBPeriod>("all")
+  const [lbPage, setLbPage] = useState(1)
+  const [lbSearch, setLbSearch] = useState("")
+  const [lbDebouncedSearch, setLbDebouncedSearch] = useState("")
+
+  useEffect(() => {
+    const t = setTimeout(() => setLbDebouncedSearch(lbSearch), 400)
+    return () => clearTimeout(t)
+  }, [lbSearch])
+
+  useEffect(() => { setLbPage(1) }, [lbType, lbPeriod, lbDebouncedSearch])
+  useEffect(() => { if (lbType === "coins") setLbPeriod("all") }, [lbType])
+
+  const lbApiUrl = useMemo(() => {
+    if (!id) return null
+    const params = new URLSearchParams({
+      guildId: id as string,
+      type: lbType,
+      period: lbPeriod,
+      page: String(lbPage),
+      pageSize: "25",
+    })
+    if (lbDebouncedSearch) params.set("search", lbDebouncedSearch)
+    return `/api/dashboard/leaderboard?${params.toString()}`
+  }, [id, lbType, lbPeriod, lbPage, lbDebouncedSearch])
+
+  const { data: lbData, isLoading: lbLoading } = useDashboard<{
+    entries: Array<{ rank: number; userId: string; displayName: string | null; value: number; isYou: boolean }>
+    totalEntries: number; totalPages: number; page: number
+    yourPosition: { rank: number; value: number } | null
+    serverName: string; seasonStart: string | null
+  }>(status === "authenticated" ? lbApiUrl : null)
+
+  const lbHasSeason = !!lbData?.seasonStart
+  const lbJumpToYou = useCallback(() => {
+    if (!lbData?.yourPosition) return
+    setLbPage(Math.ceil(lbData.yourPosition.rank / 25))
+  }, [lbData])
+
+  function lbFormatValue(value: number, type: SLBType): string {
+    if (type === "study") return value < 1 ? `${Math.round(value * 60)}m` : `${value.toFixed(1)}h`
+    return value.toLocaleString()
+  }
+  function lbUnit(type: SLBType): string {
+    if (type === "study") return "hours"
+    if (type === "messages") return "msgs"
+    return "coins"
+  }
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout
@@ -1082,79 +1138,217 @@ export default function ServerDetail() {
                     </TabsContent>
 
                     {/* ====== LEADERBOARD TAB ====== */}
+                    {/* --- AI-MODIFIED (2026-03-14) --- */}
+                    {/* Purpose: enhanced leaderboard with type tabs, period filter, podium, pagination */}
                     <TabsContent value="leaderboard" className="space-y-4">
-                      {/* Your Position */}
-                      {userRank && (
-                        <div className={`rounded-xl p-4 border flex items-center gap-4 ${
-                          userRank.rank <= 3 ? "border-amber-500/30 bg-amber-500/5" : "border-indigo-500/30 bg-indigo-500/5"
-                        }`}>
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
-                            userRank.rank === 1 ? "bg-amber-500/20 text-amber-400" :
-                            userRank.rank === 2 ? "bg-gray-300/20 text-gray-300" :
-                            userRank.rank === 3 ? "bg-amber-700/20 text-amber-600" :
-                            "bg-indigo-500/15 text-indigo-400"
-                          }`}>
-                            #{userRank.rank}
+                      {/* Controls */}
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/40 w-fit">
+                          {(["study", "messages", "coins"] as SLBType[]).map((t) => {
+                            const icons = { study: Clock, messages: MessageSquare, coins: Coins }
+                            const labels = { study: "Study Time", messages: "Messages", coins: "Coins" }
+                            const Icon = icons[t]
+                            return (
+                              <button key={t} onClick={() => setLbType(t)}
+                                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                  lbType === t ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                                }`}>
+                                <Icon size={15} />
+                                <span className="hidden sm:inline">{labels[t]}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <div className="flex items-center justify-between gap-3 flex-wrap">
+                          {lbType !== "coins" && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              {([
+                                { v: "all" as SLBPeriod, l: "All Time" },
+                                ...(lbHasSeason ? [{ v: "season" as SLBPeriod, l: "Season" }] : []),
+                                { v: "month" as SLBPeriod, l: "This Month" },
+                                { v: "week" as SLBPeriod, l: "This Week" },
+                                { v: "today" as SLBPeriod, l: "Today" },
+                              ]).map((p) => (
+                                <button key={p.v} onClick={() => setLbPeriod(p.v)}
+                                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                                    lbPeriod === p.v
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
+                                  }`}>
+                                  {p.l}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input type="text" value={lbSearch} onChange={(e) => setLbSearch(e.target.value)}
+                              placeholder="Search members..."
+                              className="pl-8 pr-3 py-1.5 text-sm rounded-lg bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-48 sm:w-40" />
                           </div>
-                          <div>
-                            <p className="text-foreground font-semibold">Your Position</p>
-                            <p className="text-sm text-muted-foreground">
-                              Rank {userRank.rank} of {userRank.total} members &middot; {data.you.trackedTimeHours}h studied &middot; {data.you.coins.toLocaleString()} coins
-                            </p>
+                        </div>
+                      </div>
+
+                      {/* Your Position */}
+                      {lbData?.yourPosition && (
+                        <div className={`flex items-center justify-between gap-3 px-4 py-3 rounded-xl border ${
+                          lbData.yourPosition.rank <= 3
+                            ? "bg-gradient-to-r from-amber-500/10 to-yellow-500/5 border-amber-500/20"
+                            : "bg-gradient-to-r from-indigo-500/10 to-purple-500/5 border-indigo-500/20"
+                        }`}>
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ${
+                              lbData.yourPosition.rank <= 3 ? "bg-amber-500/20 text-amber-400" : "bg-indigo-500/20 text-indigo-400"
+                            }`}>
+                              #{lbData.yourPosition.rank}
+                            </div>
+                            <div>
+                              <p className="text-sm font-semibold text-foreground">Your Position</p>
+                              <p className="text-xs text-muted-foreground">
+                                #{lbData.yourPosition.rank.toLocaleString()} of {lbData.totalEntries.toLocaleString()} members
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <div className="text-right">
+                              <p className="text-sm font-bold text-foreground tabular-nums">{lbFormatValue(lbData.yourPosition.value, lbType)}</p>
+                              <p className="text-xs text-muted-foreground">{lbUnit(lbType)}</p>
+                            </div>
+                            {Math.ceil(lbData.yourPosition.rank / 25) !== lbPage && (
+                              <button onClick={lbJumpToYou}
+                                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                                Jump <ArrowRight size={12} />
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
 
                       <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                        <div className="p-5 border-b border-border">
-                          <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                            <Trophy size={18} />
-                            Study Time Leaderboard
-                          </h3>
-                        </div>
-                        <div className="overflow-x-auto">
-                          <table className="w-full">
-                            <thead>
-                              <tr className="border-b border-border/50">
-                                <th className="text-left py-3 px-5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Rank</th>
-                                <th className="text-left py-3 px-5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Member</th>
-                                <th className="text-right py-3 px-5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Study Time</th>
-                                <th className="text-right py-3 px-5 text-xs font-medium text-muted-foreground uppercase tracking-wider">Coins</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {data.leaderboard.map((entry) => (
-                                <tr key={entry.userId} className={`border-b border-border/30 last:border-0 ${entry.isYou ? "bg-indigo-500/10" : "hover:bg-accent"}`}>
-                                  <td className="py-3 px-5">
-                                    {entry.rank <= 3 ? (
-                                      <span className={`inline-flex items-center gap-1 font-bold ${
-                                        entry.rank === 1 ? "text-amber-400" : entry.rank === 2 ? "text-gray-300" : "text-amber-600"
-                                      }`}>
-                                        <Medal size={14} />
-                                        #{entry.rank}
-                                      </span>
-                                    ) : (
-                                      <span className="text-muted-foreground font-bold">#{entry.rank}</span>
-                                    )}
-                                  </td>
-                                  <td className="py-3 px-5">
-                                    <span className={`font-medium ${entry.isYou ? "text-indigo-400" : "text-foreground"}`}>
-                                      {entry.displayName || `User ...${entry.userId.slice(-4)}`}
-                                    </span>
-                                    {entry.isYou && <span className="ml-2"><Badge variant="info" size="sm">you</Badge></span>}
-                                  </td>
-                                  <td className="py-3 px-5 text-right"><span className="text-success font-mono">{entry.trackedTimeHours}h</span></td>
-                                  <td className="py-3 px-5 text-right"><span className="text-warning font-mono">{entry.coins.toLocaleString()}</span></td>
-                                </tr>
+                        {lbLoading ? (
+                          <div className="p-6 space-y-3">
+                            <div className="flex items-end justify-center gap-4 py-6">
+                              {[1, 2, 3].map((i) => (
+                                <div key={i} className="flex flex-col items-center gap-2">
+                                  <Skeleton className={`w-12 h-12 rounded-full`} />
+                                  <Skeleton className="w-16 h-3 rounded" />
+                                  <Skeleton className={`w-20 rounded-t-lg ${i === 2 ? "h-20" : i === 1 ? "h-14" : "h-10"}`} />
+                                </div>
                               ))}
-                            </tbody>
-                          </table>
-                          {data.leaderboard.length === 0 && (
-                            <div className="text-center py-12 text-muted-foreground">No study activity yet</div>
-                          )}
-                        </div>
+                            </div>
+                            {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 rounded-lg" />)}
+                          </div>
+                        ) : !lbData || lbData.totalEntries === 0 ? (
+                          <div className="text-center py-12 text-muted-foreground">
+                            <Trophy size={32} className="mx-auto mb-2 opacity-40" />
+                            <p>{lbDebouncedSearch ? `No members matching "${lbDebouncedSearch}"` : "No activity yet for this period"}</p>
+                          </div>
+                        ) : (
+                          <>
+                            {/* Podium top 3 */}
+                            {lbPage === 1 && !lbDebouncedSearch && (() => {
+                              const top3 = lbData.entries.filter((e) => e.rank <= 3)
+                              if (top3.length === 0) return null
+                              const ordered = [
+                                top3.find((e) => e.rank === 2),
+                                top3.find((e) => e.rank === 1),
+                                top3.find((e) => e.rank === 3),
+                              ].filter(Boolean)
+                              return (
+                                <div className="flex items-end justify-center gap-3 sm:gap-2 py-6 px-4">
+                                  {ordered.map((entry) => {
+                                    if (!entry) return null
+                                    const medalColors = { 1: "text-yellow-400", 2: "text-gray-300", 3: "text-amber-600" }
+                                    const podBg = {
+                                      1: "from-yellow-500/20 to-yellow-600/5 border-yellow-500/30",
+                                      2: "from-gray-300/15 to-gray-400/5 border-gray-400/25",
+                                      3: "from-amber-600/15 to-amber-700/5 border-amber-600/25",
+                                    }
+                                    const podH = { 1: "h-24", 2: "h-16", 3: "h-12" }
+                                    return (
+                                      <div key={entry.userId} className={`flex flex-col items-center gap-2 ${entry.rank === 1 ? "w-32 sm:w-24" : "w-24 sm:w-20"}`}>
+                                        <div className={`relative flex items-center justify-center rounded-full border-2 bg-gradient-to-b ${
+                                          entry.rank === 1 ? "w-14 h-14 sm:w-12 sm:h-12 border-yellow-400/60" : "w-12 h-12 sm:w-10 sm:h-10 border-muted-foreground/30"
+                                        } ${entry.isYou ? "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background" : ""}`}>
+                                          <span className={`text-base font-bold ${entry.rank === 1 ? "text-yellow-400" : "text-muted-foreground"}`}>
+                                            {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+                                          </span>
+                                          <div className="absolute -top-2 -right-1">
+                                            {entry.rank === 1 ? <Crown size={18} className="text-yellow-400" /> :
+                                             entry.rank === 2 ? <Medal size={16} className="text-gray-300" /> :
+                                             <Award size={16} className="text-amber-600" />}
+                                          </div>
+                                        </div>
+                                        <div className="text-center">
+                                          <p className={`text-xs font-semibold truncate max-w-full ${entry.isYou ? "text-indigo-400" : "text-foreground"}`}>
+                                            {entry.displayName || "Unknown"}{entry.isYou && " (you)"}
+                                          </p>
+                                          <p className="text-[10px] text-muted-foreground">
+                                            {lbFormatValue(entry.value, lbType)} {lbUnit(lbType)}
+                                          </p>
+                                        </div>
+                                        <div className={`w-full rounded-t-lg bg-gradient-to-b border-t border-x ${podBg[entry.rank as 1 | 2 | 3]} ${podH[entry.rank as 1 | 2 | 3]}`}>
+                                          <div className="flex items-center justify-center h-full">
+                                            <span className={`text-xl font-black ${medalColors[entry.rank as 1 | 2 | 3]}`}>#{entry.rank}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              )
+                            })()}
+
+                            {/* Table for rank 4+ */}
+                            <div className="divide-y divide-border">
+                              {lbData.entries.filter((e) => e.rank > 3 || lbDebouncedSearch).map((entry) => (
+                                <div key={entry.userId}
+                                  className={`flex items-center gap-4 px-4 py-3 transition-colors ${
+                                    entry.isYou ? "bg-indigo-500/10 border-l-2 border-l-indigo-500" : "hover:bg-muted/30"
+                                  }`}>
+                                  <span className="w-10 text-sm font-mono text-muted-foreground text-right">
+                                    {entry.rank <= 3 ? (
+                                      entry.rank === 1 ? <Crown size={16} className="text-yellow-400 inline" /> :
+                                      entry.rank === 2 ? <Medal size={16} className="text-gray-300 inline" /> :
+                                      <Award size={16} className="text-amber-600 inline" />
+                                    ) : `#${entry.rank}`}
+                                  </span>
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
+                                    entry.isYou ? "bg-indigo-500/20 text-indigo-400" : "bg-muted text-muted-foreground"
+                                  }`}>
+                                    {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm font-medium truncate ${entry.isYou ? "text-indigo-400" : "text-foreground"}`}>
+                                      {entry.displayName || "Unknown User"}
+                                      {entry.isYou && <span className="ml-2 text-xs text-indigo-400/70">(you)</span>}
+                                    </p>
+                                  </div>
+                                  <span className="text-sm font-semibold text-foreground tabular-nums">{lbFormatValue(entry.value, lbType)}</span>
+                                  <span className="text-xs text-muted-foreground w-12 text-right">{lbUnit(lbType)}</span>
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Pagination */}
+                            {lbData.totalPages > 1 && (
+                              <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
+                                <button onClick={() => setLbPage(lbPage - 1)} disabled={lbPage <= 1}
+                                  className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                  <ChevronLeft size={18} />
+                                </button>
+                                <span className="text-sm text-muted-foreground px-3">Page {lbPage} of {lbData.totalPages}</span>
+                                <button onClick={() => setLbPage(lbPage + 1)} disabled={lbPage >= lbData.totalPages}
+                                  className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                                  <ChevronRight size={18} />
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
                       </div>
                     </TabsContent>
+                    {/* --- END AI-MODIFIED --- */}
                   </Tabs>
                 </>
               ) : null}
