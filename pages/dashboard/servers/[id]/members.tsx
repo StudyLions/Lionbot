@@ -18,7 +18,7 @@ import {
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useRef, useCallback } from "react"
+import { useEffect, useState, useRef, useCallback, createRef } from "react"
 import {
   Users, Download, MoreHorizontal, AlertTriangle, Coins,
   Eye, ChevronLeft, ChevronRight, Search, Filter,
@@ -48,6 +48,49 @@ interface MembersResponse {
   members: Member[]
   pagination: Pagination
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: action menu uses fixed positioning to escape table overflow:hidden
+function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
+  isOpen: boolean; onToggle: () => void; onClose: () => void
+  onView: () => void; onWarn: () => void; onCoins: () => void
+}) {
+  const btnRef = useRef<HTMLButtonElement>(null)
+  const [pos, setPos] = useState({ top: 0, left: 0 })
+
+  useEffect(() => {
+    if (isOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect()
+      setPos({ top: rect.bottom + 4, left: rect.right - 176 })
+    }
+  }, [isOpen])
+
+  return (
+    <>
+      <button
+        ref={btnRef}
+        onClick={onToggle}
+        className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-[90]" onClick={onClose} />
+          <div
+            className="fixed z-[95] w-44 bg-card border border-border rounded-lg shadow-xl py-1"
+            style={{ top: pos.top, left: pos.left }}
+          >
+            <button onClick={onView} className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"><Eye size={14} /> View Profile</button>
+            <button onClick={onWarn} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><AlertTriangle size={14} /> Add Warning</button>
+            <button onClick={onCoins} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><Coins size={14} /> Adjust Coins</button>
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+// --- END AI-MODIFIED ---
 
 export default function MembersPage() {
   const { data: session } = useSession()
@@ -252,24 +295,14 @@ export default function MembersPage() {
                               <span className="text-muted-foreground text-sm">{m.firstJoined ? new Date(m.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" }) : "--"}</span>
                             </td>
                             <td className="py-3 px-3" onClick={(e) => e.stopPropagation()}>
-                              <div className="relative">
-                                <button
-                                  onClick={() => setActionMenuId(actionMenuId === m.userId ? null : m.userId)}
-                                  className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                                >
-                                  <MoreHorizontal size={16} />
-                                </button>
-                                {actionMenuId === m.userId && (
-                                  <>
-                                    <div className="fixed inset-0 z-40" onClick={() => setActionMenuId(null)} />
-                                    <div className="absolute right-0 top-full mt-1 z-50 w-44 bg-card border border-border rounded-lg shadow-xl py-1">
-                                      <button onClick={() => { openMemberPanel(m.userId); setActionMenuId(null) }} className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"><Eye size={14} /> View Profile</button>
-                                      <button onClick={() => { setWarnTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><AlertTriangle size={14} /> Add Warning</button>
-                                      <button onClick={() => { setCoinTarget({ userId: m.userId, name: m.displayName || m.userId, balance: m.coins }); setActionMenuId(null) }} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><Coins size={14} /> Adjust Coins</button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                              <ActionMenu
+                                isOpen={actionMenuId === m.userId}
+                                onToggle={() => setActionMenuId(actionMenuId === m.userId ? null : m.userId)}
+                                onClose={() => setActionMenuId(null)}
+                                onView={() => { openMemberPanel(m.userId); setActionMenuId(null) }}
+                                onWarn={() => { setWarnTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }}
+                                onCoins={() => { setCoinTarget({ userId: m.userId, name: m.displayName || m.userId, balance: m.coins }); setActionMenuId(null) }}
+                              />
                             </td>
                           </tr>
                         ))
