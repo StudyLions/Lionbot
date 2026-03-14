@@ -29,6 +29,7 @@ interface LBEntry {
   rank: number
   userId: string
   displayName: string | null
+  avatarUrl: string | null
   value: number
   isYou: boolean
 }
@@ -213,21 +214,25 @@ function Podium({ entries, type }: { entries: LBEntry[]; type: LBType }) {
         >
           <div
             className={cn(
-              "relative flex items-center justify-center rounded-full border-2 bg-gradient-to-b",
+              "relative flex items-center justify-center rounded-full border-2 bg-gradient-to-b overflow-hidden",
               entry.rank === 1
                 ? "w-16 h-16 sm:w-14 sm:h-14 border-yellow-400/60"
                 : "w-14 h-14 sm:w-12 sm:h-12 border-muted-foreground/30",
               entry.isYou && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
             )}
           >
-            <span
-              className={cn(
-                "text-lg font-bold",
-                entry.rank === 1 ? "text-yellow-400" : "text-muted-foreground"
-              )}
-            >
-              {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
-            </span>
+            {entry.avatarUrl ? (
+              <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <span
+                className={cn(
+                  "text-lg font-bold",
+                  entry.rank === 1 ? "text-yellow-400" : "text-muted-foreground"
+                )}
+              >
+                {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+              </span>
+            )}
             <div className="absolute -top-2 -right-1">
               <MedalIcon rank={entry.rank} />
             </div>
@@ -310,16 +315,20 @@ function LeaderboardTable({
               <span className="w-10 text-sm font-mono text-muted-foreground text-right">
                 #{entry.rank}
               </span>
-              <div
-                className={cn(
-                  "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold",
-                  entry.isYou
-                    ? "bg-indigo-500/20 text-indigo-400"
-                    : "bg-muted text-muted-foreground"
-                )}
-              >
-                {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
-              </div>
+              {entry.avatarUrl ? (
+                <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+              ) : (
+                <div
+                  className={cn(
+                    "w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0",
+                    entry.isYou
+                      ? "bg-indigo-500/20 text-indigo-400"
+                      : "bg-muted text-muted-foreground"
+                  )}
+                >
+                  {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p
                   className={cn(
@@ -665,9 +674,13 @@ export default function LeaderboardPage() {
                                       <Award size={16} className="text-amber-600 inline" />
                                     )}
                                   </span>
-                                  <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
-                                    {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
-                                  </div>
+                                  {entry.avatarUrl ? (
+                                    <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
+                                      {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+                                    </div>
+                                  )}
                                   <div className="flex-1 min-w-0">
                                     <p className="text-sm font-medium truncate text-foreground">
                                       {entry.displayName || "Unknown User"}
