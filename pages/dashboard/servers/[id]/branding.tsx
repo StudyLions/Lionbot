@@ -1261,11 +1261,13 @@ export default function BrandingPage() {
               ))}
             </div>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
-              <Link href="/dashboard/gems" className="w-full">
-                <Button variant="outline" className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
-                  <Sparkles size={14} className="mr-1.5" />
-                  Get LionGems
-                </Button>
+              <Link href="/dashboard/gems">
+                <a className="w-full block">
+                  <Button variant="outline" className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
+                    <Sparkles size={14} className="mr-1.5" />
+                    Get LionGems
+                  </Button>
+                </a>
               </Link>
               <Button variant="ghost" onClick={() => setUpsellOpen(false)} className="w-full">
                 Maybe later

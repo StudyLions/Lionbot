@@ -546,12 +546,11 @@ export default function SetupWizard() {
                       </div>
                       {/* --- END AI-MODIFIED --- */}
 
-                      <Link
-                        href={`/dashboard/servers/${id}`}
-                        className="flex items-center justify-center gap-2 w-full py-4 px-6 rounded-xl bg-primary hover:bg-primary/90 text-foreground font-semibold text-lg transition-colors"
-                      >
-                        Go to Dashboard
-                        <ArrowLeft size={20} className="rotate-180" />
+                      <Link href={`/dashboard/servers/${id}`}>
+                        <a className="flex items-center justify-center gap-2 w-full py-4 px-6 rounded-xl bg-primary hover:bg-primary/90 text-foreground font-semibold text-lg transition-colors">
+                          Go to Dashboard
+                          <ArrowLeft size={20} className="rotate-180" />
+                        </a>
                       </Link>
                     </div>
                   </SectionCard>

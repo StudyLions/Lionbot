@@ -286,10 +286,10 @@ export default function ServerDetail() {
                                   : "Premium features active"}
                               </p>
                             </div>
-                            <Link href={`/dashboard/servers/${id}/branding`} className="ml-auto">
-                              <span className="px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors">
+                            <Link href={`/dashboard/servers/${id}/branding`}>
+                              <a className="ml-auto px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors">
                                 Edit Branding
-                              </span>
+                              </a>
                             </Link>
                           </div>
                         </div>

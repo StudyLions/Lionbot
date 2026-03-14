@@ -626,8 +626,10 @@ export default function Dashboard() {
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-foreground text-base">Recent Activity</CardTitle>
-                          <Link href="/dashboard/history" className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5">
-                            View all <ChevronRight size={12} />
+                          <Link href="/dashboard/history">
+                            <a className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5">
+                              View all <ChevronRight size={12} />
+                            </a>
                           </Link>
                         </div>
                       </CardHeader>
@@ -681,8 +683,10 @@ export default function Dashboard() {
                       <CardHeader className="pb-2">
                         <div className="flex items-center justify-between">
                           <CardTitle className="text-foreground text-base">Your Servers</CardTitle>
-                          <Link href="/dashboard/servers" className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5">
-                            View all <ChevronRight size={12} />
+                          <Link href="/dashboard/servers">
+                            <a className="text-xs text-primary hover:text-primary/80 flex items-center gap-0.5">
+                              View all <ChevronRight size={12} />
+                            </a>
                           </Link>
                         </div>
                       </CardHeader>
@@ -800,11 +804,11 @@ export default function Dashboard() {
                           LionBot is free and open source. LionGems help keep the project running and unlock cosmetic perks like custom skins and server branding.
                         </p>
                       </div>
-                      <Link href="/dashboard/gems" className="flex-shrink-0">
-                        <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-sm font-medium transition-colors cursor-pointer">
+                      <Link href="/dashboard/gems">
+                        <a className="flex-shrink-0 inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-amber-500/15 hover:bg-amber-500/25 text-amber-400 text-sm font-medium transition-colors cursor-pointer">
                           <Gem size={14} />
                           Get Gems
-                        </span>
+                        </a>
                       </Link>
                     </div>
                   </div>
