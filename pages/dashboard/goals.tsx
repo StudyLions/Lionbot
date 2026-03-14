@@ -3,228 +3,579 @@
 // Created: 2026-03-13
 // Purpose: Goals page - weekly and monthly study goals
 // ============================================================
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: design system migration - color classes (bg-background, text-foreground, etc.)
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: full redesign - radial progress, all goal types, checklist CRUD, period nav,
+//          cross-server summary, streaks, attendance, inline editing, celebrations
 // --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import {
-  PageHeader,
-  Badge,
-  SectionCard,
-  EmptyState,
-  toast,
-} from "@/components/dashboard/ui"
-import { useSession } from "next-auth/react"
+import { EmptyState, ConfirmModal, toast } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
-import { Target, TrendingUp, Calendar } from "lucide-react"
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add i18n imports for serverSideTranslations
+import { useSession } from "next-auth/react"
+import { useState, useCallback, useMemo } from "react"
+import { cn } from "@/lib/utils"
+import {
+  Target, ChevronLeft, ChevronRight, Flame, Trophy, BookOpen,
+  MessageSquare, CheckSquare, Plus, Trash2, Check, X, Pencil, Calendar,
+  Users,
+} from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-// --- END AI-MODIFIED ---
+
+// --- Types ---
+
+interface GoalTask { id: number; content: string; completed: boolean }
+interface Attendance { booked: number; attended: number }
 
 interface GoalItem {
   guildId: string
   serverName: string
-  weekid?: number
-  monthid?: number
+  periodId: number
   studyGoal: number | null
   taskGoal: number | null
+  messageGoal: number | null
   studyProgress: number
   tasksProgress: number
+  messageProgress: number
+  attendance: Attendance
+  goalTasks: GoalTask[]
+}
+
+interface GoalsSummary {
+  totalStudyHours: number
+  totalTasksDone: number
+  totalMessages: number
+  serversWithGoals: number
+  goalsSet: number
+  goalsMet: number
+  allGoalsMet: boolean
 }
 
 interface GoalsData {
-  weekid: number
-  monthid: number
+  weekId: number
+  monthId: number
+  weekOffset: number
+  monthOffset: number
+  weekLabel: string
+  monthLabel: string
+  canGoBack: { weekly: boolean; monthly: boolean }
+  canGoForward: { weekly: boolean; monthly: boolean }
   weekly: GoalItem[]
   monthly: GoalItem[]
+  summary: GoalsSummary
+  streaks: { weeklyStreak: number; monthlyStreak: number }
 }
 
-function ProgressBar({
-  current,
-  goal,
-  label,
-}: {
-  current: number
-  goal: number | null
-  label: string
-}) {
-  if (goal == null || goal <= 0) {
-    return (
-      <div className="space-y-1">
-        <div className="flex justify-between text-xs">
-          <span className="text-muted-foreground">{label}</span>
-          <span className="text-foreground/80">{current} / —</span>
-        </div>
-        <div className="h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-muted/80 rounded-full"
-            style={{ width: "0%" }}
-          />
-        </div>
-      </div>
-    )
-  }
+type PeriodTab = "weekly" | "monthly"
 
-  const pct = Math.min(100, (current / goal) * 100)
-  const status =
-    pct >= 100 ? "complete" : pct >= 50 ? "on_track" : "behind"
-  const barColor =
-    status === "complete"
-      ? "bg-emerald-500"
-      : status === "on_track"
-        ? "bg-green-500"
-        : "bg-amber-500"
+// --- Radial Progress Component ---
+
+function RadialProgress({
+  value, max, label, unit, size = 80, strokeWidth = 6,
+}: {
+  value: number; max: number | null; label: string; unit: string
+  size?: number; strokeWidth?: number
+}) {
+  const pct = max && max > 0 ? Math.min(100, (value / max) * 100) : 0
+  const isComplete = max != null && max > 0 && value >= max
+  const r = (size - strokeWidth) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (pct / 100) * circ
+
+  const color = isComplete ? "stroke-emerald-500" : pct >= 50 ? "stroke-amber-400" : "stroke-muted-foreground/30"
+  const textColor = isComplete ? "text-emerald-400" : "text-foreground"
 
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between text-xs">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="text-foreground/80">
-          {current} / {goal}
-        </span>
+    <div className="flex flex-col items-center gap-1">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="transform -rotate-90">
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+            className="stroke-muted/30" strokeWidth={strokeWidth} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+            className={cn(color, "transition-all duration-700")}
+            strokeWidth={strokeWidth} strokeLinecap="round"
+            strokeDasharray={circ} strokeDashoffset={offset} />
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <span className={cn("text-sm font-bold leading-none", textColor)}>
+            {max != null && max > 0 ? value : "—"}
+          </span>
+          {max != null && max > 0 && (
+            <span className="text-[9px] text-muted-foreground">/{max}{unit}</span>
+          )}
+        </div>
+        {isComplete && (
+          <div className="absolute -top-1 -right-1">
+            <Check size={14} className="text-emerald-400 bg-background rounded-full" />
+          </div>
+        )}
       </div>
-      <div className="h-2 bg-muted rounded-full overflow-hidden">
-        <div
-          className={`h-full ${barColor} rounded-full transition-all duration-300`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
+      <span className="text-[10px] text-muted-foreground font-medium">{label}</span>
     </div>
   )
 }
 
+// --- Main Component ---
+
 export default function GoalsPage() {
   const { data: session } = useSession()
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
-  const { data, error, isLoading: loading, mutate } = useDashboard<GoalsData>(session ? "/api/dashboard/goals" : null)
-  // --- END AI-MODIFIED ---
+  const [tab, setTab] = useState<PeriodTab>("weekly")
+  const [weekOffset, setWeekOffset] = useState(0)
+  const [monthOffset, setMonthOffset] = useState(0)
+  const [editingGuild, setEditingGuild] = useState<string | null>(null)
+  const [editValues, setEditValues] = useState<{ study: string; task: string; message: string }>({ study: "", task: "", message: "" })
+  const [addingTaskFor, setAddingTaskFor] = useState<string | null>(null)
+  const [newTaskContent, setNewTaskContent] = useState("")
 
-  const hasGoals =
-    data &&
-    (data.weekly.length > 0 || data.monthly.length > 0)
+  const offset = tab === "weekly" ? weekOffset : monthOffset
+  const queryParams = `weekOffset=${weekOffset}&monthOffset=${monthOffset}`
+  const { data, isLoading: loading, mutate } = useDashboard<GoalsData>(
+    session ? `/api/dashboard/goals?${queryParams}` : null
+  )
+
+  const goals = tab === "weekly" ? (data?.weekly ?? []) : (data?.monthly ?? [])
+  const summary = data?.summary ?? null
+  const streaks = data?.streaks ?? { weeklyStreak: 0, monthlyStreak: 0 }
+  const periodLabel = tab === "weekly" ? data?.weekLabel : data?.monthLabel
+  const canGoBack = tab === "weekly" ? data?.canGoBack?.weekly : data?.canGoBack?.monthly
+  const canGoForward = tab === "weekly" ? data?.canGoForward?.weekly : data?.canGoForward?.monthly
+
+  // Navigation
+  const goBack = () => tab === "weekly" ? setWeekOffset(o => o - 1) : setMonthOffset(o => o - 1)
+  const goForward = () => tab === "weekly" ? setWeekOffset(o => o + 1) : setMonthOffset(o => o + 1)
+  const goToCurrent = () => { setWeekOffset(0); setMonthOffset(0) }
+
+  // Toggle goal task
+  const toggleTask = useCallback(async (taskId: number) => {
+    try {
+      await fetch("/api/dashboard/goals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle_task", taskId, type: tab }),
+      })
+      mutate()
+    } catch { toast.error("Failed to toggle task") }
+  }, [tab, mutate])
+
+  // Add goal task
+  const addTask = useCallback(async (guildId: string, periodId: number) => {
+    if (!newTaskContent.trim()) return
+    try {
+      const res = await fetch("/api/dashboard/goals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "add_task", guildId, periodId, type: tab,
+          content: newTaskContent.trim(),
+        }),
+      })
+      if (res.ok) {
+        setNewTaskContent("")
+        setAddingTaskFor(null)
+        mutate()
+        toast.success("Goal added")
+      }
+    } catch { toast.error("Failed to add goal") }
+  }, [newTaskContent, tab, mutate])
+
+  // Delete goal task
+  const deleteTask = useCallback(async (taskId: number) => {
+    try {
+      await fetch("/api/dashboard/goals", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ taskId, type: tab }),
+      })
+      mutate()
+      toast.success("Goal removed")
+    } catch { toast.error("Failed to remove goal") }
+  }, [tab, mutate])
+
+  // Save edited goal values
+  const saveGoals = useCallback(async (guildId: string, periodId: number) => {
+    try {
+      const body: any = {
+        guildId, type: tab,
+        study_goal: editValues.study ? Number(editValues.study) : null,
+        task_goal: editValues.task ? Number(editValues.task) : null,
+        message_goal: editValues.message ? Number(editValues.message) : null,
+      }
+      if (tab === "weekly") body.weekid = periodId
+      else body.monthid = periodId
+
+      const res = await fetch("/api/dashboard/goals", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (res.ok) {
+        setEditingGuild(null)
+        mutate()
+        toast.success("Goals updated")
+      }
+    } catch { toast.error("Failed to save goals") }
+  }, [editValues, tab, mutate])
+
+  const startEditing = (g: GoalItem) => {
+    setEditingGuild(g.guildId)
+    setEditValues({
+      study: g.studyGoal?.toString() ?? "",
+      task: g.taskGoal?.toString() ?? "",
+      message: g.messageGoal?.toString() ?? "",
+    })
+  }
+
+  const isCurrent = weekOffset === 0 && monthOffset === 0
 
   return (
-    <Layout
-      SEO={{
-        title: "Goals - LionBot Dashboard",
-        description: "Set and track your weekly and monthly study goals",
-      }}
-    >
+    <Layout SEO={{ title: "Goals - LionBot Dashboard", description: "Track your study goals" }}>
       <AdminGuard>
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-4xl">
-              <PageHeader
-                title="Goals"
-                description="Set and track your weekly and monthly study goals across your servers."
-                breadcrumbs={[
-                  { label: "Dashboard", href: "/dashboard" },
-                  { label: "Goals" },
-                ]}
-              />
+            <div className="flex-1 min-w-0 max-w-3xl space-y-5">
 
-              {loading ? (
-                <div className="space-y-6">
-                  <div className="h-48 bg-card rounded-2xl animate-pulse" />
-                  <div className="h-48 bg-card rounded-2xl animate-pulse" />
+              {/* Header */}
+              <div>
+                <h1 className="text-2xl font-bold text-foreground">Goals</h1>
+                <p className="text-sm text-muted-foreground mt-0.5">
+                  Set targets, track progress, and build consistent study habits.
+                </p>
+              </div>
+
+              {/* Summary Card */}
+              {summary && goals.length > 0 && tab === "weekly" && isCurrent && (
+                <div className="bg-card rounded-xl border border-border p-4">
+                  <div className="flex items-center gap-4 flex-wrap">
+                    {/* Overall ring */}
+                    <RadialProgress
+                      value={summary.goalsMet} max={summary.goalsSet || null}
+                      label="Goals Met" unit="" size={72} strokeWidth={5}
+                    />
+                    <div className="flex-1 min-w-0 space-y-1.5">
+                      <p className="text-sm font-semibold text-foreground">
+                        {summary.goalsSet > 0
+                          ? `${summary.goalsMet} of ${summary.goalsSet} goals met this week`
+                          : "No goals set this week"}
+                      </p>
+                      <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                        <span>{summary.totalStudyHours}h studied</span>
+                        <span>{summary.totalTasksDone} tasks</span>
+                        {summary.totalMessages > 0 && <span>{summary.totalMessages} messages</span>}
+                        <span>{summary.serversWithGoals} server{summary.serversWithGoals !== 1 ? "s" : ""}</span>
+                      </div>
+                      {/* Streaks */}
+                      <div className="flex gap-3">
+                        {streaks.weeklyStreak > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-amber-400 font-medium">
+                            <Flame size={12} /> {streaks.weeklyStreak}-week streak
+                          </span>
+                        )}
+                        {streaks.monthlyStreak > 0 && (
+                          <span className="flex items-center gap-1 text-xs text-amber-400 font-medium">
+                            <Flame size={12} /> {streaks.monthlyStreak}-month streak
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    {summary.allGoalsMet && summary.goalsSet > 0 && (
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-500/30">
+                        <Trophy size={14} className="text-emerald-400" />
+                        <span className="text-xs font-semibold text-emerald-400">All goals met!</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center py-16 gap-4">
-                  <p className="text-red-400">{error.message}</p>
+              )}
+
+              {/* Period Navigation */}
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                {/* Tab switcher */}
+                <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
                   <button
-                    onClick={() => mutate()}
-                    className="text-primary hover:text-primary text-sm"
+                    onClick={() => setTab("weekly")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                      tab === "weekly" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
                   >
-                    Retry
+                    Weekly
+                  </button>
+                  <button
+                    onClick={() => setTab("monthly")}
+                    className={cn(
+                      "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
+                      tab === "monthly" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    Monthly
                   </button>
                 </div>
-              ) : !hasGoals ? (
+
+                {/* Period arrows */}
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={goBack}
+                    disabled={!canGoBack}
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <span className="text-xs font-medium text-foreground min-w-[140px] text-center">
+                    {periodLabel || "..."}
+                  </span>
+                  <button
+                    onClick={goForward}
+                    disabled={!canGoForward}
+                    className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <ChevronRight size={16} />
+                  </button>
+                  {!isCurrent && (
+                    <button
+                      onClick={goToCurrent}
+                      className="ml-1 px-2 py-1 rounded-md text-[10px] text-primary hover:bg-primary/10 transition-colors"
+                    >
+                      Current
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Goal Cards */}
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="bg-card rounded-xl border border-border p-6 animate-pulse">
+                      <div className="h-4 bg-muted rounded w-1/3 mb-4" />
+                      <div className="flex gap-6 justify-center">
+                        {[1, 2, 3].map(j => <div key={j} className="w-16 h-16 rounded-full bg-muted" />)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : goals.length === 0 ? (
                 <EmptyState
                   icon={<Target size={48} strokeWidth={1} className="text-muted-foreground" />}
-                  title="No goals set yet"
-                  description="Set weekly and monthly study goals in Discord using LionBot commands to see your progress here."
+                  title={isCurrent ? "No goals set yet" : "No goals for this period"}
+                  description={isCurrent
+                    ? "Set study goals in Discord using LionBot commands, or navigate to past weeks to see your history."
+                    : "Navigate to the current period to set goals, or go further back to see older goals."}
                 />
               ) : (
-                <div className="space-y-6">
-                  <SectionCard
-                    title="This Week"
-                    description="Weekly study and task goals"
-                    icon={<Calendar size={18} />}
-                    defaultOpen
-                  >
-                    <div className="space-y-6 pt-2">
-                      {data!.weekly.map((g) => (
-                        <div
-                          key={`${g.guildId}-${g.weekid}`}
-                          className="p-4 bg-card/50 rounded-xl border border-border/50"
-                        >
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="font-medium text-foreground">
-                              {g.serverName}
-                            </span>
-                            <Badge variant="info" size="sm">
-                              Weekly
-                            </Badge>
-                          </div>
-                          <div className="space-y-4">
-                            <ProgressBar
-                              current={g.studyProgress}
-                              goal={g.studyGoal}
-                              label="Study hours"
-                            />
-                            <ProgressBar
-                              current={g.tasksProgress}
-                              goal={g.taskGoal}
-                              label="Tasks completed"
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </SectionCard>
+                <div className="space-y-4">
+                  {goals.map(g => {
+                    const isEditing = editingGuild === g.guildId
+                    const allMet = (
+                      (!g.studyGoal || g.studyGoal <= 0 || g.studyProgress >= g.studyGoal) &&
+                      (!g.taskGoal || g.taskGoal <= 0 || g.tasksProgress >= g.taskGoal) &&
+                      (!g.messageGoal || g.messageGoal <= 0 || g.messageProgress >= g.messageGoal)
+                    )
+                    const hasAnyGoal = (g.studyGoal && g.studyGoal > 0) || (g.taskGoal && g.taskGoal > 0) || (g.messageGoal && g.messageGoal > 0)
 
-                  <SectionCard
-                    title="This Month"
-                    description="Monthly study and task goals"
-                    icon={<TrendingUp size={18} />}
-                    defaultOpen
-                  >
-                    <div className="space-y-6 pt-2">
-                      {data!.monthly.map((g) => (
-                        <div
-                          key={`${g.guildId}-${g.monthid}`}
-                          className="p-4 bg-card/50 rounded-xl border border-border/50"
-                        >
-                          <div className="flex items-center gap-2 mb-4">
-                            <span className="font-medium text-foreground">
-                              {g.serverName}
-                            </span>
-                            <Badge variant="purple" size="sm">
-                              Monthly
-                            </Badge>
+                    return (
+                      <div
+                        key={g.guildId}
+                        className={cn(
+                          "bg-card rounded-xl border p-4 transition-all",
+                          allMet && hasAnyGoal
+                            ? "border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.05)]"
+                            : "border-border"
+                        )}
+                      >
+                        {/* Header */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold text-foreground text-sm">{g.serverName}</span>
+                            {allMet && hasAnyGoal && (
+                              <span className="flex items-center gap-0.5 text-[10px] text-emerald-400 font-medium">
+                                <Trophy size={10} /> All met
+                              </span>
+                            )}
                           </div>
-                          <div className="space-y-4">
-                            <ProgressBar
-                              current={g.studyProgress}
-                              goal={g.studyGoal}
-                              label="Study hours"
-                            />
-                            <ProgressBar
-                              current={g.tasksProgress}
-                              goal={g.taskGoal}
-                              label="Tasks completed"
-                            />
-                          </div>
+                          {isCurrent && !isEditing && (
+                            <button
+                              onClick={() => startEditing(g)}
+                              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+                              title="Edit goals"
+                            >
+                              <Pencil size={14} />
+                            </button>
+                          )}
                         </div>
-                      ))}
-                    </div>
-                  </SectionCard>
+
+                        {/* Radial Progress Row */}
+                        {isEditing ? (
+                          <div className="space-y-3 mb-4">
+                            <div className="grid grid-cols-3 gap-3">
+                              <div>
+                                <label className="text-[10px] text-muted-foreground block mb-1">Study hours</label>
+                                <input
+                                  type="number" min="0" step="1"
+                                  value={editValues.study}
+                                  onChange={e => setEditValues(v => ({ ...v, study: e.target.value }))}
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground block mb-1">Tasks</label>
+                                <input
+                                  type="number" min="0" step="1"
+                                  value={editValues.task}
+                                  onChange={e => setEditValues(v => ({ ...v, task: e.target.value }))}
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[10px] text-muted-foreground block mb-1">Messages</label>
+                                <input
+                                  type="number" min="0" step="1"
+                                  value={editValues.message}
+                                  onChange={e => setEditValues(v => ({ ...v, message: e.target.value }))}
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  placeholder="0"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setEditingGuild(null)}
+                                className="px-3 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={() => saveGoals(g.guildId, g.periodId)}
+                                className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-6 mb-4">
+                            <RadialProgress
+                              value={g.studyProgress} max={g.studyGoal}
+                              label="Study" unit="h"
+                            />
+                            <RadialProgress
+                              value={g.tasksProgress} max={g.taskGoal}
+                              label="Tasks" unit=""
+                            />
+                            <RadialProgress
+                              value={g.messageProgress} max={g.messageGoal}
+                              label="Messages" unit=""
+                            />
+                          </div>
+                        )}
+
+                        {/* Attendance */}
+                        {g.attendance.booked > 0 && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between text-xs mb-1">
+                              <span className="text-muted-foreground flex items-center gap-1">
+                                <Users size={10} /> Attendance
+                              </span>
+                              <span className="text-foreground/80">{g.attendance.attended} / {g.attendance.booked}</span>
+                            </div>
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div
+                                className={cn(
+                                  "h-full rounded-full transition-all",
+                                  g.attendance.attended >= g.attendance.booked ? "bg-emerald-500" : "bg-amber-400"
+                                )}
+                                style={{ width: `${Math.min(100, (g.attendance.attended / g.attendance.booked) * 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Goal Tasks Checklist */}
+                        {(g.goalTasks.length > 0 || (isCurrent && addingTaskFor === g.guildId)) && (
+                          <div className="border-t border-border/50 pt-3 mt-1">
+                            <p className="text-[10px] text-muted-foreground font-medium mb-2">
+                              {tab === "weekly" ? "Goals of the Week" : "Goals of the Month"}
+                            </p>
+                            <div className="space-y-1">
+                              {g.goalTasks.map(t => (
+                                <div key={t.id} className="group flex items-center gap-2 py-1 px-1 rounded hover:bg-muted/20 transition-colors">
+                                  <button
+                                    onClick={() => toggleTask(t.id)}
+                                    className="flex-shrink-0"
+                                  >
+                                    <div className={cn(
+                                      "w-4 h-4 rounded border flex items-center justify-center transition-all",
+                                      t.completed
+                                        ? "bg-emerald-500 border-emerald-500 text-white"
+                                        : "border-muted-foreground/30 hover:border-emerald-500"
+                                    )}>
+                                      {t.completed && <Check size={10} strokeWidth={3} />}
+                                    </div>
+                                  </button>
+                                  <span className={cn(
+                                    "flex-1 text-xs",
+                                    t.completed ? "line-through text-muted-foreground" : "text-foreground"
+                                  )}>
+                                    {t.content}
+                                  </span>
+                                  {isCurrent && (
+                                    <button
+                                      onClick={() => deleteTask(t.id)}
+                                      className="p-0.5 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Add task inline */}
+                        {isCurrent && addingTaskFor === g.guildId ? (
+                          <div className="flex items-center gap-2 mt-2 px-1">
+                            <input
+                              type="text"
+                              value={newTaskContent}
+                              onChange={e => setNewTaskContent(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === "Enter") addTask(g.guildId, g.periodId)
+                                if (e.key === "Escape") { setAddingTaskFor(null); setNewTaskContent("") }
+                              }}
+                              placeholder="Add a goal..."
+                              maxLength={200}
+                              className="flex-1 bg-transparent text-xs text-foreground placeholder:text-muted-foreground/60 focus:outline-none border-b border-border pb-1"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => addTask(g.guildId, g.periodId)}
+                              disabled={!newTaskContent.trim()}
+                              className="text-emerald-500 hover:text-emerald-400 disabled:text-muted-foreground p-0.5"
+                            >
+                              <Check size={14} />
+                            </button>
+                            <button
+                              onClick={() => { setAddingTaskFor(null); setNewTaskContent("") }}
+                              className="text-muted-foreground hover:text-foreground p-0.5"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        ) : isCurrent && (
+                          <button
+                            onClick={() => { setAddingTaskFor(g.guildId); setNewTaskContent("") }}
+                            className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground mt-2 px-1 transition-colors"
+                          >
+                            <Plus size={10} /> Add goal
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
@@ -235,11 +586,8 @@ export default function GoalsPage() {
   )
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add getServerSideProps for i18n serverSideTranslations
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),
   },
 })
-// --- END AI-MODIFIED ---
