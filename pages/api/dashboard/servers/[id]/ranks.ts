@@ -4,12 +4,10 @@
 // Purpose: CRUD for rank tiers (xp_ranks, voice_ranks, msg_ranks)
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: wrapped with apiHandler for error handling and method validation
 import { apiHandler } from "@/utils/apiHandler"
-// --- END AI-MODIFIED ---
 
 type RankType = "XP" | "VOICE" | "MESSAGE"
 
@@ -40,7 +38,9 @@ export default apiHandler({
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
-    const [xpRanks, voiceRanks, msgRanks, guildConfig] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: add memberCounts per rank to GET response
+    const [xpRanks, voiceRanks, msgRanks, guildConfig, xpCounts, voiceCounts, msgCounts] = await Promise.all([
       prisma.xp_ranks.findMany({
         where: { guildid: guildId },
         orderBy: { required: "asc" },
@@ -57,7 +57,28 @@ export default apiHandler({
         where: { guildid: guildId },
         select: { rank_type: true, rank_channel: true, dm_ranks: true },
       }),
+      prisma.$queryRaw<Array<{ rankid: number; cnt: bigint }>>(Prisma.sql`
+        SELECT current_xp_rankid as rankid, COUNT(*)::bigint as cnt
+        FROM member_ranks WHERE guildid = ${guildId} AND current_xp_rankid IS NOT NULL
+        GROUP BY current_xp_rankid
+      `),
+      prisma.$queryRaw<Array<{ rankid: number; cnt: bigint }>>(Prisma.sql`
+        SELECT current_voice_rankid as rankid, COUNT(*)::bigint as cnt
+        FROM member_ranks WHERE guildid = ${guildId} AND current_voice_rankid IS NOT NULL
+        GROUP BY current_voice_rankid
+      `),
+      prisma.$queryRaw<Array<{ rankid: number; cnt: bigint }>>(Prisma.sql`
+        SELECT current_msg_rankid as rankid, COUNT(*)::bigint as cnt
+        FROM member_ranks WHERE guildid = ${guildId} AND current_msg_rankid IS NOT NULL
+        GROUP BY current_msg_rankid
+      `),
     ])
+
+    const toCountMap = (rows: Array<{ rankid: number; cnt: bigint }>) => {
+      const m: Record<number, number> = {}
+      for (const r of rows) m[r.rankid] = Number(r.cnt)
+      return m
+    }
 
     return res.status(200).json({
       rankType: guildConfig?.rank_type || null,
@@ -66,7 +87,13 @@ export default apiHandler({
       xpRanks: xpRanks.map(serializeRank),
       voiceRanks: voiceRanks.map(serializeRank),
       msgRanks: msgRanks.map(serializeRank),
+      memberCounts: {
+        XP: toCountMap(xpCounts),
+        VOICE: toCountMap(voiceCounts),
+        MESSAGE: toCountMap(msgCounts),
+      },
     })
+    // --- END AI-MODIFIED ---
   },
   async POST(req, res) {
     const guildId = BigInt(req.query.id as string)

@@ -66,12 +66,15 @@ export default apiHandler({
           AND created_at >= ${weekAgo}
       `).then(r => Number(r[0]?.count ?? 0)),
 
+      // --- AI-MODIFIED (2026-03-14) ---
+      // Purpose: member_ranks has no obtained_at column; count total ranked members instead
       prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
         SELECT COUNT(*) as count
         FROM member_ranks
         WHERE guildid = ${guildId}
-          AND obtained_at >= ${weekAgo}
+          AND (current_xp_rankid IS NOT NULL OR current_voice_rankid IS NOT NULL OR current_msg_rankid IS NOT NULL)
       `).then(r => Number(r[0]?.count ?? 0)).catch(() => 0),
+      // --- END AI-MODIFIED ---
 
       prisma.$queryRaw<[{ avg_hours: number | null }]>(Prisma.sql`
         SELECT AVG(daily_total) as avg_hours FROM (

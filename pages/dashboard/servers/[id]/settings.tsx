@@ -882,7 +882,7 @@ export default function ServerSettings() {
                   {filteredSections.includes("ranks") && (
                     <div id="ranks">
                       <SectionCard title="Ranks" description="Configure activity-based rank progression" icon={<Trophy size={18} />} {...badgeProps("ranks", modifiedCounts["ranks"])}>
-                        <SettingRow label="Rank Type" description="Which activity drives rank progression" tooltip="XP: combines voice and text activity. Voice: only study time counts. Messages: only text messages count." defaultBadge={DEFAULTS.rank_type} isModified={isModified("rank_type")} onReset={() => resetField("rank_type")} impactText={ctx.rankUpsThisWeek ? `${ctx.rankUpsThisWeek} rank-ups this week` : undefined}>
+                        <SettingRow label="Rank Type" description="Which activity drives rank progression" tooltip="XP: combines voice and text activity. Voice: only study time counts. Messages: only text messages count." defaultBadge={DEFAULTS.rank_type} isModified={isModified("rank_type")} onReset={() => resetField("rank_type")} impactText={ctx.rankUpsThisWeek ? `${ctx.rankUpsThisWeek} members currently ranked` : undefined}>
                           <SearchSelect options={RANK_TYPE_OPTIONS} value={config.rank_type || null} onChange={(v) => set("rank_type", v)} placeholder="Select rank type" />
                         </SettingRow>
                         <SettingRow label="DM Rank-Up Notifications" description="Send members a DM when they reach a new rank" isModified={isModified("dm_ranks")} onReset={() => resetField("dm_ranks")}>

@@ -16,6 +16,10 @@ interface ConfirmModalProps {
   cancelLabel?: string
   variant?: "danger" | "warning" | "info"
   loading?: boolean
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: allow custom body content for preset selection dialogs
+  customContent?: React.ReactNode
+  // --- END AI-MODIFIED ---
 }
 
 export default function ConfirmModal({
@@ -28,6 +32,7 @@ export default function ConfirmModal({
   cancelLabel = "Cancel",
   variant = "danger",
   loading = false,
+  customContent,
 }: ConfirmModalProps) {
   const confirmRef = useRef<HTMLButtonElement>(null)
 
@@ -71,6 +76,10 @@ export default function ConfirmModal({
               <p className="text-sm text-muted-foreground leading-relaxed">{message}</p>
             </div>
           </div>
+          {/* --- AI-MODIFIED (2026-03-14) --- */}
+          {customContent}
+          {/* --- END AI-MODIFIED --- */}
+          {!customContent && (
           <div className="flex justify-end gap-3 mt-6">
             <button
               onClick={onCancel}
@@ -79,6 +88,7 @@ export default function ConfirmModal({
             >
               {cancelLabel}
             </button>
+            {confirmLabel && (
             <button
               ref={confirmRef}
               onClick={onConfirm}
@@ -87,7 +97,9 @@ export default function ConfirmModal({
             >
               {loading ? "Processing..." : confirmLabel}
             </button>
+            )}
           </div>
+          )}
         </div>
       </div>
     </div>
