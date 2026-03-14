@@ -101,10 +101,12 @@ export default apiHandler({
       prisma.members.count({ where: whereClause }),
     ])
 
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: return per-type active record counts for visual indicators
     const memberUserIds = members.map((m) => m.userid)
     const recordCounts = memberUserIds.length > 0
       ? await prisma.tickets.groupBy({
-          by: ["targetid"],
+          by: ["targetid", "ticket_type"],
           where: {
             guildid: guildId,
             targetid: { in: memberUserIds },
@@ -113,7 +115,17 @@ export default apiHandler({
           _count: true,
         })
       : []
-    const recordCountMap = new Map(recordCounts.map((r) => [r.targetid.toString(), r._count]))
+
+    const activeRecordsMap = new Map<string, { warnings: number; restrictions: number; notes: number }>()
+    for (const r of recordCounts) {
+      const uid = r.targetid.toString()
+      if (!activeRecordsMap.has(uid)) activeRecordsMap.set(uid, { warnings: 0, restrictions: 0, notes: 0 })
+      const entry = activeRecordsMap.get(uid)!
+      if (r.ticket_type === "WARNING") entry.warnings += r._count
+      else if (r.ticket_type === "STUDY_BAN") entry.restrictions += r._count
+      else if (r.ticket_type === "NOTE") entry.notes += r._count
+    }
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       members: members.map((m) => {
@@ -128,7 +140,7 @@ export default apiHandler({
           firstJoined: m.first_joined,
           lastLeft: m.last_left,
           lastActive: m.timestamp,
-          activeRecordCount: recordCountMap.get(uid) ?? 0,
+          activeRecords: activeRecordsMap.get(uid) ?? { warnings: 0, restrictions: 0, notes: 0 },
         }
       }),
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },

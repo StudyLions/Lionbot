@@ -4,6 +4,8 @@
 // Purpose: Slide-out member detail panel with Overview, Sessions,
 //          Records, and Economy tabs for server admin management
 // ============================================================
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: UX polish - clear text, contextual resolve labels, refund buttons
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Badge } from "@/components/dashboard/ui"
@@ -11,9 +13,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import {
   Clock, Coins, Dumbbell, TrendingUp, CheckSquare, CalendarCheck,
   Headphones, MessageSquare, AlertTriangle, FileText, Ban, CheckCircle2,
-  ShieldAlert, Copy, Home, Save, ChevronDown,
+  ShieldAlert, Copy, Home, Save, RotateCcw, Info,
 } from "lucide-react"
 import { useState } from "react"
+// --- END AI-MODIFIED ---
 
 interface MemberDetail {
   member: {
@@ -52,6 +55,7 @@ interface Props {
   onRestrict: () => void
   onResolve: (ticketIds: number[]) => void
   onAdjustCoins: () => void
+  onRefund?: (transactionId: number) => void
 }
 
 const typeLabels: Record<string, { label: string; variant: "warning" | "info" | "error" | "default" }> = {
@@ -65,6 +69,12 @@ const stateLabels: Record<string, { label: string; variant: "success" | "warning
   EXPIRING: { label: "Expiring", variant: "warning" },
   EXPIRED: { label: "Expired", variant: "default" },
   PARDONED: { label: "Resolved", variant: "success" },
+}
+
+const resolveLabels: Record<string, { label: string; description: string }> = {
+  STUDY_BAN: { label: "End Restriction Early", description: "Stops the restriction -- member can earn coins/XP again" },
+  WARNING: { label: "Dismiss Warning", description: "Marks this warning as resolved in the member's history" },
+  NOTE: { label: "Archive Note", description: "Archives this note (it stays in the history)" },
 }
 
 const txTypeLabels: Record<string, string> = {
@@ -99,21 +109,24 @@ function formatDate(dateStr: string | null): string {
 
 function formatDateTime(dateStr: string | null): string {
   if (!dateStr) return "--"
-  return new Date(dateStr).toLocaleString(undefined, {
-    month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-  })
+  return new Date(dateStr).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })
 }
 
-function copyToClipboard(text: string) {
-  navigator.clipboard.writeText(text).catch(() => {})
+function SectionInfo({ text }: { text: string }) {
+  return (
+    <div className="flex items-start gap-2 p-2.5 bg-muted/20 rounded-lg text-[11px] text-muted-foreground/70 leading-relaxed">
+      <Info size={12} className="flex-shrink-0 mt-0.5 opacity-60" />
+      {text}
+    </div>
+  )
 }
 
-export default function MemberDetailPanel({ open, onClose, data, loading, onWarn, onNote, onRestrict, onResolve, onAdjustCoins }: Props) {
+export default function MemberDetailPanel({ open, onClose, data, loading, onWarn, onNote, onRestrict, onResolve, onAdjustCoins, onRefund }: Props) {
   const [copiedId, setCopiedId] = useState(false)
 
   const handleCopyId = () => {
     if (data?.member.userId) {
-      copyToClipboard(data.member.userId)
+      navigator.clipboard.writeText(data.member.userId).catch(() => {})
       setCopiedId(true)
       setTimeout(() => setCopiedId(false), 2000)
     }
@@ -141,32 +154,25 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                     <img src={data.member.avatarUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" loading="lazy" />
                   ) : (
                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-border/50">
-                      <span className="text-lg font-bold text-foreground/80">
-                        {(data.member.displayName || "?").charAt(0).toUpperCase()}
-                      </span>
+                      <span className="text-lg font-bold text-foreground/80">{(data.member.displayName || "?").charAt(0).toUpperCase()}</span>
                     </div>
                   )}
                   <div className="min-w-0">
                     <SheetTitle className="text-lg truncate">
                       {data.member.displayName || `User ...${data.member.userId.slice(-4)}`}
                     </SheetTitle>
-                    <button
-                      onClick={handleCopyId}
-                      className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-0.5"
-                    >
+                    <button onClick={handleCopyId} className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mt-0.5">
                       <span className="font-mono">{data.member.userId}</span>
                       <Copy size={11} />
                       {copiedId && <span className="text-emerald-400 text-[10px]">Copied</span>}
                     </button>
-                    <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground">
                       {data.member.firstJoined && <span>Joined {formatDate(data.member.firstJoined)}</span>}
                       {data.member.lastActive && (
-                        <>
-                          <span className="opacity-30">|</span>
-                          <span>Active {formatDate(data.member.lastActive)}</span>
-                        </>
+                        <><span className="opacity-30">|</span><span>Active {formatDate(data.member.lastActive)}</span></>
                       )}
                     </div>
+                    <p className="text-[10px] text-muted-foreground/50 mt-1">LionBot member data -- not Discord server data</p>
                   </div>
                 </div>
               </SheetHeader>
@@ -184,6 +190,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
 
                 {/* ====== OVERVIEW ====== */}
                 <TabsContent value="overview" className="px-6 pb-6 space-y-4">
+                  <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium">Bot Activity Stats</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/30 rounded-xl p-3">
                       <div className="flex items-center gap-1.5 text-emerald-400/70 mb-1"><Clock size={12} /><span className="text-[10px] uppercase tracking-wider">Study Time</span></div>
@@ -229,42 +236,41 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                   <div className="pt-2">
                     <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium mb-2">Quick Actions</p>
                     <div className="grid grid-cols-2 gap-2">
-                      <button onClick={onWarn} className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400 hover:bg-amber-500/15 transition-colors">
-                        <AlertTriangle size={14} /> Add Warning
+                      <button onClick={onWarn} className="flex flex-col px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400 hover:bg-amber-500/15 transition-colors">
+                        <span className="flex items-center gap-2"><AlertTriangle size={14} /> Add Warning</span>
+                        <span className="text-[10px] text-amber-400/50 mt-0.5">Adds a bot warning record</span>
                       </button>
-                      <button onClick={onNote} className="flex items-center gap-2 px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-sm text-indigo-400 hover:bg-indigo-500/15 transition-colors">
-                        <FileText size={14} /> Add Note
+                      <button onClick={onNote} className="flex flex-col px-3 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg text-sm text-indigo-400 hover:bg-indigo-500/15 transition-colors">
+                        <span className="flex items-center gap-2"><FileText size={14} /> Add Note</span>
+                        <span className="text-[10px] text-indigo-400/50 mt-0.5">Private admin-only note</span>
                       </button>
-                      <button onClick={onAdjustCoins} className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400 hover:bg-amber-500/15 transition-colors">
-                        <Coins size={14} /> Adjust Coins
+                      <button onClick={onAdjustCoins} className="flex flex-col px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg text-sm text-amber-400 hover:bg-amber-500/15 transition-colors">
+                        <span className="flex items-center gap-2"><Coins size={14} /> Adjust Coins</span>
+                        <span className="text-[10px] text-amber-400/50 mt-0.5">Add, set, or reset balance</span>
                       </button>
-                      <button onClick={onRestrict} className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 hover:bg-red-500/15 transition-colors">
-                        <Ban size={14} /> Study Restriction
+                      <button onClick={onRestrict} className="flex flex-col px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 hover:bg-red-500/15 transition-colors">
+                        <span className="flex items-center gap-2"><Ban size={14} /> Study Restriction</span>
+                        <span className="text-[10px] text-red-400/50 mt-0.5">Block voice coin/XP earning</span>
                       </button>
                     </div>
                   </div>
                 </TabsContent>
 
                 {/* ====== SESSIONS ====== */}
-                <TabsContent value="sessions" className="px-6 pb-6">
+                <TabsContent value="sessions" className="px-6 pb-6 space-y-3">
+                  <SectionInfo text="Recent voice and text study sessions tracked by LionBot in this server." />
                   {data.recentSessions.length === 0 ? (
                     <div className="text-center py-10 text-muted-foreground"><Headphones size={32} className="mx-auto mb-2 opacity-40" /><p>No recent sessions</p></div>
                   ) : (
                     <div className="space-y-1.5">
                       {data.recentSessions.map((s, i) => (
                         <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted/30 transition-colors">
-                          {s.type === "voice" ? (
-                            <Headphones size={14} className="text-emerald-400 flex-shrink-0" />
-                          ) : (
-                            <MessageSquare size={14} className="text-blue-400 flex-shrink-0" />
-                          )}
+                          {s.type === "voice" ? <Headphones size={14} className="text-emerald-400 flex-shrink-0" /> : <MessageSquare size={14} className="text-blue-400 flex-shrink-0" />}
                           <div className="min-w-0 flex-1">
                             <p className="text-sm text-foreground">{formatDateTime(s.startTime)}</p>
                             {s.tag && <p className="text-[10px] text-indigo-400 truncate">{s.tag}</p>}
                           </div>
-                          <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">
-                            {formatDuration(s.duration)}
-                          </span>
+                          <span className="text-xs font-mono text-muted-foreground whitespace-nowrap">{formatDuration(s.duration)}</span>
                         </div>
                       ))}
                     </div>
@@ -273,6 +279,8 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
 
                 {/* ====== RECORDS ====== */}
                 <TabsContent value="records" className="px-6 pb-6 space-y-4">
+                  <SectionInfo text="LionBot moderation records for this member. These are bot records, not Discord server moderation." />
+
                   {data.restrictionEscalation.priorRestrictions > 0 && (
                     <div className="flex items-start gap-3 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-sm">
                       <ShieldAlert size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
@@ -281,7 +289,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                           {data.restrictionEscalation.priorRestrictions} prior restriction{data.restrictionEscalation.priorRestrictions !== 1 ? "s" : ""}
                         </p>
                         <p className="text-red-400/60 text-xs">
-                          Next auto-escalation duration: {data.restrictionEscalation.nextDuration}
+                          Next auto-escalation: {data.restrictionEscalation.nextDuration} (based on server rules)
                         </p>
                       </div>
                     </div>
@@ -300,7 +308,9 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                       {data.records.map((r) => {
                         const tl = typeLabels[r.type] || { label: r.type, variant: "default" as const }
                         const sl = stateLabels[r.state] || { label: r.state, variant: "default" as const }
+                        const rl = resolveLabels[r.type] || { label: "Resolve", description: "Marks this record as resolved" }
                         const isActive = r.state === "OPEN" || r.state === "EXPIRING"
+                        const isExpired = r.state === "EXPIRED"
                         return (
                           <div key={r.ticketId} className={`p-3 rounded-xl border ${isActive ? "border-red-500/20 bg-red-500/5" : "border-border bg-muted/20"}`}>
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
@@ -308,20 +318,33 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                               <Badge variant={sl.variant} size="sm" dot>{sl.label}</Badge>
                               <span className="text-[10px] text-muted-foreground ml-auto">{formatDateTime(r.createdAt)}</span>
                             </div>
-                            {r.content && <p className="text-sm text-foreground/80 mb-1.5">{r.content}</p>}
-                            {r.expiry && r.state !== "PARDONED" && (
+                            {r.content && <p className="text-sm text-foreground/80 mb-1">{r.content}</p>}
+                            {r.type === "STUDY_BAN" && isActive && (
+                              <p className="text-[10px] text-red-400/60 mb-1">This prevents the member from earning coins/XP in voice channels</p>
+                            )}
+                            {r.expiry && isActive && (
                               <p className="text-[10px] text-muted-foreground">Expires: {formatDateTime(r.expiry)}</p>
                             )}
                             {r.pardonedReason && r.state === "PARDONED" && (
                               <p className="text-[10px] text-muted-foreground">Resolved: {r.pardonedReason}</p>
                             )}
                             {isActive && (
-                              <button
-                                onClick={() => onResolve([r.ticketId])}
-                                className="mt-2 text-xs px-2.5 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-lg hover:bg-emerald-500/15 transition-colors flex items-center gap-1.5"
-                              >
-                                <CheckCircle2 size={12} /> Resolve
-                              </button>
+                              <div className="mt-2">
+                                <button
+                                  onClick={() => onResolve([r.ticketId])}
+                                  className={`text-xs px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors ${
+                                    r.type === "STUDY_BAN"
+                                      ? "bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25"
+                                      : "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15"
+                                  }`}
+                                >
+                                  <CheckCircle2 size={12} /> {rl.label}
+                                </button>
+                                <p className="text-[9px] text-muted-foreground/50 mt-1">{rl.description}</p>
+                              </div>
+                            )}
+                            {isExpired && (
+                              <p className="mt-2 text-[10px] text-muted-foreground/50">Already expired -- no action needed</p>
                             )}
                           </div>
                         )
@@ -332,6 +355,8 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
 
                 {/* ====== ECONOMY ====== */}
                 <TabsContent value="economy" className="px-6 pb-6 space-y-4">
+                  <SectionInfo text="LionCoins balance and transaction history. Admin adjustments are logged below." />
+
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Balance</p>
@@ -373,15 +398,23 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                       <div className="space-y-1">
                         {data.recentTransactions.map((t) => {
                           const isIncoming = t.toAccount === data.member.userId
+                          const isRefundable = t.type !== "REFUND" && onRefund
                           return (
-                            <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/30 transition-colors">
+                            <div key={t.id} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted/30 transition-colors group">
                               <span className={`text-xs font-mono font-bold ${isIncoming ? "text-emerald-400" : "text-red-400"}`}>
                                 {isIncoming ? "+" : "-"}{t.amount}
                               </span>
                               <span className="text-xs text-muted-foreground truncate">{txTypeLabels[t.type] || t.type}</span>
-                              <span className="text-[10px] text-muted-foreground/60 ml-auto whitespace-nowrap">
-                                {formatDate(t.createdAt)}
-                              </span>
+                              {isRefundable && (
+                                <button
+                                  onClick={() => onRefund!(t.id)}
+                                  className="text-[10px] text-muted-foreground/40 hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                                  title="Refund this transaction"
+                                >
+                                  <RotateCcw size={10} /> Refund
+                                </button>
+                              )}
+                              <span className="text-[10px] text-muted-foreground/60 ml-auto whitespace-nowrap">{formatDate(t.createdAt)}</span>
                             </div>
                           )
                         })}

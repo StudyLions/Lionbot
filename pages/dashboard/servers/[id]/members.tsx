@@ -13,7 +13,7 @@ import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import {
   WarnModal, NoteModal, RestrictModal, CoinAdjustModal,
-  BulkActionModal, ResolveModal,
+  BulkActionModal, ResolveModal, RefundModal,
 } from "@/components/dashboard/MemberActionModals"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
@@ -21,7 +21,7 @@ import { useRouter } from "next/router"
 import { useEffect, useState, useRef, useCallback } from "react"
 import {
   Users, Download, MoreHorizontal, AlertTriangle, Coins,
-  Eye, ChevronLeft, ChevronRight, Search, Filter,
+  Eye, ChevronLeft, ChevronRight, Search, Filter, Ban, FileText,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -37,7 +37,7 @@ interface Member {
   firstJoined: string | null
   lastLeft: string | null
   lastActive: string | null
-  activeRecordCount: number
+  activeRecords: { warnings: number; restrictions: number; notes: number }
 }
 
 interface Pagination {
@@ -140,6 +140,7 @@ export default function MembersPage() {
   const [coinTarget, setCoinTarget] = useState<{ userId: string; name: string; balance: number } | null>(null)
   const [resolveTarget, setResolveTarget] = useState<{ userId: string; ticketIds: number[] } | null>(null)
   const [bulkOp, setBulkOp] = useState<"coins" | "warn" | null>(null)
+  const [refundTarget, setRefundTarget] = useState<{ userId: string; transactionId: number; amount: number } | null>(null)
   const [actionLoading, setActionLoading] = useState(false)
 
   const filterParam = filter ? `&filter=${filter}` : ""
@@ -311,13 +312,18 @@ export default function MembersPage() {
                         members.map((m) => {
                           const activeUser = activeUserMap.get(m.userId)
                           const isActive = !!activeUser
+                          const hasRestriction = m.activeRecords.restrictions > 0
+                          const hasWarning = m.activeRecords.warnings > 0
+                          const hasNote = m.activeRecords.notes > 0
                           return (
                             <tr
                               key={m.userId}
                               onClick={() => openMemberPanel(m.userId)}
-                              className={`border-b border-border/30 last:border-0 cursor-pointer transition-colors ${selectedIds.has(m.userId) ? "bg-primary/10" : "hover:bg-accent"}`}
+                              className={`border-b border-border/30 last:border-0 cursor-pointer transition-colors ${
+                                hasRestriction ? "bg-red-500/5" : selectedIds.has(m.userId) ? "bg-primary/10" : "hover:bg-accent"
+                              }`}
                             >
-                              <td className="py-2.5 px-3" onClick={(e) => e.stopPropagation()}>
+                              <td className={`py-2.5 px-3 ${hasRestriction ? "border-l-3 border-l-red-500/70" : ""}`} onClick={(e) => e.stopPropagation()}>
                                 <input type="checkbox" checked={selectedIds.has(m.userId)} onChange={() => toggleSelect(m.userId)} className="rounded border-border accent-primary" />
                               </td>
                               <td className="py-2.5 px-3">
@@ -332,13 +338,11 @@ export default function MembersPage() {
                                     )}
                                   </div>
                                   <div className="min-w-0">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5">
                                       <span className="text-foreground font-medium truncate">{m.displayName || `User ...${m.userId.slice(-4)}`}</span>
-                                      {m.activeRecordCount > 0 && (
-                                        <span className="flex-shrink-0 inline-flex items-center justify-center w-4.5 h-4.5 rounded-full bg-red-500/20 text-red-400 text-[9px] font-bold leading-none px-1">
-                                          {m.activeRecordCount}
-                                        </span>
-                                      )}
+                                      {hasRestriction && <span title="Study restricted"><Ban size={13} className="text-red-400 flex-shrink-0" /></span>}
+                                      {hasWarning && <span title={`${m.activeRecords.warnings} active warning(s)`}><AlertTriangle size={13} className="text-amber-400 flex-shrink-0" /></span>}
+                                      {hasNote && !hasWarning && !hasRestriction && <span title="Has admin notes"><FileText size={12} className="text-blue-400/60 flex-shrink-0" /></span>}
                                     </div>
                                     {isActive && activeUser?.tag && (
                                       <span className="text-[10px] text-indigo-400 truncate block">{activeUser.tag}</span>
@@ -422,6 +426,12 @@ export default function MembersPage() {
           onRestrict={() => { if (panelData) setRestrictTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId, priorRestrictions: (panelData as any).restrictionEscalation.priorRestrictions, nextDuration: (panelData as any).restrictionEscalation.nextDuration }) }}
           onResolve={(ticketIds) => { if (panelData) setResolveTarget({ userId: (panelData as any).member.userId, ticketIds }) }}
           onAdjustCoins={() => { if (panelData) setCoinTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId, balance: (panelData as any).member.coins }) }}
+          onRefund={(transactionId) => {
+            if (panelData) {
+              const tx = (panelData as any).recentTransactions?.find((t: any) => t.id === transactionId)
+              if (tx) setRefundTarget({ userId: (panelData as any).member.userId, transactionId, amount: tx.amount })
+            }
+          }}
         />
 
         {/* Action Modals */}
@@ -431,6 +441,7 @@ export default function MembersPage() {
         <CoinAdjustModal open={!!coinTarget} onClose={() => setCoinTarget(null)} loading={actionLoading} memberName={coinTarget?.name || ""} currentBalance={coinTarget?.balance ?? 0} onConfirm={(action, amount) => { apiAction(`/api/dashboard/servers/${id}/members/${coinTarget?.userId}/coins`, "PATCH", { action, amount }).then(() => setCoinTarget(null)) }} />
         <ResolveModal open={!!resolveTarget} onClose={() => setResolveTarget(null)} loading={actionLoading} ticketCount={resolveTarget?.ticketIds.length ?? 0} onConfirm={(reason) => { apiAction(`/api/dashboard/servers/${id}/members/${resolveTarget?.userId}/resolve`, "PATCH", { ticketIds: resolveTarget?.ticketIds, reason }).then(() => setResolveTarget(null)) }} />
         <BulkActionModal open={!!bulkOp} onClose={() => setBulkOp(null)} loading={actionLoading} selectedCount={selectedIds.size} operation={bulkOp || "coins"} onConfirm={(data) => { apiAction(`/api/dashboard/servers/${id}/members/bulk`, "PATCH", { userIds: Array.from(selectedIds), operation: bulkOp, ...data }).then(() => { setBulkOp(null); setSelectedIds(new Set()) }) }} />
+        <RefundModal open={!!refundTarget} onClose={() => setRefundTarget(null)} loading={actionLoading} transactionAmount={refundTarget?.amount ?? 0} onConfirm={() => { apiAction(`/api/dashboard/servers/${id}/members/${refundTarget?.userId}/refund`, "POST", { transactionId: refundTarget?.transactionId }).then(() => setRefundTarget(null)) }} />
       </AdminGuard>
     </Layout>
   )

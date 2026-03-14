@@ -6,7 +6,7 @@
 // ============================================================
 import { useState } from "react"
 import {
-  AlertTriangle, FileText, Ban, Coins, X, Check, XCircle, Users,
+  AlertTriangle, FileText, Ban, Coins, X, Check, XCircle, Users, RotateCcw,
 } from "lucide-react"
 
 interface ModalBaseProps {
@@ -26,7 +26,7 @@ function ModalShell({
   }[variant]
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
       <div className={`relative w-full max-w-md ${colors.bg} border ${colors.border} rounded-xl shadow-2xl`}>
         <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"><X size={18} /></button>
@@ -74,7 +74,7 @@ export function WarnModal({ open, onClose, loading, memberName, onConfirm }: War
 
   return (
     <ModalShell open={open} onClose={onClose} loading={loading} title={`Add Bot Warning -- ${memberName}`} icon={<AlertTriangle size={20} />} variant="warning">
-      <p className="text-sm text-muted-foreground mb-3">A bot warning will be added to this member's LionBot record. The member may be notified via DM.</p>
+      <p className="text-sm text-muted-foreground mb-3">A bot warning will be added to this member's LionBot record. The member MAY receive a DM notification (depends on their DM settings). This does NOT affect their Discord account.</p>
       <textarea
         value={reason}
         onChange={(e) => setReason(e.target.value)}
@@ -279,6 +279,7 @@ export function CoinAdjustModal({ open, onClose, loading, memberName, currentBal
         />
       )}
 
+      <p className="text-[10px] text-muted-foreground/60 mb-2">This change will be logged in the transaction history with a full audit trail.</p>
       <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg mb-4 text-sm">
         <span className="text-muted-foreground">Balance change:</span>
         <span>
@@ -388,7 +389,7 @@ export function ResolveModal({ open, onClose, loading, ticketCount, onConfirm }:
 
   return (
     <ModalShell open={open} onClose={onClose} loading={loading} title={`Resolve ${ticketCount} Record${ticketCount !== 1 ? "s" : ""}`} icon={<Check size={20} />} variant="info">
-      <p className="text-sm text-muted-foreground mb-3">Mark the selected record{ticketCount !== 1 ? "s" : ""} as resolved. This does not undo any past effects.</p>
+      <p className="text-sm text-muted-foreground mb-3">Mark the selected record{ticketCount !== 1 ? "s" : ""} as resolved. For study restrictions, this will end the restriction and allow the member to earn coins/XP again.</p>
       <textarea
         value={reason}
         onChange={(e) => setReason(e.target.value)}
@@ -400,6 +401,30 @@ export function ResolveModal({ open, onClose, loading, ticketCount, onConfirm }:
         <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm text-muted-foreground bg-muted hover:bg-accent rounded-lg transition-colors">Cancel</button>
         <button onClick={handleSubmit} disabled={loading} className="px-4 py-2 text-sm font-medium text-foreground bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors disabled:opacity-50">
           {loading ? "Resolving..." : "Resolve"}
+        </button>
+      </div>
+    </ModalShell>
+  )
+}
+
+// ============================================================
+// REFUND MODAL
+// ============================================================
+interface RefundModalProps extends ModalBaseProps {
+  transactionAmount: number
+  onConfirm: () => void
+}
+
+export function RefundModal({ open, onClose, loading, transactionAmount, onConfirm }: RefundModalProps) {
+  return (
+    <ModalShell open={open} onClose={onClose} loading={loading} title="Refund Transaction" icon={<RotateCcw size={20} />} variant="warning">
+      <p className="text-sm text-muted-foreground mb-3">
+        This will reverse the transaction of <strong className="text-foreground">{transactionAmount} coins</strong> and adjust the member's balance accordingly. A refund record will be created in the transaction history.
+      </p>
+      <div className="flex justify-end gap-3">
+        <button onClick={onClose} disabled={loading} className="px-4 py-2 text-sm text-muted-foreground bg-muted hover:bg-accent rounded-lg transition-colors">Cancel</button>
+        <button onClick={onConfirm} disabled={loading} className="px-4 py-2 text-sm font-medium text-foreground bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors disabled:opacity-50">
+          {loading ? "Refunding..." : "Confirm Refund"}
         </button>
       </div>
     </ModalShell>
