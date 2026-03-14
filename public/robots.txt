@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /api/
+Disallow: /dashboard/
+
+Sitemap: https://lionbot.org/sitemap.xml

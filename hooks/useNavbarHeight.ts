@@ -39,4 +39,8 @@ function useWindowSize(): Size {
   return windowSize;
 }
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Export both names for backwards compatibility
 export default useWindowSize;
+export { useWindowSize as useNavbarHeight };
+// --- END AI-MODIFIED ---

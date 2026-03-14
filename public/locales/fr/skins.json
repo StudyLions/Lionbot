@@ -1,0 +1,17 @@
+{
+  "header": {
+    "title": "Skin Collection",
+    "subtitle": "Browse all the unique skins available for your LionBot profile. Purchase with LionGems."
+  },
+  "browser": {
+    "search": "Search skins...",
+    "gems": "{{amount}} Gems",
+    "noResults": "No skins found matching your search."
+  },
+  "modal": {
+    "price": "Price",
+    "gems": "{{amount}} LionGems",
+    "getPurchase": "Get LionGems to Purchase",
+    "close": "Close"
+  }
+}

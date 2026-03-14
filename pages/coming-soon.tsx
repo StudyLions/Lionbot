@@ -1,17 +1,38 @@
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Clean coming-soon page with dashboard design system
+import Link from "next/link";
+import { GetStaticProps } from "next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { useTranslation } from "next-i18next";
 import Layout from "@/components/Layout/Layout";
 import { ComingSoonSEO } from "@/constants/SeoData";
 
 export default function ComingSoon() {
+  const { t } = useTranslation("errors");
   return (
-    <>
-      <Layout SEO={ComingSoonSEO}>
-        <div className={"alignCenter flex-col h-[57vh] bg-gradient-to-r from-[#627AF7] to-[#EF566A] px-[30px]"}>
-          <h1 className={"text-[65px] font-bold uppercase md:text-[30px]"}>coming soon!</h1>
-          <h2 className={"mt-[10px] text-[20px] md:text-[18px] text-center"}>
-            We are currently creating something great.
-          </h2>
+    <Layout SEO={ComingSoonSEO}>
+      <div className="bg-background min-h-[60vh] flex items-center justify-center px-4">
+        <div className="text-center">
+          <h1 className="text-4xl sm:text-5xl font-bold text-foreground">
+            {t("comingSoon.title")}
+          </h1>
+          <p className="text-muted-foreground mt-3 max-w-md mx-auto">
+            {t("comingSoon.subtitle")}
+          </p>
+          <Link href="/">
+            <a className="inline-flex items-center justify-center mt-8 px-6 py-3 rounded-lg border border-border text-foreground font-medium hover:bg-accent transition-colors">
+              {t("comingSoon.goHome")}
+            </a>
+          </Link>
         </div>
-      </Layout>
-    </>
+      </div>
+    </Layout>
   );
 }
+
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "errors"])),
+  },
+});
+// --- END AI-MODIFIED ---

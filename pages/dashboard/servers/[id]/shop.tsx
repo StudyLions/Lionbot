@@ -19,6 +19,11 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useState } from "react"
 import { ShoppingBag, Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight, Coins } from "lucide-react"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface ShopItem {
   itemId: number
@@ -242,3 +247,12 @@ export default function ShopPage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
+  },
+})
+// --- END AI-MODIFIED ---

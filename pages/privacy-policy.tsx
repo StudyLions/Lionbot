@@ -1,10 +1,15 @@
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Updated imports, styling wrapper, i18n support
+import { GetStaticProps } from "next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import Layout from "@/components/Layout/Layout";
 import { PrivacyPolicySEO } from "@/constants/SeoData";
 
 export default function PrivacyPolicy() {
   return (
     <Layout SEO={PrivacyPolicySEO}>
-      <div className="container p-4">
+      <div className="bg-background min-h-screen">
+      <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6 [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:my-6 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-4 [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7 [&_li]:my-2 [&_li]:bg-card [&_li]:p-3 [&_li]:rounded-lg [&_li]:border [&_li]:border-border">
         <h1 className="text-3xl mb-4">Privacy Policy:</h1>
         <p className="my-2 leading-6">
           We know you care about your personal information and we take your privacy seriously. Please read the following
@@ -161,7 +166,14 @@ export default function PrivacyPolicy() {
           address: Contact@arihoresh.com
         </p>
       </div>
+      </div>
     </Layout>
   );
 }
 
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "legal"])),
+  },
+});
+// --- END AI-MODIFIED ---

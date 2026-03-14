@@ -37,6 +37,11 @@ import {
   Trophy,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface ProfileData {
   userId: string
@@ -570,3 +575,12 @@ export default function ProfilePage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),
+  },
+})
+// --- END AI-MODIFIED ---

@@ -34,6 +34,11 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface SkinItem {
   id: number
@@ -570,3 +575,12 @@ export default function InventoryPage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),
+  },
+})
+// --- END AI-MODIFIED ---

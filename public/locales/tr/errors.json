@@ -1,0 +1,13 @@
+{
+  "notFound": {
+    "title": "404",
+    "subtitle": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has been moved.",
+    "goHome": "Go Home"
+  },
+  "comingSoon": {
+    "title": "Coming Soon",
+    "subtitle": "We are currently creating something great.",
+    "goHome": "Go Home"
+  }
+}

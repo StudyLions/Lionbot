@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "overview": "Overview",
+    "servers": "My Servers",
+    "activity": "Activity",
+    "tasks": "Tasks",
+    "history": "Study History",
+    "goals": "Goals",
+    "reminders": "Reminders",
+    "collection": "Collection",
+    "skins": "Skins & Inventory",
+    "gems": "LionGems",
+    "leaderboard": "Leaderboard",
+    "account": "Account",
+    "profile": "Profile"
+  },
+  "auth": {
+    "signIn": "Sign in with Discord",
+    "signInDesc": "Sign in to access your dashboard",
+    "loading": "Loading..."
+  },
+  "page": {
+    "welcome": "Welcome back",
+    "tasks": {
+      "title": "Your Tasks",
+      "empty": "No tasks yet. Create one to get started!"
+    },
+    "history": {
+      "title": "Study History"
+    },
+    "goals": {
+      "title": "Your Goals"
+    },
+    "reminders": {
+      "title": "Your Reminders"
+    },
+    "gems": {
+      "title": "Your LionGems",
+      "balance": "Balance"
+    },
+    "profile": {
+      "title": "Your Profile"
+    }
+  }
+}

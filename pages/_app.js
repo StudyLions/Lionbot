@@ -1,15 +1,18 @@
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: Added ToastProvider for dashboard notifications
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Added DefaultSeo, i18n wrapping, ToastProvider
 import { SessionProvider } from "next-auth/react";
+import { DefaultSeo } from "next-seo";
+import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
+import defaultSEO from "next-seo.config";
 
 import "public/styles/styles.scss";
 // --- END AI-MODIFIED ---
 
 // Use of the <SessionProvider> is now mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
-export default function App({ Component, pageProps }) {
+function App({ Component, pageProps }) {
   return (
     <SessionProvider
       // Provider options are not required but can be useful in situations where
@@ -41,8 +44,17 @@ export default function App({ Component, pageProps }) {
           gtag('config', 'G-5YBLTF11VW');
         `}
       </Script>
+      {/* --- AI-MODIFIED (2026-03-14) --- */}
+      {/* Purpose: Site-wide default SEO tags */}
+      <DefaultSeo {...defaultSEO} />
+      {/* --- END AI-MODIFIED --- */}
       <Component {...pageProps} />
       <ToastProvider />
     </SessionProvider>
   );
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Wrap app with i18n translation support
+export default appWithTranslation(App);
+// --- END AI-MODIFIED ---

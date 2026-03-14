@@ -22,6 +22,11 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
 import { Calendar, Clock } from "lucide-react"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface ScheduleData {
   lobby_channel: string | null
@@ -323,3 +328,12 @@ export default function SchedulePage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
+  },
+})
+// --- END AI-MODIFIED ---

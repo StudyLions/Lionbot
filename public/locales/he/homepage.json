@@ -1,0 +1,76 @@
+{
+  "hero": {
+    "title": "The Ultimate Discord Productivity Bot",
+    "subtitle": "Activity tracking, economy, leaderboards, productivity tools, and so much more. The all-in-one solution every Discord community needs.",
+    "addToDiscord": "Add to Discord",
+    "viewDashboard": "View Dashboard"
+  },
+  "features": {
+    "title": "Everything Your Server Needs",
+    "subtitle": "Packed with features to keep your community engaged and productive.",
+    "statistics": {
+      "title": "Statistics",
+      "description": "Track daily, weekly, monthly and all-time chat and voice activity. Beautiful graphical summaries to analyze progress."
+    },
+    "leaderboards": {
+      "title": "Leaderboards",
+      "description": "Compare progress across members and servers. Reset to create your own server seasons."
+    },
+    "voiceRooms": {
+      "title": "Private Voice Rooms",
+      "description": "Create private voice rooms and invite friends. Admins can control webcam usage for safety."
+    },
+    "pomodoro": {
+      "title": "Pomodoro Timers",
+      "description": "Built-in focus timers with customizable work and break intervals to boost productivity."
+    },
+    "profiles": {
+      "title": "Profiles",
+      "description": "Customizable member profiles with achievements, stats, and collectible skins."
+    },
+    "economy": {
+      "title": "Economy",
+      "description": "Earn coins through activity, spend in the role shop, and reward your most active members."
+    },
+    "badges": {
+      "title": "Activity Badges",
+      "description": "Assign roles based on chat and voice activity. Fully customizable ranks, intervals, and colors."
+    },
+    "todos": {
+      "title": "To-Do & Reminders",
+      "description": "Create task lists, set weekly and monthly goals, and stay accountable with reminders."
+    },
+    "schedule": {
+      "title": "Scheduled Sessions",
+      "description": "Schedule study sessions members can attend. Missing sessions costs a bonus, building accountability."
+    }
+  },
+  "socialProof": {
+    "title": "Trusted by {{count}}+ Communities",
+    "sessions": "Sessions",
+    "users": "Users",
+    "tasks": "Tasks",
+    "timers": "Active Timers"
+  },
+  "howItWorks": {
+    "title": "Get Started in Minutes",
+    "step1": {
+      "title": "Add to Discord",
+      "description": "Click the invite link to add Leo to your server."
+    },
+    "step2": {
+      "title": "Configure",
+      "description": "Set up channels, roles, and preferences from the dashboard."
+    },
+    "step3": {
+      "title": "Watch Your Server Thrive",
+      "description": "Members start tracking activity and engaging with your community."
+    }
+  },
+  "finalCta": {
+    "title": "Ready to Boost Your Server?",
+    "subtitle": "Join thousands of communities already using LionBot.",
+    "addToDiscord": "Add to Discord",
+    "joinDiscord": "Join Our Discord"
+  }
+}

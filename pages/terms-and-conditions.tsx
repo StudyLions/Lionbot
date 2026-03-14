@@ -1,10 +1,15 @@
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Updated imports, styling wrapper, i18n support
+import { GetStaticProps } from "next";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import Layout from "@/components/Layout/Layout";
 import { TermsAndConditionsSEO } from "@/constants/SeoData";
 
 export default function TermsAndConditions() {
   return (
     <Layout SEO={TermsAndConditionsSEO}>
-      <div className="container p-4 flex flex-wrap flex-col">
+      <div className="bg-background min-h-screen">
+      <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6 [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:my-6 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7 [&_li]:my-2 [&_li]:bg-card [&_li]:p-3 [&_li]:rounded-lg [&_li]:border [&_li]:border-border">
         <h1 className="text-3xl my-4">
           Welcome to “LionBot.org”. Please read on to learn the rules and restrictions that govern your use of our
           website(s), products, services, proprietary bots, as well as any related services on which these Terms appear:
@@ -19,10 +24,11 @@ export default function TermsAndConditions() {
         <p className="my-2 leading-6">
           Under no circumstances shall LionBot.org and its development team be liable for any direct, indirect, special,
           incidental, or consequential damages, including, but not limited to, loss of data or profit, arising out of
-          the use, or the inability to use, the materials on this site, even if Teller or an authorized representative
+          the use, or the inability to use, the materials on this site, even if LionBot.org or an authorized representative
           has been advised of the possibility of such damages. If your use of materials from this site results in the
           need for servicing, repair, or correction of equipment or data, you assume any costs thereof should only be
           provided by the user of the application.
+          {/* AI-MODIFIED: Fixed "Teller" reference to "LionBot.org" */}
         </p>
         <p className="my-2 leading-6">
           By continuing to use this Site or services, you agree to these Terms, as updated from time to time.
@@ -186,7 +192,14 @@ export default function TermsAndConditions() {
           refunds. You lose any right to cancel or to claim a refund once you have made the purchase.
         </p>
       </div>
+      </div>
     </Layout>
   );
 }
 
+export const getStaticProps: GetStaticProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "legal"])),
+  },
+});
+// --- END AI-MODIFIED ---

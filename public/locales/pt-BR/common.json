@@ -1,0 +1,46 @@
+{
+  "nav": {
+    "home": "Home",
+    "donate": "Donate",
+    "skins": "Skins",
+    "inviteBot": "Invite Bot",
+    "tutorials": "Tutorials",
+    "dashboard": "Dashboard",
+    "signIn": "Sign In",
+    "signInDiscord": "Sign In with Discord",
+    "signOut": "Sign Out",
+    "menu": "Menu"
+  },
+  "banner": {
+    "message": "We are expanding!",
+    "detail": "Leo is now available to use in non-study servers as well!"
+  },
+  "footer": {
+    "description": "An open-source productivity bot for Discord communities. Activity tracking, economy, leaderboards, and so much more.",
+    "product": "Product",
+    "resources": "Resources",
+    "legal": "Legal",
+    "home": "Home",
+    "features": "Features",
+    "donate": "Donate",
+    "skins": "Skins",
+    "dashboard": "Dashboard",
+    "tutorials": "Tutorials",
+    "sourceCode": "Source Code",
+    "discordServer": "Discord Server",
+    "support": "Support",
+    "terms": "Terms & Conditions",
+    "privacy": "Privacy Policy",
+    "refund": "Refund Policy",
+    "contact": "Contact",
+    "copyright": "© {{year}} LionBot. All rights reserved.",
+    "madeBy": "Made with love by Ari Horesh"
+  },
+  "cta": {
+    "addToDiscord": "Add to Discord",
+    "viewDashboard": "View Dashboard",
+    "learnMore": "Learn More",
+    "getStarted": "Get Started",
+    "goHome": "Go Home"
+  }
+}

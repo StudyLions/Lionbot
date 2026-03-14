@@ -29,6 +29,11 @@ import { Shield, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useState } from "react"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface Ticket {
   id: number
@@ -387,3 +392,12 @@ export default function ModerationPage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
+  },
+})
+// --- END AI-MODIFIED ---

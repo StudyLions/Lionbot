@@ -1,0 +1,21 @@
+{
+  "nav": {
+    "allServers": "All Servers",
+    "overview": "Overview",
+    "management": "Management",
+    "members": "Members",
+    "moderation": "Moderation",
+    "economy": "Economy",
+    "configuration": "Configuration",
+    "settings": "Settings",
+    "ranks": "Ranks",
+    "shop": "Shop",
+    "roleMenus": "Role Menus",
+    "features": "Features",
+    "schedule": "Schedule",
+    "pomodoro": "Pomodoro",
+    "videoChannels": "Video Channels",
+    "branding": "Branding",
+    "setupWizard": "Setup Wizard"
+  }
+}

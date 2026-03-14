@@ -39,6 +39,11 @@ import {
   Video,
   Pencil,
 } from "lucide-react"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 const TOTAL_STEPS = 6
 const STEP_LABELS = ["Basics", "Study Rewards", "Ranks", "Economy", "Optional Features", "Summary"]
@@ -584,3 +589,12 @@ export default function SetupWizard() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
+  },
+})
+// --- END AI-MODIFIED ---

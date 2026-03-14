@@ -20,6 +20,11 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { CheckSquare, Plus, Trash2, Check, Circle } from "lucide-react"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add i18n imports for serverSideTranslations
+import { GetServerSideProps } from "next"
+import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- END AI-MODIFIED ---
 
 interface Task {
   id: number
@@ -278,3 +283,12 @@ export default function TasksPage() {
     </Layout>
   )
 }
+
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: add getServerSideProps for i18n serverSideTranslations
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+  props: {
+    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),
+  },
+})
+// --- END AI-MODIFIED ---
