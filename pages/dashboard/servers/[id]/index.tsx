@@ -5,7 +5,7 @@
 //          real-time active users, premium banner, and leaderboard
 // ============================================================
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: full redesign with tabs, hero header, admin stats, skeleton loading
+// Purpose: full member hub redesign - rank progress, activity chart, goals, economy, sessions, attendance, messages, server info
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
@@ -13,7 +13,7 @@ import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import {
@@ -21,9 +21,14 @@ import {
   Wallet, Wand2, CheckCircle2, XCircle, ChevronRight, Radio,
   AlertTriangle, Ban, ArrowRightLeft, TrendingUp, UserPlus,
   Sparkles, Zap, Palette, HeadphonesIcon,
+  MessageSquare, Target, Calendar, Camera, Monitor, Info,
+  ArrowUp, ArrowDown, Minus, Medal, ChevronUp,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+} from "recharts"
 // --- END AI-MODIFIED ---
 
 interface ServerData {
@@ -84,7 +89,69 @@ interface SetupStatus {
   roleMenusCount: number
 }
 
+interface MemberOverview {
+  rankProgress: {
+    rankType: string
+    currentRank: { roleId: string; required: number } | null
+    nextRank: { roleId: string; required: number } | null
+    currentValue: number
+    progress: number
+  } | null
+  leaderboardPosition: { rank: number; total: number }
+  recentSessions: Array<{
+    id: number
+    startTime: string
+    durationMinutes: number
+    cameraMins: number
+    streamMins: number
+    tag: string | null
+    rating: number | null
+  }>
+  ongoingSession: {
+    startTime: string
+    currentMinutes: number
+    isCamera: boolean
+    isStream: boolean
+  } | null
+  goals: {
+    weekly: {
+      studyGoal: number | null; studyProgress: number
+      taskGoal: number | null; taskProgress: number
+      messageGoal: number | null; messageProgress: number
+    } | null
+    monthly: {
+      studyGoal: number | null; studyProgress: number
+      taskGoal: number | null; taskProgress: number
+      messageGoal: number | null; messageProgress: number
+    } | null
+  }
+  economy: {
+    coins: number
+    rewardRate: number
+    recentTransactions: Array<{
+      id: number; type: string; amount: number; bonus: number; createdAt: string
+    }>
+    inventoryCount: number
+  }
+  messages: { totalMessages: number; totalWords: number; thisWeekMessages: number }
+  attendance: {
+    totalBooked: number
+    totalAttended: number
+    recent: Array<{ date: string; attended: boolean }>
+  }
+  activityChart: Array<{ date: string; minutes: number }>
+  serverInfo: {
+    rankType: string | null
+    timezone: string | null
+    studyReward: number | null
+    liveBonus: number | null
+    taskReward: number | null
+    maxTasks: number | null
+  }
+}
+
 function formatMinutes(minutes: number): string {
+  if (minutes < 1) return "<1m"
   if (minutes < 60) return `${minutes}m`
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
@@ -101,14 +168,24 @@ function formatDuration(startTime: string | null): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-function Skeleton({ className = "" }: { className?: string }) {
-  return (
-    <div className={`animate-pulse bg-muted/50 rounded-lg ${className}`} />
-  )
+function timeAgo(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime()
+  const mins = Math.floor(diff / 60_000)
+  if (mins < 1) return "just now"
+  if (mins < 60) return `${mins}m ago`
+  const hrs = Math.floor(mins / 60)
+  if (hrs < 24) return `${hrs}h ago`
+  const days = Math.floor(hrs / 24)
+  if (days < 7) return `${days}d ago`
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
 }
 
-function StatCard({ icon, label, value, color, href }: {
-  icon: React.ReactNode; label: string; value: string | number; color: string; href?: string
+function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse bg-muted/50 rounded-lg ${className}`} />
+}
+
+function StatCard({ icon, label, value, color, href, sub }: {
+  icon: React.ReactNode; label: string; value: string | number; color: string; href?: string; sub?: string
 }) {
   const content = (
     <div className={`bg-card rounded-2xl p-4 border border-border/50 ${href ? "hover:border-primary/30 transition-colors cursor-pointer group" : ""}`}>
@@ -117,6 +194,7 @@ function StatCard({ icon, label, value, color, href }: {
         <span className="text-[10px] uppercase tracking-wider font-medium">{label}</span>
       </div>
       <p className="text-xl font-bold text-foreground">{typeof value === "number" ? value.toLocaleString() : value}</p>
+      {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   )
   if (href) return <Link href={href}>{content}</Link>
@@ -134,6 +212,47 @@ function ServerIcon({ name, iconUrl, size = "lg" }: { name: string; iconUrl: str
       <span className={`${textSize} font-bold text-foreground/80`}>{name.charAt(0).toUpperCase()}</span>
     </div>
   )
+}
+
+function RadialProgress({ value, max, size = 56, color }: { value: number; max: number; size?: number; color: string }) {
+  const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0
+  const r = (size - 6) / 2
+  const circ = 2 * Math.PI * r
+  const offset = circ - (pct / 100) * circ
+
+  return (
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor"
+        className="text-muted/30" strokeWidth={5} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor"
+        className={color} strokeWidth={5} strokeLinecap="round"
+        strokeDasharray={circ} strokeDashoffset={offset}
+        style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+    </svg>
+  )
+}
+
+function ChartTooltip({ active, payload, label }: any) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="bg-card border border-border rounded-lg px-3 py-2 shadow-xl text-xs">
+      <p className="text-muted-foreground mb-0.5">{label}</p>
+      <p className="text-foreground font-bold">{formatMinutes(payload[0].value)}</p>
+    </div>
+  )
+}
+
+const txnLabels: Record<string, string> = {
+  VOICE_SESSION: "Study reward",
+  TEXT_SESSION: "Text reward",
+  TASKS: "Task reward",
+  SHOP_PURCHASE: "Shop purchase",
+  TRANSFER: "Transfer",
+  ADMIN: "Admin",
+  REFUND: "Refund",
+  SCHEDULE_BOOK: "Schedule booking",
+  SCHEDULE_REWARD: "Schedule reward",
+  OTHER: "Other",
 }
 
 export default function ServerDetail() {
@@ -155,8 +274,10 @@ export default function ServerDetail() {
   const { data: premiumData } = useDashboard<{ isPremium: boolean; premiumUntil: string | null }>(
     id && status === "authenticated" ? `/api/dashboard/servers/${id}/branding` : null
   )
-  // --- AI-MODIFIED (2026-03-14) ---
-  // Purpose: fetch overview-stats optimistically (API handles auth), avoid loading waterfall
+  const { data: memberData } = useDashboard<MemberOverview>(
+    status === "authenticated" && id ? `/api/dashboard/servers/${id}/member-overview` : null
+  )
+
   const perms = permsData ?? { isMember: false, isModerator: false, isAdmin: false }
   const permsLoading = permsData === undefined && !permsError
   const { data: adminStats } = useDashboard<OverviewStats>(
@@ -166,7 +287,6 @@ export default function ServerDetail() {
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const loading = isLoading
   const error = fetchError?.message ?? null
-  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!perms.isAdmin || !id) return
@@ -191,6 +311,28 @@ export default function ServerDetail() {
       .catch(() => toast.error("Failed to load setup status"))
   }, [perms.isAdmin, id, data?.server?.settings])
 
+  const [liveTimer, setLiveTimer] = useState(0)
+  useEffect(() => {
+    if (!memberData?.ongoingSession) return
+    const update = () => {
+      setLiveTimer(Math.floor((Date.now() - new Date(memberData.ongoingSession!.startTime).getTime()) / 60_000))
+    }
+    update()
+    const iv = setInterval(update, 30_000)
+    return () => clearInterval(iv)
+  }, [memberData?.ongoingSession])
+
+  const chartData = useMemo(() => {
+    if (!memberData?.activityChart) return []
+    return memberData.activityChart.map((d) => ({
+      ...d,
+      label: new Date(d.date + "T00:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    }))
+  }, [memberData?.activityChart])
+
+  const isMod = perms.isModerator || perms.isAdmin
+  const userRank = memberData?.leaderboardPosition
+
   return (
     <Layout
       SEO={{ title: `${data?.server.name || "Server"} - LionBot Dashboard`, description: "Server dashboard" }}
@@ -210,13 +352,10 @@ export default function ServerDetail() {
                   <div className="rounded-2xl overflow-hidden border border-border">
                     <Skeleton className="h-28 rounded-none" />
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                    {[1, 2, 3, 4, 5, 6].map((i) => <Skeleton key={i} className="h-20" />)}
                   </div>
-                  <Skeleton className="h-24" />
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}
-                  </div>
+                  <Skeleton className="h-48" />
                   <Skeleton className="h-64" />
                 </div>
               ) : error ? (
@@ -273,6 +412,36 @@ export default function ServerDetail() {
 
                     {/* ====== OVERVIEW TAB ====== */}
                     <TabsContent value="overview" className="space-y-6">
+                      {/* Ongoing Session Banner */}
+                      {memberData?.ongoingSession && (
+                        <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-transparent p-5">
+                          <div className="flex items-center gap-3">
+                            <span className="relative flex h-3 w-3 flex-shrink-0">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                            </span>
+                            <div className="flex-1">
+                              <p className="font-semibold text-foreground">You&apos;re studying right now!</p>
+                              <p className="text-sm text-muted-foreground mt-0.5">
+                                Started {timeAgo(memberData.ongoingSession.startTime)} &middot; {formatMinutes(liveTimer)} so far
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              {memberData.ongoingSession.isCamera && (
+                                <span className="flex items-center gap-1 text-xs bg-emerald-500/15 text-emerald-400 px-2.5 py-1 rounded-full">
+                                  <Camera size={12} /> Camera
+                                </span>
+                              )}
+                              {memberData.ongoingSession.isStream && (
+                                <span className="flex items-center gap-1 text-xs bg-purple-500/15 text-purple-400 px-2.5 py-1 rounded-full">
+                                  <Monitor size={12} /> Stream
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
                       {/* Premium Banner */}
                       {premiumData?.isPremium ? (
                         <div className="rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-transparent p-5">
@@ -320,13 +489,12 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* Admin Control Panel -- show skeleton while permissions load */}
-                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
+                      {/* Admin Control Panel */}
+                      {(isMod || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="px-5 py-4 border-b border-border">
                             <h3 className="text-base font-bold text-foreground">Server Control Panel</h3>
                           </div>
-
                           {!adminStats ? (
                             <div className="p-5 space-y-4">
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -337,7 +505,6 @@ export default function ServerDetail() {
                             </div>
                           ) : (
                             <div className="p-5 space-y-4">
-                              {/* Activity row */}
                               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                                 <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-3">
                                   <div className="flex items-center gap-2 mb-1">
@@ -374,8 +541,6 @@ export default function ServerDetail() {
                                   </p>
                                 </div>
                               </div>
-
-                              {/* Moderation row */}
                               <div className="flex items-center gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm">
                                 <Shield size={16} className="text-rose-400 flex-shrink-0" />
                                 <span className="text-muted-foreground font-medium mr-auto">Moderation</span>
@@ -386,18 +551,10 @@ export default function ServerDetail() {
                                   </span>
                                 </Link>
                                 <span className="text-border">|</span>
-                                <span>
-                                  <span className="font-bold text-foreground">{adminStats.moderation.recentWarnings}</span>
-                                  <span className="text-muted-foreground ml-1">warnings</span>
-                                </span>
+                                <span><span className="font-bold text-foreground">{adminStats.moderation.recentWarnings}</span><span className="text-muted-foreground ml-1">warnings</span></span>
                                 <span className="text-border">|</span>
-                                <span>
-                                  <span className="font-bold text-foreground">{adminStats.moderation.activeStudyBans}</span>
-                                  <span className="text-muted-foreground ml-1">bans</span>
-                                </span>
+                                <span><span className="font-bold text-foreground">{adminStats.moderation.activeStudyBans}</span><span className="text-muted-foreground ml-1">bans</span></span>
                               </div>
-
-                              {/* Economy row */}
                               <div className="flex items-center gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm">
                                 <Coins size={16} className="text-amber-400 flex-shrink-0" />
                                 <span className="text-muted-foreground font-medium mr-auto">Economy</span>
@@ -408,10 +565,7 @@ export default function ServerDetail() {
                                   </span>
                                 </Link>
                                 <span className="text-border">|</span>
-                                <span>
-                                  <span className="font-bold text-foreground">{adminStats.economy.transactionsToday}</span>
-                                  <span className="text-muted-foreground ml-1">txns today</span>
-                                </span>
+                                <span><span className="font-bold text-foreground">{adminStats.economy.transactionsToday}</span><span className="text-muted-foreground ml-1">txns today</span></span>
                                 {adminStats.economy.topEarner && (
                                   <>
                                     <span className="text-border">|</span>
@@ -427,15 +581,348 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* Your Stats */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                        <StatCard icon={<Clock size={14} />} label="Study Time" value={`${data.you.trackedTimeHours}h`} color="text-emerald-400/70" />
-                        <StatCard icon={<Coins size={14} />} label="Coins" value={data.you.coins} color="text-warning/70" />
+                      {/* ====== MEMBER HUB SECTIONS ====== */}
+
+                      {/* Stats Grid */}
+                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                        <StatCard icon={<Clock size={14} />} label="Study Time" value={`${data.you.trackedTimeHours}h`} color="text-emerald-400/70" sub={serverStats ? `${formatMinutes(serverStats.studyTime.thisWeekMinutes)} this week` : undefined} />
+                        <StatCard icon={<Coins size={14} />} label="Coins" value={memberData?.economy.coins ?? data.you.coins} color="text-warning/70" sub={memberData?.economy.rewardRate ? `${memberData.economy.rewardRate} coins/hr` : undefined} />
+                        <StatCard
+                          icon={<Trophy size={14} />}
+                          label="Leaderboard"
+                          value={userRank ? `#${userRank.rank}` : "--"}
+                          color={userRank && userRank.rank <= 3 ? "text-amber-400/70" : "text-cyan-400/70"}
+                          sub={userRank ? `of ${userRank.total} members` : undefined}
+                        />
+                        <StatCard icon={<MessageSquare size={14} />} label="Messages" value={memberData?.messages.totalMessages ?? 0} color="text-blue-400/70" sub={memberData?.messages.thisWeekMessages ? `${memberData.messages.thisWeekMessages} this week` : undefined} />
                         <StatCard icon={<Dumbbell size={14} />} label="Workouts" value={data.you.workoutCount || 0} color="text-purple-400/70" />
-                        <StatCard icon={<Trophy size={14} />} label="Reward Rate" value={`${data.server.settings?.studyHourlyReward ?? 0}/hr`} color="text-cyan-400/70" />
+                        {data.you.firstJoined && (
+                          <StatCard
+                            icon={<Calendar size={14} />}
+                            label="Member Since"
+                            value={new Date(data.you.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                            color="text-indigo-400/70"
+                          />
+                        )}
                       </div>
 
-                      {/* Setup Checklist */}
+                      {/* Rank Progress */}
+                      {memberData?.rankProgress ? (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                              <Medal size={18} className="text-indigo-400" />
+                              Rank Progress
+                            </h3>
+                            <Badge variant="info" size="sm">
+                              {memberData.rankProgress.rankType === "VOICE" ? "Voice Hours" : memberData.rankProgress.rankType === "MESSAGE" ? "Messages" : "XP"}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="relative flex-shrink-0">
+                              <RadialProgress
+                                value={memberData.rankProgress.progress}
+                                max={100}
+                                size={72}
+                                color={memberData.rankProgress.progress >= 100 ? "text-emerald-500" : memberData.rankProgress.progress >= 50 ? "text-indigo-500" : "text-muted-foreground"}
+                              />
+                              <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-foreground">
+                                {memberData.rankProgress.progress}%
+                              </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between text-sm mb-2">
+                                <span className="text-muted-foreground">
+                                  {memberData.rankProgress.currentRank ? "Current rank" : "No rank yet"}
+                                </span>
+                                {memberData.rankProgress.nextRank && (
+                                  <span className="text-muted-foreground">Next rank</span>
+                                )}
+                              </div>
+                              <div className="h-2.5 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-700 ${
+                                    memberData.rankProgress.progress >= 100 ? "bg-emerald-500" : "bg-indigo-500"
+                                  }`}
+                                  style={{ width: `${memberData.rankProgress.progress}%` }}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
+                                <span>
+                                  {memberData.rankProgress.currentValue.toLocaleString()}{" "}
+                                  {memberData.rankProgress.rankType === "VOICE" ? "hours" : memberData.rankProgress.rankType === "MESSAGE" ? "msgs" : "XP"}
+                                </span>
+                                {memberData.rankProgress.nextRank && (
+                                  <span>{memberData.rankProgress.nextRank.required.toLocaleString()} needed</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : memberData && (
+                        <div className="bg-card rounded-2xl border border-border p-5 text-center">
+                          <Medal size={24} className="text-muted-foreground mx-auto mb-2" />
+                          <p className="text-sm text-muted-foreground">This server hasn&apos;t set up ranks yet</p>
+                        </div>
+                      )}
+
+                      {/* Activity Chart */}
+                      {chartData.length > 0 && (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <h3 className="text-base font-bold text-foreground mb-4 flex items-center gap-2">
+                            <TrendingUp size={18} className="text-emerald-400" />
+                            Study Activity
+                            <span className="text-xs text-muted-foreground font-normal ml-auto">Last 30 days</span>
+                          </h3>
+                          <div className="h-40">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+                                <defs>
+                                  <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="rgb(99 102 241)" stopOpacity={0.8} />
+                                    <stop offset="100%" stopColor="rgb(99 102 241)" stopOpacity={0.2} />
+                                  </linearGradient>
+                                </defs>
+                                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                                <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+                                <Bar dataKey="minutes" fill="url(#barGrad)" radius={[3, 3, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Goals Snapshot */}
+                      {memberData?.goals && (memberData.goals.weekly || memberData.goals.monthly) && (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                              <Target size={18} className="text-emerald-400" />
+                              Goals This Week
+                            </h3>
+                            <Link href="/dashboard/goals">
+                              <span className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors cursor-pointer flex items-center gap-1">
+                                View all <ChevronRight size={12} />
+                              </span>
+                            </Link>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            {(() => {
+                              const g = memberData.goals.weekly || memberData.goals.monthly
+                              if (!g) return null
+                              const items = [
+                                { label: "Study", goal: g.studyGoal, progress: g.studyProgress, unit: "h", color: "text-emerald-500" },
+                                { label: "Tasks", goal: g.taskGoal, progress: g.taskProgress, unit: "", color: "text-blue-500" },
+                                { label: "Messages", goal: g.messageGoal, progress: g.messageProgress, unit: "", color: "text-purple-500" },
+                              ].filter((it) => it.goal && it.goal > 0)
+                              if (items.length === 0) return (
+                                <div className="col-span-3 text-center py-4 text-sm text-muted-foreground">
+                                  No goals set for this server. Set them in Discord with <code className="bg-muted px-1 rounded text-xs">/goals</code>
+                                </div>
+                              )
+                              return items.map((it) => (
+                                <div key={it.label} className="text-center">
+                                  <div className="relative inline-block">
+                                    <RadialProgress value={it.progress} max={it.goal!} size={64} color={it.progress >= it.goal! ? "text-emerald-500" : it.color} />
+                                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
+                                      {it.progress}{it.unit}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">{it.label}</p>
+                                  <p className="text-[10px] text-muted-foreground/60">{it.progress}{it.unit} / {it.goal}{it.unit}</p>
+                                </div>
+                              ))
+                            })()}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Two-column layout: Recent Sessions + Economy */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+                        {/* Recent Sessions */}
+                        {memberData && memberData.recentSessions.length > 0 && (
+                          <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                            <div className="px-5 py-4 border-b border-border flex items-center justify-between">
+                              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                <HeadphonesIcon size={16} className="text-blue-400" />
+                                Recent Sessions
+                              </h3>
+                              <Link href="/dashboard/history">
+                                <span className="text-xs text-indigo-400 hover:text-indigo-300 cursor-pointer">View all</span>
+                              </Link>
+                            </div>
+                            <div className="divide-y divide-border/30">
+                              {memberData.recentSessions.slice(0, 5).map((s) => (
+                                <div key={s.id} className="px-5 py-3 flex items-center gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-medium text-foreground">{formatMinutes(s.durationMinutes)}</span>
+                                      {s.cameraMins > 0 && (
+                                        <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                                          <Camera size={10} className="inline mr-0.5" />{formatMinutes(s.cameraMins)}
+                                        </span>
+                                      )}
+                                      {s.streamMins > 0 && (
+                                        <span className="text-[10px] text-purple-400 bg-purple-500/10 px-1.5 py-0.5 rounded">
+                                          <Monitor size={10} className="inline mr-0.5" />{formatMinutes(s.streamMins)}
+                                        </span>
+                                      )}
+                                      {s.tag && (
+                                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded truncate max-w-[80px]">{s.tag}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(s.startTime)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Economy */}
+                        {memberData && (
+                          <div className="bg-card rounded-2xl border border-border overflow-hidden">
+                            <div className="px-5 py-4 border-b border-border">
+                              <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                                <Coins size={16} className="text-amber-400" />
+                                Economy
+                              </h3>
+                            </div>
+                            <div className="p-5">
+                              <div className="flex items-center justify-between mb-3">
+                                <div>
+                                  <p className="text-2xl font-bold text-warning">{memberData.economy.coins.toLocaleString()}</p>
+                                  <p className="text-xs text-muted-foreground">coins</p>
+                                </div>
+                                <div className="text-right">
+                                  {memberData.economy.rewardRate > 0 && (
+                                    <p className="text-xs text-muted-foreground">
+                                      Earn <span className="text-warning font-medium">{memberData.economy.rewardRate}</span> coins/hr studying
+                                    </p>
+                                  )}
+                                  {memberData.economy.inventoryCount > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-0.5">
+                                      {memberData.economy.inventoryCount} item{memberData.economy.inventoryCount !== 1 ? "s" : ""} owned
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              {memberData.economy.recentTransactions.length > 0 && (
+                                <div className="space-y-1.5 mt-3">
+                                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Recent</p>
+                                  {memberData.economy.recentTransactions.slice(0, 5).map((t) => (
+                                    <div key={t.id} className="flex items-center gap-2 text-xs">
+                                      <span className={`font-mono font-bold ${t.amount >= 0 ? "text-emerald-400" : "text-red-400"}`}>
+                                        {t.amount >= 0 ? "+" : ""}{t.amount}
+                                      </span>
+                                      {t.bonus > 0 && <span className="text-amber-400/70 font-mono">+{t.bonus}</span>}
+                                      <span className="text-muted-foreground truncate flex-1">{txnLabels[t.type] || t.type}</span>
+                                      <span className="text-muted-foreground/50 whitespace-nowrap">{timeAgo(t.createdAt)}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Attendance */}
+                      {memberData && memberData.attendance.totalBooked > 0 && (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                            <Calendar size={16} className="text-indigo-400" />
+                            Schedule Attendance
+                          </h3>
+                          <div className="flex items-center gap-4 mb-3">
+                            <div>
+                              <span className="text-2xl font-bold text-foreground">{memberData.attendance.totalAttended}</span>
+                              <span className="text-muted-foreground text-sm"> / {memberData.attendance.totalBooked} sessions</span>
+                            </div>
+                            <div className="flex-1">
+                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-indigo-500 transition-all"
+                                  style={{ width: `${memberData.attendance.totalBooked > 0 ? (memberData.attendance.totalAttended / memberData.attendance.totalBooked) * 100 : 0}%` }}
+                                />
+                              </div>
+                            </div>
+                            <span className="text-sm font-medium text-foreground">
+                              {memberData.attendance.totalBooked > 0
+                                ? Math.round((memberData.attendance.totalAttended / memberData.attendance.totalBooked) * 100)
+                                : 0}%
+                            </span>
+                          </div>
+                          {memberData.attendance.recent.length > 0 && (
+                            <div className="flex gap-1.5 flex-wrap">
+                              {memberData.attendance.recent.map((a, i) => (
+                                <span
+                                  key={i}
+                                  title={new Date(a.date).toLocaleDateString()}
+                                  className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] ${
+                                    a.attended
+                                      ? "bg-emerald-500/15 text-emerald-400"
+                                      : "bg-red-500/10 text-red-400"
+                                  }`}
+                                >
+                                  {a.attended ? <CheckCircle2 size={12} /> : <XCircle size={12} />}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Server Info */}
+                      {memberData?.serverInfo && (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+                            <Info size={16} className="text-muted-foreground" />
+                            Server Settings
+                          </h3>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {memberData.serverInfo.rankType && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Rank Type</p>
+                                <p className="text-sm font-medium text-foreground capitalize">{memberData.serverInfo.rankType.toLowerCase()}</p>
+                              </div>
+                            )}
+                            {memberData.serverInfo.timezone && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Timezone</p>
+                                <p className="text-sm font-medium text-foreground">{memberData.serverInfo.timezone}</p>
+                              </div>
+                            )}
+                            {memberData.serverInfo.studyReward != null && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Study Reward</p>
+                                <p className="text-sm font-medium text-warning">{memberData.serverInfo.studyReward} coins/hr</p>
+                              </div>
+                            )}
+                            {memberData.serverInfo.liveBonus != null && memberData.serverInfo.liveBonus > 0 && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Camera Bonus</p>
+                                <p className="text-sm font-medium text-emerald-400">+{memberData.serverInfo.liveBonus} coins/hr</p>
+                              </div>
+                            )}
+                            {memberData.serverInfo.taskReward != null && memberData.serverInfo.taskReward > 0 && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Task Reward</p>
+                                <p className="text-sm font-medium text-blue-400">{memberData.serverInfo.taskReward} coins</p>
+                              </div>
+                            )}
+                            {memberData.serverInfo.maxTasks != null && (
+                              <div className="bg-muted/30 rounded-xl px-3 py-2.5">
+                                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Max Tasks</p>
+                                <p className="text-sm font-medium text-foreground">{memberData.serverInfo.maxTasks}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Setup Checklist (admin only) */}
                       {(perms.isAdmin || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="p-5 border-b border-border">
@@ -460,7 +947,7 @@ export default function ServerDetail() {
                       )}
 
                       {/* Quick Admin Actions */}
-                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
+                      {(isMod || permsLoading) && (
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                           {(perms.isAdmin || permsLoading) && (
                             permsLoading ? <Skeleton className="h-[68px] rounded-2xl" /> : (
@@ -488,8 +975,8 @@ export default function ServerDetail() {
 
                     {/* ====== ACTIVITY TAB ====== */}
                     <TabsContent value="activity" className="space-y-6">
-                      {/* Currently Studying */}
-                      {(perms.isModerator || perms.isAdmin || permsLoading) && (
+                      {/* Currently Studying (mod+) */}
+                      {(isMod || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="px-5 py-4 border-b border-border flex items-center gap-3">
                             <span className="relative flex h-2.5 w-2.5">
@@ -535,13 +1022,36 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* Server Activity Summary */}
+                      {/* Your Study Time */}
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         <StatCard icon={<Clock size={14} />} label="Today" value={formatMinutes(serverStats?.studyTime.todayMinutes ?? 0)} color="text-emerald-400/70" />
                         <StatCard icon={<Clock size={14} />} label="This Week" value={formatMinutes(serverStats?.studyTime.thisWeekMinutes ?? 0)} color="text-blue-400/70" />
                         <StatCard icon={<Clock size={14} />} label="This Month" value={formatMinutes(serverStats?.studyTime.thisMonthMinutes ?? 0)} color="text-indigo-400/70" />
                         <StatCard icon={<Clock size={14} />} label="All Time" value={formatMinutes(serverStats?.studyTime.allTimeMinutes ?? 0)} color="text-purple-400/70" />
                       </div>
+
+                      {/* Activity Chart */}
+                      {chartData.length > 0 && (
+                        <div className="bg-card rounded-2xl border border-border p-5">
+                          <h3 className="text-base font-bold text-foreground mb-4">Daily Study Activity</h3>
+                          <div className="h-48">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
+                                <defs>
+                                  <linearGradient id="barGrad2" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stopColor="rgb(99 102 241)" stopOpacity={0.8} />
+                                    <stop offset="100%" stopColor="rgb(99 102 241)" stopOpacity={0.2} />
+                                  </linearGradient>
+                                </defs>
+                                <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} interval="preserveStartEnd" axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }} axisLine={false} tickLine={false} />
+                                <Tooltip content={<ChartTooltip />} cursor={{ fill: "hsl(var(--muted))", opacity: 0.3 }} />
+                                <Bar dataKey="minutes" fill="url(#barGrad2)" radius={[3, 3, 0, 0]} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Your Stats */}
                       <div className="bg-card rounded-2xl border border-border p-5">
@@ -556,8 +1066,8 @@ export default function ServerDetail() {
                             <p className="text-lg font-bold text-warning">{data.you.coins.toLocaleString()}</p>
                           </div>
                           <div>
-                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Workouts</p>
-                            <p className="text-lg font-bold text-purple-400">{data.you.workoutCount || 0}</p>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Messages</p>
+                            <p className="text-lg font-bold text-blue-400">{(memberData?.messages.totalMessages ?? 0).toLocaleString()}</p>
                           </div>
                           {data.you.firstJoined && (
                             <div>
@@ -572,7 +1082,29 @@ export default function ServerDetail() {
                     </TabsContent>
 
                     {/* ====== LEADERBOARD TAB ====== */}
-                    <TabsContent value="leaderboard">
+                    <TabsContent value="leaderboard" className="space-y-4">
+                      {/* Your Position */}
+                      {userRank && (
+                        <div className={`rounded-xl p-4 border flex items-center gap-4 ${
+                          userRank.rank <= 3 ? "border-amber-500/30 bg-amber-500/5" : "border-indigo-500/30 bg-indigo-500/5"
+                        }`}>
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-lg font-bold ${
+                            userRank.rank === 1 ? "bg-amber-500/20 text-amber-400" :
+                            userRank.rank === 2 ? "bg-gray-300/20 text-gray-300" :
+                            userRank.rank === 3 ? "bg-amber-700/20 text-amber-600" :
+                            "bg-indigo-500/15 text-indigo-400"
+                          }`}>
+                            #{userRank.rank}
+                          </div>
+                          <div>
+                            <p className="text-foreground font-semibold">Your Position</p>
+                            <p className="text-sm text-muted-foreground">
+                              Rank {userRank.rank} of {userRank.total} members &middot; {data.you.trackedTimeHours}h studied &middot; {data.you.coins.toLocaleString()} coins
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
                       <div className="bg-card rounded-2xl border border-border overflow-hidden">
                         <div className="p-5 border-b border-border">
                           <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -592,14 +1124,23 @@ export default function ServerDetail() {
                             </thead>
                             <tbody>
                               {data.leaderboard.map((entry) => (
-                                <tr key={entry.userId} className={`border-b border-border/30 last:border-0 ${entry.isYou ? "bg-primary/10" : "hover:bg-accent"}`}>
+                                <tr key={entry.userId} className={`border-b border-border/30 last:border-0 ${entry.isYou ? "bg-indigo-500/10" : "hover:bg-accent"}`}>
                                   <td className="py-3 px-5">
-                                    <span className={`font-bold ${entry.rank === 1 ? "text-warning" : entry.rank === 2 ? "text-foreground/80" : entry.rank === 3 ? "text-amber-700" : "text-muted-foreground"}`}>
-                                      #{entry.rank}
-                                    </span>
+                                    {entry.rank <= 3 ? (
+                                      <span className={`inline-flex items-center gap-1 font-bold ${
+                                        entry.rank === 1 ? "text-amber-400" : entry.rank === 2 ? "text-gray-300" : "text-amber-600"
+                                      }`}>
+                                        <Medal size={14} />
+                                        #{entry.rank}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground font-bold">#{entry.rank}</span>
+                                    )}
                                   </td>
                                   <td className="py-3 px-5">
-                                    <span className="text-foreground font-medium">{entry.displayName || `User ...${entry.userId.slice(-4)}`}</span>
+                                    <span className={`font-medium ${entry.isYou ? "text-indigo-400" : "text-foreground"}`}>
+                                      {entry.displayName || `User ...${entry.userId.slice(-4)}`}
+                                    </span>
                                     {entry.isYou && <span className="ml-2"><Badge variant="info" size="sm">you</Badge></span>}
                                   </td>
                                   <td className="py-3 px-5 text-right"><span className="text-success font-mono">{entry.trackedTimeHours}h</span></td>
@@ -647,3 +1188,4 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
   },
 })
+// --- END AI-MODIFIED ---
