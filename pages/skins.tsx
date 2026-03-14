@@ -1,77 +1,35 @@
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Use real bot-rendered skin previews instead of static PNG screenshots
+// Purpose: Skins page using static images from SkinsList, with visual polish
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
-import { Diamond, X, Search, ImageOff } from "lucide-react";
+import { Diamond, X, Search } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { SkinsSEO } from "@/constants/SeoData";
-
-const SKINS = [
-  { id: "obsidian", label: "Obsidian", price: 1500 },
-  { id: "platinum", label: "Platinum", price: 750 },
-  { id: "blue_bayoux", label: "Blue Bayoux", price: 1500 },
-  { id: "boston_blue", label: "Boston Blue", price: 750 },
-  { id: "bubblegum", label: "Bubblegum", price: 1500 },
-  { id: "cotton_candy", label: "Cotton Candy", price: 1500 },
-];
-
-const CARD_TYPES = [
-  { type: "profile", label: "Profile Card" },
-  { type: "stats", label: "Stats Card" },
-] as const;
-
-function SkinPreviewImage({
-  skinId,
-  cardType,
-  alt,
-  className = "",
-}: {
-  skinId: string;
-  cardType: string;
-  alt: string;
-  className?: string;
-}) {
-  const [error, setError] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  if (error) {
-    return (
-      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground ${className}`}>
-        <ImageOff className="h-8 w-8" />
-      </div>
-    );
-  }
-
-  return (
-    <div className={`relative ${className}`}>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-      <img
-        src={`/api/skins/preview?skin=${skinId}&type=${cardType}`}
-        alt={alt}
-        className="w-full h-auto block"
-        onError={() => setError(true)}
-        onLoad={() => setLoading(false)}
-      />
-    </div>
-  );
-}
+import { SkinsList } from "@/constants/SkinsList";
 
 function SkinModal({
   skin,
   onClose,
 }: {
-  skin: (typeof SKINS)[0];
+  skin: (typeof SkinsList)[0];
   onClose: () => void;
 }) {
   const { t } = useTranslation("skins");
-  const [selectedType, setSelectedType] = useState(0);
+  const images = [
+    { full: skin.image.imageOne, thumb: skin.image.imageOneThumbnail },
+    { full: skin.image.imageTwo, thumb: skin.image.imageTwoThumbnail },
+    { full: skin.image.imageThree, thumb: skin.image.imageThreeThumbnail },
+    { full: skin.image.imageFour, thumb: skin.image.imageFourThumbnail },
+    { full: skin.image.imageFive, thumb: skin.image.imageFiveThumbnail },
+    { full: skin.image.imageSix, thumb: skin.image.imageSixThumbnail },
+    { full: skin.image.imageSeven, thumb: skin.image.imageSevenThumbnail },
+    { full: skin.image.imageEight, thumb: skin.image.imageEightThumbnail },
+  ];
+  const [selectedImage, setSelectedImage] = useState(0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -86,11 +44,12 @@ function SkinModal({
 
         <div className="flex flex-col md:flex-row">
           <div className="flex-1 p-6 bg-background/50 flex items-center justify-center min-h-[300px]">
-            <SkinPreviewImage
-              skinId={skin.id}
-              cardType={CARD_TYPES[selectedType].type}
-              alt={`${skin.label} ${CARD_TYPES[selectedType].label}`}
-              className="max-w-full"
+            <Image
+              src={images[selectedImage].full}
+              alt={skin.label}
+              width={400}
+              height={400}
+              objectFit="contain"
             />
           </div>
 
@@ -99,34 +58,31 @@ function SkinModal({
             <div className="flex items-center gap-2 mt-2">
               <Diamond className="h-4 w-4 text-primary" />
               <span className="text-lg font-semibold text-primary">
-                {skin.price.toLocaleString()} {t("modal.gems", { amount: "" }).trim()}
+                {skin.price.toLocaleString()} gems
               </span>
             </div>
 
             <div className="border-t border-border my-4" />
 
-            <p className="text-sm text-muted-foreground mb-3">Card type preview:</p>
-            <div className="flex gap-2">
-              {CARD_TYPES.map((ct, i) => (
+            <div className="grid grid-cols-4 gap-2">
+              {images.map((img, i) => (
                 <button
-                  key={ct.type}
-                  onClick={() => setSelectedType(i)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                    i === selectedType
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                  key={i}
+                  onClick={() => setSelectedImage(i)}
+                  className={`rounded-lg overflow-hidden border-2 transition-colors ${
+                    i === selectedImage ? "border-primary" : "border-border hover:border-primary/30"
                   }`}
                 >
-                  {ct.label}
+                  <Image
+                    src={img.thumb}
+                    alt={`${skin.label} preview ${i + 1}`}
+                    width={80}
+                    height={80}
+                    objectFit="cover"
+                  />
                 </button>
               ))}
             </div>
-
-            <div className="border-t border-border my-4" />
-
-            <p className="text-sm text-muted-foreground mb-1">
-              These are actual bot-rendered card previews — exactly what you see in Discord.
-            </p>
 
             <div className="border-t border-border my-4" />
 
@@ -148,10 +104,10 @@ function SkinModal({
 
 export default function Skins() {
   const { t } = useTranslation("skins");
-  const [selectedSkin, setSelectedSkin] = useState<(typeof SKINS)[0] | null>(null);
+  const [selectedSkin, setSelectedSkin] = useState<(typeof SkinsList)[0] | null>(null);
   const [search, setSearch] = useState("");
 
-  const filtered = SKINS.filter((skin) =>
+  const filtered = SkinsList.filter((skin) =>
     skin.label.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -194,11 +150,12 @@ export default function Skins() {
                     className="group rounded-lg border border-border bg-card hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 hover:translate-y-[-2px] transition-all duration-200 overflow-hidden text-left"
                   >
                     <div className="relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-background/80 to-card">
-                      <SkinPreviewImage
-                        skinId={skin.id}
-                        cardType="profile"
+                      <Image
+                        src={skin.image.imageOne}
                         alt={skin.label}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        layout="fill"
+                        objectFit="cover"
+                        className="group-hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-card to-transparent" />
                     </div>

@@ -4,9 +4,7 @@
 // Purpose: Premium skin shop with try-before-you-buy experience
 // ============================================================
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Replace React ProfileCard/StatsCard approximations with
-//          real bot-rendered PNG previews via /api/skins/preview
-//          and /api/dashboard/card-image
+// Purpose: Skin shop with static image previews from SkinsList
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -33,8 +31,17 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { SkinsList } from "@/constants/SkinsList"
+import Image from "next/image"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+
+const skinImageMap: Record<string, any> = {}
+SkinsList.forEach((s) => { skinImageMap[s.id] = s.image.imageOne })
+
+function getSkinImage(skinId: string) {
+  return skinImageMap[skinId] || skinImageMap["obsidian"] || null
+}
 
 interface SkinItem {
   id: number
@@ -70,31 +77,17 @@ function BotRenderedPreview({
   alt: string
   className?: string
 }) {
-  const [error, setError] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  if (error) {
+  const imgSrc = getSkinImage(skinId)
+  if (!imgSrc) {
     return (
-      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground ${className}`}>
+      <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground p-8 ${className}`}>
         <ImageOff className="h-8 w-8" />
       </div>
     )
   }
-
   return (
     <div className={`relative ${className}`}>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-      <img
-        src={`/api/skins/preview?skin=${skinId}&type=${cardType}`}
-        alt={alt}
-        className="w-full h-auto block"
-        onError={() => setError(true)}
-        onLoad={() => setLoading(false)}
-      />
+      <Image src={imgSrc} alt={alt} width={400} height={400} objectFit="contain" />
     </div>
   )
 }
@@ -114,34 +107,20 @@ function UserDataPreview({
   className?: string
   refreshKey: number
 }) {
-  const [error, setError] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  if (error) {
+  const imgSrc = getSkinImage(skinId)
+  if (!imgSrc) {
     return (
       <div className={`flex items-center justify-center bg-muted/30 text-muted-foreground p-8 ${className}`}>
         <div className="text-center space-y-2">
           <ImageOff className="h-8 w-8 mx-auto" />
-          <p className="text-sm">Could not load preview with your data</p>
+          <p className="text-sm">Preview not available</p>
         </div>
       </div>
     )
   }
-
   return (
     <div className={`relative ${className}`}>
-      {loading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-          <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        </div>
-      )}
-      <img
-        src={`/api/dashboard/card-image?type=${cardType}&guildId=${guildId}&skin=${skinId}&_t=${refreshKey}`}
-        alt={alt}
-        className="w-full h-auto block"
-        onError={() => setError(true)}
-        onLoad={() => setLoading(false)}
-      />
+      <Image src={imgSrc} alt={alt} width={400} height={400} objectFit="contain" />
     </div>
   )
 }

@@ -36,10 +36,15 @@ import {
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
+import { SkinsList } from "@/constants/SkinsList"
+import Image from "next/image"
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add i18n imports for serverSideTranslations
+// Purpose: add i18n imports and static skin image map
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+
+const skinImageMap: Record<string, any> = {}
+SkinsList.forEach((s) => { skinImageMap[s.id] = s.image.imageOne })
 // --- END AI-MODIFIED ---
 
 interface ProfileData {
@@ -140,10 +145,9 @@ export default function ProfilePage() {
   const [refreshKey, setRefreshKey] = useState(0)
 
   const firstGuildId = serversData?.servers?.[0]?.guildId
-  const cardSrc =
-    firstGuildId && !cardError
-      ? `/api/dashboard/card-image?type=profile&guildId=${firstGuildId}&_t=${refreshKey}`
-      : null
+  const currentSkin = invData?.skins?.find(s => s.active)
+  const currentSkinId = currentSkin?.skinName?.toLowerCase().replace(/\s+/g, "_") ?? "base"
+  const cardSrc = skinImageMap[currentSkinId] || skinImageMap["obsidian"] || null
 
   const handleCardError = useCallback(() => {
     setCardError(true)
@@ -246,31 +250,26 @@ export default function ProfilePage() {
                     {/* Left: Profile Card */}
                     <div>
                       {/* --- AI-MODIFIED (2026-03-14) --- */}
-                      {/* Purpose: Use only real bot-rendered images, no React approximation fallback */}
+                      {/* --- AI-MODIFIED (2026-03-14) --- */}
+                      {/* Purpose: Use static skin images instead of broken API-rendered previews */}
                       <div className="flex justify-center lg:justify-start">
-                        {cardSrc && !cardError ? (
+                        {cardSrc ? (
                           <div className="relative w-full max-w-[440px] rounded-xl overflow-hidden shadow-2xl bg-card">
-                            <img
+                            <Image
                               src={cardSrc}
                               alt="Profile card"
-                              className="w-full h-auto block"
-                              onError={handleCardError}
+                              width={440}
+                              height={220}
+                              objectFit="contain"
+                              layout="responsive"
                             />
-                          </div>
-                        ) : cardError ? (
-                          <div className="w-full max-w-[440px] aspect-[2/1] rounded-xl bg-card border border-border flex flex-col items-center justify-center text-muted-foreground gap-3 p-6">
-                            <ImageOff className="h-10 w-10" />
-                            <p className="text-sm text-center">Profile card preview unavailable</p>
-                            <Button variant="outline" size="sm" onClick={handleRefreshPreview}>
-                              <RefreshCw size={14} className="mr-2" />
-                              Try again
-                            </Button>
                           </div>
                         ) : (
                           <div className="w-full max-w-[440px] aspect-[2/1] rounded-xl bg-card border border-border flex items-center justify-center">
-                            <div className="h-6 w-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            <Palette className="h-8 w-8 text-muted-foreground" />
                           </div>
                         )}
+                      {/* --- END AI-MODIFIED --- */}
                       </div>
                       {/* --- END AI-MODIFIED --- */}
                       <div className="flex gap-3 mt-4">
@@ -422,12 +421,8 @@ export default function ProfilePage() {
                               : "border-border hover:bg-card/80"
                           )}
                         >
-                          <div className="bg-muted/30 overflow-hidden">
-                            <img
-                              src="/api/skins/preview?skin=base&type=profile"
-                              alt="Default skin"
-                              className="w-full h-auto block"
-                            />
+                          <div className="bg-muted/30 overflow-hidden flex items-center justify-center p-3">
+                            <Palette className="h-8 w-8 text-muted-foreground" />
                           </div>
                           <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
                             Default
@@ -448,11 +443,11 @@ export default function ProfilePage() {
                               )}
                             >
                               <div className="bg-muted/30 overflow-hidden">
-                                <img
-                                  src={`/api/skins/preview?skin=${skinKey}&type=profile`}
-                                  alt={`${item.skinName} skin`}
-                                  className="w-full h-auto block"
-                                />
+                                {skinImageMap[skinKey] ? (
+                                  <Image src={skinImageMap[skinKey]} alt={`${item.skinName} skin`} width={144} height={90} objectFit="cover" />
+                                ) : (
+                                  <div className="w-full h-20 flex items-center justify-center"><Palette className="h-6 w-6 text-muted-foreground" /></div>
+                                )}
                               </div>
                               <span className="text-xs font-medium text-foreground truncate w-full px-2 py-2 text-center bg-card">
                                 {item.skinName}
