@@ -54,7 +54,11 @@ interface PublicStats {
   activeTimers: number;
 }
 
-const statsFetcher = (url: string) => fetch(url).then((r) => r.json());
+const statsFetcher = (url: string) =>
+  fetch(url).then((r) => {
+    if (!r.ok) throw new Error("Stats fetch failed");
+    return r.json();
+  });
 
 function formatLargeNumber(n: number): { display: number; suffix: string; decimals: number } {
   if (n >= 1_000_000) return { display: Math.round(n / 100_000) / 10, suffix: "m", decimals: 1 };
