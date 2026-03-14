@@ -32,6 +32,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { SkinsList } from "@/constants/SkinsList"
+import { SkinCardPreview } from "@/components/SkinCardPreview"
 import Image from "next/image"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -86,8 +87,8 @@ function BotRenderedPreview({
     )
   }
   return (
-    <div className={`relative ${className}`}>
-      <Image src={imgSrc} alt={alt} width={400} height={400} objectFit="contain" />
+    <div className={className}>
+      <SkinCardPreview backgroundSrc={imgSrc} skinName={alt} compact />
     </div>
   )
 }
