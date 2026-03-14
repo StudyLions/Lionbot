@@ -15,7 +15,6 @@ import {
   LayoutDashboard,
   User,
   Globe,
-  Crown,
   Home,
   Palette,
   BookOpen,
@@ -65,9 +64,11 @@ export default function Header() {
           {/* Brand */}
           <Link href="/">
             <a className="flex items-center gap-2.5 group">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center shadow-sm shadow-amber-500/20 group-hover:shadow-amber-500/40 transition-shadow">
-                <Crown className="h-4 w-4 text-white" />
-              </div>
+              <img
+                src="/images/lionbot-avatar.png"
+                alt="LionBot"
+                className="w-9 h-9 rounded-full ring-2 ring-border group-hover:ring-primary/40 transition-all shadow-sm"
+              />
               <div className="flex flex-col">
                 <span className="text-lg font-bold text-foreground leading-tight tracking-wide">
                   LionBot
@@ -242,9 +243,11 @@ export default function Header() {
                 <SheetContent side="right" className="w-72 p-0">
                   <SheetHeader className="p-6 pb-2">
                     <SheetTitle className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-amber-500 to-amber-600 flex items-center justify-center">
-                        <Crown className="h-3.5 w-3.5 text-white" />
-                      </div>
+                      <img
+                        src="/images/lionbot-avatar.png"
+                        alt="LionBot"
+                        className="w-7 h-7 rounded-full"
+                      />
                       <span>LionBot</span>
                     </SheetTitle>
                   </SheetHeader>
