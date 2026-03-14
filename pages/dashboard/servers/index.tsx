@@ -4,7 +4,7 @@
 // Purpose: Server list page - shows all servers the user is in
 // ============================================================
 // --- AI-MODIFIED (2026-03-14) ---
-// Purpose: redesigned with role badges, Discord icons, grouped sections, colored borders
+// Purpose: redesigned with role badges, bot presence indicator, Discord icons, grouped sections
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
@@ -12,7 +12,7 @@ import { EmptyState, Badge } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import Link from "next/link"
-import { Server, Shield, ShieldCheck, ChevronRight } from "lucide-react"
+import { Server, Shield, ShieldCheck, ChevronRight, Plus, CheckCircle2, XCircle } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 // --- END AI-MODIFIED ---
@@ -29,39 +29,38 @@ interface ServerInfo {
   firstJoined: string | null
   role: ServerRole
   iconUrl: string | null
+  botPresent: boolean
 }
 
 const roleConfig: Record<ServerRole, {
   badge: { label: string; variant: "warning" | "info" | "default" }
   borderClass: string
   hoverBorder: string
-  icon: typeof ShieldCheck
 }> = {
   admin: {
     badge: { label: "Admin", variant: "warning" },
     borderClass: "border-l-4 border-l-amber-500/70",
     hoverBorder: "hover:border-amber-500/40",
-    icon: ShieldCheck,
   },
   moderator: {
     badge: { label: "Mod", variant: "info" },
     borderClass: "border-l-4 border-l-blue-500/70",
     hoverBorder: "hover:border-blue-500/40",
-    icon: Shield,
   },
   member: {
     badge: { label: "Member", variant: "default" },
     borderClass: "",
     hoverBorder: "hover:border-indigo-500/50",
-    icon: Server,
   },
 }
 
-const sectionMeta: { role: ServerRole; title: string; subtitle: string }[] = [
-  { role: "admin", title: "Servers You Manage", subtitle: "Full admin access" },
-  { role: "moderator", title: "Servers You Moderate", subtitle: "Moderation access" },
-  { role: "member", title: "Your Servers", subtitle: "Member access" },
+const sectionMeta: { role: ServerRole; title: string }[] = [
+  { role: "admin", title: "Servers You Manage" },
+  { role: "moderator", title: "Servers You Moderate" },
+  { role: "member", title: "Your Servers" },
 ]
+
+const BOT_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${process.env.NEXT_PUBLIC_BOT_CLIENT_ID || "889078613817831495"}&permissions=1376674495606&scope=bot+applications.commands`
 
 function ServerIcon({ name, iconUrl }: { name: string; iconUrl: string | null }) {
   if (iconUrl) {
@@ -84,75 +83,106 @@ function ServerIcon({ name, iconUrl }: { name: string; iconUrl: string | null })
 
 function ServerCard({ server }: { server: ServerInfo }) {
   const config = roleConfig[server.role]
-  const RoleIcon = config.icon
 
-  return (
-    <Link key={server.guildId} href={`/dashboard/servers/${server.guildId}`}>
-      <div
-        className={`
-          bg-card rounded-2xl p-5 border border-border transition-all cursor-pointer h-full group
-          ${config.borderClass} ${config.hoverBorder}
-        `}
-      >
-        <div className="flex items-start gap-3.5 mb-3">
-          <ServerIcon name={server.guildName} iconUrl={server.iconUrl} />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="text-base font-semibold text-foreground truncate group-hover:text-indigo-300 transition-colors">
-                {server.guildName}
-              </h3>
-            </div>
-            <div className="flex items-center gap-2">
-              <Badge variant={config.badge.variant} size="sm" dot>
-                {config.badge.label}
-              </Badge>
-              {server.displayName && (
-                <span className="text-muted-foreground text-xs truncate">
-                  as {server.displayName}
-                </span>
-              )}
-            </div>
+  const cardContent = (
+    <div
+      className={`
+        bg-card rounded-2xl p-5 border border-border transition-all h-full group
+        ${config.borderClass} ${config.hoverBorder}
+        ${server.botPresent ? "cursor-pointer" : ""}
+        ${!server.botPresent ? "opacity-75" : ""}
+      `}
+    >
+      <div className="flex items-start gap-3.5 mb-3">
+        <ServerIcon name={server.guildName} iconUrl={server.iconUrl} />
+        <div className="flex-1 min-w-0">
+          <h3 className={`text-base font-semibold text-foreground truncate transition-colors mb-1 ${server.botPresent ? "group-hover:text-indigo-300" : ""}`}>
+            {server.guildName}
+          </h3>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <Badge variant={config.badge.variant} size="sm" dot>
+              {config.badge.label}
+            </Badge>
+            {server.botPresent ? (
+              <Badge variant="success" size="sm" dot>Bot Active</Badge>
+            ) : (
+              <Badge variant="error" size="sm" dot>No Bot</Badge>
+            )}
+            {server.displayName && (
+              <span className="text-muted-foreground text-xs truncate">
+                as {server.displayName}
+              </span>
+            )}
           </div>
-          <ChevronRight
-            size={18}
-            className="text-muted-foreground/40 group-hover:text-primary transition-colors flex-shrink-0 mt-1"
-          />
         </div>
+        <ChevronRight
+          size={18}
+          className={`flex-shrink-0 mt-1 transition-colors ${server.botPresent ? "text-muted-foreground/40 group-hover:text-primary" : "text-muted-foreground/20"}`}
+        />
+      </div>
 
-        <div className="flex items-center gap-5 mt-auto pt-1">
-          <div>
-            <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Study</p>
-            <p className="text-emerald-400 font-bold text-sm">{server.trackedTimeHours}h</p>
-          </div>
-          <div>
-            <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Coins</p>
-            <p className="text-warning font-bold text-sm">{server.coins.toLocaleString()}</p>
-          </div>
-          {server.firstJoined && (
+      <div className="flex items-center gap-5 mt-auto pt-1">
+        {server.botPresent && (
+          <>
             <div>
-              <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Joined</p>
-              <p className="text-muted-foreground text-sm">
-                {new Date(server.firstJoined).toLocaleDateString(undefined, {
-                  month: "short",
-                  year: "numeric",
-                })}
-              </p>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Study</p>
+              <p className="text-emerald-400 font-bold text-sm">{server.trackedTimeHours}h</p>
             </div>
-          )}
-          <div className="ml-auto">
+            <div>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Coins</p>
+              <p className="text-warning font-bold text-sm">{server.coins.toLocaleString()}</p>
+            </div>
+            {server.firstJoined && (
+              <div>
+                <p className="text-muted-foreground text-[10px] uppercase tracking-wider">Joined</p>
+                <p className="text-muted-foreground text-sm">
+                  {new Date(server.firstJoined).toLocaleDateString(undefined, {
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </p>
+              </div>
+            )}
+          </>
+        )}
+        <div className="ml-auto">
+          {server.botPresent ? (
             <span
-              className={`text-xs font-medium ${
+              className={`text-xs font-medium transition-colors ${
                 server.role !== "member"
                   ? "text-primary/80 group-hover:text-primary"
                   : "text-muted-foreground group-hover:text-foreground"
-              } transition-colors`}
+              }`}
             >
               {server.role !== "member" ? "Manage" : "View"}
             </span>
-          </div>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-400 group-hover:text-indigo-300 transition-colors">
+              <Plus size={14} />
+              Add Bot
+            </span>
+          )}
         </div>
       </div>
-    </Link>
+    </div>
+  )
+
+  if (server.botPresent) {
+    return (
+      <Link href={`/dashboard/servers/${server.guildId}`}>
+        {cardContent}
+      </Link>
+    )
+  }
+
+  return (
+    <a
+      href={`${BOT_INVITE_URL}&guild_id=${server.guildId}`}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {cardContent}
+    </a>
   )
 }
 

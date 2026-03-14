@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
-  Gem, User, Menu, Trophy,
+  Gem, User, Menu, Trophy, ChevronRight,
 } from "lucide-react"
 
 interface NavItem {
@@ -125,25 +125,29 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       )}
       {/* --- END AI-MODIFIED --- */}
       {/* --- AI-MODIFIED (2026-03-14) --- */}
-      {/* Purpose: prominent Servers button with accent styling, separate from regular nav */}
+      {/* Purpose: prominent Servers button styled as a real button with depth and hover feedback */}
       <div className="px-3 py-2">
         <Link href="/dashboard/servers" onClick={onNavigate}>
           <span
             className={cn(
-              "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all border",
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all cursor-pointer",
+              "shadow-sm hover:shadow-md",
               router.pathname.startsWith("/dashboard/servers")
-                ? "bg-indigo-500/20 text-indigo-300 border-indigo-500/30 font-semibold"
-                : "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/15 hover:border-indigo-500/30"
+                ? "bg-indigo-600 text-white shadow-indigo-500/25 hover:bg-indigo-500"
+                : "bg-indigo-600/80 text-indigo-50 hover:bg-indigo-600 shadow-indigo-500/15"
             )}
             aria-current={router.pathname.startsWith("/dashboard/servers") ? "page" : undefined}
           >
-            <Server size={20} className="flex-shrink-0" />
-            <div className="min-w-0">
-              <span className="block leading-tight">Servers</span>
-              <span className="block text-[10px] text-indigo-400/60 font-normal leading-tight">
-                Server Management
+            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+              <Server size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block font-semibold leading-tight">My Servers</span>
+              <span className="block text-[10px] text-indigo-200/70 font-normal leading-tight">
+                Manage &amp; configure
               </span>
             </div>
+            <ChevronRight size={16} className="flex-shrink-0 opacity-60" />
           </span>
         </Link>
       </div>

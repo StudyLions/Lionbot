@@ -81,6 +81,8 @@ export default apiHandler({
           iconUrl = `https://cdn.discordapp.com/icons/${guildIdStr}/${discordGuild.icon}.${ext}?size=128`
         }
 
+        // --- AI-MODIFIED (2026-03-14) ---
+        // Purpose: add botPresent flag based on guild_config existence
         return {
           guildId: guildIdStr,
           guildName: discordGuild?.name || m.guild_config?.name || "Unknown Server",
@@ -91,7 +93,9 @@ export default apiHandler({
           firstJoined: m.first_joined,
           role,
           iconUrl,
+          botPresent: !!m.guild_config,
         }
+        // --- END AI-MODIFIED ---
       })
     )
 
