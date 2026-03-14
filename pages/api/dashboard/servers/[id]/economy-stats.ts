@@ -278,18 +278,30 @@ export default apiHandler({
     const earnerMembers = earnerUserIds.length > 0
       ? await prisma.members.findMany({
           where: { guildid: guildId, userid: { in: earnerUserIds } },
-          select: { userid: true, display_name: true, user_config: { select: { avatar_hash: true } } },
+          select: { userid: true, display_name: true, user_config: { select: { avatar_hash: true, name: true } } },
         })
       : []
     const earnerMap = new Map(earnerMembers.map((m) => [m.userid.toString(), m]))
 
+    const missingEarnerIds = earnerUserIds.filter((uid) => !earnerMap.has(uid.toString()))
+    const globalEarners = missingEarnerIds.length > 0
+      ? await prisma.user_config.findMany({
+          where: { userid: { in: missingEarnerIds } },
+          select: { userid: true, name: true, avatar_hash: true },
+        })
+      : []
+    const globalEarnerMap = new Map(globalEarners.map((u) => [u.userid.toString(), u]))
+
     const topEarnersWeek = topEarnersRaw.map((e) => {
       const uid = e.userid.toString()
       const member = earnerMap.get(uid)
+      const global = globalEarnerMap.get(uid)
+      const displayName = member?.display_name || member?.user_config?.name || global?.name || `User ${uid}`
+      const avatarHash = member?.user_config?.avatar_hash ?? global?.avatar_hash ?? null
       return {
         userId: uid,
-        displayName: member?.display_name || `User ...${uid.slice(-4)}`,
-        avatarUrl: buildAvatarUrl(uid, member?.user_config?.avatar_hash ?? null),
+        displayName,
+        avatarUrl: buildAvatarUrl(uid, avatarHash),
         earned: Number(e.total_earned),
       }
     })

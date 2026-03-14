@@ -136,22 +136,37 @@ export default apiHandler({
       if (tx.to_account) userIds.add(tx.to_account)
     }
 
-    const members = userIds.size > 0
+    const userIdArray = Array.from(userIds)
+    const members = userIdArray.length > 0
       ? await prisma.members.findMany({
-          where: { guildid: guildId, userid: { in: Array.from(userIds) } },
-          select: { userid: true, display_name: true, user_config: { select: { avatar_hash: true } } },
+          where: { guildid: guildId, userid: { in: userIdArray } },
+          select: { userid: true, display_name: true, user_config: { select: { avatar_hash: true, name: true } } },
         })
       : []
     const memberMap = new Map(members.map((m) => [m.userid.toString(), m]))
+
+    const missingIds = userIdArray.filter((uid) => !memberMap.has(uid.toString()))
+    const globalUsers = missingIds.length > 0
+      ? await prisma.user_config.findMany({
+          where: { userid: { in: missingIds } },
+          select: { userid: true, name: true, avatar_hash: true },
+        })
+      : []
+    const globalMap = new Map(globalUsers.map((u) => [u.userid.toString(), u]))
 
     function getMemberInfo(id: bigint | null) {
       if (!id) return { name: null, avatarUrl: null }
       const uid = id.toString()
       const m = memberMap.get(uid)
-      return {
-        name: m?.display_name || `User ...${uid.slice(-4)}`,
-        avatarUrl: buildAvatarUrl(uid, m?.user_config?.avatar_hash ?? null),
+      if (m) {
+        const name = m.display_name || m.user_config?.name || `User ${uid}`
+        return { name, avatarUrl: buildAvatarUrl(uid, m.user_config?.avatar_hash ?? null) }
       }
+      const g = globalMap.get(uid)
+      if (g) {
+        return { name: g.name || `User ${uid}`, avatarUrl: buildAvatarUrl(uid, g.avatar_hash) }
+      }
+      return { name: `User ${uid}`, avatarUrl: buildAvatarUrl(uid, null) }
     }
 
     const mapped = transactions.map((tx) => {

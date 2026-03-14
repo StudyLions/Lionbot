@@ -224,7 +224,14 @@ export default function EconomyPage() {
   const { data: permsData } = useDashboard(id && session ? `/api/dashboard/servers/${id}/permissions` : null)
 
   const panelDetailKey = panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
-  const { data: panelData, isLoading: panelLoading } = useDashboard(panelDetailKey)
+  const { data: panelData, isLoading: panelLoading, error: panelError } = useDashboard(panelDetailKey)
+
+  useEffect(() => {
+    if (panelError && panelUserId) {
+      toast.error("Could not load member details. This user may not have a profile in this server.")
+      setPanelUserId(null)
+    }
+  }, [panelError, panelUserId])
 
   const bulkCountKey = id && session && tab === "admin" ? `/api/dashboard/servers/${id}/economy-bulk?target=${bulkTarget}` : null
   const { data: bulkCountData } = useDashboard<{ count: number }>(bulkCountKey)

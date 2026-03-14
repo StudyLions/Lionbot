@@ -15,7 +15,7 @@ import { ResolveModal } from "@/components/dashboard/MemberActionModals"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
   Shield, AlertTriangle, Ban, FileText, CheckCircle2, TrendingUp,
   ChevronDown, ChevronRight, Search, ChevronLeft, Clock, Users,
@@ -173,7 +173,14 @@ export default function ModerationPage() {
   const { data: serverData } = useDashboard(id && session ? `/api/dashboard/servers/${id}` : null)
   const { data: permsData } = useDashboard(id && session ? `/api/dashboard/servers/${id}/permissions` : null)
   const panelDetailKey = panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
-  const { data: panelData, isLoading: panelLoading } = useDashboard(panelDetailKey)
+  const { data: panelData, isLoading: panelLoading, error: panelError } = useDashboard(panelDetailKey)
+
+  useEffect(() => {
+    if (panelError && panelUserId) {
+      toast.error("Could not load member details. This user may not have a profile in this server.")
+      setPanelUserId(null)
+    }
+  }, [panelError, panelUserId])
 
   const tickets = ticketsData?.tickets ?? []
   const pagination = ticketsData?.pagination ?? null

@@ -155,7 +155,14 @@ export default function MembersPage() {
   )
 
   const panelDetailKey = panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
-  const { data: panelData, isLoading: panelLoading } = useDashboard(panelDetailKey)
+  const { data: panelData, isLoading: panelLoading, error: panelError } = useDashboard(panelDetailKey)
+
+  useEffect(() => {
+    if (panelError && panelUserId) {
+      toast.error("Could not load member details. This user may not have a profile in this server.")
+      setPanelUserId(null)
+    }
+  }, [panelError, panelUserId])
 
   const members = membersData?.members ?? []
   const pagination = membersData?.pagination ?? null
