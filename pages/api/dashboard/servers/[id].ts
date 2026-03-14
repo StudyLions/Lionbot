@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: switched to requireAuth for rate limiting consistency
-import { requireAuth } from "@/utils/adminAuth"
+import { requireAuth, getUserGuilds } from "@/utils/adminAuth"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
@@ -25,7 +25,9 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
     const guildId = BigInt(req.query.id as string)
 
-    const [membership, guildConfig, leaderboard, userRank] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: fetch Discord guild data for icon and banner URLs
+    const [membership, guildConfig, leaderboard, userRank, discordGuilds] = await Promise.all([
     prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: userId } },
       select: {
@@ -72,7 +74,26 @@ export default apiHandler({
         current_msg_rankid: true,
       },
     }),
+
+    getUserGuilds(auth.accessToken, auth.discordId),
     ])
+    // --- END AI-MODIFIED ---
+
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: build icon and banner CDN URLs from Discord guild data
+    const guildIdStr = guildId.toString()
+    const discordGuild = discordGuilds.find((g) => g.id === guildIdStr)
+    let iconUrl: string | null = null
+    let bannerUrl: string | null = null
+    if (discordGuild?.icon) {
+      const ext = discordGuild.icon.startsWith("a_") ? "gif" : "webp"
+      iconUrl = `https://cdn.discordapp.com/icons/${guildIdStr}/${discordGuild.icon}.${ext}?size=128`
+    }
+    if (discordGuild?.banner) {
+      const ext = discordGuild.banner.startsWith("a_") ? "gif" : "webp"
+      bannerUrl = `https://cdn.discordapp.com/banners/${guildIdStr}/${discordGuild.banner}.${ext}?size=480`
+    }
+    // --- END AI-MODIFIED ---
 
     if (!membership) {
       return res.status(404).json({ error: "You are not a member of this server" })
@@ -80,8 +101,10 @@ export default apiHandler({
 
     return res.status(200).json({
     server: {
-      id: guildId.toString(),
-      name: guildConfig?.name || "Unknown Server",
+      id: guildIdStr,
+      name: discordGuild?.name || guildConfig?.name || "Unknown Server",
+      iconUrl,
+      bannerUrl,
       settings: guildConfig ? {
         studyHourlyReward: guildConfig.study_hourly_reward,
         studyHourlyLiveBonus: guildConfig.study_hourly_live_bonus,

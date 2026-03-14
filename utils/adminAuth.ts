@@ -59,12 +59,16 @@ export function rateLimited(res: NextApiResponse) {
 
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: export DiscordGuild (with icon field) and getUserGuilds for reuse in servers API
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: added banner field for server overview hero header
 export interface DiscordGuild {
   id: string
   name: string
   icon: string | null
+  banner: string | null
   permissions: string
 }
+// --- END AI-MODIFIED ---
 
 let guildCache = new Map<string, { guilds: DiscordGuild[]; expiresAt: number }>()
 
