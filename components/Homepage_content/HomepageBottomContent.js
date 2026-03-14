@@ -26,16 +26,18 @@ function HowToUse() {
         />
       </div>
       <p className={"text-[20px] max-w-[600px] text-center leading-[32px]"}>
-        Learn how to use and configure StudyLion on your server! Tutorials are availabe for admins, moderators and
+        {/* --- AI-MODIFIED (2026-03-14) --- */}
+        {/* Purpose: Updated copy and link to internal /tutorials page */}
+        Learn how to use and configure LionBot on your server! Tutorials are available for admins, moderators and
         users.
       </p>
       <div className={"mt-[30px] mb-[100px]"}>
         <Button
           image={hand_click_svg}
           label={"Tutorials"}
-          href={"https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707"}
-          target={"_blank"}
+          href={"/tutorials"}
         />
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </div>
   );

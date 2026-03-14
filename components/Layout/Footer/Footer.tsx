@@ -8,9 +8,8 @@ const DISCORD_INVITE = "https://discord.com/invite/studylions";
 const GITHUB_URL = "https://github.com/StudyLions/StudyLion/";
 const BOT_INVITE =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
-const TUTORIALS_URL =
-  "https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707";
-
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Changed Tutorials from external Notion link to internal /tutorials page
 const productLinks = [
   { label: "Home", href: "/" },
   { label: "Donate", href: "/donate" },
@@ -20,11 +19,12 @@ const productLinks = [
 ];
 
 const resourceLinks = [
-  { label: "Tutorials", href: TUTORIALS_URL, external: true },
+  { label: "Tutorials", href: "/tutorials" },
   { label: "Source Code", href: GITHUB_URL, external: true },
   { label: "Discord Server", href: DISCORD_INVITE, external: true },
   { label: "Contact", href: "mailto:contact@arihoresh.com" },
 ];
+// --- END AI-MODIFIED ---
 
 const legalLinks = [
   { label: "Terms & Conditions", href: "/terms-and-conditions" },

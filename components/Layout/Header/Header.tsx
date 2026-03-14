@@ -22,16 +22,19 @@ const NAV_LINKS = [
   { label: "Skins", href: "/skins" },
 ];
 
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: Moved Tutorials from external Notion link to internal /tutorials page
 const EXTERNAL_LINKS = [
   {
     label: "Invite Bot",
     href: "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot",
   },
-  {
-    label: "Tutorials",
-    href: "https://izabellakis.notion.site/StudyLion-Bot-Tutorials-f493268fcd12436c9674afef2e151707",
-  },
 ];
+
+const INTERNAL_EXTRA_LINKS = [
+  { label: "Tutorials", href: "/tutorials" },
+];
+// --- END AI-MODIFIED ---
 
 export default function Header() {
   const { data: session } = useSession();
@@ -66,6 +69,22 @@ export default function Header() {
                 </a>
               </Link>
             ))}
+            {/* --- AI-MODIFIED (2026-03-14) --- */}
+            {/* Purpose: Render Tutorials as internal link, Invite Bot as external */}
+            {INTERNAL_EXTRA_LINKS.map((link) => (
+              <Link key={link.href} href={link.href}>
+                <a
+                  className={cn(
+                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    router.pathname.startsWith(link.href)
+                      ? "text-foreground bg-accent"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                  )}
+                >
+                  {link.label}
+                </a>
+              </Link>
+            ))}
             {EXTERNAL_LINKS.map((link) => (
               <a
                 key={link.href}
@@ -78,6 +97,7 @@ export default function Header() {
                 <ExternalLink className="h-3 w-3 opacity-50" />
               </a>
             ))}
+            {/* --- END AI-MODIFIED --- */}
             {session && (
               <Link href="/dashboard">
                 <a
@@ -222,6 +242,23 @@ export default function Header() {
                       </a>
                     </Link>
                   ))}
+                  {/* --- AI-MODIFIED (2026-03-14) --- */}
+                  {/* Purpose: Tutorials as internal link in mobile nav */}
+                  {INTERNAL_EXTRA_LINKS.map((link) => (
+                    <Link key={link.href} href={link.href}>
+                      <a
+                        className={cn(
+                          "flex items-center px-3 py-3 rounded-md text-sm font-medium transition-colors",
+                          router.pathname.startsWith(link.href)
+                            ? "text-foreground bg-accent"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        )}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {link.label}
+                      </a>
+                    </Link>
+                  ))}
                   {EXTERNAL_LINKS.map((link) => (
                     <a
                       key={link.href}
@@ -235,6 +272,7 @@ export default function Header() {
                       <ExternalLink className="h-3 w-3 opacity-50" />
                     </a>
                   ))}
+                  {/* --- END AI-MODIFIED --- */}
 
                   <div className="my-3 border-t border-border" />
 

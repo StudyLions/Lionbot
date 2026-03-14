@@ -21,3 +21,9 @@ export { default as ChannelSelect, clearChannelCache } from "./ChannelSelect"
 export { default as RoleSelect, clearRoleCache } from "./RoleSelect"
 export { default as SaveBar } from "./SaveBar"
 export { default as FirstTimeBanner } from "./FirstTimeBanner"
+// --- AI-MODIFIED (2026-03-14) ---
+// Purpose: export new settings page components
+export { default as SettingsNav } from "./SettingsNav"
+export type { NavSection } from "./SettingsNav"
+export { default as DiscordEmbedPreview } from "./DiscordEmbedPreview"
+// --- END AI-MODIFIED ---

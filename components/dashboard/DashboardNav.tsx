@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
-  Gem, User, Menu, Trophy, ChevronRight,
+  Gem, User, Menu, Trophy, ChevronRight, BookOpen,
 } from "lucide-react"
 
 interface NavItem {
@@ -62,6 +62,15 @@ const sections: NavSection[] = [
       { href: "/dashboard/profile", label: "Profile", icon: <User size={16} /> },
     ],
   },
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: Add Tutorials link to dashboard sidebar
+  {
+    title: "Help",
+    items: [
+      { href: "/tutorials", label: "Tutorials", icon: <BookOpen size={16} /> },
+    ],
+  },
+  // --- END AI-MODIFIED ---
 ]
 
 function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {

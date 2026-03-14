@@ -4,12 +4,10 @@
 // Purpose: GET/PATCH server settings (admin only)
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireAdmin, requireAuth, isModerator } from "@/utils/adminAuth"
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: wrapped with apiHandler for error handling and method validation
 import { apiHandler } from "@/utils/apiHandler"
-// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: added missing settings fields (channels, roles, season, rooms, XP per word)
@@ -70,8 +68,41 @@ export default apiHandler({
     safeConfig.name = config.name
     safeConfig.guildid = config.guildid.toString()
 
-    return res.status(200).json(safeConfig)
+    // --- AI-MODIFIED (2026-03-14) ---
+    // Purpose: export mode includes list-type settings for full config backup
+    if (req.query.format === "export") {
+      const adminAuth = await requireAdmin(req, res, guildId)
+      if (!adminAuth) return
+
+      const [untrackedVoice, untrackedText, autoroles, botAutoroles, unrankedRoles] = await Promise.all([
+        prisma.$queryRaw<{ channelid: bigint }[]>(
+          Prisma.sql`SELECT channelid FROM untracked_channels WHERE guildid = ${guildId}`
+        ),
+        prisma.untracked_text_channels.findMany({
+          where: { guildid: guildId }, select: { channelid: true },
+        }),
+        prisma.$queryRaw<{ roleid: bigint }[]>(
+          Prisma.sql`SELECT roleid FROM autoroles WHERE guildid = ${guildId}`
+        ),
+        prisma.$queryRaw<{ roleid: bigint }[]>(
+          Prisma.sql`SELECT roleid FROM bot_autoroles WHERE guildid = ${guildId}`
+        ),
+        prisma.$queryRaw<{ roleid: bigint }[]>(
+          Prisma.sql`SELECT roleid FROM unranked_roles WHERE guildid = ${guildId}`
+        ),
+      ])
+
+      safeConfig.untrackedVoiceChannels = untrackedVoice.map((r) => r.channelid.toString())
+      safeConfig.untrackedTextChannels = untrackedText.map((r) => r.channelid.toString())
+      safeConfig.autoroles = autoroles.map((r) => r.roleid.toString())
+      safeConfig.botAutoroles = botAutoroles.map((r) => r.roleid.toString())
+      safeConfig.unrankedRoles = unrankedRoles.map((r) => r.roleid.toString())
+      safeConfig._exportedAt = new Date().toISOString()
+      safeConfig._version = 1
+    }
     // --- END AI-MODIFIED ---
+
+    return res.status(200).json(safeConfig)
   },
   async PATCH(req, res) {
     const guildId = BigInt(req.query.id as string)
@@ -108,5 +139,72 @@ export default apiHandler({
 
     return res.status(200).json({ success: true, updated: Object.keys(updates) })
   },
+
+  // --- AI-MODIFIED (2026-03-14) ---
+  // Purpose: full config import (applies all settings at once in a transaction)
+  async PUT(req, res) {
+    const guildId = BigInt(req.query.id as string)
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const body = req.body as Record<string, any>
+    if (!body || typeof body !== "object") {
+      return res.status(400).json({ error: "Invalid import data" })
+    }
+
+    const configUpdates: Record<string, any> = {}
+    for (const field of EDITABLE_FIELDS) {
+      if (field in body) {
+        const val = body[field]
+        if (BIGINT_FIELDS.has(field)) {
+          configUpdates[field] = val ? BigInt(val) : null
+        } else if (field === "season_start") {
+          configUpdates[field] = val ? new Date(val) : null
+        } else {
+          configUpdates[field] = val
+        }
+      }
+    }
+
+    const listOps: Array<() => Promise<void>> = []
+    const LIST_TABLES: Record<string, { table: string; idCol: string; usePrisma: boolean }> = {
+      untrackedVoiceChannels: { table: "untracked_channels", idCol: "channelid", usePrisma: false },
+      untrackedTextChannels: { table: "untracked_text_channels", idCol: "channelid", usePrisma: true },
+      autoroles: { table: "autoroles", idCol: "roleid", usePrisma: false },
+      botAutoroles: { table: "bot_autoroles", idCol: "roleid", usePrisma: false },
+      unrankedRoles: { table: "unranked_roles", idCol: "roleid", usePrisma: false },
+    }
+
+    for (const [key, { table, idCol, usePrisma }] of Object.entries(LIST_TABLES)) {
+      if (key in body && Array.isArray(body[key])) {
+        const ids = body[key].map((id: string) => BigInt(id))
+        listOps.push(async () => {
+          if (usePrisma) {
+            await prisma.untracked_text_channels.deleteMany({ where: { guildid: guildId } })
+            for (const cid of ids) {
+              await prisma.untracked_text_channels.create({ data: { channelid: cid, guildid: guildId } })
+            }
+          } else {
+            await prisma.$executeRawUnsafe(`DELETE FROM ${table} WHERE guildid = $1`, guildId)
+            for (const bid of ids) {
+              await prisma.$executeRawUnsafe(
+                `INSERT INTO ${table} (guildid, ${idCol}) VALUES ($1, $2) ON CONFLICT DO NOTHING`,
+                guildId, bid
+              )
+            }
+          }
+        })
+      }
+    }
+
+    if (Object.keys(configUpdates).length > 0) {
+      await prisma.guild_config.update({ where: { guildid: guildId }, data: configUpdates })
+    }
+    for (const op of listOps) {
+      await op()
+    }
+
+    return res.status(200).json({ success: true, imported: true })
+  },
+  // --- END AI-MODIFIED ---
 })
-// --- END AI-MODIFIED ---
