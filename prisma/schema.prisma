@@ -863,6 +863,7 @@ model user_config {
   avatar_hash                 String?
   api_timestamp               BigInt?
   gems                        Int?                          @default(0)
+  gold                        BigInt                        @default(0)
   first_seen                  DateTime?                     @default(now()) @db.Timestamptz(6)
   last_seen                   DateTime?                     @db.Timestamptz(6)
   locale_hint                 String?
@@ -877,6 +878,8 @@ model user_config {
   user_monthly_goals          user_monthly_goals[]
   user_skin_inventory         user_skin_inventory[]
   user_weekly_goals           user_weekly_goals[]
+  lg_pets                     lg_pets?
+  lg_user_inventory           lg_user_inventory[]
 }
 
 model user_experience {
@@ -1156,3 +1159,267 @@ enum tickettype {
   INVITE_CENSOR
   WARNING
 }
+
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: LionGotchi enums and models for the pet dashboard
+
+enum lgexpression {
+  DEFAULT
+  HAPPY
+  SAD
+  EATING
+  SICK
+  SLEEPING
+}
+
+enum lgequipmentslot {
+  HEAD
+  FACE
+  BODY
+  BACK
+  FEET
+}
+
+enum lgrarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+  MYTHICAL
+}
+
+enum lgitemcategory {
+  HAT
+  GLASSES
+  COSTUME
+  SHIRT
+  WINGS
+  FURNITURE
+  ROOM
+  GAMEBOY_SKIN
+  FARM_SEED
+  CONSUMABLE
+  MATERIAL
+  SCROLL
+}
+
+enum lgitemsource {
+  SHOP
+  DROP
+  LEVEL_REWARD
+  FARM_HARVEST
+  TRADE
+  ADMIN
+  TUTORIAL
+  CRAFT
+}
+
+enum lgfurnitureslot {
+  WALL
+  FLOOR
+  CARPET
+  BED
+  CHAIR
+  DESK
+  LAMP
+}
+
+enum lggoldtransactiontype {
+  VOICE_ACTIVITY
+  TEXT_ACTIVITY
+  LEVEL_UP
+  SHOP_PURCHASE
+  FARM_HARVEST
+  ITEM_DROP
+  TRADE
+  ADMIN
+}
+
+enum lgunlocktype {
+  FREE
+  LEVEL
+  GOLD
+  GEMS
+  EVENT
+}
+
+model lg_pets {
+  userid                 BigInt           @id
+  pet_name               String           @default("Leo")
+  expression             lgexpression     @default(DEFAULT)
+  level                  Int              @default(1)
+  xp                     BigInt           @default(0)
+  food                   Int              @default(8)
+  bath                   Int              @default(8)
+  sleep                  Int              @default(8)
+  life                   Int              @default(8)
+  last_decay_at          DateTime         @default(now()) @db.Timestamptz(6)
+  active_room_id         Int?
+  active_gameboy_skin_id Int?
+  fullscreen_mode        Boolean          @default(false)
+  created_at             DateTime         @default(now()) @db.Timestamptz(6)
+  user_config            user_config      @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_pet_equipment       lg_pet_equipment[]
+  lg_user_rooms          lg_user_rooms[]
+  lg_user_farm           lg_user_farm[]
+}
+
+model lg_gold_transactions {
+  transactionid    Int                    @id @default(autoincrement())
+  transaction_type lggoldtransactiontype
+  actorid          BigInt
+  from_account     BigInt?
+  to_account       BigInt?
+  amount           Int
+  description      String                 @default("")
+  reference        String?
+  created_at       DateTime               @default(now()) @db.Timestamptz(6)
+
+  @@index([to_account], map: "lg_gold_transactions_to")
+  @@index([from_account], map: "lg_gold_transactions_from")
+}
+
+model lg_items {
+  itemid                Int                     @id @default(autoincrement())
+  name                  String
+  category              lgitemcategory
+  slot                  lgequipmentslot?
+  rarity                lgrarity                @default(COMMON)
+  asset_path            String
+  gold_price            Int?
+  gem_price             Int?
+  tradeable             Boolean                 @default(true)
+  description           String                  @default("")
+  copyright_flag        Boolean                 @default(false)
+  lg_user_inventory     lg_user_inventory[]
+  lg_pet_equipment      lg_pet_equipment[]
+  lg_user_furniture     lg_user_furniture[]
+  lg_crafting_recipes   lg_crafting_recipes[]
+  lg_recipe_ingredients lg_recipe_ingredients[]
+  lg_scroll_properties  lg_scroll_properties?
+
+  @@index([category], map: "lg_items_category")
+}
+
+model lg_user_inventory {
+  inventoryid       Int          @id @default(autoincrement())
+  userid            BigInt
+  itemid            Int
+  acquired_at       DateTime     @default(now()) @db.Timestamptz(6)
+  source            lgitemsource @default(SHOP)
+  quantity          Int          @default(1)
+  enhancement_level Int          @default(0)
+  user_config       user_config  @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_items          lg_items     @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userid], map: "lg_user_inventory_user")
+}
+
+model lg_pet_equipment {
+  userid   BigInt
+  slot     lgequipmentslot
+  itemid   Int
+  lg_pets  lg_pets  @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_items lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, slot])
+}
+
+model lg_rooms {
+  room_id       Int             @id @default(autoincrement())
+  name          String
+  asset_prefix  String
+  has_furniture Boolean         @default(false)
+  gold_price    Int?
+  gem_price     Int?
+  lg_user_rooms lg_user_rooms[]
+}
+
+model lg_user_rooms {
+  userid            BigInt
+  room_id           Int
+  unlocked_at       DateTime            @default(now()) @db.Timestamptz(6)
+  lg_pets           lg_pets             @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_rooms          lg_rooms            @relation(fields: [room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
+  lg_user_furniture lg_user_furniture[]
+
+  @@id([userid, room_id])
+}
+
+model lg_user_furniture {
+  userid           BigInt
+  room_id          Int
+  slot             lgfurnitureslot
+  furniture_itemid Int
+  lg_user_rooms    lg_user_rooms   @relation(fields: [userid, room_id], references: [userid, room_id], onDelete: NoAction, onUpdate: NoAction)
+  lg_items         lg_items        @relation(fields: [furniture_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, room_id, slot])
+}
+
+model lg_gameboy_skins {
+  skin_id      Int          @id @default(autoincrement())
+  theme        String
+  color        String
+  asset_path   String
+  unlock_type  lgunlocktype @default(GOLD)
+  unlock_level Int?
+  gold_price   Int?
+  gem_price    Int?
+}
+
+model lg_farm_seeds {
+  seed_id              Int            @id @default(autoincrement())
+  name                 String
+  plant_type           String
+  grow_time_hours      Int            @default(24)
+  water_interval_hours Int            @default(6)
+  harvest_gold         Int            @default(10)
+  asset_prefix         String
+  lg_user_farm         lg_user_farm[]
+}
+
+model lg_user_farm {
+  userid        BigInt
+  plot_id       Int
+  seed_id       Int?
+  planted_at    DateTime?      @db.Timestamptz(6)
+  last_watered  DateTime?      @db.Timestamptz(6)
+  growth_stage  Int            @default(0)
+  dead          Boolean        @default(false)
+  lg_pets       lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_farm_seeds lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, plot_id])
+}
+
+model lg_crafting_recipes {
+  recipeid              Int                     @id @default(autoincrement())
+  result_itemid         Int
+  result_quantity       Int                     @default(1)
+  gold_cost             Int                     @default(0)
+  description           String                  @default("")
+  lg_items              lg_items                @relation(fields: [result_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_recipe_ingredients lg_recipe_ingredients[]
+}
+
+model lg_recipe_ingredients {
+  recipeid            Int
+  itemid              Int
+  quantity            Int                 @default(1)
+  lg_crafting_recipes lg_crafting_recipes @relation(fields: [recipeid], references: [recipeid], onDelete: Cascade, onUpdate: NoAction)
+  lg_items            lg_items            @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([recipeid, itemid])
+}
+
+model lg_scroll_properties {
+  itemid       Int      @id
+  target_slot  String?
+  success_rate Float    @default(0.7) @db.Real
+  destroy_rate Float    @default(0.1) @db.Real
+  lg_items     lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// --- END AI-MODIFIED ---
