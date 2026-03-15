@@ -29,30 +29,33 @@ interface NavSection {
   items: NavItem[]
 }
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Enable nav links for all built pages
 const sections: NavSection[] = [
   {
     title: "Pet",
     items: [
       { href: "/pet", label: "Overview", icon: <PawPrint size={16} /> },
-      { href: "/pet/inventory", label: "Inventory", icon: <Package size={16} />, disabled: true },
-      { href: "/pet/farm", label: "Farm", icon: <Sprout size={16} />, disabled: true },
+      { href: "/pet/inventory", label: "Inventory", icon: <Package size={16} /> },
+      { href: "/pet/farm", label: "Farm", icon: <Sprout size={16} /> },
     ],
   },
   {
     title: "Crafting",
     items: [
-      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={16} />, disabled: true },
-      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={16} />, disabled: true },
+      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={16} /> },
+      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={16} /> },
     ],
   },
   {
     title: "Browse",
     items: [
-      { href: "/pet/wiki", label: "Item Wiki", icon: <BookOpen size={16} />, disabled: true },
+      { href: "/pet/wiki", label: "Item Wiki", icon: <BookOpen size={16} /> },
       { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={16} />, disabled: true },
     ],
   },
 ]
+// --- END AI-MODIFIED ---
 
 function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {
   if (item.disabled) {
