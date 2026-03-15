@@ -17,13 +17,13 @@ import { cn } from "@/lib/utils"
 import {
   Trophy, Clock, MessageSquare, Coins, Search,
   ChevronLeft, ChevronRight, ChevronDown, Users,
-  Crown, Medal, Award, ArrowRight, Loader2,
+  Crown, Medal, Award, ArrowRight, Loader2, CalendarRange,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
 type LBType = "study" | "messages" | "coins"
-type LBPeriod = "all" | "season" | "month" | "week" | "today"
+type LBPeriod = "all" | "season" | "month" | "week" | "today" | "custom"
 
 interface LBEntry {
   rank: number
@@ -57,13 +57,17 @@ const TYPE_OPTIONS: { value: LBType; label: string; icon: typeof Clock }[] = [
   { value: "coins", label: "Coins", icon: Coins },
 ]
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: added Custom period option for date range picker
 const PERIOD_OPTIONS: { value: LBPeriod; label: string }[] = [
   { value: "all", label: "All Time" },
   { value: "season", label: "Season" },
   { value: "month", label: "This Month" },
   { value: "week", label: "This Week" },
   { value: "today", label: "Today" },
+  { value: "custom", label: "Custom" },
 ]
+// --- END AI-MODIFIED ---
 
 function formatValue(value: number, type: LBType): string {
   if (type === "study") {
@@ -383,6 +387,11 @@ export default function LeaderboardPage() {
   const [selectedServer, setSelectedServer] = useState<string>("")
   const [type, setType] = useState<LBType>("study")
   const [period, setPeriod] = useState<LBPeriod>("all")
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: state for custom date range picker
+  const [customFrom, setCustomFrom] = useState("")
+  const [customTo, setCustomTo] = useState("")
+  // --- END AI-MODIFIED ---
   const [page, setPage] = useState(1)
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -394,7 +403,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     setPage(1)
-  }, [selectedServer, type, period, debouncedSearch])
+  }, [selectedServer, type, period, debouncedSearch, customFrom, customTo])
 
   useEffect(() => {
     if (type === "coins") setPeriod("all")
@@ -410,8 +419,11 @@ export default function LeaderboardPage() {
     }
   }, [serversData, selectedServer])
 
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: pass from/to params for custom date range
   const apiUrl = useMemo(() => {
     if (!selectedServer) return null
+    if (period === "custom" && !customFrom) return null
     const params = new URLSearchParams({
       guildId: selectedServer,
       type,
@@ -420,8 +432,13 @@ export default function LeaderboardPage() {
       pageSize: "25",
     })
     if (debouncedSearch) params.set("search", debouncedSearch)
+    if (period === "custom") {
+      if (customFrom) params.set("from", customFrom)
+      if (customTo) params.set("to", customTo)
+    }
     return `/api/dashboard/leaderboard?${params.toString()}`
-  }, [selectedServer, type, period, page, debouncedSearch])
+  }, [selectedServer, type, period, page, debouncedSearch, customFrom, customTo])
+  // --- END AI-MODIFIED ---
 
   const { data: lbData, isLoading: lbLoading } = useDashboard<LBResponse>(
     session ? apiUrl : null
@@ -519,9 +536,31 @@ export default function LeaderboardPage() {
                                   : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
                               )}
                             >
+                              {opt.value === "custom" && <CalendarRange size={12} className="inline mr-1 -mt-0.5" />}
                               {opt.label}
                             </button>
                           ))}
+                          {/* --- AI-MODIFIED (2026-03-15) --- */}
+                          {/* Purpose: date range picker for custom period */}
+                          {period === "custom" && (
+                            <div className="flex items-center gap-2 ml-1">
+                              <input
+                                type="date"
+                                value={customFrom}
+                                onChange={(e) => setCustomFrom(e.target.value)}
+                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              />
+                              <span className="text-xs text-muted-foreground">to</span>
+                              <input
+                                type="date"
+                                value={customTo}
+                                onChange={(e) => setCustomTo(e.target.value)}
+                                min={customFrom || undefined}
+                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                              />
+                            </div>
+                          )}
+                          {/* --- END AI-MODIFIED --- */}
                         </div>
                       )}
                       <div className="relative">

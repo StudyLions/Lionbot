@@ -9,7 +9,10 @@ import { apiHandler } from "@/utils/apiHandler"
 import { Prisma } from "@prisma/client"
 
 type LBType = "study" | "messages" | "coins"
-type LBPeriod = "all" | "season" | "month" | "week" | "today"
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: added "custom" period for arbitrary date range filtering
+type LBPeriod = "all" | "season" | "month" | "week" | "today" | "custom"
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: in-memory cache for expensive voice_sessions aggregation queries (2 min TTL)
@@ -137,7 +140,25 @@ export default apiHandler({
 
     const seasonStart = guildConfig?.season_start || null
     const serverName = guildConfig?.name || "Unknown Server"
-    const periodStart = getPeriodStart(period, guildConfig?.timezone || null, seasonStart)
+
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: support custom date range via from/to query params
+    const fromStr = req.query.from as string | undefined
+    const toStr = req.query.to as string | undefined
+    let periodStart: Date | null
+    let periodEnd: Date | null = null
+
+    if (period === "custom" && fromStr) {
+      periodStart = new Date(fromStr + "T00:00:00Z")
+      if (toStr) {
+        const d = new Date(toStr + "T00:00:00Z")
+        d.setUTCDate(d.getUTCDate() + 1)
+        periodEnd = d
+      }
+    } else {
+      periodStart = getPeriodStart(period, guildConfig?.timezone || null, seasonStart)
+    }
+    // --- END AI-MODIFIED ---
 
     // ===== COINS =====
     // --- AI-MODIFIED (2026-03-15) ---
@@ -187,9 +208,13 @@ export default apiHandler({
     // Purpose: members.tracked_time is not populated by the bot; aggregate voice_sessions instead
     // --- AI-MODIFIED (2026-03-15) ---
     // Purpose: added last_left IS NULL filter, u.name for display name fallback, search across both name fields
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added periodEnd support for custom date range filtering
     if (type === "study") {
       const since = periodStart || new Date(0)
-      const cacheKey = `study:${guildIdStr}:${period}:${page}:${search}`
+      const untilV = periodEnd ? Prisma.sql`AND v.start_time < ${periodEnd}` : Prisma.sql``
+      const untilBare = periodEnd ? Prisma.sql`AND start_time < ${periodEnd}` : Prisma.sql``
+      const cacheKey = `study:${guildIdStr}:${period}:${fromStr || ""}:${toStr || ""}:${page}:${search}`
 
       const searchJoin = search
         ? Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
@@ -208,7 +233,7 @@ export default apiHandler({
             SELECT v.userid FROM voice_sessions v
             JOIN members m ON m.guildid = v.guildid AND m.userid = v.userid
             LEFT JOIN user_config u ON u.userid = v.userid
-            WHERE v.guildid = ${guildId} AND v.start_time >= ${since}
+            WHERE v.guildid = ${guildId} AND v.start_time >= ${since} ${untilV}
             AND m.last_left IS NULL
             ${searchJoin}
             GROUP BY v.userid HAVING SUM(v.duration) > 0
@@ -222,7 +247,7 @@ export default apiHandler({
           FROM voice_sessions v
           JOIN members m ON m.guildid = v.guildid AND m.userid = v.userid
           LEFT JOIN user_config u ON u.userid = v.userid
-          WHERE v.guildid = ${guildId} AND v.start_time >= ${since}
+          WHERE v.guildid = ${guildId} AND v.start_time >= ${since} ${untilV}
           AND m.last_left IS NULL
           ${searchJoin}
           GROUP BY v.userid, m.display_name, u.name, u.avatar_hash
@@ -232,9 +257,8 @@ export default apiHandler({
         `
         setCache(cacheKey, { totalEntries, entries })
       }
-    // --- END AI-MODIFIED ---
 
-      const yourCacheKey = `study-you:${guildIdStr}:${period}:${auth.discordId}`
+      const yourCacheKey = `study-you:${guildIdStr}:${period}:${fromStr || ""}:${toStr || ""}:${auth.discordId}`
       let yourValue: number
       let yourRank: number
 
@@ -246,7 +270,7 @@ export default apiHandler({
         const yourValueResult = await prisma.$queryRaw<[{ value: number }]>`
           SELECT COALESCE(ROUND(SUM(v.duration)::numeric / 3600, 1), 0) as value
           FROM voice_sessions v
-          WHERE v.guildid = ${guildId} AND v.userid = ${userId} AND v.start_time >= ${since}
+          WHERE v.guildid = ${guildId} AND v.userid = ${userId} AND v.start_time >= ${since} ${untilV}
         `
         yourValue = Number(yourValueResult[0]?.value || 0)
 
@@ -254,17 +278,18 @@ export default apiHandler({
           SELECT COUNT(*) as count FROM (
             SELECT v.userid, SUM(v.duration) as total
             FROM voice_sessions v
-            WHERE v.guildid = ${guildId} AND v.start_time >= ${since}
+            WHERE v.guildid = ${guildId} AND v.start_time >= ${since} ${untilV}
             GROUP BY v.userid
             HAVING SUM(v.duration) > (
               SELECT COALESCE(SUM(duration), 0) FROM voice_sessions
-              WHERE guildid = ${guildId} AND userid = ${userId} AND start_time >= ${since}
+              WHERE guildid = ${guildId} AND userid = ${userId} AND start_time >= ${since} ${untilBare}
             )
           ) sub
         `
         yourRank = Number(yourRankResult[0]?.count || 0) + 1
         setCache(yourCacheKey, { yourValue, yourRank })
       }
+    // --- END AI-MODIFIED ---
 
       return res.status(200).json(
         buildResponse(entries, offset, userId, totalEntries, pageSize, page, yourRank, yourValue, serverName, seasonStart)
@@ -275,8 +300,12 @@ export default apiHandler({
     // ===== MESSAGES =====
     // --- AI-MODIFIED (2026-03-15) ---
     // Purpose: added last_left IS NULL filter, u.name for display name fallback, search across both name fields
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added periodEnd support for custom date range filtering
     if (type === "messages") {
       const since = periodStart || new Date(0)
+      const untilT = periodEnd ? Prisma.sql`AND t.start_time < ${periodEnd}` : Prisma.sql``
+      const untilBare = periodEnd ? Prisma.sql`AND start_time < ${periodEnd}` : Prisma.sql``
       const searchJoin = search
         ? Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
         : Prisma.sql``
@@ -286,10 +315,10 @@ export default apiHandler({
           SELECT t.userid FROM text_sessions t
           JOIN members m ON m.guildid = t.guildid AND m.userid = t.userid
           LEFT JOIN user_config u ON u.userid = t.userid
-          WHERE t.guildid = ${guildId} AND t.start_time >= ${since}
+          WHERE t.guildid = ${guildId} AND t.start_time >= ${since} ${untilT}
           AND m.last_left IS NULL
           ${searchJoin}
-          GROUP BY t.userid HAVING SUM(t.messages) > 0
+          Group BY t.userid HAVING SUM(t.messages) > 0
         ) sub
       `
       const totalEntries = Number(countResult[0]?.count || 0)
@@ -299,7 +328,7 @@ export default apiHandler({
         FROM text_sessions t
         JOIN members m ON m.guildid = t.guildid AND m.userid = t.userid
         LEFT JOIN user_config u ON u.userid = t.userid
-        WHERE t.guildid = ${guildId} AND t.start_time >= ${since}
+        WHERE t.guildid = ${guildId} AND t.start_time >= ${since} ${untilT}
         AND m.last_left IS NULL
         ${searchJoin}
         GROUP BY t.userid, m.display_name, u.name, u.avatar_hash
@@ -311,18 +340,18 @@ export default apiHandler({
       const yourValueResult = await prisma.$queryRaw<[{ value: number }]>`
         SELECT COALESCE(SUM(t.messages)::int, 0) as value
         FROM text_sessions t
-        WHERE t.guildid = ${guildId} AND t.userid = ${userId} AND t.start_time >= ${since}
+        WHERE t.guildid = ${guildId} AND t.userid = ${userId} AND t.start_time >= ${since} ${untilT}
       `
       const yourValue = Number(yourValueResult[0]?.value || 0)
       const yourRankResult = await prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count FROM (
           SELECT t.userid, SUM(t.messages) as total
           FROM text_sessions t
-          WHERE t.guildid = ${guildId} AND t.start_time >= ${since}
+          WHERE t.guildid = ${guildId} AND t.start_time >= ${since} ${untilT}
           GROUP BY t.userid
           HAVING SUM(t.messages) > (
             SELECT COALESCE(SUM(messages), 0) FROM text_sessions
-            WHERE guildid = ${guildId} AND userid = ${userId} AND start_time >= ${since}
+            WHERE guildid = ${guildId} AND userid = ${userId} AND start_time >= ${since} ${untilBare}
           )
         ) sub
       `
