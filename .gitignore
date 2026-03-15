@@ -113,3 +113,4 @@ dist
 /.server_hetzner/
 package-lock.json
 /generated/prisma
+.env*.local

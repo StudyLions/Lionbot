@@ -2,7 +2,14 @@
 // AI-GENERATED FILE
 // Created: 2026-03-15
 // Purpose: Map database asset_path / asset_prefix to web URLs
+//          All assets served from Vercel Blob CDN
 // ============================================================
+
+const BLOB_BASE = process.env.NEXT_PUBLIC_BLOB_URL || ""
+
+function blobUrl(path: string): string {
+  return `${BLOB_BASE}/pet-assets/${path}`
+}
 
 const EQUIPMENT_CATEGORIES = new Set([
   "HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS",
@@ -15,52 +22,143 @@ export function getItemImageUrl(
   if (!assetPath) return null
 
   if (EQUIPMENT_CATEGORIES.has(category)) {
-    return `/pet-assets/equipment/${assetPath}`
+    return blobUrl(`equipment/${assetPath}`)
   }
 
   if (category === "FURNITURE") {
-    return `/pet-assets/rooms/furniture/${assetPath}`
+    return blobUrl(`rooms/furniture/${assetPath}`)
   }
 
   return null
 }
 
+// --- Farm asset helpers ---
+
+const RARITY_COLOR_INDEX: Record<string, number> = {
+  COMMON: 1,
+  UNCOMMON: 2,
+  RARE: 3,
+  EPIC: 4,
+  LEGENDARY: 5,
+}
+
+const SEED_PLANT_MAP: Record<string, string> = {
+  "pollen:1":  "farm/plants/a_50.gif",
+  "pollen:2":  "farm/plants/b_60.gif",
+  "pollen:3":  "farm/plants/c_40.gif",
+  "pollen:4":  "farm/plants/d_90.gif",
+  "pollen:5":  "farm/plants/e_95.gif",
+  "pollen:6":  "farm/plants/a_22.gif",
+  "pollen:7":  "farm/plants/b_38.gif",
+  "pollen:8":  "farm/plants/d_55.gif",
+  "pollen:9":  "farm/plants/e_48.gif",
+  "pollen:10": "farm/plants/c_88.gif",
+}
+
+export function getFarmBackgroundUrl(isNight: boolean): string {
+  return blobUrl(`farm/backgrounds/farm_${isNight ? "night" : "day"}.png`)
+}
+
+export function getFarmSoilUrl(plotNum: number, isWatered: boolean): string {
+  const prefix = isWatered ? "watered" : "dry"
+  const dir = isWatered ? "watered" : "dry"
+  return blobUrl(`farm/soil/${dir}/${prefix}soil${plotNum}.png`)
+}
+
+export function getFarmTreeUrl(typeId: number, stage: number, rarity: string = "COMMON"): string {
+  const color = RARITY_COLOR_INDEX[rarity] || 1
+  const clampedStage = Math.min(Math.max(stage, 1), 5)
+  const idx = (typeId - 1) * 25 + (color - 1) * 5 + clampedStage
+  return blobUrl(`farm/trees/trees_${String(idx).padStart(2, "0")}.png`)
+}
+
+export function getFarmPollenUrl(pollenId: number): string {
+  return blobUrl(`farm/pollen/pollen_plant_${String(pollenId).padStart(2, "0")}.png`)
+}
+
 export function getFarmPlantImageUrl(
+  assetPrefix: string,
   plantType: string,
-  seedId: number,
-  stage: number
+  typeId: number,
+  stage: number,
+  rarity: string = "COMMON"
 ): string | null {
-  if (plantType === "tree") {
-    const typeId = seedId
-    const color = 1
-    const clampedStage = Math.min(Math.max(stage, 1), 5)
-    const idx = (typeId - 1) * 25 + (color - 1) * 5 + clampedStage
-    return `/pet-assets/farm/trees/trees_${String(idx).padStart(2, "0")}.png`
+  if (stage < 1) return null
+
+  if (plantType === "tree" && typeId >= 1 && typeId <= 20) {
+    return getFarmTreeUrl(typeId, stage, rarity)
+  }
+
+  const gifPath = SEED_PLANT_MAP[assetPrefix]
+  if (gifPath) {
+    return blobUrl(gifPath)
   }
 
   if (plantType === "pollen") {
-    const pollenId = seedId - 10
-    if (pollenId >= 1 && pollenId <= 25) {
-      return `/pet-assets/farm/pollen/pollen_plant_${String(pollenId).padStart(2, "0")}.png`
-    }
+    return getFarmPollenUrl(typeId)
   }
 
-  return null
+  return getFarmTreeUrl(typeId, stage, rarity)
+}
+
+export function getFarmAnimationUrl(name: string, frame: number): string {
+  return blobUrl(`farm/animations/${name}_${String(frame).padStart(2, "0")}.png`)
+}
+
+export function getUiIconUrl(name: string): string {
+  return blobUrl(`ui/icons/${name}.png`)
+}
+
+export function getUiBarUrl(type: string, level: number, max: number): string {
+  return blobUrl(`ui/bars/${type}_bars_${level}_${max}.png`)
+}
+
+export function getGameboyFrameUrl(skin: string = "gameboy-basic-01"): string {
+  return blobUrl(`gameboy/frames/${skin}.png`)
+}
+
+export function parseAssetPrefix(assetPrefix: string): { plantType: string; typeId: number } {
+  const [plantType, idStr] = assetPrefix.split(":")
+  return { plantType, typeId: parseInt(idStr, 10) || 1 }
 }
 
 export function getCategoryPlaceholder(category: string): string {
   switch (category) {
-    case "HAT": return "👒"
-    case "GLASSES": return "👓"
-    case "COSTUME": return "👔"
-    case "SHIRT": return "👕"
-    case "WINGS": return "🪽"
-    case "MATERIAL": return "🧱"
-    case "SCROLL": return "📜"
-    case "FARM_SEED": return "🌱"
-    case "FURNITURE": return "🪑"
-    case "ROOM": return "🏠"
-    case "CONSUMABLE": return "🧪"
-    default: return "📦"
+    case "HAT": return "\u{1F452}"
+    case "GLASSES": return "\u{1F453}"
+    case "COSTUME": return "\u{1F454}"
+    case "SHIRT": return "\u{1F455}"
+    case "WINGS": return "\u{1FABD}"
+    case "MATERIAL": return "\u{1F9F1}"
+    case "SCROLL": return "\u{1F4DC}"
+    case "FARM_SEED": return "\u{1F331}"
+    case "FURNITURE": return "\u{1FA91}"
+    case "ROOM": return "\u{1F3E0}"
+    case "CONSUMABLE": return "\u{1F9EA}"
+    default: return "\u{1F4E6}"
   }
+}
+
+export const RARITY_COLORS: Record<string, string> = {
+  COMMON: "text-gray-400",
+  UNCOMMON: "text-blue-400",
+  RARE: "text-red-400",
+  EPIC: "text-yellow-400",
+  LEGENDARY: "text-pink-400",
+}
+
+export const RARITY_BG_COLORS: Record<string, string> = {
+  COMMON: "bg-gray-500/10 border-gray-500/20",
+  UNCOMMON: "bg-blue-500/10 border-blue-500/20",
+  RARE: "bg-red-500/10 border-red-500/20",
+  EPIC: "bg-yellow-500/10 border-yellow-500/20",
+  LEGENDARY: "bg-pink-500/10 border-pink-500/20",
+}
+
+export const RARITY_GLOW: Record<string, string> = {
+  COMMON: "",
+  UNCOMMON: "shadow-blue-500/30 shadow-lg",
+  RARE: "shadow-red-500/40 shadow-lg",
+  EPIC: "shadow-yellow-500/40 shadow-xl",
+  LEGENDARY: "shadow-pink-500/50 shadow-xl",
 }

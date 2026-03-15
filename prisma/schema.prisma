@@ -1381,19 +1381,32 @@ model lg_farm_seeds {
   water_interval_hours Int            @default(6)
   harvest_gold         Int            @default(10)
   asset_prefix         String
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: Add plant_cost and growth_points_needed columns to match bot schema
+  plant_cost           Int            @default(10)
+  growth_points_needed Int            @default(100)
+  // --- END AI-MODIFIED ---
   lg_user_farm         lg_user_farm[]
 }
 
 model lg_user_farm {
-  userid        BigInt
-  plot_id       Int
-  seed_id       Int?
-  planted_at    DateTime?      @db.Timestamptz(6)
-  last_watered  DateTime?      @db.Timestamptz(6)
-  growth_stage  Int            @default(0)
-  dead          Boolean        @default(false)
-  lg_pets       lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_farm_seeds lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
+  userid               BigInt
+  plot_id              Int
+  seed_id              Int?
+  planted_at           DateTime?      @db.Timestamptz(6)
+  last_watered         DateTime?      @db.Timestamptz(6)
+  growth_stage         Int            @default(0)
+  dead                 Boolean        @default(false)
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: Add growth_points, gold_invested, activity tracking, and rarity to match bot schema
+  growth_points        Float          @default(0)
+  gold_invested        Int            @default(0)
+  voice_minutes_earned Float          @default(0)
+  messages_earned      Int            @default(0)
+  rarity               String         @default("COMMON")
+  // --- END AI-MODIFIED ---
+  lg_pets              lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_farm_seeds        lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([userid, plot_id])
 }

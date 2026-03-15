@@ -136,3 +136,52 @@ a {
 p, a, b {
   font-size: 18px;
 }
+
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Farm scene pixel art animations
+@keyframes sway {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(1px); }
+  75% { transform: translateX(-1px); }
+}
+
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.2); }
+}
+
+@keyframes harvest-pulse {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.3); }
+}
+
+@keyframes water-drop {
+  0% { transform: translateY(-8px); opacity: 1; }
+  100% { transform: translateY(4px); opacity: 0; }
+}
+
+.animate-sway {
+  animation: sway 2.5s ease-in-out infinite;
+}
+
+.animate-bob {
+  animation: bob 1.5s ease-in-out infinite;
+}
+
+.animate-sparkle {
+  animation: sparkle 1s ease-in-out infinite;
+}
+
+.animate-harvest-pulse {
+  animation: harvest-pulse 2s ease-in-out infinite;
+}
+
+.animate-water-drop {
+  animation: water-drop 0.8s ease-out;
+}
+// --- END AI-MODIFIED ---
