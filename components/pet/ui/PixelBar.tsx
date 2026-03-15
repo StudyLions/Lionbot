@@ -39,7 +39,7 @@ export default function PixelBar({
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}
-            className="h-3 flex-1 border border-[#1a2030]"
+            className="h-4 flex-1 border border-[#1a2030]"
             style={{
               backgroundColor: i < filledSegments ? activeColors.filled : activeColors.empty,
               minWidth: 4,

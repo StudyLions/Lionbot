@@ -1,16 +1,15 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Plot detail panel with pixel art UI, activity tracking,
-//          investment/return display, and remove/uproot action
+// Purpose: RPG inspection panel for farm plot details
 // ============================================================
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { getFarmPlantImageUrl } from "@/utils/petAssets"
-import PixelCard from "@/components/pet/ui/PixelCard"
+import { getFarmPlantImageUrl, getFarmAnimationUrl } from "@/utils/petAssets"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import type { FarmPlot } from "./FarmScene"
 
 const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
@@ -18,7 +17,7 @@ const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
 }
 
 const rarityBorderColors: Record<string, string> = {
-  COMMON: "#2a3a5c",
+  COMMON: "#3a4a6c",
   UNCOMMON: "#4080f0",
   RARE: "#e04040",
   EPIC: "#f0c040",
@@ -48,7 +47,7 @@ function LiveTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
     return () => clearInterval(id)
   }, [nextWaterAt])
   if (!text) return null
-  return <span className="font-pixel text-[10px] text-[var(--pet-blue,#4080f0)]">{text}</span>
+  return <span className="font-pixel text-[11px] text-[var(--pet-blue,#4080f0)]">{text}</span>
 }
 
 export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: PlotDetailProps) {
@@ -74,97 +73,134 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
     ? Math.round(plot.seed.harvestGold * (RARITY_GOLD_MULTIPLIER[plot.rarity] || 1.0))
     : 0
 
-  return (
-    <PixelCard
-      className="p-4 transition-all"
-      borderColor={rarityBorderColors[plot.rarity] || "#2a3a5c"}
-    >
-      <div className="flex items-start gap-4">
-        <div
-          className="w-16 h-16 bg-[#0a0e1a] border-2 border-[var(--pet-border,#2a3a5c)] flex items-center justify-center flex-shrink-0"
-        >
-          {plot.empty ? (
-            <span className="font-pixel text-[10px] text-[#4a5a70]">EMPTY</span>
-          ) : plot.dead ? (
-            <span className="text-2xl">💀</span>
-          ) : imgUrl ? (
-            <img src={imgUrl} alt={plot.seed?.name || "Plant"} className="w-12 h-12 object-contain" style={{ imageRendering: "pixelated" }} />
-          ) : (
-            <span className="font-pixel text-[10px] text-[#40d870]">🌱</span>
-          )}
-        </div>
+  const bc = rarityBorderColors[plot.rarity] || "#3a4a6c"
 
-        <div className="flex-1 min-w-0 space-y-2">
+  return (
+    <div
+      className="border-[3px] p-[3px]"
+      style={{ borderColor: bc, boxShadow: `3px 3px 0 #060810` }}
+    >
+      <div className="border-2 bg-[#0c1020] p-4" style={{ borderColor: `${bc}60` }}>
+        {/* Title bar */}
+        <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-[#1a2a3c]">
           <div className="flex items-center gap-2">
-            <h3 className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">
-              Plot #{plot.plotId + 1}
-            </h3>
+            <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Plot #{plot.plotId + 1}</span>
             {!plot.empty && !plot.dead && <PixelBadge rarity={plot.rarity} />}
           </div>
-
-          {plot.empty ? (
-            <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">Plant a seed to start growing!</p>
-          ) : plot.dead ? (
-            <p className="font-pixel text-[10px] text-[var(--pet-red,#e04040)]">This plant died. Clear it to plant again.</p>
-          ) : (
-            <div className="space-y-2">
-              <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{plot.seed?.name}</p>
-
-              <PixelBar
-                value={plot.growthPoints}
-                max={plot.growthPointsNeeded}
-                label={`Stg ${plot.stage}`}
-                color={plot.readyToHarvest ? "gold" : "green"}
-              />
-
-              <div className="flex flex-wrap items-center gap-3 font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">
-                <span>{Math.round(plot.growthPoints)}/{plot.growthPointsNeeded} pts</span>
-                {plot.goldInvested > 0 && (
-                  <span>Invested: <span className="text-[var(--pet-gold,#f0c040)]">{plot.goldInvested}G</span></span>
-                )}
-                {plot.readyToHarvest && (
-                  <span>Harvest: <span className="text-[var(--pet-gold,#f0c040)]">+{projectedHarvest}G</span>
-                    {plot.rarity !== "COMMON" ? ` (x${RARITY_GOLD_MULTIPLIER[plot.rarity]})` : ""}
-                  </span>
-                )}
-                {plot.needsWater ? (
-                  <span className="text-[var(--pet-blue,#4080f0)]">Needs water!</span>
-                ) : plot.nextWaterAt && !plot.readyToHarvest ? (
-                  <span className="flex items-center gap-1">
-                    Water in <LiveTimer nextWaterAt={plot.nextWaterAt} />
-                  </span>
-                ) : null}
-              </div>
-
-              {((plot.voiceMinutesEarned || 0) > 0 || (plot.messagesEarned || 0) > 0) && (
-                <div className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">
-                  Grew from:
-                  {(plot.voiceMinutesEarned || 0) > 0 ? ` ${Math.round(plot.voiceMinutesEarned || 0)}m voice` : ""}
-                  {(plot.messagesEarned || 0) > 0 ? ` ${plot.messagesEarned} msgs` : ""}
-                </div>
-              )}
-            </div>
+          {!plot.empty && plot.seed && (
+            <span className="font-pixel text-xs" style={{ color: bc }}>{plot.seed.name}</span>
           )}
         </div>
 
-        <div className="flex flex-col gap-1.5 flex-shrink-0">
+        <div className="flex items-start gap-5">
+          {/* Plant thumbnail with decorative frame */}
+          <div className="flex-shrink-0">
+            <div
+              className="w-20 h-20 border-[3px] bg-[#080c18] flex items-center justify-center"
+              style={{ borderColor: `${bc}80`, boxShadow: "inset 0 0 8px rgba(0,0,0,0.5)" }}
+            >
+              {plot.empty ? (
+                <span className="font-pixel text-[10px] text-[#3a4a5c]">EMPTY</span>
+              ) : plot.dead ? (
+                <img src={getFarmAnimationUrl("skull", 1)} alt="Dead" width={36} height={36}
+                  style={{ imageRendering: "pixelated" }} className="animate-bob" />
+              ) : imgUrl ? (
+                <img src={imgUrl} alt={plot.seed?.name || ""} className="w-14 h-14 object-contain"
+                  style={{ imageRendering: "pixelated" }} />
+              ) : (
+                <span className="font-pixel text-xl text-[#40d870]/30">?</span>
+              )}
+            </div>
+          </div>
+
+          {/* Stats grid */}
+          <div className="flex-1 min-w-0 space-y-3">
+            {plot.empty ? (
+              <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+                Select a seed to plant in this plot!
+              </p>
+            ) : plot.dead ? (
+              <p className="font-pixel text-[11px] text-[var(--pet-red,#e04040)]">
+                This plant died from lack of water. Clear it to replant.
+              </p>
+            ) : (
+              <>
+                {/* Growth bar */}
+                <div className="border-2 border-[#1a2a3c] p-1.5 bg-[#080c18]">
+                  <PixelBar
+                    value={plot.growthPoints}
+                    max={plot.growthPointsNeeded}
+                    label={`Stg ${plot.stage}`}
+                    color={plot.readyToHarvest ? "gold" : "green"}
+                    segments={12}
+                  />
+                </div>
+
+                {/* 2-column stats */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                  <StatRow label="Growth" value={`${Math.round(plot.growthPoints)}/${plot.growthPointsNeeded}`} />
+                  {plot.goldInvested > 0 && (
+                    <StatRow label="Invested" value={<GoldDisplay amount={plot.goldInvested} size="sm" />} />
+                  )}
+                  {plot.readyToHarvest && (
+                    <StatRow label="Harvest" value={
+                      <span className="flex items-center gap-1">
+                        <GoldDisplay amount={projectedHarvest} size="sm" showSign />
+                        {plot.rarity !== "COMMON" && (
+                          <span className="text-[8px]" style={{ color: bc }}>x{RARITY_GOLD_MULTIPLIER[plot.rarity]}</span>
+                        )}
+                      </span>
+                    } />
+                  )}
+                  {plot.needsWater && (
+                    <StatRow label="Water" value={<span className="text-[var(--pet-blue,#4080f0)]">Needs water!</span>} />
+                  )}
+                  {!plot.needsWater && !plot.readyToHarvest && plot.nextWaterAt && (
+                    <StatRow label="Water in" value={<LiveTimer nextWaterAt={plot.nextWaterAt} />} />
+                  )}
+                  {((plot.voiceMinutesEarned || 0) > 0 || (plot.messagesEarned || 0) > 0) && (
+                    <StatRow label="Activity" value={
+                      <span className="text-[var(--pet-text-dim,#8899aa)]">
+                        {(plot.voiceMinutesEarned || 0) > 0 ? `${Math.round(plot.voiceMinutesEarned || 0)}m VC` : ""}
+                        {(plot.voiceMinutesEarned || 0) > 0 && (plot.messagesEarned || 0) > 0 ? " + " : ""}
+                        {(plot.messagesEarned || 0) > 0 ? `${plot.messagesEarned} msgs` : ""}
+                      </span>
+                    } />
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Action buttons row */}
+        <div className="flex gap-2 mt-4 pt-3 border-t-2 border-[#1a2a3c]">
           {plot.empty && (
-            <PixelButton variant="primary" size="sm" onClick={onPlantClick}>Plant</PixelButton>
+            <PixelButton variant="primary" size="md" onClick={onPlantClick} className="flex-1">Plant Seed</PixelButton>
           )}
           {!plot.empty && plot.needsWater && !plot.dead && (
-            <PixelButton variant="info" size="sm" onClick={() => handle("water")} loading={acting}>Water</PixelButton>
+            <PixelButton variant="info" size="md" onClick={() => handle("water")} loading={acting} className="flex-1">Water</PixelButton>
           )}
           {plot.readyToHarvest && !plot.dead && (
-            <PixelButton variant="gold" size="sm" onClick={() => handle("harvest")} loading={acting}>Harvest</PixelButton>
+            <PixelButton variant="gold" size="md" onClick={() => handle("harvest")} loading={acting} className="flex-1">Harvest</PixelButton>
           )}
           {!plot.empty && !plot.dead && !plot.readyToHarvest && plot.seed && (
-            <PixelButton variant="ghost" size="sm" onClick={handleRemove} loading={acting}>Remove</PixelButton>
+            <PixelButton variant="ghost" size="md" onClick={handleRemove} loading={acting}>Remove (50%)</PixelButton>
           )}
           {plot.dead && (
-            <PixelButton variant="danger" size="sm" onClick={() => handle("clear")} loading={acting}>Clear</PixelButton>
+            <PixelButton variant="danger" size="md" onClick={() => handle("clear")} loading={acting} className="flex-1">Clear Plot</PixelButton>
           )}
         </div>
       </div>
-    </PixelCard>
+    </div>
+  )
+}
+
+function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between font-pixel text-[10px]">
+      <span className="text-[var(--pet-text-dim,#8899aa)]">{label}</span>
+      <span className="text-[var(--pet-text,#e2e8f0)]">{value}</span>
+    </div>
   )
 }

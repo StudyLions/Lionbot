@@ -1,17 +1,31 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Farm statistics with load indicator, rarity breakdown,
-//          investment totals, and contextual growth tips
+// Purpose: RPG-style HUD bar with icon sprites, farm load,
+//          rarity breakdown, and speech bubble tips
 // ============================================================
 import { useMemo } from "react"
-import PixelCard from "@/components/pet/ui/PixelCard"
+import { getUiIconUrl, getFarmAnimationUrl } from "@/utils/petAssets"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import type { FarmPlot } from "./FarmScene"
 
 interface FarmStatsProps {
   plots: FarmPlot[]
   gold: number
+}
+
+function PixelIcon({ name, size = 16, alt = "" }: { name: string; size?: number; alt?: string }) {
+  return (
+    <img
+      src={getUiIconUrl(name)}
+      alt={alt}
+      width={size}
+      height={size}
+      className="inline-block flex-shrink-0"
+      style={{ imageRendering: "pixelated" }}
+    />
+  )
 }
 
 export default function FarmStats({ plots, gold }: FarmStatsProps) {
@@ -40,86 +54,132 @@ export default function FarmStats({ plots, gold }: FarmStatsProps) {
     return { active, ready, dead, empty, needsWater, totalInvested, rarities, total: plots.length, load, growingCount }
   }, [plots])
 
-  const loadColors = {
-    EMPTY: "text-[#6a7a8a]",
-    LIGHT: "text-[var(--pet-green,#40d870)]",
-    MEDIUM: "text-[#f0c040]",
-    HEAVY: "text-[var(--pet-red,#e04040)]",
-  }
-
   const tips = useMemo(() => {
     const t: string[] = []
     if (stats.ready > 0) t.push(`${stats.ready} plant${stats.ready > 1 ? "s" : ""} ready to harvest!`)
-    if (stats.needsWater > 0) t.push(`${stats.needsWater} plant${stats.needsWater > 1 ? "s" : ""} need water or they'll die!`)
-    if (stats.load === "HEAVY") t.push("Heavy load! Growth splits across all plants. Consider harvesting first.")
-    if (stats.active === 0 && stats.empty > 0) t.push("Plant seeds and be active in VC or chat to grow them!")
-    if (stats.growingCount > 0 && stats.growingCount < 5) {
-      const avgPtsNeeded = 100
-      const msgsPerPlot = Math.round(avgPtsNeeded / (2.0 / stats.growingCount * 1.5))
-      t.push(`~${msgsPerPlot} messages or ~${Math.round(avgPtsNeeded / (1.0 / stats.growingCount * 1.5))}m VC per plant to fully grow`)
-    }
+    if (stats.needsWater > 0) t.push(`${stats.needsWater} plant${stats.needsWater > 1 ? "s" : ""} need water!`)
+    if (stats.load === "HEAVY") t.push("Heavy load! Growth splits thin.")
+    if (stats.active === 0 && stats.empty > 0) t.push("Plant seeds and be active to grow them!")
     return t
   }, [stats])
+
+  const loadColors: Record<string, { bg: string; text: string }> = {
+    EMPTY: { bg: "#1a2030", text: "#6a7a8a" },
+    LIGHT: { bg: "#1a3020", text: "#40d870" },
+    MEDIUM: { bg: "#302a18", text: "#f0c040" },
+    HEAVY: { bg: "#301a1a", text: "#e04040" },
+  }
+  const lc = loadColors[stats.load]
 
   const hasRareOrAbove = Object.keys(stats.rarities).some(r => r !== "COMMON")
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-        <StatCard label="GOLD" value={gold.toLocaleString()} color="text-[var(--pet-gold,#f0c040)]" />
-        <StatCard label="GROWING" value={`${stats.active}/${stats.total}`} color="text-[var(--pet-green,#40d870)]"
-          sub={stats.needsWater > 0 ? `${stats.needsWater} thirsty` : undefined} />
-        <StatCard label="HARVEST" value={String(stats.ready)} color="text-[var(--pet-gold,#f0c040)]"
-          highlight={stats.ready > 0} />
-        <StatCard label="DEAD" value={String(stats.dead)} color="text-[var(--pet-red,#e04040)]" />
-      </div>
+    <div className="space-y-2">
+      {/* Main HUD bar */}
+      <div
+        className="border-[3px] border-[#3a4a6c] bg-gradient-to-b from-[#111828] to-[#0c1020] px-4 py-3"
+        style={{ boxShadow: "3px 3px 0 #060810, inset 0 1px 0 rgba(255,255,255,0.04)" }}
+      >
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          {/* Gold */}
+          <GoldDisplay amount={gold} size="lg" />
 
-      <PixelCard className="px-3 py-2 flex flex-wrap items-center gap-3">
-        <div className="font-pixel text-[10px] flex items-center gap-1.5">
-          <span className="text-[var(--pet-text-dim,#8899aa)]">Load:</span>
-          <span className={loadColors[stats.load]}>{stats.load}</span>
-        </div>
-        {stats.totalInvested > 0 && (
-          <div className="font-pixel text-[10px] flex items-center gap-1.5">
-            <span className="text-[var(--pet-text-dim,#8899aa)]">Invested:</span>
-            <span className="text-[var(--pet-gold,#f0c040)]">{stats.totalInvested}G</span>
+          {/* Growing / Harvest / Dead */}
+          <div className="flex items-center gap-4">
+            <HudStat icon={<PixelIcon name="liongotchi_greenpot" size={18} />} value={`${stats.active}/${stats.total}`} color="#40d870"
+              sub={stats.needsWater > 0 ? `${stats.needsWater} thirsty` : undefined} subColor="#4080f0" />
+            <div className="w-px h-6 bg-[#2a3a5c]" />
+            <HudStat icon={<PixelIcon name="trophy" size={18} />} value={String(stats.ready)} color="#f0c040"
+              pulse={stats.ready > 0} />
+            <div className="w-px h-6 bg-[#2a3a5c]" />
+            <HudStat
+              icon={
+                <img src={getFarmAnimationUrl("skull", 1)} alt="" width={16} height={16}
+                  style={{ imageRendering: "pixelated" }} />
+              }
+              value={String(stats.dead)} color="#e04040" />
           </div>
-        )}
-        {hasRareOrAbove && (
-          <div className="flex items-center gap-1">
-            {(["LEGENDARY", "EPIC", "RARE", "UNCOMMON"] as const).map(r =>
-              stats.rarities[r] ? (
-                <span key={r} className="flex items-center gap-0.5">
-                  <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">{stats.rarities[r]}x</span>
-                  <PixelBadge rarity={r} />
-                </span>
-              ) : null
+
+          {/* Load badge */}
+          <div
+            className="font-pixel text-[10px] px-2.5 py-1 border-2"
+            style={{ backgroundColor: lc.bg, borderColor: lc.text, color: lc.text }}
+          >
+            {stats.load}
+          </div>
+        </div>
+
+        {/* Second row: invested + rarity breakdown */}
+        {(stats.totalInvested > 0 || hasRareOrAbove) && (
+          <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1a2a3c]">
+            {stats.totalInvested > 0 && (
+              <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">
+                Invested: <GoldDisplay amount={stats.totalInvested} size="sm" />
+              </span>
+            )}
+            {hasRareOrAbove && (
+              <div className="flex items-center gap-1.5">
+                {(["LEGENDARY", "EPIC", "RARE", "UNCOMMON"] as const).map(r =>
+                  stats.rarities[r] ? (
+                    <span key={r} className="flex items-center gap-0.5">
+                      <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">{stats.rarities[r]}x</span>
+                      <PixelBadge rarity={r} />
+                    </span>
+                  ) : null
+                )}
+              </div>
             )}
           </div>
         )}
-      </PixelCard>
+      </div>
 
+      {/* Tips speech bubble */}
       {tips.length > 0 && (
-        <PixelCard className="px-3 py-2 border-[#4080f0]/40">
-          {tips.map((tip, i) => (
-            <p key={i} className="font-pixel text-[10px] text-[var(--pet-blue,#4080f0)]">
-              &gt; {tip}
-            </p>
-          ))}
-        </PixelCard>
+        <div className="relative">
+          <div className="flex items-start gap-2.5 pl-1">
+            <img
+              src={getUiIconUrl("liongotchi_heart")}
+              alt=""
+              width={22}
+              height={22}
+              className="flex-shrink-0 mt-1"
+              style={{ imageRendering: "pixelated" }}
+            />
+            <div
+              className="relative border-2 border-[#4080f0] bg-[#0c1428] px-3 py-2 flex-1"
+              style={{ boxShadow: "2px 2px 0 #060810" }}
+            >
+              <div
+                className="absolute -left-[7px] top-2.5 w-0 h-0"
+                style={{
+                  borderTop: "5px solid transparent",
+                  borderBottom: "5px solid transparent",
+                  borderRight: "6px solid #4080f0",
+                }}
+              />
+              {tips.map((tip, i) => (
+                <p key={i} className="font-pixel text-[10px] text-[#80b0ff] leading-relaxed">
+                  {tip}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
 }
 
-function StatCard({ label, value, color, sub, highlight }: {
-  label: string; value: string; color: string; sub?: string; highlight?: boolean
+function HudStat({ icon, value, color, sub, subColor, pulse }: {
+  icon: React.ReactNode; value: string; color: string; sub?: string; subColor?: string; pulse?: boolean
 }) {
   return (
-    <PixelCard className={`p-2.5 ${highlight ? "border-[#f0c040]/50" : ""}`}>
-      <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] tracking-widest mb-1">{label}</p>
-      <p className={`font-pixel text-base ${color}`}>{value}</p>
-      {sub && <p className="font-pixel text-[8px] text-[var(--pet-blue,#4080f0)] mt-0.5">{sub}</p>}
-    </PixelCard>
+    <div className="flex items-center gap-1.5">
+      {icon}
+      <div>
+        <span className={`font-pixel text-sm ${pulse ? "animate-harvest-pulse" : ""}`} style={{ color }}>{value}</span>
+        {sub && <span className="font-pixel text-[8px] block" style={{ color: subColor }}>{sub}</span>}
+      </div>
+    </div>
   )
 }

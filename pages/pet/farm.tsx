@@ -1,9 +1,8 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Pet farm page - pixel art styled with interactive
-//          scene, bulk actions, harvest modal, fullscreen toggle,
-//          history log, and comprehensive growth mechanics
+// Purpose: Pet farm page - pixel art RPG-style with Gameboy frame,
+//          HUD bar, action toolbar, harvest modal, history log
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
@@ -17,6 +16,8 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import dynamic from "next/dynamic"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelCard from "@/components/pet/ui/PixelCard"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+import { getUiIconUrl, getFarmAnimationUrl } from "@/utils/petAssets"
 import type { FarmPlot } from "@/components/pet/farm/FarmScene"
 
 const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), { ssr: false })
@@ -25,6 +26,7 @@ const PlotDetail = dynamic(() => import("@/components/pet/farm/PlotDetail"), { s
 const SeedSelector = dynamic(() => import("@/components/pet/farm/SeedSelector"), { ssr: false })
 const HarvestModal = dynamic(() => import("@/components/pet/farm/HarvestModal"), { ssr: false })
 const FarmHistory = dynamic(() => import("@/components/pet/farm/FarmHistory"), { ssr: false })
+const GameboyFrame = dynamic(() => import("@/components/pet/farm/GameboyFrame"), { ssr: false })
 
 interface FarmData {
   plots: FarmPlot[]
@@ -66,7 +68,6 @@ export default function FarmPage() {
   }, [])
 
   const selectedPlotData = data?.plots.find((p) => p.plotId === selectedPlot) ?? null
-
   const hasPlanted = data?.plots.some(p => !p.empty && !p.dead)
   const hasHarvestable = data?.plots.some(p => p.readyToHarvest && !p.dead)
   const hasDead = data?.plots.some(p => p.dead)
@@ -84,13 +85,11 @@ export default function FarmPage() {
   const handleAction = useCallback(async (plotId: number, action: string) => {
     try {
       const res = await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action, plotId }),
       })
       const body = await res.json()
       if (!res.ok) { showMessage(body.error || "Action failed", "error"); return }
-
       if (action === "harvest") {
         const mult = body.rarity !== "COMMON" ? ` (${body.rarity} x${body.multiplier})` : ""
         showMessage(`Harvested ${body.seedName}! +${body.goldEarned}G${mult}`, "success")
@@ -111,8 +110,7 @@ export default function FarmPage() {
   const handleRemove = useCallback(async (plotId: number) => {
     try {
       const res = await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "remove", plotId }),
       })
       const body = await res.json()
@@ -127,8 +125,7 @@ export default function FarmPage() {
   const handlePlant = useCallback(async (plotId: number, seedId: number) => {
     try {
       const res = await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "plant", plotId, seedId }),
       })
       const body = await res.json()
@@ -144,8 +141,7 @@ export default function FarmPage() {
   const handleWaterAll = useCallback(async () => {
     try {
       const res = await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "waterAll" }),
       })
       const body = await res.json()
@@ -160,8 +156,7 @@ export default function FarmPage() {
   const handleHarvestAll = useCallback(async () => {
     try {
       const res = await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "harvestAll" }),
       })
       const body = await res.json()
@@ -178,8 +173,7 @@ export default function FarmPage() {
     const deadPlots = data.plots.filter(p => p.dead)
     for (const p of deadPlots) {
       await fetch("/api/pet/farm", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "clear", plotId: p.plotId }),
       })
     }
@@ -203,48 +197,52 @@ export default function FarmPage() {
             <PetNav />
 
             <div className="flex-1 min-w-0 space-y-4">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
-                  <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
-                    Plant seeds, water them, harvest for Gold. Click any plot.
-                  </p>
+              {/* Title with decorative underline */}
+              <div>
+                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
+                  <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
+                  <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
-                {data && (
-                  <PixelCard className="px-3 py-1.5 flex items-center gap-1.5 border-[var(--pet-gold,#f0c040)]/40">
-                    <span className="font-pixel text-xs text-[var(--pet-gold,#f0c040)]">{data.gold.toLocaleString()}G</span>
-                  </PixelCard>
-                )}
+                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                  Plant seeds, water them, harvest for Gold. Click any plot.
+                </p>
               </div>
 
-              {/* Toast */}
+              {/* Toast with icon */}
               {message && (
-                <PixelCard
-                  className="px-3 py-2 font-pixel text-[10px]"
-                  borderColor={message.type === "success" ? "#40d870" : "#e04040"}
+                <div
+                  className="flex items-center gap-2 px-3 py-2 border-2"
+                  style={{
+                    borderColor: message.type === "success" ? "var(--pet-green)" : "var(--pet-red)",
+                    backgroundColor: message.type === "success" ? "rgba(40,100,60,0.15)" : "rgba(100,40,40,0.15)",
+                    boxShadow: "2px 2px 0 #060810",
+                  }}
                 >
-                  <span style={{ color: message.type === "success" ? "var(--pet-green)" : "var(--pet-red)" }}>
-                    &gt; {message.text}
+                  <img
+                    src={getUiIconUrl(message.type === "success" ? "trophy" : "liongotchi_heart")}
+                    alt="" width={14} height={14}
+                    style={{ imageRendering: "pixelated" }}
+                  />
+                  <span className="font-pixel text-[10px]"
+                    style={{ color: message.type === "success" ? "var(--pet-green)" : "var(--pet-red)" }}>
+                    {message.text}
                   </span>
-                </PixelCard>
+                </div>
               )}
 
               {isLoading ? (
                 <div className="space-y-3">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                      <Skeleton key={i} className="h-16" />
-                    ))}
-                  </div>
+                  <Skeleton className="h-16" />
                   <Skeleton className="h-[600px]" />
                 </div>
               ) : error ? (
-                <PixelCard className="p-8 text-center">
+                <PixelCard className="p-8 text-center" corners>
                   <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : !data?.plots.length ? (
-                <PixelCard className="p-12 text-center space-y-3">
+                <PixelCard className="p-12 text-center space-y-3" corners>
                   <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">No farm plots yet.</p>
                   <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
                     Use /pet in Discord to create your pet and unlock your farm!
@@ -252,31 +250,12 @@ export default function FarmPage() {
                 </PixelCard>
               ) : (
                 <>
+                  {/* RPG HUD Bar */}
                   <FarmStats plots={data.plots} gold={data.gold} />
 
-                  {/* Bulk action buttons */}
-                  <div className="flex flex-wrap gap-2">
-                    {hasPlanted && (
-                      <PixelButton variant="info" size="sm" onClick={handleWaterAll}>Water All</PixelButton>
-                    )}
-                    {hasHarvestable && (
-                      <PixelButton variant="gold" size="sm" onClick={handleHarvestAll}>Harvest All</PixelButton>
-                    )}
-                    {hasDead && (
-                      <PixelButton variant="danger" size="sm" onClick={handleClearDead}>Clear Dead</PixelButton>
-                    )}
-                    <PixelButton
-                      variant="ghost"
-                      size="sm"
-                      onClick={toggleFullscreen}
-                    >
-                      {isFullscreen ? "Compact" : "Fullscreen"}
-                    </PixelButton>
-                  </div>
-
-                  {/* Farm Scene */}
+                  {/* Farm Scene with Gameboy Frame */}
                   <div className="flex justify-center">
-                    <PixelCard className="p-3 inline-block">
+                    <GameboyFrame isFullscreen={isFullscreen}>
                       <FarmScene
                         plots={data.plots}
                         selectedPlot={selectedPlot}
@@ -284,7 +263,47 @@ export default function FarmPage() {
                         justWatered={justWatered}
                         isFullscreen={isFullscreen}
                       />
-                    </PixelCard>
+                    </GameboyFrame>
+                  </div>
+
+                  {/* Action Toolbar */}
+                  <div
+                    className="flex items-center justify-center gap-0 border-[3px] border-[#2a3a5c] bg-[#0c1020]"
+                    style={{ boxShadow: "3px 3px 0 #060810" }}
+                  >
+                    {hasPlanted && (
+                      <ToolbarButton
+                        iconUrl={getUiIconUrl("liongotchi_greenpot")}
+                        label="Water All"
+                        onClick={handleWaterAll}
+                        color="#4080f0"
+                      />
+                    )}
+                    {hasPlanted && hasHarvestable && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                    {hasHarvestable && (
+                      <ToolbarButton
+                        iconUrl={getUiIconUrl("trophy")}
+                        label="Harvest All"
+                        onClick={handleHarvestAll}
+                        color="#f0c040"
+                      />
+                    )}
+                    {(hasPlanted || hasHarvestable) && hasDead && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                    {hasDead && (
+                      <ToolbarButton
+                        iconUrl={getFarmAnimationUrl("skull", 1)}
+                        label="Clear Dead"
+                        onClick={handleClearDead}
+                        color="#e04040"
+                      />
+                    )}
+                    {(hasPlanted || hasHarvestable || hasDead) && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                    <ToolbarButton
+                      iconUrl={getUiIconUrl(isFullscreen ? "liongotchi_heart" : "liongotchi_greenpot")}
+                      label={isFullscreen ? "Compact" : "Fullscreen"}
+                      onClick={toggleFullscreen}
+                      color="#8899aa"
+                    />
                   </div>
 
                   {/* Plot detail / Seed selector */}
@@ -315,7 +334,7 @@ export default function FarmPage() {
                     </div>
                   )}
 
-                  {/* History */}
+                  {/* History Log */}
                   {data.history && data.history.length > 0 && (
                     <FarmHistory history={data.history} />
                   )}
@@ -331,6 +350,24 @@ export default function FarmPage() {
         )}
       </AdminGuard>
     </Layout>
+  )
+}
+
+function ToolbarButton({ iconUrl, label, onClick, color }: {
+  iconUrl: string; label: string; onClick: () => void; color: string
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 px-5 py-2.5 transition-all hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.06)]"
+    >
+      <img
+        src={iconUrl} alt="" width={18} height={18}
+        className="flex-shrink-0"
+        style={{ imageRendering: "pixelated" }}
+      />
+      <span className="font-pixel text-[10px]" style={{ color }}>{label}</span>
+    </button>
   )
 }
 
