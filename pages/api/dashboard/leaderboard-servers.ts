@@ -6,70 +6,84 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth, getUserGuilds } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
+import { Prisma } from "@prisma/client"
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: only show servers the user is currently in (cross-ref Discord + DB),
+//          sort by actual study time from voice_sessions, use Discord member counts
 export default apiHandler({
   async GET(req, res) {
     const auth = await requireAuth(req, res)
     if (!auth) return
 
-    const memberRows = await prisma.members.findMany({
-      where: { userid: auth.userId },
-      select: {
-        guildid: true,
-        tracked_time: true,
-      },
-      orderBy: { tracked_time: "desc" },
-    })
-
-    if (!memberRows.length) {
+    const guilds = await getUserGuilds(auth.accessToken, auth.discordId)
+    if (!guilds.length) {
       return res.status(200).json({ servers: [] })
     }
 
-    const guilds = await getUserGuilds(auth.accessToken, auth.discordId)
-    const guildMap = new Map(guilds.map((g) => [g.id, g]))
+    const discordGuildIds = new Set(guilds.map((g) => g.id))
+    const discordGuildMap = new Map(guilds.map((g) => [g.id, g]))
 
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: use Discord's approximate_member_count when available, fall back to DB count of current members
-    const discordMemberCounts = new Map(
-      guilds.map((g) => [g.id, g.approximate_member_count])
-    )
-
-    const memberCountsRaw = await prisma.members.groupBy({
-      by: ["guildid"],
-      where: { guildid: { in: memberRows.map((r) => r.guildid) }, last_left: null },
-      _count: true,
+    const memberRows = await prisma.members.findMany({
+      where: {
+        userid: auth.userId,
+        last_left: null,
+      },
+      select: { guildid: true },
     })
 
-    const dbMemberCounts = new Map(
-      memberCountsRaw.map((r) => [r.guildid.toString(), r._count])
-    )
-    // --- END AI-MODIFIED ---
+    const activeGuildIds = memberRows
+      .map((r) => r.guildid)
+      .filter((gid) => discordGuildIds.has(gid.toString()))
 
-    const guildConfigs = await prisma.guild_config.findMany({
-      where: { guildid: { in: memberRows.map((r) => r.guildid) } },
-      select: { guildid: true, name: true },
-    })
-    const configMap = new Map(
-      guildConfigs.map((c) => [c.guildid.toString(), c.name])
-    )
+    if (!activeGuildIds.length) {
+      return res.status(200).json({ servers: [] })
+    }
 
-    const servers = memberRows.map((row) => {
-      const gid = row.guildid.toString()
-      const discord = guildMap.get(gid)
-      const name =
-        discord?.name || configMap.get(gid) || `Server ${gid}`
-      const iconUrl = discord?.icon
-        ? `https://cdn.discordapp.com/icons/${gid}/${discord.icon}.webp?size=64`
-        : null
+    const [studyTimes, memberCountsRaw, guildConfigs] = await Promise.all([
+      prisma.$queryRaw<Array<{ guildid: bigint; total: number }>>`
+        SELECT guildid, COALESCE(SUM(duration), 0)::int as total
+        FROM voice_sessions
+        WHERE userid = ${auth.userId} AND guildid IN (${Prisma.join(activeGuildIds)})
+        GROUP BY guildid
+      `,
 
-      return {
-        id: gid,
-        name,
-        iconUrl,
-        memberCount: discordMemberCounts.get(gid) || dbMemberCounts.get(gid) || 0,
-      }
-    })
+      prisma.members.groupBy({
+        by: ["guildid"],
+        where: { guildid: { in: activeGuildIds }, last_left: null },
+        _count: true,
+      }),
+
+      prisma.guild_config.findMany({
+        where: { guildid: { in: activeGuildIds } },
+        select: { guildid: true, name: true },
+      }),
+    ])
+
+    const studyMap = new Map(studyTimes.map((s) => [s.guildid.toString(), Number(s.total)]))
+    const dbMemberCounts = new Map(memberCountsRaw.map((r) => [r.guildid.toString(), r._count]))
+    const configMap = new Map(guildConfigs.map((c) => [c.guildid.toString(), c.name]))
+
+    const servers = activeGuildIds
+      .map((gid) => {
+        const gidStr = gid.toString()
+        const discord = discordGuildMap.get(gidStr)
+        const name = discord?.name || configMap.get(gidStr) || `Server ${gidStr}`
+        const iconUrl = discord?.icon
+          ? `https://cdn.discordapp.com/icons/${gidStr}/${discord.icon}.webp?size=64`
+          : null
+
+        return {
+          id: gidStr,
+          name,
+          iconUrl,
+          memberCount: discord?.approximate_member_count || dbMemberCounts.get(gidStr) || 0,
+          studyHours: Math.round((studyMap.get(gidStr) || 0) / 3600 * 10) / 10,
+        }
+      })
+      .sort((a, b) => b.studyHours - a.studyHours)
 
     return res.status(200).json({ servers })
   },
 })
+// --- END AI-MODIFIED ---
