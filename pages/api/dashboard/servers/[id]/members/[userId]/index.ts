@@ -34,12 +34,13 @@ export default apiHandler({
     ] = await Promise.all([
       // --- AI-MODIFIED (2026-03-14) ---
       // Purpose: join user_config for avatar_hash
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: select user_config.name for display name fallback
       prisma.members.findUnique({
         where: { guildid_userid: { guildid: guildId, userid: targetUserId } },
         select: {
           userid: true,
           display_name: true,
-          tracked_time: true,
           coins: true,
           workout_count: true,
           first_joined: true,
@@ -48,7 +49,7 @@ export default apiHandler({
           video_warned: true,
           revision_mute_count: true,
           user_config: {
-            select: { avatar_hash: true },
+            select: { avatar_hash: true, name: true },
           },
         },
       }),
@@ -194,6 +195,15 @@ export default apiHandler({
       return res.status(404).json({ error: "Member not found in this server" })
     }
 
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: tracked_time is always 0; aggregate voice_sessions for real study time
+    const studyAgg = await prisma.voice_sessions.aggregate({
+      where: { guildid: guildId, userid: targetUserId },
+      _sum: { duration: true },
+    })
+    const totalStudySeconds = studyAgg._sum?.duration || 0
+    // --- END AI-MODIFIED ---
+
     const completedTasks = await prisma.tasklist.count({
       where: { userid: targetUserId, deleted_at: null, completed_at: { not: null } },
     })
@@ -249,9 +259,12 @@ export default apiHandler({
     res.status(200).json({
       member: {
         userId: uid,
-        displayName: member.display_name,
+        // --- AI-MODIFIED (2026-03-15) ---
+        // Purpose: display name fallback chain + study time from voice_sessions
+        displayName: member.display_name || member.user_config?.name || null,
         avatarUrl,
-        trackedTimeHours: Math.round(((member.tracked_time || 0) / 3600) * 10) / 10,
+        trackedTimeHours: Math.round((totalStudySeconds / 3600) * 10) / 10,
+        // --- END AI-MODIFIED ---
         coins: member.coins || 0,
         workoutCount: member.workout_count || 0,
         firstJoined: member.first_joined,

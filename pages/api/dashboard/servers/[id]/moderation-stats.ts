@@ -24,9 +24,13 @@ export default apiHandler({
     if (!auth) return
 
     const now = new Date()
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: use Monday-start (ISO) week to match the bot's week boundaries
     const weekStart = new Date(now)
-    weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay())
+    const wDay = weekStart.getUTCDay()
+    weekStart.setUTCDate(weekStart.getUTCDate() - (wDay === 0 ? 6 : wDay - 1))
     weekStart.setUTCHours(0, 0, 0, 0)
+    // --- END AI-MODIFIED ---
     const thirtyDaysAgo = new Date(now)
     thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30)
 
