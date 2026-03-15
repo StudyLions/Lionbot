@@ -55,7 +55,7 @@ function getStatQuery(rt: RankType, guildId: bigint, seasonStart: Date | null): 
       LEFT JOIN user_config uc ON uc.userid = m.userid
       LEFT JOIN voice_sessions vs ON vs.guildid = m.guildid AND vs.userid = m.userid AND vs.start_time >= ${since}
       LEFT JOIN member_ranks mr ON mr.guildid = m.guildid AND mr.userid = m.userid
-      WHERE m.guildid = ${guildId}
+      WHERE m.guildid = ${guildId} AND m.last_left IS NULL
       GROUP BY m.userid, m.display_name, uc.name, uc.avatar_hash, mr.current_voice_rankid
     `
   } else if (rt === "XP") {
@@ -67,7 +67,7 @@ function getStatQuery(rt: RankType, guildId: bigint, seasonStart: Date | null): 
       LEFT JOIN user_config uc ON uc.userid = m.userid
       LEFT JOIN member_experience me ON me.guildid = m.guildid AND me.userid = m.userid AND me.earned_at >= ${since}
       LEFT JOIN member_ranks mr ON mr.guildid = m.guildid AND mr.userid = m.userid
-      WHERE m.guildid = ${guildId}
+      WHERE m.guildid = ${guildId} AND m.last_left IS NULL
       GROUP BY m.userid, m.display_name, uc.name, uc.avatar_hash, mr.current_xp_rankid
     `
   } else {
@@ -79,7 +79,7 @@ function getStatQuery(rt: RankType, guildId: bigint, seasonStart: Date | null): 
       LEFT JOIN user_config uc ON uc.userid = m.userid
       LEFT JOIN text_sessions ts ON ts.guildid = m.guildid AND ts.userid = m.userid AND ts.start_time >= ${since}
       LEFT JOIN member_ranks mr ON mr.guildid = m.guildid AND mr.userid = m.userid
-      WHERE m.guildid = ${guildId}
+      WHERE m.guildid = ${guildId} AND m.last_left IS NULL
       GROUP BY m.userid, m.display_name, uc.name, uc.avatar_hash, mr.current_msg_rankid
     `
   }
@@ -114,7 +114,10 @@ export default apiHandler({
     const seasonStart = config?.season_start || null
 
     const [totalMembers, distributionRows, membersByRank, allStats] = await Promise.all([
-      prisma.members.count({ where: { guildid: guildId } }),
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only count current members
+      prisma.members.count({ where: { guildid: guildId, last_left: null } }),
+      // --- END AI-MODIFIED ---
 
       prisma.$queryRawUnsafe<DistributionRow[]>(`
         SELECT r.rankid, r.roleid, r.required, r.reward,

@@ -116,6 +116,10 @@ export default apiHandler({
       name: discordGuild?.name || guildConfig?.name || "Unknown Server",
       iconUrl,
       bannerUrl,
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: pass Discord's real member count to frontend
+      memberCount: discordGuild?.approximate_member_count || null,
+      // --- END AI-MODIFIED ---
       settings: guildConfig ? {
         studyHourlyReward: guildConfig.study_hourly_reward,
         studyHourlyLiveBonus: guildConfig.study_hourly_live_bonus,

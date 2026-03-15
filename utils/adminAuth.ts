@@ -61,13 +61,17 @@ export function rateLimited(res: NextApiResponse) {
 // Purpose: export DiscordGuild (with icon field) and getUserGuilds for reuse in servers API
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: added banner field for server overview hero header
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: added approximate_member_count from Discord ?with_counts=true
 export interface DiscordGuild {
   id: string
   name: string
   icon: string | null
   banner: string | null
   permissions: string
+  approximate_member_count?: number
 }
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 let guildCache = new Map<string, { guilds: DiscordGuild[]; expiresAt: number }>()
@@ -82,15 +86,18 @@ export async function getUserGuilds(accessToken: string, userId: string): Promis
   try {
     // --- AI-MODIFIED (2026-03-13) ---
     // Purpose: handle Discord 429 rate limits with retry
-    let res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added ?with_counts=true so Discord returns approximate_member_count per guild
+    let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (res.status === 429) {
       const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
       await new Promise((r) => setTimeout(r, retryAfter * 1000))
-      res = await fetch("https://discord.com/api/v10/users/@me/guilds", {
+      res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
+    // --- END AI-MODIFIED ---
     }
     if (!res.ok) return []
     // --- END AI-MODIFIED ---

@@ -18,12 +18,14 @@ export default apiHandler({
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30)
 
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: only count current members (exclude those who left)
     let count: number
     if (target === "active") {
       const result = await prisma.$queryRaw<[{ cnt: bigint }]>`
         SELECT COUNT(DISTINCT m.userid) as cnt
         FROM members m
-        WHERE m.guildid = ${guildId}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL
           AND EXISTS (
             SELECT 1 FROM coin_transactions ct
             WHERE ct.guildid = ${guildId}
@@ -36,7 +38,7 @@ export default apiHandler({
       const result = await prisma.$queryRaw<[{ cnt: bigint }]>`
         SELECT COUNT(*) as cnt
         FROM members m
-        WHERE m.guildid = ${guildId}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM coin_transactions ct
             WHERE ct.guildid = ${guildId}
@@ -46,8 +48,9 @@ export default apiHandler({
       `
       count = Number(result[0]?.cnt || 0)
     } else {
-      count = await prisma.members.count({ where: { guildid: guildId } })
+      count = await prisma.members.count({ where: { guildid: guildId, last_left: null } })
     }
+    // --- END AI-MODIFIED ---
 
     res.status(200).json({ count })
   },
@@ -77,12 +80,14 @@ export default apiHandler({
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setUTCDate(thirtyDaysAgo.getUTCDate() - 30)
 
-    let memberFilter: any = { guildid: guildId }
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: only target current members (exclude those who left)
+    let memberFilter: any = { guildid: guildId, last_left: null }
     if (target === "active") {
       const activeIds = await prisma.$queryRaw<Array<{ userid: bigint }>>`
         SELECT DISTINCT m.userid
         FROM members m
-        WHERE m.guildid = ${guildId}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL
           AND EXISTS (
             SELECT 1 FROM coin_transactions ct
             WHERE ct.guildid = ${guildId}
@@ -95,7 +100,7 @@ export default apiHandler({
       const inactiveIds = await prisma.$queryRaw<Array<{ userid: bigint }>>`
         SELECT m.userid
         FROM members m
-        WHERE m.guildid = ${guildId}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL
           AND NOT EXISTS (
             SELECT 1 FROM coin_transactions ct
             WHERE ct.guildid = ${guildId}

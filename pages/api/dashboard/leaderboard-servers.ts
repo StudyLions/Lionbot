@@ -28,15 +28,22 @@ export default apiHandler({
     const guilds = await getUserGuilds(auth.accessToken, auth.discordId)
     const guildMap = new Map(guilds.map((g) => [g.id, g]))
 
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: use Discord's approximate_member_count when available, fall back to DB count of current members
+    const discordMemberCounts = new Map(
+      guilds.map((g) => [g.id, g.approximate_member_count])
+    )
+
     const memberCountsRaw = await prisma.members.groupBy({
       by: ["guildid"],
-      where: { guildid: { in: memberRows.map((r) => r.guildid) } },
+      where: { guildid: { in: memberRows.map((r) => r.guildid) }, last_left: null },
       _count: true,
     })
 
-    const memberCounts = new Map(
+    const dbMemberCounts = new Map(
       memberCountsRaw.map((r) => [r.guildid.toString(), r._count])
     )
+    // --- END AI-MODIFIED ---
 
     const guildConfigs = await prisma.guild_config.findMany({
       where: { guildid: { in: memberRows.map((r) => r.guildid) } },
@@ -59,7 +66,7 @@ export default apiHandler({
         id: gid,
         name,
         iconUrl,
-        memberCount: memberCounts.get(gid) || 0,
+        memberCount: discordMemberCounts.get(gid) || dbMemberCounts.get(gid) || 0,
       }
     })
 

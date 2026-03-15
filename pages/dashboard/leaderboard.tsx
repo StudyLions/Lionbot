@@ -222,7 +222,7 @@ function Podium({ entries, type }: { entries: LBEntry[]; type: LBType }) {
             )}
           >
             {entry.avatarUrl ? (
-              <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" />
+              <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(entry.userId) % BigInt(5))}.png` }} />
             ) : (
               <span
                 className={cn(
@@ -316,7 +316,7 @@ function LeaderboardTable({
                 #{entry.rank}
               </span>
               {entry.avatarUrl ? (
-                <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(entry.userId) % BigInt(5))}.png` }} />
               ) : (
                 <div
                   className={cn(
@@ -675,7 +675,7 @@ export default function LeaderboardPage() {
                                     )}
                                   </span>
                                   {entry.avatarUrl ? (
-                                    <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                    <img src={entry.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(entry.userId) % BigInt(5))}.png` }} />
                                   ) : (
                                     <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground flex-shrink-0">
                                       {entry.displayName?.charAt(0)?.toUpperCase() || "?"}

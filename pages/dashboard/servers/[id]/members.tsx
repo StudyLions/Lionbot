@@ -253,7 +253,7 @@ export default function MembersPage() {
               <PageHeader
                 title="Members"
                 description="View, search, and manage server members. Click any member for full details."
-                actions={pagination && <Badge variant="info" size="md">{`${pagination.total.toLocaleString()} members`}</Badge>}
+                actions={<Badge variant="info" size="md">{`${((serverData as any)?.server?.memberCount || pagination?.total || 0).toLocaleString()} members`}</Badge>}
               />
 
               {/* Search + Filter + Actions Bar */}
@@ -336,7 +336,7 @@ export default function MembersPage() {
                               <td className="py-2.5 px-3">
                                 <div className="flex items-center gap-3">
                                   <div className="relative flex-shrink-0">
-                                    <img src={m.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" />
+                                    <img src={m.avatarUrl} alt="" className="w-8 h-8 rounded-full object-cover" loading="lazy" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(m.userId) % BigInt(5))}.png` }} />
                                     {isActive && (
                                       <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3">
                                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />

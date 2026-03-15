@@ -238,7 +238,10 @@ export default apiHandler({
       ) sub
     `
     const higherCount = Number(higherCountResult?.[0]?.count || 0)
-    const totalMembers = await prisma.members.count({ where: { guildid: guildId } })
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: only count current members for leaderboard position
+    const totalMembers = await prisma.members.count({ where: { guildid: guildId, last_left: null } })
+    // --- END AI-MODIFIED ---
     const leaderboardPosition = { rank: higherCount + 1, total: totalMembers }
     // --- END AI-MODIFIED ---
 

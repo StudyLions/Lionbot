@@ -64,11 +64,14 @@ export default apiHandler({
         WHERE guildid = ${guildId} AND start_time >= ${weekStart}
       `,
 
-      prisma.members.count({ where: { guildid: guildId } }),
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: filter to current members only (exclude those who left)
+      prisma.members.count({ where: { guildid: guildId, last_left: null } }),
 
       prisma.members.count({
-        where: { guildid: guildId, first_joined: { gte: weekStart } },
+        where: { guildid: guildId, last_left: null, first_joined: { gte: weekStart } },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.tickets.count({
         where: {
@@ -93,20 +96,26 @@ export default apiHandler({
         },
       }),
 
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only aggregate coins for current members
       prisma.members.aggregate({
-        where: { guildid: guildId },
+        where: { guildid: guildId, last_left: null },
         _sum: { coins: true },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.coin_transactions.count({
         where: { guildid: guildId, created_at: { gte: todayStart } },
       }),
 
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only consider current members for top earner
       prisma.members.findFirst({
-        where: { guildid: guildId },
+        where: { guildid: guildId, last_left: null },
         orderBy: { coins: "desc" },
         select: { userid: true, display_name: true, coins: true },
       }),
+      // --- END AI-MODIFIED ---
     ])
 
     res.status(200).json({

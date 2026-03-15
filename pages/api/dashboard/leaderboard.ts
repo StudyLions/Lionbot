@@ -61,18 +61,23 @@ function getPeriodStart(period: LBPeriod, timezone: string | null, seasonStart: 
   return null
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add avatarUrl to leaderboard entries using user_config.avatar_hash
-function getAvatarUrl(userId: bigint, avatarHash: string | null): string | null {
-  if (!avatarHash) return null
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: always return a URL -- fall back to Discord's default avatar when no hash
+function getAvatarUrl(userId: bigint, avatarHash: string | null): string {
   const uid = userId.toString()
-  const ext = avatarHash.startsWith("a_") ? "gif" : "webp"
-  return `https://cdn.discordapp.com/avatars/${uid}/${avatarHash}.${ext}?size=64`
+  if (avatarHash) {
+    const ext = avatarHash.startsWith("a_") ? "gif" : "webp"
+    return `https://cdn.discordapp.com/avatars/${uid}/${avatarHash}.${ext}?size=64`
+  }
+  const index = Number(BigInt(uid) % BigInt(5))
+  return `https://cdn.discordapp.com/embed/avatars/${index}.png`
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: added uname field for display name fallback chain
 function buildResponse(
-  entries: Array<{ userid: bigint; display_name: string | null; value: number; avatar_hash?: string | null }>,
+  entries: Array<{ userid: bigint; display_name: string | null; uname?: string | null; value: number; avatar_hash?: string | null }>,
   offset: number,
   userId: bigint,
   totalEntries: number,
@@ -87,11 +92,12 @@ function buildResponse(
     entries: entries.map((e, i) => ({
       rank: offset + i + 1,
       userId: e.userid.toString(),
-      displayName: e.display_name,
+      displayName: e.display_name || e.uname || null,
       avatarUrl: getAvatarUrl(e.userid, e.avatar_hash ?? null),
       value: Number(e.value),
       isYou: e.userid === userId,
     })),
+// --- END AI-MODIFIED ---
     totalEntries,
     totalPages: Math.ceil(totalEntries / pageSize),
     page,
@@ -134,23 +140,26 @@ export default apiHandler({
     const periodStart = getPeriodStart(period, guildConfig?.timezone || null, seasonStart)
 
     // ===== COINS =====
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added last_left IS NULL filter, u.name for display name fallback, search across both name fields
     if (type === "coins") {
       const searchWhere = search
-        ? Prisma.sql`AND m.display_name ILIKE ${"%" + search + "%"}`
+        ? Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
         : Prisma.sql``
 
       const countResult = await prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count FROM members m
-        WHERE m.guildid = ${guildId} AND (m.coins IS NOT NULL AND m.coins > 0)
+        LEFT JOIN user_config u ON u.userid = m.userid
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL AND (m.coins IS NOT NULL AND m.coins > 0)
         ${searchWhere}
       `
       const totalEntries = Number(countResult[0]?.count || 0)
 
-      const entries = await prisma.$queryRaw<Array<{ userid: bigint; display_name: string | null; avatar_hash: string | null; value: number }>>`
-        SELECT m.userid, m.display_name, u.avatar_hash, COALESCE(m.coins, 0) as value
+      const entries = await prisma.$queryRaw<Array<{ userid: bigint; display_name: string | null; uname: string | null; avatar_hash: string | null; value: number }>>`
+        SELECT m.userid, m.display_name, u.name as uname, u.avatar_hash, COALESCE(m.coins, 0) as value
         FROM members m
         LEFT JOIN user_config u ON u.userid = m.userid
-        WHERE m.guildid = ${guildId} AND (m.coins IS NOT NULL AND m.coins > 0)
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL AND (m.coins IS NOT NULL AND m.coins > 0)
         ${searchWhere}
         ORDER BY value DESC, m.userid ASC
         LIMIT ${pageSize} OFFSET ${offset}
@@ -163,9 +172,10 @@ export default apiHandler({
       const yourValue = Number(yourValueResult[0]?.value || 0)
       const yourRankResult = await prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count FROM members m
-        WHERE m.guildid = ${guildId} AND COALESCE(m.coins, 0) > ${yourValue}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL AND COALESCE(m.coins, 0) > ${yourValue}
       `
       const yourRank = Number(yourRankResult[0]?.count || 0) + 1
+    // --- END AI-MODIFIED ---
 
       return res.status(200).json(
         buildResponse(entries, offset, userId, totalEntries, pageSize, page, yourRank, yourValue, serverName, seasonStart)
@@ -175,16 +185,18 @@ export default apiHandler({
     // ===== STUDY (all periods aggregate voice_sessions) =====
     // --- AI-MODIFIED (2026-03-14) ---
     // Purpose: members.tracked_time is not populated by the bot; aggregate voice_sessions instead
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added last_left IS NULL filter, u.name for display name fallback, search across both name fields
     if (type === "study") {
       const since = periodStart || new Date(0)
       const cacheKey = `study:${guildIdStr}:${period}:${page}:${search}`
 
       const searchJoin = search
-        ? Prisma.sql`AND m.display_name ILIKE ${"%" + search + "%"}`
+        ? Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
         : Prisma.sql``
 
       let totalEntries: number
-      let entries: Array<{ userid: bigint; display_name: string | null; avatar_hash: string | null; value: number }>
+      let entries: Array<{ userid: bigint; display_name: string | null; uname: string | null; avatar_hash: string | null; value: number }>
 
       const cached = getCached<{ totalEntries: number; entries: typeof entries }>(cacheKey)
       if (cached) {
@@ -195,7 +207,9 @@ export default apiHandler({
           SELECT COUNT(*) as count FROM (
             SELECT v.userid FROM voice_sessions v
             JOIN members m ON m.guildid = v.guildid AND m.userid = v.userid
+            LEFT JOIN user_config u ON u.userid = v.userid
             WHERE v.guildid = ${guildId} AND v.start_time >= ${since}
+            AND m.last_left IS NULL
             ${searchJoin}
             GROUP BY v.userid HAVING SUM(v.duration) > 0
           ) sub
@@ -203,20 +217,22 @@ export default apiHandler({
         totalEntries = Number(countResult[0]?.count || 0)
 
         entries = await prisma.$queryRaw`
-          SELECT v.userid, m.display_name, u.avatar_hash,
+          SELECT v.userid, m.display_name, u.name as uname, u.avatar_hash,
             ROUND(SUM(v.duration)::numeric / 3600, 1) as value
           FROM voice_sessions v
           JOIN members m ON m.guildid = v.guildid AND m.userid = v.userid
           LEFT JOIN user_config u ON u.userid = v.userid
           WHERE v.guildid = ${guildId} AND v.start_time >= ${since}
+          AND m.last_left IS NULL
           ${searchJoin}
-          GROUP BY v.userid, m.display_name, u.avatar_hash
+          GROUP BY v.userid, m.display_name, u.name, u.avatar_hash
           HAVING SUM(v.duration) > 0
           ORDER BY value DESC, v.userid ASC
           LIMIT ${pageSize} OFFSET ${offset}
         `
         setCache(cacheKey, { totalEntries, entries })
       }
+    // --- END AI-MODIFIED ---
 
       const yourCacheKey = `study-you:${guildIdStr}:${period}:${auth.discordId}`
       let yourValue: number
@@ -257,31 +273,36 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
 
     // ===== MESSAGES =====
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: added last_left IS NULL filter, u.name for display name fallback, search across both name fields
     if (type === "messages") {
       const since = periodStart || new Date(0)
       const searchJoin = search
-        ? Prisma.sql`AND m.display_name ILIKE ${"%" + search + "%"}`
+        ? Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
         : Prisma.sql``
 
       const countResult = await prisma.$queryRaw<[{ count: bigint }]>`
         SELECT COUNT(*) as count FROM (
           SELECT t.userid FROM text_sessions t
           JOIN members m ON m.guildid = t.guildid AND m.userid = t.userid
+          LEFT JOIN user_config u ON u.userid = t.userid
           WHERE t.guildid = ${guildId} AND t.start_time >= ${since}
+          AND m.last_left IS NULL
           ${searchJoin}
           GROUP BY t.userid HAVING SUM(t.messages) > 0
         ) sub
       `
       const totalEntries = Number(countResult[0]?.count || 0)
 
-      const entries = await prisma.$queryRaw<Array<{ userid: bigint; display_name: string | null; avatar_hash: string | null; value: number }>>`
-        SELECT t.userid, m.display_name, u.avatar_hash, SUM(t.messages)::int as value
+      const entries = await prisma.$queryRaw<Array<{ userid: bigint; display_name: string | null; uname: string | null; avatar_hash: string | null; value: number }>>`
+        SELECT t.userid, m.display_name, u.name as uname, u.avatar_hash, SUM(t.messages)::int as value
         FROM text_sessions t
         JOIN members m ON m.guildid = t.guildid AND m.userid = t.userid
         LEFT JOIN user_config u ON u.userid = t.userid
         WHERE t.guildid = ${guildId} AND t.start_time >= ${since}
+        AND m.last_left IS NULL
         ${searchJoin}
-        GROUP BY t.userid, m.display_name, u.avatar_hash
+        GROUP BY t.userid, m.display_name, u.name, u.avatar_hash
         HAVING SUM(t.messages) > 0
         ORDER BY value DESC, t.userid ASC
         LIMIT ${pageSize} OFFSET ${offset}
@@ -306,6 +327,7 @@ export default apiHandler({
         ) sub
       `
       const yourRank = Number(yourRankResult[0]?.count || 0) + 1
+    // --- END AI-MODIFIED ---
 
       return res.status(200).json(
         buildResponse(entries, offset, userId, totalEntries, pageSize, page, yourRank, yourValue, serverName, seasonStart)

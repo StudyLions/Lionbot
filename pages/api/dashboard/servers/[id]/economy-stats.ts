@@ -120,12 +120,15 @@ export default apiHandler({
       inactiveWealthRaw,
       top5HolderCoins,
     ] = await Promise.all([
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only aggregate current members (exclude those who left)
       prisma.members.aggregate({
-        where: { guildid: guildId },
+        where: { guildid: guildId, last_left: null },
         _sum: { coins: true },
         _count: true,
         _avg: { coins: true },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.$queryRaw<Array<{ day: string; earned: bigint; spent: bigint; tx_count: bigint }>>`
         SELECT
@@ -193,7 +196,7 @@ export default apiHandler({
           COUNT(*) FILTER (WHERE coins BETWEEN 1001 AND 10000) as high,
           COUNT(*) FILTER (WHERE coins > 10000) as whale
         FROM members
-        WHERE guildid = ${guildId}
+        WHERE guildid = ${guildId} AND last_left IS NULL
       `,
 
       prisma.$queryRaw<Array<{ userid: bigint; total_earned: bigint }>>`
@@ -238,7 +241,7 @@ export default apiHandler({
       prisma.$queryRaw<[{ inactive_coins: bigint }]>`
         SELECT COALESCE(SUM(m.coins), 0) as inactive_coins
         FROM members m
-        WHERE m.guildid = ${guildId}
+        WHERE m.guildid = ${guildId} AND m.last_left IS NULL
           AND m.coins > 0
           AND NOT EXISTS (
             SELECT 1 FROM coin_transactions ct
@@ -252,7 +255,7 @@ export default apiHandler({
         SELECT COALESCE(SUM(coins), 0) as top5_coins
         FROM (
           SELECT coins FROM members
-          WHERE guildid = ${guildId} AND coins > 0
+          WHERE guildid = ${guildId} AND last_left IS NULL AND coins > 0
           ORDER BY coins DESC LIMIT 5
         ) top5
       `,

@@ -33,7 +33,10 @@ export default apiHandler({
       unrankedRoleCount,
       videoChannelCount,
     ] = await Promise.all([
-      prisma.members.count({ where: { guildid: guildId } }),
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only count current members (exclude those who left)
+      prisma.members.count({ where: { guildid: guildId, last_left: null } }),
+      // --- END AI-MODIFIED ---
 
       prisma.$queryRaw<[{ count: bigint }]>(Prisma.sql`
         SELECT COUNT(DISTINCT actorid) as count
@@ -41,10 +44,13 @@ export default apiHandler({
         WHERE guildid = ${guildId} AND created_at >= ${weekAgo}
       `).then(r => Number(r[0]?.count ?? 0)),
 
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: only aggregate coins for current members
       prisma.members.aggregate({
-        where: { guildid: guildId },
+        where: { guildid: guildId, last_left: null },
         _sum: { coins: true },
       }),
+      // --- END AI-MODIFIED ---
 
       prisma.rented_rooms.count({
         where: { guildid: guildId, deleted_at: null },

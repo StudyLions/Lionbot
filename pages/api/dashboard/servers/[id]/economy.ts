@@ -18,14 +18,17 @@ export default apiHandler({
   if (!auth) return
 
   const [circulation, topHolders, recentTransactions, shopItems] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: only count/aggregate current members (exclude those who left)
     prisma.members.aggregate({
-      where: { guildid: guildId },
+      where: { guildid: guildId, last_left: null },
       _sum: { coins: true },
       _count: true,
     }),
 
     prisma.members.findMany({
-      where: { guildid: guildId, coins: { gt: 0 } },
+      where: { guildid: guildId, last_left: null, coins: { gt: 0 } },
+    // --- END AI-MODIFIED ---
       orderBy: { coins: "desc" },
       take: 10,
       select: { userid: true, display_name: true, coins: true },
