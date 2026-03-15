@@ -1,0 +1,37 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-03-15
+// Purpose: Scroll success rate curve chart (extracted for SSR-safe
+//          dynamic import since Recharts requires browser DOM)
+// ============================================================
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+
+interface Props {
+  scrollProps: { success_rate: number; destroy_rate: number }
+  gameConstants: any
+}
+
+export default function SuccessCurveChart({ scrollProps, gameConstants }: Props) {
+  const penalty = gameConstants?.LEVEL_PENALTY_FACTOR ?? 0.08
+  const maxLvl = 20
+  const data = []
+  for (let lvl = 0; lvl <= maxLvl; lvl++) {
+    const success = Math.max(0, scrollProps.success_rate * 100 - lvl * penalty * 100)
+    data.push({ level: lvl, success: Math.round(success * 10) / 10 })
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={180}>
+      <LineChart data={data} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+        <XAxis dataKey="level" tick={{ fontSize: 9, fill: "#999" }} />
+        <YAxis tick={{ fontSize: 9, fill: "#999" }} domain={[0, 100]} />
+        <Tooltip
+          contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 11 }}
+          formatter={(value: number) => `${value}%`}
+        />
+        <Line type="monotone" dataKey="success" stroke="#4ade80" strokeWidth={2} dot={false} />
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}

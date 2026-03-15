@@ -18,8 +18,10 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import PriceChart from "@/components/pet/marketplace/PriceChart"
+import dynamic from "next/dynamic"
 import { GetServerSideProps } from "next"
+
+const PriceChart = dynamic(() => import("@/components/pet/marketplace/PriceChart"), { ssr: false })
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
 const rarityColor: Record<string, string> = {

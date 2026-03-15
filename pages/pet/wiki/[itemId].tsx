@@ -19,20 +19,13 @@ import {
   Sparkles, Shield, Droplets, Mic, MessageSquare, Lock,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+import dynamic from "next/dynamic"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
-import EnhancementLeaderboard from "@/components/pet/wiki/EnhancementLeaderboard"
-// --- AI-REPLACED (2026-03-15) ---
-// Reason: Replaced mock marketplace with real data widget
-// What the new code does better: Uses live marketplace API data instead of random mock data
-// --- Original code (commented out for rollback) ---
-// import MarketplaceMock from "@/components/pet/wiki/MarketplaceMock"
-// --- End original code ---
-import MarketplaceWidget from "@/components/pet/wiki/MarketplaceWidget"
-// --- END AI-REPLACED ---
-import RelatedItems from "@/components/pet/wiki/RelatedItems"
+const EnhancementLeaderboard = dynamic(() => import("@/components/pet/wiki/EnhancementLeaderboard"), { ssr: false })
+const MarketplaceWidget = dynamic(() => import("@/components/pet/wiki/MarketplaceWidget"), { ssr: false })
+const RelatedItems = dynamic(() => import("@/components/pet/wiki/RelatedItems"), { ssr: false })
 
 const rarityColor: Record<string, string> = {
   COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
@@ -54,30 +47,10 @@ const rarityBadge: Record<string, string> = {
 
 const EQUIP_CATS = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS"])
 
-function SuccessCurveChart({ scrollProps, gameConstants }: { scrollProps: { success_rate: number; destroy_rate: number }; gameConstants: any }) {
-  const penalty = gameConstants?.LEVEL_PENALTY_FACTOR ?? 0.08
-  const maxLvl = 20
-  const data = []
-  for (let lvl = 0; lvl <= maxLvl; lvl++) {
-    const success = Math.max(0, scrollProps.success_rate * 100 - lvl * penalty * 100)
-    data.push({ level: lvl, success: Math.round(success * 10) / 10 })
-  }
-
-  return (
-    <ResponsiveContainer width="100%" height={180}>
-      <LineChart data={data} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-        <XAxis dataKey="level" tick={{ fontSize: 9, fill: "#999" }} />
-        <YAxis tick={{ fontSize: 9, fill: "#999" }} domain={[0, 100]} />
-        <Tooltip
-          contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 11 }}
-          formatter={(value: number) => `${value}%`}
-        />
-        <Line type="monotone" dataKey="success" stroke="#4ade80" strokeWidth={2} dot={false} />
-      </LineChart>
-    </ResponsiveContainer>
-  )
-}
+const SuccessCurveChart = dynamic(
+  () => import("@/components/pet/wiki/SuccessCurveChart"),
+  { ssr: false }
+)
 
 export default function ItemDetailPage() {
   const { data: session } = useSession()
