@@ -7,16 +7,12 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-const SKIN_PRICES: Record<string, number> = {
-  obsidian: 1500,
-  platinum: 750,
-  boston_blue: 750,
-  cotton_candy: 1500,
-  blue_bayoux: 1500,
-  bubblegum: 1500,
-}
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: use shared SkinCatalog as single source of truth for prices
+import { SKIN_PRICES, SKIN_MAP } from "@/constants/SkinCatalog"
 
 const VALID_SKIN_IDS = new Set(Object.keys(SKIN_PRICES))
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async POST(req, res) {
