@@ -15,6 +15,7 @@ import {
   PawPrint, Heart, Droplets, Moon, Sparkles,
   Coins, Gem, Package, Sprout, Swords,
 } from "lucide-react"
+import { getItemImageUrl } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -33,7 +34,7 @@ interface PetOverviewData {
     fullscreenMode: boolean
     createdAt: string
   } | null
-  equipment: Record<string, { name: string; category: string; rarity: string }>
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }>
   inventoryCount: number
   activeFarmPlots: number
   gold: string
@@ -230,11 +231,18 @@ export default function PetOverview() {
                                 item ? "bg-muted/40" : "bg-muted/20"
                               )}
                             >
-                              <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
-                                <span className="text-xs font-bold text-muted-foreground">
-                                  {slot[0]}
-                                </span>
-                              </div>
+                              {(() => {
+                                const imgUrl = item ? getItemImageUrl(item.assetPath, item.category) : null
+                                return imgUrl ? (
+                                  <div className="w-8 h-8 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                    <img src={imgUrl} alt={item?.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                  </div>
+                                ) : (
+                                  <div className="w-8 h-8 rounded-md bg-muted flex items-center justify-center flex-shrink-0">
+                                    <span className="text-xs font-bold text-muted-foreground">{slot[0]}</span>
+                                  </div>
+                                )
+                              })()}
                               <div className="min-w-0 flex-1">
                                 <p className="text-xs uppercase tracking-wider text-muted-foreground/60 font-medium">
                                   {slot}

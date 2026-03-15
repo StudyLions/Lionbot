@@ -15,6 +15,7 @@ import { useState } from "react"
 import {
   Sparkles, Shield, ScrollText, AlertTriangle, Check, Skull, Loader2, ArrowRight,
 } from "lucide-react"
+import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -22,7 +23,7 @@ interface EquipmentItem {
   inventoryId: number
   enhancementLevel: number
   maxLevel: number
-  item: { id: number; name: string; rarity: string; slot: string | null; category: string }
+  item: { id: number; name: string; rarity: string; slot: string | null; category: string; assetPath: string }
 }
 
 interface ScrollItem {
@@ -162,26 +163,37 @@ export default function EnhancementPage() {
                         <p className="text-sm text-muted-foreground py-4 text-center">No equipment owned</p>
                       ) : (
                         <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                          {data.equipment.map((e) => (
+                          {data.equipment.map((e) => {
+                            const imgUrl = getItemImageUrl(e.item.assetPath, e.item.category)
+                            return (
                             <button
                               key={e.inventoryId}
                               onClick={() => setSelectedEquip(e.inventoryId)}
                               className={cn(
-                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
+                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
                                 selectedEquip === e.inventoryId
                                   ? "bg-primary/15 border border-primary/30"
                                   : "bg-muted/20 hover:bg-muted/40 border border-transparent"
                               )}
                             >
-                              <span className={cn("font-medium", rarityColor[e.item.rarity])}>
+                              {imgUrl ? (
+                                <div className="w-7 h-7 rounded bg-muted/20 flex-shrink-0 overflow-hidden">
+                                  <img src={imgUrl} alt={e.item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                </div>
+                              ) : (
+                                <div className="w-7 h-7 rounded bg-muted/30 flex-shrink-0 flex items-center justify-center text-xs">
+                                  {getCategoryPlaceholder(e.item.category)}
+                                </div>
+                              )}
+                              <span className={cn("font-medium flex-1", rarityColor[e.item.rarity])}>
                                 {e.item.name}
                                 {e.enhancementLevel > 0 && <span className="text-amber-400 ml-1">+{e.enhancementLevel}</span>}
                               </span>
-                              <span className="text-xs text-muted-foreground">
+                              <span className="text-xs text-muted-foreground flex-shrink-0">
                                 {e.enhancementLevel}/{e.maxLevel}
                               </span>
                             </button>
-                          ))}
+                          )})}
                         </div>
                       )}
                     </CardContent>

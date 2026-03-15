@@ -26,7 +26,7 @@ export default apiHandler({
         select: {
           inventoryid: true,
           enhancement_level: true,
-          lg_items: { select: { itemid: true, name: true, rarity: true, slot: true, category: true } },
+          lg_items: { select: { itemid: true, name: true, rarity: true, slot: true, category: true, asset_path: true } },
         },
       }),
       prisma.lg_user_inventory.findMany({
@@ -56,6 +56,7 @@ export default apiHandler({
         rarity: e.lg_items.rarity,
         slot: e.lg_items.slot,
         category: e.lg_items.category,
+        assetPath: e.lg_items.asset_path,
       },
     }))
 

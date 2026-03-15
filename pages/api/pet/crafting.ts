@@ -21,7 +21,7 @@ export default apiHandler({
         gold_cost: true,
         description: true,
         lg_items: {
-          select: { itemid: true, name: true, category: true, rarity: true, description: true },
+          select: { itemid: true, name: true, category: true, rarity: true, description: true, asset_path: true },
         },
         lg_recipe_ingredients: {
           select: {
@@ -55,6 +55,7 @@ export default apiHandler({
         category: r.lg_items.category,
         rarity: r.lg_items.rarity,
         description: r.lg_items.description,
+        assetPath: r.lg_items.asset_path,
       },
       resultQuantity: r.result_quantity,
       goldCost: r.gold_cost,

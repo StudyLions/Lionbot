@@ -15,6 +15,7 @@ import { useState } from "react"
 import {
   Sprout, Droplets, Scissors, Skull, Loader2, Coins,
 } from "lucide-react"
+import { getFarmPlantImageUrl } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -154,7 +155,19 @@ export default function FarmPage() {
                           </>
                         ) : (
                           <>
-                            <Sprout size={20} className={stageColors[plot.stage]} />
+                            {(() => {
+                              const plantImg = plot.seed ? getFarmPlantImageUrl(plot.seed.plantType, plot.seed.id, plot.stage) : null
+                              return plantImg ? (
+                                <img
+                                  src={plantImg}
+                                  alt={plot.seed?.name ?? "Plant"}
+                                  className="w-12 h-12 object-contain"
+                                  style={{ imageRendering: "pixelated" }}
+                                />
+                              ) : (
+                                <Sprout size={20} className={stageColors[plot.stage]} />
+                              )
+                            })()}
                             <p className={cn("text-[10px] font-medium", stageColors[plot.stage])}>
                               {stageLabels[plot.stage]}
                             </p>

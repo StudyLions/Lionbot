@@ -57,12 +57,13 @@ export default apiHandler({
       }),
     ])
 
-    const equipment: Record<string, { name: string; category: string; rarity: string }> = {}
+    const equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
     for (const e of equipmentRows) {
       equipment[e.slot] = {
         name: e.lg_items.name,
         category: e.lg_items.category,
         rarity: e.lg_items.rarity,
+        assetPath: e.lg_items.asset_path,
       }
     }
 

@@ -13,6 +13,7 @@ import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { Hammer, Coins, Check, X, Loader2 } from "lucide-react"
+import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -24,7 +25,7 @@ interface Ingredient {
 
 interface Recipe {
   recipeId: number
-  resultItem: { id: number; name: string; category: string; rarity: string; description: string }
+  resultItem: { id: number; name: string; category: string; rarity: string; description: string; assetPath: string }
   resultQuantity: number
   goldCost: number
   description: string
@@ -140,7 +141,20 @@ export default function CraftingPage() {
                     <Card key={recipe.recipeId} className={cn("border", rarityBorder[recipe.resultItem.rarity] ?? "border-border")}>
                       <CardContent className="pt-5 pb-4 space-y-3">
                         <div className="flex items-start justify-between gap-3">
-                          <div>
+                          <div className="flex items-center gap-3">
+                            {(() => {
+                              const imgUrl = getItemImageUrl(recipe.resultItem.assetPath, recipe.resultItem.category)
+                              return imgUrl ? (
+                                <div className="w-10 h-10 rounded-md bg-muted/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  <img src={imgUrl} alt={recipe.resultItem.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0 text-lg">
+                                  {getCategoryPlaceholder(recipe.resultItem.category)}
+                                </div>
+                              )
+                            })()}
+                            <div>
                             <h3 className={cn("text-base font-semibold", rarityColor[recipe.resultItem.rarity] ?? "text-foreground")}>
                               {recipe.resultItem.name}
                               {recipe.resultQuantity > 1 && <span className="text-muted-foreground ml-1">x{recipe.resultQuantity}</span>}
@@ -149,6 +163,7 @@ export default function CraftingPage() {
                               {recipe.resultItem.rarity} {recipe.resultItem.category}
                               {recipe.description && <span> &middot; {recipe.description}</span>}
                             </p>
+                            </div>
                           </div>
                           <button
                             onClick={() => handleCraft(recipe.recipeId)}

@@ -16,6 +16,7 @@ import {
   BookOpen, Search, Swords, Leaf, ScrollText, Hammer,
   Coins, ChevronDown, ChevronUp, Filter,
 } from "lucide-react"
+import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -34,7 +35,7 @@ interface WikiItem {
 
 interface WikiRecipe {
   recipeId: number
-  resultItem: { id: number; name: string; category: string; rarity: string }
+  resultItem: { id: number; name: string; category: string; rarity: string; assetPath: string }
   resultQuantity: number
   goldCost: number
   description: string
@@ -205,9 +206,18 @@ export default function WikiPage() {
                             key={item.id}
                             className="flex items-center gap-3 px-3 py-2 rounded-lg bg-muted/10 hover:bg-muted/20 transition-colors"
                           >
-                            <div className="w-8 h-8 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0">
-                              {categoryIcon(item.category)}
-                            </div>
+                            {(() => {
+                              const imgUrl = getItemImageUrl(item.assetPath, item.category)
+                              return imgUrl ? (
+                                <div className="w-8 h-8 rounded-md bg-muted/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                                  <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0 text-sm">
+                                  {getCategoryPlaceholder(item.category)}
+                                </div>
+                              )
+                            })()}
                             <div className="min-w-0 flex-1">
                               <p className={cn("text-sm font-medium truncate", rarityColor[item.rarity])}>
                                 {item.name}
@@ -269,7 +279,16 @@ export default function WikiPage() {
                           onClick={() => setExpandedRecipe(expandedRecipe === recipe.recipeId ? null : recipe.recipeId)}
                         >
                           <div className="flex items-center gap-2">
-                            <Hammer size={14} className="text-orange-400" />
+                            {(() => {
+                              const rImgUrl = getItemImageUrl(recipe.resultItem.assetPath, recipe.resultItem.category)
+                              return rImgUrl ? (
+                                <div className="w-6 h-6 rounded bg-muted/20 overflow-hidden flex-shrink-0">
+                                  <img src={rImgUrl} alt={recipe.resultItem.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                </div>
+                              ) : (
+                                <Hammer size={14} className="text-orange-400" />
+                              )
+                            })()}
                             <span className={cn("font-medium text-sm", rarityColor[recipe.resultItem.rarity])}>
                               {recipe.resultItem.name}
                               {recipe.resultQuantity > 1 && <span className="text-muted-foreground"> x{recipe.resultQuantity}</span>}

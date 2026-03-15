@@ -48,7 +48,7 @@ export default apiHandler({
         gold_cost: true,
         description: true,
         lg_items: {
-          select: { itemid: true, name: true, category: true, rarity: true },
+          select: { itemid: true, name: true, category: true, rarity: true, asset_path: true },
         },
         lg_recipe_ingredients: {
           select: {
@@ -96,7 +96,7 @@ export default apiHandler({
       },
       recipes: recipes.map((r) => ({
         recipeId: r.recipeid,
-        resultItem: { id: r.lg_items.itemid, name: r.lg_items.name, category: r.lg_items.category, rarity: r.lg_items.rarity },
+        resultItem: { id: r.lg_items.itemid, name: r.lg_items.name, category: r.lg_items.category, rarity: r.lg_items.rarity, assetPath: r.lg_items.asset_path },
         resultQuantity: r.result_quantity,
         goldCost: r.gold_cost,
         description: r.description,

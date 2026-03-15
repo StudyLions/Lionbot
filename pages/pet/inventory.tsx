@@ -15,6 +15,7 @@ import { useState } from "react"
 import {
   Package, Swords, Leaf, ScrollText, Shield, Sparkles,
 } from "lucide-react"
+import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -150,15 +151,23 @@ export default function InventoryPage() {
                           rBg
                         )}
                       >
-                        <div className="w-10 h-10 rounded-md bg-muted/50 flex items-center justify-center flex-shrink-0">
-                          {inv.item.category === "MATERIAL" ? (
-                            <Leaf size={18} className="text-emerald-400/60" />
-                          ) : inv.item.category === "SCROLL" ? (
-                            <ScrollText size={18} className="text-indigo-400/60" />
+                        {(() => {
+                          const imgUrl = getItemImageUrl(inv.item.assetPath, inv.item.category)
+                          return imgUrl ? (
+                            <div className="w-10 h-10 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                              <img
+                                src={imgUrl}
+                                alt={inv.item.name}
+                                className="w-full h-full object-contain"
+                                style={{ imageRendering: "pixelated" }}
+                              />
+                            </div>
                           ) : (
-                            <Shield size={18} className="text-purple-400/60" />
-                          )}
-                        </div>
+                            <div className="w-10 h-10 rounded-md bg-muted/50 flex items-center justify-center flex-shrink-0 text-lg">
+                              {getCategoryPlaceholder(inv.item.category)}
+                            </div>
+                          )
+                        })()}
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className={cn("text-sm font-medium truncate", textColor)}>
