@@ -186,7 +186,7 @@ export default apiHandler({
       const txns = await prisma.lg_gold_transactions.findMany({
         where: {
           OR: [{ from_account: userId }, { to_account: userId }],
-          transaction_type: { in: ["FARM_PLANT" as any, "FARM_HARVEST" as any] },
+          transaction_type: { in: ["SHOP_PURCHASE", "FARM_HARVEST"] },
         },
         orderBy: { created_at: "desc" },
         take: 20,
@@ -302,7 +302,7 @@ export default apiHandler({
         })
         await prisma.lg_gold_transactions.create({
           data: {
-            transaction_type: "FARM_HARVEST" as any,
+            transaction_type: "FARM_HARVEST",
             actorid: userId,
             to_account: userId,
             amount: totalGold,
@@ -350,7 +350,7 @@ export default apiHandler({
         })
         await prisma.lg_gold_transactions.create({
           data: {
-            transaction_type: "FARM_HARVEST" as any,
+            transaction_type: "FARM_HARVEST",
             actorid: userId,
             to_account: userId,
             amount: refund,
@@ -414,7 +414,7 @@ export default apiHandler({
         }),
         prisma.lg_gold_transactions.create({
           data: {
-            transaction_type: "FARM_PLANT" as any,
+            transaction_type: "SHOP_PURCHASE",
             actorid: userId,
             from_account: userId,
             amount: seed.plant_cost,
@@ -483,7 +483,7 @@ export default apiHandler({
         }),
         prisma.lg_gold_transactions.create({
           data: {
-            transaction_type: "FARM_HARVEST" as any,
+            transaction_type: "FARM_HARVEST",
             actorid: userId,
             to_account: userId,
             amount: goldReward,
