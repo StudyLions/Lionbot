@@ -4,7 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { Github } from "lucide-react";
 
-const DISCORD_INVITE = "https://discord.com/invite/studylions";
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: updated to permanent Discord invite with server name
+const DISCORD_INVITE = "https://discord.gg/the-study-lions-780195610154237993";
+// --- END AI-MODIFIED ---
 const GITHUB_URL = "https://github.com/StudyLions/StudyLion/";
 const BOT_INVITE =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
@@ -20,8 +23,8 @@ const productLinks = [
 
 const resourceLinks = [
   { label: "Tutorials", href: "/tutorials" },
+  { label: "Support", href: DISCORD_INVITE, external: true },
   { label: "Source Code", href: GITHUB_URL, external: true },
-  { label: "Discord Server", href: DISCORD_INVITE, external: true },
   { label: "Contact", href: "mailto:contact@arihoresh.com" },
 ];
 // --- END AI-MODIFIED ---

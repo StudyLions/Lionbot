@@ -19,6 +19,10 @@ import {
   Palette,
   BookOpen,
   Bot,
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: icon for Support nav link
+  HelpCircle,
+  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -38,11 +42,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Banner from "@/components/Layout/Header/Banner";
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: added Support link to Discord server
+const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
+
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Skins", href: "/skins", icon: Palette },
   { label: "Tutorials", href: "/tutorials", icon: BookOpen },
+  { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
+// --- END AI-MODIFIED ---
 
 const INVITE_URL =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
@@ -82,20 +92,36 @@ export default function Header() {
 
           {/* Desktop navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href}>
+            {/* --- AI-MODIFIED (2026-03-15) --- */}
+            {/* Purpose: handle external nav links (Support -> Discord) */}
+            {NAV_LINKS.map((link) =>
+              link.external ? (
                 <a
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    isActive(link.href, link.matchExact)
-                      ? "text-foreground bg-accent"
-                      : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                  )}
+                  key={link.href}
+                  href={link.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="px-3 py-2 rounded-md text-sm font-medium transition-colors text-muted-foreground hover:text-foreground hover:bg-accent/50 inline-flex items-center gap-1"
                 >
                   {link.label}
+                  <ExternalLink className="h-3 w-3 opacity-50" />
                 </a>
-              </Link>
-            ))}
+              ) : (
+                <Link key={link.href} href={link.href}>
+                  <a
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      isActive(link.href, link.matchExact)
+                        ? "text-foreground bg-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                    )}
+                  >
+                    {link.label}
+                  </a>
+                </Link>
+              )
+            )}
+            {/* --- END AI-MODIFIED --- */}
 
             {/* Donate — golden accent */}
             <Link href="/donate">
@@ -255,9 +281,24 @@ export default function Header() {
                     <p className="px-3 mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                       Navigate
                     </p>
+                    {/* --- AI-MODIFIED (2026-03-15) --- */}
+                    {/* Purpose: handle external nav links in mobile menu */}
                     {NAV_LINKS.map((link) => {
                       const Icon = link.icon;
-                      return (
+                      return link.external ? (
+                        <a
+                          key={link.href}
+                          href={link.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-3 px-3 py-3 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+                          onClick={() => setMobileOpen(false)}
+                        >
+                          <Icon className="h-4 w-4 opacity-70" />
+                          {link.label}
+                          <ExternalLink className="h-3 w-3 opacity-50 ml-auto" />
+                        </a>
+                      ) : (
                         <Link key={link.href} href={link.href}>
                           <a
                             className={cn(
@@ -274,6 +315,7 @@ export default function Header() {
                         </Link>
                       );
                     })}
+                    {/* --- END AI-MODIFIED --- */}
                     <Link href="/donate">
                       <a
                         className={cn(
