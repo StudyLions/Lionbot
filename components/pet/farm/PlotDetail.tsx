@@ -1,23 +1,39 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Plot detail panel with actions (water/harvest/plant/clear)
+// Purpose: Plot detail panel with pixel art UI, activity tracking,
+//          investment/return display, and remove/uproot action
 // ============================================================
 import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
-import { getFarmPlantImageUrl, RARITY_COLORS, RARITY_BG_COLORS } from "@/utils/petAssets"
-import { Droplets, Scissors, Trash2, Sprout, Loader2, Coins } from "lucide-react"
+import { getFarmPlantImageUrl } from "@/utils/petAssets"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelBar from "@/components/pet/ui/PixelBar"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
 import type { FarmPlot } from "./FarmScene"
+
+const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
+  COMMON: 1.0, UNCOMMON: 1.5, RARE: 2.0, EPIC: 3.0, LEGENDARY: 5.0,
+}
+
+const rarityBorderColors: Record<string, string> = {
+  COMMON: "#2a3a5c",
+  UNCOMMON: "#4080f0",
+  RARE: "#e04040",
+  EPIC: "#f0c040",
+  LEGENDARY: "#d060f0",
+}
 
 interface PlotDetailProps {
   plot: FarmPlot
   onAction: (plotId: number, action: string) => Promise<void>
   onPlantClick: () => void
+  onRemove: (plotId: number) => Promise<void>
 }
 
 function LiveTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
   const [text, setText] = useState("")
-
   useEffect(() => {
     if (!nextWaterAt) { setText(""); return }
     const update = () => {
@@ -31,12 +47,11 @@ function LiveTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
     const id = setInterval(update, 1000)
     return () => clearInterval(id)
   }, [nextWaterAt])
-
   if (!text) return null
-  return <span className="text-xs text-blue-400 font-mono">{text}</span>
+  return <span className="font-pixel text-[10px] text-[var(--pet-blue,#4080f0)]">{text}</span>
 }
 
-export default function PlotDetail({ plot, onAction, onPlantClick }: PlotDetailProps) {
+export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: PlotDetailProps) {
   const [acting, setActing] = useState(false)
 
   async function handle(action: string) {
@@ -45,140 +60,111 @@ export default function PlotDetail({ plot, onAction, onPlantClick }: PlotDetailP
     finally { setActing(false) }
   }
 
+  async function handleRemove() {
+    setActing(true)
+    try { await onRemove(plot.plotId) }
+    finally { setActing(false) }
+  }
+
   const imgUrl = plot.assetPrefix && plot.plantType && plot.typeId
-    ? getFarmPlantImageUrl(plot.assetPrefix, plot.plantType, plot.typeId, plot.stage, plot.rarity)
+    ? getFarmPlantImageUrl(plot.assetPrefix, plot.plantType, plot.typeId, Math.max(plot.stage, 3), plot.rarity)
     : null
 
+  const projectedHarvest = plot.seed
+    ? Math.round(plot.seed.harvestGold * (RARITY_GOLD_MULTIPLIER[plot.rarity] || 1.0))
+    : 0
+
   return (
-    <div className={cn(
-      "bg-gray-800/50 border rounded-xl p-4 transition-all",
-      RARITY_BG_COLORS[plot.rarity] || "border-gray-700/30"
-    )}>
+    <PixelCard
+      className="p-4 transition-all"
+      borderColor={rarityBorderColors[plot.rarity] || "#2a3a5c"}
+    >
       <div className="flex items-start gap-4">
-        {/* Plant preview */}
-        <div className="w-16 h-16 rounded-lg bg-gray-900/50 flex items-center justify-center flex-shrink-0 border border-gray-700/30">
+        <div
+          className="w-16 h-16 bg-[#0a0e1a] border-2 border-[var(--pet-border,#2a3a5c)] flex items-center justify-center flex-shrink-0"
+        >
           {plot.empty ? (
-            <Sprout size={24} className="text-gray-600" />
+            <span className="font-pixel text-[10px] text-[#4a5a70]">EMPTY</span>
           ) : plot.dead ? (
             <span className="text-2xl">💀</span>
           ) : imgUrl ? (
-            <img
-              src={imgUrl}
-              alt={plot.seed?.name || "Plant"}
-              className="w-12 h-12 object-contain"
-              style={{ imageRendering: "pixelated" }}
-            />
+            <img src={imgUrl} alt={plot.seed?.name || "Plant"} className="w-12 h-12 object-contain" style={{ imageRendering: "pixelated" }} />
           ) : (
-            <Sprout size={24} className="text-emerald-500/40" />
+            <span className="font-pixel text-[10px] text-[#40d870]">🌱</span>
           )}
         </div>
 
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-sm font-bold text-white">
+        <div className="flex-1 min-w-0 space-y-2">
+          <div className="flex items-center gap-2">
+            <h3 className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">
               Plot #{plot.plotId + 1}
             </h3>
-            {!plot.empty && !plot.dead && (
-              <span className={cn(
-                "text-[10px] font-bold px-1.5 py-0.5 rounded",
-                RARITY_COLORS[plot.rarity] || "text-gray-400",
-                "bg-gray-900/50"
-              )}>
-                {plot.rarity}
-              </span>
-            )}
+            {!plot.empty && !plot.dead && <PixelBadge rarity={plot.rarity} />}
           </div>
 
           {plot.empty ? (
-            <p className="text-xs text-gray-500">Empty plot -- plant a seed!</p>
+            <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">Plant a seed to start growing!</p>
           ) : plot.dead ? (
-            <p className="text-xs text-red-400">This plant has died. Clear it to plant again.</p>
+            <p className="font-pixel text-[10px] text-[var(--pet-red,#e04040)]">This plant died. Clear it to plant again.</p>
           ) : (
             <div className="space-y-2">
-              <p className="text-xs text-gray-300">{plot.seed?.name}</p>
+              <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{plot.seed?.name}</p>
 
-              {/* Growth bar */}
-              <div className="flex items-center gap-2">
-                <div className="flex-1 h-2 bg-gray-900/50 rounded-full overflow-hidden">
-                  <div
-                    className={cn(
-                      "h-full rounded-full transition-all",
-                      plot.readyToHarvest ? "bg-amber-400" : "bg-emerald-400"
-                    )}
-                    style={{ width: `${plot.progress}%` }}
-                  />
-                </div>
-                <span className="text-[10px] text-gray-400 w-8 text-right">
-                  {plot.progress}%
-                </span>
-              </div>
+              <PixelBar
+                value={plot.growthPoints}
+                max={plot.growthPointsNeeded}
+                label={`Stg ${plot.stage}`}
+                color={plot.readyToHarvest ? "gold" : "green"}
+              />
 
-              {/* Stats row */}
-              <div className="flex items-center gap-4 text-[10px] text-gray-500">
-                <span>Stage {plot.stage}/5</span>
+              <div className="flex flex-wrap items-center gap-3 font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">
                 <span>{Math.round(plot.growthPoints)}/{plot.growthPointsNeeded} pts</span>
-                {plot.needsWater ? (
-                  <span className="text-blue-400 font-medium">Needs water!</span>
-                ) : plot.nextWaterAt ? (
-                  <span className="flex items-center gap-1">
-                    <Droplets size={10} className="text-blue-400" />
-                    Next water in <LiveTimer nextWaterAt={plot.nextWaterAt} />
-                  </span>
-                ) : null}
-                {plot.readyToHarvest && plot.seed && (
-                  <span className="text-amber-400 font-medium flex items-center gap-1">
-                    <Coins size={10} />
-                    +{plot.seed.harvestGold}G
+                {plot.goldInvested > 0 && (
+                  <span>Invested: <span className="text-[var(--pet-gold,#f0c040)]">{plot.goldInvested}G</span></span>
+                )}
+                {plot.readyToHarvest && (
+                  <span>Harvest: <span className="text-[var(--pet-gold,#f0c040)]">+{projectedHarvest}G</span>
+                    {plot.rarity !== "COMMON" ? ` (x${RARITY_GOLD_MULTIPLIER[plot.rarity]})` : ""}
                   </span>
                 )}
+                {plot.needsWater ? (
+                  <span className="text-[var(--pet-blue,#4080f0)]">Needs water!</span>
+                ) : plot.nextWaterAt && !plot.readyToHarvest ? (
+                  <span className="flex items-center gap-1">
+                    Water in <LiveTimer nextWaterAt={plot.nextWaterAt} />
+                  </span>
+                ) : null}
               </div>
+
+              {((plot.voiceMinutesEarned || 0) > 0 || (plot.messagesEarned || 0) > 0) && (
+                <div className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">
+                  Grew from:
+                  {(plot.voiceMinutesEarned || 0) > 0 ? ` ${Math.round(plot.voiceMinutesEarned || 0)}m voice` : ""}
+                  {(plot.messagesEarned || 0) > 0 ? ` ${plot.messagesEarned} msgs` : ""}
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex flex-col gap-1.5 flex-shrink-0">
           {plot.empty && (
-            <button
-              onClick={onPlantClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors"
-            >
-              <Sprout size={12} /> Plant
-            </button>
+            <PixelButton variant="primary" size="sm" onClick={onPlantClick}>Plant</PixelButton>
           )}
           {!plot.empty && plot.needsWater && !plot.dead && (
-            <button
-              onClick={() => handle("water")}
-              disabled={acting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold transition-colors disabled:opacity-50"
-            >
-              {acting ? <Loader2 size={12} className="animate-spin" /> : <Droplets size={12} />}
-              Water
-            </button>
+            <PixelButton variant="info" size="sm" onClick={() => handle("water")} loading={acting}>Water</PixelButton>
           )}
           {plot.readyToHarvest && !plot.dead && (
-            <button
-              onClick={() => handle("harvest")}
-              disabled={acting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold transition-colors disabled:opacity-50"
-            >
-              {acting ? <Loader2 size={12} className="animate-spin" /> : <Scissors size={12} />}
-              Harvest
-            </button>
+            <PixelButton variant="gold" size="sm" onClick={() => handle("harvest")} loading={acting}>Harvest</PixelButton>
+          )}
+          {!plot.empty && !plot.dead && !plot.readyToHarvest && plot.seed && (
+            <PixelButton variant="ghost" size="sm" onClick={handleRemove} loading={acting}>Remove</PixelButton>
           )}
           {plot.dead && (
-            <button
-              onClick={() => handle("clear")}
-              disabled={acting}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white text-xs font-semibold transition-colors disabled:opacity-50"
-            >
-              {acting ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
-              Clear
-            </button>
+            <PixelButton variant="danger" size="sm" onClick={() => handle("clear")} loading={acting}>Clear</PixelButton>
           )}
         </div>
       </div>
-    </div>
+    </PixelCard>
   )
 }

@@ -1,7 +1,7 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Standalone sidebar navigation for the /pet section
+// Purpose: Pixel art styled sidebar navigation for the /pet section
 // ============================================================
 import Link from "next/link"
 import { useRouter } from "next/router"
@@ -9,12 +9,10 @@ import { useSession } from "next-auth/react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
-  Store, Menu, ChevronRight,
+  Store, Menu, ChevronLeft,
 } from "lucide-react"
 
 interface NavItem {
@@ -29,43 +27,38 @@ interface NavSection {
   items: NavItem[]
 }
 
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: Enable nav links for all built pages
 const sections: NavSection[] = [
   {
-    title: "Pet",
+    title: "PET",
     items: [
-      { href: "/pet", label: "Overview", icon: <PawPrint size={16} /> },
-      { href: "/pet/inventory", label: "Inventory", icon: <Package size={16} /> },
-      { href: "/pet/farm", label: "Farm", icon: <Sprout size={16} /> },
+      { href: "/pet", label: "Overview", icon: <PawPrint size={14} /> },
+      { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} /> },
+      { href: "/pet/farm", label: "Farm", icon: <Sprout size={14} /> },
     ],
   },
   {
-    title: "Crafting",
+    title: "CRAFTING",
     items: [
-      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={16} /> },
-      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={16} /> },
+      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={14} /> },
+      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={14} /> },
     ],
   },
   {
-    title: "Browse",
+    title: "BROWSE",
     items: [
-      { href: "/pet/wiki", label: "Item Wiki", icon: <BookOpen size={16} /> },
-      { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={16} /> },
+      { href: "/pet/wiki", label: "Item Wiki", icon: <BookOpen size={14} /> },
+      { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={14} /> },
     ],
   },
 ]
-// --- END AI-MODIFIED ---
 
 function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {
   if (item.disabled) {
     return (
-      <span
-        className="flex items-center gap-3 px-3 py-2 rounded-md text-sm text-muted-foreground/40 cursor-not-allowed"
-      >
-        <span className="flex-shrink-0 opacity-50">{item.icon}</span>
+      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-[11px] text-[#4a5568] cursor-not-allowed">
+        <span className="opacity-40">{item.icon}</span>
         {item.label}
-        <span className="ml-auto text-[10px] uppercase tracking-wide font-medium text-muted-foreground/30">Soon</span>
+        <span className="ml-auto text-[8px] text-[#3a4050]">SOON</span>
       </span>
     )
   }
@@ -74,14 +67,14 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
     <Link href={item.href} onClick={onClick}>
       <span
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+          "font-pixel flex items-center gap-2.5 px-3 py-2 text-[11px] transition-all border-l-2",
           isActive
-            ? "bg-amber-500/15 text-amber-400 font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent"
+            ? "border-l-[#f0c040] bg-[#f0c040]/8 text-[#f0c040]"
+            : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
         )}
         aria-current={isActive ? "page" : undefined}
       >
-        <span className="flex-shrink-0 opacity-70">{item.icon}</span>
+        <span className="opacity-70">{item.icon}</span>
         {item.label}
       </span>
     </Link>
@@ -93,49 +86,52 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const { data: session } = useSession()
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full bg-[var(--pet-card,#0f1628)]">
       {session?.user && (
-        <div className="px-4 py-4 flex items-center gap-3">
+        <div className="px-4 py-4 flex items-center gap-3 border-b-2 border-[var(--pet-border,#2a3a5c)]">
           {session.user.image && (
             <img
               src={session.user.image}
               alt=""
-              className="w-8 h-8 rounded-full ring-2 ring-border"
+              className="w-8 h-8 border-2 border-[var(--pet-border,#2a3a5c)]"
+              style={{ imageRendering: "pixelated" }}
             />
           )}
           <div className="min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
               {session.user.name}
             </p>
-            <p className="text-xs text-muted-foreground">LionGotchi</p>
+            <p className="font-pixel text-[9px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
           </div>
         </div>
       )}
-      <div className="px-3 py-2">
+
+      <div className="px-3 py-3">
         <Link href="/dashboard" onClick={onNavigate}>
           <span
-            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all cursor-pointer bg-indigo-600/80 text-indigo-50 hover:bg-indigo-600 shadow-sm hover:shadow-md shadow-indigo-500/15"
+            className={cn(
+              "font-pixel flex items-center gap-2 px-3 py-2.5 text-[11px]",
+              "bg-[#1a2050] border-2 border-[#4060c0] text-[#8090d0]",
+              "shadow-[2px_2px_0_#060810]",
+              "hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px",
+              "active:shadow-none active:translate-x-0.5 active:translate-y-0.5",
+              "transition-all cursor-pointer"
+            )}
           >
-            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
-              <ChevronRight size={18} className="rotate-180" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <span className="block font-semibold leading-tight">Dashboard</span>
-              <span className="block text-[10px] text-indigo-200/70 font-normal leading-tight">
-                Back to main
-              </span>
-            </div>
+            <ChevronLeft size={14} />
+            Dashboard
           </span>
         </Link>
       </div>
-      <Separator />
-      <ScrollArea className="flex-1 px-3 py-3">
+
+      <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide">
         {sections.map((section) => (
-          <div key={section.title} className="mb-4">
-            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-              {section.title}
-            </p>
-            <div className="space-y-0.5">
+          <div key={section.title} className="mb-3">
+            <div className="flex items-center gap-2 px-3 py-1.5">
+              <span className="font-pixel text-[9px] text-[#4a5a70] tracking-widest">{section.title}</span>
+              <div className="flex-1 h-px bg-[var(--pet-border,#2a3a5c)]" />
+            </div>
+            <div>
               {section.items.map((item) => {
                 const isActive = item.href === "/pet"
                   ? router.pathname === "/pet"
@@ -152,7 +148,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             </div>
           </div>
         ))}
-      </ScrollArea>
+      </div>
     </div>
   )
 }
@@ -162,18 +158,21 @@ export default function PetNav() {
 
   return (
     <>
-      <nav className="hidden lg:flex flex-col w-56 flex-shrink-0 sticky top-6 self-start border-r border-border/40 h-[calc(100vh-3rem)]" aria-label="Pet navigation">
+      <nav
+        className="hidden lg:flex flex-col w-52 flex-shrink-0 sticky top-6 self-start border-r-2 border-[var(--pet-border,#2a3a5c)] h-[calc(100vh-3rem)] bg-[var(--pet-card,#0f1628)]"
+        aria-label="Pet navigation"
+      >
         <NavContent />
       </nav>
 
       <div className="fixed top-16 left-4 z-40 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-card shadow-lg">
+            <Button variant="outline" size="icon" className="bg-[var(--pet-card,#0f1628)] border-2 border-[var(--pet-border,#2a3a5c)] shadow-[2px_2px_0_#060810]">
               <Menu size={18} />
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-64 p-0">
+          <SheetContent side="left" className="w-56 p-0 bg-[var(--pet-card,#0f1628)] border-r-2 border-[var(--pet-border,#2a3a5c)]">
             <SheetHeader className="sr-only">
               <SheetTitle>Pet Navigation</SheetTitle>
             </SheetHeader>

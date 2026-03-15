@@ -170,6 +170,8 @@ export default apiHandler({
         assetPrefix: seed.asset_prefix,
         plantType,
         typeId,
+        voiceMinutesEarned: plot.voice_minutes_earned || 0,
+        messagesEarned: plot.messages_earned || 0,
         nextWaterAt: nextWaterAt(plot.last_watered, seed.water_interval_hours),
         estimatedSecondsRemaining: estimateTimeRemaining(plot.growth_points, seed.growth_points_needed),
         plantedAt: plot.planted_at.toISOString(),
@@ -177,8 +179,36 @@ export default apiHandler({
       }
     })
 
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: Farm history from gold transactions
+    let history: Array<{type: string; amount: number; description: string; createdAt: string}> = []
+    if (req.query.history === "true") {
+      const txns = await prisma.lg_gold_transactions.findMany({
+        where: {
+          OR: [{ from_account: userId }, { to_account: userId }],
+          transaction_type: { in: ["FARM_PLANT" as any, "FARM_HARVEST" as any] },
+        },
+        orderBy: { created_at: "desc" },
+        take: 20,
+        select: {
+          transaction_type: true,
+          amount: true,
+          description: true,
+          created_at: true,
+        },
+      })
+      history = txns.map(t => ({
+        type: String(t.transaction_type),
+        amount: t.amount,
+        description: t.description || "",
+        createdAt: t.created_at?.toISOString() || "",
+      }))
+    }
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       plots: result,
+      history,
       availableSeeds: seeds.map((s) => {
         const { plantType, typeId } = parseAssetPrefix(s.asset_prefix)
         return {
@@ -211,9 +241,133 @@ export default apiHandler({
     const userId = BigInt(auth.discordId)
     const { action, plotId, seedId } = req.body
 
-    if (!action || plotId === undefined) {
-      return res.status(400).json({ error: "action and plotId required" })
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: Bulk actions (waterAll, harvestAll) don't require plotId
+    if (!action) {
+      return res.status(400).json({ error: "action required" })
     }
+
+    if (action === "waterAll") {
+      const now = new Date()
+      const result = await prisma.lg_user_farm.updateMany({
+        where: { userid: userId, seed_id: { not: null }, dead: false },
+        data: { last_watered: now },
+      })
+      return res.status(200).json({ success: true, action: "wateredAll", count: result.count })
+    }
+
+    if (action === "harvestAll") {
+      const allPlots = await prisma.lg_user_farm.findMany({
+        where: { userid: userId, dead: false },
+        include: { lg_farm_seeds: true },
+      })
+      const harvestable = allPlots.filter(p =>
+        p.seed_id && p.lg_farm_seeds && p.growth_points >= (p.lg_farm_seeds.growth_points_needed || 100)
+      )
+      if (harvestable.length === 0) {
+        return res.status(400).json({ error: "Nothing ready to harvest" })
+      }
+
+      let totalGold = 0
+      let totalInvested = 0
+      let totalVoiceMin = 0
+      let totalMessages = 0
+      const details: Array<{name: string; rarity: string; gold: number; multiplier: number}> = []
+
+      for (const plot of harvestable) {
+        const seed = plot.lg_farm_seeds!
+        const rarity = plot.rarity || "COMMON"
+        const multiplier = RARITY_GOLD_MULTIPLIER[rarity] || 1.0
+        const gold = Math.round(seed.harvest_gold * multiplier)
+        totalGold += gold
+        totalInvested += plot.gold_invested || 0
+        totalVoiceMin += plot.voice_minutes_earned || 0
+        totalMessages += plot.messages_earned || 0
+        details.push({ name: seed.name, rarity, gold, multiplier })
+
+        await prisma.lg_user_farm.update({
+          where: { userid_plot_id: { userid: userId, plot_id: plot.plot_id } },
+          data: {
+            seed_id: null, planted_at: null, last_watered: null,
+            growth_stage: 0, dead: false, growth_points: 0, gold_invested: 0,
+            voice_minutes_earned: 0, messages_earned: 0, rarity: "COMMON",
+          },
+        })
+      }
+
+      if (totalGold > 0) {
+        await prisma.user_config.update({
+          where: { userid: userId },
+          data: { gold: { increment: totalGold } },
+        })
+        await prisma.lg_gold_transactions.create({
+          data: {
+            transaction_type: "FARM_HARVEST" as any,
+            actorid: userId,
+            to_account: userId,
+            amount: totalGold,
+            description: `Bulk harvest ${harvestable.length} plants`,
+          },
+        })
+      }
+
+      return res.status(200).json({
+        success: true, action: "harvestedAll",
+        count: harvestable.length,
+        totalGold, totalInvested,
+        netProfit: totalGold - totalInvested,
+        totalVoiceMinutes: Math.round(totalVoiceMin),
+        totalMessages,
+        details,
+      })
+    }
+
+    if (action === "remove") {
+      if (plotId === undefined) return res.status(400).json({ error: "plotId required" })
+      const plot = await prisma.lg_user_farm.findUnique({
+        where: { userid_plot_id: { userid: userId, plot_id: plotId } },
+      })
+      if (!plot) return res.status(404).json({ error: "Plot not found" })
+      if (!plot.seed_id) return res.status(400).json({ error: "Plot is empty" })
+      if (plot.dead) return res.status(400).json({ error: "Plant is dead, use clear" })
+
+      const invested = plot.gold_invested || 0
+      const refund = Math.floor(invested / 2)
+
+      await prisma.lg_user_farm.update({
+        where: { userid_plot_id: { userid: userId, plot_id: plotId } },
+        data: {
+          seed_id: null, planted_at: null, last_watered: null,
+          growth_stage: 0, dead: false, growth_points: 0, gold_invested: 0,
+          voice_minutes_earned: 0, messages_earned: 0, rarity: "COMMON",
+        },
+      })
+
+      if (refund > 0) {
+        await prisma.user_config.update({
+          where: { userid: userId },
+          data: { gold: { increment: refund } },
+        })
+        await prisma.lg_gold_transactions.create({
+          data: {
+            transaction_type: "FARM_HARVEST" as any,
+            actorid: userId,
+            to_account: userId,
+            amount: refund,
+            description: `Removed plant (50% refund)`,
+          },
+        })
+      }
+
+      return res.status(200).json({
+        success: true, action: "removed", refund, invested,
+      })
+    }
+
+    if (plotId === undefined) {
+      return res.status(400).json({ error: "plotId required for this action" })
+    }
+    // --- END AI-MODIFIED ---
 
     if (action === "plant") {
       if (!seedId) return res.status(400).json({ error: "seedId required" })
@@ -232,7 +386,7 @@ export default apiHandler({
       if (!plot) return res.status(404).json({ error: "Plot not found" })
       if (plot.seed_id) return res.status(400).json({ error: "Plot is not empty" })
       if (!seed) return res.status(404).json({ error: "Seed not found" })
-      if ((userConfig?.gold ?? 0) < seed.plant_cost) {
+      if (Number(userConfig?.gold ?? 0) < seed.plant_cost) {
         return res.status(400).json({ error: `Not enough gold. Need ${seed.plant_cost}` })
       }
 
