@@ -39,7 +39,7 @@ export default apiHandler({
       prisma.lg_marketplace_sales.aggregate({ where: { seller_userid: userId, currency: "GEMS" }, _sum: { total_price: true } }),
     ])
 
-    const buyerIds = [...new Set(sales.map((s) => s.buyer_userid))]
+    const buyerIds = Array.from(new Set(sales.map((s) => s.buyer_userid)))
     const buyers = await prisma.user_config.findMany({
       where: { userid: { in: buyerIds } },
       select: { userid: true, name: true },

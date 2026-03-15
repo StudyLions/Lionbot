@@ -48,7 +48,7 @@ export default apiHandler({
       prisma.lg_marketplace_listings.count({ where: listingWhere }),
     ])
 
-    const sellerIds = [...new Set(listings.map((l) => l.seller_userid))]
+    const sellerIds = Array.from(new Set(listings.map((l) => l.seller_userid)))
     const sellers = await prisma.user_config.findMany({
       where: { userid: { in: sellerIds } },
       select: { userid: true, name: true },
