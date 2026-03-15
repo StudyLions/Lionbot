@@ -28,7 +28,7 @@ const PLOT_CENTERS: Record<number, [number, number]> = {
 }
 
 const STAGE_HEIGHTS: Record<number, number> = {
-  0: 0, 1: 16, 2: 22, 3: 28, 4: 34, 5: 42,
+  0: 0, 1: 30, 2: 40, 3: 52, 4: 64, 5: 78,
 }
 
 const STAGE_LABELS = ["", "Sprout", "Seedling", "Growing", "Budding", "Harvest!"]
@@ -243,6 +243,8 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
             const glowFilter = RARITY_GLOW_CSS[plot.rarity] || ""
             const hasGlow = plot.rarity !== "COMMON" && plot.stage >= 2
 
+            const w = Math.round(h * 0.75)
+
             return (
               <img
                 key={`plant-${plotNum}`}
@@ -250,10 +252,11 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
                 alt={plot.seed?.name || "Plant"}
                 className={cn("absolute", swayClass, plot.readyToHarvest && "animate-harvest-pulse")}
                 style={{
-                  left: cx - Math.round(h * 0.8) / 2,
-                  top: cy - h + 2,
+                  left: cx - w / 2,
+                  top: cy - h + 4,
                   height: h,
-                  width: "auto",
+                  width: w,
+                  objectFit: "contain",
                   imageRendering: "pixelated",
                   filter: glowFilter || undefined,
                   zIndex: cy,
@@ -270,7 +273,7 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
             const plotNum = Number(key)
             const plot = plotMap[plotNum]
             if (!plot || !plot.readyToHarvest || plot.dead) return null
-            const h = STAGE_HEIGHTS[5] || 42
+            const h = STAGE_HEIGHTS[5] || 78
 
             return (
               <div key={`harvest-fx-${plotNum}`}>
