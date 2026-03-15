@@ -195,12 +195,12 @@ export default apiHandler({
         }
       }),
       ownedSeeds: ownedSeeds.map((s) => ({
-        inventoryId: s.inventoryid,
+        inventoryId: Number(s.inventoryid),
         quantity: s.quantity,
-        itemId: s.lg_items.itemid,
+        itemId: Number(s.lg_items.itemid),
         name: s.lg_items.name,
       })),
-      gold: userConfig?.gold ?? 0,
+      gold: Number(userConfig?.gold ?? 0),
     })
   },
 
