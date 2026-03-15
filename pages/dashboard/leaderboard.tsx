@@ -216,31 +216,37 @@ function Podium({ entries, type }: { entries: LBEntry[]; type: LBType }) {
             entry.rank === 1 ? "w-36 sm:w-28" : "w-28 sm:w-24"
           )}
         >
+          {/* --- AI-MODIFIED (2025-03-15) ---
+              Purpose: Move crown outside overflow-hidden so it isn't clipped by the PFP circle.
+              Wrapper has no overflow; inner div clips avatar; crown overlays on wrapper. --- */}
           <div
             className={cn(
-              "relative flex items-center justify-center rounded-full border-2 bg-gradient-to-b overflow-hidden",
+              "relative flex items-center justify-center rounded-full border-2 bg-gradient-to-b",
               entry.rank === 1
                 ? "w-16 h-16 sm:w-14 sm:h-14 border-yellow-400/60"
                 : "w-14 h-14 sm:w-12 sm:h-12 border-muted-foreground/30",
               entry.isYou && "ring-2 ring-indigo-500 ring-offset-2 ring-offset-background"
             )}
           >
-            {entry.avatarUrl ? (
-              <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(entry.userId) % BigInt(5))}.png` }} />
-            ) : (
-              <span
-                className={cn(
-                  "text-lg font-bold",
-                  entry.rank === 1 ? "text-yellow-400" : "text-muted-foreground"
-                )}
-              >
-                {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
-              </span>
-            )}
-            <div className="absolute -top-2 -right-1">
+            <div className="absolute inset-0 rounded-full overflow-hidden">
+              {entry.avatarUrl ? (
+                <img src={entry.avatarUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.src = `https://cdn.discordapp.com/embed/avatars/${Number(BigInt(entry.userId) % BigInt(5))}.png` }} />
+              ) : (
+                <span
+                  className={cn(
+                    "absolute inset-0 flex items-center justify-center text-lg font-bold",
+                    entry.rank === 1 ? "text-yellow-400" : "text-muted-foreground"
+                  )}
+                >
+                  {entry.displayName?.charAt(0)?.toUpperCase() || "?"}
+                </span>
+              )}
+            </div>
+            <div className="absolute -top-2 -right-1 z-10">
               <MedalIcon rank={entry.rank} />
             </div>
           </div>
+          {/* --- END AI-MODIFIED --- */}
           <div className="text-center">
             <p
               className={cn(

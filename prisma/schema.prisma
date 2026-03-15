@@ -1234,6 +1234,8 @@ enum lggoldtransactiontype {
   ITEM_DROP
   TRADE
   ADMIN
+  MARKETPLACE_SALE
+  MARKETPLACE_PURCHASE
 }
 
 enum lgunlocktype {
@@ -1295,9 +1297,11 @@ model lg_items {
   lg_user_inventory     lg_user_inventory[]
   lg_pet_equipment      lg_pet_equipment[]
   lg_user_furniture     lg_user_furniture[]
-  lg_crafting_recipes   lg_crafting_recipes[]
-  lg_recipe_ingredients lg_recipe_ingredients[]
-  lg_scroll_properties  lg_scroll_properties?
+  lg_crafting_recipes        lg_crafting_recipes[]
+  lg_recipe_ingredients      lg_recipe_ingredients[]
+  lg_scroll_properties       lg_scroll_properties?
+  lg_marketplace_listings    lg_marketplace_listings[]
+  lg_marketplace_sales       lg_marketplace_sales[]
 
   @@index([category], map: "lg_items_category")
 }
@@ -1420,6 +1424,51 @@ model lg_scroll_properties {
   success_rate Float    @default(0.7) @db.Real
   destroy_rate Float    @default(0.1) @db.Real
   lg_items     lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Added marketplace models for LionGotchi trading system
+
+model lg_marketplace_listings {
+  listingid          Int       @id @default(autoincrement())
+  seller_userid      BigInt
+  itemid             Int
+  enhancement_level  Int       @default(0)
+  quantity_listed    Int
+  quantity_remaining Int
+  price_per_unit     Int
+  currency           String    @default("GOLD")
+  status             String    @default("ACTIVE")
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at         DateTime  @db.Timestamptz(6)
+  lg_items           lg_items  @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_marketplace_sales lg_marketplace_sales[]
+
+  @@index([status], map: "idx_mp_listings_status")
+  @@index([itemid], map: "idx_mp_listings_itemid")
+  @@index([seller_userid], map: "idx_mp_listings_seller")
+  @@index([expires_at], map: "idx_mp_listings_expires")
+}
+
+model lg_marketplace_sales {
+  saleid             Int      @id @default(autoincrement())
+  listingid          Int
+  buyer_userid       BigInt
+  seller_userid      BigInt
+  itemid             Int
+  enhancement_level  Int      @default(0)
+  quantity           Int
+  price_per_unit     Int
+  total_price        Int
+  currency           String
+  sold_at            DateTime @default(now()) @db.Timestamptz(6)
+  lg_marketplace_listings lg_marketplace_listings @relation(fields: [listingid], references: [listingid], onDelete: NoAction, onUpdate: NoAction)
+  lg_items           lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([itemid], map: "idx_mp_sales_itemid")
+  @@index([buyer_userid], map: "idx_mp_sales_buyer")
+  @@index([seller_userid], map: "idx_mp_sales_seller")
+  @@index([sold_at], map: "idx_mp_sales_sold_at")
 }
 
 // --- END AI-MODIFIED ---

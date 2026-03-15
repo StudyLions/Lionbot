@@ -51,7 +51,7 @@ const sections: NavSection[] = [
     title: "Browse",
     items: [
       { href: "/pet/wiki", label: "Item Wiki", icon: <BookOpen size={16} /> },
-      { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={16} />, disabled: true },
+      { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={16} /> },
     ],
   },
 ]

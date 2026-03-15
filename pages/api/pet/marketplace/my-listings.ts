@@ -1,0 +1,79 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-03-15
+// Purpose: Seller dashboard - active listings, past sales,
+//          revenue summary
+// ============================================================
+import { prisma } from "@/utils/prisma"
+import { getAuthContext } from "@/utils/adminAuth"
+import { apiHandler } from "@/utils/apiHandler"
+import { expireListings } from "@/utils/marketplace"
+
+export default apiHandler({
+  async GET(req, res) {
+    const auth = await getAuthContext(req)
+    if (!auth) return res.status(401).json({ error: "Not authenticated" })
+    const userId = BigInt(auth.discordId)
+
+    await expireListings()
+
+    const [activeListings, pastListings, sales, goldRevenue, gemRevenue] = await Promise.all([
+      prisma.lg_marketplace_listings.findMany({
+        where: { seller_userid: userId, status: "ACTIVE" },
+        include: { lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } } },
+        orderBy: { created_at: "desc" },
+      }),
+      prisma.lg_marketplace_listings.findMany({
+        where: { seller_userid: userId, status: { in: ["SOLD", "CANCELLED", "EXPIRED"] } },
+        include: { lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } } },
+        orderBy: { created_at: "desc" },
+        take: 20,
+      }),
+      prisma.lg_marketplace_sales.findMany({
+        where: { seller_userid: userId },
+        include: { lg_items: { select: { name: true } } },
+        orderBy: { sold_at: "desc" },
+        take: 30,
+      }),
+      prisma.lg_marketplace_sales.aggregate({ where: { seller_userid: userId, currency: "GOLD" }, _sum: { total_price: true } }),
+      prisma.lg_marketplace_sales.aggregate({ where: { seller_userid: userId, currency: "GEMS" }, _sum: { total_price: true } }),
+    ])
+
+    const buyerIds = [...new Set(sales.map((s) => s.buyer_userid))]
+    const buyers = await prisma.user_config.findMany({
+      where: { userid: { in: buyerIds } },
+      select: { userid: true, name: true },
+    })
+    const buyerMap: Record<string, string> = {}
+    for (const b of buyers) buyerMap[b.userid.toString()] = b.name ? b.name.slice(0, 4) + "***" : `P${b.userid.toString().slice(-4)}`
+
+    return res.status(200).json({
+      active: activeListings.map((l) => ({
+        listingId: l.listingid,
+        item: { id: l.lg_items.itemid, name: l.lg_items.name, category: l.lg_items.category, rarity: l.lg_items.rarity, assetPath: l.lg_items.asset_path },
+        enhancementLevel: l.enhancement_level,
+        quantityListed: l.quantity_listed, quantityRemaining: l.quantity_remaining,
+        pricePerUnit: l.price_per_unit, currency: l.currency,
+        createdAt: l.created_at.toISOString(), expiresAt: l.expires_at.toISOString(),
+      })),
+      past: pastListings.map((l) => ({
+        listingId: l.listingid,
+        item: { id: l.lg_items.itemid, name: l.lg_items.name, category: l.lg_items.category, rarity: l.lg_items.rarity, assetPath: l.lg_items.asset_path },
+        status: l.status, quantityListed: l.quantity_listed, quantityRemaining: l.quantity_remaining,
+        pricePerUnit: l.price_per_unit, currency: l.currency,
+        createdAt: l.created_at.toISOString(),
+      })),
+      sales: sales.map((s) => ({
+        buyerName: buyerMap[s.buyer_userid.toString()] ?? "Player",
+        itemName: s.lg_items.name, quantity: s.quantity,
+        pricePerUnit: s.price_per_unit, totalPrice: s.total_price,
+        currency: s.currency, soldAt: s.sold_at.toISOString(),
+      })),
+      revenue: {
+        totalGold: goldRevenue._sum.total_price ?? 0,
+        totalGems: gemRevenue._sum.total_price ?? 0,
+        totalSales: sales.length,
+      },
+    })
+  },
+})
