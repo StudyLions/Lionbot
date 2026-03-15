@@ -10,6 +10,12 @@ import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: bot render API URL + auth for cache invalidation after branding save
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
+// --- END AI-MODIFIED ---
+
 const AVAILABLE_SKINS = [
   "original",
   "obsidian",
@@ -106,9 +112,16 @@ export default apiHandler({
     let customSkinId = premium.custom_skin_id
 
     if (!customSkinId) {
-      const newSkin = await prisma.customised_skins.create({
-        data: { base_skin_id: null },
+      // --- AI-MODIFIED (2026-03-15) ---
+      // Purpose: set base_skin_id to "original" by default (matching bot behavior)
+      // so the custom skin properties are actually applied when rendering
+      const defaultBase = await prisma.global_available_skins.findFirst({
+        where: { skin_name: baseSkinName || "original" },
       })
+      const newSkin = await prisma.customised_skins.create({
+        data: { base_skin_id: defaultBase?.skin_id ?? null },
+      })
+      // --- END AI-MODIFIED ---
       customSkinId = newSkin.custom_skin_id
       await prisma.premium_guilds.update({
         where: { guildid: guildId },
@@ -167,6 +180,23 @@ export default apiHandler({
         }
       }
     }
+
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: tell the bot to invalidate its in-memory skin/premium caches
+    // so the branding change takes effect immediately across all shards
+    try {
+      const headers: Record<string, string> = { "Content-Type": "application/json" }
+      if (BOT_RENDER_AUTH) headers["Authorization"] = BOT_RENDER_AUTH
+      await fetch(`${BOT_RENDER_URL}/invalidate-branding`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ guildid: guildId.toString() }),
+        signal: AbortSignal.timeout(5000),
+      })
+    } catch {
+      // Non-fatal: branding is saved in DB, cache will eventually refresh
+    }
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ success: true })
   },
