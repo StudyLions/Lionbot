@@ -42,10 +42,13 @@ export const LAYER_CONSTRAINTS: Record<string, ConstraintZone> = {
   window:  { category: 'WALL_ITEMS',    yRange: [-15, 15],  xRange: [-30, 30],  movable: true,  flippable: true },
 }
 
+// Lion uses ABSOLUTE position in the 200x200 canvas, not offsets.
+// The sprite renders at 80x80, so max x = 200-80=120, max y = 200-80=120.
+// Keep lion on the "floor" area (bottom portion of room).
 export const LION_CONSTRAINTS: ConstraintZone = {
   category: 'LION',
-  yRange: [-20, 15],
-  xRange: [-50, 50],
+  yRange: [75, 115],
+  xRange: [0, 120],
   movable: true,
   flippable: true,
 }
