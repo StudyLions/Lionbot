@@ -59,7 +59,7 @@ export default apiHandler({
       }),
       pet.active_room_id
         ? prisma.lg_rooms.findUnique({
-            where: { roomid: pet.active_room_id },
+            where: { room_id: pet.active_room_id },
             select: { asset_prefix: true },
           })
         : Promise.resolve(null),

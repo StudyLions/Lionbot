@@ -32,18 +32,18 @@ export default apiHandler({
       }),
       prisma.lg_rooms.findMany({
         select: {
-          roomid: true,
+          room_id: true,
           name: true,
           asset_prefix: true,
           has_furniture: true,
           gold_price: true,
           gem_price: true,
         },
-        orderBy: { roomid: "asc" },
+        orderBy: { room_id: "asc" },
       }),
       prisma.lg_user_rooms.findMany({
         where: { userid: userId },
-        select: { roomid: true },
+        select: { room_id: true },
       }),
       prisma.lg_pet_equipment.findMany({
         where: { userid: userId },
@@ -56,9 +56,9 @@ export default apiHandler({
 
     let activeRoom: { roomId: number; name: string; assetPrefix: string } | null = null
     if (pet?.active_room_id) {
-      const room = allRooms.find((r) => r.roomid === pet.active_room_id)
+      const room = allRooms.find((r) => r.room_id === pet.active_room_id)
       if (room) {
-        activeRoom = { roomId: room.roomid, name: room.name, assetPrefix: room.asset_prefix }
+        activeRoom = { roomId: room.room_id, name: room.name, assetPrefix: room.asset_prefix }
       }
     }
 
@@ -77,15 +77,15 @@ export default apiHandler({
     )
     const layout = layoutRows.length > 0 ? layoutRows[0].layout : {}
 
-    const ownedSet = new Set(ownedRooms.map((r) => r.roomid))
+    const ownedSet = new Set(ownedRooms.map((r) => r.room_id))
     const rooms = allRooms.map((r) => ({
-      roomId: r.roomid,
+      roomId: r.room_id,
       name: r.name,
       assetPrefix: r.asset_prefix,
       hasFurniture: r.has_furniture,
       goldPrice: r.gold_price,
       gemPrice: r.gem_price,
-      owned: ownedSet.has(r.roomid),
+      owned: ownedSet.has(r.room_id),
     }))
 
     const equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
