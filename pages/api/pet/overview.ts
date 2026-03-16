@@ -85,8 +85,31 @@ export default apiHandler({
     }
 
     // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Build furniture map and extract layout for room preview response
-    const furnitureMap: Record<string, string> = {}
+    // Purpose: Build furniture map with room defaults merged, extract layout
+    const roomPrefixStr = activeRoom?.asset_prefix ?? 'rooms/default'
+    const roomDefaults: Record<string, Record<string, string>> = {
+      "rooms/default": {
+        wall: "rooms/default/wall_checker_blue.png",
+        floor: "rooms/default/floor_blue.png",
+        mat: "rooms/default/mat_blue.png",
+        table: "rooms/default/table_brown.png",
+        chair: "rooms/default/chair_brown.png",
+        bed: "rooms/default/bed_red.png",
+        lamp: "rooms/default/lamp_yellow.png",
+        picture: "rooms/default/picture_blue.png",
+        window: "rooms/default/window_blue.png",
+      },
+      "rooms/castle": {
+        wall: "rooms/castle/wall_1.png",
+        floor: "rooms/castle/floor_1.png",
+        mat: "rooms/castle/carpet_1.png",
+        table: "rooms/castle/desk_1.png",
+        chair: "rooms/castle/chair_1.png",
+        bed: "rooms/castle/bed_1.png",
+        lamp: "rooms/castle/lamp_1.png",
+      },
+    }
+    const furnitureMap: Record<string, string> = { ...(roomDefaults[roomPrefixStr] ?? {}) }
     for (const f of furnitureRows) {
       furnitureMap[f.slot] = f.asset_path
     }

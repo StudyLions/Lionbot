@@ -9,6 +9,36 @@ import { apiHandler } from "@/utils/apiHandler"
 
 const ROOM_LAYERS = ["wall", "floor", "mat", "table", "chair", "bed", "lamp", "picture", "window"]
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Default furniture assets for each room theme, used when user has no override
+const DEFAULT_ROOM_FURNITURE: Record<string, Record<string, string>> = {
+  "rooms/default": {
+    wall: "rooms/default/wall_checker_blue.png",
+    floor: "rooms/default/floor_blue.png",
+    mat: "rooms/default/mat_blue.png",
+    table: "rooms/default/table_brown.png",
+    chair: "rooms/default/chair_brown.png",
+    bed: "rooms/default/bed_red.png",
+    lamp: "rooms/default/lamp_yellow.png",
+    picture: "rooms/default/picture_blue.png",
+    window: "rooms/default/window_blue.png",
+  },
+  "rooms/castle": {
+    wall: "rooms/castle/wall_1.png",
+    floor: "rooms/castle/floor_1.png",
+    mat: "rooms/castle/carpet_1.png",
+    table: "rooms/castle/desk_1.png",
+    chair: "rooms/castle/chair_1.png",
+    bed: "rooms/castle/bed_1.png",
+    lamp: "rooms/castle/lamp_1.png",
+  },
+}
+
+function getDefaultFurniture(roomPrefix: string): Record<string, string> {
+  return DEFAULT_ROOM_FURNITURE[roomPrefix] ?? {}
+}
+// --- END AI-MODIFIED ---
+
 export default apiHandler({
   async GET(req, res) {
     const auth = await requireAuth(req, res)
@@ -66,10 +96,15 @@ export default apiHandler({
       `SELECT slot, asset_path FROM lg_user_furniture WHERE userid = $1`,
       userId
     )
-    const furniture: Record<string, string> = {}
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Merge user furniture with room defaults so every slot is populated
+    const roomPrefix = activeRoom?.assetPrefix ?? "rooms/default"
+    const defaults = getDefaultFurniture(roomPrefix)
+    const furniture: Record<string, string> = { ...defaults }
     for (const row of furnitureRows) {
       furniture[row.slot] = row.asset_path
     }
+    // --- END AI-MODIFIED ---
 
     const layoutRows = await prisma.$queryRawUnsafe<{ layout: any }[]>(
       `SELECT layout FROM lg_room_layout WHERE userid = $1`,

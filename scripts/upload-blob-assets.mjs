@@ -32,7 +32,10 @@ async function uploadBatch(files, startIdx) {
       const rel = relative(ASSETS_DIR, filePath).replace(/\\/g, '/');
       const pathname = `${PREFIX}/${rel}`;
       const content = await readFile(filePath);
-      const blob = await put(pathname, content, { access: 'public', addRandomSuffix: false });
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Allow overwriting existing blobs when re-uploading updated assets
+      const blob = await put(pathname, content, { access: 'public', addRandomSuffix: false, allowOverwrite: true });
+      // --- END AI-MODIFIED ---
       return { pathname, url: blob.url };
     })
   );

@@ -153,13 +153,14 @@ export default function RoomCanvas({
   const imageUrls = useMemo(() => {
     const urls: Record<string, string> = {}
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Load all room layers from furniture map (API now includes defaults)
     for (const layer of ROOM_LAYERS) {
       if (furniture[layer]) {
         urls[`room_${layer}`] = petAssetUrl(furniture[layer])
-      } else if (layer === 'wall' || layer === 'floor') {
-        urls[`room_${layer}`] = getRoomLayerUrl(roomPrefix, layer)
       }
     }
+    // --- END AI-MODIFIED ---
 
     for (let f = 0; f < FRAME_COUNT; f++) {
       for (const part of LION_PARTS) {

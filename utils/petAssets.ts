@@ -140,11 +140,11 @@ export function getRoomLayerVariantUrl(roomPrefix: string, layerName: string, va
 }
 
 export function getLionSpriteUrl(part: string, frame: number): string {
-  return blobUrl(`lion/${part}/${part}_${frame}.png`)
+  return blobUrl(`lion/${part}/${part}_${frame + 1}.png`)
 }
 
 export function getLionExpressionUrl(expression: string, frame: number): string {
-  return blobUrl(`lion/expressions/${expression}/face_${frame}.png`)
+  return blobUrl(`lion/expressions/${expression}/face_${frame + 1}.png`)
 }
 
 export function getRoomPreviewUrl(roomPrefix: string): string {

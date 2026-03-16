@@ -152,7 +152,7 @@ export default function PetOverview() {
                     <div className="flex justify-center">
                       <div className="border-2 border-[#2a3a5c] bg-[#080c18]" style={{ boxShadow: "2px 2px 0 #060810" }}>
                         <RoomCanvas
-                          roomPrefix={data.roomPrefix ?? "room_default"}
+                          roomPrefix={data.roomPrefix ?? "rooms/default"}
                           furniture={data.furniture ?? {}}
                           layout={mergeLayout(data.roomLayout ?? {})}
                           equipment={Object.fromEntries(
