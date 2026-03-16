@@ -46,6 +46,7 @@ interface RoomCanvasProps {
   selectedLayer?: string | null
   hoveredLayer?: string | null
   onLayerClick?: (layer: string, x: number, y: number) => void
+  onLayerMouseDown?: (layer: string, x: number, y: number) => void
   onLayerHover?: (layer: string | null) => void
   className?: string
 }
@@ -122,6 +123,7 @@ export default function RoomCanvas({
   selectedLayer = null,
   hoveredLayer = null,
   onLayerClick,
+  onLayerMouseDown,
   onLayerHover,
   className,
 }: RoomCanvasProps) {
@@ -425,6 +427,24 @@ export default function RoomCanvas({
     [onLayerClick, hitTest, toCanvasCoords],
   )
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Separate mousedown handler for drag initiation.
+  //          Drags must start on mousedown (not click) so that mouseup
+  //          can cleanly end them without click re-triggering a new drag.
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent<HTMLCanvasElement>) => {
+      if (!onLayerMouseDown) return
+      const [mx, my] = toCanvasCoords(e)
+      const hit = hitTest(mx, my)
+      if (hit) {
+        e.preventDefault()
+        onLayerMouseDown(hit, mx, my)
+      }
+    },
+    [onLayerMouseDown, hitTest, toCanvasCoords],
+  )
+  // --- END AI-MODIFIED ---
+
   const handleMouseLeave = useCallback(() => {
     lastHoverRef.current = null
     onLayerHover?.(null)
@@ -448,6 +468,7 @@ export default function RoomCanvas({
       onMouseMove={interactive ? handleMouseMove : undefined}
       onMouseLeave={interactive ? handleMouseLeave : undefined}
       onClick={interactive ? handleClick : undefined}
+      onMouseDown={interactive ? handleMouseDown : undefined}
     />
   )
   // --- END AI-MODIFIED ---

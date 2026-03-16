@@ -252,6 +252,9 @@ function RoomEditorContent({ data }: { data: RoomData }) {
       moveLayer(layer, finalOffset)
       setDragState(null)
       playSound('place')
+      // Prevent the click event (which fires after mouseup) from starting a new drag
+      justDroppedRef.current = true
+      requestAnimationFrame(() => { justDroppedRef.current = false })
     }
 
     window.addEventListener("mousemove", handleMouseMove)
@@ -262,9 +265,15 @@ function RoomEditorContent({ data }: { data: RoomData }) {
     }
   }, [dragState, mouseToCanvas, moveLayer, getSnapResult, playSound])
 
-  const handleLayerClick = useCallback(
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Drag initiation moved to onMouseDown so mouseup can cleanly
+  //          end the drag without click re-triggering a new drag.
+  //          onClick only handles non-drag tools (select, flip, etc.).
+  const justDroppedRef = useRef(false)
+
+  const handleLayerMouseDown = useCallback(
     (layer: string, x: number, y: number) => {
-      if (activeTool === "move" && isMovable(layer)) {
+      if (activeTool === "move" && isMovable(layer) && !dragState) {
         const origOffset: [number, number] =
           layer === "lion"
             ? ([...layout.lionPosition] as [number, number])
@@ -273,15 +282,25 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         setDragCurrentPos([x, y])
         setSelectedLayer(layer)
         playSound('pickup')
-      } else if (activeTool === "select") {
+      }
+    },
+    [activeTool, layout, dragState, setSelectedLayer, playSound]
+  )
+
+  const handleLayerClick = useCallback(
+    (layer: string, _x: number, _y: number) => {
+      if (justDroppedRef.current) return
+      if (activeTool === "move") return
+      if (activeTool === "select") {
         setSelectedLayer(selectedLayer === layer ? null : layer)
       } else if (activeTool === "flip" && isFlippable(layer)) {
         flipLayer(layer)
         playSound('flip')
       }
     },
-    [activeTool, layout, selectedLayer, setSelectedLayer, flipLayer, playSound]
+    [activeTool, selectedLayer, setSelectedLayer, flipLayer, playSound]
   )
+  // --- END AI-MODIFIED ---
 
   const handleLayerHover = useCallback((layer: string | null) => {
     setHoveredLayer(layer)
@@ -456,6 +475,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
             selectedLayer={selectedLayer}
             hoveredLayer={hoveredLayer}
             onLayerClick={handleLayerClick}
+            onLayerMouseDown={handleLayerMouseDown}
             onLayerHover={handleLayerHover}
             className="max-w-full h-auto"
           />
