@@ -7,13 +7,11 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Remove DEV_SPEED=60 (was 60x too fast), fix stage formula,
+//          add tier support, material drops, correct transaction types
 const GROWTH_PER_VOICE_MINUTE = 1.0
 const GROWTH_PER_TEXT_MESSAGE = 2.0
-const WATER_BOOST = 1.5
-const DRY_PENALTY = 0.5
-const DRY_DEATH_HOURS = 48
-
-const DEV_SPEED = 60
 
 const RARITY_WEIGHTS: Record<string, number> = {
   COMMON: 50, UNCOMMON: 25, RARE: 15, EPIC: 7, LEGENDARY: 3,
@@ -21,6 +19,22 @@ const RARITY_WEIGHTS: Record<string, number> = {
 const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
   COMMON: 1.0, UNCOMMON: 1.5, RARE: 2.0, EPIC: 3.0, LEGENDARY: 5.0,
 }
+const RARITY_DROP_MULTIPLIER: Record<string, number> = {
+  COMMON: 1.0, UNCOMMON: 1.25, RARE: 1.5, EPIC: 2.0, LEGENDARY: 3.0,
+}
+
+const TIER_WATER_DURATION_MULT: Record<string, number> = {
+  NONE: 1.0, LIONHEART: 1.5, LIONHEART_PLUS: 2.0, LIONHEART_PLUS_PLUS: 3.0,
+}
+const TIER_DEATH_TIMER_HOURS: Record<string, number | null> = {
+  NONE: 48, LIONHEART: 72, LIONHEART_PLUS: 96, LIONHEART_PLUS_PLUS: null,
+}
+
+const MATERIAL_DROP_CHANCE_HARVEST = 0.35
+const MATERIAL_DROP_WEIGHTS: Record<string, number> = {
+  COMMON: 45, UNCOMMON: 28, RARE: 15, EPIC: 7, LEGENDARY: 3.5, MYTHICAL: 0.5,
+}
+const MULTI_DROP_WEIGHTS: Record<number, number> = { 1: 60, 2: 30, 3: 10 }
 
 function rollRarity(): string {
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0)
@@ -32,30 +46,109 @@ function rollRarity(): string {
   return "COMMON"
 }
 
-function isWatered(lastWatered: Date | null, waterIntervalHours: number): boolean {
+function pickDropRarity(weights: Record<string, number>): string {
+  const total = Object.values(weights).reduce((a, b) => a + b, 0)
+  let roll = Math.random() * total
+  for (const [rarity, weight] of Object.entries(weights)) {
+    roll -= weight
+    if (roll <= 0) return rarity
+  }
+  return "COMMON"
+}
+
+function pickMultiDropCount(): number {
+  const total = Object.values(MULTI_DROP_WEIGHTS).reduce((a, b) => a + b, 0)
+  let r = Math.random() * total
+  for (const [count, weight] of Object.entries(MULTI_DROP_WEIGHTS)) {
+    r -= weight
+    if (r <= 0) return Number(count)
+  }
+  return 1
+}
+
+async function tryMaterialDrop(
+  userId: bigint,
+  chance: number,
+  rarityMultiplier: number = 1.0
+): Promise<Array<{ itemId: number; name: string; rarity: string }> | null> {
+  const effectiveChance = Math.min(chance * rarityMultiplier, 0.95)
+  if (Math.random() >= effectiveChance) return null
+
+  const count = pickMultiDropCount()
+  const boostedWeights = rarityMultiplier > 1.0
+    ? Object.fromEntries(
+        Object.entries(MATERIAL_DROP_WEIGHTS).map(([r, w]) =>
+          ["EPIC", "LEGENDARY", "MYTHICAL"].includes(r) ? [r, w * rarityMultiplier] : [r, w]
+        )
+      )
+    : MATERIAL_DROP_WEIGHTS
+
+  const dropped: Array<{ itemId: number; name: string; rarity: string }> = []
+  for (let i = 0; i < count; i++) {
+    const rarity = pickDropRarity(boostedWeights)
+    let mat = await prisma.lg_items.findFirst({
+      where: { category: "MATERIAL" as any, rarity: rarity as any },
+      select: { itemid: true, name: true, rarity: true },
+    })
+    if (!mat) {
+      mat = await prisma.lg_items.findFirst({
+        where: { category: "MATERIAL" as any },
+        select: { itemid: true, name: true, rarity: true },
+      })
+    }
+    if (!mat) continue
+
+    const existing = await prisma.lg_user_inventory.findFirst({
+      where: { userid: userId, itemid: mat.itemid, enhancement_level: 0 },
+    })
+    if (existing) {
+      await prisma.lg_user_inventory.update({
+        where: { inventoryid: existing.inventoryid },
+        data: { quantity: { increment: 1 } },
+      })
+    } else {
+      await prisma.lg_user_inventory.create({
+        data: {
+          userid: userId,
+          itemid: mat.itemid,
+          source: "DROP" as any,
+          quantity: 1,
+          enhancement_level: 0,
+        },
+      })
+    }
+    dropped.push({
+      itemId: mat.itemid,
+      name: mat.name,
+      rarity: String(mat.rarity),
+    })
+  }
+  return dropped.length > 0 ? dropped : null
+}
+
+function isWatered(lastWatered: Date | null, waterIntervalHours: number, tier: string = "NONE"): boolean {
   if (!lastWatered) return false
   const elapsed = (Date.now() - lastWatered.getTime()) / 1000
-  const interval = (waterIntervalHours * 3600) / DEV_SPEED
+  const mult = TIER_WATER_DURATION_MULT[tier] ?? 1.0
+  const interval = waterIntervalHours * 3600 * mult
   return elapsed < interval
 }
 
-function needsWater(lastWatered: Date | null, waterIntervalHours: number): boolean {
-  return !isWatered(lastWatered, waterIntervalHours)
-}
-
-function isDead(lastWatered: Date | null, plantedAt: Date | null): boolean {
+function isDead(lastWatered: Date | null, plantedAt: Date | null, tier: string = "NONE"): boolean {
   if (!plantedAt) return false
+  const deathHours = TIER_DEATH_TIMER_HOURS[tier]
+  if (deathHours === null || deathHours === undefined) return false
   const ref = lastWatered || plantedAt
   const elapsed = (Date.now() - ref.getTime()) / 1000
-  const deathThreshold = (DRY_DEATH_HOURS * 3600) / DEV_SPEED
-  return elapsed > deathThreshold
+  return elapsed > deathHours * 3600
 }
 
 function computeProgress(growthPoints: number, growthPointsNeeded: number): {
   stage: number; progress: number; readyToHarvest: boolean
 } {
+  if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false }
   const totalPerStage = growthPointsNeeded / 5
-  const stage = Math.min(5, Math.floor(growthPoints / totalPerStage))
+  const stage = Math.min(5, 1 + Math.floor(growthPoints / totalPerStage))
   const progress = Math.min(100, Math.round((growthPoints / growthPointsNeeded) * 100))
   return { stage, progress, readyToHarvest: stage >= 5 }
 }
@@ -71,11 +164,13 @@ function estimateTimeRemaining(
   return Math.ceil(remaining / pointsPerMinute) * 60
 }
 
-function nextWaterAt(lastWatered: Date | null, waterIntervalHours: number): string | null {
+function nextWaterAt(lastWatered: Date | null, waterIntervalHours: number, tier: string = "NONE"): string | null {
   if (!lastWatered) return null
-  const interval = (waterIntervalHours * 3600 * 1000) / DEV_SPEED
+  const mult = TIER_WATER_DURATION_MULT[tier] ?? 1.0
+  const interval = waterIntervalHours * 3600 * 1000 * mult
   return new Date(lastWatered.getTime() + interval).toISOString()
 }
+// --- END AI-MODIFIED ---
 
 function parseAssetPrefix(prefix: string): { plantType: string; typeId: number } {
   const [plantType, idStr] = prefix.split(":")
@@ -89,7 +184,9 @@ export default apiHandler({
 
     const userId = BigInt(auth.discordId)
 
-    const [plots, seeds, ownedSeeds, userConfig] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Fetch pet tier for tier-aware water/death checks; include fullscreen_mode
+    const [plots, seeds, ownedSeeds, userConfig, pet] = await Promise.all([
       prisma.lg_user_farm.findMany({
         where: { userid: userId },
         include: { lg_farm_seeds: true },
@@ -111,7 +208,13 @@ export default apiHandler({
         where: { userid: userId },
         select: { gold: true },
       }),
+      prisma.lg_pets.findUnique({
+        where: { userid: userId },
+        select: { fullscreen_mode: true },
+      }),
     ])
+
+    const userTier = "NONE"
 
     const result = plots.map((plot) => {
       const seed = plot.lg_farm_seeds
@@ -140,9 +243,9 @@ export default apiHandler({
         }
       }
 
-      const dead = plot.dead || isDead(plot.last_watered, plot.planted_at)
+      const dead = plot.dead || isDead(plot.last_watered, plot.planted_at, userTier)
       const growth = computeProgress(plot.growth_points, seed.growth_points_needed)
-      const watered = isWatered(plot.last_watered, seed.water_interval_hours)
+      const watered = isWatered(plot.last_watered, seed.water_interval_hours, userTier)
       const { plantType, typeId } = parseAssetPrefix(seed.asset_prefix)
 
       return {
@@ -172,21 +275,22 @@ export default apiHandler({
         typeId,
         voiceMinutesEarned: plot.voice_minutes_earned || 0,
         messagesEarned: plot.messages_earned || 0,
-        nextWaterAt: nextWaterAt(plot.last_watered, seed.water_interval_hours),
+        nextWaterAt: nextWaterAt(plot.last_watered, seed.water_interval_hours, userTier),
         estimatedSecondsRemaining: estimateTimeRemaining(plot.growth_points, seed.growth_points_needed),
         plantedAt: plot.planted_at.toISOString(),
         lastWatered: plot.last_watered?.toISOString() ?? null,
       }
     })
+    // --- END AI-MODIFIED ---
 
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: Farm history from gold transactions
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Farm history includes FARM_PLANT transactions; response includes fullscreen_mode
     let history: Array<{type: string; amount: number; description: string; createdAt: string}> = []
     if (req.query.history === "true") {
       const txns = await prisma.lg_gold_transactions.findMany({
         where: {
           OR: [{ from_account: userId }, { to_account: userId }],
-          transaction_type: { in: ["SHOP_PURCHASE", "FARM_HARVEST"] },
+          transaction_type: { in: ["FARM_PLANT", "FARM_HARVEST"] },
         },
         orderBy: { created_at: "desc" },
         take: 20,
@@ -209,6 +313,7 @@ export default apiHandler({
     return res.status(200).json({
       plots: result,
       history,
+      fullscreenMode: pet?.fullscreen_mode ?? false,
       availableSeeds: seeds.map((s) => {
         const { plantType, typeId } = parseAssetPrefix(s.asset_prefix)
         return {
@@ -273,6 +378,9 @@ export default apiHandler({
       let totalVoiceMin = 0
       let totalMessages = 0
       const details: Array<{name: string; rarity: string; gold: number; multiplier: number}> = []
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Collect material drops from each harvested plot
+      const allDrops: Array<{ itemId: number; name: string; rarity: string }> = []
 
       for (const plot of harvestable) {
         const seed = plot.lg_farm_seeds!
@@ -293,7 +401,12 @@ export default apiHandler({
             voice_minutes_earned: 0, messages_earned: 0, rarity: "COMMON",
           },
         })
+
+        const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
+        const drops = await tryMaterialDrop(userId, MATERIAL_DROP_CHANCE_HARVEST, rarityMult)
+        if (drops) allDrops.push(...drops)
       }
+      // --- END AI-MODIFIED ---
 
       if (totalGold > 0) {
         await prisma.user_config.update({
@@ -319,6 +432,7 @@ export default apiHandler({
         totalVoiceMinutes: Math.round(totalVoiceMin),
         totalMessages,
         details,
+        materialDrops: allDrops,
       })
     }
 
@@ -392,6 +506,8 @@ export default apiHandler({
 
       const rarity = rollRarity()
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Set growth_stage=1 (not 0) to match bot; use FARM_PLANT transaction type
       await prisma.$transaction([
         prisma.lg_user_farm.update({
           where: { userid_plot_id: { userid: userId, plot_id: plotId } },
@@ -399,7 +515,7 @@ export default apiHandler({
             seed_id: seedId,
             planted_at: new Date(),
             last_watered: new Date(),
-            growth_stage: 0,
+            growth_stage: 1,
             dead: false,
             growth_points: 0,
             gold_invested: seed.plant_cost,
@@ -414,7 +530,7 @@ export default apiHandler({
         }),
         prisma.lg_gold_transactions.create({
           data: {
-            transaction_type: "SHOP_PURCHASE",
+            transaction_type: "FARM_PLANT",
             actorid: userId,
             from_account: userId,
             amount: seed.plant_cost,
@@ -422,6 +538,7 @@ export default apiHandler({
           },
         }),
       ])
+      // --- END AI-MODIFIED ---
 
       return res.status(200).json({
         success: true,
@@ -492,6 +609,12 @@ export default apiHandler({
         }),
       ])
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Roll for material drops on harvest (matches bot behavior)
+      const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
+      const drops = await tryMaterialDrop(userId, MATERIAL_DROP_CHANCE_HARVEST, rarityMult)
+      // --- END AI-MODIFIED ---
+
       return res.status(200).json({
         success: true,
         action: "harvested",
@@ -499,6 +622,7 @@ export default apiHandler({
         seedName: plot.lg_farm_seeds.name,
         rarity,
         multiplier,
+        materialDrops: drops || [],
       })
     }
 
@@ -524,6 +648,24 @@ export default apiHandler({
       return res.status(200).json({ success: true, action: "cleared" })
     }
 
-    return res.status(400).json({ error: "Invalid action. Use 'water', 'harvest', 'plant', or 'clear'" })
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Sync fullscreen preference to DB (matches bot's lg_pets.fullscreen_mode)
+    if (action === "toggleFullscreen") {
+      const pet = await prisma.lg_pets.findUnique({
+        where: { userid: userId },
+        select: { fullscreen_mode: true },
+      })
+      if (!pet) return res.status(404).json({ error: "Pet not found" })
+
+      const newMode = !pet.fullscreen_mode
+      await prisma.lg_pets.update({
+        where: { userid: userId },
+        data: { fullscreen_mode: newMode },
+      })
+      return res.status(200).json({ success: true, fullscreenMode: newMode })
+    }
+    // --- END AI-MODIFIED ---
+
+    return res.status(400).json({ error: "Invalid action. Use 'water', 'harvest', 'plant', 'clear', or 'toggleFullscreen'" })
   },
 })

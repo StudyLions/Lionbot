@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
@@ -43,7 +44,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
                 >
                   <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
                     {ingImg ? (
-                      <img src={ingImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                      <CroppedItemImage src={ingImg} alt="" className="w-full h-full object-contain" />
                     ) : (
                       <span className="text-sm">{getCategoryPlaceholder(ing.item.category)}</span>
                     )}
@@ -73,7 +74,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
               style={{ borderColor: resultBorder }}
             >
               {resultImg ? (
-                <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                <CroppedItemImage src={resultImg} alt="" className="w-full h-full object-contain" />
               ) : (
                 <div className="w-12 h-12 flex items-center justify-center text-xl">
                   {getCategoryPlaceholder(recipe.resultItem.category)}

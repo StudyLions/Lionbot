@@ -104,12 +104,21 @@ export default apiHandler({
       userId
     )
     // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Merge user furniture with room defaults so every slot is populated
+    // Purpose: Merge user furniture with room defaults so every slot is populated.
+    //          Normalize legacy paths missing the rooms/furniture/ prefix.
     const roomPrefix = activeRoom?.assetPrefix ?? "rooms/default"
     const defaults = getDefaultFurniture(roomPrefix)
     const furniture: Record<string, string> = { ...defaults }
     for (const row of furnitureRows) {
-      furniture[row.slot] = row.asset_path
+      let path = row.asset_path
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Normalize raw filenames to rooms/furniture/ where they exist on CDN.
+      // Full paths like "rooms/default/lamp_purple.png" are used as-is.
+      if (!path.startsWith("rooms/")) {
+        path = `rooms/furniture/${path}`
+      }
+      // --- END AI-MODIFIED ---
+      furniture[row.slot] = path
     }
     // --- END AI-MODIFIED ---
 

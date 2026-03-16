@@ -5,7 +5,7 @@
 //          Validates theme access against the user's LionHeart tier.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
-import prisma from "@/utils/prisma"
+import { prisma } from "@/utils/prisma"
 import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
 import { canAccessTheme, userTierFromSub, TIMER_THEMES } from "@/constants/TimerThemes"
 

@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { Users } from "lucide-react"
 import type { WikiItemData } from "./ItemGrid"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
@@ -37,7 +38,7 @@ export default function ItemListView({ items }: { items: WikiItemData[] }) {
             >
               <div className="w-8 h-8 flex items-center justify-center">
                 {imgUrl ? (
-                  <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                  <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
                 ) : (
                   <span className="text-lg">{getCategoryPlaceholder(item.category)}</span>
                 )}

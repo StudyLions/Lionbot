@@ -16,6 +16,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import dynamic from "next/dynamic"
 import { GetServerSideProps } from "next"
 
@@ -109,8 +110,10 @@ export default function SellPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/marketplace" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
-                <span>&#x25C4;</span> Back to Marketplace
+              <Link href="/pet/marketplace">
+                <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+                  <span>&#x25C4;</span> Back to Marketplace
+                </a>
               </Link>
 
               <div>
@@ -173,7 +176,7 @@ export default function SellPage() {
                           >
                             <div className="w-12 h-12 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                               {imgUrl ? (
-                                <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
                               ) : (
                                 <span className="text-lg">{getCategoryPlaceholder(item.category)}</span>
                               )}

@@ -102,7 +102,14 @@ export default apiHandler({
     }
     const furnitureMap: Record<string, string> = { ...(roomDefaults[roomPrefixStr] ?? {}) }
     for (const f of furnitureRows) {
-      furnitureMap[f.slot] = f.asset_path
+      let path = f.asset_path
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Normalize raw filenames to rooms/furniture/ where they exist on CDN
+      if (!path.startsWith("rooms/")) {
+        path = `rooms/furniture/${path}`
+      }
+      // --- END AI-MODIFIED ---
+      furnitureMap[f.slot] = path
     }
     const layoutRow = layoutRows[0] ?? null
     // --- END AI-MODIFIED ---

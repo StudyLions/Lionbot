@@ -5,6 +5,7 @@
 // ============================================================
 import { useState } from "react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -77,7 +78,7 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
           <div className="flex items-center gap-3">
             <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center bg-[#0a0e1a] border-2 border-[#1a2a3c]">
               {imgUrl ? (
-                <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                <CroppedItemImage src={imgUrl} alt={listing.item.name} className="w-full h-full object-contain" />
               ) : (
                 <span className="text-2xl">{getCategoryPlaceholder(listing.item.category)}</span>
               )}

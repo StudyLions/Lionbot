@@ -35,6 +35,7 @@
     "@vercel/blob": "^2.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "framer-motion": "^12.37.0",
     "i18next": "^23.7.16",
     "lucide-react": "^0.577.0",
     "next": "^12.1.0",

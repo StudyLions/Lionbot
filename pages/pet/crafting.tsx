@@ -16,6 +16,8 @@ import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
+import { Check, Filter } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -33,11 +35,13 @@ interface Recipe {
   description: string
   ingredients: Ingredient[]
   canCraft: boolean
+  resultOwned: number
 }
 
 interface CraftingData {
   recipes: Recipe[]
   gold: string
+  gems: number
   totalCount: number
   page: number
   totalPages: number
@@ -48,8 +52,6 @@ const RARITY_BORDER: Record<string, string> = {
   EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: Add category/rarity/search filters and pagination
 const CRAFT_CATEGORIES = [
   { key: "", label: "All" },
   { key: "SCROLL", label: "Scroll" },
@@ -60,7 +62,6 @@ const CRAFT_CATEGORIES = [
   { key: "WINGS", label: "Wings" },
 ]
 const CRAFT_RARITIES = ["", "COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHICAL"]
-// --- END AI-MODIFIED ---
 
 export default function CraftingPage() {
   const { data: session } = useSession()
@@ -71,21 +72,23 @@ export default function CraftingPage() {
   const [page, setPage] = useState(1)
   const [crafting, setCrafting] = useState<number | null>(null)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Craftable-only filter toggle
+  const [craftableOnly, setCraftableOnly] = useState(false)
+  // --- END AI-MODIFIED ---
 
-  // --- AI-MODIFIED (2026-03-15) ---
-  // Purpose: Debounce search input so we don't fire on every keystroke
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   function handleSearch(val: string) {
     setSearch(val)
     if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
     searchTimerRef.current = setTimeout(() => { setDebouncedSearch(val); setPage(1) }, 400)
   }
-  // --- END AI-MODIFIED ---
 
   const params = new URLSearchParams()
   if (category) params.set("category", category)
   if (rarity) params.set("rarity", rarity)
   if (debouncedSearch) params.set("search", debouncedSearch)
+  if (craftableOnly) params.set("craftableOnly", "true")
   params.set("page", String(page))
   const qs = params.toString()
 
@@ -111,6 +114,7 @@ export default function CraftingPage() {
         invalidate("/api/pet/inventory?filter=materials")
         invalidate("/api/pet/inventory?filter=scrolls")
         invalidate("/api/pet/overview")
+        invalidate("/api/pet/balance")
       }
     } catch {
       setMessage({ text: "Network error", type: "error" })
@@ -118,6 +122,8 @@ export default function CraftingPage() {
       setCrafting(null)
     }
   }
+
+  const craftableCount = data?.recipes.filter((r) => r.canCraft).length ?? 0
 
   return (
     <Layout SEO={{ title: "Crafting - LionGotchi", description: "Craft items from materials" }}>
@@ -130,7 +136,6 @@ export default function CraftingPage() {
               <div>
                 <div className="flex items-center justify-between">
                   <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Crafting</h1>
-                  {data && <GoldDisplay amount={Number(data.gold)} size="md" />}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
@@ -142,7 +147,6 @@ export default function CraftingPage() {
                 </p>
               </div>
 
-              {/* --- AI-MODIFIED (2026-03-15) --- */}
               {/* Filters */}
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-1">
@@ -182,6 +186,22 @@ export default function CraftingPage() {
                       <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
+                  {/* --- AI-MODIFIED (2026-03-16) --- */}
+                  {/* Purpose: Craftable-only toggle button */}
+                  <button
+                    onClick={() => { setCraftableOnly((v) => !v); setPage(1) }}
+                    className={cn(
+                      "font-pixel text-[12px] px-3 py-1 border-2 transition-colors flex items-center gap-1.5",
+                      craftableOnly
+                        ? "border-[#40d870] bg-[#40d870]/10 text-[#40d870]"
+                        : "border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim,#8899aa)] hover:border-[#2a3060]"
+                    )}
+                    style={{ boxShadow: "2px 2px 0 #060810" }}
+                  >
+                    <Filter size={12} />
+                    Craftable{craftableCount > 0 && ` (${craftableCount})`}
+                  </button>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
                 {data && (
                   <p className="font-pixel text-sm text-[#4a5a70]">
@@ -190,7 +210,6 @@ export default function CraftingPage() {
                   </p>
                 )}
               </div>
-              {/* --- END AI-MODIFIED --- */}
 
               {/* Toast */}
               {message && (
@@ -221,48 +240,87 @@ export default function CraftingPage() {
                 </PixelCard>
               ) : !data?.recipes.length ? (
                 <PixelCard className="p-12 text-center" corners>
-                  <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">No recipes available yet.</p>
+                  <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">
+                    {craftableOnly ? "No craftable recipes with your current materials." : "No recipes available yet."}
+                  </p>
                 </PixelCard>
               ) : (
                 <div className="space-y-3">
-                  {data.recipes.length === 0 && data.totalCount === 0 && (
-                    <PixelCard className="p-8 text-center" corners>
-                      <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">No recipes match your filters.</p>
-                    </PixelCard>
-                  )}
                   {data.recipes.map((recipe) => {
                     const bc = RARITY_BORDER[recipe.resultItem.rarity] || "#3a4a6c"
                     const imgUrl = getItemImageUrl(recipe.resultItem.assetPath, recipe.resultItem.category)
+                    const allIngredientsPercent = recipe.ingredients.length > 0
+                      ? recipe.ingredients.reduce((sum, ing) => sum + Math.min(1, ing.owned / ing.required), 0) / recipe.ingredients.length
+                      : 1
                     return (
                       <div
                         key={recipe.recipeId}
-                        className="border-[3px] p-[3px]"
-                        style={{ borderColor: bc, boxShadow: "3px 3px 0 #060810" }}
+                        className={cn(
+                          "border-[3px] p-[3px] transition-all",
+                          recipe.canCraft && "ring-1 ring-[#40d870]/30"
+                        )}
+                        style={{
+                          borderColor: recipe.canCraft ? "#40d870" : bc,
+                          boxShadow: recipe.canCraft ? "3px 3px 0 #060810, 0 0 12px rgba(64,216,112,0.08)" : "3px 3px 0 #060810",
+                          opacity: !recipe.canCraft && craftableOnly ? 0.5 : 1,
+                        }}
                       >
-                        <div className="border-2 bg-[#0c1020] p-4 space-y-3" style={{ borderColor: `${bc}40` }}>
+                        <div
+                          className="border-2 bg-[#0c1020] p-4 space-y-3"
+                          style={{ borderColor: recipe.canCraft ? "rgba(64,216,112,0.15)" : `${bc}40` }}
+                        >
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-12 h-12 border-2 bg-[#080c18] flex items-center justify-center flex-shrink-0"
-                                style={{ borderColor: `${bc}60` }}>
+                              <div className="w-14 h-14 border-2 bg-[#080c18] flex items-center justify-center flex-shrink-0 relative"
+                                style={{ borderColor: recipe.canCraft ? "rgba(64,216,112,0.3)" : `${bc}60` }}>
                                 {imgUrl ? (
-                                  <img src={imgUrl} alt={recipe.resultItem.name} className="w-9 h-9 object-contain"
-                                    style={{ imageRendering: "pixelated" }} />
+                                  <CroppedItemImage src={imgUrl} alt={recipe.resultItem.name} className="w-full h-full object-contain" />
                                 ) : (
                                   <span className="text-xl">{getCategoryPlaceholder(recipe.resultItem.category)}</span>
                                 )}
+                                {/* --- AI-MODIFIED (2026-03-16) --- */}
+                                {/* Purpose: Show "OWNED" badge if user already has this item */}
+                                {recipe.resultOwned > 0 && (
+                                  <span className="absolute -top-2 -right-2 font-pixel text-[10px] px-1 py-0.5 border bg-[#40d870]/15 text-[#40d870] border-[#40d870] flex items-center gap-0.5">
+                                    <Check size={8} /> x{recipe.resultOwned}
+                                  </span>
+                                )}
+                                {/* --- END AI-MODIFIED --- */}
                               </div>
                               <div>
-                                <div className="flex items-center gap-1.5">
+                                <div className="flex items-center gap-1.5 flex-wrap">
                                   <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">
                                     {recipe.resultItem.name}
                                     {recipe.resultQuantity > 1 && <span className="text-[var(--pet-text-dim)] ml-1">x{recipe.resultQuantity}</span>}
                                   </span>
                                   <PixelBadge rarity={recipe.resultItem.rarity} />
+                                  {recipe.canCraft && (
+                                    <span className="font-pixel text-[10px] px-1.5 py-0.5 border border-[#40d870] bg-[#40d870]/10 text-[#40d870] animate-pulse">
+                                      READY
+                                    </span>
+                                  )}
                                 </div>
                                 <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)] mt-0.5">
                                   {recipe.resultItem.category}
                                   {recipe.description && <span> &middot; {recipe.description}</span>}
                                 </p>
+                                {/* Progress indicator for non-craftable */}
+                                {!recipe.canCraft && recipe.ingredients.length > 0 && (
+                                  <div className="mt-1.5 flex items-center gap-2">
+                                    <div className="w-20 h-1.5 bg-[#1a2040] overflow-hidden">
+                                      <div
+                                        className="h-full transition-all"
+                                        style={{
+                                          width: `${Math.round(allIngredientsPercent * 100)}%`,
+                                          backgroundColor: allIngredientsPercent >= 1 ? "#40d870" : allIngredientsPercent > 0.5 ? "#f0c040" : "#e04040",
+                                        }}
+                                      />
+                                    </div>
+                                    <span className="font-pixel text-[10px] text-[#4a5a70]">
+                                      {Math.round(allIngredientsPercent * 100)}%
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                             <PixelButton
@@ -272,7 +330,7 @@ export default function CraftingPage() {
                               disabled={!recipe.canCraft || crafting !== null}
                               loading={crafting === recipe.recipeId}
                             >
-                              Craft
+                              {recipe.canCraft ? "Craft!" : "Craft"}
                             </PixelButton>
                           </div>
 
@@ -281,22 +339,23 @@ export default function CraftingPage() {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                               {recipe.ingredients.map((ing) => {
                                 const ok = ing.owned >= ing.required
+                                const partial = ing.owned > 0 && !ok
                                 return (
                                   <div
                                     key={ing.item.id}
                                     className="flex items-center gap-2 px-2.5 py-1.5 border"
                                     style={{
-                                      borderColor: ok ? "rgba(64,216,112,0.2)" : "rgba(224,64,64,0.2)",
-                                      backgroundColor: ok ? "rgba(64,216,112,0.04)" : "rgba(224,64,64,0.04)",
+                                      borderColor: ok ? "rgba(64,216,112,0.2)" : partial ? "rgba(240,192,64,0.2)" : "rgba(224,64,64,0.2)",
+                                      backgroundColor: ok ? "rgba(64,216,112,0.04)" : partial ? "rgba(240,192,64,0.04)" : "rgba(224,64,64,0.04)",
                                     }}
                                   >
                                     <span className="w-2 h-2 flex-shrink-0"
-                                      style={{ backgroundColor: ok ? "#40d870" : "#e04040" }} />
+                                      style={{ backgroundColor: ok ? "#40d870" : partial ? "#f0c040" : "#e04040" }} />
                                     <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate flex-1">
                                       {ing.item.name}
                                     </span>
                                     <span className="font-pixel text-[13px] flex-shrink-0"
-                                      style={{ color: ok ? "#40d870" : "#e04040" }}>
+                                      style={{ color: ok ? "#40d870" : partial ? "#f0c040" : "#e04040" }}>
                                       {ing.owned}/{ing.required}
                                     </span>
                                   </div>
@@ -323,7 +382,6 @@ export default function CraftingPage() {
                       </div>
                     )
                   })}
-                  {/* --- AI-MODIFIED (2026-03-15) --- */}
                   {data.totalPages > 1 && (
                     <div className="flex items-center justify-center gap-2 pt-2">
                       <button
@@ -347,7 +405,6 @@ export default function CraftingPage() {
                       </button>
                     </div>
                   )}
-                  {/* --- END AI-MODIFIED --- */}
                 </div>
               )}
             </div>

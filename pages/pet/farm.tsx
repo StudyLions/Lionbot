@@ -10,7 +10,7 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import dynamic from "next/dynamic"
@@ -28,6 +28,8 @@ const HarvestModal = dynamic(() => import("@/components/pet/farm/HarvestModal"),
 const FarmHistory = dynamic(() => import("@/components/pet/farm/FarmHistory"), { ssr: false })
 const GameboyFrame = dynamic(() => import("@/components/pet/farm/GameboyFrame"), { ssr: false })
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Add fullscreenMode and materialDrops to FarmData/HarvestResult types
 interface FarmData {
   plots: FarmPlot[]
   availableSeeds: Array<{
@@ -38,6 +40,7 @@ interface FarmData {
   ownedSeeds: Array<{ inventoryId: number; quantity: number; itemId: number; name: string }>
   gold: number
   history: Array<{ type: string; amount: number; description: string; createdAt: string }>
+  fullscreenMode: boolean
 }
 
 interface HarvestResult {
@@ -48,24 +51,44 @@ interface HarvestResult {
   totalVoiceMinutes: number
   totalMessages: number
   details: Array<{ name: string; rarity: string; gold: number; multiplier: number }>
+  materialDrops?: Array<{ itemId: number; name: string; rarity: string }>
 }
+
+const RARITY_REVEAL_COLORS: Record<string, string> = {
+  UNCOMMON: "#4080f0",
+  RARE: "#e04040",
+  EPIC: "#f0c040",
+  LEGENDARY: "#d060f0",
+}
+// --- END AI-MODIFIED ---
 
 export default function FarmPage() {
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Auto-refresh every 30s to keep farm growth data live
   const { data, error, isLoading, mutate } = useDashboard<FarmData>(
-    session ? "/api/pet/farm?history=true" : null
+    session ? "/api/pet/farm?history=true" : null,
+    { refreshInterval: 30000 }
   )
+  // --- END AI-MODIFIED ---
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null)
   const [showSeedSelector, setShowSeedSelector] = useState(false)
   const [justWatered, setJustWatered] = useState(false)
   const [harvestResult, setHarvestResult] = useState<HarvestResult | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Rarity reveal flash state for planting animation
+  const [rarityReveal, setRarityReveal] = useState<{ rarity: string; name: string } | null>(null)
+  const fullscreenInitialized = useRef(false)
 
   useEffect(() => {
-    const saved = localStorage.getItem("farm-fullscreen")
-    if (saved === "true") setIsFullscreen(true)
-  }, [])
+    if (data && !fullscreenInitialized.current) {
+      setIsFullscreen(data.fullscreenMode)
+      fullscreenInitialized.current = true
+    }
+  }, [data])
+  // --- END AI-MODIFIED ---
 
   const selectedPlotData = data?.plots.find((p) => p.plotId === selectedPlot) ?? null
   const hasPlanted = data?.plots.some(p => !p.empty && !p.dead)
@@ -91,8 +114,13 @@ export default function FarmPage() {
       const body = await res.json()
       if (!res.ok) { showMessage(body.error || "Action failed", "error"); return }
       if (action === "harvest") {
+        // --- AI-MODIFIED (2026-03-16) ---
+        // Purpose: Show single-harvest as a mini harvest result with material drops
+        const dropCount = body.materialDrops?.length || 0
+        const dropMsg = dropCount > 0 ? ` + ${dropCount} material${dropCount > 1 ? "s" : ""}!` : ""
         const mult = body.rarity !== "COMMON" ? ` (${body.rarity} x${body.multiplier})` : ""
-        showMessage(`Harvested ${body.seedName}! +${body.goldEarned}G${mult}`, "success")
+        showMessage(`Harvested ${body.seedName}! +${body.goldEarned}G${mult}${dropMsg}`, "success")
+        // --- END AI-MODIFIED ---
         setSelectedPlot(null)
       } else if (action === "water") {
         showMessage("Watered!", "success")
@@ -122,6 +150,8 @@ export default function FarmPage() {
     } catch { showMessage("Network error", "error") }
   }, [mutate, showMessage])
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Rarity reveal animation when planting non-COMMON seeds
   const handlePlant = useCallback(async (plotId: number, seedId: number) => {
     try {
       const res = await fetch("/api/pet/farm", {
@@ -130,13 +160,20 @@ export default function FarmPage() {
       })
       const body = await res.json()
       if (!res.ok) { showMessage(body.error || "Planting failed", "error"); return }
-      const rarityMsg = body.rarity !== "COMMON" ? ` [${body.rarity}]` : ""
-      showMessage(`Planted ${body.seedName}${rarityMsg} for ${body.cost}G!`, "success")
+
+      if (body.rarity && body.rarity !== "COMMON") {
+        setRarityReveal({ rarity: body.rarity, name: body.seedName })
+        setTimeout(() => setRarityReveal(null), 3000)
+      } else {
+        showMessage(`Planted ${body.seedName} for ${body.cost}G!`, "success")
+      }
+
       setShowSeedSelector(false)
       mutate()
       invalidate("/api/pet/overview")
     } catch { showMessage("Network error", "error") }
   }, [mutate, showMessage])
+  // --- END AI-MODIFIED ---
 
   const handleWaterAll = useCallback(async () => {
     try {
@@ -181,13 +218,18 @@ export default function FarmPage() {
     mutate()
   }, [data, mutate, showMessage])
 
-  const toggleFullscreen = useCallback(() => {
-    setIsFullscreen(prev => {
-      const next = !prev
-      localStorage.setItem("farm-fullscreen", String(next))
-      return next
-    })
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Fullscreen toggle syncs to database via API instead of localStorage only
+  const toggleFullscreen = useCallback(async () => {
+    setIsFullscreen(prev => !prev)
+    try {
+      await fetch("/api/pet/farm", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggleFullscreen" }),
+      })
+    } catch {}
   }, [])
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: "Farm - LionGotchi", description: "Grow plants for Gold" }}>
@@ -197,7 +239,6 @@ export default function FarmPage() {
             <PetNav />
 
             <div className="flex-1 min-w-0 space-y-4">
-              {/* Title with decorative underline */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
                 <div className="mt-1.5 flex items-center gap-1">
@@ -232,6 +273,27 @@ export default function FarmPage() {
                 </div>
               )}
 
+              {/* --- AI-MODIFIED (2026-03-16) --- */}
+              {/* Purpose: Rarity reveal banner with animated glow */}
+              {rarityReveal && (
+                <div
+                  className="flex items-center justify-center gap-3 px-4 py-3 border-2 animate-pulse"
+                  style={{
+                    borderColor: RARITY_REVEAL_COLORS[rarityReveal.rarity] || "#4080f0",
+                    backgroundColor: `${RARITY_REVEAL_COLORS[rarityReveal.rarity] || "#4080f0"}15`,
+                    boxShadow: `0 0 20px ${RARITY_REVEAL_COLORS[rarityReveal.rarity] || "#4080f0"}40`,
+                  }}
+                >
+                  <span className="font-pixel text-lg" style={{ color: RARITY_REVEAL_COLORS[rarityReveal.rarity] }}>
+                    {rarityReveal.rarity === "LEGENDARY" ? "\u2B50" : rarityReveal.rarity === "EPIC" ? "\uD83D\uDC51" : rarityReveal.rarity === "RARE" ? "\u2764\uFE0F" : "\uD83D\uDD39"}
+                  </span>
+                  <span className="font-pixel text-sm" style={{ color: RARITY_REVEAL_COLORS[rarityReveal.rarity] }}>
+                    {rarityReveal.rarity} {rarityReveal.name}!
+                  </span>
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {isLoading ? (
                 <div className="space-y-3">
                   <Skeleton className="h-16" />
@@ -250,10 +312,8 @@ export default function FarmPage() {
                 </PixelCard>
               ) : (
                 <>
-                  {/* RPG HUD Bar */}
                   <FarmStats plots={data.plots} gold={data.gold} />
 
-                  {/* Farm Scene with Gameboy Frame */}
                   <div className="flex justify-center">
                     <GameboyFrame isFullscreen={isFullscreen}>
                       <FarmScene
@@ -306,7 +366,6 @@ export default function FarmPage() {
                     />
                   </div>
 
-                  {/* Plot detail / Seed selector */}
                   {selectedPlotData && !showSeedSelector && (
                     <PlotDetail
                       plot={selectedPlotData}
@@ -334,7 +393,6 @@ export default function FarmPage() {
                     </div>
                   )}
 
-                  {/* History Log */}
                   {data.history && data.history.length > 0 && (
                     <FarmHistory history={data.history} />
                   )}
@@ -344,7 +402,6 @@ export default function FarmPage() {
           </div>
         </div>
 
-        {/* Harvest Modal */}
         {harvestResult && (
           <HarvestModal result={harvestResult} onClose={() => setHarvestResult(null)} />
         )}

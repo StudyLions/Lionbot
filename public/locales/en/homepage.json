@@ -5,6 +5,34 @@
     "addToDiscord": "Add to Discord",
     "viewDashboard": "View Dashboard"
   },
+  "liongotchi": {
+    "title": "Meet Your LionGotchi",
+    "subtitle": "Raise, customize, and show off your very own virtual pet — right inside Discord.",
+    "description": "Every member gets a unique LionGotchi pet. Dress it up with cosmetics, decorate its room with furniture, farm for gold, and trade items on the marketplace.",
+    "highlight1": "Raise & Customize Your Pet",
+    "highlight2": "Decorate Your Room",
+    "highlight3": "Earn Gold Through Activity",
+    "highlight4": "Collect Rare Equipment",
+    "cta": "Explore LionGotchi"
+  },
+  "farm": {
+    "title": "Grow Your Farm",
+    "subtitle": "Plant seeds, water your crops, and harvest gold — all powered by your Discord activity.",
+    "description": "Your study time and chat activity help your plants grow. Tend your farm, unlock rare plant varieties, and watch your gold pile up.",
+    "highlight1": "Plant Seeds & Watch Them Grow",
+    "highlight2": "Water Crops to Boost Growth",
+    "highlight3": "Harvest Gold & Materials",
+    "highlight4": "Discover Rare Plant Drops"
+  },
+  "marketplace": {
+    "title": "Trade on the Marketplace",
+    "subtitle": "Buy, sell, and trade items with other players in a real player-driven economy.",
+    "description": "List your items for sale, browse listings from other players, and snag deals before they expire. From common materials to legendary equipment — every item has value.",
+    "highlight1": "Player-to-Player Trading",
+    "highlight2": "Set Your Own Prices",
+    "highlight3": "Browse by Rarity & Category",
+    "highlight4": "Price History & Trends"
+  },
   "features": {
     "title": "Everything Your Server Needs",
     "subtitle": "Packed with features to keep your community engaged and productive.",

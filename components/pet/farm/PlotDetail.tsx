@@ -173,13 +173,27 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
           </div>
         </div>
 
-        {/* Action buttons row */}
+        {/* --- AI-MODIFIED (2026-03-16) --- */}
+        {/* Purpose: Water button always visible for alive plants (re-water resets timer) */}
         <div className="flex gap-2 mt-4 pt-3 border-t-2 border-[#1a2a3c]">
           {plot.empty && (
             <PixelButton variant="primary" size="md" onClick={onPlantClick} className="flex-1">Plant Seed</PixelButton>
           )}
-          {!plot.empty && plot.needsWater && !plot.dead && (
-            <PixelButton variant="info" size="md" onClick={() => handle("water")} loading={acting} className="flex-1">Water</PixelButton>
+          {!plot.empty && !plot.dead && !plot.readyToHarvest && (
+            <PixelButton
+              variant={plot.needsWater ? "info" : "ghost"}
+              size="md"
+              onClick={() => handle("water")}
+              loading={acting}
+              className="flex-1"
+            >
+              {plot.needsWater ? "Water" : "Re-water"}
+              {!plot.needsWater && plot.nextWaterAt && (
+                <span className="ml-1 text-[10px] opacity-60">
+                  (<LiveTimer nextWaterAt={plot.nextWaterAt} />)
+                </span>
+              )}
+            </PixelButton>
           )}
           {plot.readyToHarvest && !plot.dead && (
             <PixelButton variant="gold" size="md" onClick={() => handle("harvest")} loading={acting} className="flex-1">Harvest</PixelButton>
@@ -191,6 +205,7 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
             <PixelButton variant="danger" size="md" onClick={() => handle("clear")} loading={acting} className="flex-1">Clear Plot</PixelButton>
           )}
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </div>
   )

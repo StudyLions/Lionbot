@@ -23,6 +23,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 
 const EnhancementLeaderboard = dynamic(() => import("@/components/pet/wiki/EnhancementLeaderboard"), { ssr: false })
 const MarketplaceWidget = dynamic(() => import("@/components/pet/wiki/MarketplaceWidget"), { ssr: false })
@@ -79,8 +80,10 @@ export default function ItemDetailPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/wiki" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
-                <span>&#x25C4;</span> Back to Wiki
+              <Link href="/pet/wiki">
+                <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+                  <span>&#x25C4;</span> Back to Wiki
+                </a>
               </Link>
 
               {isLoading ? (
@@ -107,7 +110,7 @@ export default function ItemDetailPage() {
                     >
                       <div className="w-36 h-36 flex items-center justify-center flex-shrink-0 border-2 border-[#1a2a3c] bg-[#080c18]">
                         {imgUrl ? (
-                          <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                          <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
                         ) : (
                           <div className="w-24 h-24 flex items-center justify-center text-5xl">
                             {getCategoryPlaceholder(item.category)}
@@ -258,7 +261,7 @@ export default function ItemDetailPage() {
                               <div className="flex items-center gap-3 px-2 py-1.5 border border-transparent hover:border-[#2a3a5c] hover:bg-[#0c1020] transition-all">
                                 <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                                   {resultImg ? (
-                                    <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                    <CroppedItemImage src={resultImg} alt="" className="w-full h-full object-contain" />
                                   ) : (
                                     <span>{getCategoryPlaceholder(r.resultItem.category)}</span>
                                   )}

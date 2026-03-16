@@ -17,6 +17,11 @@ import {
   Store, Menu, ChevronLeft, Home,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Added balance display imports for persistent gold/gems in nav
+import { useDashboard } from "@/hooks/useDashboard"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+// --- END AI-MODIFIED ---
 
 interface NavItem {
   href: string
@@ -91,25 +96,44 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Fetch balance for persistent display in sidebar
+  const { data: balanceData } = useDashboard<{ gold: string; gems: number }>(
+    session ? "/api/pet/balance" : null,
+    { refreshInterval: 30000 }
+  )
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="flex flex-col h-full bg-[var(--pet-card,#0f1628)]">
       {session?.user && (
-        <div className="px-4 py-4 flex items-center gap-3 border-b-2 border-[var(--pet-border,#2a3a5c)]">
-          {session.user.image && (
-            <img
-              src={session.user.image}
-              alt=""
-              className="w-8 h-8 border-2 border-[var(--pet-border,#2a3a5c)]"
-              style={{ imageRendering: "pixelated" }}
-            />
-          )}
-          <div className="min-w-0">
-            <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
-              {session.user.name}
-            </p>
-            <p className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
+        <div className="px-4 py-4 flex flex-col gap-2 border-b-2 border-[var(--pet-border,#2a3a5c)]">
+          <div className="flex items-center gap-3">
+            {session.user.image && (
+              <img
+                src={session.user.image}
+                alt=""
+                className="w-8 h-8 border-2 border-[var(--pet-border,#2a3a5c)]"
+                style={{ imageRendering: "pixelated" }}
+              />
+            )}
+            <div className="min-w-0">
+              <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
+                {session.user.name}
+              </p>
+              <p className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
+            </div>
           </div>
+          {/* --- AI-MODIFIED (2026-03-16) --- */}
+          {/* Purpose: Persistent gold/gems balance display */}
+          {balanceData && (
+            <div className="flex items-center gap-3 px-1 py-1.5 bg-[#0a0e1a] border border-[#1a2a3c]">
+              <GoldDisplay amount={Number(balanceData.gold)} size="sm" />
+              <div className="w-px h-4 bg-[#2a3a5c]" />
+              <GoldDisplay amount={balanceData.gems} size="sm" type="gem" />
+            </div>
+          )}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       )}
 

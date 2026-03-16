@@ -12,6 +12,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
@@ -121,8 +122,7 @@ export default function InventoryPage() {
                       >
                         <div className="w-12 h-12 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {imgUrl ? (
-                            <img src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain"
-                              style={{ imageRendering: "pixelated" }} />
+                            <CroppedItemImage src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain" />
                           ) : (
                             <span className="text-xl">{getCategoryPlaceholder(inv.item.category)}</span>
                           )}

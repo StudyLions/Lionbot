@@ -15,6 +15,14 @@ interface HarvestDetail {
   multiplier: number
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Add material drops display to harvest results
+interface MaterialDrop {
+  itemId: number
+  name: string
+  rarity: string
+}
+
 interface HarvestResult {
   count: number
   totalGold: number
@@ -23,7 +31,9 @@ interface HarvestResult {
   totalVoiceMinutes: number
   totalMessages: number
   details: HarvestDetail[]
+  materialDrops?: MaterialDrop[]
 }
+// --- END AI-MODIFIED ---
 
 interface HarvestModalProps {
   result: HarvestResult
@@ -107,6 +117,27 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
               </p>
             )}
           </div>
+
+          {/* --- AI-MODIFIED (2026-03-16) --- */}
+          {/* Purpose: Show material drops from harvest */}
+          {result.materialDrops && result.materialDrops.length > 0 && (
+            <div className="border-t-2 border-[#1a2a3c] pt-3 space-y-2">
+              <p className="font-pixel text-[13px] text-[var(--pet-purple,#bc8cff)]">Materials Found!</p>
+              <div className="border-2 border-[#1a2a3c] bg-[#080c18]">
+                {result.materialDrops.map((drop, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between px-3 py-1.5"
+                    style={{ backgroundColor: i % 2 === 0 ? "transparent" : "rgba(20,30,50,0.3)" }}
+                  >
+                    <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{drop.name}</span>
+                    <PixelBadge rarity={drop.rarity} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          {/* --- END AI-MODIFIED --- */}
 
           <div className="flex justify-center pt-1">
             <PixelButton variant="gold" size="lg" onClick={onClose}>Collect</PixelButton>

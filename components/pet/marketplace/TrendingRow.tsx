@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { TrendingUp } from "lucide-react"
 
 const RARITY_BORDER: Record<string, string> = {
@@ -42,7 +43,7 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
               >
                 <div className="w-12 h-12 flex items-center justify-center">
                   {imgUrl ? (
-                    <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    <CroppedItemImage src={imgUrl} alt={t.item.name} className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-lg">{getCategoryPlaceholder(t.item.category)}</span>
                   )}

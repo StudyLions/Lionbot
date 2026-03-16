@@ -2,6 +2,8 @@
 // Purpose: Complete homepage redesign - mobile-first, dashboard design system, feature grid
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: Live stats from database via /api/public-stats (replaces hardcoded counters)
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Add LionGotchi showcase sections (Pet Room, Farm, Marketplace) + framer-motion
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -9,6 +11,7 @@ import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import useSWR from "swr";
+import { motion, type Variants } from "framer-motion";
 import {
   Mic,
   User,
@@ -27,6 +30,11 @@ import {
   PomodoroDemo,
   EconomyDemo,
 } from "@/components/homepage/FeatureDemos";
+import {
+  LionGotchiHeroSection,
+  FarmShowcaseSection,
+  MarketplaceShowcaseSection,
+} from "@/components/homepage/LionGotchiShowcase";
 
 const INVITE_URL =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
@@ -218,28 +226,48 @@ function HeroSection({ guildCount }: { guildCount?: number }) {
 }
 // --- END AI-MODIFIED ---
 
+const featureFadeUp: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
+};
+
+const featureStagger: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08 } },
+};
+
 function FeaturesSection() {
   const { t } = useTranslation("homepage");
   return (
-    <section className="py-20 lg:py-28">
+    <section className="py-20 lg:py-28 border-t border-border/50">
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
-        <div className="text-center mb-16 lg:mb-20">
+        <motion.div
+          className="text-center mb-16 lg:mb-20"
+          variants={featureFadeUp}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+        >
           <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
             {t("features.title")}
           </h2>
           <p className="mt-3 text-muted-foreground max-w-2xl mx-auto">
             {t("features.subtitle")}
           </p>
-        </div>
+        </motion.div>
 
         {/* Hero feature rows -- alternating layout */}
         <div className="space-y-16 lg:space-y-24">
           {heroFeatures.map((feature, i) => {
             const isReversed = i % 2 === 1;
             return (
-              <div
+              <motion.div
                 key={feature.key}
                 className={`flex flex-col ${isReversed ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-10 lg:gap-16`}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.15 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               >
                 <div className="flex-shrink-0 flex items-center justify-center">
                   <div className="relative">
@@ -268,7 +296,7 @@ function FeaturesSection() {
                     </span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
@@ -283,10 +311,18 @@ function FeaturesSection() {
         </div>
 
         {/* Compact features grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <motion.div
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+          variants={featureStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+        >
           {compactFeatures.map((feature) => (
-            <div
+            <motion.div
               key={feature.key}
+              variants={featureFadeUp}
+              whileHover={{ scale: 1.03, transition: { duration: 0.15 } }}
               className="flex items-start gap-3 p-4 rounded-lg border border-border bg-card/50 hover:border-primary/20 transition-colors"
             >
               <div className={`p-2 rounded-lg ${feature.bg} flex-shrink-0`}>
@@ -300,9 +336,9 @@ function FeaturesSection() {
                   {t(`features.${feature.key}.description`)}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -456,6 +492,9 @@ export default function HomePage() {
     <Layout SEO={HomepageSEO}>
       <div className="bg-background min-h-screen">
         <HeroSection guildCount={stats?.guilds} />
+        <LionGotchiHeroSection />
+        <FarmShowcaseSection />
+        <MarketplaceShowcaseSection />
         <FeaturesSection />
         <SocialProofSection stats={stats} />
         <HowItWorksSection />

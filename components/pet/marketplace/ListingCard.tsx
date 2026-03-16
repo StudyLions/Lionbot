@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { Clock, User } from "lucide-react"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
@@ -58,7 +59,7 @@ export default function ListingCard({ listing, onBuy }: Props) {
       <Link href={`/pet/wiki/${item.id}`} className="flex flex-col items-center gap-2">
         <div className="relative w-20 h-20 flex items-center justify-center bg-[#0a0e1a] border border-[#1a2a3c]">
           {imgUrl ? (
-            <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+            <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
           ) : (
             <div className="w-12 h-12 flex items-center justify-center text-2xl">
               {getCategoryPlaceholder(item.category)}

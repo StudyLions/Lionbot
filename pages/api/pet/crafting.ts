@@ -56,18 +56,20 @@ export default apiHandler({
     ])
     // --- END AI-MODIFIED ---
 
-    const userMaterials = await prisma.lg_user_inventory.findMany({
-      where: { userid: userId, lg_items: { category: { in: ["MATERIAL", "SCROLL"] as any } } },
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Fetch all inventory items (not just materials) to know owned counts for result items too
+    const userInventory = await prisma.lg_user_inventory.findMany({
+      where: { userid: userId },
       select: { itemid: true, quantity: true },
     })
     const ownedMap: Record<number, number> = {}
-    for (const m of userMaterials) {
+    for (const m of userInventory) {
       ownedMap[m.itemid] = (ownedMap[m.itemid] || 0) + m.quantity
     }
 
     const userGold = await prisma.user_config.findUnique({
       where: { userid: userId },
-      select: { gold: true },
+      select: { gold: true, gems: true },
     })
 
     const result = recipes.map((r) => ({
@@ -96,16 +98,24 @@ export default apiHandler({
         r.lg_recipe_ingredients.every(
           (ing) => (ownedMap[ing.lg_items.itemid] || 0) >= ing.quantity
         ) && Number(userGold?.gold ?? 0) >= r.gold_cost,
+      resultOwned: ownedMap[r.lg_items.itemid] || 0,
     }))
 
+    const craftableFirst = (req.query.craftableOnly === "true")
+    const sorted = craftableFirst
+      ? result.filter((r) => r.canCraft)
+      : [...result].sort((a, b) => (b.canCraft ? 1 : 0) - (a.canCraft ? 1 : 0))
+
     return res.status(200).json({
-      recipes: result,
+      recipes: sorted,
       gold: (userGold?.gold ?? BigInt(0)).toString(),
-      totalCount,
+      gems: userGold?.gems ?? 0,
+      totalCount: craftableFirst ? sorted.length : totalCount,
       page,
       pageSize,
-      totalPages: Math.ceil(totalCount / pageSize),
+      totalPages: craftableFirst ? Math.ceil(sorted.length / pageSize) : Math.ceil(totalCount / pageSize),
     })
+    // --- END AI-MODIFIED ---
   },
 
   async POST(req, res) {

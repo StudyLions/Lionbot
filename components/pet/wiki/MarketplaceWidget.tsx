@@ -32,8 +32,8 @@ export default function MarketplaceWidget({ itemId, itemName }: Props) {
         <h3 className="font-pixel text-base text-[#c0d0e0] flex items-center gap-2">
           <Store size={18} /> Marketplace
         </h3>
-        <Link href="/pet/marketplace" className="font-pixel text-[12px] text-[#4080f0] hover:text-[#80b0ff] transition-colors">
-          View All Listings
+        <Link href="/pet/marketplace">
+          <a className="font-pixel text-[12px] text-[#4080f0] hover:text-[#80b0ff] transition-colors">View All Listings</a>
         </Link>
       </div>
 

@@ -97,7 +97,7 @@ const DEFAULT_VARIANTS: Record<string, string[]> = {
 
 export default function RoomEditorPage() {
   const { data: session } = useSession()
-  const { data, error, isLoading } = useDashboard<RoomData>(
+  const { data, error, isLoading, mutate } = useDashboard<RoomData>(
     session ? "/api/pet/room" : null
   )
 
@@ -138,7 +138,7 @@ export default function RoomEditorPage() {
                   </p>
                 </PixelCard>
               ) : (
-                <RoomEditorContent data={data} />
+                <RoomEditorContent data={data} mutate={mutate} />
               )}
             </div>
           </div>
@@ -154,7 +154,7 @@ interface DragState {
   originalOffset: [number, number]
 }
 
-function RoomEditorContent({ data }: { data: RoomData }) {
+function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => void }) {
   const room = data.activeRoom!
   const pet = data.pet!
   const furniture = data.furniture ?? {}
@@ -628,6 +628,9 @@ function RoomEditorContent({ data }: { data: RoomData }) {
 
       {/* --- AI-MODIFIED (2026-03-16) --- */}
       {/* Purpose: Replace inline furniture panel with full item shop component */}
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: Pass roomPrefix for room-theme variants, normalize asset paths,
+          send itemId with purchases for inventory tracking, add preview support */}
       <FurniturePanel
         activeTab={activeTab}
         setActiveTab={setActiveTab}
@@ -635,6 +638,18 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         availableItems={data.availableItems ?? []}
         gold={data.gold}
         gems={data.gems}
+        rooms={data.rooms}
+        activeRoomPrefix={room.assetPrefix}
+        onPreviewItem={(slot, assetPath) => {
+          setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+        }}
+        onCancelPreview={(slot) => {
+          setFurnitureOverrides(prev => {
+            const next = { ...prev }
+            delete next[slot]
+            return next
+          })
+        }}
         onEquipItem={(slot, assetPath) => {
           setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
           fetch('/api/pet/room/furniture', {
@@ -649,7 +664,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           const res = await fetch('/api/pet/room/cart', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: [{ slot, assetPath, price, currency }] }),
+            body: JSON.stringify({ items: [{ itemId, slot, assetPath, price, currency }] }),
           })
           if (res.ok) {
             setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
@@ -658,7 +673,22 @@ function RoomEditorContent({ data }: { data: RoomData }) {
             playSound('error')
           }
         }}
+        onPurchaseRoom={async (roomId) => {
+          const res = await fetch('/api/pet/room/purchase-room', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roomId }),
+          })
+          if (res.ok) {
+            playSound('purchase')
+            mutate()
+            return true
+          }
+          playSound('error')
+          return false
+        }}
       />
+      {/* --- END AI-MODIFIED --- */}
       {/* --- END AI-MODIFIED --- */}
 
       {/* Floating info card on hover */}

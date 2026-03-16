@@ -102,19 +102,35 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
           })}
         </div>
 
-        {/* Purchase summary bar */}
+        {/* --- AI-MODIFIED (2026-03-16) --- */}
+        {/* Purpose: Purchase summary with stage previews */}
         {selected && (
-          <div className="flex items-center justify-between px-4 py-2.5 bg-[#111a28] border-t-2 border-[#2a3a5c]">
-            <div className="flex items-center gap-4 font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
-              <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
-              <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
-              <span>{selected.growthPointsNeeded} pts</span>
+          <div className="border-t-2 border-[#2a3a5c] bg-[#111a28]">
+            <div className="flex items-center gap-1 px-4 pt-2.5">
+              {[1, 2, 3, 4, 5].map(stage => {
+                const previewUrl = getFarmPlantImageUrl(selected.assetPrefix, selected.plantType, selected.typeId, stage)
+                return previewUrl ? (
+                  <div key={stage} className="flex flex-col items-center gap-0.5">
+                    <img src={previewUrl} alt={`Stage ${stage}`}
+                      className="w-8 h-8 object-contain" style={{ imageRendering: "pixelated" }} />
+                    <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">{stage}</span>
+                  </div>
+                ) : null
+              })}
             </div>
-            <PixelButton variant="primary" size="md" onClick={handlePlant} loading={planting}>
-              Buy & Plant
-            </PixelButton>
+            <div className="flex items-center justify-between px-4 py-2.5">
+              <div className="flex items-center gap-4 font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
+                <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
+                <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
+                <span>{selected.growthPointsNeeded} pts</span>
+              </div>
+              <PixelButton variant="primary" size="md" onClick={handlePlant} loading={planting}>
+                Buy & Plant
+              </PixelButton>
+            </div>
           </div>
         )}
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </div>
   )

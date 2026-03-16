@@ -15,6 +15,7 @@ import {
   Coins, Gem, Clock, CheckCircle, XCircle, AlertTriangle,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import PixelCard from "@/components/pet/ui/PixelCard"
@@ -81,8 +82,10 @@ export default function MyListingsPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/marketplace" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
-                <span>&#x25C4;</span> Back to Marketplace
+              <Link href="/pet/marketplace">
+                <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+                  <span>&#x25C4;</span> Back to Marketplace
+                </a>
               </Link>
 
               <div className="flex items-start justify-between gap-4">
@@ -153,8 +156,8 @@ export default function MyListingsPage() {
                         <PixelCard className="p-12 text-center" corners>
                           <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                             NO ACTIVE LISTINGS.{" "}
-                            <Link href="/pet/marketplace/sell" className="text-[var(--pet-blue,#4080f0)] hover:underline">
-                              List an item?
+                            <Link href="/pet/marketplace/sell">
+                              <a className="text-[var(--pet-blue,#4080f0)] hover:underline">List an item?</a>
                             </Link>
                           </p>
                         </PixelCard>
@@ -169,7 +172,7 @@ export default function MyListingsPage() {
                           >
                             <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                               {imgUrl ? (
-                                <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                <CroppedItemImage src={imgUrl} alt={l.item.name} className="w-full h-full object-contain" />
                               ) : (
                                 <span className="text-lg">{getCategoryPlaceholder(l.item.category)}</span>
                               )}

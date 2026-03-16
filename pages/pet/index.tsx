@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { getItemImageUrl, getUiIconUrl } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
@@ -202,7 +203,7 @@ export default function PetOverview() {
                           >
                             <div className="w-11 h-11 border border-[#1a2a3c] bg-[#0a0e1a] flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {imgUrl ? (
-                                <img src={imgUrl} alt={item?.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                                <CroppedItemImage src={imgUrl} alt={item?.name ?? ""} className="w-full h-full object-contain" />
                               ) : (
                                 <span className="font-pixel text-[11px] text-[#3a4a5c]">{slot[0]}</span>
                               )}

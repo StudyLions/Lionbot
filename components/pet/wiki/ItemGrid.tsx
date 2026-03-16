@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { Users } from "lucide-react"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -34,7 +35,7 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
             >
               <div className="w-16 h-16 flex items-center justify-center">
                 {imgUrl ? (
-                  <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                  <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
                 ) : (
                   <div
                     className="w-12 h-12 flex items-center justify-center text-2xl border-2 bg-[#0a0e1a]"

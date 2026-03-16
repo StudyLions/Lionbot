@@ -5,6 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 const rarityBorderColor: Record<string, string> = {
@@ -32,7 +33,7 @@ export default function RelatedItems({ items }: { items: Item[] }) {
               >
                 <div className="w-12 h-12 flex items-center justify-center">
                   {imgUrl ? (
-                    <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    <CroppedItemImage src={imgUrl} alt="" className="w-full h-full object-contain" />
                   ) : (
                     <span className="text-xl">{getCategoryPlaceholder(item.category)}</span>
                   )}
