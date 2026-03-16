@@ -7,7 +7,7 @@
 // ============================================================
 
 import { useState, useCallback, useRef } from 'react'
-import { RoomLayout, DEFAULT_LAYOUT, mergeLayout, clampOffset, isMovable } from '@/utils/roomConstraints'
+import { RoomLayout, DEFAULT_LAYOUT, mergeLayout, clampOffset, isMovable, clampScale, isResizable } from '@/utils/roomConstraints'
 
 interface RoomEditorState {
   layout: RoomLayout
@@ -23,7 +23,7 @@ interface RoomEditorState {
   cart: CartItem[]
 }
 
-type EditorTool = 'move' | 'select' | 'flip' | 'color' | 'remove' | 'zoom' | 'layers' | 'grid'
+type EditorTool = 'move' | 'select' | 'resize' | 'flip' | 'color' | 'remove' | 'zoom' | 'layers' | 'grid'
 
 interface CartItem {
   slot: string
@@ -82,6 +82,23 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
       },
     }))
   }, [updateLayout])
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Scale a layer (furniture or lion) by a given factor (0.25 to 3.0)
+  const scaleLayer = useCallback((layer: string, scale: number) => {
+    if (!isResizable(layer)) return
+    const clamped = clampScale(scale)
+    updateLayout(prev => {
+      if (layer === 'lion') {
+        return { ...prev, lionScale: clamped }
+      }
+      return {
+        ...prev,
+        furnitureScales: { ...prev.furnitureScales, [layer]: clamped },
+      }
+    })
+  }, [updateLayout])
+  // --- END AI-MODIFIED ---
 
   const reorderLayers = useCallback((newOrder: string[]) => {
     updateLayout(prev => ({ ...prev, layerOrder: newOrder }))
@@ -173,6 +190,7 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
 
     moveLayer,
     flipLayer,
+    scaleLayer,
     reorderLayers,
     reorderEquipment,
     undo,

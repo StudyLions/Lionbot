@@ -23,9 +23,12 @@ import {
   mergeLayout,
   isMovable,
   isFlippable,
+  isResizable,
   clampOffset,
   CANVAS_SIZE,
   DISPLAY_SCALE,
+  MIN_SCALE,
+  MAX_SCALE,
 } from "@/utils/roomConstraints"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -57,6 +60,7 @@ interface RoomData {
 const TOOLS: { id: EditorTool; label: string; icon: string }[] = [
   { id: "move", label: "Move", icon: "✥" },
   { id: "select", label: "Select", icon: "◎" },
+  { id: "resize", label: "Resize", icon: "⤡" },
   { id: "flip", label: "Flip", icon: "⇔" },
   { id: "color", label: "Color", icon: "◐" },
   { id: "remove", label: "Remove", icon: "✕" },
@@ -162,6 +166,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
     redoCount,
     moveLayer,
     flipLayer,
+    scaleLayer,
     undo,
     redo,
     saveLayout,
@@ -444,6 +449,48 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           </div>
         </div>
       </PixelCard>
+
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: Scale slider bar -- visible when resize tool is active and a resizable layer is selected */}
+      {activeTool === "resize" && selectedLayer && isResizable(selectedLayer) && (
+        <PixelCard className="px-4 py-2">
+          <div className="flex items-center gap-3">
+            <span className="font-pixel text-[10px] text-[#8899aa] whitespace-nowrap capitalize">
+              {selectedLayer} size
+            </span>
+            <input
+              type="range"
+              min={MIN_SCALE * 100}
+              max={MAX_SCALE * 100}
+              value={Math.round(
+                (selectedLayer === "lion"
+                  ? layout.lionScale
+                  : (layout.furnitureScales[selectedLayer] ?? 1)) * 100
+              )}
+              onChange={(e) => {
+                scaleLayer(selectedLayer, Number(e.target.value) / 100)
+              }}
+              className="flex-1 h-1.5 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
+              style={{ accentColor: "#4080f0" }}
+            />
+            <span className="font-pixel text-[10px] text-[#e2e8f0] min-w-[4ch] text-right tabular-nums">
+              {Math.round(
+                (selectedLayer === "lion"
+                  ? layout.lionScale
+                  : (layout.furnitureScales[selectedLayer] ?? 1)) * 100
+              )}%
+            </span>
+            <button
+              onClick={() => scaleLayer(selectedLayer, 1)}
+              className="font-pixel text-[8px] px-2 py-1 border border-[#3a4a6c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              title="Reset to 100%"
+            >
+              Reset
+            </button>
+          </div>
+        </PixelCard>
+      )}
+      {/* --- END AI-MODIFIED --- */}
 
       {/* Canvas */}
       <PixelCard

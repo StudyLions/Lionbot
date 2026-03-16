@@ -55,22 +55,27 @@ function petAssetUrl(path: string): string {
   return `${BLOB_BASE}/pet-assets/${path}`
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Support per-layer scaling. Scale is applied around the center
+//          of the 200x200 layer image so items grow/shrink from their center.
 function drawLayer(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
   offset: [number, number],
   flip: boolean,
+  scale: number = 1,
 ): void {
   ctx.save()
-  if (flip) {
-    ctx.translate(offset[0] + CANVAS_SIZE, offset[1])
-    ctx.scale(-1, 1)
-  } else {
-    ctx.translate(offset[0], offset[1])
-  }
+  const cx = CANVAS_SIZE / 2
+  const cy = CANVAS_SIZE / 2
+  ctx.translate(offset[0] + cx, offset[1] + cy)
+  if (scale !== 1) ctx.scale(scale, scale)
+  if (flip) ctx.scale(-1, 1)
+  ctx.translate(-cx, -cy)
   ctx.drawImage(img, 0, 0)
   ctx.restore()
 }
+// --- END AI-MODIFIED ---
 
 function drawHighlight(
   ctx: CanvasRenderingContext2D,
@@ -84,10 +89,11 @@ function drawHighlight(
 
   if (layer === 'lion') {
     const [lx, ly] = layout.lionPosition
+    const ls = Math.round(LION_DISPLAY_SIZE * (layout.lionScale ?? 1))
     ctx.save()
     ctx.strokeStyle = color
     ctx.lineWidth = 1
-    ctx.strokeRect(lx - 0.5, ly - 0.5, LION_DISPLAY_SIZE + 1, LION_DISPLAY_SIZE + 1)
+    ctx.strokeRect(lx - 0.5, ly - 0.5, ls + 1, ls + 1)
     ctx.restore()
     return
   }
@@ -263,20 +269,26 @@ export default function RoomCanvas({
 
       osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Apply per-layer scale from furnitureScales, and lionScale for the lion
       for (const layer of ROOM_LAYERS) {
         const img = cache.get(`room_${layer}`)
         if (!img) continue
         const offset: [number, number] = curLayout.furnitureOffsets[layer] ?? [0, 0]
         const flip = curLayout.furnitureFlips[layer] ?? false
-        drawLayer(osCtx, img, offset, flip)
+        const scale = curLayout.furnitureScales?.[layer] ?? 1
+        drawLayer(osCtx, img, offset, flip, scale)
       }
+
+      const lionScale = curLayout.lionScale ?? 1
+      const scaledLionSize = Math.round(LION_DISPLAY_SIZE * lionScale)
 
       const backEquip = curEquip['back']
       if (backEquip) {
         const backImg = cache.get('equip_back')
         if (backImg) {
           const [lx, ly] = curLayout.lionPosition
-          osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, lx, ly, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE)
+          osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, lx, ly, scaledLionSize, scaledLionSize)
         }
       }
 
@@ -295,7 +307,8 @@ export default function RoomCanvas({
       }
 
       const [lionX, lionY] = curLayout.lionPosition
-      osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE, lionX, lionY, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE)
+      osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE, lionX, lionY, scaledLionSize, scaledLionSize)
+      // --- END AI-MODIFIED ---
 
       if (curHovered && curHovered !== curSelected) {
         drawHighlight(osCtx, hl, cache, curLayout, curHovered, 'rgba(147,197,253,0.2)')
@@ -359,7 +372,8 @@ export default function RoomCanvas({
     (mx: number, my: number): string | null => {
       const curLayout = layoutRef.current
       const [lx, ly] = curLayout.lionPosition
-      if (mx >= lx && mx < lx + LION_DISPLAY_SIZE && my >= ly && my < ly + LION_DISPLAY_SIZE) {
+      const ls = Math.round(LION_DISPLAY_SIZE * (curLayout.lionScale ?? 1))
+      if (mx >= lx && mx < lx + ls && my >= ly && my < ly + ls) {
         return 'lion'
       }
       for (let i = ROOM_LAYERS.length - 1; i >= 0; i--) {

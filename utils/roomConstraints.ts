@@ -81,10 +81,28 @@ export function getConstraintCategory(layer: string): ConstraintCategory | null 
   return LAYER_CONSTRAINTS[layer]?.category ?? null
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Add furnitureScales and lionScale for per-item resizing (25%-300%)
+export const MIN_SCALE = 0.25
+export const MAX_SCALE = 3.0
+export const DEFAULT_SCALE = 1.0
+
+export function clampScale(scale: number): number {
+  return Math.max(MIN_SCALE, Math.min(MAX_SCALE, Math.round(scale * 100) / 100))
+}
+
+export function isResizable(layer: string): boolean {
+  if (layer === 'lion') return true
+  const c = LAYER_CONSTRAINTS[layer]
+  return c ? c.movable : false
+}
+
 export interface RoomLayout {
   furnitureOffsets: Record<string, [number, number]>
   furnitureFlips: Record<string, boolean>
+  furnitureScales: Record<string, number>
   lionPosition: [number, number]
+  lionScale: number
   layerOrder: string[]
   equipmentOrder: string[]
   activeSlot: number
@@ -93,7 +111,9 @@ export interface RoomLayout {
 export const DEFAULT_LAYOUT: RoomLayout = {
   furnitureOffsets: {},
   furnitureFlips: {},
+  furnitureScales: {},
   lionPosition: [...DEFAULT_LION_POSITION],
+  lionScale: DEFAULT_SCALE,
   layerOrder: [...ROOM_LAYERS],
   equipmentOrder: ['body', 'face', 'head'],
   activeSlot: 0,
@@ -103,9 +123,12 @@ export function mergeLayout(saved: Partial<RoomLayout>): RoomLayout {
   return {
     furnitureOffsets: saved.furnitureOffsets ?? {},
     furnitureFlips: saved.furnitureFlips ?? {},
+    furnitureScales: saved.furnitureScales ?? {},
     lionPosition: saved.lionPosition ?? [...DEFAULT_LION_POSITION],
+    lionScale: saved.lionScale ?? DEFAULT_SCALE,
     layerOrder: saved.layerOrder ?? [...ROOM_LAYERS],
     equipmentOrder: saved.equipmentOrder ?? ['body', 'face', 'head'],
     activeSlot: saved.activeSlot ?? 0,
   }
 }
+// --- END AI-MODIFIED ---
