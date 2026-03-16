@@ -90,9 +90,14 @@ export default apiHandler({
     }))
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Exclude MATERIAL category from wiki meta (materials removed from the game)
     return res.status(200).json({
-      categories: categoryGroups.map((c) => ({ category: c.category, count: c._count.category })),
+      categories: categoryGroups
+        .filter((c) => c.category !== "MATERIAL")
+        .map((c) => ({ category: c.category, count: c._count.category })),
       rarities: rarityGroups.map((r) => ({ rarity: r.rarity, count: r._count.rarity })),
+    // --- END AI-MODIFIED ---
       totalItems,
       totalOwned: Number(totalOwnedRaw._sum.quantity ?? 0),
       totalEnhancements: Number(totalEnhancementsRaw._sum.enhancement_level ?? 0),

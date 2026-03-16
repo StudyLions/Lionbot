@@ -6,6 +6,8 @@
 //          file when bot constants change.
 // ============================================================
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Updated to match new drop system (materials removed, equipment/scrolls drop directly)
 export const GAME_CONSTANTS = {
   LEVEL_PENALTY_FACTOR: 0.08,
   ENHANCEMENT_GOLD_BONUS: 0.02,
@@ -20,7 +22,7 @@ export const GAME_CONSTANTS = {
     MYTHICAL: 20,
   } as Record<string, number>,
 
-  MATERIAL_DROP_WEIGHTS: {
+  ITEM_DROP_WEIGHTS: {
     COMMON: 45,
     UNCOMMON: 28,
     RARE: 15,
@@ -29,11 +31,13 @@ export const GAME_CONSTANTS = {
     MYTHICAL: 0.5,
   } as Record<string, number>,
 
-  MATERIAL_DROP_CHANCE_VOICE: 0.20,
-  MATERIAL_DROP_CHANCE_TEXT: 0.12,
+  ITEM_DROP_CHANCE_VOICE: 0.05,
+  ITEM_DROP_CHANCE_TEXT: 0.03,
+  ITEM_DROP_CHANCE_HARVEST: 0.15,
 
-  MULTI_DROP_WEIGHTS: { 1: 60, 2: 30, 3: 10 } as Record<number, number>,
+  SCROLL_DROP_RATIO: 0.6,
 }
+// --- END AI-MODIFIED ---
 
 export function getOwnershipTier(count: number): string {
   if (count === 0) return "Undiscovered"

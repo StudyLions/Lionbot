@@ -529,209 +529,211 @@ export default function FurniturePanel({
       )}
       {/* --- END AI-MODIFIED --- */}
 
-      {/* Item grid */}
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: Rooms tab shows room themes as primary content; item tabs show furniture.
+         Removed room themes from bottom of scroll area (now in dedicated Rooms tab).
+         Bumped all text/tile/grid sizes for readability. */}
       <div
         ref={scrollRef}
-        className="flex flex-col gap-2 px-3 py-2 overflow-y-auto max-h-[260px] scrollbar-thin scrollbar-thumb-[#3a4a6c] scrollbar-track-transparent"
+        className="flex flex-col gap-2 px-3 py-2 overflow-y-auto max-h-[300px] scrollbar-thin scrollbar-thumb-[#3a4a6c] scrollbar-track-transparent"
       >
-        {/* --- AI-MODIFIED (2026-03-16) --- */}
-        {/* Purpose: Non-set items (default color variants) shown as flat grid */}
-        {nonSetItems.length > 0 && (
-          <div>
-            <p className="text-[11px] text-[#4a5a70] tracking-widest uppercase mb-1">Default Styles</p>
-            <div className="flex flex-wrap gap-1.5">
-              {nonSetItems.map((item) => (
-                <ItemTile
-                  key={item.itemId}
-                  item={item}
-                  equippedPath={equippedPath}
-                  previewingItem={previewingItem}
-                  onPreview={handlePreview}
-                  onApply={handleApply}
-                  onBuyClick={handleBuyClick}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Purpose: Set items grouped by base name with collapsible headers */}
-        {setGroups.length > 0 && (
-          <div>
-            <p className="text-[11px] text-[#4a5a70] tracking-widest uppercase mb-1">Premium Sets</p>
-            <div className="flex flex-col gap-2">
-              {setGroups.map(({ name, items }) => (
-                <div key={name}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[11px] text-[#8899aa]">{name}</span>
-                    <span className="text-[9px] text-[#4a5a70]">({items.length} styles)</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {items.map((item) => (
-                      <ItemTile
-                        key={item.itemId}
-                        item={item}
-                        equippedPath={equippedPath}
-                        previewingItem={previewingItem}
-                        onPreview={handlePreview}
-                        onApply={handleApply}
-                        onBuyClick={handleBuyClick}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {/* --- END AI-MODIFIED --- */}
-
-        {/* --- AI-MODIFIED (2026-03-16) --- */}
-        {/* Purpose: Room-theme variant sections for wall/floor/mat */}
-        {roomVariants.length > 0 && (() => {
-          const byRoom = new Map<string, RoomVariantItem[]>()
-          for (const v of roomVariants) {
-            const list = byRoom.get(v.roomName) || []
-            list.push(v)
-            byRoom.set(v.roomName, list)
-          }
-          return Array.from(byRoom.entries()).map(([roomName, variants]) => {
-            const firstVariant = variants[0]
-            const isOwned = firstVariant.roomOwned
-            const gemPrice = firstVariant.gemPrice
-            return (
-              <div key={roomName}>
-                <div className="flex items-center gap-2 mb-1">
-                  <p className="text-[11px] text-[#4a5a70] tracking-widest uppercase">{roomName}</p>
-                  {isOwned ? (
-                    <span className="text-[9px] text-green-400 border border-green-500/30 px-1 rounded">OWNED</span>
-                  ) : gemPrice ? (
-                    <span className="text-[9px] text-cyan-300 border border-cyan-500/30 px-1 rounded">💎 {gemPrice} (room)</span>
-                  ) : null}
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {variants.map((v) => {
-                    const isEquipped = equippedPath === v.assetPath
-                    const isPreviewing = previewingItem === v.id
-                    const canUse = isOwned
-                    return (
-                      <div key={v.id} className="flex flex-col items-center gap-0.5">
-                        <button
-                          onClick={() => handlePreview(v.assetPath, v.id)}
-                          onDoubleClick={() => canUse ? handleApply(v.assetPath) : undefined}
-                          title={`${v.name}${isEquipped ? ' (equipped)' : canUse ? ' (click to preview)' : ' (requires room purchase)'}`}
-                          className={`
-                            relative flex-shrink-0 w-14 h-14 rounded border-2 overflow-hidden transition-all
-                            ${isPreviewing
-                              ? 'border-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)] scale-105'
-                              : isEquipped
-                                ? 'border-yellow-500 shadow-[0_0_6px_rgba(234,179,8,0.5)]'
-                                : canUse
-                                  ? 'border-green-500/70 hover:border-green-400 hover:scale-105'
-                                  : 'border-[#3a4a6c] hover:border-[#5a6a8c] hover:scale-105 brightness-50 hover:brightness-75'
-                            }
-                          `}
-                        >
-                          <img
-                            src={`${BLOB_BASE}/pet-assets/${v.assetPath}`}
-                            alt={v.name}
-                            className="w-full h-full object-contain"
-                            style={{ imageRendering: 'pixelated' }}
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                          />
-                          {isEquipped && (
-                            <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[7px] leading-none px-0.5 py-px rounded-bl">✓</div>
-                          )}
-                          {!canUse && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                              <span className="text-[10px] text-cyan-300">🔒</span>
-                            </div>
-                          )}
-                        </button>
-                        {isPreviewing && canUse && (
+        {activeTab === 'rooms' ? (
+          <>
+            <p className="text-xs text-[#7a8a9a] tracking-widest uppercase mb-1">Room Themes</p>
+            {purchasableRooms.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                {purchasableRooms.map((room) => {
+                  const isActive = room.assetPrefix === activeRoomPrefix
+                  const previewUrl = `${BLOB_BASE}/pet-assets/${room.assetPrefix}/wall_1.png`
+                  return (
+                    <div
+                      key={room.roomId}
+                      className={`
+                        relative rounded-lg border-2 p-2 transition-all
+                        ${isActive
+                          ? 'border-yellow-500 bg-[#1a2340]'
+                          : room.owned
+                            ? 'border-green-500/50 bg-[#0a1020] hover:border-green-400'
+                            : 'border-[#2a3a5c] bg-[#0a1020] hover:border-[#4a5a7c]'
+                        }
+                      `}
+                    >
+                      <div className="w-full h-20 rounded overflow-hidden mb-1.5 bg-[#060810]">
+                        <img
+                          src={previewUrl}
+                          alt={room.name}
+                          className="w-full h-full object-cover"
+                          style={{ imageRendering: 'pixelated' }}
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="text-sm text-[#c8d4e8] truncate">{room.name}</span>
+                        {room.owned ? (
+                          <span className="text-xs text-green-400 whitespace-nowrap">OWNED</span>
+                        ) : (
                           <button
-                            onClick={() => handleApply(v.assetPath)}
-                            className="text-[9px] px-1.5 py-0.5 bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
+                            onClick={() => setConfirmRoom(room)}
+                            className="text-xs px-2 py-1 bg-[#2a3a5c] hover:bg-[#4a5a7c] text-cyan-300 rounded whitespace-nowrap transition-colors"
                           >
-                            Apply
+                            {room.goldPrice
+                              ? `🪙 ${room.goldPrice.toLocaleString()}`
+                              : `💎 ${(room.gemPrice ?? 0).toLocaleString()}`
+                            }
                           </button>
                         )}
                       </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )
-          })
-        })()}
-        {/* --- END AI-MODIFIED --- */}
-
-        {filteredItems.length === 0 && roomVariants.length === 0 && (
-          <p className="text-sm text-[#6b7fa0] italic py-2 w-full text-center">
-            No items available for this slot.
-          </p>
-        )}
-
-        {/* --- AI-MODIFIED (2026-03-16) --- */}
-        {/* Purpose: Room Themes purchase section - shows all purchasable rooms */}
-        {purchasableRooms.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-[#1a2a3c]">
-            <p className="text-[11px] text-[#4a5a70] tracking-widest uppercase mb-2">Room Themes</p>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {purchasableRooms.map((room) => {
-                const isActive = room.assetPrefix === activeRoomPrefix
-                const previewUrl = `${BLOB_BASE}/pet-assets/${room.assetPrefix}/wall_1.png`
-                return (
-                  <div
-                    key={room.roomId}
-                    className={`
-                      relative rounded border-2 p-1.5 transition-all
-                      ${isActive
-                        ? 'border-yellow-500 bg-[#1a2340]'
-                        : room.owned
-                          ? 'border-green-500/50 bg-[#0a1020] hover:border-green-400'
-                          : 'border-[#2a3a5c] bg-[#0a1020] hover:border-[#4a5a7c]'
-                      }
-                    `}
-                  >
-                    <div className="w-full h-12 rounded overflow-hidden mb-1 bg-[#060810]">
-                      <img
-                        src={previewUrl}
-                        alt={room.name}
-                        className="w-full h-full object-cover"
-                        style={{ imageRendering: 'pixelated' }}
-                        onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-                      />
-                    </div>
-                    <div className="flex items-center justify-between gap-1">
-                      <span className="text-[11px] text-[#c8d4e8] truncate">{room.name}</span>
-                      {room.owned ? (
-                        <span className="text-[9px] text-green-400 whitespace-nowrap">OWNED</span>
-                      ) : (
-                        <button
-                          onClick={() => setConfirmRoom(room)}
-                          className="text-[9px] px-1.5 py-0.5 bg-[#2a3a5c] hover:bg-[#4a5a7c] text-cyan-300 rounded whitespace-nowrap transition-colors"
-                        >
-                          {room.goldPrice
-                            ? `🪙 ${room.goldPrice.toLocaleString()}`
-                            : `💎 ${(room.gemPrice ?? 0).toLocaleString()}`
-                          }
-                        </button>
+                      {isActive && (
+                        <div className="absolute top-1 right-1 bg-yellow-500 text-black text-[9px] px-1.5 py-0.5 rounded-bl leading-none font-bold">
+                          ACTIVE
+                        </div>
                       )}
                     </div>
-                    {isActive && (
-                      <div className="absolute top-0.5 right-0.5 bg-yellow-500 text-black text-[7px] px-1 py-px rounded-bl leading-none">
-                        ACTIVE
+                  )
+                })}
+              </div>
+            ) : (
+              <p className="text-sm text-[#6b7fa0] italic py-2 w-full text-center">
+                No room themes available.
+              </p>
+            )}
+          </>
+        ) : (
+          <>
+            {nonSetItems.length > 0 && (
+              <div>
+                <p className="text-xs text-[#7a8a9a] tracking-widest uppercase mb-1">Default Styles</p>
+                <div className="flex flex-wrap gap-2">
+                  {nonSetItems.map((item) => (
+                    <ItemTile
+                      key={item.itemId}
+                      item={item}
+                      equippedPath={equippedPath}
+                      previewingItem={previewingItem}
+                      onPreview={handlePreview}
+                      onApply={handleApply}
+                      onBuyClick={handleBuyClick}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {setGroups.length > 0 && (
+              <div>
+                <p className="text-xs text-[#7a8a9a] tracking-widest uppercase mb-1">Premium Sets</p>
+                <div className="flex flex-col gap-2">
+                  {setGroups.map(({ name, items }) => (
+                    <div key={name}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs text-[#8899aa]">{name}</span>
+                        <span className="text-[11px] text-[#5a6a80]">({items.length} styles)</span>
                       </div>
-                    )}
+                      <div className="flex flex-wrap gap-2">
+                        {items.map((item) => (
+                          <ItemTile
+                            key={item.itemId}
+                            item={item}
+                            equippedPath={equippedPath}
+                            previewingItem={previewingItem}
+                            onPreview={handlePreview}
+                            onApply={handleApply}
+                            onBuyClick={handleBuyClick}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {roomVariants.length > 0 && (() => {
+              const byRoom = new Map<string, RoomVariantItem[]>()
+              for (const v of roomVariants) {
+                const list = byRoom.get(v.roomName) || []
+                list.push(v)
+                byRoom.set(v.roomName, list)
+              }
+              return Array.from(byRoom.entries()).map(([roomName, variants]) => {
+                const firstVariant = variants[0]
+                const isOwned = firstVariant.roomOwned
+                const gemPrice = firstVariant.gemPrice
+                return (
+                  <div key={roomName}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-xs text-[#7a8a9a] tracking-widest uppercase">{roomName}</p>
+                      {isOwned ? (
+                        <span className="text-[11px] text-green-400 border border-green-500/30 px-1 rounded">OWNED</span>
+                      ) : gemPrice ? (
+                        <span className="text-[11px] text-cyan-300 border border-cyan-500/30 px-1 rounded">💎 {gemPrice} (room)</span>
+                      ) : null}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {variants.map((v) => {
+                        const isEquipped = equippedPath === v.assetPath
+                        const isPreviewing = previewingItem === v.id
+                        const canUse = isOwned
+                        return (
+                          <div key={v.id} className="flex flex-col items-center gap-0.5">
+                            <button
+                              onClick={() => handlePreview(v.assetPath, v.id)}
+                              onDoubleClick={() => canUse ? handleApply(v.assetPath) : undefined}
+                              title={`${v.name}${isEquipped ? ' (equipped)' : canUse ? ' (click to preview)' : ' (requires room purchase)'}`}
+                              className={`
+                                relative flex-shrink-0 w-16 h-16 rounded border-2 overflow-hidden transition-all
+                                ${isPreviewing
+                                  ? 'border-blue-400 shadow-[0_0_8px_rgba(96,165,250,0.6)] scale-105'
+                                  : isEquipped
+                                    ? 'border-yellow-500 shadow-[0_0_6px_rgba(234,179,8,0.5)]'
+                                    : canUse
+                                      ? 'border-green-500/70 hover:border-green-400 hover:scale-105'
+                                      : 'border-[#3a4a6c] hover:border-[#5a6a8c] hover:scale-105 brightness-50 hover:brightness-75'
+                                }
+                              `}
+                            >
+                              <img
+                                src={`${BLOB_BASE}/pet-assets/${v.assetPath}`}
+                                alt={v.name}
+                                className="w-full h-full object-contain"
+                                style={{ imageRendering: 'pixelated' }}
+                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                              />
+                              {isEquipped && (
+                                <div className="absolute top-0 right-0 bg-yellow-500 text-black text-[9px] leading-none px-0.5 py-px rounded-bl">✓</div>
+                              )}
+                              {!canUse && (
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/40">
+                                  <span className="text-xs text-cyan-300">🔒</span>
+                                </div>
+                              )}
+                            </button>
+                            {isPreviewing && canUse && (
+                              <button
+                                onClick={() => handleApply(v.assetPath)}
+                                className="text-[11px] px-2 py-0.5 bg-green-600 hover:bg-green-500 text-white rounded transition-colors"
+                              >
+                                Apply
+                              </button>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 )
-              })}
-            </div>
-          </div>
+              })
+            })()}
+
+            {filteredItems.length === 0 && roomVariants.length === 0 && (
+              <p className="text-sm text-[#6b7fa0] italic py-2 w-full text-center">
+                No items available for this slot.
+              </p>
+            )}
+          </>
         )}
-        {/* --- END AI-MODIFIED --- */}
       </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

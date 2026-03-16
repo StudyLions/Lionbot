@@ -26,11 +26,13 @@ import RarityPills from "@/components/pet/wiki/RarityPills"
 import CategoryChips from "@/components/pet/wiki/CategoryChips"
 import ItemGrid from "@/components/pet/wiki/ItemGrid"
 import ItemListView from "@/components/pet/wiki/ItemRow"
-import RecipeCard from "@/components/pet/wiki/RecipeCard"
 import EnhancementCalculator from "@/components/pet/wiki/EnhancementCalculator"
 import PixelCard from "@/components/pet/ui/PixelCard"
 
-type WikiTab = "items" | "recipes" | "enhancement"
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Recipes tab removed (crafting system removed)
+type WikiTab = "items" | "enhancement"
+// --- END AI-MODIFIED ---
 
 const SORT_OPTIONS = [
   { value: "rarity_desc", label: "Rarity High-Low" },
@@ -48,11 +50,13 @@ const RARITY_TEXT: Record<string, string> = {
   EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ffa0c0",
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Recipes tab removed (crafting system removed)
 const TABS: { key: WikiTab; label: string }[] = [
   { key: "items", label: "ITEMS" },
-  { key: "recipes", label: "RECIPES" },
   { key: "enhancement", label: "ENHANCEMENT" },
 ]
+// --- END AI-MODIFIED ---
 
 export default function WikiPage() {
   const { data: session } = useSession()
@@ -70,7 +74,6 @@ export default function WikiPage() {
   const [sort, setSort] = useState((q.sort as string) || "rarity_desc")
   const [page, setPage] = useState(parseInt(q.page as string) || 1)
   const [viewMode, setViewMode] = useState<"grid" | "list">((q.view as "grid" | "list") || "grid")
-  const [recipeSearch, setRecipeSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -107,24 +110,9 @@ export default function WikiPage() {
   const { data: itemsData, isLoading: itemsLoading } = useDashboard<any>(
     session && tab === "items" ? `/api/pet/wiki/items?${itemsQuery}` : null
   )
-  const { data: recipesData, isLoading: recipesLoading } = useDashboard<any>(
-    session && tab === "recipes" ? `/api/pet/wiki/recipes${recipeSearch ? `?search=${encodeURIComponent(recipeSearch)}` : ""}` : null
-  )
-
   const enhancementScrolls = useMemo(() => {
     return metaData?.scrolls ?? []
   }, [metaData?.scrolls])
-
-  const recipesByCategory = useMemo(() => {
-    if (!recipesData?.recipes) return {}
-    const groups: Record<string, any[]> = {}
-    for (const r of recipesData.recipes) {
-      const cat = r.resultItem.category
-      if (!groups[cat]) groups[cat] = []
-      groups[cat].push(r)
-    }
-    return groups
-  }, [recipesData?.recipes])
 
   function handleGlobalSearch(q: string) {
     setSearch(q)
@@ -133,7 +121,7 @@ export default function WikiPage() {
   }
 
   return (
-    <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse all items and recipes" }}>
+    <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse all items and enhancement info" }}>
       <AdminGuard>
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
@@ -149,7 +137,7 @@ export default function WikiPage() {
                 </h1>
                 <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--pet-gold,#f0c040)] to-transparent mt-1" />
                 <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
-                  Browse all {metaData?.totalItems ?? "..."} items, recipes, and enhancement info
+                  Browse all {metaData?.totalItems ?? "..."} items and enhancement info
                 </p>
               </div>
 
@@ -288,43 +276,6 @@ export default function WikiPage() {
                         Try adjusting your search or rarity filter
                       </p>
                     </PixelCard>
-                  )}
-                </div>
-              )}
-
-              {/* ── Recipes Tab ── */}
-              {tab === "recipes" && (
-                <div className="space-y-4">
-                  <div className="relative">
-                    <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5a6a]" />
-                    <input
-                      type="text" value={recipeSearch}
-                      onChange={(e) => setRecipeSearch(e.target.value)}
-                      placeholder="Search recipes..."
-                      className="font-pixel text-sm w-full pl-9 pr-3 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#4a5a6a] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
-                    />
-                  </div>
-                  {recipesLoading ? (
-                    <div className="space-y-3">
-                      {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="h-32 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
-                      ))}
-                    </div>
-                  ) : !recipesData?.recipes?.length ? (
-                    <PixelCard className="p-12 text-center" corners>
-                      <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">NO RECIPES FOUND</p>
-                    </PixelCard>
-                  ) : (
-                    Object.entries(recipesByCategory).map(([cat, recipes]) => (
-                      <div key={cat}>
-                        <h3 className="font-pixel text-[13px] uppercase text-[var(--pet-gold,#f0c040)] mb-2 tracking-wide">
-                          {cat.replace("_", " ")} Recipes
-                        </h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {(recipes as any[]).map((r: any) => <RecipeCard key={r.recipeId} recipe={r} />)}
-                        </div>
-                      </div>
-                    ))
                   )}
                 </div>
               )}

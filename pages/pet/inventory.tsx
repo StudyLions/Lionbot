@@ -32,9 +32,11 @@ interface InventoryItem {
   }
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Materials tab removed (materials no longer exist in the game)
 interface InventoryData {
   items: InventoryItem[]
-  counts: { equipment: number; materials: number; scrolls: number }
+  counts: { equipment: number; scrolls: number }
 }
 
 const RARITY_BORDER: Record<string, string> = {
@@ -42,13 +44,13 @@ const RARITY_BORDER: Record<string, string> = {
   EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
-type FilterTab = "equipment" | "materials" | "scrolls"
+type FilterTab = "equipment" | "scrolls"
 
 const tabs: { key: FilterTab; label: string }[] = [
   { key: "equipment", label: "Equipment" },
-  { key: "materials", label: "Materials" },
   { key: "scrolls", label: "Scrolls" },
 ]
+// --- END AI-MODIFIED ---
 
 export default function InventoryPage() {
   const { data: session } = useSession()
@@ -73,7 +75,7 @@ export default function InventoryPage() {
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
                 <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
-                  All your items, materials, and scrolls
+                  All your equipment and scrolls
                 </p>
               </div>
 

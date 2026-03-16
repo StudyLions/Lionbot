@@ -30,11 +30,15 @@ const TIER_DEATH_TIMER_HOURS: Record<string, number | null> = {
   NONE: 48, LIONHEART: 72, LIONHEART_PLUS: 96, LIONHEART_PLUS_PLUS: null,
 }
 
-const MATERIAL_DROP_CHANCE_HARVEST = 0.35
-const MATERIAL_DROP_WEIGHTS: Record<string, number> = {
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Materials removed; equipment/scrolls now drop directly from harvest
+const ITEM_DROP_CHANCE_HARVEST = 0.15
+const ITEM_DROP_WEIGHTS: Record<string, number> = {
   COMMON: 45, UNCOMMON: 28, RARE: 15, EPIC: 7, LEGENDARY: 3.5, MYTHICAL: 0.5,
 }
-const MULTI_DROP_WEIGHTS: Record<number, number> = { 1: 60, 2: 30, 3: 10 }
+const SCROLL_DROP_RATIO = 0.6
+const EQUIPMENT_CATEGORIES = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"]
+// --- END AI-MODIFIED ---
 
 function rollRarity(): string {
   const total = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0)
@@ -56,50 +60,52 @@ function pickDropRarity(weights: Record<string, number>): string {
   return "COMMON"
 }
 
-function pickMultiDropCount(): number {
-  const total = Object.values(MULTI_DROP_WEIGHTS).reduce((a, b) => a + b, 0)
-  let r = Math.random() * total
-  for (const [count, weight] of Object.entries(MULTI_DROP_WEIGHTS)) {
-    r -= weight
-    if (r <= 0) return Number(count)
-  }
-  return 1
-}
-
-async function tryMaterialDrop(
+// --- AI-REPLACED (2026-03-16) ---
+// Reason: Materials removed; drop equipment/scrolls instead
+// What the new code does better: Drops actual usable items, always exactly 1
+async function tryItemDrop(
   userId: bigint,
   chance: number,
   rarityMultiplier: number = 1.0
-): Promise<Array<{ itemId: number; name: string; rarity: string }> | null> {
+): Promise<Array<{ itemId: number; name: string; rarity: string; category: string }> | null> {
   const effectiveChance = Math.min(chance * rarityMultiplier, 0.95)
   if (Math.random() >= effectiveChance) return null
 
-  const count = pickMultiDropCount()
   const boostedWeights = rarityMultiplier > 1.0
     ? Object.fromEntries(
-        Object.entries(MATERIAL_DROP_WEIGHTS).map(([r, w]) =>
+        Object.entries(ITEM_DROP_WEIGHTS).map(([r, w]) =>
           ["EPIC", "LEGENDARY", "MYTHICAL"].includes(r) ? [r, w * rarityMultiplier] : [r, w]
         )
       )
-    : MATERIAL_DROP_WEIGHTS
+    : ITEM_DROP_WEIGHTS
 
-  const dropped: Array<{ itemId: number; name: string; rarity: string }> = []
-  for (let i = 0; i < count; i++) {
-    const rarity = pickDropRarity(boostedWeights)
-    let mat = await prisma.lg_items.findFirst({
-      where: { category: "MATERIAL" as any, rarity: rarity as any },
-      select: { itemid: true, name: true, rarity: true },
+  const isScroll = Math.random() < SCROLL_DROP_RATIO
+  const rarity = pickDropRarity(boostedWeights)
+
+  let item
+  if (isScroll) {
+    item = await prisma.lg_items.findFirst({
+      where: { category: "SCROLL" as any },
+      select: { itemid: true, name: true, rarity: true, category: true },
     })
-    if (!mat) {
-      mat = await prisma.lg_items.findFirst({
-        where: { category: "MATERIAL" as any },
-        select: { itemid: true, name: true, rarity: true },
-      })
-    }
-    if (!mat) continue
+  } else {
+    item = await prisma.lg_items.findFirst({
+      where: { category: { in: EQUIPMENT_CATEGORIES as any }, rarity: rarity as any },
+      select: { itemid: true, name: true, rarity: true, category: true },
+    })
+  }
+  if (!item) {
+    item = await prisma.lg_items.findFirst({
+      where: { category: { in: [...EQUIPMENT_CATEGORIES, "SCROLL"] as any } },
+      select: { itemid: true, name: true, rarity: true, category: true },
+    })
+  }
+  if (!item) return null
 
+  const cat = String(item.category)
+  if (cat === "SCROLL") {
     const existing = await prisma.lg_user_inventory.findFirst({
-      where: { userid: userId, itemid: mat.itemid, enhancement_level: 0 },
+      where: { userid: userId, itemid: item.itemid, enhancement_level: 0 },
     })
     if (existing) {
       await prisma.lg_user_inventory.update({
@@ -108,23 +114,18 @@ async function tryMaterialDrop(
       })
     } else {
       await prisma.lg_user_inventory.create({
-        data: {
-          userid: userId,
-          itemid: mat.itemid,
-          source: "DROP" as any,
-          quantity: 1,
-          enhancement_level: 0,
-        },
+        data: { userid: userId, itemid: item.itemid, source: "DROP" as any, quantity: 1, enhancement_level: 0 },
       })
     }
-    dropped.push({
-      itemId: mat.itemid,
-      name: mat.name,
-      rarity: String(mat.rarity),
+  } else {
+    await prisma.lg_user_inventory.create({
+      data: { userid: userId, itemid: item.itemid, source: "DROP" as any, quantity: 1, enhancement_level: 0 },
     })
   }
-  return dropped.length > 0 ? dropped : null
+
+  return [{ itemId: item.itemid, name: item.name, rarity: String(item.rarity), category: cat }]
 }
+// --- END AI-REPLACED ---
 
 function isWatered(lastWatered: Date | null, waterIntervalHours: number, tier: string = "NONE"): boolean {
   if (!lastWatered) return false
@@ -403,7 +404,7 @@ export default apiHandler({
         })
 
         const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
-        const drops = await tryMaterialDrop(userId, MATERIAL_DROP_CHANCE_HARVEST, rarityMult)
+        const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
         if (drops) allDrops.push(...drops)
       }
       // --- END AI-MODIFIED ---
@@ -610,9 +611,9 @@ export default apiHandler({
       ])
 
       // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Roll for material drops on harvest (matches bot behavior)
+      // Purpose: Roll for item drops on harvest (matches bot behavior)
       const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
-      const drops = await tryMaterialDrop(userId, MATERIAL_DROP_CHANCE_HARVEST, rarityMult)
+      const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
       // --- END AI-MODIFIED ---
 
       return res.status(200).json({

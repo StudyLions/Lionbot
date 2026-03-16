@@ -28,7 +28,7 @@ interface MetaData {
   totalEnhancements: number
   mostPopularItem: { name: string; rarity: string; ownerCount: number; category: string; assetPath: string | null } | null
   rarestOwnedItem: { name: string; rarity: string; ownerCount: number; category: string; assetPath: string | null } | null
-  gameConstants: { MATERIAL_DROP_WEIGHTS: Record<string, number> }
+  gameConstants: { ITEM_DROP_WEIGHTS: Record<string, number> }
 }
 
 export default function WikiOverview({ data }: { data: MetaData }) {
@@ -42,7 +42,7 @@ export default function WikiOverview({ data }: { data: MetaData }) {
   }, [open])
 
   const rarityData = data.rarities.map((r) => ({ name: r.rarity, count: r.count, fill: RARITY_COLORS[r.rarity] ?? "#666" }))
-  const dropData = Object.entries(data.gameConstants.MATERIAL_DROP_WEIGHTS).map(([name, value]) => ({
+  const dropData = Object.entries(data.gameConstants.ITEM_DROP_WEIGHTS).map(([name, value]) => ({
     name, value, fill: RARITY_COLORS[name] ?? "#666",
   }))
 
@@ -108,7 +108,7 @@ export default function WikiOverview({ data }: { data: MetaData }) {
               </ResponsiveContainer>
             </div>
             <div className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
-              <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-2">Material Drop Rates</h4>
+              <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-2">Item Drop Rates</h4>
               <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
                   <Pie data={dropData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={2}>

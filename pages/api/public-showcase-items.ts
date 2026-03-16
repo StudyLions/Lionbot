@@ -12,7 +12,7 @@ import { lgitemcategory, lgrarity } from "@prisma/client"
 const ALL_CATEGORIES: lgitemcategory[] = [
   lgitemcategory.HAT, lgitemcategory.GLASSES, lgitemcategory.COSTUME,
   lgitemcategory.SHIRT, lgitemcategory.WINGS, lgitemcategory.BOOTS,
-  lgitemcategory.MATERIAL, lgitemcategory.SCROLL, lgitemcategory.FURNITURE, lgitemcategory.FARM_SEED,
+  lgitemcategory.SCROLL, lgitemcategory.FURNITURE, lgitemcategory.FARM_SEED,
 ]
 const RARITIES: lgrarity[] = [
   lgrarity.COMMON, lgrarity.UNCOMMON, lgrarity.RARE, lgrarity.EPIC, lgrarity.LEGENDARY,

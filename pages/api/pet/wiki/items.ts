@@ -28,9 +28,12 @@ export default apiHandler({
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
     const pageSize = Math.min(100, Math.max(10, parseInt(req.query.pageSize as string) || 40))
 
-    const where: any = {}
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Exclude MATERIAL items from wiki (materials removed from the game)
+    const where: any = { category: { not: "MATERIAL" } }
     if (search) where.name = { contains: search, mode: "insensitive" }
     if (category) where.category = category
+    // --- END AI-MODIFIED ---
     if (rarityParam) {
       const rarities = rarityParam.split(",").filter(Boolean)
       if (rarities.length === 1) where.rarity = rarities[0]

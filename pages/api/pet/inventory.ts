@@ -17,14 +17,15 @@ export default apiHandler({
     const userId = BigInt(auth.discordId)
     const filter = (req.query.filter as string) || "all"
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Materials filter removed (materials no longer exist)
     let categoryFilter: object | undefined
     if (filter === "equipment") {
       categoryFilter = { lg_items: { category: { in: EQUIPMENT_CATEGORIES as any } } }
-    } else if (filter === "materials") {
-      categoryFilter = { lg_items: { category: "MATERIAL" as any } }
     } else if (filter === "scrolls") {
       categoryFilter = { lg_items: { category: "SCROLL" as any } }
     }
+    // --- END AI-MODIFIED ---
 
     const items = await prisma.lg_user_inventory.findMany({
       where: { userid: userId, ...categoryFilter },
@@ -73,17 +74,17 @@ export default apiHandler({
       },
     }))
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Materials count removed (materials no longer exist)
     const counts = {
       equipment: await prisma.lg_user_inventory.count({
         where: { userid: userId, lg_items: { category: { in: EQUIPMENT_CATEGORIES as any } } },
-      }),
-      materials: await prisma.lg_user_inventory.count({
-        where: { userid: userId, lg_items: { category: "MATERIAL" as any } },
       }),
       scrolls: await prisma.lg_user_inventory.count({
         where: { userid: userId, lg_items: { category: "SCROLL" as any } },
       }),
     }
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ items: result, counts })
   },

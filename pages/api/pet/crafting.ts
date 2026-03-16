@@ -1,215 +1,31 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Pet crafting API - list recipes and craft items
+// Purpose: Pet crafting API - disabled (crafting system removed)
 // ============================================================
-import { prisma } from "@/utils/prisma"
-import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Crafting system removed. Equipment/scrolls now drop from activity.
+// GET returns empty results, POST returns error.
+
 export default apiHandler({
-  async GET(req, res) {
-    const auth = await requireAuth(req, res)
-    if (!auth) return
-
-    const userId = BigInt(auth.discordId)
-
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: Server-side category + search + rarity filtering and pagination
-    const category = (req.query.category as string) || ""
-    const search = (req.query.search as string) || ""
-    const rarity = (req.query.rarity as string) || ""
-    const page = Math.max(1, parseInt(req.query.page as string) || 1)
-    const pageSize = 50
-
-    const where: any = {}
-    if (category || search || rarity) {
-      where.lg_items = {} as any
-      if (category) (where.lg_items as any).category = category
-      if (search) (where.lg_items as any).name = { contains: search, mode: "insensitive" }
-      if (rarity) (where.lg_items as any).rarity = rarity
-    }
-
-    const [recipes, totalCount] = await Promise.all([
-      prisma.lg_crafting_recipes.findMany({
-        where,
-        select: {
-          recipeid: true,
-          result_quantity: true,
-          gold_cost: true,
-          description: true,
-          lg_items: {
-            select: { itemid: true, name: true, category: true, rarity: true, description: true, asset_path: true },
-          },
-          lg_recipe_ingredients: {
-            select: {
-              quantity: true,
-              lg_items: { select: { itemid: true, name: true, rarity: true, category: true } },
-            },
-          },
-        },
-        orderBy: { recipeid: "asc" },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
-      }),
-      prisma.lg_crafting_recipes.count({ where }),
-    ])
-    // --- END AI-MODIFIED ---
-
-    // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Fetch all inventory items (not just materials) to know owned counts for result items too
-    const userInventory = await prisma.lg_user_inventory.findMany({
-      where: { userid: userId },
-      select: { itemid: true, quantity: true },
-    })
-    const ownedMap: Record<number, number> = {}
-    for (const m of userInventory) {
-      ownedMap[m.itemid] = (ownedMap[m.itemid] || 0) + m.quantity
-    }
-
-    const userGold = await prisma.user_config.findUnique({
-      where: { userid: userId },
-      select: { gold: true, gems: true },
-    })
-
-    const result = recipes.map((r) => ({
-      recipeId: r.recipeid,
-      resultItem: {
-        id: r.lg_items.itemid,
-        name: r.lg_items.name,
-        category: r.lg_items.category,
-        rarity: r.lg_items.rarity,
-        description: r.lg_items.description,
-        assetPath: r.lg_items.asset_path,
-      },
-      resultQuantity: r.result_quantity,
-      goldCost: r.gold_cost,
-      description: r.description,
-      ingredients: r.lg_recipe_ingredients.map((ing) => ({
-        item: {
-          id: ing.lg_items.itemid,
-          name: ing.lg_items.name,
-          rarity: ing.lg_items.rarity,
-        },
-        required: ing.quantity,
-        owned: ownedMap[ing.lg_items.itemid] || 0,
-      })),
-      canCraft:
-        r.lg_recipe_ingredients.every(
-          (ing) => (ownedMap[ing.lg_items.itemid] || 0) >= ing.quantity
-        ) && Number(userGold?.gold ?? 0) >= r.gold_cost,
-      resultOwned: ownedMap[r.lg_items.itemid] || 0,
-    }))
-
-    const craftableFirst = (req.query.craftableOnly === "true")
-    const sorted = craftableFirst
-      ? result.filter((r) => r.canCraft)
-      : [...result].sort((a, b) => (b.canCraft ? 1 : 0) - (a.canCraft ? 1 : 0))
-
+  async GET(_req, res) {
     return res.status(200).json({
-      recipes: sorted,
-      gold: (userGold?.gold ?? BigInt(0)).toString(),
-      gems: userGold?.gems ?? 0,
-      totalCount: craftableFirst ? sorted.length : totalCount,
-      page,
-      pageSize,
-      totalPages: craftableFirst ? Math.ceil(sorted.length / pageSize) : Math.ceil(totalCount / pageSize),
+      recipes: [],
+      gold: "0",
+      gems: 0,
+      totalCount: 0,
+      page: 1,
+      pageSize: 50,
+      totalPages: 0,
     })
-    // --- END AI-MODIFIED ---
   },
 
-  async POST(req, res) {
-    const auth = await requireAuth(req, res)
-    if (!auth) return
-
-    const userId = BigInt(auth.discordId)
-    const { recipeId } = req.body
-    if (!recipeId) return res.status(400).json({ error: "recipeId required" })
-
-    const recipe = await prisma.lg_crafting_recipes.findUnique({
-      where: { recipeid: recipeId },
-      include: {
-        lg_items: true,
-        lg_recipe_ingredients: { include: { lg_items: true } },
-      },
-    })
-    if (!recipe) return res.status(404).json({ error: "Recipe not found" })
-
-    const userGold = await prisma.user_config.findUnique({
-      where: { userid: userId },
-      select: { gold: true },
-    })
-    if (Number(userGold?.gold ?? 0) < recipe.gold_cost) {
-      return res.status(400).json({ error: "Not enough gold" })
-    }
-
-    for (const ing of recipe.lg_recipe_ingredients) {
-      const owned = await prisma.lg_user_inventory.findFirst({
-        where: { userid: userId, itemid: ing.itemid, enhancement_level: 0 },
-        select: { inventoryid: true, quantity: true },
-      })
-      if (!owned || owned.quantity < ing.quantity) {
-        return res.status(400).json({ error: `Not enough ${ing.lg_items.name}` })
-      }
-    }
-
-    for (const ing of recipe.lg_recipe_ingredients) {
-      const inv = await prisma.lg_user_inventory.findFirst({
-        where: { userid: userId, itemid: ing.itemid, enhancement_level: 0 },
-      })
-      if (!inv) continue
-      if (inv.quantity <= ing.quantity) {
-        await prisma.lg_user_inventory.delete({ where: { inventoryid: inv.inventoryid } })
-      } else {
-        await prisma.lg_user_inventory.update({
-          where: { inventoryid: inv.inventoryid },
-          data: { quantity: inv.quantity - ing.quantity },
-        })
-      }
-    }
-
-    if (recipe.gold_cost > 0) {
-      await prisma.user_config.update({
-        where: { userid: userId },
-        data: { gold: { decrement: recipe.gold_cost } },
-      })
-    }
-
-    const isStackable = ["MATERIAL", "SCROLL"].includes(recipe.lg_items.category)
-    if (isStackable) {
-      const existing = await prisma.lg_user_inventory.findFirst({
-        where: { userid: userId, itemid: recipe.result_itemid, enhancement_level: 0 },
-      })
-      if (existing) {
-        await prisma.lg_user_inventory.update({
-          where: { inventoryid: existing.inventoryid },
-          data: { quantity: existing.quantity + recipe.result_quantity },
-        })
-      } else {
-        await prisma.lg_user_inventory.create({
-          data: {
-            userid: userId,
-            itemid: recipe.result_itemid,
-            quantity: recipe.result_quantity,
-            source: "CRAFT",
-          },
-        })
-      }
-    } else {
-      await prisma.lg_user_inventory.create({
-        data: {
-          userid: userId,
-          itemid: recipe.result_itemid,
-          quantity: 1,
-          source: "CRAFT",
-        },
-      })
-    }
-
-    return res.status(200).json({
-      success: true,
-      craftedItem: recipe.lg_items.name,
-      quantity: recipe.result_quantity,
+  async POST(_req, res) {
+    return res.status(400).json({
+      error: "Crafting is no longer available. Equipment and scrolls now drop directly from activity.",
     })
   },
 })
+// --- END AI-MODIFIED ---

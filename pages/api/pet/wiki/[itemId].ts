@@ -131,7 +131,11 @@ export default apiHandler({
 
     const isEquipment = EQUIP_CATEGORIES.includes(item.category)
     const maxEnhancement = isEquipment ? (GAME_CONSTANTS.MAX_ENHANCEMENT_BY_RARITY[item.rarity] ?? 5) : null
-    const dropTier = item.category === "MATERIAL" ? (GAME_CONSTANTS.MATERIAL_DROP_WEIGHTS[item.rarity] ?? null) : null
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Materials no longer drop; drop info now applies to equipment/scrolls
+    const isDroppable = isEquipment || item.category === "SCROLL"
+    const dropTier = isDroppable ? (GAME_CONSTANTS.ITEM_DROP_WEIGHTS[item.rarity] ?? null) : null
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       item: {
@@ -181,9 +185,12 @@ export default apiHandler({
             maxXpBonus: (maxEnhancement ?? 0) * GAME_CONSTANTS.ENHANCEMENT_XP_BONUS,
           }
         : null,
-      dropInfo: item.category === "MATERIAL"
-        ? { dropTierPercent: dropTier, voiceChance: GAME_CONSTANTS.MATERIAL_DROP_CHANCE_VOICE, textChance: GAME_CONSTANTS.MATERIAL_DROP_CHANCE_TEXT }
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Drop info for equipment/scrolls instead of materials
+      dropInfo: isDroppable
+        ? { dropTierPercent: dropTier, voiceChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_VOICE, textChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_TEXT }
         : null,
+      // --- END AI-MODIFIED ---
       related: related.map((r) => ({
         id: r.itemid, name: r.name, rarity: r.rarity, category: r.category,
         assetPath: r.asset_path, goldPrice: r.gold_price,

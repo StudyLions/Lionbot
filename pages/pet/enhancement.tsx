@@ -215,7 +215,7 @@ export default function EnhancementPage() {
                       <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">SELECT SCROLL</span>
                     </div>
                     {!data?.scrolls.length ? (
-                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Craft some first!</p>
+                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Keep studying to earn scroll drops!</p>
                     ) : (
                       <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
                         {data.scrolls.map((s) => {
