@@ -43,7 +43,9 @@ export default apiHandler({
       return res.status(200).json({ hasPet: false, pet: null, gold: 0, gems: 0 })
     }
 
-    const [equipmentRows, inventoryCount, farmPlots] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Also fetch active room, user furniture, and room layout for room preview
+    const [equipmentRows, inventoryCount, farmPlots, room, furnitureRows, layoutRows] = await Promise.all([
       prisma.lg_pet_equipment.findMany({
         where: { userid: userId },
         select: {
@@ -55,7 +57,22 @@ export default apiHandler({
       prisma.lg_user_farm.count({
         where: { userid: userId, seed_id: { not: null } },
       }),
+      pet.active_room_id
+        ? prisma.lg_rooms.findUnique({
+            where: { roomid: pet.active_room_id },
+            select: { asset_prefix: true },
+          })
+        : Promise.resolve(null),
+      prisma.$queryRawUnsafe<{ slot: string; asset_path: string }[]>(
+        `SELECT slot, asset_path FROM lg_user_furniture WHERE userid = $1`,
+        userId
+      ),
+      prisma.$queryRawUnsafe<{ layout: unknown }[]>(
+        `SELECT layout FROM lg_room_layout WHERE userid = $1`,
+        userId
+      ),
     ])
+    // --- END AI-MODIFIED ---
 
     const equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
     for (const e of equipmentRows) {
@@ -66,6 +83,15 @@ export default apiHandler({
         assetPath: e.lg_items.asset_path,
       }
     }
+
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Build furniture map and extract layout for room preview response
+    const furnitureMap: Record<string, string> = {}
+    for (const f of furnitureRows) {
+      furnitureMap[f.slot] = f.asset_path
+    }
+    const layoutRow = layoutRows[0] ?? null
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       hasPet: true,
@@ -87,6 +113,12 @@ export default apiHandler({
       activeFarmPlots: farmPlots,
       gold: (userConfig?.gold ?? BigInt(0)).toString(),
       gems: userConfig?.gems ?? 0,
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Include room data for room preview rendering
+      roomPrefix: room?.asset_prefix ?? 'rooms/default',
+      furniture: furnitureMap,
+      roomLayout: layoutRow?.layout ?? {},
+      // --- END AI-MODIFIED ---
     })
   },
 })

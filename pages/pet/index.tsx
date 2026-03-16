@@ -17,6 +17,12 @@ import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Added imports for Room preview section on overview page
+import Link from "next/link"
+import RoomCanvas from "@/components/pet/room/RoomCanvas"
+import { DEFAULT_LAYOUT, mergeLayout } from "@/utils/roomConstraints"
+// --- END AI-MODIFIED ---
 
 interface PetOverviewData {
   hasPet: boolean
@@ -38,6 +44,12 @@ interface PetOverviewData {
   activeFarmPlots: number
   gold: string
   gems: number
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Added optional room data fields for the room preview section
+  roomPrefix?: string
+  furniture?: Record<string, string>
+  roomLayout?: any
+  // --- END AI-MODIFIED ---
 }
 
 const RARITY_BORDER: Record<string, string> = {
@@ -122,6 +134,40 @@ export default function PetOverview() {
                       </div>
                     </div>
                   </div>
+
+                  {/* --- AI-MODIFIED (2026-03-16) --- */}
+                  {/* Purpose: Room preview section with RoomCanvas and link to /pet/room */}
+                  <PixelCard className="p-4 space-y-3" corners>
+                    <div className="flex items-center justify-between pb-2 border-b-2 border-[#1a2a3c]">
+                      <div className="flex items-center gap-2">
+                        <span className="font-pixel text-[14px]">🏠</span>
+                        <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">Room</span>
+                      </div>
+                      <Link href="/pet/room">
+                        <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] hover:text-[#ffd860] transition-colors cursor-pointer">
+                          Customize &rarr;
+                        </span>
+                      </Link>
+                    </div>
+                    <div className="flex justify-center">
+                      <div className="border-2 border-[#2a3a5c] bg-[#080c18]" style={{ boxShadow: "2px 2px 0 #060810" }}>
+                        <RoomCanvas
+                          roomPrefix={data.roomPrefix ?? "room_default"}
+                          furniture={data.furniture ?? {}}
+                          layout={mergeLayout(data.roomLayout ?? {})}
+                          equipment={Object.fromEntries(
+                            Object.entries(equipment).map(([slot, item]) => [
+                              slot, { assetPath: item.assetPath, category: item.category }
+                            ])
+                          )}
+                          expression={pet.expression}
+                          size={400}
+                          animated
+                        />
+                      </div>
+                    </div>
+                  </PixelCard>
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Needs */}
                   <PixelCard className="p-4 space-y-3" corners>

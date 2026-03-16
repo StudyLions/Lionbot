@@ -10,10 +10,13 @@ import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Added Home icon import for the new Room nav link
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
-  Store, Menu, ChevronLeft,
+  Store, Menu, ChevronLeft, Home,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 
 interface NavItem {
   href: string
@@ -32,6 +35,10 @@ const sections: NavSection[] = [
     title: "PET",
     items: [
       { href: "/pet", label: "Overview", icon: <PawPrint size={14} /> },
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Added Room link between Overview and Inventory
+      { href: "/pet/room", label: "Room", icon: <Home size={14} /> },
+      // --- END AI-MODIFIED ---
       { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} /> },
       { href: "/pet/farm", label: "Farm", icon: <Sprout size={14} /> },
     ],

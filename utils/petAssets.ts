@@ -128,6 +128,34 @@ export function getGameboyFrameUrl(skin: string = "gameboy-basic-01"): string {
   return blobUrl(`gameboy/frames/${skin}.png`)
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Room layer and lion sprite URL helpers for the room editor
+
+export function getRoomLayerUrl(roomPrefix: string, layerName: string): string {
+  return blobUrl(`${roomPrefix}/${layerName}.png`)
+}
+
+export function getRoomLayerVariantUrl(roomPrefix: string, layerName: string, variant: number): string {
+  return blobUrl(`${roomPrefix}/${layerName}_${variant}.png`)
+}
+
+export function getLionSpriteUrl(part: string, frame: number): string {
+  return blobUrl(`lion/${part}/${part}_${frame}.png`)
+}
+
+export function getLionExpressionUrl(expression: string, frame: number): string {
+  return blobUrl(`lion/expressions/${expression}/face_${frame}.png`)
+}
+
+export function getRoomPreviewUrl(roomPrefix: string): string {
+  return blobUrl(`${roomPrefix}/wall_1.png`)
+}
+
+export function getFurnitureUrl(assetPath: string): string {
+  return blobUrl(`rooms/furniture/${assetPath}`)
+}
+// --- END AI-MODIFIED ---
+
 export function parseAssetPrefix(assetPrefix: string): { plantType: string; typeId: number } {
   const [plantType, idStr] = assetPrefix.split(":")
   return { plantType, typeId: parseInt(idStr, 10) || 1 }
