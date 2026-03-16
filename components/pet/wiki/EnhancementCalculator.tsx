@@ -30,7 +30,7 @@ const TOOLTIP_STYLE = {
   backgroundColor: "#0f1628",
   border: "2px solid #2a3a5c",
   borderRadius: 0,
-  fontSize: 11,
+  fontSize: 13,
   fontFamily: "var(--font-pixel, monospace)",
 }
 
@@ -67,11 +67,11 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-end">
         <div>
-          <label className="block font-pixel text-[9px] text-[#4a5a70] mb-1">Equipment Rarity</label>
+          <label className="block font-pixel text-[12px] text-[#4a5a70] mb-1">Equipment Rarity</label>
           <select
             value={selectedRarity}
             onChange={(e) => { setSelectedRarity(e.target.value); setCurrentLevel(0) }}
-            className="font-pixel bg-[#0a0e1a] border-2 border-[#2a3a5c] px-3 py-1.5 text-[10px] text-[#c0d0e0] focus:outline-none focus:border-[#4080f0] appearance-none cursor-pointer shadow-[2px_2px_0_#060810]"
+            className="font-pixel bg-[#0a0e1a] border-2 border-[#2a3a5c] px-3 py-1.5 text-[13px] text-[#c0d0e0] focus:outline-none focus:border-[#4080f0] appearance-none cursor-pointer shadow-[2px_2px_0_#060810]"
           >
             {RARITY_ORDER.map((r) => (
               <option key={r} value={r}>{r} (max +{gameConstants.MAX_ENHANCEMENT_BY_RARITY[r] ?? "?"})</option>
@@ -79,7 +79,7 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
           </select>
         </div>
         <div>
-          <label className="block font-pixel text-[9px] text-[#4a5a70] mb-1">Current Level: +{currentLevel}</label>
+          <label className="block font-pixel text-[12px] text-[#4a5a70] mb-1">Current Level: +{currentLevel}</label>
           <input
             type="range" min={0} max={maxLevel} value={currentLevel}
             onChange={(e) => setCurrentLevel(Number(e.target.value))}
@@ -98,8 +98,8 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
           return (
             <div key={scroll.itemId} className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="font-pixel text-[10px] text-[#c0d0e0]">{scroll.name}</span>
-                <div className="flex gap-3 font-pixel text-[9px]">
+                <span className="font-pixel text-[13px] text-[#c0d0e0]">{scroll.name}</span>
+                <div className="flex gap-3 font-pixel text-[12px]">
                   <span className="text-[#40e070]">{rates.success.toFixed(1)}% success</span>
                   <span className="text-[#f0c040]">{rates.fail.toFixed(1)}% fail</span>
                   <span className="text-[#e04040]">{rates.destroy.toFixed(1)}% destroy</span>
@@ -116,14 +116,14 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
       </div>
 
       <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-4 shadow-[2px_2px_0_#060810]">
-        <h4 className="font-pixel text-[9px] uppercase text-[#4a5a70] mb-3">Success Rate Curve</h4>
+        <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-3">Success Rate Curve</h4>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={curveData} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1a2a3c" />
-            <XAxis dataKey="level" tick={{ fontSize: 9, fill: "#4a5a70" }} label={{ value: "Enhancement Level", fontSize: 9, fill: "#4a5a70", position: "insideBottomRight", offset: -5 }} />
-            <YAxis tick={{ fontSize: 9, fill: "#4a5a70" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 9, fill: "#4a5a70", angle: -90, position: "insideLeft" }} />
+            <XAxis dataKey="level" tick={{ fontSize: 12, fill: "#4a5a70" }} label={{ value: "Enhancement Level", fontSize: 12, fill: "#4a5a70", position: "insideBottomRight", offset: -5 }} />
+            <YAxis tick={{ fontSize: 12, fill: "#4a5a70" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 12, fill: "#4a5a70", angle: -90, position: "insideLeft" }} />
             <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => `${value}%`} />
-            <Legend wrapperStyle={{ fontSize: 9, fontFamily: "var(--font-pixel, monospace)" }} />
+            <Legend wrapperStyle={{ fontSize: 12, fontFamily: "var(--font-pixel, monospace)" }} />
             {scrolls.map((scroll, i) => (
               <Line
                 key={scroll.itemId} type="monotone" dataKey={scroll.name}

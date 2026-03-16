@@ -14,12 +14,15 @@ interface GoldDisplayProps {
   showSign?: boolean
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Increased icon and text sizes for better readability
 const sizeMap = {
-  sm: { icon: 10, text: "text-[9px]" },
-  md: { icon: 14, text: "text-[11px]" },
-  lg: { icon: 18, text: "text-sm" },
-  xl: { icon: 24, text: "text-lg" },
+  sm: { icon: 14, text: "text-[12px]" },
+  md: { icon: 18, text: "text-sm" },
+  lg: { icon: 22, text: "text-base" },
+  xl: { icon: 28, text: "text-xl" },
 }
+// --- END AI-MODIFIED ---
 
 export default function GoldDisplay({ amount, size = "md", className, type = "gold", showSign }: GoldDisplayProps) {
   const s = sizeMap[size]

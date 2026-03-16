@@ -62,10 +62,10 @@ const sections: NavSection[] = [
 function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {
   if (item.disabled) {
     return (
-      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-[11px] text-[#4a5568] cursor-not-allowed">
+      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#4a5568] cursor-not-allowed">
         <span className="opacity-40">{item.icon}</span>
         {item.label}
-        <span className="ml-auto text-[8px] text-[#3a4050]">SOON</span>
+        <span className="ml-auto text-[11px] text-[#3a4050]">SOON</span>
       </span>
     )
   }
@@ -74,7 +74,7 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
     <Link href={item.href} onClick={onClick}>
       <span
         className={cn(
-          "font-pixel flex items-center gap-2.5 px-3 py-2 text-[11px] transition-all border-l-2",
+          "font-pixel flex items-center gap-2.5 px-3 py-2 text-sm transition-all border-l-2",
           isActive
             ? "border-l-[#f0c040] bg-[#f0c040]/8 text-[#f0c040]"
             : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
@@ -105,10 +105,10 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             />
           )}
           <div className="min-w-0">
-            <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
+            <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
               {session.user.name}
             </p>
-            <p className="font-pixel text-[9px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
+            <p className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
           </div>
         </div>
       )}
@@ -117,7 +117,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <Link href="/dashboard" onClick={onNavigate}>
           <span
             className={cn(
-              "font-pixel flex items-center gap-2 px-3 py-2.5 text-[11px]",
+              "font-pixel flex items-center gap-2 px-3 py-2.5 text-sm",
               "bg-[#1a2050] border-2 border-[#4060c0] text-[#8090d0]",
               "shadow-[2px_2px_0_#060810]",
               "hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px",
@@ -135,7 +135,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         {sections.map((section) => (
           <div key={section.title} className="mb-3">
             <div className="flex items-center gap-2 px-3 py-1.5">
-              <span className="font-pixel text-[9px] text-[#4a5a70] tracking-widest">{section.title}</span>
+              <span className="font-pixel text-[12px] text-[#4a5a70] tracking-widest">{section.title}</span>
               <div className="flex-1 h-px bg-[var(--pet-border,#2a3a5c)]" />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function PetNav() {
   return (
     <>
       <nav
-        className="hidden lg:flex flex-col w-52 flex-shrink-0 sticky top-6 self-start border-r-2 border-[var(--pet-border,#2a3a5c)] h-[calc(100vh-3rem)] bg-[var(--pet-card,#0f1628)]"
+        className="hidden lg:flex flex-col w-56 flex-shrink-0 sticky top-6 self-start border-r-2 border-[var(--pet-border,#2a3a5c)] h-[calc(100vh-3rem)] bg-[var(--pet-card,#0f1628)]"
         aria-label="Pet navigation"
       >
         <NavContent />

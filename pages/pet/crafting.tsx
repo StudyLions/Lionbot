@@ -129,7 +129,7 @@ export default function CraftingPage() {
               {/* Title */}
               <div>
                 <div className="flex items-center justify-between">
-                  <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Crafting</h1>
+                  <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Crafting</h1>
                   {data && <GoldDisplay amount={Number(data.gold)} size="md" />}
                 </div>
                 <div className="mt-1.5 flex items-center gap-1">
@@ -137,7 +137,7 @@ export default function CraftingPage() {
                   <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
-                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   Combine materials to create scrolls and equipment
                 </p>
               </div>
@@ -151,7 +151,7 @@ export default function CraftingPage() {
                       key={c.key}
                       onClick={() => { setCategory(c.key); setPage(1) }}
                       className={cn(
-                        "font-pixel text-[9px] px-2.5 py-1 border-2 transition-colors",
+                        "font-pixel text-[12px] px-2.5 py-1 border-2 transition-colors",
                         category === c.key
                           ? "border-[var(--pet-gold,#f0c040)] bg-[var(--pet-gold,#f0c040)]/10 text-[var(--pet-gold,#f0c040)]"
                           : "border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim,#8899aa)] hover:border-[#2a3060]"
@@ -168,13 +168,13 @@ export default function CraftingPage() {
                     placeholder="Search recipes..."
                     value={search}
                     onChange={(e) => handleSearch(e.target.value)}
-                    className="font-pixel text-[10px] px-2.5 py-1.5 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#4a5a70] flex-1 outline-none focus:border-[var(--pet-gold,#f0c040)]/40"
+                    className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#4a5a70] flex-1 outline-none focus:border-[var(--pet-gold,#f0c040)]/40"
                     style={{ boxShadow: "2px 2px 0 #060810" }}
                   />
                   <select
                     value={rarity}
                     onChange={(e) => { setRarity(e.target.value); setPage(1) }}
-                    className="font-pixel text-[9px] px-2 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim,#8899aa)] outline-none cursor-pointer"
+                    className="font-pixel text-[12px] px-2 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim,#8899aa)] outline-none cursor-pointer"
                     style={{ boxShadow: "2px 2px 0 #060810" }}
                   >
                     <option value="">All Rarities</option>
@@ -184,7 +184,7 @@ export default function CraftingPage() {
                   </select>
                 </div>
                 {data && (
-                  <p className="font-pixel text-[8px] text-[#4a5a70]">
+                  <p className="font-pixel text-sm text-[#4a5a70]">
                     {data.totalCount} recipe{data.totalCount !== 1 && "s"} found
                     {data.totalPages > 1 && ` \u2022 Page ${data.page} of ${data.totalPages}`}
                   </p>
@@ -203,8 +203,8 @@ export default function CraftingPage() {
                   }}
                 >
                   <img src={getUiIconUrl(message.type === "success" ? "trophy" : "liongotchi_heart")}
-                    alt="" width={14} height={14} style={{ imageRendering: "pixelated" }} />
-                  <span className="font-pixel text-[10px]"
+                    alt="" width={18} height={18} style={{ imageRendering: "pixelated" }} />
+                  <span className="font-pixel text-[13px]"
                     style={{ color: message.type === "success" ? "var(--pet-green)" : "var(--pet-red)" }}>
                     {message.text}
                   </span>
@@ -217,17 +217,17 @@ export default function CraftingPage() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : !data?.recipes.length ? (
                 <PixelCard className="p-12 text-center" corners>
-                  <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">No recipes available yet.</p>
+                  <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">No recipes available yet.</p>
                 </PixelCard>
               ) : (
                 <div className="space-y-3">
                   {data.recipes.length === 0 && data.totalCount === 0 && (
                     <PixelCard className="p-8 text-center" corners>
-                      <p className="font-pixel text-xs text-[var(--pet-text-dim,#8899aa)]">No recipes match your filters.</p>
+                      <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">No recipes match your filters.</p>
                     </PixelCard>
                   )}
                   {data.recipes.map((recipe) => {
@@ -248,7 +248,7 @@ export default function CraftingPage() {
                                   <img src={imgUrl} alt={recipe.resultItem.name} className="w-9 h-9 object-contain"
                                     style={{ imageRendering: "pixelated" }} />
                                 ) : (
-                                  <span className="text-lg">{getCategoryPlaceholder(recipe.resultItem.category)}</span>
+                                  <span className="text-xl">{getCategoryPlaceholder(recipe.resultItem.category)}</span>
                                 )}
                               </div>
                               <div>
@@ -259,7 +259,7 @@ export default function CraftingPage() {
                                   </span>
                                   <PixelBadge rarity={recipe.resultItem.rarity} />
                                 </div>
-                                <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] mt-0.5">
+                                <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)] mt-0.5">
                                   {recipe.resultItem.category}
                                   {recipe.description && <span> &middot; {recipe.description}</span>}
                                 </p>
@@ -277,7 +277,7 @@ export default function CraftingPage() {
                           </div>
 
                           <div className="space-y-1">
-                            <p className="font-pixel text-[8px] text-[#4a5a70] tracking-[0.15em] uppercase">Ingredients</p>
+                            <p className="font-pixel text-[11px] text-[#4a5a70] tracking-[0.15em] uppercase">Ingredients</p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                               {recipe.ingredients.map((ing) => {
                                 const ok = ing.owned >= ing.required
@@ -292,10 +292,10 @@ export default function CraftingPage() {
                                   >
                                     <span className="w-2 h-2 flex-shrink-0"
                                       style={{ backgroundColor: ok ? "#40d870" : "#e04040" }} />
-                                    <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate flex-1">
+                                    <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate flex-1">
                                       {ing.item.name}
                                     </span>
-                                    <span className="font-pixel text-[10px] flex-shrink-0"
+                                    <span className="font-pixel text-[13px] flex-shrink-0"
                                       style={{ color: ok ? "#40d870" : "#e04040" }}>
                                       {ing.owned}/{ing.required}
                                     </span>
@@ -311,7 +311,7 @@ export default function CraftingPage() {
                                   }}
                                 >
                                   <GoldDisplay amount={recipe.goldCost} size="sm" />
-                                  <span className="font-pixel text-[10px] flex-shrink-0 ml-auto"
+                                  <span className="font-pixel text-[13px] flex-shrink-0 ml-auto"
                                     style={{ color: Number(data.gold) >= recipe.goldCost ? "#40d870" : "#e04040" }}>
                                     {Number(data.gold).toLocaleString()}/{recipe.goldCost.toLocaleString()}
                                   </span>
@@ -329,18 +329,18 @@ export default function CraftingPage() {
                       <button
                         disabled={page <= 1}
                         onClick={() => setPage((p) => p - 1)}
-                        className="font-pixel text-[9px] px-3 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim)] disabled:opacity-30"
+                        className="font-pixel text-[12px] px-3 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim)] disabled:opacity-30"
                         style={{ boxShadow: "2px 2px 0 #060810" }}
                       >
                         Prev
                       </button>
-                      <span className="font-pixel text-[9px] text-[var(--pet-text-dim)]">
+                      <span className="font-pixel text-[12px] text-[var(--pet-text-dim)]">
                         {data.page} / {data.totalPages}
                       </span>
                       <button
                         disabled={page >= data.totalPages}
                         onClick={() => setPage((p) => p + 1)}
-                        className="font-pixel text-[9px] px-3 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim)] disabled:opacity-30"
+                        className="font-pixel text-[12px] px-3 py-1 border-2 border-[#1a2040] bg-[#0c1020] text-[var(--pet-text-dim)] disabled:opacity-30"
                         style={{ boxShadow: "2px 2px 0 #060810" }}
                       >
                         Next

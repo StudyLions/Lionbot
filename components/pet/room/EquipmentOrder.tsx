@@ -102,8 +102,8 @@ export default function EquipmentOrder({
   if (Object.keys(equipment).length === 0) {
     return (
       <div className="bg-[#111828] border border-[#3a4a6c] rounded-lg p-4 font-pixel">
-        <h4 className="text-[11px] text-yellow-300 mb-2">Equipment Order</h4>
-        <p className="text-[10px] text-[#6b7fa0] italic">
+        <h4 className="text-sm text-yellow-300 mb-2">Equipment Order</h4>
+        <p className="text-[13px] text-[#6b7fa0] italic">
           No equipment worn. Equip items to arrange their render order.
         </p>
       </div>
@@ -112,15 +112,15 @@ export default function EquipmentOrder({
 
   return (
     <div className="bg-[#111828] border border-[#3a4a6c] rounded-lg p-3 font-pixel select-none">
-      <h4 className="text-[11px] text-yellow-300 mb-1">Equipment Order</h4>
-      <p className="text-[9px] text-[#6b7fa0] mb-2.5">
+      <h4 className="text-sm text-yellow-300 mb-1">Equipment Order</h4>
+      <p className="text-[12px] text-[#6b7fa0] mb-2.5">
         Drag to reorder. Bottom = behind, Top = in front.
       </p>
 
       {/* Back slot -- always behind the lion, not draggable */}
       {backItem && (
         <div className="mb-2">
-          <div className="text-[9px] text-[#6b7fa0] mb-1 flex items-center gap-1">
+          <div className="text-[12px] text-[#6b7fa0] mb-1 flex items-center gap-1">
             <span>🔒</span>
             <span>Behind Lion (fixed)</span>
           </div>
@@ -138,7 +138,7 @@ export default function EquipmentOrder({
       {backItem && frontSlots.length > 0 && (
         <div className="flex items-center gap-2 mb-2">
           <div className="flex-1 h-px bg-[#3a4a6c]" />
-          <span className="text-[8px] text-[#6b7fa0] uppercase tracking-wider">
+          <span className="text-[11px] text-[#6b7fa0] uppercase tracking-wider">
             🦁 Lion Layer
           </span>
           <div className="flex-1 h-px bg-[#3a4a6c]" />
@@ -172,7 +172,7 @@ export default function EquipmentOrder({
       </div>
 
       {frontSlots.length > 0 && (
-        <div className="flex items-center justify-between mt-2 text-[8px] text-[#6b7fa0]">
+        <div className="flex items-center justify-between mt-2 text-[11px] text-[#6b7fa0]">
           <span>↑ Renders in front</span>
           <span>↓ Renders behind</span>
         </div>
@@ -242,17 +242,17 @@ function EquipmentCard({
       {/* Info */}
       <div className="flex-1 min-w-0 py-1.5 pr-2">
         <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-[#6b7fa0]">{SLOT_LABELS[slot] || slot}</span>
-          <span className={`text-[8px] ${rarityClass} uppercase tracking-wider`}>
+          <span className="text-[13px] text-[#6b7fa0]">{SLOT_LABELS[slot] || slot}</span>
+          <span className={`text-[11px] ${rarityClass} uppercase tracking-wider`}>
             {item.rarity}
           </span>
         </div>
-        <div className="text-[11px] text-[#e2e8f0] truncate">{item.name}</div>
+        <div className="text-sm text-[#e2e8f0] truncate">{item.name}</div>
       </div>
 
       {/* Drag handle */}
       {!locked && (
-        <div className="flex-shrink-0 pr-2 text-[#6b7fa0] text-xs">⠿</div>
+        <div className="flex-shrink-0 pr-2 text-[#6b7fa0] text-sm">⠿</div>
       )}
     </div>
   )

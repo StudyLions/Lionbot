@@ -8,17 +8,17 @@ import { Trophy, Medal, Award, Sparkles } from "lucide-react"
 interface Entry { name: string; level: number }
 
 const RANK_STYLES = [
-  { icon: <Trophy size={14} />, color: "#f0c040", border: "#f0c040" },
-  { icon: <Medal size={14} />, color: "#c0d0e0", border: "#6a7a8a" },
-  { icon: <Award size={14} />, color: "#cd7f32", border: "#cd7f32" },
+  { icon: <Trophy size={18} />, color: "#f0c040", border: "#f0c040" },
+  { icon: <Medal size={18} />, color: "#c0d0e0", border: "#6a7a8a" },
+  { icon: <Award size={18} />, color: "#cd7f32", border: "#cd7f32" },
 ]
 
 export default function EnhancementLeaderboard({ entries }: { entries: Entry[] }) {
   if (entries.length === 0) {
     return (
       <div className="border-2 border-[#2a3a5c] bg-[#0a0e1a] p-4 text-center shadow-[2px_2px_0_#060810]">
-        <Sparkles className="mx-auto mb-2 text-[#2a3a5c]" size={20} />
-        <p className="font-pixel text-[10px] text-[#4a5a70]">Be the first to enhance this item!</p>
+        <Sparkles className="mx-auto mb-2 text-[#2a3a5c]" size={24} />
+        <p className="font-pixel text-[13px] text-[#4a5a70]">Be the first to enhance this item!</p>
       </div>
     )
   }
@@ -36,17 +36,17 @@ export default function EnhancementLeaderboard({ entries }: { entries: Entry[] }
               style={{ backgroundColor: i % 2 === 0 ? "#0c1020" : "#0a0e1a" }}
             >
               <span
-                className="w-7 h-7 flex items-center justify-center border-2"
+                className="w-8 h-8 flex items-center justify-center border-2"
                 style={{
                   color: rank?.color ?? "#4a5a70",
                   borderColor: rank?.border ?? "#1a2a3c",
                   backgroundColor: "#0f1628",
                 }}
               >
-                {rank ? rank.icon : <span className="font-pixel text-[9px]">#{i + 1}</span>}
+                {rank ? rank.icon : <span className="font-pixel text-[12px]">#{i + 1}</span>}
               </span>
-              <span className="flex-1 font-pixel text-[10px] text-[#8899aa] truncate">{entry.name}</span>
-              <span className="font-pixel text-[10px] text-[#40e070]">+{entry.level}</span>
+              <span className="flex-1 font-pixel text-[13px] text-[#8899aa] truncate">{entry.name}</span>
+              <span className="font-pixel text-[13px] text-[#40e070]">+{entry.level}</span>
             </div>
           )
         })}

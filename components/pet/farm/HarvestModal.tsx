@@ -60,11 +60,11 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
         <div className="border-2 border-[#f0c040]/30 p-5 space-y-4">
           {/* Title */}
           <div className="text-center space-y-3">
-            <h2 className="font-pixel text-lg text-[var(--pet-gold,#f0c040)]">HARVEST COMPLETE</h2>
+            <h2 className="font-pixel text-xl text-[var(--pet-gold,#f0c040)]">HARVEST COMPLETE</h2>
             <div className="font-pixel text-3xl animate-harvest-pulse">
               <GoldDisplay amount={displayGold} size="xl" showSign />
             </div>
-            <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+            <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
               {result.count} plant{result.count !== 1 ? "s" : ""} harvested
             </p>
           </div>
@@ -81,9 +81,9 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
                   <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{d.name}</span>
                   {d.rarity !== "COMMON" && <PixelBadge rarity={d.rarity} />}
                 </div>
-                <span className="font-pixel text-[10px]">
+                <span className="font-pixel text-[13px]">
                   <GoldDisplay amount={d.gold} size="sm" showSign />
-                  {d.multiplier > 1 ? <span className="text-[8px] text-[var(--pet-text-dim,#8899aa)]"> x{d.multiplier}</span> : ""}
+                  {d.multiplier > 1 ? <span className="text-[11px] text-[var(--pet-text-dim,#8899aa)]"> x{d.multiplier}</span> : ""}
                 </span>
               </div>
             ))}
@@ -100,7 +100,7 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
               </span>
             </div>
             {(result.totalVoiceMinutes > 0 || result.totalMessages > 0) && (
-              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] pt-1">
+              <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)] pt-1">
                 Growth: {result.totalVoiceMinutes > 0 ? `${result.totalVoiceMinutes}m voice` : ""}
                 {result.totalVoiceMinutes > 0 && result.totalMessages > 0 ? " + " : ""}
                 {result.totalMessages > 0 ? `${result.totalMessages} msgs` : ""}
@@ -119,7 +119,7 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
 
 function SummaryRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between font-pixel text-[10px]">
+    <div className="flex justify-between font-pixel text-[13px]">
       <span className="text-[var(--pet-text-dim,#8899aa)]">{label}</span>
       {value}
     </div>

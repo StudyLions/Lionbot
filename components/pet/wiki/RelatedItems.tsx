@@ -19,7 +19,7 @@ export default function RelatedItems({ items }: { items: Item[] }) {
 
   return (
     <div>
-      <h3 className="font-pixel text-sm text-[#c0d0e0] mb-3">Related Items</h3>
+      <h3 className="font-pixel text-base text-[#c0d0e0] mb-3">Related Items</h3>
       <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
         {items.map((item) => {
           const imgUrl = getItemImageUrl(item.assetPath, item.category)
@@ -38,7 +38,7 @@ export default function RelatedItems({ items }: { items: Item[] }) {
                   )}
                 </div>
                 <span
-                  className="font-pixel text-[9px] text-center truncate w-full"
+                  className="font-pixel text-[12px] text-center truncate w-full"
                   style={{ color: borderColor }}
                 >
                   {item.name}

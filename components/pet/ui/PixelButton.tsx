@@ -22,11 +22,14 @@ interface PixelButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Increased button sizes for better readability
 const sizes = {
-  sm: "px-2 py-1 text-[10px]",
-  md: "px-3 py-1.5 text-xs",
-  lg: "px-4 py-2 text-sm",
+  sm: "px-3 py-1.5 text-[13px]",
+  md: "px-4 py-2 text-sm",
+  lg: "px-5 py-2.5 text-base",
 }
+// --- END AI-MODIFIED ---
 
 const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(
   ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => (

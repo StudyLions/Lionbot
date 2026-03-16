@@ -119,7 +119,7 @@ export default function EditorToolbar({
         >
           ↶
           {undoCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[9px] bg-blue-600 text-white rounded-full leading-none">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[12px] bg-blue-600 text-white rounded-full leading-none">
               {undoCount}
             </span>
           )}
@@ -132,7 +132,7 @@ export default function EditorToolbar({
         >
           ↷
           {redoCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[9px] bg-blue-600 text-white rounded-full leading-none">
+            <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[12px] bg-blue-600 text-white rounded-full leading-none">
               {redoCount}
             </span>
           )}
@@ -169,14 +169,14 @@ export default function EditorToolbar({
       >
         🛒
         {cartCount > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[9px] bg-green-500 text-white rounded-full leading-none font-bold">
+          <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 flex items-center justify-center px-0.5 text-[12px] bg-green-500 text-white rounded-full leading-none font-bold">
             {cartCount}
           </span>
         )}
       </button>
 
       {/* Zoom display */}
-      <div className="flex items-center gap-0.5 ml-1.5 text-[10px] text-[#6b7fa0]">
+      <div className="flex items-center gap-0.5 ml-1.5 text-[13px] text-[#6b7fa0]">
         <button
           onClick={zoomOut}
           title="Zoom out"

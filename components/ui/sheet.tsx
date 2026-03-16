@@ -50,6 +50,9 @@ interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>,
     VariantProps<typeof sheetVariants> {}
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Added aria-describedby={undefined} to suppress Radix accessibility warning
+//          when no SheetDescription is provided
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   SheetContentProps
@@ -58,6 +61,7 @@ const SheetContent = React.forwardRef<
     <SheetOverlay />
     <DialogPrimitive.Content
       ref={ref}
+      aria-describedby={undefined}
       className={cn(sheetVariants({ side }), className)}
       {...props}
     >
@@ -69,6 +73,7 @@ const SheetContent = React.forwardRef<
     </DialogPrimitive.Content>
   </SheetPortal>
 ))
+// --- END AI-MODIFIED ---
 SheetContent.displayName = DialogPrimitive.Content.displayName
 
 const SheetHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (

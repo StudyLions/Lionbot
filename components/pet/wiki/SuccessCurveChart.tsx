@@ -24,14 +24,14 @@ export default function SuccessCurveChart({ scrollProps, gameConstants }: Props)
     <ResponsiveContainer width="100%" height={180}>
       <LineChart data={data} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="#1a2a3c" />
-        <XAxis dataKey="level" tick={{ fontSize: 9, fill: "#4a5a70" }} />
-        <YAxis tick={{ fontSize: 9, fill: "#4a5a70" }} domain={[0, 100]} />
+        <XAxis dataKey="level" tick={{ fontSize: 12, fill: "#4a5a70" }} />
+        <YAxis tick={{ fontSize: 12, fill: "#4a5a70" }} domain={[0, 100]} />
         <Tooltip
           contentStyle={{
             backgroundColor: "#0f1628",
             border: "2px solid #2a3a5c",
             borderRadius: 0,
-            fontSize: 11,
+            fontSize: 13,
             fontFamily: "var(--font-pixel, monospace)",
           }}
           formatter={(value: number) => `${value}%`}

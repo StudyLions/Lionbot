@@ -20,12 +20,12 @@ export default function ItemListView({ items }: { items: WikiItemData[] }) {
     <div className="border-2 border-[#2a3a5c] bg-[#0a0e1a] overflow-hidden shadow-[2px_2px_0_#060810]">
       <div className="grid grid-cols-[40px_1fr_80px_70px_80px_60px_60px] gap-2 px-3 py-2 bg-[#111828] border-b-2 border-[#2a3a5c]">
         <span />
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Name</span>
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Category</span>
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Rarity</span>
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Price</span>
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Owners</span>
-        <span className="font-pixel text-[9px] text-[#4a5a70] uppercase">Owned</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Name</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Category</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Rarity</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Price</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Owners</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] uppercase">Owned</span>
       </div>
       {items.map((item, i) => {
         const imgUrl = getItemImageUrl(item.assetPath, item.category)
@@ -43,12 +43,12 @@ export default function ItemListView({ items }: { items: WikiItemData[] }) {
                 )}
               </div>
               <span
-                className="font-pixel text-[10px] truncate"
+                className="font-pixel text-[13px] truncate"
                 style={{ color: rarityTextColor[item.rarity] ?? "#8899aa" }}
               >
                 {item.name}
               </span>
-              <span className="font-pixel text-[9px] text-[#4a5a70]">{item.category.replace("_", " ")}</span>
+              <span className="font-pixel text-[12px] text-[#4a5a70]">{item.category.replace("_", " ")}</span>
               <PixelBadge rarity={item.rarity} />
               <span>
                 {item.goldPrice ? (
@@ -57,10 +57,10 @@ export default function ItemListView({ items }: { items: WikiItemData[] }) {
                   <span className="font-pixel text-[9px] text-[#2a3a50]">--</span>
                 )}
               </span>
-              <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-0.5">
-                <Users size={8} /> {item.ownerCount}
+              <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-0.5">
+                <Users size={16} /> {item.ownerCount}
               </span>
-              <span className="font-pixel text-[9px]" style={{ color: item.userOwned > 0 ? "#40d870" : "#2a3a50" }}>
+              <span className="font-pixel text-[12px]" style={{ color: item.userOwned > 0 ? "#40d870" : "#2a3a50" }}>
                 {item.userOwned > 0 ? `x${item.userOwned}` : "--"}
               </span>
             </div>

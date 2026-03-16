@@ -48,10 +48,10 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
                       <span className="text-sm">{getCategoryPlaceholder(ing.item.category)}</span>
                     )}
                   </div>
-                  <span className="font-pixel text-[10px] truncate" style={{ color: ingBorder }}>
+                  <span className="font-pixel text-[13px] truncate" style={{ color: ingBorder }}>
                     {ing.item.name}
                   </span>
-                  <span className="font-pixel text-[9px] text-[#4a5a70] ml-auto">x{ing.quantity}</span>
+                  <span className="font-pixel text-[12px] text-[#4a5a70] ml-auto">x{ing.quantity}</span>
                 </div>
               </Link>
             )
@@ -64,7 +64,7 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
           )}
         </div>
 
-        <span className="font-pixel text-[#4a5a70] text-sm flex-shrink-0 select-none">&gt;&gt;&gt;</span>
+        <span className="font-pixel text-[#4a5a70] text-base flex-shrink-0 select-none">&gt;&gt;&gt;</span>
 
         <Link href={`/pet/wiki/${recipe.resultItem.id}`} className="flex-shrink-0">
           <div className="flex flex-col items-center gap-1.5 hover:translate-y-[-2px] transition-transform">
@@ -75,17 +75,17 @@ export default function RecipeCard({ recipe }: { recipe: Recipe }) {
               {resultImg ? (
                 <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
               ) : (
-                <div className="w-10 h-10 flex items-center justify-center text-xl">
+                <div className="w-12 h-12 flex items-center justify-center text-xl">
                   {getCategoryPlaceholder(recipe.resultItem.category)}
                 </div>
               )}
             </div>
-            <span className="font-pixel text-[10px] text-center" style={{ color: resultBorder }}>
+            <span className="font-pixel text-[13px] text-center" style={{ color: resultBorder }}>
               {recipe.resultItem.name}
             </span>
             <PixelBadge rarity={recipe.resultItem.rarity} />
             {recipe.resultQuantity > 1 && (
-              <span className="font-pixel text-[9px] text-[#4a5a70]">x{recipe.resultQuantity}</span>
+              <span className="font-pixel text-[12px] text-[#4a5a70]">x{recipe.resultQuantity}</span>
             )}
           </div>
         </Link>

@@ -23,7 +23,7 @@ export default function PixelBadge({ rarity, className }: PixelBadgeProps) {
   return (
     <span
       className={cn(
-        "font-pixel inline-block px-1.5 py-0.5 text-[9px] border uppercase tracking-wide",
+        "font-pixel inline-block px-2 py-0.5 text-[12px] border uppercase tracking-wide",
         rarityStyles[rarity] || rarityStyles.COMMON,
         className
       )}

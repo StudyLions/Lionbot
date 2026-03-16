@@ -43,7 +43,7 @@ export default function FarmHistory({ history }: FarmHistoryProps) {
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 bg-[#0c1020] border-b-2 border-[#1a2a3c]">
-        <span className="font-pixel text-[9px] text-[#4a5a70] tracking-[0.15em]">EVENT LOG</span>
+        <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">EVENT LOG</span>
         {history.length > 5 && (
           <PixelButton variant="ghost" size="sm" onClick={() => setExpanded(!expanded)}>
             {expanded ? "Less" : `All (${history.length})`}
@@ -67,7 +67,7 @@ export default function FarmHistory({ history }: FarmHistoryProps) {
                 style={{ backgroundColor: isHarvest ? "#40d870" : "#e04040" }}
               />
               {/* Description */}
-              <span className="font-pixel text-[9px] text-[var(--pet-text,#e2e8f0)] truncate flex-1 min-w-0">
+              <span className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] truncate flex-1 min-w-0">
                 {entry.description}
               </span>
               {/* Amount */}
@@ -78,7 +78,7 @@ export default function FarmHistory({ history }: FarmHistoryProps) {
                 className={isHarvest ? "" : "!text-[var(--pet-text-dim,#8899aa)]"}
               />
               {/* Timestamp */}
-              <span className="font-pixel text-[8px] text-[#3a4a5c] w-6 text-right flex-shrink-0">
+              <span className="font-pixel text-[11px] text-[#3a4a5c] w-6 text-right flex-shrink-0">
                 {timeAgo(entry.createdAt)}
               </span>
             </div>

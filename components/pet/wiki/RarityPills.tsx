@@ -38,7 +38,7 @@ export default function RarityPills({ selected, onChange }: Props) {
           <button
             key={r}
             onClick={() => toggle(r)}
-            className="font-pixel px-2 py-1 text-[9px] border-2 transition-all"
+            className="font-pixel px-3 py-1.5 text-[12px] border-2 transition-all"
             style={{
               borderColor: active ? c.border : "#1a2a3c",
               backgroundColor: active ? c.bg : "#0a0e1a",

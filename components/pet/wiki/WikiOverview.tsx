@@ -47,9 +47,9 @@ export default function WikiOverview({ data }: { data: MetaData }) {
   }))
 
   const statCards = [
-    { label: "Total Items", value: data.totalItems, icon: <Package size={14} />, border: "#4080f0" },
-    { label: "Owned Across Players", value: data.totalOwned.toLocaleString(), icon: <Users size={14} />, border: "#40d870" },
-    { label: "Total Enhancements", value: data.totalEnhancements.toLocaleString(), icon: <Sparkles size={14} />, border: "#d060f0" },
+    { label: "Total Items", value: data.totalItems, icon: <Package size={18} />, border: "#4080f0" },
+    { label: "Owned Across Players", value: data.totalOwned.toLocaleString(), icon: <Users size={18} />, border: "#40d870" },
+    { label: "Total Enhancements", value: data.totalEnhancements.toLocaleString(), icon: <Sparkles size={18} />, border: "#d060f0" },
   ]
 
   return (
@@ -58,8 +58,8 @@ export default function WikiOverview({ data }: { data: MetaData }) {
         onClick={() => setOpen(!open)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-[#111828] transition-colors"
       >
-        <span className="font-pixel text-sm text-[#c0d0e0]">Wiki Overview</span>
-        <span className="font-pixel text-[10px] text-[#4a5a70] select-none">
+        <span className="font-pixel text-base text-[#c0d0e0]">Wiki Overview</span>
+        <span className="font-pixel text-[13px] text-[#4a5a70] select-none">
           {open ? "[-]" : "[+]"}
         </span>
       </button>
@@ -73,33 +73,33 @@ export default function WikiOverview({ data }: { data: MetaData }) {
                 className="border-2 bg-[#0f1628] p-3 flex flex-col gap-1"
                 style={{ borderColor: `${s.border}40` }}
               >
-                <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-1">{s.icon} {s.label}</span>
-                <span className="font-pixel text-lg text-[#c0d0e0]">{s.value}</span>
+                <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-1">{s.icon} {s.label}</span>
+                <span className="font-pixel text-xl text-[#c0d0e0]">{s.value}</span>
               </div>
             ))}
             {data.mostPopularItem && (
               <div className="border-2 border-[#f0c040]/40 bg-[#f0c040]/5 p-3 flex flex-col gap-1">
-                <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-1"><Crown size={10} /> Most Popular</span>
-                <span className="font-pixel text-[10px] text-[#f0c040] truncate">{data.mostPopularItem.name}</span>
-                <span className="font-pixel text-[9px] text-[#4a5a70]">{data.mostPopularItem.ownerCount} owners</span>
+                <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-1"><Crown size={14} /> Most Popular</span>
+                <span className="font-pixel text-[13px] text-[#f0c040] truncate">{data.mostPopularItem.name}</span>
+                <span className="font-pixel text-[12px] text-[#4a5a70]">{data.mostPopularItem.ownerCount} owners</span>
               </div>
             )}
             {data.rarestOwnedItem && (
               <div className="border-2 border-[#ff6080]/40 bg-[#ff6080]/5 p-3 flex flex-col gap-1">
-                <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-1"><Star size={10} /> Rarest Owned</span>
-                <span className="font-pixel text-[10px] text-[#ff6080] truncate">{data.rarestOwnedItem.name}</span>
-                <span className="font-pixel text-[9px] text-[#4a5a70]">{data.rarestOwnedItem.ownerCount} owners</span>
+                <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-1"><Star size={14} /> Rarest Owned</span>
+                <span className="font-pixel text-[13px] text-[#ff6080] truncate">{data.rarestOwnedItem.name}</span>
+                <span className="font-pixel text-[12px] text-[#4a5a70]">{data.rarestOwnedItem.ownerCount} owners</span>
               </div>
             )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
-              <h4 className="font-pixel text-[9px] uppercase text-[#4a5a70] mb-2">Rarity Distribution</h4>
+              <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-2">Rarity Distribution</h4>
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={rarityData} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-                  <XAxis type="number" tick={{ fontSize: 9, fill: "#4a5a70" }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 9, fill: "#4a5a70" }} width={70} axisLine={false} tickLine={false} />
+                  <XAxis type="number" tick={{ fontSize: 12, fill: "#4a5a70" }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "#4a5a70" }} width={70} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                   <Bar dataKey="count" radius={0}>
                     {rarityData.map((d, i) => <Cell key={i} fill={d.fill} />)}
@@ -108,7 +108,7 @@ export default function WikiOverview({ data }: { data: MetaData }) {
               </ResponsiveContainer>
             </div>
             <div className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
-              <h4 className="font-pixel text-[9px] uppercase text-[#4a5a70] mb-2">Material Drop Rates</h4>
+              <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-2">Material Drop Rates</h4>
               <ResponsiveContainer width="100%" height={150}>
                 <PieChart>
                   <Pie data={dropData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={30} outerRadius={55} paddingAngle={2}>
@@ -119,7 +119,7 @@ export default function WikiOverview({ data }: { data: MetaData }) {
               </ResponsiveContainer>
               <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1 justify-center">
                 {dropData.map((d) => (
-                  <span key={d.name} className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-1">
+                  <span key={d.name} className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-1">
                     <span className="w-2 h-2 inline-block" style={{ backgroundColor: d.fill }} />
                     {d.name} {d.value}%
                   </span>

@@ -106,13 +106,13 @@ export default function EnhancementPage() {
             <div className="flex-1 min-w-0 space-y-4">
               {/* Title */}
               <div>
-                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Enhancement</h1>
+                <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Enhancement</h1>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
                   <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
-                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   Use scrolls to upgrade equipment for Gold & XP bonuses
                 </p>
               </div>
@@ -130,20 +130,20 @@ export default function EnhancementPage() {
                   {result.outcome === "success" && (
                     <>
                       <img src={getUiIconUrl("trophy")} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
-                      <span className="font-pixel text-[11px] text-[var(--pet-green,#40d870)]">
+                      <span className="font-pixel text-sm text-[var(--pet-green,#40d870)]">
                         {result.itemName} enhanced to +{result.newLevel}!
                       </span>
                     </>
                   )}
                   {result.outcome === "failed" && (
-                    <span className="font-pixel text-[11px] text-[var(--pet-gold,#f0c040)]">
+                    <span className="font-pixel text-sm text-[var(--pet-gold,#f0c040)]">
                       Enhancement failed. {result.itemName} is unchanged at +{result.currentLevel}.
                     </span>
                   )}
                   {result.outcome === "destroyed" && (
                     <>
                       <img src={getFarmAnimationUrl("skull", 1)} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
-                      <span className="font-pixel text-[11px] text-[var(--pet-red,#e04040)]">
+                      <span className="font-pixel text-sm text-[var(--pet-red,#e04040)]">
                         {result.itemName} was destroyed!
                       </span>
                     </>
@@ -158,17 +158,17 @@ export default function EnhancementPage() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Equipment picker */}
                   <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
                     <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c]">
-                      <span className="font-pixel text-[9px] text-[#4a5a70] tracking-[0.15em]">SELECT EQUIPMENT</span>
+                      <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">SELECT EQUIPMENT</span>
                     </div>
                     {!data?.equipment.length ? (
-                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim)] py-6 text-center">No equipment owned</p>
+                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No equipment owned</p>
                     ) : (
                       <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
                         {data.equipment.map((e) => {
@@ -193,13 +193,13 @@ export default function EnhancementPage() {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">
+                                <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate block">
                                   {e.item.name}
                                   {e.enhancementLevel > 0 && <span className="text-[var(--pet-gold)] ml-1">+{e.enhancementLevel}</span>}
                                 </span>
                                 <PixelBadge rarity={e.item.rarity} />
                               </div>
-                              <span className="font-pixel text-[9px] text-[var(--pet-text-dim)] flex-shrink-0">
+                              <span className="font-pixel text-[12px] text-[var(--pet-text-dim)] flex-shrink-0">
                                 {e.enhancementLevel}/{e.maxLevel}
                               </span>
                             </button>
@@ -212,10 +212,10 @@ export default function EnhancementPage() {
                   {/* Scroll picker */}
                   <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
                     <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c]">
-                      <span className="font-pixel text-[9px] text-[#4a5a70] tracking-[0.15em]">SELECT SCROLL</span>
+                      <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">SELECT SCROLL</span>
                     </div>
                     {!data?.scrolls.length ? (
-                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Craft some first!</p>
+                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Craft some first!</p>
                     ) : (
                       <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
                         {data.scrolls.map((s) => {
@@ -232,10 +232,10 @@ export default function EnhancementPage() {
                               style={{ borderColor: isSelected ? bc : "#1a2a3c" }}
                             >
                               <div className="flex items-center gap-1.5">
-                                <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{s.item.name}</span>
+                                <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)]">{s.item.name}</span>
                                 <PixelBadge rarity={s.item.rarity} />
                               </div>
-                              <span className="font-pixel text-[10px] text-[var(--pet-text-dim)]">x{s.quantity}</span>
+                              <span className="font-pixel text-[13px] text-[var(--pet-text-dim)]">x{s.quantity}</span>
                             </button>
                           )
                         })}
@@ -254,14 +254,14 @@ export default function EnhancementPage() {
                   <div className="border-2 border-[var(--pet-gold)]/30 bg-[#0c1020] p-4">
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                       <div className="text-center flex-1">
-                        <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">
+                        <span className="font-pixel text-base text-[var(--pet-text,#e2e8f0)]">
                           {equip.item.name} +{equip.enhancementLevel}
                         </span>
                         <PixelBadge rarity={equip.item.rarity} />
                       </div>
-                      <div className="font-pixel text-lg text-[var(--pet-text-dim)] px-2">+</div>
+                      <div className="font-pixel text-xl text-[var(--pet-text-dim)] px-2">+</div>
                       <div className="text-center flex-1 space-y-2">
-                        <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">{scroll.item.name}</span>
+                        <span className="font-pixel text-base text-[var(--pet-text,#e2e8f0)]">{scroll.item.name}</span>
                         <div className="space-y-1">
                           <PixelBar value={effectiveSuccess} max={100} label="Success" color="green" segments={10} />
                           <PixelBar value={effectiveDestroy} max={100} label="Destroy" color="red" segments={10} />
@@ -278,7 +278,7 @@ export default function EnhancementPage() {
                       </PixelButton>
                     </div>
                     {equip.enhancementLevel >= equip.maxLevel && (
-                      <p className="font-pixel text-[10px] text-[var(--pet-gold)] text-center mt-2">MAX LEVEL REACHED</p>
+                      <p className="font-pixel text-[13px] text-[var(--pet-gold)] text-center mt-2">MAX LEVEL REACHED</p>
                     )}
                   </div>
                 </div>

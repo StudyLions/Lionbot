@@ -47,7 +47,7 @@ function LiveTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
     return () => clearInterval(id)
   }, [nextWaterAt])
   if (!text) return null
-  return <span className="font-pixel text-[11px] text-[var(--pet-blue,#4080f0)]">{text}</span>
+  return <span className="font-pixel text-sm text-[var(--pet-blue,#4080f0)]">{text}</span>
 }
 
 export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: PlotDetailProps) {
@@ -84,11 +84,11 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
         {/* Title bar */}
         <div className="flex items-center justify-between mb-3 pb-2 border-b-2 border-[#1a2a3c]">
           <div className="flex items-center gap-2">
-            <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Plot #{plot.plotId + 1}</span>
+            <span className="font-pixel text-base text-[var(--pet-text,#e2e8f0)]">Plot #{plot.plotId + 1}</span>
             {!plot.empty && !plot.dead && <PixelBadge rarity={plot.rarity} />}
           </div>
           {!plot.empty && plot.seed && (
-            <span className="font-pixel text-xs" style={{ color: bc }}>{plot.seed.name}</span>
+            <span className="font-pixel text-sm" style={{ color: bc }}>{plot.seed.name}</span>
           )}
         </div>
 
@@ -108,7 +108,7 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
                 <img src={imgUrl} alt={plot.seed?.name || ""} className="w-14 h-14 object-contain"
                   style={{ imageRendering: "pixelated" }} />
               ) : (
-                <span className="font-pixel text-xl text-[#40d870]/30">?</span>
+                <span className="font-pixel text-2xl text-[#40d870]/30">?</span>
               )}
             </div>
           </div>
@@ -116,7 +116,7 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
           {/* Stats grid */}
           <div className="flex-1 min-w-0 space-y-3">
             {plot.empty ? (
-              <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+              <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">
                 Select a seed to plant in this plot!
               </p>
             ) : plot.dead ? (
@@ -147,7 +147,7 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
                       <span className="flex items-center gap-1">
                         <GoldDisplay amount={projectedHarvest} size="sm" showSign />
                         {plot.rarity !== "COMMON" && (
-                          <span className="text-[8px]" style={{ color: bc }}>x{RARITY_GOLD_MULTIPLIER[plot.rarity]}</span>
+                          <span className="text-[11px]" style={{ color: bc }}>x{RARITY_GOLD_MULTIPLIER[plot.rarity]}</span>
                         )}
                       </span>
                     } />
@@ -198,7 +198,7 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
 
 function StatRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex items-center justify-between font-pixel text-[10px]">
+    <div className="flex items-center justify-between font-pixel text-[13px]">
       <span className="text-[var(--pet-text-dim,#8899aa)]">{label}</span>
       <span className="text-[var(--pet-text,#e2e8f0)]">{value}</span>
     </div>

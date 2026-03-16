@@ -83,14 +83,14 @@ export default function RoomBrowser({
         {/* Header */}
         <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#0c1020] border-b border-[#3a4a6c]">
           <div>
-            <h2 className="text-sm text-yellow-300">Browse Rooms</h2>
-            <p className="text-[10px] text-[#6b7fa0] mt-0.5">
+            <h2 className="text-base text-yellow-300">Browse Rooms</h2>
+            <p className="text-[13px] text-[#6b7fa0] mt-0.5">
               Switch between your rooms or preview premium themes
             </p>
           </div>
           <div className="flex items-center gap-3">
             {/* Currency display */}
-            <div className="flex items-center gap-2 text-[10px]">
+            <div className="flex items-center gap-2 text-[13px]">
               <span className="text-yellow-400">💰 {gold}</span>
               <span className="text-cyan-400">💎 {gems}</span>
             </div>
@@ -107,10 +107,10 @@ export default function RoomBrowser({
           {/* Owned rooms section */}
           {ownedRooms.length > 0 && (
             <div className="mb-6">
-              <h3 className="text-[11px] text-[#e2e8f0] mb-3 flex items-center gap-1.5">
+              <h3 className="text-sm text-[#e2e8f0] mb-3 flex items-center gap-1.5">
                 <span>🏠</span>
                 <span>Your Rooms</span>
-                <span className="text-[9px] text-[#6b7fa0]">({ownedRooms.length})</span>
+                <span className="text-[12px] text-[#6b7fa0]">({ownedRooms.length})</span>
               </h3>
               <div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-3">
                 {ownedRooms.map((room) => (
@@ -128,10 +128,10 @@ export default function RoomBrowser({
           {/* Shop rooms section */}
           {shopRooms.length > 0 && (
             <div>
-              <h3 className="text-[11px] text-[#e2e8f0] mb-3 flex items-center gap-1.5">
+              <h3 className="text-sm text-[#e2e8f0] mb-3 flex items-center gap-1.5">
                 <span>🛍️</span>
                 <span>Room Shop</span>
-                <span className="text-[9px] text-[#6b7fa0]">({shopRooms.length})</span>
+                <span className="text-[12px] text-[#6b7fa0]">({shopRooms.length})</span>
               </h3>
               <div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-3">
                 {shopRooms.map((room) => (
@@ -150,7 +150,7 @@ export default function RoomBrowser({
           {rooms.length === 0 && (
             <div className="text-center py-12">
               <div className="text-3xl mb-3">🏚️</div>
-              <p className="text-[11px] text-[#6b7fa0]">No rooms available.</p>
+              <p className="text-sm text-[#6b7fa0]">No rooms available.</p>
             </div>
           )}
         </div>
@@ -205,33 +205,33 @@ function RoomCard({
 
         {/* Owned green check */}
         {room.owned && !isActive && (
-          <div className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-green-600/90 text-white text-[10px] shadow-md">
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 flex items-center justify-center rounded-full bg-green-600/90 text-white text-[13px] shadow-md">
             ✓
           </div>
         )}
 
         {/* Active badge */}
         {isActive && (
-          <div className="absolute top-1.5 right-1.5 px-2 py-0.5 bg-yellow-500/90 text-black text-[9px] rounded-full font-bold shadow-md">
+          <div className="absolute top-1.5 right-1.5 px-2 py-0.5 bg-yellow-500/90 text-black text-[12px] rounded-full font-bold shadow-md">
             ACTIVE
           </div>
         )}
 
         {/* Price badge for shop items */}
         {isShop && room.gemPrice != null && (
-          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 px-2 py-0.5 bg-[#0c1020]/90 border border-cyan-500/40 text-cyan-300 text-[9px] rounded-full shadow-md">
+          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 px-2 py-0.5 bg-[#0c1020]/90 border border-cyan-500/40 text-cyan-300 text-[12px] rounded-full shadow-md">
             💎 {room.gemPrice}
           </div>
         )}
         {isShop && room.gemPrice == null && room.goldPrice != null && (
-          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 px-2 py-0.5 bg-[#0c1020]/90 border border-yellow-500/40 text-yellow-300 text-[9px] rounded-full shadow-md">
+          <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 px-2 py-0.5 bg-[#0c1020]/90 border border-yellow-500/40 text-yellow-300 text-[12px] rounded-full shadow-md">
             💰 {room.goldPrice}
           </div>
         )}
 
         {/* Furniture indicator */}
         {room.hasFurniture && (
-          <div className="absolute bottom-1.5 left-1.5 text-[9px] text-[#8b9dc3] bg-[#0c1020]/80 px-1.5 py-0.5 rounded">
+          <div className="absolute bottom-1.5 left-1.5 text-[12px] text-[#8b9dc3] bg-[#0c1020]/80 px-1.5 py-0.5 rounded">
             🪑 Furnished
           </div>
         )}
@@ -240,14 +240,14 @@ function RoomCard({
       {/* Card footer */}
       <div className="px-3 py-2.5 bg-[#111828]">
         <div className="flex items-center justify-between">
-          <span className="text-[11px] text-[#e2e8f0] truncate">{room.name}</span>
+          <span className="text-sm text-[#e2e8f0] truncate">{room.name}</span>
           {isShop && (
-            <span className="text-[9px] text-[#6b7fa0] hover:text-cyan-400 transition-colors flex-shrink-0 ml-2">
+            <span className="text-[12px] text-[#6b7fa0] hover:text-cyan-400 transition-colors flex-shrink-0 ml-2">
               Preview →
             </span>
           )}
           {room.owned && !isActive && (
-            <span className="text-[9px] text-green-400/80 group-hover:text-green-300 transition-colors flex-shrink-0 ml-2">
+            <span className="text-[12px] text-green-400/80 group-hover:text-green-300 transition-colors flex-shrink-0 ml-2">
               Switch →
             </span>
           )}

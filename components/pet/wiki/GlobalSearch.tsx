@@ -56,7 +56,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-pixel text-[10px] text-[#4a5a70]">&#x25B6;</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-pixel text-[13px] text-[#4a5a70]">&#x25B6;</span>
         <input
           type="text"
           value={query}
@@ -64,7 +64,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
           onKeyDown={handleKeyDown}
           onFocus={() => hasResults && setOpen(true)}
           placeholder="Search items, recipes, scrolls..."
-          className="w-full pl-8 pr-4 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#3a4a5c] focus:outline-none focus:border-[var(--pet-blue,#4080f0)] transition-colors"
+          className="w-full pl-8 pr-4 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] font-pixel text-sm text-[var(--pet-text,#e2e8f0)] placeholder:text-[#3a4a5c] focus:outline-none focus:border-[var(--pet-blue,#4080f0)] transition-colors"
         />
         {loading && <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border-2 border-[var(--pet-blue)]/30 border-t-[var(--pet-blue)] animate-spin" />}
       </div>
@@ -76,7 +76,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
         >
           {results!.items.length > 0 && (
             <div>
-              <div className="px-3 py-1.5 font-pixel text-[8px] text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-b border-[#1a2a3c]">ITEMS</div>
+              <div className="px-3 py-1.5 font-pixel text-[11px] text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-b border-[#1a2a3c]">ITEMS</div>
               {results!.items.map((item) => {
                 const imgUrl = getItemImageUrl(item.assetPath, item.category)
                 return (
@@ -90,13 +90,13 @@ export default function GlobalSearch({ onSubmit }: Props) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">{item.name}</span>
+                        <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate block">{item.name}</span>
                         <div className="flex items-center gap-1">
                           <PixelBadge rarity={item.rarity} />
-                          <span className="font-pixel text-[8px] text-[#4a5a70]">{item.category}</span>
+                          <span className="font-pixel text-sm text-[#4a5a70]">{item.category}</span>
                         </div>
                       </div>
-                      <span className="font-pixel text-[10px] text-[#3a4a5c]">&#x25B6;</span>
+                      <span className="font-pixel text-[13px] text-[#3a4a5c]">&#x25B6;</span>
                     </div>
                   </Link>
                 )
@@ -105,7 +105,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
           )}
           {results!.recipes.length > 0 && (
             <div>
-              <div className="px-3 py-1.5 font-pixel text-[8px] text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-y border-[#1a2a3c]">RECIPES</div>
+              <div className="px-3 py-1.5 font-pixel text-sm text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-y border-[#1a2a3c]">RECIPES</div>
               {results!.recipes.map((r) => {
                 const imgUrl = getItemImageUrl(r.resultItem.assetPath, r.resultItem.category)
                 return (
@@ -119,10 +119,10 @@ export default function GlobalSearch({ onSubmit }: Props) {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">{r.resultItem.name}</span>
-                        <span className="font-pixel text-[8px] text-[#4a5a70]">Recipe</span>
+                        <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate block">{r.resultItem.name}</span>
+                        <span className="font-pixel text-sm text-[#4a5a70]">Recipe</span>
                       </div>
-                      <span className="font-pixel text-[10px] text-[#3a4a5c]">&#x25B6;</span>
+                      <span className="font-pixel text-[13px] text-[#3a4a5c]">&#x25B6;</span>
                     </div>
                   </Link>
                 )

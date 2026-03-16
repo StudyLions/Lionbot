@@ -12,6 +12,7 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
+import FurniturePanel from "@/components/pet/room/FurniturePanel"
 import { useRoomEditor, type EditorTool } from "@/hooks/useRoomEditor"
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Import smart snap and sound hooks for editor polish
@@ -55,6 +56,15 @@ interface RoomData {
   pet: { name: string; expression: string; level: number } | null
   gold: string
   gems: number
+  availableItems?: Array<{
+    itemId: number
+    name: string
+    assetPath: string
+    goldPrice: number | null
+    gemPrice: number | null
+    rarity: string
+    owned: boolean
+  }>
 }
 
 const TOOLS: { id: EditorTool; label: string; icon: string }[] = [
@@ -69,17 +79,21 @@ const TOOLS: { id: EditorTool; label: string; icon: string }[] = [
   { id: "grid", label: "Grid", icon: "⊞" },
 ]
 
-const TAB_LABELS: Record<string, string> = {
-  wall: "Wall",
-  floor: "Floor",
-  mat: "Mat",
-  table: "Table",
-  chair: "Chair",
-  bed: "Bed",
-  lamp: "Lamp",
-  picture: "Picture",
-  window: "Window",
+
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Color variant lists for cycling through furniture colors with the Color tool
+const DEFAULT_VARIANTS: Record<string, string[]> = {
+  wall: ['wall_checker_blue', 'wall_checker_green', 'wall_checker_grey', 'wall_checker_pink', 'wall_checker_yellow', 'walldots_blue', 'walldots_green', 'walldots_grey', 'walldots_pink', 'walldots_yellow', 'wall_stripe_green', 'wall_stripe_grey', 'wall_stripe_light_blue', 'wall_stripe_pink', 'wall_stripe_yellow'],
+  floor: ['floor_blue', 'floor_brown', 'floor_green', 'floor_orange', 'floor_purple'],
+  mat: ['mat_blue', 'mat_green', 'mat_red', 'mat_silver', 'mat_yellow'],
+  table: ['table_blue', 'table_brown', 'table_green', 'table_pink', 'table_white'],
+  chair: ['chair_blue', 'chair_brown', 'chair_green', 'chair_pink', 'chair_white'],
+  bed: ['bed_blueyellow', 'bed_orange', 'bed_pinkpurple', 'bed_red', 'bed_redgreen'],
+  lamp: ['lamp_blue', 'lamp_green', 'lamp_purple', 'lamp_red', 'lamp_yellow'],
+  picture: ['picture_blue', 'picture_brown', 'picture_grey', 'picture_orange', 'picture_red'],
+  window: ['window_blue', 'window_green', 'window_purple_pink', 'window_red_blue', 'window_yellow'],
 }
+// --- END AI-MODIFIED ---
 
 export default function RoomEditorPage() {
   const { data: session } = useSession()
@@ -108,17 +122,17 @@ export default function RoomEditorPage() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[#e04040]">
+                  <p className="font-pixel text-sm text-[#e04040]">
                     {(error as Error).message}
                   </p>
                 </PixelCard>
               ) : !data?.activeRoom || !data?.pet ? (
                 <PixelCard className="p-12 text-center space-y-4" corners>
                   <span className="font-pixel text-2xl">🏠</span>
-                  <h2 className="font-pixel text-lg text-[#e2e8f0]">
+                  <h2 className="font-pixel text-xl text-[#e2e8f0]">
                     No room yet!
                   </h2>
-                  <p className="font-pixel text-[10px] text-[#8899aa] max-w-sm mx-auto">
+                  <p className="font-pixel text-[13px] text-[#8899aa] max-w-sm mx-auto">
                     Use the /pet room command in Discord to unlock your first
                     room.
                   </p>
@@ -145,6 +159,12 @@ function RoomEditorContent({ data }: { data: RoomData }) {
   const pet = data.pet!
   const furniture = data.furniture ?? {}
   const equipment = data.equipment ?? {}
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Local overrides for immediate color cycling preview without waiting for API
+  const [furnitureOverrides, setFurnitureOverrides] = useState<Record<string, string>>({})
+  const mergedFurniture = { ...furniture, ...furnitureOverrides }
+  // --- END AI-MODIFIED ---
 
   const editor = useRoomEditor(
     data.layout ? mergeLayout(data.layout) : undefined
@@ -301,9 +321,29 @@ function RoomEditorContent({ data }: { data: RoomData }) {
       } else if (activeTool === "flip" && isFlippable(layer)) {
         flipLayer(layer)
         playSound('flip')
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Color tool cycles through variant colors for furniture items
+      } else if (activeTool === "color" && layer !== "lion") {
+        const currentPath = mergedFurniture[layer]
+        if (!currentPath) return
+        const fileName = currentPath.split('/').pop()?.replace('.png', '') ?? ''
+        const variants = DEFAULT_VARIANTS[layer]
+        if (!variants) return
+        const currentIdx = variants.indexOf(fileName)
+        const nextIdx = (currentIdx + 1) % variants.length
+        const roomPrefix = data.activeRoom?.assetPrefix ?? 'rooms/default'
+        const nextPath = `${roomPrefix}/${variants[nextIdx]}.png`
+        setFurnitureOverrides(prev => ({ ...prev, [layer]: nextPath }))
+        fetch('/api/pet/room/furniture', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slot: layer, assetPath: nextPath }),
+        })
+        playSound('colorCycle')
+      // --- END AI-MODIFIED ---
       }
     },
-    [activeTool, selectedLayer, setSelectedLayer, flipLayer, playSound]
+    [activeTool, selectedLayer, setSelectedLayer, flipLayer, playSound, mergedFurniture, data.activeRoom, setFurnitureOverrides]
   )
   // --- END AI-MODIFIED ---
 
@@ -346,7 +386,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
       {/* Header bar */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="font-pixel text-xl text-[#e2e8f0]">{room.name}</h1>
+          <h1 className="font-pixel text-2xl text-[#e2e8f0]">{room.name}</h1>
           <div className="mt-1.5 flex items-center gap-1">
             <span className="block h-[3px] w-8 bg-[#f0c040]" />
             <span className="block h-[3px] w-4 bg-[#f0c040]/60" />
@@ -358,21 +398,21 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           <button
             onClick={() => { undo(); playSound('undo') }}
             disabled={undoCount === 0}
-            className="font-pixel text-[10px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
+            className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
             title="Undo"
           >
             ↩{undoCount > 0 && (
-              <span className="text-[8px] ml-0.5">({undoCount})</span>
+              <span className="text-[11px] ml-0.5">({undoCount})</span>
             )}
           </button>
           <button
             onClick={() => { redo(); playSound('undo') }}
             disabled={redoCount === 0}
-            className="font-pixel text-[10px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
+            className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
             title="Redo"
           >
             ↪{redoCount > 0 && (
-              <span className="text-[8px] ml-0.5">({redoCount})</span>
+              <span className="text-[11px] ml-0.5">({redoCount})</span>
             )}
           </button>
 
@@ -381,7 +421,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           <button
             onClick={() => { saveLayout(); playSound('save') }}
             disabled={!isDirty || isSaving}
-            className="font-pixel text-[10px] px-4 py-1.5 border-2 bg-[#111828] disabled:opacity-30 hover:bg-[#1a2438] transition-colors flex items-center gap-1.5"
+            className="font-pixel text-[13px] px-4 py-1.5 border-2 bg-[#111828] disabled:opacity-30 hover:bg-[#1a2438] transition-colors flex items-center gap-1.5"
             style={{
               borderColor: isDirty ? "#f0c040" : "#3a4a6c",
               color: isDirty ? "#f0c040" : "#8899aa",
@@ -410,7 +450,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
               <button
                 key={tool.id}
                 onClick={() => handleToolClick(tool.id)}
-                className="font-pixel text-xs px-3 py-1.5 border-2 transition-colors"
+                className="font-pixel text-sm px-3 py-1.5 border-2 transition-colors"
                 style={{
                   borderColor: isActive ? "#4080f0" : "#2a3a5c",
                   backgroundColor: isActive ? "#1a2850" : "#0a0e1a",
@@ -433,16 +473,16 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           <div className="flex items-center gap-1 border-l-2 border-[#2a3a5c] pl-2 ml-1">
             <button
               onClick={zoomOut}
-              className="font-pixel text-xs px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              className="font-pixel text-sm px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
             >
               −
             </button>
-            <span className="font-pixel text-[10px] text-[#8899aa] min-w-[3ch] text-center">
+            <span className="font-pixel text-[13px] text-[#8899aa] min-w-[3ch] text-center">
               {Math.round(zoom * 100)}%
             </span>
             <button
               onClick={zoomIn}
-              className="font-pixel text-xs px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              className="font-pixel text-sm px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
             >
               +
             </button>
@@ -455,7 +495,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
       {activeTool === "resize" && selectedLayer && isResizable(selectedLayer) && (
         <PixelCard className="px-4 py-2">
           <div className="flex items-center gap-3">
-            <span className="font-pixel text-[10px] text-[#8899aa] whitespace-nowrap capitalize">
+            <span className="font-pixel text-[13px] text-[#8899aa] whitespace-nowrap capitalize">
               {selectedLayer} size
             </span>
             <input
@@ -473,7 +513,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
               className="flex-1 h-1.5 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
               style={{ accentColor: "#4080f0" }}
             />
-            <span className="font-pixel text-[10px] text-[#e2e8f0] min-w-[4ch] text-right tabular-nums">
+            <span className="font-pixel text-[13px] text-[#e2e8f0] min-w-[4ch] text-right tabular-nums">
               {Math.round(
                 (selectedLayer === "lion"
                   ? layout.lionScale
@@ -482,7 +522,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
             </span>
             <button
               onClick={() => scaleLayer(selectedLayer, 1)}
-              className="font-pixel text-[8px] px-2 py-1 border border-[#3a4a6c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              className="font-pixel text-[11px] px-2 py-1 border border-[#3a4a6c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
               title="Reset to 100%"
             >
               Reset
@@ -510,9 +550,11 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           }}
           onMouseMove={handleCanvasMouseMove}
         >
+          {/* --- AI-MODIFIED (2026-03-16) --- */}
+          {/* Purpose: Use mergedFurniture for immediate color cycling preview */}
           <RoomCanvas
             roomPrefix={room.assetPrefix}
-            furniture={furniture}
+            furniture={mergedFurniture}
             layout={previewLayout}
             equipment={equipment}
             expression={pet.expression}
@@ -526,6 +568,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
             onLayerHover={handleLayerHover}
             className="max-w-full h-auto"
           />
+          {/* --- END AI-MODIFIED --- */}
 
           {showGrid && (
             <div
@@ -583,58 +626,40 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         </div>
       </PixelCard>
 
-      {/* Furniture panel */}
-      <PixelCard className="p-0 overflow-hidden" corners>
-        <div className="flex overflow-x-auto border-b-2 border-[#1a2a3c] bg-[#080c18] scrollbar-thin">
-          {ROOM_LAYERS.map((layer) => (
-            <button
-              key={layer}
-              onClick={() => setActiveTab(layer)}
-              className="font-pixel text-[10px] px-4 py-2.5 whitespace-nowrap transition-colors flex-shrink-0"
-              style={{
-                color: activeTab === layer ? "#e2e8f0" : "#5a6a8c",
-                borderBottom:
-                  activeTab === layer
-                    ? "2px solid #4080f0"
-                    : "2px solid transparent",
-                backgroundColor:
-                  activeTab === layer ? "#0f1628" : "transparent",
-              }}
-            >
-              {TAB_LABELS[layer]}
-            </button>
-          ))}
-        </div>
-
-        <div className="p-3">
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
-            {furniture[activeTab] ? (
-              <FurnitureThumb
-                label={activeTab}
-                assetPath={furniture[activeTab]}
-                equipped
-                selected={selectedLayer === activeTab}
-                onClick={() => {
-                  setSelectedLayer(activeTab)
-                  setActiveTool("select")
-                }}
-              />
-            ) : (
-              <div className="flex-shrink-0 w-12 h-12 border-2 border-dashed border-[#2a3a5c] bg-[#080c18] flex items-center justify-center">
-                <span className="font-pixel text-[8px] text-[#3a4a5c]">
-                  Empty
-                </span>
-              </div>
-            )}
-          </div>
-          {!furniture[activeTab] && (
-            <p className="font-pixel text-[9px] text-[#5a6a8c] mt-1">
-              No {TAB_LABELS[activeTab]?.toLowerCase()} furniture equipped. Use
-              the /pet room command in Discord to equip furniture.
-            </p>
-          )}
-        </div>
-      </PixelCard>
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: Replace inline furniture panel with full item shop component */}
+      <FurniturePanel
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        furniture={mergedFurniture}
+        availableItems={data.availableItems ?? []}
+        gold={data.gold}
+        gems={data.gems}
+        onEquipItem={(slot, assetPath) => {
+          setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+          fetch('/api/pet/room/furniture', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slot, assetPath }),
+          })
+          setSelectedLayer(slot)
+          playSound('place')
+        }}
+        onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
+          const res = await fetch('/api/pet/room/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: [{ slot, assetPath, price, currency }] }),
+          })
+          if (res.ok) {
+            setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+            playSound('purchase')
+          } else {
+            playSound('error')
+          }
+        }}
+      />
+      {/* --- END AI-MODIFIED --- */}
 
       {/* Floating info card on hover */}
       {hoveredLayer && !dragState && (
@@ -643,18 +668,18 @@ function RoomEditorContent({ data }: { data: RoomData }) {
           style={{ left: hoverPos.x + 16, top: hoverPos.y - 8 }}
         >
           <PixelCard className="px-3 py-2 min-w-[120px]" borderColor="#4080f0">
-            <p className="font-pixel text-[10px] text-[#e2e8f0] capitalize">
+            <p className="font-pixel text-[13px] text-[#e2e8f0] capitalize">
               {hoveredLayer}
             </p>
-            <p className="font-pixel text-[8px] text-[#8899aa] mt-0.5">
+            <p className="font-pixel text-[11px] text-[#8899aa] mt-0.5">
               {hoveredLayer === "lion"
                 ? `${pet.name} (Lv.${pet.level})`
-                : furniture[hoveredLayer]
+                : mergedFurniture[hoveredLayer]
                   ? "Equipped"
                   : "Default"}
             </p>
             {isMovable(hoveredLayer) && (
-              <p className="font-pixel text-[8px] text-[#5a7a9c] mt-0.5">
+              <p className="font-pixel text-sm text-[#5a7a9c] mt-0.5">
                 {activeTool === "move"
                   ? "Click + drag to move"
                   : "Switch to Move tool"}
@@ -667,41 +692,6 @@ function RoomEditorContent({ data }: { data: RoomData }) {
   )
 }
 
-function FurnitureThumb({
-  label,
-  assetPath,
-  equipped,
-  selected,
-  onClick,
-}: {
-  label: string
-  assetPath: string
-  equipped?: boolean
-  selected?: boolean
-  onClick?: () => void
-}) {
-  const borderColor = selected ? "#4080f0" : equipped ? "#40d870" : "#3a4a6c"
-  const blobBase = process.env.NEXT_PUBLIC_BLOB_URL || ""
-  const url = `${blobBase}/pet-assets/${assetPath}`
-
-  return (
-    <button
-      onClick={onClick}
-      className="flex-shrink-0 w-12 h-12 border-2 bg-[#080c18] overflow-hidden hover:brightness-110 transition-all relative"
-      style={{ borderColor }}
-    >
-      <img
-        src={url}
-        alt={label}
-        className="w-full h-full object-contain"
-        style={{ imageRendering: "pixelated" }}
-      />
-      {equipped && (
-        <span className="absolute top-0 right-0 w-1.5 h-1.5 bg-[#40d870]" />
-      )}
-    </button>
-  )
-}
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {

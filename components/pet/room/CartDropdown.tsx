@@ -98,16 +98,16 @@ export default function CartDropdown({
       <div className="bg-[#0c1020] border-2 border-[#3a4a6c] rounded-lg overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-[#3a4a6c]">
-          <span className="text-[11px] text-yellow-300 font-bold">🛒 Cart</span>
+          <span className="text-sm text-yellow-300 font-bold">🛒 Cart</span>
           <div className="flex items-center gap-2">
             {items.length > 0 && (
-              <span className="text-[9px] text-[#6b7fa0]">
+              <span className="text-[12px] text-[#6b7fa0]">
                 {items.length} item{items.length !== 1 ? 's' : ''}
               </span>
             )}
             <button
               onClick={onClose}
-              className="text-[#6b7fa0] hover:text-[#e2e8f0] text-xs transition-colors"
+              className="text-[#6b7fa0] hover:text-[#e2e8f0] text-sm transition-colors"
             >
               ✕
             </button>
@@ -118,10 +118,10 @@ export default function CartDropdown({
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4">
             <span className="text-2xl mb-2 opacity-40">🛒</span>
-            <span className="text-[11px] text-[#6b7fa0] text-center">
+            <span className="text-sm text-[#6b7fa0] text-center">
               Your cart is empty
             </span>
-            <span className="text-[9px] text-[#4a5a7c] mt-1 text-center">
+            <span className="text-[12px] text-[#4a5a7c] mt-1 text-center">
               Try items in the editor, then add to cart
             </span>
           </div>
@@ -149,8 +149,8 @@ export default function CartDropdown({
 
                   {/* Name & slot */}
                   <div className="flex-1 min-w-0">
-                    <div className="text-[10px] text-[#e2e8f0] truncate">{item.name}</div>
-                    <div className="text-[8px] text-[#6b7fa0] capitalize">{item.slot}</div>
+                    <div className="text-[13px] text-[#e2e8f0] truncate">{item.name}</div>
+                    <div className="text-[11px] text-[#6b7fa0] capitalize">{item.slot}</div>
                   </div>
 
                   {/* Price */}
@@ -163,7 +163,7 @@ export default function CartDropdown({
                   <button
                     onClick={() => onRemoveItem(index)}
                     title="Remove from cart"
-                    className="w-5 h-5 flex items-center justify-center text-[10px] text-[#6b7fa0] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
+                    className="w-5 h-5 flex items-center justify-center text-[13px] text-[#6b7fa0] hover:text-red-400 hover:bg-red-400/10 rounded transition-colors flex-shrink-0"
                   >
                     ✕
                   </button>
@@ -174,7 +174,7 @@ export default function CartDropdown({
             {/* Totals */}
             <div className="px-3 py-2 border-t border-[#3a4a6c] space-y-1">
               {goldTotal > 0 && (
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-[13px]">
                   <span className="text-[#6b7fa0]">Gold total:</span>
                   <span className="text-[#e2e8f0] tabular-nums">
                     🪙 {goldTotal.toLocaleString()}
@@ -182,7 +182,7 @@ export default function CartDropdown({
                 </div>
               )}
               {gemTotal > 0 && (
-                <div className="flex items-center justify-between text-[10px]">
+                <div className="flex items-center justify-between text-[13px]">
                   <span className="text-[#6b7fa0]">Gem total:</span>
                   <span className="text-[#e2e8f0] tabular-nums">
                     💎 {gemTotal.toLocaleString()}
@@ -192,7 +192,7 @@ export default function CartDropdown({
 
               {/* Set discount */}
               {setInfo.isSet && (
-                <div className="flex items-center justify-between text-[10px] pt-1 border-t border-[#1a2340]">
+                <div className="flex items-center justify-between text-[13px] pt-1 border-t border-[#1a2340]">
                   <span className="text-green-400">
                     ✨ {setInfo.themeName} set −{Math.round(setInfo.discount * 100)}%
                   </span>
@@ -210,7 +210,7 @@ export default function CartDropdown({
               <button
                 onClick={onCheckout}
                 disabled={isCheckingOut}
-                className="w-full py-1.5 text-[11px] rounded border-2 border-yellow-500 bg-yellow-500/15 text-yellow-300 hover:bg-yellow-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold"
+                className="w-full py-1.5 text-sm rounded border-2 border-yellow-500 bg-yellow-500/15 text-yellow-300 hover:bg-yellow-500/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-bold"
               >
                 {isCheckingOut ? (
                   <span className="animate-spin inline-block">⟳</span>
@@ -222,7 +222,7 @@ export default function CartDropdown({
               {setInfo.isSet && !isCheckingOut && (
                 <button
                   onClick={onCheckout}
-                  className="w-full py-1.5 text-[10px] rounded border border-green-500/60 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all"
+                  className="w-full py-1.5 text-[13px] rounded border border-green-500/60 bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-all"
                 >
                   ✨ Buy as {setInfo.themeName} Set (−{Math.round(setInfo.discount * 100)}%)
                 </button>

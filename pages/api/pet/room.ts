@@ -10,29 +10,20 @@ import { apiHandler } from "@/utils/apiHandler"
 const ROOM_LAYERS = ["wall", "floor", "mat", "table", "chair", "bed", "lamp", "picture", "window"]
 
 // --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Default furniture assets for each room theme, used when user has no override
+// Purpose: Reduced defaults to wall/floor/mat only -- new pets start with mostly empty rooms
 const DEFAULT_ROOM_FURNITURE: Record<string, Record<string, string>> = {
   "rooms/default": {
     wall: "rooms/default/wall_checker_blue.png",
     floor: "rooms/default/floor_blue.png",
     mat: "rooms/default/mat_blue.png",
-    table: "rooms/default/table_brown.png",
-    chair: "rooms/default/chair_brown.png",
-    bed: "rooms/default/bed_red.png",
-    lamp: "rooms/default/lamp_yellow.png",
-    picture: "rooms/default/picture_blue.png",
-    window: "rooms/default/window_blue.png",
   },
   "rooms/castle": {
     wall: "rooms/castle/wall_1.png",
     floor: "rooms/castle/floor_1.png",
     mat: "rooms/castle/carpet_1.png",
-    table: "rooms/castle/desk_1.png",
-    chair: "rooms/castle/chair_1.png",
-    bed: "rooms/castle/bed_1.png",
-    lamp: "rooms/castle/lamp_1.png",
   },
 }
+// --- END AI-MODIFIED ---
 
 function getDefaultFurniture(roomPrefix: string): Record<string, string> {
   return DEFAULT_ROOM_FURNITURE[roomPrefix] ?? {}
@@ -92,6 +83,22 @@ export default apiHandler({
       }
     }
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Query all FURNITURE items with ownership status for the room editor panel
+    const [allFurniture, ownedItems] = await Promise.all([
+      prisma.lg_items.findMany({
+        where: { category: 'FURNITURE' },
+        select: { itemid: true, name: true, asset_path: true, gold_price: true, gem_price: true, rarity: true },
+        orderBy: { itemid: 'asc' },
+      }),
+      prisma.lg_user_inventory.findMany({
+        where: { userid: userId },
+        select: { itemid: true },
+      }),
+    ])
+    const ownedItemIds = new Set(ownedItems.map(i => i.itemid))
+    // --- END AI-MODIFIED ---
+
     const furnitureRows = await prisma.$queryRawUnsafe<{ slot: string; asset_path: string }[]>(
       `SELECT slot, asset_path FROM lg_user_furniture WHERE userid = $1`,
       userId
@@ -147,6 +154,18 @@ export default apiHandler({
       // --- END AI-MODIFIED ---
       gold: (userConfig?.gold ?? BigInt(0)).toString(),
       gems: userConfig?.gems ?? 0,
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: All FURNITURE items with ownership flag for room editor item picker
+      availableItems: allFurniture.map(item => ({
+        itemId: item.itemid,
+        name: item.name,
+        assetPath: item.asset_path,
+        goldPrice: item.gold_price,
+        gemPrice: item.gem_price,
+        rarity: item.rarity,
+        owned: ownedItemIds.has(item.itemid),
+      })),
+      // --- END AI-MODIFIED ---
     })
   },
 

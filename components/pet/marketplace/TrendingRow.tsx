@@ -26,8 +26,8 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
 
   return (
     <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-4 shadow-[2px_2px_0_#060810]">
-      <h3 className="font-pixel text-[10px] text-[#4a5a70] flex items-center gap-1.5 mb-3 uppercase tracking-wide">
-        <TrendingUp size={12} /> Trending (24h)
+      <h3 className="font-pixel text-[13px] text-[#4a5a70] flex items-center gap-1.5 mb-3 uppercase tracking-wide">
+        <TrendingUp size={16} /> Trending (24h)
       </h3>
       <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
         {items.map((t) => {
@@ -37,10 +37,10 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
           return (
             <Link key={t.item.id} href={`/pet/wiki/${t.item.id}`}>
               <div
-                className="flex-shrink-0 w-24 flex flex-col items-center gap-1 p-2 border-2 bg-[#0a0e1a] shadow-[2px_2px_0_#060810] hover:brightness-125 transition-all"
+                className="flex-shrink-0 w-28 flex flex-col items-center gap-1.5 p-2.5 border-2 bg-[#0a0e1a] shadow-[2px_2px_0_#060810] hover:brightness-125 transition-all"
                 style={{ borderColor }}
               >
-                <div className="w-10 h-10 flex items-center justify-center">
+                <div className="w-12 h-12 flex items-center justify-center">
                   {imgUrl ? (
                     <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                   ) : (

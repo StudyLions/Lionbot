@@ -49,12 +49,12 @@ export default function UnsavedModal({
         <div className="text-center text-3xl mb-3">⚠️</div>
 
         {/* Title */}
-        <h3 className="text-sm text-yellow-300 text-center mb-2">
+        <h3 className="text-base text-yellow-300 text-center mb-2">
           Unsaved Changes
         </h3>
 
         {/* Message */}
-        <p className="text-[11px] text-[#8b9dc3] text-center mb-5 leading-relaxed">
+        <p className="text-sm text-[#8b9dc3] text-center mb-5 leading-relaxed">
           You have unsaved changes to your room layout. What would you like to do?
         </p>
 
@@ -63,7 +63,7 @@ export default function UnsavedModal({
           <button
             onClick={onSaveAndLeave}
             disabled={isSaving}
-            className="w-full py-2 px-3 text-[11px] rounded border-2 border-green-500 bg-green-500/10 text-green-300 hover:bg-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-2 px-3 text-sm rounded border-2 border-green-500 bg-green-500/10 text-green-300 hover:bg-green-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isSaving ? (
               <span className="flex items-center justify-center gap-1.5">
@@ -77,7 +77,7 @@ export default function UnsavedModal({
           <button
             onClick={onLeaveWithout}
             disabled={isSaving}
-            className="w-full py-2 px-3 text-[11px] rounded border-2 border-red-500/50 bg-red-500/5 text-red-400 hover:bg-red-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-2 px-3 text-sm rounded border-2 border-red-500/50 bg-red-500/5 text-red-400 hover:bg-red-500/15 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             🚪 Leave Without Saving
           </button>
@@ -85,7 +85,7 @@ export default function UnsavedModal({
           <button
             onClick={onStay}
             disabled={isSaving}
-            className="w-full py-2 px-3 text-[11px] rounded border border-[#3a4a6c] bg-[#111828] text-[#e2e8f0] hover:border-[#5a6a8c] hover:bg-[#1a2340] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="w-full py-2 px-3 text-sm rounded border border-[#3a4a6c] bg-[#111828] text-[#e2e8f0] hover:border-[#5a6a8c] hover:bg-[#1a2340] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             ✏️ Stay & Keep Editing
           </button>

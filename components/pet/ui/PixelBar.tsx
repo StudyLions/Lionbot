@@ -34,12 +34,12 @@ export default function PixelBar({
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
-      {label && <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] min-w-[3rem]">{label}</span>}
+      {label && <span className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] min-w-[3.5rem]">{label}</span>}
       <div className="flex gap-px flex-1">
         {Array.from({ length: segments }).map((_, i) => (
           <div
             key={i}
-            className="h-4 flex-1 border border-[#1a2030]"
+            className="h-5 flex-1 border border-[#1a2030]"
             style={{
               backgroundColor: i < filledSegments ? activeColors.filled : activeColors.empty,
               minWidth: 4,
@@ -48,7 +48,7 @@ export default function PixelBar({
         ))}
       </div>
       {showText && (
-        <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] min-w-[3rem] text-right">
+        <span className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] min-w-[3.5rem] text-right">
           {Math.round(pct * 100)}%
         </span>
       )}

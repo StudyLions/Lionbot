@@ -21,21 +21,21 @@ export default function MarketStats({ data }: { data: StatsData | null }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
       <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
-        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
-          <ShoppingCart size={10} /> Active Listings
+        <span className="font-pixel text-[11px] text-[#4a5a70] flex items-center gap-1.5 uppercase tracking-wide">
+          <ShoppingCart size={14} /> Active Listings
         </span>
-        <p className="font-pixel text-lg text-[#c0d0e0] mt-1.5">{data.activeListings}</p>
+        <p className="font-pixel text-xl text-[#c0d0e0] mt-1.5">{data.activeListings}</p>
       </div>
 
       <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
-        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
-          <TrendingUp size={10} /> Total Trades
+        <span className="font-pixel text-[11px] text-[#4a5a70] flex items-center gap-1.5 uppercase tracking-wide">
+          <TrendingUp size={14} /> Total Trades
         </span>
-        <p className="font-pixel text-lg text-[#c0d0e0] mt-1.5">{data.totalSalesEver}</p>
+        <p className="font-pixel text-xl text-[#c0d0e0] mt-1.5">{data.totalSalesEver}</p>
       </div>
 
       <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
-        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+        <span className="font-pixel text-[11px] text-[#4a5a70] flex items-center gap-1.5 uppercase tracking-wide">
           24h Gold Vol
         </span>
         <div className="mt-1.5">
@@ -44,7 +44,7 @@ export default function MarketStats({ data }: { data: StatsData | null }) {
       </div>
 
       <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
-        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+        <span className="font-pixel text-[11px] text-[#4a5a70] flex items-center gap-1.5 uppercase tracking-wide">
           24h Gem Vol
         </span>
         <div className="mt-1.5">
@@ -54,7 +54,7 @@ export default function MarketStats({ data }: { data: StatsData | null }) {
 
       {!hasActivity && (
         <div className="col-span-full border-2 border-[#1a2a3c] bg-[#0a0e1a] text-center py-3">
-          <p className="font-pixel text-[10px] text-[#3a4a60]">
+          <p className="font-pixel text-[13px] text-[#3a4a60]">
             NO TRADES YET -- BE THE FIRST!
           </p>
         </div>

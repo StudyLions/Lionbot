@@ -94,8 +94,8 @@ export default function LayersPanel({
     >
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-[#3a4a6c]">
-        <span className="text-[11px] text-yellow-300 font-bold tracking-wide">☰ Layers</span>
-        <span className="text-[9px] text-[#6b7fa0]">{layerOrder.length}</span>
+        <span className="text-sm text-yellow-300 font-bold tracking-wide">☰ Layers</span>
+        <span className="text-[12px] text-[#6b7fa0]">{layerOrder.length}</span>
       </div>
 
       {/* Layer list */}
@@ -133,7 +133,7 @@ export default function LayersPanel({
                   onToggleVisibility(layer)
                 }}
                 title={hidden ? 'Show layer' : 'Hide layer'}
-                className="w-5 h-5 flex items-center justify-center text-[10px] rounded hover:bg-[#3a4a6c]/50 transition-colors flex-shrink-0"
+                className="w-5 h-5 flex items-center justify-center text-[13px] rounded hover:bg-[#3a4a6c]/50 transition-colors flex-shrink-0"
               >
                 <span className={hidden ? 'text-[#6b7fa0]' : 'text-[#8b9dc3]'}>
                   {hidden ? '◻' : '◉'}
@@ -151,17 +151,17 @@ export default function LayersPanel({
                     onError={(e) => {
                       const img = e.target as HTMLImageElement
                       img.style.display = 'none'
-                      img.parentElement!.innerHTML = `<span class="text-[10px]">${icon}</span>`
+                      img.parentElement!.innerHTML = `<span class="text-[13px]">${icon}</span>`
                     }}
                   />
                 ) : (
-                  <span className="text-[10px]">{icon}</span>
+                  <span className="text-[13px]">{icon}</span>
                 )}
               </div>
 
               {/* Layer name */}
               <span className={`
-                text-[10px] capitalize flex-1 truncate
+                text-[13px] capitalize flex-1 truncate
                 ${selected ? 'text-yellow-300' : 'text-[#e2e8f0]'}
               `}>
                 {layer}
@@ -169,7 +169,7 @@ export default function LayersPanel({
 
               {/* Drag handle */}
               <span
-                className="text-[10px] text-[#6b7fa0] hover:text-[#8b9dc3] cursor-grab active:cursor-grabbing flex-shrink-0"
+                className="text-[13px] text-[#6b7fa0] hover:text-[#8b9dc3] cursor-grab active:cursor-grabbing flex-shrink-0"
                 title="Drag to reorder"
               >
                 ⠿
@@ -193,22 +193,22 @@ export default function LayersPanel({
           }
         `}
       >
-        <div className="w-5 h-5 flex items-center justify-center text-[10px] flex-shrink-0">
+        <div className="w-5 h-5 flex items-center justify-center text-[13px] flex-shrink-0">
           <span className="text-[#8b9dc3]">◉</span>
         </div>
 
         <div className="w-7 h-7 rounded border border-[#3a4a6c] bg-[#0c1020] overflow-hidden flex-shrink-0 flex items-center justify-center">
-          <span className="text-sm">🦁</span>
+          <span className="text-base">🦁</span>
         </div>
 
         <span className={`
-          text-[10px] flex-1
+          text-[13px] flex-1
           ${selectedLayer === 'lion' ? 'text-yellow-300' : 'text-[#e2e8f0]'}
         `}>
           Lion
         </span>
 
-        <span className="text-[8px] text-[#6b7fa0] bg-[#0c1020] px-1 py-0.5 rounded border border-[#3a4a6c]">
+        <span className="text-sm text-[#6b7fa0] bg-[#0c1020] px-1 py-0.5 rounded border border-[#3a4a6c]">
           fixed
         </span>
       </div>

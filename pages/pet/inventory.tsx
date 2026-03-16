@@ -65,13 +65,13 @@ export default function InventoryPage() {
             <div className="flex-1 min-w-0 space-y-4">
               {/* Title */}
               <div>
-                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
+                <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
                   <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
-                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   All your items, materials, and scrolls
                 </p>
               </div>
@@ -100,11 +100,11 @@ export default function InventoryPage() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : !data?.items.length ? (
                 <PixelCard className="p-12 text-center" corners>
-                  <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">
+                  <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">
                     No {filter} found. Earn items from Discord activity!
                   </p>
                 </PixelCard>
@@ -119,24 +119,24 @@ export default function InventoryPage() {
                         className="flex items-center gap-3 px-3 py-2.5 border-2 bg-[#0c1020]"
                         style={{ borderColor: `${bc}60`, boxShadow: "2px 2px 0 #060810" }}
                       >
-                        <div className="w-10 h-10 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        <div className="w-12 h-12 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0 overflow-hidden">
                           {imgUrl ? (
                             <img src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain"
                               style={{ imageRendering: "pixelated" }} />
                           ) : (
-                            <span className="text-lg">{getCategoryPlaceholder(inv.item.category)}</span>
+                            <span className="text-xl">{getCategoryPlaceholder(inv.item.category)}</span>
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
+                            <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
                               {inv.item.name}
                             </span>
                             {inv.enhancementLevel > 0 && (
-                              <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)]">+{inv.enhancementLevel}</span>
+                              <span className="font-pixel text-[13px] text-[var(--pet-gold,#f0c040)]">+{inv.enhancementLevel}</span>
                             )}
                             {inv.equipped && (
-                              <span className="font-pixel text-[8px] px-1.5 py-0.5 border border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#1a3020]">
+                              <span className="font-pixel text-sm px-1.5 py-0.5 border border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#1a3020]">
                                 EQP
                               </span>
                             )}
@@ -144,12 +144,12 @@ export default function InventoryPage() {
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <PixelBadge rarity={inv.item.rarity} />
                             {inv.item.slot && (
-                              <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">{inv.item.slot}</span>
+                              <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">{inv.item.slot}</span>
                             )}
                           </div>
                         </div>
                         {inv.quantity > 1 && (
-                          <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] flex-shrink-0">x{inv.quantity}</span>
+                          <span className="font-pixel text-base text-[var(--pet-text,#e2e8f0)] flex-shrink-0">x{inv.quantity}</span>
                         )}
                       </div>
                     )

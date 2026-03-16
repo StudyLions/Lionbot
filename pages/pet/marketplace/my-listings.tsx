@@ -81,13 +81,13 @@ export default function MyListingsPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/marketplace" className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+              <Link href="/pet/marketplace" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
                 <span>&#x25C4;</span> Back to Marketplace
               </Link>
 
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
+                  <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
                     <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
                     MY LISTINGS
                     <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
@@ -103,19 +103,19 @@ export default function MyListingsPage() {
               {data?.revenue && (
                 <div className="grid grid-cols-3 gap-3">
                   <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                    <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                      <Coins size={10} className="text-[var(--pet-gold,#f0c040)]" /> GOLD EARNED
+                    <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1.5">
+                      <Coins size={14} className="text-[var(--pet-gold,#f0c040)]" /> GOLD EARNED
                     </span>
                     <GoldDisplay amount={data.revenue.totalGold} size="lg" className="mt-1" />
                   </div>
                   <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                    <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                      <Gem size={10} className="text-[#a855f7]" /> GEMS EARNED
+                    <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1.5">
+                      <Gem size={14} className="text-[#a855f7]" /> GEMS EARNED
                     </span>
                     <GoldDisplay amount={data.revenue.totalGems} size="lg" type="gem" className="mt-1" />
                   </div>
                   <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                    <span className="font-pixel text-[9px] text-[#4a5a6a]">ITEMS SOLD</span>
+                    <span className="font-pixel text-[12px] text-[#4a5a6a]">ITEMS SOLD</span>
                     <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{data.revenue.totalSales}</p>
                   </div>
                 </div>
@@ -127,7 +127,7 @@ export default function MyListingsPage() {
                   <button
                     key={t.key}
                     onClick={() => setTab(t.key)}
-                    className={`font-pixel text-[10px] px-3 py-1.5 border-2 transition-all ${
+                    className={`font-pixel text-[13px] px-4 py-2 border-2 transition-all ${
                       tab === t.key
                         ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
                         : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
@@ -151,7 +151,7 @@ export default function MyListingsPage() {
                     <div className="space-y-2">
                       {!data?.active?.length ? (
                         <PixelCard className="p-12 text-center" corners>
-                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                          <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                             NO ACTIVE LISTINGS.{" "}
                             <Link href="/pet/marketplace/sell" className="text-[var(--pet-blue,#4080f0)] hover:underline">
                               List an item?
@@ -167,7 +167,7 @@ export default function MyListingsPage() {
                             key={l.listingId}
                             className="flex items-center gap-3 px-4 py-3 border-2 border-[#2a3a5c] bg-[#0c1020] shadow-[2px_2px_0_#060810]"
                           >
-                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
+                            <div className="w-12 h-12 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                               {imgUrl ? (
                                 <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                               ) : (
@@ -176,17 +176,17 @@ export default function MyListingsPage() {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p
-                                className="font-pixel text-[10px] truncate"
+                                className="font-pixel text-[13px] truncate"
                                 style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
                               >
                                 {l.item.name}
                               </p>
-                              <div className="flex items-center gap-2 font-pixel text-[9px] text-[#4a5a6a] mt-0.5">
-                                <span className={`flex items-center gap-0.5 ${l.currency === "GOLD" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"}`}>
-                                  <CIcon size={9} /> {l.pricePerUnit} each
+                              <div className="flex items-center gap-2 font-pixel text-[12px] text-[#4a5a6a] mt-0.5">
+                                <span className={`flex items-center gap-1 ${l.currency === "GOLD" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"}`}>
+                                  <CIcon size={13} /> {l.pricePerUnit} each
                                 </span>
                                 <span>{l.quantityRemaining}/{l.quantityListed} remaining</span>
-                                <span className="flex items-center gap-0.5"><Clock size={8} /> {timeLeft(l.expiresAt)}</span>
+                                <span className="flex items-center gap-1"><Clock size={12} /> {timeLeft(l.expiresAt)}</span>
                               </div>
                               <PixelBar
                                 value={sold}
@@ -217,7 +217,7 @@ export default function MyListingsPage() {
                     <div className="space-y-2">
                       {!data?.past?.length ? (
                         <PixelCard className="p-12 text-center" corners>
-                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">NO PAST LISTINGS</p>
+                          <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">NO PAST LISTINGS</p>
                         </PixelCard>
                       ) : data.past.map((l: any) => {
                         const st = STATUS_STYLE[l.status] ?? STATUS_STYLE.CANCELLED
@@ -227,17 +227,17 @@ export default function MyListingsPage() {
                             key={l.listingId}
                             className="flex items-center gap-3 px-4 py-2.5 border-2 border-[#1a2a3c] bg-[#0c1020]"
                           >
-                            <StatusIcon size={14} className={st.color} />
+                            <StatusIcon size={16} className={st.color} />
                             <span
-                              className="font-pixel text-[10px] flex-1 truncate"
+                              className="font-pixel text-[13px] flex-1 truncate"
                               style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
                             >
                               {l.item.name}
                             </span>
-                            <span className="font-pixel text-[9px] text-[#4a5a6a]">
+                            <span className="font-pixel text-[12px] text-[#4a5a6a]">
                               {l.quantityListed - l.quantityRemaining}/{l.quantityListed} sold
                             </span>
-                            <span className={`font-pixel text-[9px] ${st.color}`}>{st.label}</span>
+                            <span className={`font-pixel text-[12px] ${st.color}`}>{st.label}</span>
                           </div>
                         )
                       })}
@@ -249,7 +249,7 @@ export default function MyListingsPage() {
                     <div className="space-y-2">
                       {!data?.sales?.length ? (
                         <PixelCard className="p-12 text-center" corners>
-                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                          <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                             NO SALES YET -- LIST SOME ITEMS!
                           </p>
                         </PixelCard>
@@ -262,17 +262,17 @@ export default function MyListingsPage() {
                             className="flex items-center justify-between px-4 py-2.5 border-2 border-[#1a2a3c] bg-[#0c1020]"
                           >
                             <div className="flex items-center gap-2 min-w-0">
-                              <CheckCircle size={12} className="text-[var(--pet-green,#40d870)] flex-shrink-0" />
-                              <span className="font-pixel text-[10px] truncate text-[var(--pet-text-dim,#8899aa)]">
+                              <CheckCircle size={14} className="text-[var(--pet-green,#40d870)] flex-shrink-0" />
+                              <span className="font-pixel text-[13px] truncate text-[var(--pet-text-dim,#8899aa)]">
                                 <span className="text-[#4a5a6a]">{s.buyerName}</span> bought{" "}
                                 <span className="text-[var(--pet-text,#e2e8f0)]">{s.quantity}x {s.itemName}</span>
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className={`font-pixel text-[10px] flex items-center gap-0.5 ${cColor}`}>
-                                <CIcon size={10} /> {s.totalPrice.toLocaleString()}
+                              <span className={`font-pixel text-[13px] flex items-center gap-1 ${cColor}`}>
+                                <CIcon size={14} /> {s.totalPrice.toLocaleString()}
                               </span>
-                              <span className="font-pixel text-[8px] text-[#4a5a6a]">
+                              <span className="font-pixel text-[11px] text-[#4a5a6a]">
                                 {new Date(s.soldAt).toLocaleDateString()}
                               </span>
                             </div>

@@ -102,7 +102,7 @@ export default function FarmStats({ plots, gold }: FarmStatsProps) {
 
           {/* Load badge */}
           <div
-            className="font-pixel text-[10px] px-2.5 py-1 border-2"
+            className="font-pixel text-[13px] px-2.5 py-1 border-2"
             style={{ backgroundColor: lc.bg, borderColor: lc.text, color: lc.text }}
           >
             {stats.load}
@@ -113,7 +113,7 @@ export default function FarmStats({ plots, gold }: FarmStatsProps) {
         {(stats.totalInvested > 0 || hasRareOrAbove) && (
           <div className="flex items-center gap-3 mt-2 pt-2 border-t border-[#1a2a3c]">
             {stats.totalInvested > 0 && (
-              <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">
+              <span className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)]">
                 Invested: <GoldDisplay amount={stats.totalInvested} size="sm" />
               </span>
             )}
@@ -122,7 +122,7 @@ export default function FarmStats({ plots, gold }: FarmStatsProps) {
                 {(["LEGENDARY", "EPIC", "RARE", "UNCOMMON"] as const).map(r =>
                   stats.rarities[r] ? (
                     <span key={r} className="flex items-center gap-0.5">
-                      <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">{stats.rarities[r]}x</span>
+                      <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">{stats.rarities[r]}x</span>
                       <PixelBadge rarity={r} />
                     </span>
                   ) : null
@@ -177,8 +177,8 @@ function HudStat({ icon, value, color, sub, subColor, pulse }: {
     <div className="flex items-center gap-1.5">
       {icon}
       <div>
-        <span className={`font-pixel text-sm ${pulse ? "animate-harvest-pulse" : ""}`} style={{ color }}>{value}</span>
-        {sub && <span className="font-pixel text-[8px] block" style={{ color: subColor }}>{sub}</span>}
+        <span className={`font-pixel text-base ${pulse ? "animate-harvest-pulse" : ""}`} style={{ color }}>{value}</span>
+        {sub && <span className="font-pixel text-[11px] block" style={{ color: subColor }}>{sub}</span>}
       </div>
     </div>
   )

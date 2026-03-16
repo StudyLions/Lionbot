@@ -45,7 +45,7 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
                 )}
               </div>
               <p
-                className="font-pixel text-[10px] text-center truncate w-full"
+                className="font-pixel text-[13px] text-center truncate w-full"
                 style={{ color: borderColor }}
               >
                 {item.name}
@@ -56,13 +56,13 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
               )}
               {item.userOwned > 0 && (
                 <span
-                  className="absolute top-1 right-1 font-pixel px-1.5 py-0.5 text-[9px] border bg-[#40d870]/15 text-[#40d870] border-[#40d870]"
+                  className="absolute top-1 right-1 font-pixel px-1.5 py-0.5 text-[12px] border bg-[#40d870]/15 text-[#40d870] border-[#40d870]"
                 >
                   x{item.userOwned}
                 </span>
               )}
-              <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-0.5">
-                <Users size={8} /> {item.ownerCount}
+              <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-0.5">
+                <Users size={16} /> {item.ownerCount}
               </span>
             </div>
           </Link>

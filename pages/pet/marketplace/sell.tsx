@@ -109,12 +109,12 @@ export default function SellPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/marketplace" className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+              <Link href="/pet/marketplace" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
                 <span>&#x25C4;</span> Back to Marketplace
               </Link>
 
               <div>
-                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
+                  <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
                   <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
                   SELL ITEMS
                   <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
@@ -124,21 +124,21 @@ export default function SellPage() {
 
               {success && (
                 <div className="border-2 border-[#40d870] bg-[#40d87010] p-3 flex items-center gap-2 shadow-[2px_2px_0_#060810]">
-                  <Check size={14} className="text-[var(--pet-green,#40d870)]" />
-                  <span className="font-pixel text-[10px] text-[#80ffb0]">{success}</span>
+                  <Check size={16} className="text-[var(--pet-green,#40d870)]" />
+                  <span className="font-pixel text-[13px] text-[#80ffb0]">{success}</span>
                 </div>
               )}
               {error && (
                 <div className="border-2 border-[#e04040] bg-[#e0404010] p-3 flex items-center gap-2 shadow-[2px_2px_0_#060810]">
-                  <AlertCircle size={14} className="text-[var(--pet-red,#e04040)]" />
-                  <span className="font-pixel text-[10px] text-[#ff8080]">{error}</span>
+                  <AlertCircle size={16} className="text-[var(--pet-red,#e04040)]" />
+                  <span className="font-pixel text-[13px] text-[#ff8080]">{error}</span>
                 </div>
               )}
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Step 1: Pick Item */}
                 <div className="lg:col-span-2 space-y-3">
-                  <h3 className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)]">
+                  <h3 className="font-pixel text-[13px] text-[var(--pet-gold,#f0c040)]">
                     1. SELECT AN ITEM FROM YOUR INVENTORY
                   </h3>
 
@@ -150,7 +150,7 @@ export default function SellPage() {
                     </div>
                   ) : !tradeableItems.length ? (
                     <PixelCard className="p-8 text-center" corners>
-                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                         No tradeable items in your inventory.
                       </p>
                     </PixelCard>
@@ -171,7 +171,7 @@ export default function SellPage() {
                             }`}
                             style={{ borderColor: isSelected ? "#4080f0" : `${bc}40` }}
                           >
-                            <div className="w-10 h-10 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
+                            <div className="w-12 h-12 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                               {imgUrl ? (
                                 <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                               ) : (
@@ -179,12 +179,12 @@ export default function SellPage() {
                               )}
                             </div>
                             <span
-                              className="font-pixel text-[9px] truncate w-full"
+                              className="font-pixel text-[12px] truncate w-full"
                               style={{ color: RARITY_TEXT[item.rarity] || "#a0a8b4" }}
                             >
                               {item.name}
                             </span>
-                            <span className="font-pixel text-[8px] text-[#4a5a6a]">
+                            <span className="font-pixel text-[11px] text-[#4a5a6a]">
                               x{item.quantity}
                               {item.enhancementLevel > 0 && ` +${item.enhancementLevel}`}
                             </span>
@@ -199,13 +199,13 @@ export default function SellPage() {
                 <div className="space-y-4">
                   {selectedItem ? (
                     <>
-                      <h3 className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)]">
+                      <h3 className="font-pixel text-[13px] text-[var(--pet-gold,#f0c040)]">
                         2. SET PRICE AND QUANTITY
                       </h3>
 
                       <PixelCard className="p-4 space-y-4" corners>
                         <div>
-                          <label className="font-pixel text-[9px] text-[#4a5a6a] block mb-1">
+                          <label className="font-pixel text-[12px] text-[#4a5a6a] block mb-1">
                             QUANTITY (max {selectedItem.quantity})
                           </label>
                           <input
@@ -213,7 +213,7 @@ export default function SellPage() {
                             onChange={(e) => setQuantity(Number(e.target.value))}
                             className="w-full accent-[var(--pet-blue,#4080f0)]"
                           />
-                          <div className="flex justify-between font-pixel text-[9px] text-[#4a5a6a]">
+                          <div className="flex justify-between font-pixel text-[12px] text-[#4a5a6a]">
                             <span>1</span>
                             <span className="text-[var(--pet-text,#e2e8f0)]">{quantity}</span>
                             <span>{selectedItem.quantity}</span>
@@ -221,50 +221,50 @@ export default function SellPage() {
                         </div>
 
                         <div>
-                          <label className="font-pixel text-[9px] text-[#4a5a6a] block mb-1">CURRENCY</label>
+                          <label className="font-pixel text-[12px] text-[#4a5a6a] block mb-1">CURRENCY</label>
                           <div className="flex gap-2">
                             <button
                               onClick={() => setCurrency("GOLD")}
-                              className={`font-pixel text-[10px] flex-1 py-2 border-2 flex items-center justify-center gap-1 transition-all ${
+                              className={`font-pixel text-[13px] flex-1 py-2.5 border-2 flex items-center justify-center gap-1.5 transition-all ${
                                 currency === "GOLD"
                                   ? "border-[var(--pet-gold,#f0c040)] bg-[#f0c04010] text-[var(--pet-gold,#f0c040)]"
                                   : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
                               }`}
                             >
-                              <Coins size={12} /> Gold
+                              <Coins size={16} /> Gold
                             </button>
                             <button
                               onClick={() => setCurrency("GEMS")}
-                              className={`font-pixel text-[10px] flex-1 py-2 border-2 flex items-center justify-center gap-1 transition-all ${
+                              className={`font-pixel text-[13px] flex-1 py-2.5 border-2 flex items-center justify-center gap-1.5 transition-all ${
                                 currency === "GEMS"
                                   ? "border-[#a855f7] bg-[#a855f710] text-[#a855f7]"
                                   : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
                               }`}
                             >
-                              <Gem size={12} /> Gems
+                              <Gem size={16} /> Gems
                             </button>
                           </div>
                         </div>
 
                         <div>
-                          <label className="font-pixel text-[9px] text-[#4a5a6a] block mb-1">PRICE PER UNIT</label>
+                          <label className="font-pixel text-[12px] text-[#4a5a6a] block mb-1">PRICE PER UNIT</label>
                           <input
                             type="number" min={1} value={pricePerUnit}
                             onChange={(e) => setPricePerUnit(Math.max(1, parseInt(e.target.value) || 1))}
-                            className="font-pixel text-[11px] w-full py-2 px-3 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
+                            className="font-pixel text-sm w-full py-2.5 px-3 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
                           />
                         </div>
 
                         <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
                           <div className="flex items-center justify-between">
-                            <span className="font-pixel text-[9px] text-[#4a5a6a]">Total Revenue</span>
+                            <span className="font-pixel text-[12px] text-[#4a5a6a]">Total Revenue</span>
                             <GoldDisplay
                               amount={totalPrice}
                               size="lg"
                               type={currency === "GOLD" ? "gold" : "gem"}
                             />
                           </div>
-                          <p className="font-pixel text-[8px] text-[#4a5a6a] mt-1">
+                          <p className="font-pixel text-[11px] text-[#4a5a6a] mt-1">
                             {quantity}x {selectedItem.name} at {pricePerUnit} {currency} each. Expires in 7 days.
                           </p>
                         </div>
@@ -283,12 +283,12 @@ export default function SellPage() {
 
                       {/* Price Reference */}
                       <div className="space-y-2">
-                        <h4 className="font-pixel text-[9px] uppercase text-[var(--pet-gold,#f0c040)]">
+                        <h4 className="font-pixel text-[12px] uppercase text-[var(--pet-gold,#f0c040)]">
                           RECENT PRICES FOR {selectedItem.name}
                         </h4>
                         <PriceChart data={historyData?.priceHistory ?? []} height={120} />
                         {historyData?.summary && (
-                          <div className="flex gap-3 font-pixel text-[9px] text-[#4a5a6a]">
+                          <div className="flex gap-3 font-pixel text-[12px] text-[#4a5a6a]">
                             <span>Avg: {historyData.summary.avgPrice || "--"}</span>
                             <span>Trades: {historyData.summary.totalSales}</span>
                             <span>Listed: {historyData.summary.activeListings}</span>
@@ -298,7 +298,7 @@ export default function SellPage() {
                     </>
                   ) : (
                     <PixelCard className="p-8 text-center" corners>
-                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                      <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                         SELECT AN ITEM FROM YOUR INVENTORY TO LIST IT FOR SALE
                       </p>
                     </PixelCard>

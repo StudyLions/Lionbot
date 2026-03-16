@@ -64,10 +64,10 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
         <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-4 space-y-4">
           {/* Title bar */}
           <div className="flex items-center justify-between border-b-2 border-[#2a3a5c] pb-2">
-            <h3 className="font-pixel text-xs text-[#c0d0e0]">CONFIRM PURCHASE</h3>
+            <h3 className="font-pixel text-sm text-[#c0d0e0]">CONFIRM PURCHASE</h3>
             <button
               onClick={onClose}
-              className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#ff8080] border border-[#3a4a6c] px-1.5 py-0.5 bg-[#111828] transition-colors"
+              className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#ff8080] border border-[#3a4a6c] px-2 py-1 bg-[#111828] transition-colors"
             >
               X
             </button>
@@ -75,7 +75,7 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
 
           {/* Item preview */}
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-[#0a0e1a] border-2 border-[#1a2a3c]">
+            <div className="w-16 h-16 flex-shrink-0 flex items-center justify-center bg-[#0a0e1a] border-2 border-[#1a2a3c]">
               {imgUrl ? (
                 <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
               ) : (
@@ -84,23 +84,23 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
             </div>
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-2">
-                <span className="font-pixel text-[11px]" style={{ color: nameColor }}>
+                <span className="font-pixel text-sm" style={{ color: nameColor }}>
                   {listing.item.name}
                 </span>
                 {listing.enhancementLevel > 0 && (
-                  <span className="font-pixel text-[9px] border border-[#40d870] bg-[#2a7a3a]/40 text-[#d0ffd8] px-1">
+                  <span className="font-pixel text-[12px] border border-[#40d870] bg-[#2a7a3a]/40 text-[#d0ffd8] px-1.5">
                     +{listing.enhancementLevel}
                   </span>
                 )}
               </div>
               <PixelBadge rarity={listing.item.rarity} />
-              <span className="font-pixel text-[8px] text-[#4a5a70]">Sold by {listing.sellerName}</span>
+              <span className="font-pixel text-[11px] text-[#4a5a70]">Sold by {listing.sellerName}</span>
             </div>
           </div>
 
           {/* Quantity picker */}
           <div>
-            <label className="font-pixel text-[9px] text-[#4a5a70] block mb-1.5">
+            <label className="font-pixel text-[12px] text-[#4a5a70] block mb-1.5">
               QTY (MAX {listing.quantityRemaining})
             </label>
             <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
               {listing.quantityRemaining > 1 && (
                 <button
                   onClick={() => setQuantity(listing.quantityRemaining)}
-                  className="font-pixel px-2 py-1.5 border border-[#3a4a6c] bg-[#111828] text-[8px] text-[#4a5a70] hover:text-[#c0d0e0] transition-colors"
+                  className="font-pixel px-2.5 py-1.5 border border-[#3a4a6c] bg-[#111828] text-[11px] text-[#4a5a70] hover:text-[#c0d0e0] transition-colors"
                 >
                   MAX
                 </button>
@@ -135,7 +135,7 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
 
           {/* Total cost */}
           <div className="border-2 border-[#2a3a5c] bg-[#0a0e1a] p-3 flex items-center justify-between">
-            <span className="font-pixel text-[9px] text-[#4a5a70]">TOTAL COST</span>
+            <span className="font-pixel text-[12px] text-[#4a5a70]">TOTAL COST</span>
             <GoldDisplay
               amount={totalPrice}
               type={listing.currency === "GOLD" ? "gold" : "gem"}
@@ -144,7 +144,7 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
           </div>
 
           {error && (
-            <p className="font-pixel text-[9px] text-[#ff8080] border border-[#e04040]/30 bg-[#e04040]/10 px-2 py-1">
+            <p className="font-pixel text-[12px] text-[#ff8080] border border-[#e04040]/30 bg-[#e04040]/10 px-2.5 py-1.5">
               {error}
             </p>
           )}

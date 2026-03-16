@@ -199,13 +199,13 @@ export default function FarmPage() {
             <div className="flex-1 min-w-0 space-y-4">
               {/* Title with decorative underline */}
               <div>
-                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
+                <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
                 <div className="mt-1.5 flex items-center gap-1">
                   <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
                   <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
-                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   Plant seeds, water them, harvest for Gold. Click any plot.
                 </p>
               </div>
@@ -222,7 +222,7 @@ export default function FarmPage() {
                 >
                   <img
                     src={getUiIconUrl(message.type === "success" ? "trophy" : "liongotchi_heart")}
-                    alt="" width={14} height={14}
+                    alt="" width={18} height={18}
                     style={{ imageRendering: "pixelated" }}
                   />
                   <span className="font-pixel text-[10px]"
@@ -239,12 +239,12 @@ export default function FarmPage() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : !data?.plots.length ? (
                 <PixelCard className="p-12 text-center space-y-3" corners>
                   <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">No farm plots yet.</p>
-                  <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                  <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
                     Use /pet in Discord to create your pet and unlock your farm!
                   </p>
                 </PixelCard>
@@ -328,7 +328,7 @@ export default function FarmPage() {
 
                   {selectedPlot === null && (
                     <div className="text-center py-3">
-                      <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">
+                      <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)]">
                         Click on any plot to view details and take actions
                       </p>
                     </div>
@@ -366,7 +366,7 @@ function ToolbarButton({ iconUrl, label, onClick, color }: {
         className="flex-shrink-0"
         style={{ imageRendering: "pixelated" }}
       />
-      <span className="font-pixel text-[10px]" style={{ color }}>{label}</span>
+      <span className="font-pixel text-[13px]" style={{ color }}>{label}</span>
     </button>
   )
 }

@@ -58,7 +58,7 @@ export default function ItemDetailPage() {
       <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse item details" }}>
         <AdminGuard>
           <div className="pet-section pet-scanline min-h-screen flex items-center justify-center">
-            <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">Sign in to view item details</p>
+            <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">Sign in to view item details</p>
           </div>
         </AdminGuard>
       </Layout>
@@ -79,7 +79,7 @@ export default function ItemDetailPage() {
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/wiki" className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+              <Link href="/pet/wiki" className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
                 <span>&#x25C4;</span> Back to Wiki
               </Link>
 
@@ -92,7 +92,7 @@ export default function ItemDetailPage() {
               ) : error || !item ? (
                 <PixelCard className="p-12 text-center" corners>
                   <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">ITEM NOT FOUND</p>
-                  <p className="font-pixel text-[10px] text-[#4a5a6a] mt-1">This item may have been removed or doesn&apos;t exist</p>
+                  <p className="font-pixel text-[13px] text-[#4a5a6a] mt-1">This item may have been removed or doesn&apos;t exist</p>
                 </PixelCard>
               ) : (
                 <>
@@ -115,19 +115,19 @@ export default function ItemDetailPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
-                        <h1 className="font-pixel text-xl" style={{ color: tc }}>{item.name}</h1>
+                        <h1 className="font-pixel text-2xl" style={{ color: tc }}>{item.name}</h1>
                         <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                           <PixelBadge rarity={item.rarity} />
-                          <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
+                          <span className="font-pixel text-[12px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
                             {item.category}
                           </span>
                           {item.slot && (
-                            <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
+                            <span className="font-pixel text-[12px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
                               {item.slot}
                             </span>
                           )}
                           <span
-                            className="font-pixel text-[9px] px-1.5 py-0.5 border"
+                            className="font-pixel text-[12px] px-1.5 py-0.5 border"
                             style={{
                               borderColor: item.tradeable ? "#40d870" : "#e04040",
                               color: item.tradeable ? "#80ffb0" : "#ff8080",
@@ -137,13 +137,13 @@ export default function ItemDetailPage() {
                             {item.tradeable ? "TRADEABLE" : "UNTRADEABLE"}
                           </span>
                           {item.setName && (
-                            <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#4080f0] text-[#80b0ff] bg-[#4080f010]">
+                            <span className="font-pixel text-[12px] px-1.5 py-0.5 border border-[#4080f0] text-[#80b0ff] bg-[#4080f010]">
                               {item.setName}
                             </span>
                           )}
                         </div>
                         {item.description && (
-                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed">{item.description}</p>
+                          <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed">{item.description}</p>
                         )}
                       </div>
                     </div>
@@ -152,35 +152,35 @@ export default function ItemDetailPage() {
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                        <Coins size={10} className="text-[var(--pet-gold,#f0c040)]" /> GOLD PRICE
+                      <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
+                        <Coins size={14} className="text-[var(--pet-gold,#f0c040)]" /> GOLD PRICE
                       </span>
                       {item.goldPrice ? (
                         <GoldDisplay amount={item.goldPrice} size="lg" className="mt-1" />
                       ) : (
-                        <p className="font-pixel text-[11px] text-[#4a5a6a] mt-1">N/A</p>
+                        <p className="font-pixel text-sm text-[#4a5a6a] mt-1">N/A</p>
                       )}
                     </div>
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                        <Gem size={10} className="text-[#a855f7]" /> GEM PRICE
+                      <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
+                        <Gem size={18} className="text-[#a855f7]" /> GEM PRICE
                       </span>
                       {item.gemPrice ? (
                         <GoldDisplay amount={item.gemPrice} size="lg" type="gem" className="mt-1" />
                       ) : (
-                        <p className="font-pixel text-[11px] text-[#4a5a6a] mt-1">N/A</p>
+                        <p className="font-pixel text-sm text-[#4a5a6a] mt-1">N/A</p>
                       )}
                     </div>
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                        <Users size={10} /> OWNERS
+                      <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
+                        <Users size={14} /> OWNERS
                       </span>
-                      <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{data.ownership.count}</p>
-                      <p className="font-pixel text-[9px] text-[#4a5a6a]">{data.ownership.tier}</p>
+                      <p className="font-pixel text-base text-[var(--pet-text,#e2e8f0)] mt-1">{data.ownership.count}</p>
+                      <p className="font-pixel text-[12px] text-[#4a5a6a]">{data.ownership.tier}</p>
                     </div>
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
-                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
-                        <Package size={10} /> YOUR COLLECTION
+                      <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
+                        <Package size={14} /> YOUR COLLECTION
                       </span>
                       <p className={`font-pixel text-sm mt-1 ${data.ownership.userOwned > 0 ? "text-[var(--pet-green,#40d870)]" : "text-[#4a5a6a]"}`}>
                         {data.ownership.userOwned > 0 ? `You own x${data.ownership.userOwned}` : "Not owned"}
@@ -190,19 +190,19 @@ export default function ItemDetailPage() {
 
                   {/* How to Obtain */}
                   <PixelCard className="p-4" corners>
-                    <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                      <ShoppingCart size={14} /> HOW TO OBTAIN
+                    <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                      <ShoppingCart size={18} /> HOW TO OBTAIN
                     </h3>
-                    <div className="space-y-2 font-pixel text-[10px]">
+                    <div className="space-y-2 font-pixel text-[13px]">
                       {(item.goldPrice || item.gemPrice) && (
                         <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Coins size={12} className="text-[var(--pet-gold,#f0c040)]" />
+                          <Coins size={16} className="text-[var(--pet-gold,#f0c040)]" />
                           Buy for {item.goldPrice ? `${item.goldPrice.toLocaleString()} Gold` : ""}{item.goldPrice && item.gemPrice ? " or " : ""}{item.gemPrice ? `${item.gemPrice} Gems` : ""}
                         </div>
                       )}
                       {data.craftedFrom && (
                         <div className="flex items-start gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Hammer size={12} className="text-[var(--pet-gold,#f0c040)] mt-0.5 flex-shrink-0" />
+                          <Hammer size={16} className="text-[var(--pet-gold,#f0c040)] mt-0.5 flex-shrink-0" />
                           <div>
                             <span>Craft from: </span>
                             {data.craftedFrom.ingredients.map((ing: any, i: number) => (
@@ -226,19 +226,19 @@ export default function ItemDetailPage() {
                       )}
                       {data.dropInfo && (
                         <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Droplets size={12} className="text-[#80b0ff]" />
+                          <Droplets size={16} className="text-[#80b0ff]" />
                           Drops from activity. Drop tier: {item.rarity} ({data.dropInfo.dropTierPercent}% of material drops)
                         </div>
                       )}
                       {data.dropInfo && (
-                        <div className="flex items-center gap-4 ml-5 text-[9px] text-[#4a5a6a]">
-                          <span className="flex items-center gap-1"><Mic size={9} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
-                          <span className="flex items-center gap-1"><MessageSquare size={9} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per text session</span>
+                        <div className="flex items-center gap-4 ml-5 text-[12px] text-[#4a5a6a]">
+                          <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
+                          <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per text session</span>
                         </div>
                       )}
                       {!item.goldPrice && !item.gemPrice && !data.craftedFrom && !data.dropInfo && (
                         <div className="flex items-center gap-2 text-[#4a5a6a]">
-                          <Lock size={12} /> Acquisition method unknown
+                          <Lock size={16} /> Acquisition method unknown
                         </div>
                       )}
                     </div>
@@ -247,8 +247,8 @@ export default function ItemDetailPage() {
                   {/* Used In Recipes */}
                   {data.usedInRecipes?.length > 0 && (
                     <PixelCard className="p-4" corners>
-                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                        <Hammer size={14} /> USED IN RECIPES
+                      <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                        <Hammer size={18} /> USED IN RECIPES
                       </h3>
                       <div className="space-y-1">
                         {data.usedInRecipes.map((r: any) => {
@@ -263,10 +263,10 @@ export default function ItemDetailPage() {
                                     <span>{getCategoryPlaceholder(r.resultItem.category)}</span>
                                   )}
                                 </div>
-                                <span className="font-pixel text-[10px]" style={{ color: RARITY_TEXT[r.resultItem.rarity] || "#a0a8b4" }}>
+                                <span className="font-pixel text-[13px]" style={{ color: RARITY_TEXT[r.resultItem.rarity] || "#a0a8b4" }}>
                                   {r.resultItem.name}
                                 </span>
-                                <span className="font-pixel text-[9px] text-[#4a5a6a] ml-auto">needs x{r.quantityNeeded}</span>
+                                <span className="font-pixel text-[12px] text-[#4a5a6a] ml-auto">needs x{r.quantityNeeded}</span>
                               </div>
                             </Link>
                           )
@@ -278,27 +278,27 @@ export default function ItemDetailPage() {
                   {/* Enhancement Info (equipment) */}
                   {data.enhancement && (
                     <PixelCard className="p-4" corners>
-                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                        <Sparkles size={14} /> ENHANCEMENT INFO
+                      <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                        <Sparkles size={18} /> ENHANCEMENT INFO
                       </h3>
                       <div className="grid grid-cols-3 gap-3 text-center">
                         <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
                           <p className="font-pixel text-lg text-[var(--pet-blue,#4080f0)]">+{data.enhancement.maxLevel}</p>
-                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Max Level</p>
+                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Max Level</p>
                         </div>
                         <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                          <p className="font-pixel text-lg text-[var(--pet-green,#40d870)]">+{(data.enhancement.goldBonusPerLevel * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Gold/XP per lvl</p>
+                          <p className="font-pixel text-xl text-[var(--pet-green,#40d870)]">+{(data.enhancement.goldBonusPerLevel * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Gold/XP per lvl</p>
                         </div>
                         <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
                           <p className="font-pixel text-lg text-[var(--pet-gold,#f0c040)]">+{(data.enhancement.maxGoldBonus * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Max Bonus</p>
+                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Max Bonus</p>
                         </div>
                       </div>
                       <div className="mt-3 h-3 bg-[#0c1020] overflow-hidden border border-[#1a2a3c]">
                         <div className="h-full bg-gradient-to-r from-[var(--pet-green,#40d870)] to-[var(--pet-blue,#4080f0)]" style={{ width: "100%" }} />
                       </div>
-                      <div className="flex justify-between font-pixel text-[9px] text-[#4a5a6a] mt-1">
+                      <div className="flex justify-between font-pixel text-[12px] text-[#4a5a6a] mt-1">
                         <span>+0</span>
                         <span>+{data.enhancement.maxLevel}</span>
                       </div>
@@ -309,16 +309,16 @@ export default function ItemDetailPage() {
                   {data.scrollProperties && (
                     <PixelCard className="p-4 space-y-4" corners>
                       <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] flex items-center gap-2">
-                        <Shield size={14} /> SCROLL PROPERTIES
+                        <Shield size={18} /> SCROLL PROPERTIES
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
                         <div className="border-2 border-[#40d87040] bg-[#40d87008] p-3 text-center">
-                          <p className="font-pixel text-xl text-[var(--pet-green,#40d870)]">{(data.scrollProperties.success_rate * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Base Success Rate</p>
+                          <p className="font-pixel text-2xl text-[var(--pet-green,#40d870)]">{(data.scrollProperties.success_rate * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Base Success Rate</p>
                         </div>
                         <div className="border-2 border-[#e0404040] bg-[#e0404008] p-3 text-center">
-                          <p className="font-pixel text-xl text-[var(--pet-red,#e04040)]">{(data.scrollProperties.destroy_rate * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Destroy Rate</p>
+                          <p className="font-pixel text-2xl text-[var(--pet-red,#e04040)]">{(data.scrollProperties.destroy_rate * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Destroy Rate</p>
                         </div>
                       </div>
                       {data.scrollProperties.target_slot && (
@@ -327,7 +327,7 @@ export default function ItemDetailPage() {
                         </p>
                       )}
                       <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                        <h4 className="font-pixel text-[9px] uppercase text-[#4a5a6a] mb-2">SUCCESS RATE BY ENHANCEMENT LEVEL</h4>
+                        <h4 className="font-pixel text-[12px] uppercase text-[#4a5a6a] mb-2">SUCCESS RATE BY ENHANCEMENT LEVEL</h4>
                         <SuccessCurveChart scrollProps={data.scrollProperties} gameConstants={data.gameConstants} />
                       </div>
                     </PixelCard>

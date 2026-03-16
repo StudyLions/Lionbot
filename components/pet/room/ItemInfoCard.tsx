@@ -50,18 +50,18 @@ export default function ItemInfoCard({
         }}
       >
         {/* Layer name */}
-        <div className="text-[11px] text-yellow-300 font-bold mb-1">
+        <div className="text-sm text-yellow-300 font-bold mb-1">
           {displayName}
         </div>
 
         {/* Asset */}
-        <div className="flex items-center gap-1 text-[10px] text-[#8b9dc3] mb-0.5">
+        <div className="flex items-center gap-1 text-[13px] text-[#8b9dc3] mb-0.5">
           <span className="text-[#6b7fa0]">Asset:</span>
           <span className="text-[#e2e8f0] truncate max-w-[120px]">{assetName}</span>
         </div>
 
         {/* Offset */}
-        <div className="flex items-center gap-1 text-[10px] text-[#8b9dc3] mb-0.5">
+        <div className="flex items-center gap-1 text-[13px] text-[#8b9dc3] mb-0.5">
           <span className="text-[#6b7fa0]">Offset:</span>
           <span className="text-[#e2e8f0] tabular-nums">
             ({offset[0]}, {offset[1]})
@@ -70,7 +70,7 @@ export default function ItemInfoCard({
 
         {/* Flip status */}
         {!isLion && (
-          <div className="flex items-center gap-1 text-[10px] text-[#8b9dc3]">
+          <div className="flex items-center gap-1 text-[13px] text-[#8b9dc3]">
             <span className="text-[#6b7fa0]">Flipped:</span>
             <span className={flipped ? 'text-yellow-300' : 'text-[#e2e8f0]'}>
               {flipped ? 'Yes ⇔' : 'No'}

@@ -51,7 +51,7 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
       <div className="border-2 border-[#40d870]/30 bg-[#0c1020]">
         {/* Title bar */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a3020] border-b-2 border-[#40d870]/30">
-          <span className="font-pixel text-xs text-[#40d870]">
+          <span className="font-pixel text-sm text-[#40d870]">
             SEED SHOP - Plot #{plotId + 1}
           </span>
           <div className="flex items-center gap-3">
@@ -88,7 +88,7 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
                       <img src={imgUrl} alt={seed.name} className="w-11 h-11 object-contain"
                         style={{ imageRendering: "pixelated" }} />
                     ) : (
-                      <span className="font-pixel text-lg text-[#40d870]/20">?</span>
+                      <span className="font-pixel text-xl text-[#40d870]/20">?</span>
                     )}
                   </div>
                   <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate w-full text-center">
@@ -105,7 +105,7 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
         {/* Purchase summary bar */}
         {selected && (
           <div className="flex items-center justify-between px-4 py-2.5 bg-[#111a28] border-t-2 border-[#2a3a5c]">
-            <div className="flex items-center gap-4 font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+            <div className="flex items-center gap-4 font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
               <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
               <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
               <span>{selected.growthPointsNeeded} pts</span>

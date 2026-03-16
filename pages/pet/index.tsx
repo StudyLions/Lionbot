@@ -83,14 +83,14 @@ export default function PetOverview() {
                 </div>
               ) : error ? (
                 <PixelCard className="p-8 text-center" corners>
-                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
               ) : !data?.hasPet ? (
                 <PixelCard className="p-12 text-center space-y-4" corners>
                   <img src={getUiIconUrl("liongotchi_heart")} alt="" width={48} height={48}
                     className="mx-auto" style={{ imageRendering: "pixelated" }} />
-                  <h2 className="font-pixel text-lg text-[var(--pet-text,#e2e8f0)]">No pet yet!</h2>
-                  <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] max-w-sm mx-auto">
+                  <h2 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">No pet yet!</h2>
+                  <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] max-w-sm mx-auto">
                     Use the /pet command in any Discord server with LionBot to create your LionGotchi.
                   </p>
                 </PixelCard>
@@ -98,13 +98,13 @@ export default function PetOverview() {
                 <>
                   {/* Hero */}
                   <div>
-                    <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">{pet.name}</h1>
+                    <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">{pet.name}</h1>
                     <div className="mt-1.5 flex items-center gap-1">
                       <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
                       <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
                       <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                     </div>
-                    <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                    <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                       Level {pet.level} &middot; {pet.expression.toLowerCase()} mood &middot;
                       Created {new Date(pet.createdAt).toLocaleDateString()}
                     </p>
@@ -123,13 +123,13 @@ export default function PetOverview() {
                         <div className="flex items-center gap-1.5">
                           <img src={getUiIconUrl("liongotchi_greenpot")} alt="" width={16} height={16}
                             style={{ imageRendering: "pixelated" }} />
-                          <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">{data.inventoryCount}</span>
-                          <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">items</span>
+                          <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">{data.inventoryCount}</span>
+                          <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">items</span>
                         </div>
                         <div className="w-px h-6 bg-[#2a3a5c]" />
                         <div className="flex items-center gap-1.5">
-                          <span className="font-pixel text-xs text-[#40d870]">{data.activeFarmPlots}</span>
-                          <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">farm</span>
+                          <span className="font-pixel text-sm text-[#40d870]">{data.activeFarmPlots}</span>
+                          <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">farm</span>
                         </div>
                       </div>
                     </div>
@@ -141,7 +141,7 @@ export default function PetOverview() {
                     <div className="flex items-center justify-between pb-2 border-b-2 border-[#1a2a3c]">
                       <div className="flex items-center gap-2">
                         <span className="font-pixel text-[14px]">🏠</span>
-                        <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">Room</span>
+                        <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Room</span>
                       </div>
                       <Link href="/pet/room">
                         <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] hover:text-[#ffd860] transition-colors cursor-pointer">
@@ -174,7 +174,7 @@ export default function PetOverview() {
                     <div className="flex items-center gap-2 pb-2 border-b-2 border-[#1a2a3c]">
                       <img src={getUiIconUrl("liongotchi_heart")} alt="" width={16} height={16}
                         style={{ imageRendering: "pixelated" }} />
-                      <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">Pet Needs</span>
+                      <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Pet Needs</span>
                     </div>
                     <PixelBar value={pet.food} max={8} label="Food" color="gold" />
                     <PixelBar value={pet.bath} max={8} label="Bath" color="blue" />
@@ -200,22 +200,22 @@ export default function PetOverview() {
                             className="flex items-center gap-3 px-3 py-2 border-2 bg-[#080c18]"
                             style={{ borderColor: bc, boxShadow: "1px 1px 0 #060810" }}
                           >
-                            <div className="w-9 h-9 border border-[#1a2a3c] bg-[#0a0e1a] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <div className="w-11 h-11 border border-[#1a2a3c] bg-[#0a0e1a] flex items-center justify-center flex-shrink-0 overflow-hidden">
                               {imgUrl ? (
                                 <img src={imgUrl} alt={item?.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                               ) : (
-                                <span className="font-pixel text-[8px] text-[#3a4a5c]">{slot[0]}</span>
+                                <span className="font-pixel text-[11px] text-[#3a4a5c]">{slot[0]}</span>
                               )}
                             </div>
                             <div className="min-w-0 flex-1">
-                              <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] uppercase">{slot}</p>
+                              <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] uppercase">{slot}</p>
                               {item ? (
                                 <div className="flex items-center gap-1.5">
                                   <span className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">{item.name}</span>
                                   <PixelBadge rarity={item.rarity} />
                                 </div>
                               ) : (
-                                <p className="font-pixel text-[10px] text-[#3a4a5c]">Empty</p>
+                                <p className="font-pixel text-[13px] text-[#3a4a5c]">Empty</p>
                               )}
                             </div>
                           </div>

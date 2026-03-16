@@ -104,7 +104,7 @@ function WaterTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
   if (remaining === null || remaining <= 0) return null
   const m = Math.floor(remaining / 60)
   const s = remaining % 60
-  return <span className="text-[6px] text-[#4080f0]">{m}:{String(s).padStart(2, "0")}</span>
+  return <span className="text-[9px] text-[#4080f0]">{m}:{String(s).padStart(2, "0")}</span>
 }
 
 export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWatered, isFullscreen }: FarmSceneProps) {
@@ -406,9 +406,9 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
               >
                 <div className="bg-[#0a0e1a]/95 border border-[#4080f0] px-1.5 py-0.5 font-pixel text-center whitespace-nowrap">
                   {plot.empty ? (
-                    <span className="text-[5px] text-[#6a7a8a]">Empty Plot</span>
+                    <span className="text-[8px] text-[#6a7a8a]">Empty Plot</span>
                   ) : plot.dead ? (
-                    <span className="text-[5px] text-[#e04040]">Dead</span>
+                    <span className="text-[8px] text-[#e04040]">Dead</span>
                   ) : (
                     <div className="flex flex-col items-center gap-0">
                       <span className={cn(
@@ -421,17 +421,17 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
                       )}>
                         {plot.seed?.name}
                       </span>
-                      <span className="text-[4px] text-[#40d870]">
+                      <span className="text-[7px] text-[#40d870]">
                         {STAGE_LABELS[plot.stage]} {plot.progress}%
                       </span>
                       {plot.needsWater && (
-                        <span className="text-[4px] text-[#4080f0]">Needs water!</span>
+                        <span className="text-[7px] text-[#4080f0]">Needs water!</span>
                       )}
                       {!plot.needsWater && !plot.readyToHarvest && plot.nextWaterAt && (
                         <WaterTimer nextWaterAt={plot.nextWaterAt} />
                       )}
                       {plot.readyToHarvest && (
-                        <span className="text-[4px] text-[#f0c040]">HARVEST!</span>
+                        <span className="text-[7px] text-[#f0c040]">HARVEST!</span>
                       )}
                     </div>
                   )}

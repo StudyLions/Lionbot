@@ -88,13 +88,13 @@ export default function MarketplacePage() {
               {/* Title + Actions */}
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
+                  <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
                     <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
                     MARKETPLACE
                     <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
                   </h1>
                   <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--pet-gold,#f0c040)] to-transparent mt-1" />
-                  <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                  <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                     Buy and sell items with other players
                   </p>
                 </div>
@@ -115,24 +115,24 @@ export default function MarketplacePage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
-                    <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5a6a]" />
+                    <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5a6a]" />
                     <input
                       type="text" value={search}
                       onChange={(e) => { setSearch(e.target.value); setPage(1) }}
                       placeholder="Search items..."
-                      className="font-pixel text-[11px] w-full pl-9 pr-3 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#4a5a6a] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
+                      className="font-pixel text-sm w-full pl-10 pr-3 py-2.5 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#4a5a6a] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
                     />
                   </div>
                   <div className="flex border-2 border-[#2a3a5c] overflow-hidden">
                     {[
                       { val: "", label: "ALL" },
-                      { val: "GOLD", label: "", icon: <Coins size={12} className="text-[var(--pet-gold,#f0c040)]" /> },
-                      { val: "GEMS", label: "", icon: <Gem size={12} className="text-[#a855f7]" /> },
+                      { val: "GOLD", label: "", icon: <Coins size={16} className="text-[var(--pet-gold,#f0c040)]" /> },
+                      { val: "GEMS", label: "", icon: <Gem size={16} className="text-[#a855f7]" /> },
                     ].map((c) => (
                       <button
                         key={c.val}
                         onClick={() => { setCurrency(c.val); setPage(1) }}
-                        className={`font-pixel text-[10px] px-2.5 py-2 transition-all flex items-center gap-1 ${
+                        className={`font-pixel text-[13px] px-3 py-2.5 transition-all flex items-center gap-1.5 ${
                           currency === c.val
                             ? "bg-[#101830] text-[#80b0ff]"
                             : "bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
@@ -145,7 +145,7 @@ export default function MarketplacePage() {
                   <select
                     value={sort}
                     onChange={(e) => { setSort(e.target.value); setPage(1) }}
-                    className="font-pixel text-[11px] px-3 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
+                    className="font-pixel text-sm px-3 py-2.5 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
                   >
                     {SORT_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
@@ -177,29 +177,29 @@ export default function MarketplacePage() {
                       <button
                         onClick={() => setPage(Math.max(1, page - 1))}
                         disabled={page <= 1}
-                        className="font-pixel p-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa] disabled:opacity-30 transition-all"
+                        className="font-pixel p-2.5 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa] disabled:opacity-30 transition-all"
                       >
-                        <ChevronLeft size={14} />
+                        <ChevronLeft size={16} />
                       </button>
-                      <span className="font-pixel text-[10px] text-[#4a5a6a] px-2">
+                      <span className="font-pixel text-[13px] text-[#4a5a6a] px-3">
                         Page {listingsData.pagination.page} / {listingsData.pagination.totalPages}
                       </span>
                       <button
                         onClick={() => setPage(Math.min(listingsData.pagination.totalPages, page + 1))}
                         disabled={page >= listingsData.pagination.totalPages}
-                        className="font-pixel p-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa] disabled:opacity-30 transition-all"
+                        className="font-pixel p-2.5 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa] disabled:opacity-30 transition-all"
                       >
-                        <ChevronRight size={14} />
+                        <ChevronRight size={16} />
                       </button>
                     </div>
                   )}
                 </>
               ) : (
                 <PixelCard className="py-16 text-center" corners>
-                  <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">
+                  <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">
                     NO LISTINGS FOUND
                   </p>
-                  <p className="font-pixel text-[10px] text-[#4a5a6a] mt-1">
+                  <p className="font-pixel text-[13px] text-[#4a5a6a] mt-1">
                     {search || category || selectedRarities.size
                       ? "Try adjusting your filters"
                       : "The marketplace is empty -- be the first to list an item!"}
