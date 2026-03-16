@@ -26,25 +26,30 @@ interface ConstraintZone {
   flippable: boolean
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Tightened constraints to prevent items from leaving the room.
+//          Offsets are relative to each item's default position within the
+//          200x200 canvas. Keeping ranges small ensures items stay visible.
 export const LAYER_CONSTRAINTS: Record<string, ConstraintZone> = {
   wall:    { category: 'BACKGROUND',    yRange: [0, 0],     xRange: [0, 0],     movable: false, flippable: false },
   floor:   { category: 'BACKGROUND',    yRange: [0, 0],     xRange: [0, 0],     movable: false, flippable: false },
-  mat:     { category: 'FLOOR_SURFACE', yRange: [-20, 40],  xRange: [-40, 40],  movable: true,  flippable: true },
-  table:   { category: 'FLOOR_ITEMS',   yRange: [-40, 60],  xRange: [-60, 60],  movable: true,  flippable: true },
-  chair:   { category: 'FLOOR_ITEMS',   yRange: [-40, 60],  xRange: [-60, 60],  movable: true,  flippable: true },
-  bed:     { category: 'FLOOR_ITEMS',   yRange: [-40, 60],  xRange: [-60, 60],  movable: true,  flippable: true },
-  lamp:    { category: 'FLOOR_ITEMS',   yRange: [-40, 60],  xRange: [-60, 60],  movable: true,  flippable: true },
-  picture: { category: 'WALL_ITEMS',    yRange: [-60, 40],  xRange: [-60, 60],  movable: true,  flippable: true },
-  window:  { category: 'WALL_ITEMS',    yRange: [-60, 40],  xRange: [-60, 60],  movable: true,  flippable: true },
+  mat:     { category: 'FLOOR_SURFACE', yRange: [-10, 15],  xRange: [-25, 25],  movable: true,  flippable: true },
+  table:   { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
+  chair:   { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
+  bed:     { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
+  lamp:    { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
+  picture: { category: 'WALL_ITEMS',    yRange: [-15, 15],  xRange: [-30, 30],  movable: true,  flippable: true },
+  window:  { category: 'WALL_ITEMS',    yRange: [-15, 15],  xRange: [-30, 30],  movable: true,  flippable: true },
 }
 
 export const LION_CONSTRAINTS: ConstraintZone = {
   category: 'LION',
-  yRange: [-40, 40],
-  xRange: [-80, 80],
+  yRange: [-20, 15],
+  xRange: [-50, 50],
   movable: true,
   flippable: true,
 }
+// --- END AI-MODIFIED ---
 
 export function clampOffset(
   offset: [number, number],

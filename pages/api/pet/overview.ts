@@ -120,7 +120,7 @@ export default apiHandler({
       hasPet: true,
       pet: {
         name: pet.pet_name,
-        expression: pet.expression,
+        expression: (pet.expression ?? 'default').toLowerCase(),
         level: pet.level,
         xp: pet.xp.toString(),
         food: pet.food,

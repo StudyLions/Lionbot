@@ -139,9 +139,12 @@ export default apiHandler({
       layout,
       rooms,
       equipment,
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Lowercase expression to match blob asset paths (DB stores UPPERCASE)
       pet: pet
-        ? { name: pet.pet_name, expression: pet.expression, level: pet.level }
+        ? { name: pet.pet_name, expression: (pet.expression ?? 'default').toLowerCase(), level: pet.level }
         : null,
+      // --- END AI-MODIFIED ---
       gold: (userConfig?.gold ?? BigInt(0)).toString(),
       gems: userConfig?.gems ?? 0,
     })
@@ -154,14 +157,17 @@ export default apiHandler({
     const userId = BigInt(auth.discordId)
     const { layout, activeRoomId, slot, assetPath } = req.body
 
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Cast layout string to jsonb explicitly for PostgreSQL compatibility
     if (layout !== undefined) {
       await prisma.$queryRawUnsafe(
-        `INSERT INTO lg_room_layout (userid, layout, updated_at) VALUES ($1, $2, now()) ON CONFLICT (userid) DO UPDATE SET layout = $2, updated_at = now()`,
+        `INSERT INTO lg_room_layout (userid, layout, updated_at) VALUES ($1, $2::jsonb, now()) ON CONFLICT (userid) DO UPDATE SET layout = $2::jsonb, updated_at = now()`,
         userId,
         JSON.stringify(layout)
       )
       return res.status(200).json({ success: true })
     }
+    // --- END AI-MODIFIED ---
 
     if (activeRoomId !== undefined) {
       await prisma.lg_pets.update({
