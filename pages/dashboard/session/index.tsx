@@ -11,6 +11,7 @@ import CountdownRing from "@/components/dashboard/CountdownRing"
 import { toast } from "@/components/dashboard/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDashboard } from "@/hooks/useDashboard"
+import { useStageNotifications } from "@/hooks/useStageNotifications"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
@@ -19,6 +20,7 @@ import Link from "next/link"
 import {
   Radio, Clock, Users, CheckSquare, Plus, Check, Circle,
   Maximize2, ArrowLeft, Video, MonitorPlay, Trash2, X, Pencil,
+  Bell, BellOff, Trophy, Timer,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -44,12 +46,17 @@ interface LiveSessionData {
     remainingSeconds: number
     stageDurationSeconds: number
     channelName: string
+    cycleNumber: number
+    lastStarted: string
   } | null
   roomMembers?: Array<{
     userId: string
     displayName: string
     avatarUrl: string | null
     activity: string | null
+    startTime: string | null
+    isCamera: boolean
+    isStream: boolean
     tasks: Array<{ id: number; content: string; completed: boolean }>
   }>
   myTasks?: Array<{
@@ -73,6 +80,17 @@ function formatDuration(startTime: string): string {
   return `${m}m ${String(s).padStart(2, "0")}s`
 }
 
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: format member study duration from startTime
+function formatMemberDuration(startTime: string): string {
+  const elapsed = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000)
+  const h = Math.floor(elapsed / 3600)
+  const m = Math.floor((elapsed % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+// --- END AI-MODIFIED ---
+
 export default function SessionPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -92,6 +110,36 @@ export default function SessionPage() {
   const addInputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
   const activityInputRef = useRef<HTMLInputElement>(null)
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: stage change notifications + session summary tracking
+  const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
+
+  const lastActiveDataRef = useRef<LiveSessionData | null>(null)
+  const [sessionSummary, setSessionSummary] = useState<{
+    duration: string
+    cycles: number | null
+    tasksCompleted: number
+  } | null>(null)
+
+  useEffect(() => {
+    if (data?.active) {
+      lastActiveDataRef.current = data
+      setSessionSummary(null)
+    } else if (lastActiveDataRef.current?.active && data && !data.active) {
+      const prev = lastActiveDataRef.current
+      const startTime = prev.session?.startTime
+      const duration = startTime ? formatDuration(startTime) : "0m"
+      const cycles = prev.pomodoro?.cycleNumber ?? null
+      const sessionStart = startTime ? new Date(startTime).getTime() : 0
+      const tasksCompleted = (prev.myTasks ?? []).filter(
+        (t) => t.completed && t.completedAt && new Date(t.completedAt).getTime() >= sessionStart
+      ).length
+      setSessionSummary({ duration, cycles, tasksCompleted })
+      lastActiveDataRef.current = null
+    }
+  }, [data?.active])
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!data?.session?.startTime) return
@@ -248,11 +296,46 @@ export default function SessionPage() {
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0 space-y-6">
+              {/* --- AI-MODIFIED (2026-03-16) --- */}
+              {/* Purpose: session summary overlay when session ends */}
               {isLoading ? (
                 <SessionSkeleton />
+              ) : !data?.active && sessionSummary ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-6 text-center">
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/15 flex items-center justify-center">
+                    <Trophy size={28} className="text-emerald-400" />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-semibold text-foreground">Session Complete</h2>
+                    <p className="text-sm text-muted-foreground">Great work! Here&apos;s your session summary.</p>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-md w-full">
+                    <div className="rounded-xl border border-border bg-card p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground tabular-nums">{sessionSummary.duration}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Duration</p>
+                    </div>
+                    {sessionSummary.cycles !== null && (
+                      <div className="rounded-xl border border-border bg-card p-4 text-center">
+                        <p className="text-2xl font-bold text-foreground tabular-nums">{sessionSummary.cycles}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Cycles</p>
+                      </div>
+                    )}
+                    <div className="rounded-xl border border-border bg-card p-4 text-center">
+                      <p className="text-2xl font-bold text-foreground tabular-nums">{sessionSummary.tasksCompleted}</p>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1">Tasks Done</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => { setSessionSummary(null); router.push("/dashboard") }}
+                    className="mt-2 text-sm text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors"
+                  >
+                    <ArrowLeft size={14} /> Back to Overview
+                  </button>
+                </div>
               ) : !data?.active ? (
                 <NoSession />
               ) : (
+              /* --- END AI-MODIFIED --- */
                 <>
                   {/* Session Header */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -370,16 +453,54 @@ export default function SessionPage() {
                           {Math.floor(data.pomodoro.focusLength / 60)}m focus / {Math.floor(data.pomodoro.breakLength / 60)}m break
                         </p>
                       </div>
-                      <Link href="/dashboard/session/focus">
-                        <a className={cn(
-                          "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                          data.pomodoro.stage === "focus"
-                            ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
-                            : "bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25"
-                        )}>
-                          <Maximize2 size={14} /> Focus Mode
-                        </a>
-                      </Link>
+
+                      {/* --- AI-MODIFIED (2026-03-16) --- */}
+                      {/* Purpose: cycle counter dots + notification toggle */}
+                      <div className="flex items-center gap-1.5">
+                        {Array.from({ length: Math.min(data.pomodoro.cycleNumber, 8) }).map((_, i) => (
+                          <div
+                            key={i}
+                            className={cn(
+                              "w-2 h-2 rounded-full transition-all",
+                              i < data.pomodoro!.cycleNumber - 1
+                                ? data.pomodoro!.stage === "focus" ? "bg-amber-400" : "bg-cyan-400"
+                                : data.pomodoro!.stage === "focus"
+                                  ? "bg-amber-400 animate-pulse"
+                                  : "bg-cyan-400 animate-pulse"
+                            )}
+                          />
+                        ))}
+                        <span className="text-[10px] text-muted-foreground ml-1 tabular-nums">
+                          Cycle {data.pomodoro.cycleNumber}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Link href="/dashboard/session/focus">
+                          <a className={cn(
+                            "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
+                            data.pomodoro.stage === "focus"
+                              ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
+                              : "bg-cyan-500/15 text-cyan-400 hover:bg-cyan-500/25"
+                          )}>
+                            <Maximize2 size={14} /> Focus Mode
+                          </a>
+                        </Link>
+                        <button
+                          onClick={notifications.toggle}
+                          className={cn(
+                            "flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors",
+                            notifications.enabled
+                              ? "bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25"
+                              : "bg-muted/50 text-muted-foreground hover:bg-muted"
+                          )}
+                          title={notifications.enabled ? "Disable alerts" : "Enable stage change alerts"}
+                        >
+                          {notifications.enabled ? <Bell size={13} /> : <BellOff size={13} />}
+                          {notifications.enabled ? "Alerts On" : "Alerts"}
+                        </button>
+                      </div>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   )}
 
@@ -401,6 +522,8 @@ export default function SessionPage() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {/* --- AI-MODIFIED (2026-03-16) --- */}
+                        {/* Purpose: show study duration + camera/stream badges per member */}
                         {roomMembers.map((member) => (
                           <div key={member.userId} className="rounded-xl border border-border bg-card p-4 space-y-3">
                             <div className="flex items-center gap-3">
@@ -411,17 +534,33 @@ export default function SessionPage() {
                                   <Users size={14} className="text-muted-foreground" />
                                 </div>
                               )}
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">{member.displayName}</p>
-                                {member.activity ? (
-                                  <p className="text-[10px] text-primary/80 truncate">{member.activity}</p>
-                                ) : member.tasks.length > 0 ? (
-                                  <p className="text-[10px] text-muted-foreground">
-                                    {member.tasks.length} active task{member.tasks.length !== 1 ? "s" : ""}
-                                  </p>
-                                ) : null}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-medium text-foreground truncate">{member.displayName}</p>
+                                  {member.isCamera && (
+                                    <Video size={11} className="text-blue-400 flex-shrink-0" />
+                                  )}
+                                  {member.isStream && (
+                                    <MonitorPlay size={11} className="text-purple-400 flex-shrink-0" />
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {member.activity ? (
+                                    <p className="text-[10px] text-primary/80 truncate">{member.activity}</p>
+                                  ) : member.tasks.length > 0 ? (
+                                    <p className="text-[10px] text-muted-foreground">
+                                      {member.tasks.length} active task{member.tasks.length !== 1 ? "s" : ""}
+                                    </p>
+                                  ) : null}
+                                  {member.startTime && (
+                                    <span className="text-[10px] text-muted-foreground/60 tabular-nums flex-shrink-0">
+                                      {formatMemberDuration(member.startTime)}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </div>
+                            {/* --- END AI-MODIFIED --- */}
                             {member.tasks.length > 0 && (
                               <div className="space-y-1.5 pl-1">
                                 {member.tasks.slice(0, 5).map((task) => (

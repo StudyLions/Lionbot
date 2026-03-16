@@ -79,6 +79,11 @@ export default apiHandler({
       const stageStartMs = now - stageElapsed * 1000
       const stageEndMs = stageStartMs + stageDuration * 1000
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: add cycleNumber and lastStarted for cycle counter UI
+      const totalElapsedSecs = (now - lastStarted) / 1000
+      const cycleNumber = Math.floor(totalElapsedSecs / interval) + 1
+
       pomodoro = {
         stage,
         focusLength: timer.focus_length,
@@ -88,13 +93,18 @@ export default apiHandler({
         remainingSeconds: remaining,
         stageDurationSeconds: stageDuration,
         channelName: timer.pretty_name || timer.channel_name || "Pomodoro",
+        cycleNumber,
+        lastStarted: timer.last_started!.toISOString(),
       }
+      // --- END AI-MODIFIED ---
     }
 
     const roomUserIds = roomSessions.map((s) => s.userid)
 
-    const roomSessionTagMap = new Map(
-      roomSessions.map((s) => [s.userid.toString(), s.tag ?? null])
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: map full session data per room member (tag, start_time, camera, stream)
+    const roomSessionMap = new Map(
+      roomSessions.map((s) => [s.userid.toString(), s])
     )
 
     let roomMembers: Array<{
@@ -102,8 +112,12 @@ export default apiHandler({
       displayName: string
       avatarUrl: string | null
       activity: string | null
+      startTime: string | null
+      isCamera: boolean
+      isStream: boolean
       tasks: Array<{ id: number; content: string; completed: boolean }>
     }> = []
+    // --- END AI-MODIFIED ---
 
     if (roomUserIds.length > 0) {
       const [userConfigs, memberRows, roomTasks] = await Promise.all([
@@ -143,16 +157,22 @@ export default apiHandler({
         tasksByUser.get(uid)!.push(t)
       }
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: include startTime, isCamera, isStream per room member
       roomMembers = roomUserIds.map((uid) => {
         const uidStr = uid.toString()
         const uc = userConfigMap.get(uidStr)
         const mem = memberMap.get(uidStr)
+        const rs = roomSessionMap.get(uidStr)
         const tasks = tasksByUser.get(uidStr) || []
         return {
           userId: uidStr,
           displayName: mem?.display_name || uc?.name || `User ${uidStr.slice(-4)}`,
           avatarUrl: discordAvatarUrl(uidStr, uc?.avatar_hash ?? null),
-          activity: roomSessionTagMap.get(uidStr) ?? null,
+          activity: rs?.tag ?? null,
+          startTime: rs?.start_time?.toISOString() ?? null,
+          isCamera: rs?.live_video ?? false,
+          isStream: rs?.live_stream ?? false,
           tasks: tasks.map((t) => ({
             id: t.taskid,
             content: t.content,
@@ -160,6 +180,7 @@ export default apiHandler({
           })),
         }
       })
+      // --- END AI-MODIFIED ---
     }
 
     res.status(200).json({

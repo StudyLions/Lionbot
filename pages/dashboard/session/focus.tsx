@@ -2,17 +2,23 @@
 // AI-GENERATED FILE
 // Created: 2026-03-16
 // Purpose: Focus Mode - immersive full-screen pomodoro timer with
-//          Wake Lock API, pop-out window support, and ambient backgrounds
+//          Wake Lock API, pop-out window support, ambient backgrounds,
+//          stopwatch mode for non-pomodoro rooms, ambient sounds,
+//          room member presence, break wellness tips, notifications,
+//          and pomodoro cycle counter
 // ============================================================
 import { useDashboard } from "@/hooks/useDashboard"
+import { useStageNotifications } from "@/hooks/useStageNotifications"
+import { useAmbientSound, SoundType } from "@/hooks/useAmbientSound"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import Head from "next/head"
 import Link from "next/link"
 import {
   ArrowLeft, ExternalLink, Clock, Maximize, Minimize,
+  Bell, BellOff, Volume2, VolumeX, Waves, CloudRain, Users,
 } from "lucide-react"
 import InstallPrompt from "@/components/dashboard/InstallPrompt"
 import { GetServerSideProps } from "next"
@@ -38,8 +44,33 @@ interface LiveSessionData {
     remainingSeconds: number
     stageDurationSeconds: number
     channelName: string
+    cycleNumber: number
+    lastStarted: string
   } | null
+  roomMembers?: Array<{
+    userId: string
+    displayName: string
+    avatarUrl: string | null
+  }>
 }
+
+const BREAK_TIPS = [
+  "Stand up and stretch your shoulders",
+  "Drink a glass of water",
+  "Look at something 20 feet away for 20 seconds",
+  "Roll your neck gently side to side",
+  "Take 3 deep breaths",
+  "Wiggle your fingers and toes",
+  "Close your eyes and relax your jaw",
+  "Walk around the room for a moment",
+  "Splash cold water on your face",
+  "Do a quick shoulder roll",
+  "Stretch your wrists and forearms",
+  "Take a moment to appreciate your progress",
+  "Straighten your posture",
+  "Give your eyes a break from the screen",
+  "Hydrate -- your brain needs water to focus",
+]
 
 function useWakeLock() {
   const wakeLockRef = useRef<any>(null)
@@ -72,6 +103,13 @@ function useWakeLock() {
   }, [request, release])
 }
 
+const SOUND_OPTIONS: { type: SoundType; label: string; Icon: typeof Volume2 }[] = [
+  { type: "off", label: "Off", Icon: VolumeX },
+  { type: "white", label: "White Noise", Icon: Waves },
+  { type: "brown", label: "Brown Noise", Icon: Volume2 },
+  { type: "rain", label: "Rain", Icon: CloudRain },
+]
+
 export default function FocusModePage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -83,14 +121,18 @@ export default function FocusModePage() {
   )
 
   useWakeLock()
+  const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
+  const ambient = useAmbientSound()
 
   const [remaining, setRemaining] = useState<number>(0)
   const [totalSecs, setTotalSecs] = useState<number>(0)
   const [stage, setStage] = useState<"focus" | "break" | null>(null)
   const [elapsed, setElapsed] = useState("")
+  const [elapsedSecs, setElapsedSecs] = useState(0)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const prevStageRef = useRef<string | null>(null)
   const [transitioning, setTransitioning] = useState(false)
+  const [showSoundPanel, setShowSoundPanel] = useState(false)
 
   useEffect(() => {
     if (!data?.pomodoro) {
@@ -121,9 +163,10 @@ export default function FocusModePage() {
       const h = Math.floor(secs / 3600)
       const m = Math.floor((secs % 3600) / 60)
       setElapsed(h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`)
+      setElapsedSecs(secs)
     }
     update()
-    const interval = setInterval(update, 10000)
+    const interval = setInterval(update, 1000)
     return () => clearInterval(interval)
   }, [data?.session?.startTime])
 
@@ -132,9 +175,11 @@ export default function FocusModePage() {
       const mins = Math.floor(remaining / 60)
       const secs = remaining % 60
       document.title = `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")} - ${stage === "focus" ? "Focus" : "Break"}`
+    } else if (elapsed && data?.active && !data?.pomodoro) {
+      document.title = `${elapsed} - Study Session`
     }
     return () => { document.title = "LionBot" }
-  }, [remaining, stage])
+  }, [remaining, stage, elapsed, data?.active, data?.pomodoro])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -170,17 +215,13 @@ export default function FocusModePage() {
     )
   }
 
-  const minutes = Math.floor(remaining / 60)
-  const seconds = remaining % 60
-  const formatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
-  const progress = totalSecs > 0 ? remaining / totalSecs : 0
-  const urgent = totalSecs > 0 && remaining / totalSecs < 0.1
+  const breakTip = useMemo(() => {
+    if (!data?.pomodoro || data.pomodoro.stage !== "break") return null
+    const idx = (data.pomodoro.cycleNumber - 1) % BREAK_TIPS.length
+    return BREAK_TIPS[idx]
+  }, [data?.pomodoro?.stage, data?.pomodoro?.cycleNumber])
 
-  const ringSize = isPopout ? 240 : 320
-  const strokeWidth = isPopout ? 6 : 8
-  const radius = (ringSize - strokeWidth * 2) / 2
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference * (1 - progress)
+  const roomMembers = data?.roomMembers ?? []
 
   if (!data?.active) {
     return (
@@ -198,23 +239,29 @@ export default function FocusModePage() {
     )
   }
 
-  if (!data?.pomodoro) {
-    return (
-      <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Head><title>Focus Mode - LionBot</title></Head>
-        <div className="text-center space-y-4">
-          <Clock size={48} className="text-gray-600 mx-auto" />
-          <p className="text-lg text-gray-400">You&apos;re in a voice channel, not a pomodoro room.</p>
-          <p className="text-sm text-gray-500">Focus mode requires a pomodoro timer.</p>
-          <Link href="/dashboard/session">
-            <a className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1.5 justify-center">
-              <ArrowLeft size={14} /> Back to Session
-            </a>
-          </Link>
-        </div>
-      </div>
-    )
+  const isPomodoro = !!data.pomodoro
+
+  const minutes = isPomodoro ? Math.floor(remaining / 60) : Math.floor(elapsedSecs / 60)
+  const seconds = isPomodoro ? remaining % 60 : elapsedSecs % 60
+  const formatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+
+  const ringSize = isPopout ? 240 : 320
+  const strokeWidth = isPopout ? 6 : 8
+  const radius = (ringSize - strokeWidth * 2) / 2
+  const circumference = 2 * Math.PI * radius
+
+  let progress = 0
+  let strokeDashoffset = circumference
+  if (isPomodoro && totalSecs > 0) {
+    progress = remaining / totalSecs
+    strokeDashoffset = circumference * (1 - progress)
+  } else if (!isPomodoro) {
+    const maxRingSecs = 3600
+    progress = Math.min(elapsedSecs / maxRingSecs, 1)
+    strokeDashoffset = circumference * (1 - progress)
   }
+
+  const urgent = isPomodoro && totalSecs > 0 && remaining / totalSecs < 0.1
 
   const focusColors = {
     bg: "from-amber-950/40 via-gray-950 to-gray-950",
@@ -223,7 +270,6 @@ export default function FocusModePage() {
     glowStrong: "rgba(245, 158, 11, 0.3)",
     text: "text-amber-400",
     label: "FOCUS",
-    breathe: "animate-[breathe-warm_8s_ease-in-out_infinite]",
   }
   const breakColors = {
     bg: "from-cyan-950/40 via-gray-950 to-gray-950",
@@ -232,9 +278,19 @@ export default function FocusModePage() {
     glowStrong: "rgba(6, 182, 212, 0.3)",
     text: "text-cyan-400",
     label: "BREAK",
-    breathe: "animate-[breathe-cool_6s_ease-in-out_infinite]",
   }
-  const c = stage === "focus" ? focusColors : breakColors
+  const sessionColors = {
+    bg: "from-violet-950/30 via-gray-950 to-gray-950",
+    stroke: "#8b5cf6",
+    glow: "rgba(139, 92, 246, 0.12)",
+    glowStrong: "rgba(139, 92, 246, 0.25)",
+    text: "text-violet-400",
+    label: "SESSION",
+  }
+
+  const c = isPomodoro
+    ? (stage === "focus" ? focusColors : breakColors)
+    : sessionColors
 
   return (
     <>
@@ -292,7 +348,21 @@ export default function FocusModePage() {
                 <ArrowLeft size={14} /> Back
               </a>
             </Link>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {isPomodoro && (
+                <button
+                  onClick={notifications.toggle}
+                  className={cn(
+                    "transition-colors p-1.5 rounded-lg",
+                    notifications.enabled
+                      ? "text-emerald-400 hover:text-emerald-300 bg-emerald-400/10"
+                      : "text-gray-500 hover:text-gray-300"
+                  )}
+                  title={notifications.enabled ? "Disable alerts" : "Enable stage alerts"}
+                >
+                  {notifications.enabled ? <Bell size={15} /> : <BellOff size={15} />}
+                </button>
+              )}
               <button
                 onClick={openPopout}
                 className="text-gray-500 hover:text-gray-300 transition-colors p-1.5"
@@ -361,19 +431,52 @@ export default function FocusModePage() {
             <p className={cn("text-sm font-bold uppercase tracking-[0.3em]", c.text)}>
               {c.label}
             </p>
-            <p className="text-xs text-gray-500">
-              {Math.floor(data.pomodoro.focusLength / 60)}:{String(data.pomodoro.focusLength % 60).padStart(2, "0")} focus
-              {" / "}
-              {Math.floor(data.pomodoro.breakLength / 60)}:{String(data.pomodoro.breakLength % 60).padStart(2, "0")} break
-            </p>
+            {isPomodoro && data.pomodoro && (
+              <>
+                <p className="text-xs text-gray-500">
+                  {Math.floor(data.pomodoro.focusLength / 60)}:{String(data.pomodoro.focusLength % 60).padStart(2, "0")} focus
+                  {" / "}
+                  {Math.floor(data.pomodoro.breakLength / 60)}:{String(data.pomodoro.breakLength % 60).padStart(2, "0")} break
+                </p>
+                {/* Cycle counter */}
+                <div className="flex items-center justify-center gap-1.5 mt-1">
+                  {Array.from({ length: Math.min(data.pomodoro.cycleNumber, 8) }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={cn(
+                        "w-1.5 h-1.5 rounded-full transition-all",
+                        i < data.pomodoro!.cycleNumber - 1
+                          ? stage === "focus" ? "bg-amber-400/70" : "bg-cyan-400/70"
+                          : stage === "focus"
+                            ? "bg-amber-400 animate-pulse"
+                            : "bg-cyan-400 animate-pulse"
+                      )}
+                    />
+                  ))}
+                  <span className="text-[10px] text-gray-600 ml-1 tabular-nums">
+                    Cycle {data.pomodoro.cycleNumber}
+                  </span>
+                </div>
+              </>
+            )}
+            {/* Break wellness tip */}
+            {breakTip && (
+              <p className="text-xs text-cyan-400/60 italic mt-2 max-w-xs mx-auto">
+                {breakTip}
+              </p>
+            )}
           </div>
 
           {/* Session info */}
           {!isPopout && (
             <div className="mt-4 flex items-center gap-3 text-xs text-gray-600">
               <span>{data.session?.guildName}</span>
-              <span>&middot;</span>
-              <span>{data.pomodoro.channelName}</span>
+              {isPomodoro && data.pomodoro && (
+                <>
+                  <span>&middot;</span>
+                  <span>{data.pomodoro.channelName}</span>
+                </>
+              )}
               {elapsed && (
                 <>
                   <span>&middot;</span>
@@ -384,8 +487,107 @@ export default function FocusModePage() {
           )}
         </div>
 
+        {/* Bottom area */}
         {!isPopout && (
-          <div className="absolute bottom-6 left-0 right-0 flex justify-center z-10 px-4">
+          <div className="absolute bottom-0 left-0 right-0 z-10 px-4 pb-6 flex flex-col items-center gap-4">
+            {/* Room member presence */}
+            {roomMembers.length > 0 && (
+              <div className="flex flex-col items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+                <div className="flex -space-x-2">
+                  {roomMembers.slice(0, 8).map((m) => (
+                    m.avatarUrl ? (
+                      <img
+                        key={m.userId}
+                        src={m.avatarUrl}
+                        alt={m.displayName}
+                        title={m.displayName}
+                        className="w-7 h-7 rounded-full border-2 border-gray-950"
+                      />
+                    ) : (
+                      <div
+                        key={m.userId}
+                        title={m.displayName}
+                        className="w-7 h-7 rounded-full border-2 border-gray-950 bg-gray-800 flex items-center justify-center"
+                      >
+                        <Users size={10} className="text-gray-500" />
+                      </div>
+                    )
+                  ))}
+                  {roomMembers.length > 8 && (
+                    <div className="w-7 h-7 rounded-full border-2 border-gray-950 bg-gray-800 flex items-center justify-center text-[9px] text-gray-400 font-medium">
+                      +{roomMembers.length - 8}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-600">
+                  {roomMembers.length} studying with you
+                </p>
+              </div>
+            )}
+
+            {/* Ambient sound controls */}
+            <div className="relative">
+              <button
+                onClick={() => setShowSoundPanel(!showSoundPanel)}
+                className={cn(
+                  "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs transition-all",
+                  ambient.playing
+                    ? "bg-white/10 text-gray-300 hover:bg-white/15"
+                    : "bg-white/5 text-gray-500 hover:bg-white/10 hover:text-gray-400"
+                )}
+              >
+                {ambient.playing ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                {ambient.playing
+                  ? SOUND_OPTIONS.find(s => s.type === ambient.soundType)?.label ?? "Sound"
+                  : "Ambient Sound"
+                }
+              </button>
+
+              {showSoundPanel && (
+                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-gray-900/95 backdrop-blur border border-gray-800 rounded-xl p-3 min-w-[200px] space-y-3">
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {SOUND_OPTIONS.map(({ type, label, Icon }) => (
+                      <button
+                        key={type}
+                        onClick={() => {
+                          if (type === "off") {
+                            if (ambient.playing) ambient.toggle()
+                            ambient.setSoundType("off")
+                          } else {
+                            ambient.setSoundType(type)
+                            if (!ambient.playing) ambient.toggle()
+                          }
+                        }}
+                        className={cn(
+                          "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] transition-all",
+                          (type === "off" && !ambient.playing) || (type !== "off" && ambient.soundType === type && ambient.playing)
+                            ? "bg-white/15 text-white"
+                            : "text-gray-500 hover:text-gray-300 hover:bg-white/5"
+                        )}
+                      >
+                        <Icon size={12} />
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {ambient.playing && (
+                    <div className="flex items-center gap-2 px-1">
+                      <VolumeX size={10} className="text-gray-600 flex-shrink-0" />
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        value={Math.round(ambient.volume * 100)}
+                        onChange={(e) => ambient.setVolume(parseInt(e.target.value) / 100)}
+                        className="flex-1 h-1 accent-white/60 cursor-pointer"
+                      />
+                      <Volume2 size={10} className="text-gray-600 flex-shrink-0" />
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
             <InstallPrompt className="max-w-sm w-full" />
           </div>
         )}
