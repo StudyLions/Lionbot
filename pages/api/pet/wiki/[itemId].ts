@@ -108,7 +108,7 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-15) ---
     // Purpose: Prioritize set members in related items when item belongs to a set
-    let setMembers: typeof related = []
+    let setMembers: Array<{ itemid: number; name: string; rarity: string; category: string; asset_path: string | null; gold_price: number | null }> = []
     if (item.set_id) {
       setMembers = await prisma.lg_items.findMany({
         where: { set_id: item.set_id, itemid: { not: itemId } },
@@ -117,7 +117,7 @@ export default apiHandler({
       })
     }
     const remainingSlots = 6 - setMembers.length
-    const setMemberIds = new Set(setMembers.map((s) => s.itemid))
+    const setMemberIds = setMembers.map((s) => s.itemid)
     const categoryRelated = remainingSlots > 0
       ? await prisma.lg_items.findMany({
           where: { category: item.category, itemid: { notIn: [itemId, ...setMemberIds] } },

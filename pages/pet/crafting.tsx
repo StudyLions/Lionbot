@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { getItemImageUrl, getCategoryPlaceholder, getUiIconUrl } from "@/utils/petAssets"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
@@ -74,11 +74,11 @@ export default function CraftingPage() {
 
   // --- AI-MODIFIED (2026-03-15) ---
   // Purpose: Debounce search input so we don't fire on every keystroke
-  const searchTimer = useState<ReturnType<typeof setTimeout> | null>(null)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   function handleSearch(val: string) {
     setSearch(val)
-    if (searchTimer[0]) clearTimeout(searchTimer[0])
-    searchTimer[1] = setTimeout(() => { setDebouncedSearch(val); setPage(1) }, 400)
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+    searchTimerRef.current = setTimeout(() => { setDebouncedSearch(val); setPage(1) }, 400)
   }
   // --- END AI-MODIFIED ---
 
