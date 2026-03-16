@@ -86,7 +86,7 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Build furniture map with room defaults merged, extract layout
-    const roomPrefixStr = activeRoom?.asset_prefix ?? 'rooms/default'
+    const roomPrefixStr = room?.asset_prefix ?? 'rooms/default'
     const roomDefaults: Record<string, Record<string, string>> = {
       "rooms/default": {
         wall: "rooms/default/wall_checker_blue.png",
