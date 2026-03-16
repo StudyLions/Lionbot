@@ -51,16 +51,25 @@ export function useStageNotifications(stage: "focus" | "break" | null) {
       const isFocus = stage === "focus"
       const audioSrc = isFocus ? "/audio/focus-alert.wav" : "/audio/break-alert.wav"
 
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: gentle fade-in for alert sounds
       try {
         if (audioRef.current) {
           audioRef.current.pause()
           audioRef.current = null
         }
         const audio = new Audio(audioSrc)
-        audio.volume = 0.6
+        audio.volume = 0
         audio.play().catch(() => {})
         audioRef.current = audio
+        let vol = 0
+        const fadeInterval = setInterval(() => {
+          vol = Math.min(vol + 0.1, 0.6)
+          if (audioRef.current) audioRef.current.volume = vol
+          if (vol >= 0.6) clearInterval(fadeInterval)
+        }, 20)
       } catch {}
+      // --- END AI-MODIFIED ---
 
       if (typeof Notification !== "undefined" && Notification.permission === "granted") {
         try {

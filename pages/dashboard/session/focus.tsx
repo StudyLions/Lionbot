@@ -19,6 +19,7 @@ import Link from "next/link"
 import {
   ArrowLeft, ExternalLink, Clock, Maximize, Minimize,
   Bell, BellOff, Volume2, VolumeX, Waves, CloudRain, Users,
+  MonitorUp,
 } from "lucide-react"
 import InstallPrompt from "@/components/dashboard/InstallPrompt"
 import { GetServerSideProps } from "next"
@@ -124,6 +125,17 @@ export default function FocusModePage() {
   const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
   const ambient = useAmbientSound()
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: auto-resume ambient sound when entering focus mode
+  const autoResumedRef = useRef(false)
+  useEffect(() => {
+    if (data?.active && !autoResumedRef.current) {
+      autoResumedRef.current = true
+      ambient.autoResume()
+    }
+  }, [data?.active])
+  // --- END AI-MODIFIED ---
+
   const [remaining, setRemaining] = useState<number>(0)
   const [totalSecs, setTotalSecs] = useState<number>(0)
   const [stage, setStage] = useState<"focus" | "break" | null>(null)
@@ -133,6 +145,19 @@ export default function FocusModePage() {
   const prevStageRef = useRef<string | null>(null)
   const [transitioning, setTransitioning] = useState(false)
   const [showSoundPanel, setShowSoundPanel] = useState(false)
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: cycle completion celebration animation
+  const prevCycleRef = useRef<number | null>(null)
+  const [celebrating, setCelebrating] = useState(false)
+
+  // PiP timer
+  const [pipSupported, setPipSupported] = useState(false)
+  const [pipActive, setPipActive] = useState(false)
+  const pipCanvasRef = useRef<HTMLCanvasElement | null>(null)
+  const pipVideoRef = useRef<HTMLVideoElement | null>(null)
+  const pipAnimRef = useRef<number>(0)
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!data?.pomodoro) {
@@ -147,6 +172,15 @@ export default function FocusModePage() {
     }
     prevStageRef.current = data.pomodoro.stage
     setStage(data.pomodoro.stage)
+
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: detect cycle completion (cycleNumber increased)
+    if (prevCycleRef.current !== null && data.pomodoro.cycleNumber > prevCycleRef.current) {
+      setCelebrating(true)
+      setTimeout(() => setCelebrating(false), 1500)
+    }
+    prevCycleRef.current = data.pomodoro.cycleNumber
+    // --- END AI-MODIFIED ---
   }, [data?.pomodoro])
 
   useEffect(() => {
@@ -206,6 +240,102 @@ export default function FocusModePage() {
     document.addEventListener("fullscreenchange", handler)
     return () => document.removeEventListener("fullscreenchange", handler)
   }, [])
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Canvas-to-Video PiP timer support
+  useEffect(() => {
+    if (typeof document !== "undefined" && "pictureInPictureEnabled" in document) {
+      setPipSupported(true)
+    }
+  }, [])
+
+  const pipDataRef = useRef({ formatted: "00:00", stage: "FOCUS", stageColor: "#f59e0b" })
+
+  const startPip = useCallback(async () => {
+    if (!pipCanvasRef.current) {
+      const canvas = document.createElement("canvas")
+      canvas.width = 200
+      canvas.height = 200
+      pipCanvasRef.current = canvas
+    }
+    if (!pipVideoRef.current) {
+      const video = document.createElement("video")
+      video.muted = true
+      video.autoplay = true
+      video.playsInline = true
+      const stream = pipCanvasRef.current.captureStream(2)
+      video.srcObject = stream
+      await video.play().catch(() => {})
+      pipVideoRef.current = video
+    }
+
+    const drawFrame = () => {
+      const canvas = pipCanvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+
+      const { formatted: txt, stage: lbl, stageColor: clr } = pipDataRef.current
+
+      ctx.fillStyle = "#0a0a0a"
+      ctx.fillRect(0, 0, 200, 200)
+
+      const cx = 100
+      const cy = 90
+      const r = 70
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, 0, Math.PI * 2)
+      ctx.strokeStyle = "rgba(255,255,255,0.08)"
+      ctx.lineWidth = 6
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2)
+      ctx.strokeStyle = clr
+      ctx.lineWidth = 6
+      ctx.stroke()
+
+      ctx.fillStyle = "#f0f0f0"
+      ctx.font = "bold 36px monospace"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+      ctx.fillText(txt, cx, cy)
+
+      ctx.fillStyle = clr
+      ctx.font = "bold 11px sans-serif"
+      ctx.fillText(lbl, cx, cy + r + 20)
+
+      pipAnimRef.current = requestAnimationFrame(drawFrame)
+    }
+    drawFrame()
+
+    try {
+      await (pipVideoRef.current as any).requestPictureInPicture()
+      setPipActive(true)
+      pipVideoRef.current!.addEventListener("leavepictureinpicture", () => {
+        setPipActive(false)
+        cancelAnimationFrame(pipAnimRef.current)
+      }, { once: true })
+    } catch { setPipActive(false) }
+  }, [])
+
+  const stopPip = useCallback(async () => {
+    try {
+      if ((document as any).pictureInPictureElement) {
+        await (document as any).exitPictureInPicture()
+      }
+    } catch {}
+    cancelAnimationFrame(pipAnimRef.current)
+    setPipActive(false)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(pipAnimRef.current)
+      stopPip()
+    }
+  }, [stopPip])
+  // --- END AI-MODIFIED ---
 
   const openPopout = () => {
     window.open(
@@ -292,6 +422,8 @@ export default function FocusModePage() {
     ? (stage === "focus" ? focusColors : breakColors)
     : sessionColors
 
+  pipDataRef.current = { formatted, stage: c.label, stageColor: c.stroke }
+
   return (
     <>
       <Head>
@@ -311,6 +443,15 @@ export default function FocusModePage() {
           0% { opacity: 0; transform: scale(1.1); }
           50% { opacity: 1; }
           100% { opacity: 0; transform: scale(1); }
+        }
+        @keyframes celebrate-particle {
+          0% { transform: translate(0, 0) scale(1); opacity: 1; }
+          100% { transform: translate(var(--px), var(--py)) scale(0); opacity: 0; }
+        }
+        @keyframes celebrate-ring-glow {
+          0% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0.8)); }
+          50% { filter: drop-shadow(0 0 60px rgba(250, 204, 21, 0.4)); }
+          100% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0)); }
         }
       `}</style>
 
@@ -363,13 +504,31 @@ export default function FocusModePage() {
                   {notifications.enabled ? <Bell size={15} /> : <BellOff size={15} />}
                 </button>
               )}
-              <button
-                onClick={openPopout}
-                className="text-gray-500 hover:text-gray-300 transition-colors p-1.5"
-                title="Pop out timer"
-              >
-                <ExternalLink size={16} />
-              </button>
+              {/* --- AI-MODIFIED (2026-03-16) --- */}
+              {/* Purpose: PiP button when supported, otherwise pop-out */}
+              {pipSupported ? (
+                <button
+                  onClick={pipActive ? stopPip : startPip}
+                  className={cn(
+                    "transition-colors p-1.5 rounded-lg",
+                    pipActive
+                      ? "text-emerald-400 hover:text-emerald-300 bg-emerald-400/10"
+                      : "text-gray-500 hover:text-gray-300"
+                  )}
+                  title={pipActive ? "Close Picture-in-Picture" : "Picture-in-Picture timer"}
+                >
+                  <MonitorUp size={16} />
+                </button>
+              ) : (
+                <button
+                  onClick={openPopout}
+                  className="text-gray-500 hover:text-gray-300 transition-colors p-1.5"
+                  title="Pop out timer"
+                >
+                  <ExternalLink size={16} />
+                </button>
+              )}
+              {/* --- END AI-MODIFIED --- */}
               <button
                 onClick={toggleFullscreen}
                 className="text-gray-500 hover:text-gray-300 transition-colors p-1.5"
@@ -424,6 +583,37 @@ export default function FocusModePage() {
                 {formatted}
               </span>
             </div>
+
+            {/* --- AI-MODIFIED (2026-03-16) --- */}
+            {/* Purpose: celebration particle burst on cycle completion */}
+            {celebrating && (
+              <div className="absolute inset-0 pointer-events-none" style={{ animation: "celebrate-ring-glow 1.5s ease-out forwards" }}>
+                {Array.from({ length: 20 }).map((_, i) => {
+                  const angle = (i / 20) * 360
+                  const dist = 80 + Math.random() * 60
+                  const px = Math.cos((angle * Math.PI) / 180) * dist
+                  const py = Math.sin((angle * Math.PI) / 180) * dist
+                  const colors = ["#fbbf24", "#f59e0b", "#06b6d4", "#8b5cf6", "#10b981", "#f43f5e"]
+                  const color = colors[i % colors.length]
+                  return (
+                    <div
+                      key={i}
+                      className="absolute left-1/2 top-1/2 rounded-full"
+                      style={{
+                        width: 4 + Math.random() * 4,
+                        height: 4 + Math.random() * 4,
+                        backgroundColor: color,
+                        "--px": `${px}px`,
+                        "--py": `${py}px`,
+                        animation: `celebrate-particle ${0.8 + Math.random() * 0.7}s ease-out forwards`,
+                        animationDelay: `${Math.random() * 0.2}s`,
+                      } as React.CSSProperties}
+                    />
+                  )
+                })}
+              </div>
+            )}
+            {/* --- END AI-MODIFIED --- */}
           </div>
 
           {/* Stage label */}

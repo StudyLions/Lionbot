@@ -115,6 +115,21 @@ export default function SessionPage() {
   // Purpose: stage change notifications + session summary tracking
   const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: cycle completion celebration glow on session page
+  const prevCycleRef = useRef<number | null>(null)
+  const [celebratingCycle, setCelebratingCycle] = useState(false)
+
+  useEffect(() => {
+    if (!data?.pomodoro) { prevCycleRef.current = null; return }
+    if (prevCycleRef.current !== null && data.pomodoro.cycleNumber > prevCycleRef.current) {
+      setCelebratingCycle(true)
+      setTimeout(() => setCelebratingCycle(false), 1500)
+    }
+    prevCycleRef.current = data.pomodoro.cycleNumber
+  }, [data?.pomodoro?.cycleNumber])
+  // --- END AI-MODIFIED ---
+
   const lastActiveDataRef = useRef<LiveSessionData | null>(null)
   const [sessionSummary, setSessionSummary] = useState<{
     duration: string
@@ -431,10 +446,11 @@ export default function SessionPage() {
                   {/* Pomodoro Timer */}
                   {data.pomodoro && (
                     <div className={cn(
-                      "relative rounded-2xl border p-6 flex flex-col items-center gap-4 transition-colors duration-700",
+                      "relative rounded-2xl border p-6 flex flex-col items-center gap-4 transition-all duration-700",
                       data.pomodoro.stage === "focus"
                         ? "border-amber-500/30 bg-gradient-to-b from-amber-500/5 to-transparent"
-                        : "border-cyan-500/30 bg-gradient-to-b from-cyan-500/5 to-transparent"
+                        : "border-cyan-500/30 bg-gradient-to-b from-cyan-500/5 to-transparent",
+                      celebratingCycle && "ring-2 ring-amber-400/50 shadow-lg shadow-amber-400/20"
                     )}>
                       <CountdownRing
                         totalSeconds={data.pomodoro.stageDurationSeconds}

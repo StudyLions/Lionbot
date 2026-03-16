@@ -5,6 +5,7 @@ import { DefaultSeo } from "next-seo";
 import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
+import MiniSessionTimer from "@/components/dashboard/MiniSessionTimer";
 import defaultSEO from "next-seo.config";
 
 import "public/styles/styles.scss";
@@ -49,6 +50,10 @@ function App({ Component, pageProps }) {
       <DefaultSeo {...defaultSEO} />
       {/* --- END AI-MODIFIED --- */}
       <Component {...pageProps} />
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: Persistent mini-timer on all dashboard pages when user has active session */}
+      <MiniSessionTimer />
+      {/* --- END AI-MODIFIED --- */}
       <ToastProvider />
     </SessionProvider>
   );

@@ -12,7 +12,10 @@ export type SoundType = "off" | "white" | "brown" | "rain"
 const STORAGE_KEYS = {
   type: "lion-ambient-type",
   volume: "lion-ambient-volume",
+  playing: "lion-ambient-playing",
 }
+
+const FADE_DURATION = 0.5
 
 function createWhiteNoiseBuffer(ctx: AudioContext, durationSecs = 2): AudioBuffer {
   const bufferSize = durationSecs * ctx.sampleRate
@@ -79,22 +82,56 @@ export function useAmbientSound() {
     } catch {}
   }, [])
 
-  const stopSound = useCallback(() => {
-    if (stateRef.current) {
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: smooth fade-out when stopping ambient sound
+  const fadeOutTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const stopSound = useCallback((immediate = false) => {
+    if (fadeOutTimerRef.current) {
+      clearTimeout(fadeOutTimerRef.current)
+      fadeOutTimerRef.current = null
+    }
+    if (!stateRef.current) {
+      setPlaying(false)
+      return
+    }
+    const st = stateRef.current
+    if (immediate) {
       try {
-        stateRef.current.source.stop()
-        stateRef.current.source.disconnect()
-        stateRef.current.gain.disconnect()
-        stateRef.current.filter?.disconnect()
-        stateRef.current.ctx.close().catch(() => {})
+        st.source.stop()
+        st.source.disconnect()
+        st.gain.disconnect()
+        st.filter?.disconnect()
+        st.ctx.close().catch(() => {})
       } catch {}
       stateRef.current = null
+      setPlaying(false)
+      localStorage.setItem(STORAGE_KEYS.playing, "false")
+      return
     }
+    try {
+      st.gain.gain.linearRampToValueAtTime(0, st.ctx.currentTime + FADE_DURATION)
+    } catch {}
+    fadeOutTimerRef.current = setTimeout(() => {
+      try {
+        st.source.stop()
+        st.source.disconnect()
+        st.gain.disconnect()
+        st.filter?.disconnect()
+        st.ctx.close().catch(() => {})
+      } catch {}
+      stateRef.current = null
+      fadeOutTimerRef.current = null
+    }, FADE_DURATION * 1000 + 50)
     setPlaying(false)
+    localStorage.setItem(STORAGE_KEYS.playing, "false")
   }, [])
+  // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: smooth fade-in when starting ambient sound + persist playing state
   const startSound = useCallback((type: SoundType, vol: number) => {
-    stopSound()
+    stopSound(true)
     if (type === "off") return
 
     try {
@@ -125,7 +162,8 @@ export function useAmbientSound() {
       source.loop = true
 
       const gain = ctx.createGain()
-      gain.gain.value = vol
+      gain.gain.setValueAtTime(0, ctx.currentTime)
+      gain.gain.linearRampToValueAtTime(vol, ctx.currentTime + FADE_DURATION)
 
       if (filter) {
         source.connect(filter)
@@ -138,8 +176,10 @@ export function useAmbientSound() {
 
       stateRef.current = { ctx, source, gain, filter }
       setPlaying(true)
+      localStorage.setItem(STORAGE_KEYS.playing, "true")
     } catch {}
   }, [stopSound])
+  // --- END AI-MODIFIED ---
 
   const setSoundType = useCallback((type: SoundType) => {
     setSoundTypeState(type)
@@ -151,14 +191,23 @@ export function useAmbientSound() {
     }
   }, [playing, volume, startSound, stopSound])
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: smooth volume transitions
   const setVolume = useCallback((vol: number) => {
     const clamped = Math.max(0, Math.min(1, vol))
     setVolumeState(clamped)
     localStorage.setItem(STORAGE_KEYS.volume, String(clamped))
     if (stateRef.current) {
-      stateRef.current.gain.gain.value = clamped
+      try {
+        stateRef.current.gain.gain.linearRampToValueAtTime(
+          clamped, stateRef.current.ctx.currentTime + 0.1
+        )
+      } catch {
+        stateRef.current.gain.gain.value = clamped
+      }
     }
   }, [])
+  // --- END AI-MODIFIED ---
 
   const toggle = useCallback(() => {
     if (playing) {
@@ -172,8 +221,25 @@ export function useAmbientSound() {
   }, [playing, soundType, volume, startSound, stopSound, setSoundType])
 
   useEffect(() => {
-    return () => { stopSound() }
+    return () => { stopSound(true) }
   }, [stopSound])
 
-  return { playing, soundType, volume, toggle, setSoundType, setVolume }
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: auto-resume ambient sound when re-entering focus mode
+  const autoResume = useCallback(() => {
+    try {
+      const wasPlaying = localStorage.getItem(STORAGE_KEYS.playing)
+      const storedType = localStorage.getItem(STORAGE_KEYS.type) as SoundType | null
+      const storedVol = localStorage.getItem(STORAGE_KEYS.volume)
+      if (wasPlaying === "true" && storedType && storedType !== "off") {
+        const vol = storedVol ? parseFloat(storedVol) : 0.3
+        setSoundTypeState(storedType)
+        setVolumeState(vol)
+        startSound(storedType, vol)
+      }
+    } catch {}
+  }, [startSound])
+
+  return { playing, soundType, volume, toggle, setSoundType, setVolume, autoResume }
+  // --- END AI-MODIFIED ---
 }
