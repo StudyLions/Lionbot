@@ -6,7 +6,7 @@
 import Link from "next/link"
 import { useRouter } from "next/router"
 import { useSession } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
-  Gem, User, Menu, Trophy, ChevronRight, BookOpen,
+  Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio,
 } from "lucide-react"
 
 interface NavItem {
@@ -101,6 +101,49 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
     session ? "/api/dashboard/gems" : null
   )
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: live session indicator in sidebar nav with duration and timer info
+  const { data: liveData } = useDashboard<{
+    active: boolean
+    session?: { startTime: string; guildName: string }
+    pomodoro?: { stage: "focus" | "break"; remainingSeconds: number; stageDurationSeconds: number } | null
+  }>(
+    session ? "/api/dashboard/live-session" : null,
+    { refreshInterval: 30000 }
+  )
+  const hasLiveSession = liveData?.active === true
+  const isSessionActive = router.pathname.startsWith("/dashboard/session")
+
+  const [navElapsed, setNavElapsed] = useState("")
+  const [navRemaining, setNavRemaining] = useState<number | null>(null)
+  const [navStage, setNavStage] = useState<"focus" | "break" | null>(null)
+
+  useEffect(() => {
+    if (!liveData?.session?.startTime) { setNavElapsed(""); return }
+    const update = () => {
+      const secs = Math.floor((Date.now() - new Date(liveData.session!.startTime).getTime()) / 1000)
+      const h = Math.floor(secs / 3600)
+      const m = Math.floor((secs % 3600) / 60)
+      setNavElapsed(h > 0 ? `${h}h ${m}m` : `${m}m`)
+    }
+    update()
+    const interval = setInterval(update, 10000)
+    return () => clearInterval(interval)
+  }, [liveData?.session?.startTime])
+
+  useEffect(() => {
+    if (!liveData?.pomodoro) { setNavRemaining(null); setNavStage(null); return }
+    setNavRemaining(liveData.pomodoro.remainingSeconds)
+    setNavStage(liveData.pomodoro.stage)
+  }, [liveData?.pomodoro])
+
+  useEffect(() => {
+    if (navRemaining !== null && navRemaining > 0) {
+      const interval = setInterval(() => setNavRemaining((r) => r !== null ? Math.max(0, r - 1) : null), 1000)
+      return () => clearInterval(interval)
+    }
+  }, [navRemaining !== null && navRemaining > 0])
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="flex flex-col h-full">
@@ -131,6 +174,47 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             <span className="text-amber-400/60 text-xs">gems</span>
           </a>
         </Link>
+      )}
+      {/* --- END AI-MODIFIED --- */}
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: live session nav item with duration, timer info, and pulsing indicator */}
+      {hasLiveSession && (
+        <div className="px-3 pb-1">
+          <Link href="/dashboard/session" onClick={onNavigate}>
+            <span
+              className={cn(
+                "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all cursor-pointer",
+                isSessionActive
+                  ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/25"
+                  : "bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/25"
+              )}
+            >
+              <span className="relative flex-shrink-0">
+                <Radio size={16} />
+                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                </span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <span className="block font-medium leading-tight">Live Session</span>
+                <span className={cn(
+                  "block text-[10px] leading-tight font-normal tabular-nums",
+                  isSessionActive ? "text-emerald-200/70" : "text-emerald-400/60"
+                )}>
+                  {navElapsed && <>{navElapsed}</>}
+                  {navStage && navRemaining !== null && (
+                    <>
+                      {navElapsed && " · "}
+                      {navStage === "focus" ? "Focus" : "Break"}{" "}
+                      {Math.floor(navRemaining / 60)}:{String(navRemaining % 60).padStart(2, "0")}
+                    </>
+                  )}
+                </span>
+              </div>
+            </span>
+          </Link>
+        </div>
       )}
       {/* --- END AI-MODIFIED --- */}
       {/* --- AI-MODIFIED (2026-03-14) --- */}

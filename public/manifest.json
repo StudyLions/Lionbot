@@ -1,0 +1,18 @@
+{
+  "name": "LionBot",
+  "short_name": "LionBot",
+  "description": "Study productivity dashboard - track time, manage tasks, and stay focused",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#111827",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/images/lionbot-avatar.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

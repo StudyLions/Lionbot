@@ -57,7 +57,8 @@ import {
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import { useMemo } from "react"
+import { useMemo, useEffect } from "react"
+import { useRouter } from "next/router"
 
 // --- Types ---
 
@@ -393,6 +394,7 @@ function ChartTooltip({ active, payload, label }: any) {
 
 export default function Dashboard() {
   const { data: session } = useSession()
+  const router = useRouter()
   const { data: meData, error: meError, isLoading: meLoading } = useDashboard<MeData>(
     session ? "/api/dashboard/me" : null
   )
@@ -411,6 +413,20 @@ export default function Dashboard() {
   const { data: gemsData } = useDashboard<{ gemBalance: number }>(
     session ? "/api/dashboard/gems" : null
   )
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: auto-redirect to live session page when user has an active voice session
+  const { data: liveData } = useDashboard<{ active: boolean }>(
+    session ? "/api/dashboard/live-session" : null
+  )
+  useEffect(() => {
+    if (liveData?.active && !sessionStorage.getItem("dismissed-session-redirect")) {
+      router.replace("/dashboard/session")
+    }
+    if (liveData && !liveData.active) {
+      sessionStorage.removeItem("dismissed-session-redirect")
+    }
+  }, [liveData, router])
+  // --- END AI-MODIFIED ---
 
   const loading = meLoading || statsLoading
   const error = meError?.message ?? statsError?.message
