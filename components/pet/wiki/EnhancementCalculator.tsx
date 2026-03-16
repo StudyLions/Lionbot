@@ -24,7 +24,15 @@ interface Props {
 }
 
 const RARITY_ORDER = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHICAL"]
-const SCROLL_COLORS = ["#4ade80", "#60a5fa", "#c084fc", "#fbbf24", "#fb7185"]
+const SCROLL_COLORS = ["#40e070", "#4080f0", "#d060f0", "#f0c040", "#ff6080"]
+
+const TOOLTIP_STYLE = {
+  backgroundColor: "#0f1628",
+  border: "2px solid #2a3a5c",
+  borderRadius: 0,
+  fontSize: 11,
+  fontFamily: "var(--font-pixel, monospace)",
+}
 
 function calcRates(baseSuccess: number, baseDestroy: number, level: number, penalty: number) {
   const basePct = baseSuccess * 100
@@ -59,11 +67,11 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
     <div className="space-y-6">
       <div className="flex flex-wrap gap-3 items-end">
         <div>
-          <label className="block text-[10px] text-muted-foreground/50 mb-1">Equipment Rarity</label>
+          <label className="block font-pixel text-[9px] text-[#4a5a70] mb-1">Equipment Rarity</label>
           <select
             value={selectedRarity}
             onChange={(e) => { setSelectedRarity(e.target.value); setCurrentLevel(0) }}
-            className="bg-muted/20 border border-border/30 rounded-lg px-3 py-1.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/40"
+            className="font-pixel bg-[#0a0e1a] border-2 border-[#2a3a5c] px-3 py-1.5 text-[10px] text-[#c0d0e0] focus:outline-none focus:border-[#4080f0] appearance-none cursor-pointer shadow-[2px_2px_0_#060810]"
           >
             {RARITY_ORDER.map((r) => (
               <option key={r} value={r}>{r} (max +{gameConstants.MAX_ENHANCEMENT_BY_RARITY[r] ?? "?"})</option>
@@ -71,11 +79,11 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
           </select>
         </div>
         <div>
-          <label className="block text-[10px] text-muted-foreground/50 mb-1">Current Level: +{currentLevel}</label>
+          <label className="block font-pixel text-[9px] text-[#4a5a70] mb-1">Current Level: +{currentLevel}</label>
           <input
             type="range" min={0} max={maxLevel} value={currentLevel}
             onChange={(e) => setCurrentLevel(Number(e.target.value))}
-            className="w-40 accent-primary"
+            className="w-40 accent-[#40e070]"
           />
         </div>
       </div>
@@ -84,38 +92,38 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
         {scrolls.map((scroll) => {
           const rates = calcRates(scroll.successRate, scroll.destroyRate, currentLevel, gameConstants.LEVEL_PENALTY_FACTOR)
           const total = rates.success + rates.fail + rates.destroy
+          const successW = total > 0 ? (rates.success / total) * 100 : 0
+          const failW = total > 0 ? (rates.fail / total) * 100 : 0
+          const destroyW = total > 0 ? (rates.destroy / total) * 100 : 0
           return (
-            <div key={scroll.itemId} className="rounded-lg border border-border/20 bg-muted/5 p-3">
+            <div key={scroll.itemId} className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium">{scroll.name}</span>
-                <div className="flex gap-3 text-[10px]">
-                  <span className="text-emerald-400">{rates.success.toFixed(1)}% success</span>
-                  <span className="text-amber-400">{rates.fail.toFixed(1)}% fail</span>
-                  <span className="text-red-400">{rates.destroy.toFixed(1)}% destroy</span>
+                <span className="font-pixel text-[10px] text-[#c0d0e0]">{scroll.name}</span>
+                <div className="flex gap-3 font-pixel text-[9px]">
+                  <span className="text-[#40e070]">{rates.success.toFixed(1)}% success</span>
+                  <span className="text-[#f0c040]">{rates.fail.toFixed(1)}% fail</span>
+                  <span className="text-[#e04040]">{rates.destroy.toFixed(1)}% destroy</span>
                 </div>
               </div>
-              <div className="h-3 rounded-full overflow-hidden flex bg-muted/20">
-                <div className="bg-emerald-500 transition-all" style={{ width: `${(rates.success / total) * 100}%` }} />
-                <div className="bg-amber-500 transition-all" style={{ width: `${(rates.fail / total) * 100}%` }} />
-                <div className="bg-red-500 transition-all" style={{ width: `${(rates.destroy / total) * 100}%` }} />
+              <div className="h-4 flex overflow-hidden border border-[#1a2030]">
+                <div className="bg-[#40e070] transition-all" style={{ width: `${successW}%` }} />
+                <div className="bg-[#f0c040] transition-all" style={{ width: `${failW}%` }} />
+                <div className="bg-[#e04040] transition-all" style={{ width: `${destroyW}%` }} />
               </div>
             </div>
           )
         })}
       </div>
 
-      <div className="rounded-lg border border-border/20 bg-muted/5 p-4">
-        <h4 className="text-[10px] uppercase font-semibold text-muted-foreground/50 mb-3">Success Rate Curve</h4>
+      <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-4 shadow-[2px_2px_0_#060810]">
+        <h4 className="font-pixel text-[9px] uppercase text-[#4a5a70] mb-3">Success Rate Curve</h4>
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={curveData} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="level" tick={{ fontSize: 10, fill: "#999" }} label={{ value: "Enhancement Level", fontSize: 10, fill: "#666", position: "insideBottomRight", offset: -5 }} />
-            <YAxis tick={{ fontSize: 10, fill: "#999" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 10, fill: "#666", angle: -90, position: "insideLeft" }} />
-            <Tooltip
-              contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 11 }}
-              formatter={(value: number) => `${value}%`}
-            />
-            <Legend wrapperStyle={{ fontSize: 10 }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#1a2a3c" />
+            <XAxis dataKey="level" tick={{ fontSize: 9, fill: "#4a5a70" }} label={{ value: "Enhancement Level", fontSize: 9, fill: "#4a5a70", position: "insideBottomRight", offset: -5 }} />
+            <YAxis tick={{ fontSize: 9, fill: "#4a5a70" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 9, fill: "#4a5a70", angle: -90, position: "insideLeft" }} />
+            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => `${value}%`} />
+            <Legend wrapperStyle={{ fontSize: 9, fontFamily: "var(--font-pixel, monospace)" }} />
             {scrolls.map((scroll, i) => (
               <Line
                 key={scroll.itemId} type="monotone" dataKey={scroll.name}

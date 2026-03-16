@@ -14,24 +14,47 @@ export default apiHandler({
 
     const userId = BigInt(auth.discordId)
 
-    const recipes = await prisma.lg_crafting_recipes.findMany({
-      select: {
-        recipeid: true,
-        result_quantity: true,
-        gold_cost: true,
-        description: true,
-        lg_items: {
-          select: { itemid: true, name: true, category: true, rarity: true, description: true, asset_path: true },
-        },
-        lg_recipe_ingredients: {
-          select: {
-            quantity: true,
-            lg_items: { select: { itemid: true, name: true, rarity: true, category: true } },
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: Server-side category + search + rarity filtering and pagination
+    const category = (req.query.category as string) || ""
+    const search = (req.query.search as string) || ""
+    const rarity = (req.query.rarity as string) || ""
+    const page = Math.max(1, parseInt(req.query.page as string) || 1)
+    const pageSize = 50
+
+    const where: any = {}
+    if (category || search || rarity) {
+      where.lg_items = {} as any
+      if (category) (where.lg_items as any).category = category
+      if (search) (where.lg_items as any).name = { contains: search, mode: "insensitive" }
+      if (rarity) (where.lg_items as any).rarity = rarity
+    }
+
+    const [recipes, totalCount] = await Promise.all([
+      prisma.lg_crafting_recipes.findMany({
+        where,
+        select: {
+          recipeid: true,
+          result_quantity: true,
+          gold_cost: true,
+          description: true,
+          lg_items: {
+            select: { itemid: true, name: true, category: true, rarity: true, description: true, asset_path: true },
+          },
+          lg_recipe_ingredients: {
+            select: {
+              quantity: true,
+              lg_items: { select: { itemid: true, name: true, rarity: true, category: true } },
+            },
           },
         },
-      },
-      orderBy: { recipeid: "asc" },
-    })
+        orderBy: { recipeid: "asc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      }),
+      prisma.lg_crafting_recipes.count({ where }),
+    ])
+    // --- END AI-MODIFIED ---
 
     const userMaterials = await prisma.lg_user_inventory.findMany({
       where: { userid: userId, lg_items: { category: { in: ["MATERIAL", "SCROLL"] as any } } },
@@ -78,6 +101,10 @@ export default apiHandler({
     return res.status(200).json({
       recipes: result,
       gold: (userGold?.gold ?? BigInt(0)).toString(),
+      totalCount,
+      page,
+      pageSize,
+      totalPages: Math.ceil(totalCount / pageSize),
     })
   },
 

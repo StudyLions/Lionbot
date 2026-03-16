@@ -1189,12 +1189,15 @@ enum lgrarity {
   MYTHICAL
 }
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Add BOOTS category (split from COSTUME for FEET-slot items)
 enum lgitemcategory {
   HAT
   GLASSES
   COSTUME
   SHIRT
   WINGS
+  BOOTS
   FURNITURE
   ROOM
   GAMEBOY_SKIN
@@ -1203,6 +1206,7 @@ enum lgitemcategory {
   MATERIAL
   SCROLL
 }
+// --- END AI-MODIFIED ---
 
 enum lgitemsource {
   SHOP
@@ -1294,6 +1298,11 @@ model lg_items {
   tradeable             Boolean                 @default(true)
   description           String                  @default("")
   copyright_flag        Boolean                 @default(false)
+  // --- AI-MODIFIED (2026-03-15) ---
+  // Purpose: Link items to item sets
+  set_id                Int?
+  item_set              lg_item_sets?           @relation(fields: [set_id], references: [set_id])
+  // --- END AI-MODIFIED ---
   lg_user_inventory     lg_user_inventory[]
   lg_pet_equipment      lg_pet_equipment[]
   lg_user_furniture     lg_user_furniture[]
@@ -1304,7 +1313,18 @@ model lg_items {
   lg_marketplace_sales       lg_marketplace_sales[]
 
   @@index([category], map: "lg_items_category")
+  @@index([set_id])
 }
+
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Item sets grouping related equipment pieces
+model lg_item_sets {
+  set_id      Int        @id @default(autoincrement())
+  name        String
+  description String     @default("")
+  items       lg_items[]
+}
+// --- END AI-MODIFIED ---
 
 model lg_user_inventory {
   inventoryid       Int          @id @default(autoincrement())

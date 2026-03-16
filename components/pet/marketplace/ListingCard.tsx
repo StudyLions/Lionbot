@@ -4,17 +4,19 @@
 // Purpose: Marketplace listing card for browse grid
 // ============================================================
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import { Coins, Gem, Clock, User } from "lucide-react"
+import { Clock, User } from "lucide-react"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
-const rarityBorder: Record<string, string> = {
-  COMMON: "border-gray-500/15", UNCOMMON: "border-green-500/15", RARE: "border-blue-500/15",
-  EPIC: "border-purple-500/15", LEGENDARY: "border-amber-500/15", MYTHICAL: "border-rose-500/15",
+const RARITY_TEXT: Record<string, string> = {
+  COMMON: "#8899aa", UNCOMMON: "#80b0ff", RARE: "#ff8080",
+  EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ff90a0",
 }
 
 function timeLeft(expiresAt: string): string {
@@ -45,54 +47,60 @@ interface Props {
 export default function ListingCard({ listing, onBuy }: Props) {
   const { item } = listing
   const imgUrl = getItemImageUrl(item.assetPath, item.category)
-  const CurrencyIcon = listing.currency === "GOLD" ? Coins : Gem
-  const currencyColor = listing.currency === "GOLD" ? "text-amber-400" : "text-cyan-400"
+  const borderColor = RARITY_BORDER[item.rarity] || RARITY_BORDER.COMMON
+  const textColor = RARITY_TEXT[item.rarity] || RARITY_TEXT.COMMON
 
   return (
-    <div className={cn("rounded-xl border p-3.5 bg-muted/5 flex flex-col gap-2 group hover:shadow-lg transition-all", rarityBorder[item.rarity])}>
+    <PixelCard
+      borderColor={borderColor}
+      className="p-3 flex flex-col gap-2 group hover:brightness-110 transition-all"
+    >
       <Link href={`/pet/wiki/${item.id}`} className="flex flex-col items-center gap-2">
-        <div className="relative w-16 h-16 flex items-center justify-center">
+        <div className="relative w-16 h-16 flex items-center justify-center bg-[#0a0e1a] border border-[#1a2a3c]">
           {imgUrl ? (
             <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
           ) : (
-            <div className="w-12 h-12 rounded-full bg-muted/20 flex items-center justify-center text-2xl">
+            <div className="w-12 h-12 flex items-center justify-center text-2xl">
               {getCategoryPlaceholder(item.category)}
             </div>
           )}
           {listing.enhancementLevel > 0 && (
-            <span className="absolute -top-1 -right-1 px-1 py-0.5 rounded bg-primary/20 text-primary text-[9px] font-bold">
+            <span
+              className="font-pixel absolute -top-1.5 -right-1.5 px-1 py-0.5 text-[8px] border bg-[#2a7a3a]/80 border-[#40d870] text-[#d0ffd8]"
+            >
               +{listing.enhancementLevel}
             </span>
           )}
         </div>
-        <p className={cn("text-xs font-semibold text-center truncate w-full", rarityColor[item.rarity])}>
+        <p className="font-pixel text-[10px] text-center truncate w-full" style={{ color: textColor }}>
           {item.name}
         </p>
       </Link>
 
       <div className="flex items-center justify-center gap-1">
-        <CurrencyIcon size={12} className={currencyColor} />
-        <span className={cn("text-sm font-bold", currencyColor)}>
-          {listing.pricePerUnit.toLocaleString()}
-        </span>
-        <span className="text-[9px] text-muted-foreground/40">each</span>
+        <GoldDisplay
+          amount={listing.pricePerUnit}
+          type={listing.currency === "GOLD" ? "gold" : "gem"}
+          size="md"
+        />
+        <span className="font-pixel text-[8px] text-[#4a5a70]">each</span>
       </div>
 
-      <div className="flex items-center justify-between text-[9px] text-muted-foreground/40">
-        <span>{listing.quantityRemaining} available</span>
+      <div className="flex items-center justify-between font-pixel text-[8px] text-[#4a5a70]">
+        <span>{listing.quantityRemaining} avail</span>
         <span className="flex items-center gap-0.5"><Clock size={8} /> {timeLeft(listing.expiresAt)}</span>
       </div>
 
-      <div className="flex items-center gap-1 text-[9px] text-muted-foreground/30">
+      <div className="flex items-center gap-1 font-pixel text-[8px] text-[#3a4a60]">
         <User size={8} /> {listing.sellerName}
       </div>
 
       <button
         onClick={(e) => { e.preventDefault(); onBuy(listing) }}
-        className="mt-auto w-full py-1.5 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors"
+        className="font-pixel mt-auto w-full py-1.5 text-[10px] border-2 border-[#40d870] bg-[#2a7a3a] text-[#d0ffd8] shadow-[2px_2px_0_#060810] hover:bg-[#338844] hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
       >
-        Buy
+        BUY
       </button>
-    </div>
+    </PixelCard>
   )
 }

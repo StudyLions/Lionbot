@@ -3,7 +3,7 @@
 // Created: 2026-03-15
 // Purpose: Recharts price history line chart (reusable)
 // ============================================================
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from "recharts"
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Area, AreaChart } from "recharts"
 import { BarChart2 } from "lucide-react"
 
 interface PricePoint { date: string; avgPrice: number; volume: number }
@@ -17,32 +17,55 @@ interface Props {
 export default function PriceChart({ data, height = 180, showVolume = false }: Props) {
   if (!data.length) {
     return (
-      <div className="rounded-lg border border-border/15 bg-muted/5 p-6 flex flex-col items-center justify-center" style={{ height }}>
-        <BarChart2 size={24} className="text-muted-foreground/15 mb-2" />
-        <p className="text-xs text-muted-foreground/30">No price history yet</p>
-        <p className="text-[10px] text-muted-foreground/20 mt-1">Be the first to set the market!</p>
+      <div
+        className="border-2 border-[#2a3a5c] bg-[#0f1628] p-6 flex flex-col items-center justify-center shadow-[2px_2px_0_#060810]"
+        style={{ height }}
+      >
+        <BarChart2 size={24} className="text-[#2a3a5c] mb-2" />
+        <p className="font-pixel text-[10px] text-[#4a5a70]">NO PRICE HISTORY</p>
+        <p className="font-pixel text-[8px] text-[#3a4a60] mt-1">BE THE FIRST TO SET THE MARKET!</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg border border-border/15 bg-muted/5 p-3">
+    <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={data} margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
           <defs>
             <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#fbbf24" stopOpacity={0.15} />
-              <stop offset="95%" stopColor="#fbbf24" stopOpacity={0} />
+              <stop offset="5%" stopColor="#f0c040" stopOpacity={0.2} />
+              <stop offset="95%" stopColor="#f0c040" stopOpacity={0} />
             </linearGradient>
           </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-          <XAxis dataKey="date" tick={{ fontSize: 8, fill: "#666" }} interval="preserveStartEnd" />
-          <YAxis tick={{ fontSize: 9, fill: "#999" }} width={40} />
-          <Tooltip
-            contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 11 }}
-            formatter={(value: number, name: string) => name === "avgPrice" ? [`${value} Gold`, "Avg Price"] : [`${value}`, "Volume"]}
+          <CartesianGrid strokeDasharray="2 4" stroke="#1a2a3c" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 9, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
+            interval="preserveStartEnd"
+            stroke="#1a2a3c"
           />
-          <Area type="monotone" dataKey="avgPrice" stroke="#fbbf24" strokeWidth={1.5} fill="url(#priceGrad)" />
+          <YAxis
+            tick={{ fontSize: 9, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
+            width={40}
+            stroke="#1a2a3c"
+          />
+          <Tooltip
+            contentStyle={{
+              backgroundColor: "#0f1628",
+              border: "2px solid #2a3a5c",
+              borderRadius: 0,
+              fontSize: 10,
+              fontFamily: "var(--font-pixel)",
+              color: "#c0d0e0",
+              boxShadow: "2px 2px 0 #060810",
+            }}
+            itemStyle={{ color: "#f0c040" }}
+            formatter={(value: number, name: string) =>
+              name === "avgPrice" ? [`${value} Gold`, "Avg Price"] : [`${value}`, "Volume"]
+            }
+          />
+          <Area type="monotone" dataKey="avgPrice" stroke="#f0c040" strokeWidth={2} fill="url(#priceGrad)" />
         </AreaChart>
       </ResponsiveContainer>
     </div>

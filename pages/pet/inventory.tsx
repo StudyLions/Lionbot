@@ -1,21 +1,20 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Pet inventory page - filterable item list with tabs
+// Purpose: Pet inventory page - pixel art RPG style
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import {
-  Package, Swords, Leaf, ScrollText, Shield, Sparkles,
-} from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -27,13 +26,8 @@ interface InventoryItem {
   acquiredAt: string
   equipped: boolean
   item: {
-    id: number
-    name: string
-    category: string
-    slot: string | null
-    rarity: string
-    description: string
-    assetPath: string
+    id: number; name: string; category: string; slot: string | null
+    rarity: string; description: string; assetPath: string
   }
 }
 
@@ -42,30 +36,17 @@ interface InventoryData {
   counts: { equipment: number; materials: number; scrolls: number }
 }
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400 border-gray-500/30",
-  UNCOMMON: "text-green-400 border-green-500/30",
-  RARE: "text-blue-400 border-blue-500/30",
-  EPIC: "text-purple-400 border-purple-500/30",
-  LEGENDARY: "text-amber-400 border-amber-500/30",
-  MYTHICAL: "text-rose-400 border-rose-500/30",
-}
-
-const rarityBg: Record<string, string> = {
-  COMMON: "bg-gray-500/5",
-  UNCOMMON: "bg-green-500/5",
-  RARE: "bg-blue-500/5",
-  EPIC: "bg-purple-500/5",
-  LEGENDARY: "bg-amber-500/5",
-  MYTHICAL: "bg-rose-500/5",
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "#3a4a6c", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
 type FilterTab = "equipment" | "materials" | "scrolls"
 
-const tabs: { key: FilterTab; label: string; icon: React.ReactNode }[] = [
-  { key: "equipment", label: "Equipment", icon: <Swords size={14} /> },
-  { key: "materials", label: "Materials", icon: <Leaf size={14} /> },
-  { key: "scrolls", label: "Scrolls", icon: <ScrollText size={14} /> },
+const tabs: { key: FilterTab; label: string }[] = [
+  { key: "equipment", label: "Equipment" },
+  { key: "materials", label: "Materials" },
+  { key: "scrolls", label: "Scrolls" },
 ]
 
 export default function InventoryPage() {
@@ -78,16 +59,19 @@ export default function InventoryPage() {
   return (
     <Layout SEO={{ title: "Inventory - LionGotchi", description: "Your pet inventory" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
+        <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-            <div className="flex-1 min-w-0 space-y-6">
-              <div className="space-y-1">
-                <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <Package size={24} className="text-emerald-400" />
-                  Inventory
-                </h1>
-                <p className="text-sm text-muted-foreground">
+            <div className="flex-1 min-w-0 space-y-4">
+              {/* Title */}
+              <div>
+                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
+                  <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
+                  <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
+                </div>
+                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   All your items, materials, and scrolls
                 </p>
               </div>
@@ -95,106 +79,78 @@ export default function InventoryPage() {
               {/* Tabs */}
               <div className="flex gap-2">
                 {tabs.map((tab) => (
-                  <button
+                  <PixelButton
                     key={tab.key}
+                    variant={filter === tab.key ? "primary" : "ghost"}
+                    size="sm"
                     onClick={() => setFilter(tab.key)}
-                    className={cn(
-                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                      filter === tab.key
-                        ? "bg-primary/15 text-primary border border-primary/30"
-                        : "bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/50 border border-transparent"
-                    )}
                   >
-                    {tab.icon}
                     {tab.label}
                     {data?.counts && (
-                      <span className="text-xs opacity-60">
-                        ({data.counts[tab.key]})
-                      </span>
+                      <span className="opacity-60 ml-1">({data.counts[tab.key]})</span>
                     )}
-                  </button>
+                  </PixelButton>
                 ))}
               </div>
 
               {/* Items */}
               {isLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <Skeleton key={i} className="h-20 rounded-lg" />
-                  ))}
+                  {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-16" />)}
                 </div>
               ) : error ? (
-                <div className="text-center py-12">
-                  <p className="text-destructive">{(error as Error).message}</p>
-                </div>
+                <PixelCard className="p-8 text-center" corners>
+                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                </PixelCard>
               ) : !data?.items.length ? (
-                <div className="text-center py-16">
-                  <div className="p-3 rounded-xl bg-muted/30 inline-block mb-3">
-                    <Package size={32} className="text-muted-foreground/40" />
-                  </div>
-                  <p className="text-muted-foreground">
+                <PixelCard className="p-12 text-center" corners>
+                  <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">
                     No {filter} found. Earn items from Discord activity!
                   </p>
-                </div>
+                </PixelCard>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {data.items.map((inv) => {
-                    const rColors = rarityColor[inv.item.rarity] ?? "text-gray-400 border-gray-500/30"
-                    const rBg = rarityBg[inv.item.rarity] ?? "bg-gray-500/5"
-                    const [textColor] = rColors.split(" ")
+                    const bc = RARITY_BORDER[inv.item.rarity] || "#3a4a6c"
+                    const imgUrl = getItemImageUrl(inv.item.assetPath, inv.item.category)
                     return (
                       <div
                         key={inv.inventoryId}
-                        className={cn(
-                          "flex items-center gap-3 px-4 py-3 rounded-lg border transition-colors",
-                          rColors.split(" ").slice(1).join(" "),
-                          rBg
-                        )}
+                        className="flex items-center gap-3 px-3 py-2.5 border-2 bg-[#0c1020]"
+                        style={{ borderColor: `${bc}60`, boxShadow: "2px 2px 0 #060810" }}
                       >
-                        {(() => {
-                          const imgUrl = getItemImageUrl(inv.item.assetPath, inv.item.category)
-                          return imgUrl ? (
-                            <div className="w-10 h-10 rounded-md bg-muted/30 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              <img
-                                src={imgUrl}
-                                alt={inv.item.name}
-                                className="w-full h-full object-contain"
-                                style={{ imageRendering: "pixelated" }}
-                              />
-                            </div>
+                        <div className="w-10 h-10 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                          {imgUrl ? (
+                            <img src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain"
+                              style={{ imageRendering: "pixelated" }} />
                           ) : (
-                            <div className="w-10 h-10 rounded-md bg-muted/50 flex items-center justify-center flex-shrink-0 text-lg">
-                              {getCategoryPlaceholder(inv.item.category)}
-                            </div>
-                          )
-                        })()}
+                            <span className="text-lg">{getCategoryPlaceholder(inv.item.category)}</span>
+                          )}
+                        </div>
                         <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className={cn("text-sm font-medium truncate", textColor)}>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
                               {inv.item.name}
-                              {inv.enhancementLevel > 0 && (
-                                <span className="text-amber-400 ml-1">+{inv.enhancementLevel}</span>
-                              )}
-                            </p>
+                            </span>
+                            {inv.enhancementLevel > 0 && (
+                              <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)]">+{inv.enhancementLevel}</span>
+                            )}
                             {inv.equipped && (
-                              <span className="px-1.5 py-0.5 rounded bg-primary/15 text-primary text-[10px] font-medium flex-shrink-0">
-                                Equipped
+                              <span className="font-pixel text-[8px] px-1.5 py-0.5 border border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#1a3020]">
+                                EQP
                               </span>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                            <span className={cn("font-medium", textColor)}>{inv.item.rarity}</span>
-                            {inv.item.slot && <span>&middot; {inv.item.slot}</span>}
-                            {inv.item.description && (
-                              <span className="truncate">&middot; {inv.item.description}</span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <PixelBadge rarity={inv.item.rarity} />
+                            {inv.item.slot && (
+                              <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)]">{inv.item.slot}</span>
                             )}
                           </div>
                         </div>
-                        <div className="flex-shrink-0 text-right">
-                          {inv.quantity > 1 && (
-                            <p className="text-sm font-bold text-foreground">x{inv.quantity}</p>
-                          )}
-                        </div>
+                        {inv.quantity > 1 && (
+                          <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] flex-shrink-0">x{inv.quantity}</span>
+                        )}
                       </div>
                     )
                   })}

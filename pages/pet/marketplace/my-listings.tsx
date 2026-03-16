@@ -7,29 +7,30 @@
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
 import { useState } from "react"
-import { cn } from "@/lib/utils"
 import Link from "next/link"
 import {
-  ArrowLeft, Coins, Gem, Clock, X, ShoppingBag, History, DollarSign,
-  CheckCircle, XCircle, AlertTriangle, Plus,
+  Coins, Gem, Clock, CheckCircle, XCircle, AlertTriangle,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelButton from "@/components/pet/ui/PixelButton"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+import PixelBar from "@/components/pet/ui/PixelBar"
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
+const RARITY_TEXT: Record<string, string> = {
+  COMMON: "#a0a8b4", UNCOMMON: "#80b0ff", RARE: "#ff8080",
+  EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ffa0c0",
 }
 
 const STATUS_STYLE: Record<string, { icon: any; color: string; label: string }> = {
-  SOLD: { icon: CheckCircle, color: "text-emerald-400", label: "Sold" },
-  CANCELLED: { icon: XCircle, color: "text-muted-foreground/50", label: "Cancelled" },
-  EXPIRED: { icon: AlertTriangle, color: "text-amber-400", label: "Expired" },
+  SOLD: { icon: CheckCircle, color: "text-[var(--pet-green,#40d870)]", label: "SOLD" },
+  CANCELLED: { icon: XCircle, color: "text-[#4a5a6a]", label: "CANCELLED" },
+  EXPIRED: { icon: AlertTriangle, color: "text-[var(--pet-gold,#f0c040)]", label: "EXPIRED" },
 }
 
 function timeLeft(expiresAt: string): string {
@@ -41,6 +42,12 @@ function timeLeft(expiresAt: string): string {
 }
 
 type DashTab = "active" | "history" | "sales"
+
+const TABS: { key: DashTab; label: string }[] = [
+  { key: "active", label: "ACTIVE" },
+  { key: "history", label: "PAST" },
+  { key: "sales", label: "SALES LOG" },
+]
 
 export default function MyListingsPage() {
   const { data: session } = useSession()
@@ -69,98 +76,136 @@ export default function MyListingsPage() {
   return (
     <Layout SEO={{ title: "My Listings - Marketplace", description: "Manage your marketplace listings" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
+        <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/marketplace" className="inline-flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-foreground transition-colors">
-                <ArrowLeft size={12} /> Back to Marketplace
+              <Link href="/pet/marketplace" className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+                <span>&#x25C4;</span> Back to Marketplace
               </Link>
 
-              <div className="flex items-center justify-between">
-                <h1 className="text-xl font-bold flex items-center gap-2">
-                  <ShoppingBag size={20} className="text-emerald-400" /> My Listings
-                </h1>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)] flex items-center gap-3">
+                    <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
+                    MY LISTINGS
+                    <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
+                  </h1>
+                  <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--pet-gold,#f0c040)] to-transparent mt-1" />
+                </div>
                 <Link href="/pet/marketplace/sell">
-                  <button className="px-4 py-2 rounded-lg bg-primary/15 text-primary text-xs font-semibold hover:bg-primary/25 transition-colors flex items-center gap-1.5">
-                    <Plus size={14} /> Sell More
-                  </button>
+                  <PixelButton variant="primary" size="sm">+ SELL MORE</PixelButton>
                 </Link>
               </div>
 
               {/* Revenue Summary */}
               {data?.revenue && (
                 <div className="grid grid-cols-3 gap-3">
-                  <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                    <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Coins size={10} /> Gold Earned</span>
-                    <p className="text-lg font-bold text-amber-400 mt-1">{data.revenue.totalGold.toLocaleString()}</p>
+                  <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                    <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                      <Coins size={10} className="text-[var(--pet-gold,#f0c040)]" /> GOLD EARNED
+                    </span>
+                    <GoldDisplay amount={data.revenue.totalGold} size="lg" className="mt-1" />
                   </div>
-                  <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                    <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Gem size={10} /> Gems Earned</span>
-                    <p className="text-lg font-bold text-cyan-400 mt-1">{data.revenue.totalGems.toLocaleString()}</p>
+                  <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                    <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                      <Gem size={10} className="text-[#a855f7]" /> GEMS EARNED
+                    </span>
+                    <GoldDisplay amount={data.revenue.totalGems} size="lg" type="gem" className="mt-1" />
                   </div>
-                  <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                    <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><DollarSign size={10} /> Items Sold</span>
-                    <p className="text-lg font-bold mt-1">{data.revenue.totalSales}</p>
+                  <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                    <span className="font-pixel text-[9px] text-[#4a5a6a]">ITEMS SOLD</span>
+                    <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{data.revenue.totalSales}</p>
                   </div>
                 </div>
               )}
 
               {/* Tabs */}
               <div className="flex gap-2">
-                {([
-                  { key: "active" as DashTab, label: "Active Listings", icon: <ShoppingBag size={14} /> },
-                  { key: "history" as DashTab, label: "Past Listings", icon: <History size={14} /> },
-                  { key: "sales" as DashTab, label: "Sales Log", icon: <DollarSign size={14} /> },
-                ]).map((t) => (
-                  <button key={t.key} onClick={() => setTab(t.key)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-medium transition-colors border ${
-                      tab === t.key ? "bg-primary/15 text-primary border-primary/30" : "bg-muted/30 text-muted-foreground border-transparent hover:text-foreground"}`}>
-                    {t.icon} {t.label}
+                {TABS.map((t) => (
+                  <button
+                    key={t.key}
+                    onClick={() => setTab(t.key)}
+                    className={`font-pixel text-[10px] px-3 py-1.5 border-2 transition-all ${
+                      tab === t.key
+                        ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
+                        : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
+                    }`}
+                  >
+                    {t.label}
                   </button>
                 ))}
               </div>
 
               {isLoading ? (
-                <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-xl" />)}</div>
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="h-16 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
+                  ))}
+                </div>
               ) : (
                 <>
                   {/* Active */}
                   {tab === "active" && (
                     <div className="space-y-2">
                       {!data?.active?.length ? (
-                        <div className="text-center py-12 text-xs text-muted-foreground/40">
-                          No active listings.
-                          <Link href="/pet/marketplace/sell" className="text-primary ml-1 hover:underline">List an item?</Link>
-                        </div>
+                        <PixelCard className="p-12 text-center" corners>
+                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                            NO ACTIVE LISTINGS.{" "}
+                            <Link href="/pet/marketplace/sell" className="text-[var(--pet-blue,#4080f0)] hover:underline">
+                              List an item?
+                            </Link>
+                          </p>
+                        </PixelCard>
                       ) : data.active.map((l: any) => {
                         const imgUrl = getItemImageUrl(l.item.assetPath, l.item.category)
                         const CIcon = l.currency === "GOLD" ? Coins : Gem
-                        const cColor = l.currency === "GOLD" ? "text-amber-400" : "text-cyan-400"
                         const sold = l.quantityListed - l.quantityRemaining
-                        const pct = l.quantityListed > 0 ? Math.round((sold / l.quantityListed) * 100) : 0
                         return (
-                          <div key={l.listingId} className="flex items-center gap-3 px-4 py-3 rounded-xl border border-border/20 bg-muted/5">
-                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center">
-                              {imgUrl ? <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-                                : <span className="text-lg">{getCategoryPlaceholder(l.item.category)}</span>}
+                          <div
+                            key={l.listingId}
+                            className="flex items-center gap-3 px-4 py-3 border-2 border-[#2a3a5c] bg-[#0c1020] shadow-[2px_2px_0_#060810]"
+                          >
+                            <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
+                              {imgUrl ? (
+                                <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                              ) : (
+                                <span className="text-lg">{getCategoryPlaceholder(l.item.category)}</span>
+                              )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className={cn("text-xs font-semibold truncate", rarityColor[l.item.rarity])}>{l.item.name}</p>
-                              <div className="flex items-center gap-2 text-[10px] text-muted-foreground/40 mt-0.5">
-                                <span className={cn("flex items-center gap-0.5", cColor)}><CIcon size={9} /> {l.pricePerUnit} each</span>
+                              <p
+                                className="font-pixel text-[10px] truncate"
+                                style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
+                              >
+                                {l.item.name}
+                              </p>
+                              <div className="flex items-center gap-2 font-pixel text-[9px] text-[#4a5a6a] mt-0.5">
+                                <span className={`flex items-center gap-0.5 ${l.currency === "GOLD" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"}`}>
+                                  <CIcon size={9} /> {l.pricePerUnit} each
+                                </span>
                                 <span>{l.quantityRemaining}/{l.quantityListed} remaining</span>
                                 <span className="flex items-center gap-0.5"><Clock size={8} /> {timeLeft(l.expiresAt)}</span>
                               </div>
-                              <div className="h-1.5 rounded-full bg-muted/20 mt-1 overflow-hidden w-32">
-                                <div className="h-full rounded-full bg-primary/40" style={{ width: `${pct}%` }} />
-                              </div>
+                              <PixelBar
+                                value={sold}
+                                max={l.quantityListed}
+                                segments={8}
+                                color="green"
+                                showText={false}
+                                className="mt-1 max-w-[8rem]"
+                              />
                             </div>
-                            <button onClick={() => handleCancel(l.listingId)} disabled={cancelling === l.listingId}
-                              className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-[10px] font-medium hover:bg-red-500/20 transition-colors disabled:opacity-50">
-                              {cancelling === l.listingId ? "..." : "Cancel"}
-                            </button>
+                            <PixelButton
+                              onClick={() => handleCancel(l.listingId)}
+                              disabled={cancelling === l.listingId}
+                              loading={cancelling === l.listingId}
+                              variant="danger"
+                              size="sm"
+                            >
+                              CANCEL
+                            </PixelButton>
                           </div>
                         )
                       })}
@@ -171,16 +216,28 @@ export default function MyListingsPage() {
                   {tab === "history" && (
                     <div className="space-y-2">
                       {!data?.past?.length ? (
-                        <div className="text-center py-12 text-xs text-muted-foreground/40">No past listings.</div>
+                        <PixelCard className="p-12 text-center" corners>
+                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">NO PAST LISTINGS</p>
+                        </PixelCard>
                       ) : data.past.map((l: any) => {
                         const st = STATUS_STYLE[l.status] ?? STATUS_STYLE.CANCELLED
                         const StatusIcon = st.icon
                         return (
-                          <div key={l.listingId} className="flex items-center gap-3 px-4 py-2.5 rounded-xl border border-border/10 bg-muted/3">
+                          <div
+                            key={l.listingId}
+                            className="flex items-center gap-3 px-4 py-2.5 border-2 border-[#1a2a3c] bg-[#0c1020]"
+                          >
                             <StatusIcon size={14} className={st.color} />
-                            <span className={cn("text-xs font-medium flex-1 truncate", rarityColor[l.item.rarity])}>{l.item.name}</span>
-                            <span className="text-[10px] text-muted-foreground/40">{l.quantityListed - l.quantityRemaining}/{l.quantityListed} sold</span>
-                            <span className={cn("text-[10px] font-semibold", st.color)}>{st.label}</span>
+                            <span
+                              className="font-pixel text-[10px] flex-1 truncate"
+                              style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
+                            >
+                              {l.item.name}
+                            </span>
+                            <span className="font-pixel text-[9px] text-[#4a5a6a]">
+                              {l.quantityListed - l.quantityRemaining}/{l.quantityListed} sold
+                            </span>
+                            <span className={`font-pixel text-[9px] ${st.color}`}>{st.label}</span>
                           </div>
                         )
                       })}
@@ -191,21 +248,33 @@ export default function MyListingsPage() {
                   {tab === "sales" && (
                     <div className="space-y-2">
                       {!data?.sales?.length ? (
-                        <div className="text-center py-12 text-xs text-muted-foreground/40">No sales yet -- list some items!</div>
+                        <PixelCard className="p-12 text-center" corners>
+                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                            NO SALES YET -- LIST SOME ITEMS!
+                          </p>
+                        </PixelCard>
                       ) : data.sales.map((s: any, i: number) => {
                         const CIcon = s.currency === "GOLD" ? Coins : Gem
-                        const cColor = s.currency === "GOLD" ? "text-amber-400" : "text-cyan-400"
+                        const cColor = s.currency === "GOLD" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"
                         return (
-                          <div key={i} className="flex items-center justify-between px-4 py-2.5 rounded-xl border border-border/10 bg-muted/3">
+                          <div
+                            key={i}
+                            className="flex items-center justify-between px-4 py-2.5 border-2 border-[#1a2a3c] bg-[#0c1020]"
+                          >
                             <div className="flex items-center gap-2 min-w-0">
-                              <CheckCircle size={12} className="text-emerald-400 flex-shrink-0" />
-                              <span className="text-xs truncate">
-                                <span className="text-muted-foreground/60">{s.buyerName}</span> bought <span className="font-medium">{s.quantity}x {s.itemName}</span>
+                              <CheckCircle size={12} className="text-[var(--pet-green,#40d870)] flex-shrink-0" />
+                              <span className="font-pixel text-[10px] truncate text-[var(--pet-text-dim,#8899aa)]">
+                                <span className="text-[#4a5a6a]">{s.buyerName}</span> bought{" "}
+                                <span className="text-[var(--pet-text,#e2e8f0)]">{s.quantity}x {s.itemName}</span>
                               </span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <span className={cn("text-xs font-bold flex items-center gap-0.5", cColor)}><CIcon size={10} /> {s.totalPrice.toLocaleString()}</span>
-                              <span className="text-[9px] text-muted-foreground/30">{new Date(s.soldAt).toLocaleDateString()}</span>
+                              <span className={`font-pixel text-[10px] flex items-center gap-0.5 ${cColor}`}>
+                                <CIcon size={10} /> {s.totalPrice.toLocaleString()}
+                              </span>
+                              <span className="font-pixel text-[8px] text-[#4a5a6a]">
+                                {new Date(s.soldAt).toLocaleDateString()}
+                              </span>
                             </div>
                           </div>
                         )

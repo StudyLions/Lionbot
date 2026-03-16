@@ -11,10 +11,16 @@ function blobUrl(path: string): string {
   return `${BLOB_BASE}/pet-assets/${path}`
 }
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Add BOOTS category for footwear (split from COSTUME)
 const EQUIPMENT_CATEGORIES = new Set([
-  "HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS",
+  "HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS",
 ])
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Add MATERIAL, SCROLL, and BOOTS support; materials/scrolls
+//          use asset_path directly (no equipment/ prefix needed)
 export function getItemImageUrl(
   assetPath: string | null | undefined,
   category: string
@@ -29,8 +35,13 @@ export function getItemImageUrl(
     return blobUrl(`rooms/furniture/${assetPath}`)
   }
 
+  if (category === "MATERIAL" || category === "SCROLL") {
+    return blobUrl(assetPath)
+  }
+
   return null
 }
+// --- END AI-MODIFIED ---
 
 // --- Farm asset helpers ---
 
@@ -128,6 +139,7 @@ export function getCategoryPlaceholder(category: string): string {
     case "GLASSES": return "\u{1F453}"
     case "COSTUME": return "\u{1F454}"
     case "SHIRT": return "\u{1F455}"
+    case "BOOTS": return "\u{1F462}"
     case "WINGS": return "\u{1FABD}"
     case "MATERIAL": return "\u{1F9F1}"
     case "SCROLL": return "\u{1F4DC}"

@@ -4,14 +4,10 @@
 // Purpose: Buy confirmation dialog with quantity picker
 // ============================================================
 import { useState } from "react"
-import { cn } from "@/lib/utils"
-import { Coins, Gem, X } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
-}
+import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 interface ListingData {
   listingId: number
@@ -29,15 +25,19 @@ interface Props {
   onConfirm: (listingId: number, quantity: number) => Promise<void>
 }
 
+const RARITY_TEXT: Record<string, string> = {
+  COMMON: "#8899aa", UNCOMMON: "#80b0ff", RARE: "#ff8080",
+  EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ff90a0",
+}
+
 export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
   const totalPrice = listing.pricePerUnit * quantity
-  const CurrencyIcon = listing.currency === "GOLD" ? Coins : Gem
-  const currencyColor = listing.currency === "GOLD" ? "text-amber-400" : "text-cyan-400"
   const imgUrl = getItemImageUrl(listing.item.assetPath, listing.item.category)
+  const nameColor = RARITY_TEXT[listing.item.rarity] || RARITY_TEXT.COMMON
 
   async function handleBuy() {
     setLoading(true)
@@ -53,65 +53,111 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-background border border-border/40 rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold">Confirm Purchase</h3>
-          <button onClick={onClose} className="text-muted-foreground/40 hover:text-foreground"><X size={16} /></button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="w-14 h-14 flex items-center justify-center flex-shrink-0">
-            {imgUrl ? (
-              <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-            ) : (
-              <span className="text-2xl">{getCategoryPlaceholder(listing.item.category)}</span>
-            )}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={onClose}>
+      {/* Outer border */}
+      <div
+        className="border-2 border-[#4a6090] p-[3px] shadow-[4px_4px_0_#060810] w-full max-w-sm mx-4"
+        style={{ backgroundColor: "#0c1020" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Inner border */}
+        <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-4 space-y-4">
+          {/* Title bar */}
+          <div className="flex items-center justify-between border-b-2 border-[#2a3a5c] pb-2">
+            <h3 className="font-pixel text-xs text-[#c0d0e0]">CONFIRM PURCHASE</h3>
+            <button
+              onClick={onClose}
+              className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#ff8080] border border-[#3a4a6c] px-1.5 py-0.5 bg-[#111828] transition-colors"
+            >
+              X
+            </button>
           </div>
+
+          {/* Item preview */}
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 flex-shrink-0 flex items-center justify-center bg-[#0a0e1a] border-2 border-[#1a2a3c]">
+              {imgUrl ? (
+                <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+              ) : (
+                <span className="text-2xl">{getCategoryPlaceholder(listing.item.category)}</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-pixel text-[11px]" style={{ color: nameColor }}>
+                  {listing.item.name}
+                </span>
+                {listing.enhancementLevel > 0 && (
+                  <span className="font-pixel text-[9px] border border-[#40d870] bg-[#2a7a3a]/40 text-[#d0ffd8] px-1">
+                    +{listing.enhancementLevel}
+                  </span>
+                )}
+              </div>
+              <PixelBadge rarity={listing.item.rarity} />
+              <span className="font-pixel text-[8px] text-[#4a5a70]">Sold by {listing.sellerName}</span>
+            </div>
+          </div>
+
+          {/* Quantity picker */}
           <div>
-            <p className={cn("text-sm font-semibold", rarityColor[listing.item.rarity])}>
-              {listing.item.name}
-              {listing.enhancementLevel > 0 && <span className="text-primary ml-1">+{listing.enhancementLevel}</span>}
-            </p>
-            <p className="text-[10px] text-muted-foreground/50">Sold by {listing.sellerName}</p>
+            <label className="font-pixel text-[9px] text-[#4a5a70] block mb-1.5">
+              QTY (MAX {listing.quantityRemaining})
+            </label>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="font-pixel w-8 h-8 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] flex items-center justify-center hover:bg-[#1a2438] hover:text-[#c0d0e0] shadow-[2px_2px_0_#060810] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              >
+                -
+              </button>
+              <input
+                type="number" min={1} max={listing.quantityRemaining}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, Math.min(listing.quantityRemaining, parseInt(e.target.value) || 1)))}
+                className="font-pixel w-16 text-center py-1.5 bg-[#0a0e1a] border-2 border-[#2a3a5c] text-[#c0d0e0] text-xs focus:outline-none focus:border-[#4080f0]"
+              />
+              <button
+                onClick={() => setQuantity(Math.min(listing.quantityRemaining, quantity + 1))}
+                className="font-pixel w-8 h-8 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] flex items-center justify-center hover:bg-[#1a2438] hover:text-[#c0d0e0] shadow-[2px_2px_0_#060810] active:shadow-none active:translate-x-0.5 active:translate-y-0.5 transition-all"
+              >
+                +
+              </button>
+              {listing.quantityRemaining > 1 && (
+                <button
+                  onClick={() => setQuantity(listing.quantityRemaining)}
+                  className="font-pixel px-2 py-1.5 border border-[#3a4a6c] bg-[#111828] text-[8px] text-[#4a5a70] hover:text-[#c0d0e0] transition-colors"
+                >
+                  MAX
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        <div>
-          <label className="text-[10px] text-muted-foreground/50 block mb-1">Quantity (max {listing.quantityRemaining})</label>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-lg bg-muted/20 text-foreground flex items-center justify-center hover:bg-muted/30">-</button>
-            <input
-              type="number" min={1} max={listing.quantityRemaining}
-              value={quantity} onChange={(e) => setQuantity(Math.max(1, Math.min(listing.quantityRemaining, parseInt(e.target.value) || 1)))}
-              className="w-16 text-center py-1.5 rounded-lg bg-muted/20 border border-border/30 text-sm"
+          {/* Total cost */}
+          <div className="border-2 border-[#2a3a5c] bg-[#0a0e1a] p-3 flex items-center justify-between">
+            <span className="font-pixel text-[9px] text-[#4a5a70]">TOTAL COST</span>
+            <GoldDisplay
+              amount={totalPrice}
+              type={listing.currency === "GOLD" ? "gold" : "gem"}
+              size="lg"
             />
-            <button onClick={() => setQuantity(Math.min(listing.quantityRemaining, quantity + 1))} className="w-8 h-8 rounded-lg bg-muted/20 text-foreground flex items-center justify-center hover:bg-muted/30">+</button>
-            {listing.quantityRemaining > 1 && (
-              <button onClick={() => setQuantity(listing.quantityRemaining)} className="px-2 py-1.5 rounded-lg bg-muted/10 text-[10px] text-muted-foreground hover:text-foreground">Max</button>
-            )}
           </div>
-        </div>
 
-        <div className="rounded-lg bg-muted/10 p-3 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground/60">Total Cost</span>
-          <span className={cn("text-lg font-bold flex items-center gap-1", currencyColor)}>
-            <CurrencyIcon size={16} /> {totalPrice.toLocaleString()} {listing.currency}
-          </span>
-        </div>
+          {error && (
+            <p className="font-pixel text-[9px] text-[#ff8080] border border-[#e04040]/30 bg-[#e04040]/10 px-2 py-1">
+              {error}
+            </p>
+          )}
 
-        {error && <p className="text-xs text-red-400">{error}</p>}
-
-        <div className="flex gap-2">
-          <button onClick={onClose} className="flex-1 py-2 rounded-lg bg-muted/20 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Cancel
-          </button>
-          <button
-            onClick={handleBuy} disabled={loading}
-            className="flex-1 py-2 rounded-lg bg-primary/20 text-primary text-xs font-semibold hover:bg-primary/30 transition-colors disabled:opacity-50"
-          >
-            {loading ? "Buying..." : "Confirm Purchase"}
-          </button>
+          {/* Actions */}
+          <div className="flex gap-2">
+            <PixelButton variant="ghost" size="md" onClick={onClose} className="flex-1">
+              CANCEL
+            </PixelButton>
+            <PixelButton variant="primary" size="md" onClick={handleBuy} loading={loading} className="flex-1">
+              {loading ? "BUYING..." : "CONFIRM"}
+            </PixelButton>
+          </div>
         </div>
       </div>
     </div>

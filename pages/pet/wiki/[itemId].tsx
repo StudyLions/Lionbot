@@ -8,44 +8,36 @@
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import {
-  ArrowLeft, Coins, Gem, Users, Package, ShoppingCart, Hammer,
+  Coins, Gem, Users, Package, ShoppingCart, Hammer,
   Sparkles, Shield, Droplets, Mic, MessageSquare, Lock,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import dynamic from "next/dynamic"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 const EnhancementLeaderboard = dynamic(() => import("@/components/pet/wiki/EnhancementLeaderboard"), { ssr: false })
 const MarketplaceWidget = dynamic(() => import("@/components/pet/wiki/MarketplaceWidget"), { ssr: false })
 const RelatedItems = dynamic(() => import("@/components/pet/wiki/RelatedItems"), { ssr: false })
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "#6a7080", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff60a0",
 }
-const rarityBg: Record<string, string> = {
-  COMMON: "bg-gray-500/10", UNCOMMON: "bg-green-500/10", RARE: "bg-blue-500/10",
-  EPIC: "bg-purple-500/10", LEGENDARY: "bg-amber-500/10", MYTHICAL: "bg-rose-500/10",
-}
-const rarityBorder: Record<string, string> = {
-  COMMON: "border-gray-500/30", UNCOMMON: "border-green-500/30", RARE: "border-blue-500/30",
-  EPIC: "border-purple-500/30", LEGENDARY: "border-amber-500/30", MYTHICAL: "border-rose-500/30",
-}
-const rarityBadge: Record<string, string> = {
-  COMMON: "bg-gray-500/15 text-gray-400", UNCOMMON: "bg-green-500/15 text-green-400",
-  RARE: "bg-blue-500/15 text-blue-400", EPIC: "bg-purple-500/15 text-purple-400",
-  LEGENDARY: "bg-amber-500/15 text-amber-400", MYTHICAL: "bg-rose-500/15 text-rose-400",
+const RARITY_TEXT: Record<string, string> = {
+  COMMON: "#a0a8b4", UNCOMMON: "#80b0ff", RARE: "#ff8080",
+  EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ffa0c0",
 }
 
-const EQUIP_CATS = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS"])
+const EQUIP_CATS = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"])
 
 const SuccessCurveChart = dynamic(
   () => import("@/components/pet/wiki/SuccessCurveChart"),
@@ -65,8 +57,8 @@ export default function ItemDetailPage() {
     return (
       <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse item details" }}>
         <AdminGuard>
-          <div className="min-h-screen bg-background flex items-center justify-center">
-            <p className="text-muted-foreground">Sign in to view item details</p>
+          <div className="pet-section pet-scanline min-h-screen flex items-center justify-center">
+            <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">Sign in to view item details</p>
           </div>
         </AdminGuard>
       </Layout>
@@ -76,216 +68,269 @@ export default function ItemDetailPage() {
   const item = data?.item
   const imgUrl = item ? getItemImageUrl(item.assetPath, item.category) : null
   const isEquipment = item ? EQUIP_CATS.has(item.category) : false
+  const bc = item ? (RARITY_BORDER[item.rarity] || "#6a7080") : "#2a3a5c"
+  const tc = item ? (RARITY_TEXT[item.rarity] || "#a0a8b4") : "#8899aa"
 
   return (
     <Layout SEO={{ title: item ? `${item.name} - Item Wiki` : "Item Wiki", description: item?.description ?? "" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
+        <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-            <div className="flex-1 min-w-0 space-y-6">
+            <div className="flex-1 min-w-0 space-y-5">
 
-              <Link href="/pet/wiki" className="inline-flex items-center gap-1 text-xs text-muted-foreground/60 hover:text-foreground transition-colors">
-                <ArrowLeft size={12} /> Back to Wiki
+              <Link href="/pet/wiki" className="font-pixel text-[10px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
+                <span>&#x25C4;</span> Back to Wiki
               </Link>
 
               {isLoading ? (
                 <div className="space-y-4">
-                  <Skeleton className="h-48 rounded-xl" />
-                  <Skeleton className="h-24 rounded-xl" />
-                  <Skeleton className="h-32 rounded-xl" />
+                  <div className="h-48 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
+                  <div className="h-24 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
+                  <div className="h-32 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
                 </div>
               ) : error || !item ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Item not found</p>
-                </div>
+                <PixelCard className="p-12 text-center" corners>
+                  <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">ITEM NOT FOUND</p>
+                  <p className="font-pixel text-[10px] text-[#4a5a6a] mt-1">This item may have been removed or doesn&apos;t exist</p>
+                </PixelCard>
               ) : (
                 <>
                   {/* Hero */}
-                  <div className={cn("rounded-2xl border-2 p-6 flex flex-col sm:flex-row items-center gap-6", rarityBorder[item.rarity], rarityBg[item.rarity])}>
-                    <div className="w-40 h-40 flex items-center justify-center flex-shrink-0">
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-                      ) : (
-                        <div className="w-24 h-24 rounded-2xl bg-muted/30 flex items-center justify-center text-5xl">
-                          {getCategoryPlaceholder(item.category)}
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
-                      <h1 className={cn("text-2xl font-bold", rarityColor[item.rarity])}>{item.name}</h1>
-                      <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
-                        <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold", rarityBadge[item.rarity])}>{item.rarity}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-muted/20 text-muted-foreground">{item.category}</span>
-                        {item.slot && <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-muted/20 text-muted-foreground">{item.slot}</span>}
-                        <span className={cn("px-2 py-0.5 rounded text-[10px] font-medium", item.tradeable ? "bg-emerald-500/10 text-emerald-400" : "bg-red-500/10 text-red-400")}>
-                          {item.tradeable ? "Tradeable" : "Untradeable"}
-                        </span>
+                  <div
+                    className="border-2 p-1 shadow-[2px_2px_0_#060810]"
+                    style={{ borderColor: bc }}
+                  >
+                    <div
+                      className="border-2 p-5 flex flex-col sm:flex-row items-center gap-6"
+                      style={{ borderColor: `${bc}60`, backgroundColor: `${bc}08` }}
+                    >
+                      <div className="w-36 h-36 flex items-center justify-center flex-shrink-0 border-2 border-[#1a2a3c] bg-[#080c18]">
+                        {imgUrl ? (
+                          <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                        ) : (
+                          <div className="w-24 h-24 flex items-center justify-center text-5xl">
+                            {getCategoryPlaceholder(item.category)}
+                          </div>
+                        )}
                       </div>
-                      {item.description && (
-                        <p className="text-sm text-muted-foreground/70 leading-relaxed">{item.description}</p>
-                      )}
+                      <div className="flex-1 min-w-0 space-y-2 text-center sm:text-left">
+                        <h1 className="font-pixel text-xl" style={{ color: tc }}>{item.name}</h1>
+                        <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                          <PixelBadge rarity={item.rarity} />
+                          <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
+                            {item.category}
+                          </span>
+                          {item.slot && (
+                            <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#3a4a6c] text-[#8899aa] bg-[#0a0e1a]">
+                              {item.slot}
+                            </span>
+                          )}
+                          <span
+                            className="font-pixel text-[9px] px-1.5 py-0.5 border"
+                            style={{
+                              borderColor: item.tradeable ? "#40d870" : "#e04040",
+                              color: item.tradeable ? "#80ffb0" : "#ff8080",
+                              backgroundColor: item.tradeable ? "#40d87010" : "#e0404010",
+                            }}
+                          >
+                            {item.tradeable ? "TRADEABLE" : "UNTRADEABLE"}
+                          </span>
+                          {item.setName && (
+                            <span className="font-pixel text-[9px] px-1.5 py-0.5 border border-[#4080f0] text-[#80b0ff] bg-[#4080f010]">
+                              {item.setName}
+                            </span>
+                          )}
+                        </div>
+                        {item.description && (
+                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed">{item.description}</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Coins size={10} /> Gold Price</span>
-                      <p className="text-sm font-bold mt-1 text-amber-400">{item.goldPrice ? item.goldPrice.toLocaleString() : "Not for sale"}</p>
+                    <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                        <Coins size={10} className="text-[var(--pet-gold,#f0c040)]" /> GOLD PRICE
+                      </span>
+                      {item.goldPrice ? (
+                        <GoldDisplay amount={item.goldPrice} size="lg" className="mt-1" />
+                      ) : (
+                        <p className="font-pixel text-[11px] text-[#4a5a6a] mt-1">N/A</p>
+                      )}
                     </div>
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Gem size={10} /> Gem Price</span>
-                      <p className="text-sm font-bold mt-1 text-cyan-400">{item.gemPrice ?? "N/A"}</p>
+                    <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                        <Gem size={10} className="text-[#a855f7]" /> GEM PRICE
+                      </span>
+                      {item.gemPrice ? (
+                        <GoldDisplay amount={item.gemPrice} size="lg" type="gem" className="mt-1" />
+                      ) : (
+                        <p className="font-pixel text-[11px] text-[#4a5a6a] mt-1">N/A</p>
+                      )}
                     </div>
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Users size={10} /> Owners</span>
-                      <p className="text-sm font-bold mt-1">{data.ownership.count}</p>
-                      <p className="text-[10px] text-muted-foreground/40">{data.ownership.tier}</p>
+                    <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                        <Users size={10} /> OWNERS
+                      </span>
+                      <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{data.ownership.count}</p>
+                      <p className="font-pixel text-[9px] text-[#4a5a6a]">{data.ownership.tier}</p>
                     </div>
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-                      <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Package size={10} /> Your Collection</span>
-                      <p className={cn("text-sm font-bold mt-1", data.ownership.userOwned > 0 ? "text-emerald-400" : "text-muted-foreground/30")}>
+                    <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                      <span className="font-pixel text-[9px] text-[#4a5a6a] flex items-center gap-1">
+                        <Package size={10} /> YOUR COLLECTION
+                      </span>
+                      <p className={`font-pixel text-sm mt-1 ${data.ownership.userOwned > 0 ? "text-[var(--pet-green,#40d870)]" : "text-[#4a5a6a]"}`}>
                         {data.ownership.userOwned > 0 ? `You own x${data.ownership.userOwned}` : "Not owned"}
                       </p>
                     </div>
                   </div>
 
                   {/* How to Obtain */}
-                  <div className="rounded-xl border border-border/20 bg-muted/5 p-4">
-                    <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                      <ShoppingCart size={14} /> How to Obtain
+                  <PixelCard className="p-4" corners>
+                    <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                      <ShoppingCart size={14} /> HOW TO OBTAIN
                     </h3>
-                    <div className="space-y-2 text-xs">
+                    <div className="space-y-2 font-pixel text-[10px]">
                       {(item.goldPrice || item.gemPrice) && (
-                        <div className="flex items-center gap-2 text-muted-foreground/70">
-                          <Coins size={12} className="text-amber-400" />
+                        <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
+                          <Coins size={12} className="text-[var(--pet-gold,#f0c040)]" />
                           Buy for {item.goldPrice ? `${item.goldPrice.toLocaleString()} Gold` : ""}{item.goldPrice && item.gemPrice ? " or " : ""}{item.gemPrice ? `${item.gemPrice} Gems` : ""}
                         </div>
                       )}
                       {data.craftedFrom && (
-                        <div className="flex items-start gap-2 text-muted-foreground/70">
-                          <Hammer size={12} className="text-orange-400 mt-0.5 flex-shrink-0" />
+                        <div className="flex items-start gap-2 text-[var(--pet-text-dim,#8899aa)]">
+                          <Hammer size={12} className="text-[var(--pet-gold,#f0c040)] mt-0.5 flex-shrink-0" />
                           <div>
                             <span>Craft from: </span>
                             {data.craftedFrom.ingredients.map((ing: any, i: number) => (
                               <span key={i}>
-                                <Link href={`/pet/wiki/${ing.item.id}`} className={cn("hover:underline", rarityColor[ing.item.rarity])}>
+                                <Link
+                                  href={`/pet/wiki/${ing.item.id}`}
+                                  className="hover:underline"
+                                  style={{ color: RARITY_TEXT[ing.item.rarity] || "#a0a8b4" }}
+                                >
                                   {ing.item.name}
                                 </Link>
-                                <span className="text-muted-foreground/40"> x{ing.quantity}</span>
+                                <span className="text-[#4a5a6a]"> x{ing.quantity}</span>
                                 {i < data.craftedFrom.ingredients.length - 1 && ", "}
                               </span>
                             ))}
                             {data.craftedFrom.goldCost > 0 && (
-                              <span className="text-amber-400"> + {data.craftedFrom.goldCost} Gold</span>
+                              <span className="text-[var(--pet-gold,#f0c040)]"> + {data.craftedFrom.goldCost} Gold</span>
                             )}
                           </div>
                         </div>
                       )}
                       {data.dropInfo && (
-                        <div className="flex items-center gap-2 text-muted-foreground/70">
-                          <Droplets size={12} className="text-cyan-400" />
+                        <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
+                          <Droplets size={12} className="text-[#80b0ff]" />
                           Drops from activity. Drop tier: {item.rarity} ({data.dropInfo.dropTierPercent}% of material drops)
                         </div>
                       )}
                       {data.dropInfo && (
-                        <div className="flex items-center gap-4 ml-5 text-[10px] text-muted-foreground/50">
+                        <div className="flex items-center gap-4 ml-5 text-[9px] text-[#4a5a6a]">
                           <span className="flex items-center gap-1"><Mic size={9} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
                           <span className="flex items-center gap-1"><MessageSquare size={9} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per text session</span>
                         </div>
                       )}
                       {!item.goldPrice && !item.gemPrice && !data.craftedFrom && !data.dropInfo && (
-                        <div className="flex items-center gap-2 text-muted-foreground/40">
+                        <div className="flex items-center gap-2 text-[#4a5a6a]">
                           <Lock size={12} /> Acquisition method unknown
                         </div>
                       )}
                     </div>
-                  </div>
+                  </PixelCard>
 
-                  {/* Used In Recipes (materials/scrolls) */}
+                  {/* Used In Recipes */}
                   {data.usedInRecipes?.length > 0 && (
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-4">
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <Hammer size={14} /> Used In Recipes
+                    <PixelCard className="p-4" corners>
+                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                        <Hammer size={14} /> USED IN RECIPES
                       </h3>
-                      <div className="space-y-2">
+                      <div className="space-y-1">
                         {data.usedInRecipes.map((r: any) => {
                           const resultImg = getItemImageUrl(r.resultItem.assetPath, r.resultItem.category)
                           return (
                             <Link key={r.recipeId} href={`/pet/wiki/${r.resultItem.id}`}>
-                              <div className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-muted/15 transition-colors">
-                                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center">
+                              <div className="flex items-center gap-3 px-2 py-1.5 border border-transparent hover:border-[#2a3a5c] hover:bg-[#0c1020] transition-all">
+                                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
                                   {resultImg ? (
                                     <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                                   ) : (
                                     <span>{getCategoryPlaceholder(r.resultItem.category)}</span>
                                   )}
                                 </div>
-                                <span className={cn("text-xs font-medium", rarityColor[r.resultItem.rarity])}>{r.resultItem.name}</span>
-                                <span className="text-[10px] text-muted-foreground/40 ml-auto">needs x{r.quantityNeeded}</span>
+                                <span className="font-pixel text-[10px]" style={{ color: RARITY_TEXT[r.resultItem.rarity] || "#a0a8b4" }}>
+                                  {r.resultItem.name}
+                                </span>
+                                <span className="font-pixel text-[9px] text-[#4a5a6a] ml-auto">needs x{r.quantityNeeded}</span>
                               </div>
                             </Link>
                           )
                         })}
                       </div>
-                    </div>
+                    </PixelCard>
                   )}
 
                   {/* Enhancement Info (equipment) */}
                   {data.enhancement && (
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-4">
-                      <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
-                        <Sparkles size={14} /> Enhancement Info
+                    <PixelCard className="p-4" corners>
+                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                        <Sparkles size={14} /> ENHANCEMENT INFO
                       </h3>
                       <div className="grid grid-cols-3 gap-3 text-center">
-                        <div>
-                          <p className="text-lg font-bold text-primary">+{data.enhancement.maxLevel}</p>
-                          <p className="text-[10px] text-muted-foreground/50">Max Level</p>
+                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                          <p className="font-pixel text-lg text-[var(--pet-blue,#4080f0)]">+{data.enhancement.maxLevel}</p>
+                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Max Level</p>
                         </div>
-                        <div>
-                          <p className="text-lg font-bold text-emerald-400">+{(data.enhancement.goldBonusPerLevel * 100).toFixed(0)}%</p>
-                          <p className="text-[10px] text-muted-foreground/50">Gold/XP per level</p>
+                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                          <p className="font-pixel text-lg text-[var(--pet-green,#40d870)]">+{(data.enhancement.goldBonusPerLevel * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Gold/XP per lvl</p>
                         </div>
-                        <div>
-                          <p className="text-lg font-bold text-amber-400">+{(data.enhancement.maxGoldBonus * 100).toFixed(0)}%</p>
-                          <p className="text-[10px] text-muted-foreground/50">Max Bonus</p>
+                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                          <p className="font-pixel text-lg text-[var(--pet-gold,#f0c040)]">+{(data.enhancement.maxGoldBonus * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Max Bonus</p>
                         </div>
                       </div>
-                      <div className="mt-3 h-3 rounded-full bg-muted/20 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-primary" style={{ width: "100%" }} />
+                      <div className="mt-3 h-3 bg-[#0c1020] overflow-hidden border border-[#1a2a3c]">
+                        <div className="h-full bg-gradient-to-r from-[var(--pet-green,#40d870)] to-[var(--pet-blue,#4080f0)]" style={{ width: "100%" }} />
                       </div>
-                      <div className="flex justify-between text-[9px] text-muted-foreground/40 mt-1">
+                      <div className="flex justify-between font-pixel text-[9px] text-[#4a5a6a] mt-1">
                         <span>+0</span>
                         <span>+{data.enhancement.maxLevel}</span>
                       </div>
-                    </div>
+                    </PixelCard>
                   )}
 
                   {/* Scroll Properties */}
                   {data.scrollProperties && (
-                    <div className="rounded-xl border border-border/20 bg-muted/5 p-4 space-y-4">
-                      <h3 className="text-sm font-semibold flex items-center gap-2">
-                        <Shield size={14} /> Scroll Properties
+                    <PixelCard className="p-4 space-y-4" corners>
+                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] flex items-center gap-2">
+                        <Shield size={14} /> SCROLL PROPERTIES
                       </h3>
                       <div className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/15 p-3 text-center">
-                          <p className="text-xl font-bold text-emerald-400">{(data.scrollProperties.success_rate * 100).toFixed(0)}%</p>
-                          <p className="text-[10px] text-muted-foreground/50">Base Success Rate</p>
+                        <div className="border-2 border-[#40d87040] bg-[#40d87008] p-3 text-center">
+                          <p className="font-pixel text-xl text-[var(--pet-green,#40d870)]">{(data.scrollProperties.success_rate * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Base Success Rate</p>
                         </div>
-                        <div className="rounded-lg bg-red-500/5 border border-red-500/15 p-3 text-center">
-                          <p className="text-xl font-bold text-red-400">{(data.scrollProperties.destroy_rate * 100).toFixed(0)}%</p>
-                          <p className="text-[10px] text-muted-foreground/50">Destroy Rate</p>
+                        <div className="border-2 border-[#e0404040] bg-[#e0404008] p-3 text-center">
+                          <p className="font-pixel text-xl text-[var(--pet-red,#e04040)]">{(data.scrollProperties.destroy_rate * 100).toFixed(0)}%</p>
+                          <p className="font-pixel text-[9px] text-[#4a5a6a]">Destroy Rate</p>
                         </div>
                       </div>
                       {data.scrollProperties.target_slot && (
-                        <p className="text-xs text-muted-foreground/60">Target slot: {data.scrollProperties.target_slot}</p>
+                        <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                          Target slot: {data.scrollProperties.target_slot}
+                        </p>
                       )}
-                      <div className="rounded-lg bg-muted/10 border border-border/15 p-3">
-                        <h4 className="text-[10px] uppercase font-semibold text-muted-foreground/50 mb-2">Success Rate by Enhancement Level</h4>
+                      <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                        <h4 className="font-pixel text-[9px] uppercase text-[#4a5a6a] mb-2">SUCCESS RATE BY ENHANCEMENT LEVEL</h4>
                         <SuccessCurveChart scrollProps={data.scrollProperties} gameConstants={data.gameConstants} />
                       </div>
-                    </div>
+                    </PixelCard>
                   )}
 
                   {/* Enhancement Leaderboard (equipment) */}

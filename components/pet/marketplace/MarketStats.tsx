@@ -3,7 +3,8 @@
 // Created: 2026-03-15
 // Purpose: Marketplace stats banner (volume, listings, trades)
 // ============================================================
-import { Coins, Gem, ShoppingCart, TrendingUp, Zap } from "lucide-react"
+import { ShoppingCart, TrendingUp } from "lucide-react"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 interface StatsData {
   activeListings: number
@@ -19,25 +20,43 @@ export default function MarketStats({ data }: { data: StatsData | null }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-        <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><ShoppingCart size={10} /> Active Listings</span>
-        <p className="text-lg font-bold mt-1">{data.activeListings}</p>
+      <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
+        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+          <ShoppingCart size={10} /> Active Listings
+        </span>
+        <p className="font-pixel text-lg text-[#c0d0e0] mt-1.5">{data.activeListings}</p>
       </div>
-      <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-        <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><TrendingUp size={10} /> Total Trades</span>
-        <p className="text-lg font-bold mt-1">{data.totalSalesEver}</p>
+
+      <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
+        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+          <TrendingUp size={10} /> Total Trades
+        </span>
+        <p className="font-pixel text-lg text-[#c0d0e0] mt-1.5">{data.totalSalesEver}</p>
       </div>
-      <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-        <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Coins size={10} /> 24h Gold Volume</span>
-        <p className="text-lg font-bold mt-1 text-amber-400">{data.volume24h.gold.toLocaleString()}</p>
+
+      <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
+        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+          24h Gold Vol
+        </span>
+        <div className="mt-1.5">
+          <GoldDisplay amount={data.volume24h.gold} type="gold" size="lg" />
+        </div>
       </div>
-      <div className="rounded-xl border border-border/20 bg-muted/5 p-3">
-        <span className="text-[10px] text-muted-foreground/50 flex items-center gap-1"><Gem size={10} /> 24h Gem Volume</span>
-        <p className="text-lg font-bold mt-1 text-cyan-400">{data.volume24h.gems.toLocaleString()}</p>
+
+      <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-3 shadow-[2px_2px_0_#060810]">
+        <span className="font-pixel text-[8px] text-[#4a5a70] flex items-center gap-1 uppercase tracking-wide">
+          24h Gem Vol
+        </span>
+        <div className="mt-1.5">
+          <GoldDisplay amount={data.volume24h.gems} type="gem" size="lg" />
+        </div>
       </div>
+
       {!hasActivity && (
-        <div className="col-span-full text-center py-2">
-          <p className="text-xs text-muted-foreground/40">No trades yet -- be the first to kickstart the economy!</p>
+        <div className="col-span-full border-2 border-[#1a2a3c] bg-[#0a0e1a] text-center py-3">
+          <p className="font-pixel text-[10px] text-[#3a4a60]">
+            NO TRADES YET -- BE THE FIRST!
+          </p>
         </div>
       )}
     </div>

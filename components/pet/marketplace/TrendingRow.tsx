@@ -4,13 +4,16 @@
 // Purpose: Horizontal trending items row
 // ============================================================
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { TrendingUp } from "lucide-react"
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
+}
+const RARITY_TEXT: Record<string, string> = {
+  COMMON: "#8899aa", UNCOMMON: "#80b0ff", RARE: "#ff8080",
+  EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ff90a0",
 }
 
 interface TrendingItem {
@@ -22,16 +25,21 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
   if (!items.length) return null
 
   return (
-    <div className="rounded-xl border border-border/20 bg-muted/5 p-4">
-      <h3 className="text-xs font-semibold text-muted-foreground/60 flex items-center gap-1.5 mb-3">
+    <div className="border-2 border-[#2a3a5c] bg-[#0f1628] p-4 shadow-[2px_2px_0_#060810]">
+      <h3 className="font-pixel text-[10px] text-[#4a5a70] flex items-center gap-1.5 mb-3 uppercase tracking-wide">
         <TrendingUp size={12} /> Trending (24h)
       </h3>
       <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-thin">
         {items.map((t) => {
           const imgUrl = getItemImageUrl(t.item.assetPath, t.item.category)
+          const borderColor = RARITY_BORDER[t.item.rarity] || RARITY_BORDER.COMMON
+          const textColor = RARITY_TEXT[t.item.rarity] || RARITY_TEXT.COMMON
           return (
             <Link key={t.item.id} href={`/pet/wiki/${t.item.id}`}>
-              <div className="flex-shrink-0 w-24 flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-muted/10 transition-colors">
+              <div
+                className="flex-shrink-0 w-24 flex flex-col items-center gap-1 p-2 border-2 bg-[#0a0e1a] shadow-[2px_2px_0_#060810] hover:brightness-125 transition-all"
+                style={{ borderColor }}
+              >
                 <div className="w-10 h-10 flex items-center justify-center">
                   {imgUrl ? (
                     <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
@@ -39,10 +47,13 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
                     <span className="text-lg">{getCategoryPlaceholder(t.item.category)}</span>
                   )}
                 </div>
-                <span className={cn("text-[10px] font-semibold truncate w-full text-center", rarityColor[t.item.rarity])}>
+                <span
+                  className="font-pixel text-[9px] truncate w-full text-center"
+                  style={{ color: textColor }}
+                >
                   {t.item.name}
                 </span>
-                <span className="text-[9px] text-muted-foreground/40">{t.tradeCount} trades</span>
+                <span className="font-pixel text-[8px] text-[#3a4a60]">{t.tradeCount} trades</span>
               </div>
             </Link>
           )

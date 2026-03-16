@@ -1,19 +1,19 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Multi-select rarity filter pills with glow effect
+// Purpose: Multi-select rarity filter toggles - pixel art style
 // ============================================================
 import { cn } from "@/lib/utils"
 
 const RARITIES = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHICAL"] as const
 
-const RARITY_STYLES: Record<string, { bg: string; border: string; text: string; glow: string }> = {
-  COMMON:    { bg: "bg-gray-500/10",   border: "border-gray-500/30",   text: "text-gray-400",   glow: "shadow-gray-500/20" },
-  UNCOMMON:  { bg: "bg-green-500/10",  border: "border-green-500/30",  text: "text-green-400",  glow: "shadow-green-500/20" },
-  RARE:      { bg: "bg-blue-500/10",   border: "border-blue-500/30",   text: "text-blue-400",   glow: "shadow-blue-500/20" },
-  EPIC:      { bg: "bg-purple-500/10", border: "border-purple-500/30", text: "text-purple-400", glow: "shadow-purple-500/20" },
-  LEGENDARY: { bg: "bg-amber-500/10",  border: "border-amber-500/30",  text: "text-amber-400",  glow: "shadow-amber-500/20" },
-  MYTHICAL:  { bg: "bg-rose-500/10",   border: "border-rose-500/30",   text: "text-rose-400",   glow: "shadow-rose-500/20" },
+const RARITY_COLORS: Record<string, { border: string; bg: string; text: string }> = {
+  COMMON:    { border: "#6a7a8a", bg: "#1a2030", text: "#8899aa" },
+  UNCOMMON:  { border: "#4080f0", bg: "#101830", text: "#80b0ff" },
+  RARE:      { border: "#e04040", bg: "#301018", text: "#ff8080" },
+  EPIC:      { border: "#f0c040", bg: "#302818", text: "#ffe080" },
+  LEGENDARY: { border: "#d060f0", bg: "#281030", text: "#e0a0ff" },
+  MYTHICAL:  { border: "#ff6080", bg: "#301020", text: "#ff90a0" },
 }
 
 interface Props {
@@ -32,18 +32,19 @@ export default function RarityPills({ selected, onChange }: Props) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {RARITIES.map((r) => {
-        const s = RARITY_STYLES[r]
+        const c = RARITY_COLORS[r]
         const active = selected.has(r)
         return (
           <button
             key={r}
             onClick={() => toggle(r)}
-            className={cn(
-              "px-2.5 py-1 rounded-full text-[11px] font-semibold border transition-all",
-              active
-                ? `${s.bg} ${s.border} ${s.text} shadow-md ${s.glow}`
-                : "bg-muted/20 border-transparent text-muted-foreground/50 hover:text-muted-foreground"
-            )}
+            className="font-pixel px-2 py-1 text-[9px] border-2 transition-all"
+            style={{
+              borderColor: active ? c.border : "#1a2a3c",
+              backgroundColor: active ? c.bg : "#0a0e1a",
+              color: active ? c.text : "#4a5a6a",
+              boxShadow: active ? `0 0 6px ${c.border}30` : "none",
+            }}
           >
             {r}
           </button>

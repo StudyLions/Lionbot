@@ -4,17 +4,13 @@
 // Purpose: Visual ingredient-to-result recipe flow card
 // ============================================================
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import { ArrowRight, Coins } from "lucide-react"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
-}
-const rarityBorder: Record<string, string> = {
-  COMMON: "border-gray-500/20", UNCOMMON: "border-green-500/20", RARE: "border-blue-500/20",
-  EPIC: "border-purple-500/20", LEGENDARY: "border-amber-500/20", MYTHICAL: "border-rose-500/20",
+const rarityBorderColor: Record<string, string> = {
+  COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
 interface ItemRef { id: number; name: string; rarity: string; category: string; assetPath: string | null }
@@ -26,59 +22,74 @@ interface Recipe {
 
 export default function RecipeCard({ recipe }: { recipe: Recipe }) {
   const resultImg = getItemImageUrl(recipe.resultItem.assetPath, recipe.resultItem.category)
+  const resultBorder = rarityBorderColor[recipe.resultItem.rarity] ?? "#2a3a5c"
 
   return (
-    <div className={cn("rounded-xl border p-4 bg-muted/5 flex items-center gap-4", rarityBorder[recipe.resultItem.rarity])}>
-      <div className="flex-1 space-y-2">
-        {recipe.ingredients.map((ing, i) => {
-          const ingImg = getItemImageUrl(ing.item.assetPath, ing.item.category)
-          return (
-            <Link key={i} href={`/pet/wiki/${ing.item.id}`}>
-              <div className="flex items-center gap-2 hover:bg-muted/15 rounded-lg px-2 py-1 transition-colors">
-                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center">
-                  {ingImg ? (
-                    <img src={ingImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-                  ) : (
-                    <span className="text-sm">{getCategoryPlaceholder(ing.item.category)}</span>
-                  )}
+    <div
+      className="border-2 border-[#2a3a5c] bg-[#0a0e1a] p-1 shadow-[2px_2px_0_#060810]"
+    >
+      <div
+        className="border-2 border-[#1a2030] bg-[#0f1628] p-4 flex items-center gap-4"
+      >
+        <div className="flex-1 space-y-1">
+          {recipe.ingredients.map((ing, i) => {
+            const ingImg = getItemImageUrl(ing.item.assetPath, ing.item.category)
+            const ingBorder = rarityBorderColor[ing.item.rarity] ?? "#2a3a5c"
+            return (
+              <Link key={i} href={`/pet/wiki/${ing.item.id}`}>
+                <div
+                  className="flex items-center gap-2 border-2 p-1.5 hover:bg-[#111828] transition-colors"
+                  style={{ borderColor: `${ingBorder}60`, backgroundColor: "#0a0e1a" }}
+                >
+                  <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                    {ingImg ? (
+                      <img src={ingImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                    ) : (
+                      <span className="text-sm">{getCategoryPlaceholder(ing.item.category)}</span>
+                    )}
+                  </div>
+                  <span className="font-pixel text-[10px] truncate" style={{ color: ingBorder }}>
+                    {ing.item.name}
+                  </span>
+                  <span className="font-pixel text-[9px] text-[#4a5a70] ml-auto">x{ing.quantity}</span>
                 </div>
-                <span className={cn("text-[11px] truncate", rarityColor[ing.item.rarity])}>{ing.item.name}</span>
-                <span className="text-[10px] text-muted-foreground/40 ml-auto">x{ing.quantity}</span>
-              </div>
-            </Link>
-          )
-        })}
-        {recipe.goldCost > 0 && (
-          <div className="flex items-center gap-2 px-2 py-1">
-            <Coins size={14} className="text-amber-400" />
-            <span className="text-[11px] text-amber-400">{recipe.goldCost.toLocaleString()} Gold</span>
-          </div>
-        )}
-      </div>
-
-      <div className="flex-shrink-0 text-muted-foreground/20">
-        <ArrowRight size={20} />
-      </div>
-
-      <Link href={`/pet/wiki/${recipe.resultItem.id}`} className="flex-shrink-0">
-        <div className="flex flex-col items-center gap-1 hover:scale-105 transition-transform">
-          <div className="w-14 h-14 flex items-center justify-center">
-            {resultImg ? (
-              <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-            ) : (
-              <div className="w-10 h-10 rounded-full bg-muted/20 flex items-center justify-center text-xl">
-                {getCategoryPlaceholder(recipe.resultItem.category)}
-              </div>
-            )}
-          </div>
-          <span className={cn("text-xs font-semibold text-center", rarityColor[recipe.resultItem.rarity])}>
-            {recipe.resultItem.name}
-          </span>
-          {recipe.resultQuantity > 1 && (
-            <span className="text-[9px] text-muted-foreground/40">x{recipe.resultQuantity}</span>
+              </Link>
+            )
+          })}
+          {recipe.goldCost > 0 && (
+            <div className="flex items-center gap-2 border-2 border-[#f0c040]/30 bg-[#0a0e1a] p-1.5">
+              <GoldDisplay amount={recipe.goldCost} size="sm" />
+              <span className="font-pixel text-[9px] text-[#f0c040]/60">Gold</span>
+            </div>
           )}
         </div>
-      </Link>
+
+        <span className="font-pixel text-[#4a5a70] text-sm flex-shrink-0 select-none">&gt;&gt;&gt;</span>
+
+        <Link href={`/pet/wiki/${recipe.resultItem.id}`} className="flex-shrink-0">
+          <div className="flex flex-col items-center gap-1.5 hover:translate-y-[-2px] transition-transform">
+            <div
+              className="w-16 h-16 flex items-center justify-center border-2 bg-[#0a0e1a] shadow-[2px_2px_0_#060810]"
+              style={{ borderColor: resultBorder }}
+            >
+              {resultImg ? (
+                <img src={resultImg} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+              ) : (
+                <div className="w-10 h-10 flex items-center justify-center text-xl">
+                  {getCategoryPlaceholder(recipe.resultItem.category)}
+                </div>
+              )}
+            </div>
+            <span className="font-pixel text-[10px] text-center" style={{ color: resultBorder }}>
+              {recipe.resultItem.name}
+            </span>
+            <PixelBadge rarity={recipe.resultItem.rarity} />
+            {recipe.resultQuantity > 1 && (
+              <span className="font-pixel text-[9px] text-[#4a5a70]">x{recipe.resultQuantity}</span>
+            )}
+          </div>
+        </Link>
+      </div>
     </div>
   )
 }

@@ -1,21 +1,13 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Category filter chip row with icons and counts
+// Purpose: Category filter chips - pixel art style
 // ============================================================
 import { cn } from "@/lib/utils"
 import { getCategoryPlaceholder } from "@/utils/petAssets"
 
-interface CategoryCount {
-  category: string
-  count: number
-}
-
-interface Props {
-  categories: CategoryCount[]
-  selected: string
-  onChange: (category: string) => void
-}
+interface CategoryCount { category: string; count: number }
+interface Props { categories: CategoryCount[]; selected: string; onChange: (category: string) => void }
 
 export default function CategoryChips({ categories, selected, onChange }: Props) {
   return (
@@ -23,10 +15,10 @@ export default function CategoryChips({ categories, selected, onChange }: Props)
       <button
         onClick={() => onChange("")}
         className={cn(
-          "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border",
+          "font-pixel px-2.5 py-1 text-[10px] border-2 transition-all",
           !selected
-            ? "bg-primary/15 text-primary border-primary/30"
-            : "bg-muted/20 text-muted-foreground/60 border-transparent hover:text-muted-foreground"
+            ? "border-[var(--pet-blue,#4080f0)] bg-[#1a2a50] text-[var(--pet-blue,#4080f0)]"
+            : "border-[#1a2a3c] bg-[#0a0e1a] text-[var(--pet-text-dim,#8899aa)] hover:text-[var(--pet-text,#e2e8f0)]"
         )}
       >
         All
@@ -36,10 +28,10 @@ export default function CategoryChips({ categories, selected, onChange }: Props)
           key={c.category}
           onClick={() => onChange(c.category === selected ? "" : c.category)}
           className={cn(
-            "px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border flex items-center gap-1.5",
+            "font-pixel px-2.5 py-1 text-[10px] border-2 transition-all flex items-center gap-1",
             selected === c.category
-              ? "bg-primary/15 text-primary border-primary/30"
-              : "bg-muted/20 text-muted-foreground/60 border-transparent hover:text-muted-foreground"
+              ? "border-[var(--pet-blue,#4080f0)] bg-[#1a2a50] text-[var(--pet-blue,#4080f0)]"
+              : "border-[#1a2a3c] bg-[#0a0e1a] text-[var(--pet-text-dim,#8899aa)] hover:text-[var(--pet-text,#e2e8f0)]"
           )}
         >
           <span>{getCategoryPlaceholder(c.category)}</span>

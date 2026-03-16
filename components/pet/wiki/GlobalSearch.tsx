@@ -1,27 +1,19 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Global search bar with grouped dropdown results
+// Purpose: Global search bar with dropdown - pixel art style
 // ============================================================
 import { useState, useRef, useEffect, useCallback } from "react"
-import { useRouter } from "next/router"
 import Link from "next/link"
-import { Search, ArrowRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
-}
+import PixelBadge from "@/components/pet/ui/PixelBadge"
 
 interface SearchItem { id: number; name: string; category: string; rarity: string; assetPath: string | null }
 interface SearchRecipe { recipeId: number; resultItem: SearchItem }
 interface SearchResult { items: SearchItem[]; recipes: SearchRecipe[] }
 
-interface Props {
-  onSubmit: (q: string) => void
-}
+interface Props { onSubmit: (q: string) => void }
 
 export default function GlobalSearch({ onSubmit }: Props) {
   const [query, setQuery] = useState("")
@@ -36,10 +28,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
     setLoading(true)
     try {
       const res = await fetch(`/api/pet/wiki/search?q=${encodeURIComponent(q)}`)
-      if (res.ok) {
-        setResults(await res.json())
-        setOpen(true)
-      }
+      if (res.ok) { setResults(await res.json()); setOpen(true) }
     } finally { setLoading(false) }
   }, [])
 
@@ -50,10 +39,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
-    if (e.key === "Enter" && query.trim()) {
-      setOpen(false)
-      onSubmit(query.trim())
-    }
+    if (e.key === "Enter" && query.trim()) { setOpen(false); onSubmit(query.trim()) }
     if (e.key === "Escape") setOpen(false)
   }
 
@@ -70,7 +56,7 @@ export default function GlobalSearch({ onSubmit }: Props) {
   return (
     <div ref={containerRef} className="relative w-full">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40" size={16} />
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 font-pixel text-[10px] text-[#4a5a70]">&#x25B6;</span>
         <input
           type="text"
           value={query}
@@ -78,33 +64,39 @@ export default function GlobalSearch({ onSubmit }: Props) {
           onKeyDown={handleKeyDown}
           onFocus={() => hasResults && setOpen(true)}
           placeholder="Search items, recipes, scrolls..."
-          className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-muted/20 border border-border/30 text-sm text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/40 transition-colors"
+          className="w-full pl-8 pr-4 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] placeholder:text-[#3a4a5c] focus:outline-none focus:border-[var(--pet-blue,#4080f0)] transition-colors"
         />
-        {loading && <div className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />}
+        {loading && <span className="absolute right-3 top-1/2 -translate-y-1/2 w-3 h-3 border-2 border-[var(--pet-blue)]/30 border-t-[var(--pet-blue)] animate-spin" />}
       </div>
 
       {open && hasResults && (
-        <div className="absolute z-50 mt-1 w-full bg-background border border-border/40 rounded-xl shadow-2xl overflow-hidden max-h-[400px] overflow-y-auto">
+        <div
+          className="absolute z-50 mt-1 w-full border-2 border-[#2a3a5c] bg-[#0c1020] overflow-hidden max-h-[360px] overflow-y-auto scrollbar-hide"
+          style={{ boxShadow: "3px 3px 0 #060810" }}
+        >
           {results!.items.length > 0 && (
             <div>
-              <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-muted-foreground/50 bg-muted/10">Items</div>
+              <div className="px-3 py-1.5 font-pixel text-[8px] text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-b border-[#1a2a3c]">ITEMS</div>
               {results!.items.map((item) => {
                 const imgUrl = getItemImageUrl(item.assetPath, item.category)
                 return (
                   <Link key={item.id} href={`/pet/wiki/${item.id}`} onClick={() => setOpen(false)}>
-                    <div className="flex items-center gap-3 px-3 py-2 hover:bg-muted/15 transition-colors cursor-pointer">
-                      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#141e30] transition-colors cursor-pointer">
+                      <div className="w-7 h-7 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0">
                         {imgUrl ? (
-                          <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                          <img src={imgUrl} alt="" className="w-5 h-5 object-contain" style={{ imageRendering: "pixelated" }} />
                         ) : (
-                          <span className="text-lg">{getCategoryPlaceholder(item.category)}</span>
+                          <span className="text-sm">{getCategoryPlaceholder(item.category)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("text-xs font-medium truncate", rarityColor[item.rarity])}>{item.name}</p>
-                        <p className="text-[10px] text-muted-foreground/40">{item.category}</p>
+                        <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">{item.name}</span>
+                        <div className="flex items-center gap-1">
+                          <PixelBadge rarity={item.rarity} />
+                          <span className="font-pixel text-[8px] text-[#4a5a70]">{item.category}</span>
+                        </div>
                       </div>
-                      <ArrowRight size={12} className="text-muted-foreground/20" />
+                      <span className="font-pixel text-[10px] text-[#3a4a5c]">&#x25B6;</span>
                     </div>
                   </Link>
                 )
@@ -113,24 +105,24 @@ export default function GlobalSearch({ onSubmit }: Props) {
           )}
           {results!.recipes.length > 0 && (
             <div>
-              <div className="px-3 py-1.5 text-[10px] uppercase font-semibold text-muted-foreground/50 bg-muted/10 border-t border-border/20">Recipes</div>
+              <div className="px-3 py-1.5 font-pixel text-[8px] text-[#4a5a70] tracking-[0.15em] bg-[#111828] border-y border-[#1a2a3c]">RECIPES</div>
               {results!.recipes.map((r) => {
                 const imgUrl = getItemImageUrl(r.resultItem.assetPath, r.resultItem.category)
                 return (
                   <Link key={r.recipeId} href={`/pet/wiki/${r.resultItem.id}`} onClick={() => setOpen(false)}>
-                    <div className="flex items-center gap-3 px-3 py-2 hover:bg-muted/15 transition-colors cursor-pointer">
-                      <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                    <div className="flex items-center gap-2.5 px-3 py-2 hover:bg-[#141e30] transition-colors cursor-pointer">
+                      <div className="w-7 h-7 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0">
                         {imgUrl ? (
-                          <img src={imgUrl} alt="" className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
+                          <img src={imgUrl} alt="" className="w-5 h-5 object-contain" style={{ imageRendering: "pixelated" }} />
                         ) : (
-                          <span className="text-lg">{getCategoryPlaceholder(r.resultItem.category)}</span>
+                          <span className="text-sm">{getCategoryPlaceholder(r.resultItem.category)}</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("text-xs font-medium truncate", rarityColor[r.resultItem.rarity])}>{r.resultItem.name}</p>
-                        <p className="text-[10px] text-muted-foreground/40">Recipe</p>
+                        <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">{r.resultItem.name}</span>
+                        <span className="font-pixel text-[8px] text-[#4a5a70]">Recipe</span>
                       </div>
-                      <ArrowRight size={12} className="text-muted-foreground/20" />
+                      <span className="font-pixel text-[10px] text-[#3a4a5c]">&#x25B6;</span>
                     </div>
                   </Link>
                 )

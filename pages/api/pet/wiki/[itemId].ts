@@ -10,7 +10,10 @@ import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 import { GAME_CONSTANTS, getOwnershipTier } from "@/utils/gameConstants"
 
-const EQUIP_CATEGORIES = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS"]
+// --- AI-MODIFIED (2026-03-15) ---
+// Purpose: Add BOOTS to equipment categories
+const EQUIP_CATEGORIES = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"]
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -19,14 +22,18 @@ export default apiHandler({
     const itemId = parseInt(req.query.itemId as string)
     if (isNaN(itemId)) return res.status(400).json({ error: "Invalid itemId" })
 
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: Include set_id and set name in item queries
     const item = await prisma.lg_items.findUnique({
       where: { itemid: itemId },
       select: {
         itemid: true, name: true, category: true, slot: true, rarity: true,
         asset_path: true, gold_price: true, gem_price: true, tradeable: true,
-        description: true, copyright_flag: true,
+        description: true, copyright_flag: true, set_id: true,
+        item_set: { select: { name: true } },
       },
     })
+    // --- END AI-MODIFIED ---
     if (!item) return res.status(404).json({ error: "Item not found" })
 
     const ownerCountRaw = await prisma.$queryRaw<[{ cnt: bigint }]>`
@@ -99,12 +106,28 @@ export default apiHandler({
       }
     }
 
-    const related = await prisma.lg_items.findMany({
-      where: { category: item.category, itemid: { not: itemId } },
-      select: { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true },
-      orderBy: { rarity: "desc" },
-      take: 6,
-    })
+    // --- AI-MODIFIED (2026-03-15) ---
+    // Purpose: Prioritize set members in related items when item belongs to a set
+    let setMembers: typeof related = []
+    if (item.set_id) {
+      setMembers = await prisma.lg_items.findMany({
+        where: { set_id: item.set_id, itemid: { not: itemId } },
+        select: { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true },
+        orderBy: { rarity: "desc" },
+      })
+    }
+    const remainingSlots = 6 - setMembers.length
+    const setMemberIds = new Set(setMembers.map((s) => s.itemid))
+    const categoryRelated = remainingSlots > 0
+      ? await prisma.lg_items.findMany({
+          where: { category: item.category, itemid: { notIn: [itemId, ...setMemberIds] } },
+          select: { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true },
+          orderBy: { rarity: "desc" },
+          take: remainingSlots,
+        })
+      : []
+    const related = [...setMembers, ...categoryRelated]
+    // --- END AI-MODIFIED ---
 
     const isEquipment = EQUIP_CATEGORIES.includes(item.category)
     const maxEnhancement = isEquipment ? (GAME_CONSTANTS.MAX_ENHANCEMENT_BY_RARITY[item.rarity] ?? 5) : null
@@ -115,6 +138,7 @@ export default apiHandler({
         id: item.itemid, name: item.name, category: item.category, slot: item.slot,
         rarity: item.rarity, assetPath: item.asset_path, goldPrice: item.gold_price,
         gemPrice: item.gem_price, tradeable: item.tradeable, description: item.description,
+        setName: item.item_set?.name ?? null,
       },
       ownership: { count: ownerCount, tier: getOwnershipTier(ownerCount), userOwned },
       usedInRecipes: usedInRecipes.map((r) => ({

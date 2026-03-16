@@ -1,21 +1,21 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-15
-// Purpose: Pet enhancement page - enhance equipment with scrolls
+// Purpose: Pet enhancement page - pixel art RPG style
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import { Card, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import {
-  Sparkles, Shield, ScrollText, AlertTriangle, Check, Skull, Loader2, ArrowRight,
-} from "lucide-react"
-import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import { getItemImageUrl, getCategoryPlaceholder, getUiIconUrl, getFarmAnimationUrl } from "@/utils/petAssets"
+import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelBar from "@/components/pet/ui/PixelBar"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -38,13 +38,9 @@ interface EnhancementData {
   scrolls: ScrollItem[]
 }
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400",
-  UNCOMMON: "text-green-400",
-  RARE: "text-blue-400",
-  EPIC: "text-purple-400",
-  LEGENDARY: "text-amber-400",
-  MYTHICAL: "text-rose-400",
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: "#3a4a6c", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
 const LEVEL_PENALTY_FACTOR = 0.08
@@ -59,10 +55,8 @@ export default function EnhancementPage() {
   const [selectedScroll, setSelectedScroll] = useState<number | null>(null)
   const [enhancing, setEnhancing] = useState(false)
   const [result, setResult] = useState<{
-    outcome: "success" | "failed" | "destroyed"
-    itemName: string
-    newLevel?: number
-    currentLevel?: number
+    outcome: "success" | "failed" | "destroyed"; itemName: string
+    newLevel?: number; currentLevel?: number
   } | null>(null)
 
   const equip = data?.equipment.find((e) => e.inventoryId === selectedEquip)
@@ -82,21 +76,15 @@ export default function EnhancementPage() {
     setResult(null)
     try {
       const res = await fetch("/api/pet/enhancement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          equipmentInventoryId: selectedEquip,
-          scrollInventoryId: selectedScroll,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ equipmentInventoryId: selectedEquip, scrollInventoryId: selectedScroll }),
       })
       const body = await res.json()
       if (!res.ok) {
         setResult({ outcome: "failed", itemName: body.error || "Enhancement failed" })
       } else {
         setResult(body)
-        if (body.outcome === "destroyed") {
-          setSelectedEquip(null)
-        }
+        if (body.outcome === "destroyed") setSelectedEquip(null)
       }
       mutate()
       invalidate("/api/pet/inventory?filter=equipment")
@@ -112,168 +100,188 @@ export default function EnhancementPage() {
   return (
     <Layout SEO={{ title: "Enhancement - LionGotchi", description: "Enhance your equipment" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
+        <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
+          <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-            <div className="flex-1 min-w-0 space-y-6">
-              <div className="space-y-1">
-                <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                  <Sparkles size={24} className="text-amber-400" />
-                  Enhancement
-                </h1>
-                <p className="text-sm text-muted-foreground">
+            <div className="flex-1 min-w-0 space-y-4">
+              {/* Title */}
+              <div>
+                <h1 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">Enhancement</h1>
+                <div className="mt-1.5 flex items-center gap-1">
+                  <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
+                  <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
+                  <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
+                </div>
+                <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] mt-1">
                   Use scrolls to upgrade equipment for Gold & XP bonuses
                 </p>
               </div>
 
+              {/* Result toast */}
               {result && (
-                <div className={cn(
-                  "px-4 py-3 rounded-lg text-sm font-medium flex items-center gap-2",
-                  result.outcome === "success"
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : result.outcome === "destroyed"
-                    ? "bg-red-500/10 text-red-400 border border-red-500/20"
-                    : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
-                )}>
-                  {result.outcome === "success" && <><Check size={16} /> {result.itemName} enhanced to +{result.newLevel}!</>}
-                  {result.outcome === "failed" && <><AlertTriangle size={16} /> Enhancement failed. {result.itemName} is unchanged at +{result.currentLevel}.</>}
-                  {result.outcome === "destroyed" && <><Skull size={16} /> {result.itemName} was destroyed!</>}
+                <div
+                  className="flex items-center gap-2 px-3 py-2.5 border-2"
+                  style={{
+                    borderColor: result.outcome === "success" ? "var(--pet-green)" : result.outcome === "destroyed" ? "var(--pet-red)" : "var(--pet-gold)",
+                    backgroundColor: result.outcome === "success" ? "rgba(40,100,60,0.15)" : result.outcome === "destroyed" ? "rgba(100,40,40,0.15)" : "rgba(100,80,20,0.15)",
+                    boxShadow: "2px 2px 0 #060810",
+                  }}
+                >
+                  {result.outcome === "success" && (
+                    <>
+                      <img src={getUiIconUrl("trophy")} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
+                      <span className="font-pixel text-[11px] text-[var(--pet-green,#40d870)]">
+                        {result.itemName} enhanced to +{result.newLevel}!
+                      </span>
+                    </>
+                  )}
+                  {result.outcome === "failed" && (
+                    <span className="font-pixel text-[11px] text-[var(--pet-gold,#f0c040)]">
+                      Enhancement failed. {result.itemName} is unchanged at +{result.currentLevel}.
+                    </span>
+                  )}
+                  {result.outcome === "destroyed" && (
+                    <>
+                      <img src={getFarmAnimationUrl("skull", 1)} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
+                      <span className="font-pixel text-[11px] text-[var(--pet-red,#e04040)]">
+                        {result.itemName} was destroyed!
+                      </span>
+                    </>
+                  )}
                 </div>
               )}
 
               {isLoading ? (
                 <div className="space-y-4">
-                  <Skeleton className="h-40 rounded-lg" />
-                  <Skeleton className="h-40 rounded-lg" />
+                  <Skeleton className="h-40" />
+                  <Skeleton className="h-40" />
                 </div>
               ) : error ? (
-                <div className="text-center py-12">
-                  <p className="text-destructive">{(error as Error).message}</p>
-                </div>
+                <PixelCard className="p-8 text-center" corners>
+                  <p className="font-pixel text-xs text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
+                </PixelCard>
               ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                   {/* Equipment picker */}
-                  <Card className="border-border">
-                    <CardContent className="pt-5 pb-4 space-y-3">
-                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Shield size={16} className="text-purple-400" />
-                        Select Equipment
-                      </p>
-                      {!data?.equipment.length ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">No equipment owned</p>
-                      ) : (
-                        <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                          {data.equipment.map((e) => {
-                            const imgUrl = getItemImageUrl(e.item.assetPath, e.item.category)
-                            return (
+                  <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
+                    <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c]">
+                      <span className="font-pixel text-[9px] text-[#4a5a70] tracking-[0.15em]">SELECT EQUIPMENT</span>
+                    </div>
+                    {!data?.equipment.length ? (
+                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim)] py-6 text-center">No equipment owned</p>
+                    ) : (
+                      <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+                        {data.equipment.map((e) => {
+                          const bc = RARITY_BORDER[e.item.rarity] || "#3a4a6c"
+                          const imgUrl = getItemImageUrl(e.item.assetPath, e.item.category)
+                          const isSelected = selectedEquip === e.inventoryId
+                          return (
                             <button
                               key={e.inventoryId}
                               onClick={() => setSelectedEquip(e.inventoryId)}
                               className={cn(
-                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2",
-                                selectedEquip === e.inventoryId
-                                  ? "bg-primary/15 border border-primary/30"
-                                  : "bg-muted/20 hover:bg-muted/40 border border-transparent"
+                                "w-full text-left px-2.5 py-2 border-2 flex items-center gap-2 transition-all",
+                                isSelected ? "bg-[#f0c040]/6" : "bg-[#0a0e1a] hover:bg-[#101828]"
                               )}
+                              style={{ borderColor: isSelected ? bc : "#1a2a3c" }}
                             >
-                              {imgUrl ? (
-                                <div className="w-7 h-7 rounded bg-muted/20 flex-shrink-0 overflow-hidden">
-                                  <img src={imgUrl} alt={e.item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
-                                </div>
-                              ) : (
-                                <div className="w-7 h-7 rounded bg-muted/30 flex-shrink-0 flex items-center justify-center text-xs">
-                                  {getCategoryPlaceholder(e.item.category)}
-                                </div>
-                              )}
-                              <span className={cn("font-medium flex-1", rarityColor[e.item.rarity])}>
-                                {e.item.name}
-                                {e.enhancementLevel > 0 && <span className="text-amber-400 ml-1">+{e.enhancementLevel}</span>}
-                              </span>
-                              <span className="text-xs text-muted-foreground flex-shrink-0">
+                              <div className="w-8 h-8 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0">
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt="" className="w-6 h-6 object-contain" style={{ imageRendering: "pixelated" }} />
+                                ) : (
+                                  <span className="text-xs">{getCategoryPlaceholder(e.item.category)}</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate block">
+                                  {e.item.name}
+                                  {e.enhancementLevel > 0 && <span className="text-[var(--pet-gold)] ml-1">+{e.enhancementLevel}</span>}
+                                </span>
+                                <PixelBadge rarity={e.item.rarity} />
+                              </div>
+                              <span className="font-pixel text-[9px] text-[var(--pet-text-dim)] flex-shrink-0">
                                 {e.enhancementLevel}/{e.maxLevel}
                               </span>
                             </button>
-                          )})}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Scroll picker */}
-                  <Card className="border-border">
-                    <CardContent className="pt-5 pb-4 space-y-3">
-                      <p className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <ScrollText size={16} className="text-indigo-400" />
-                        Select Scroll
-                      </p>
-                      {!data?.scrolls.length ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">No scrolls owned. Craft some first!</p>
-                      ) : (
-                        <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                          {data.scrolls.map((s) => (
+                  <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
+                    <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c]">
+                      <span className="font-pixel text-[9px] text-[#4a5a70] tracking-[0.15em]">SELECT SCROLL</span>
+                    </div>
+                    {!data?.scrolls.length ? (
+                      <p className="font-pixel text-[10px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Craft some first!</p>
+                    ) : (
+                      <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+                        {data.scrolls.map((s) => {
+                          const isSelected = selectedScroll === s.inventoryId
+                          const bc = RARITY_BORDER[s.item.rarity] || "#3a4a6c"
+                          return (
                             <button
                               key={s.inventoryId}
                               onClick={() => setSelectedScroll(s.inventoryId)}
                               className={cn(
-                                "w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between",
-                                selectedScroll === s.inventoryId
-                                  ? "bg-primary/15 border border-primary/30"
-                                  : "bg-muted/20 hover:bg-muted/40 border border-transparent"
+                                "w-full text-left px-2.5 py-2 border-2 flex items-center justify-between transition-all",
+                                isSelected ? "bg-[#4080f0]/6" : "bg-[#0a0e1a] hover:bg-[#101828]"
                               )}
+                              style={{ borderColor: isSelected ? bc : "#1a2a3c" }}
                             >
-                              <span className={cn("font-medium", rarityColor[s.item.rarity])}>
-                                {s.item.name}
-                              </span>
-                              <span className="text-xs text-muted-foreground">x{s.quantity}</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)]">{s.item.name}</span>
+                                <PixelBadge rarity={s.item.rarity} />
+                              </div>
+                              <span className="font-pixel text-[10px] text-[var(--pet-text-dim)]">x{s.quantity}</span>
                             </button>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
               {/* Enhancement preview */}
               {equip && scroll && (
-                <Card className="border-amber-500/20 bg-amber-500/5">
-                  <CardContent className="pt-5 pb-4">
+                <div
+                  className="border-[3px] border-[var(--pet-gold,#f0c040)] p-[3px]"
+                  style={{ boxShadow: "3px 3px 0 #060810, 0 0 12px rgba(240,192,64,0.1)" }}
+                >
+                  <div className="border-2 border-[var(--pet-gold)]/30 bg-[#0c1020] p-4">
                     <div className="flex flex-col sm:flex-row items-center gap-4">
                       <div className="text-center flex-1">
-                        <p className={cn("font-semibold", rarityColor[equip.item.rarity])}>
+                        <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">
                           {equip.item.name} +{equip.enhancementLevel}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{equip.item.slot}</p>
+                        </span>
+                        <PixelBadge rarity={equip.item.rarity} />
                       </div>
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <ArrowRight size={16} />
-                        <ScrollText size={16} className="text-indigo-400" />
-                      </div>
-                      <div className="text-center flex-1">
-                        <p className={cn("font-semibold", rarityColor[scroll.item.rarity])}>
-                          {scroll.item.name}
-                        </p>
-                        <div className="flex items-center justify-center gap-3 text-xs mt-1">
-                          <span className="text-emerald-400">{effectiveSuccess}% success</span>
-                          <span className="text-red-400">{effectiveDestroy}% destroy</span>
+                      <div className="font-pixel text-lg text-[var(--pet-text-dim)] px-2">+</div>
+                      <div className="text-center flex-1 space-y-2">
+                        <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">{scroll.item.name}</span>
+                        <div className="space-y-1">
+                          <PixelBar value={effectiveSuccess} max={100} label="Success" color="green" segments={10} />
+                          <PixelBar value={effectiveDestroy} max={100} label="Destroy" color="red" segments={10} />
                         </div>
                       </div>
-                      <button
+                      <PixelButton
+                        variant="gold"
+                        size="lg"
                         onClick={handleEnhance}
                         disabled={enhancing || equip.enhancementLevel >= equip.maxLevel}
-                        className={cn(
-                          "px-6 py-2.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-2",
-                          equip.enhancementLevel >= equip.maxLevel
-                            ? "bg-muted text-muted-foreground cursor-not-allowed"
-                            : "bg-amber-500 hover:bg-amber-400 text-black"
-                        )}
+                        loading={enhancing}
                       >
-                        {enhancing ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
                         Enhance
-                      </button>
+                      </PixelButton>
                     </div>
-                  </CardContent>
-                </Card>
+                    {equip.enhancementLevel >= equip.maxLevel && (
+                      <p className="font-pixel text-[10px] text-[var(--pet-gold)] text-center mt-2">MAX LEVEL REACHED</p>
+                    )}
+                  </div>
+                </div>
               )}
             </div>
           </div>

@@ -4,26 +4,14 @@
 // Purpose: Wiki item grid view with clickable cards
 // ============================================================
 import Link from "next/link"
-import { cn } from "@/lib/utils"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import { Coins, Users } from "lucide-react"
+import { Users } from "lucide-react"
+import PixelBadge from "@/components/pet/ui/PixelBadge"
+import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
-const rarityColor: Record<string, string> = {
-  COMMON: "text-gray-400", UNCOMMON: "text-green-400", RARE: "text-blue-400",
-  EPIC: "text-purple-400", LEGENDARY: "text-amber-400", MYTHICAL: "text-rose-400",
-}
-const rarityBorder: Record<string, string> = {
-  COMMON: "border-gray-500/20", UNCOMMON: "border-green-500/20", RARE: "border-blue-500/20",
-  EPIC: "border-purple-500/20", LEGENDARY: "border-amber-500/20", MYTHICAL: "border-rose-500/20",
-}
-const rarityBg: Record<string, string> = {
-  COMMON: "bg-gray-500/5", UNCOMMON: "bg-green-500/5", RARE: "bg-blue-500/5",
-  EPIC: "bg-purple-500/5", LEGENDARY: "bg-amber-500/5", MYTHICAL: "bg-rose-500/5",
-}
-const rarityBadge: Record<string, string> = {
-  COMMON: "bg-gray-500/15 text-gray-400", UNCOMMON: "bg-green-500/15 text-green-400",
-  RARE: "bg-blue-500/15 text-blue-400", EPIC: "bg-purple-500/15 text-purple-400",
-  LEGENDARY: "bg-amber-500/15 text-amber-400", MYTHICAL: "bg-rose-500/15 text-rose-400",
+const rarityBorderColor: Record<string, string> = {
+  COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
+  EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
 export interface WikiItemData {
@@ -37,38 +25,43 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
       {items.map((item) => {
         const imgUrl = getItemImageUrl(item.assetPath, item.category)
+        const borderColor = rarityBorderColor[item.rarity] ?? "#2a3a5c"
         return (
           <Link key={item.id} href={`/pet/wiki/${item.id}`}>
-            <div className={cn(
-              "group relative rounded-xl border p-3 transition-all hover:scale-[1.02] hover:shadow-lg cursor-pointer flex flex-col items-center gap-2",
-              rarityBorder[item.rarity], rarityBg[item.rarity]
-            )}>
+            <div
+              className="group relative bg-[#0f1628] border-2 p-3 transition-all cursor-pointer flex flex-col items-center gap-2 shadow-[2px_2px_0_#060810] hover:shadow-[4px_4px_0_#060810] hover:-translate-x-[1px] hover:-translate-y-[1px]"
+              style={{ borderColor }}
+            >
               <div className="w-16 h-16 flex items-center justify-center">
                 {imgUrl ? (
                   <img src={imgUrl} alt={item.name} className="w-full h-full object-contain" style={{ imageRendering: "pixelated" }} />
                 ) : (
-                  <div className={cn("w-12 h-12 rounded-full flex items-center justify-center text-2xl", rarityBg[item.rarity])}>
+                  <div
+                    className="w-12 h-12 flex items-center justify-center text-2xl border-2 bg-[#0a0e1a]"
+                    style={{ borderColor: `${borderColor}40` }}
+                  >
                     {getCategoryPlaceholder(item.category)}
                   </div>
                 )}
               </div>
-              <p className={cn("text-xs font-semibold text-center truncate w-full", rarityColor[item.rarity])}>
+              <p
+                className="font-pixel text-[10px] text-center truncate w-full"
+                style={{ color: borderColor }}
+              >
                 {item.name}
               </p>
-              <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold", rarityBadge[item.rarity])}>
-                {item.rarity}
-              </span>
-              {item.goldPrice && (
-                <span className="text-[10px] text-amber-400 flex items-center gap-0.5">
-                  <Coins size={9} /> {item.goldPrice.toLocaleString()}
-                </span>
+              <PixelBadge rarity={item.rarity} />
+              {item.goldPrice != null && item.goldPrice > 0 && (
+                <GoldDisplay amount={item.goldPrice} size="sm" />
               )}
               {item.userOwned > 0 && (
-                <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold">
+                <span
+                  className="absolute top-1 right-1 font-pixel px-1.5 py-0.5 text-[9px] border bg-[#40d870]/15 text-[#40d870] border-[#40d870]"
+                >
                   x{item.userOwned}
                 </span>
               )}
-              <span className="text-[9px] text-muted-foreground/40 flex items-center gap-0.5">
+              <span className="font-pixel text-[9px] text-[#4a5a70] flex items-center gap-0.5">
                 <Users size={8} /> {item.ownerCount}
               </span>
             </div>
