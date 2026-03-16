@@ -42,12 +42,12 @@ interface LiveSessionData {
 }
 
 function useWakeLock() {
-  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+  const wakeLockRef = useRef<any>(null)
 
   const request = useCallback(async () => {
     try {
       if ("wakeLock" in navigator) {
-        wakeLockRef.current = await navigator.wakeLock.request("screen")
+        wakeLockRef.current = await (navigator as any).wakeLock.request("screen")
       }
     } catch {}
   }, [])
