@@ -170,14 +170,15 @@ function RoomEditorContent({ data }: { data: RoomData }) {
   } = editor
 
   // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Wire up smart snap alignment guides and retro sound effects
+  // Purpose: Wire up smart snap and sounds. Snap guides are computed alongside
+  //          the preview layout in a single useMemo (no setState inside useMemo).
   const { getSnapResult } = useSmartSnap(layout, showGrid)
   const { play: playSound } = useRoomSounds()
-  const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([])
   // --- END AI-MODIFIED ---
 
   const [activeTab, setActiveTab] = useState<string>("wall")
   const [hoveredLayer, setHoveredLayer] = useState<string | null>(null)
+  const hoverPosRef = useRef({ x: 0, y: 0 })
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
 
   const [dragState, setDragState] = useState<DragState | null>(null)
@@ -198,11 +199,11 @@ function RoomEditorContent({ data }: { data: RoomData }) {
   )
 
   // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Preview layout during drag with smart snap alignment
-  const previewLayout = useMemo(() => {
+  // Purpose: Compute preview layout AND snap guides together in a single useMemo.
+  //          No setState calls inside -- returns a tuple { layout, guides }.
+  const dragPreview = useMemo(() => {
     if (!dragState) {
-      setSnapGuides([])
-      return layout
+      return { layout, guides: [] as SnapGuide[] }
     }
     const { layer, startCanvasPos, originalOffset } = dragState
     const delta: [number, number] = [
@@ -215,19 +216,19 @@ function RoomEditorContent({ data }: { data: RoomData }) {
     ]
     const snap = getSnapResult(layer, rawOffset)
     const clamped = clampOffset([snap.snappedX, snap.snappedY], layer)
-    setSnapGuides(snap.guides)
 
-    if (layer === "lion") {
-      return { ...layout, lionPosition: clamped }
-    }
-    return {
-      ...layout,
-      furnitureOffsets: { ...layout.furnitureOffsets, [layer]: clamped },
-    }
+    const previewLayout = layer === "lion"
+      ? { ...layout, lionPosition: clamped }
+      : { ...layout, furnitureOffsets: { ...layout.furnitureOffsets, [layer]: clamped } }
+
+    return { layout: previewLayout, guides: snap.guides }
   }, [dragState, dragCurrentPos, layout, getSnapResult])
+
+  const previewLayout = dragPreview.layout
+  const snapGuides = dragPreview.guides
   // --- END AI-MODIFIED ---
 
-  // Window-level drag listeners — only active while dragging
+  // Window-level drag listeners -- only active while dragging
   useEffect(() => {
     if (!dragState) return
 
@@ -246,14 +247,10 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         originalOffset[0] + delta[0],
         originalOffset[1] + delta[1],
       ]
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Apply smart snap on final drop and play place sound
       const snap = getSnapResult(layer, rawOffset)
       const finalOffset = clampOffset([snap.snappedX, snap.snappedY], layer)
-      // --- END AI-MODIFIED ---
       moveLayer(layer, finalOffset)
       setDragState(null)
-      setSnapGuides([])
       playSound('place')
     }
 
@@ -263,7 +260,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("mouseup", handleMouseUp)
     }
-  }, [dragState, mouseToCanvas, moveLayer])
+  }, [dragState, mouseToCanvas, moveLayer, getSnapResult, playSound])
 
   const handleLayerClick = useCallback(
     (layer: string, x: number, y: number) => {
@@ -271,10 +268,7 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         const origOffset: [number, number] =
           layer === "lion"
             ? ([...layout.lionPosition] as [number, number])
-            : ([...(layout.furnitureOffsets[layer] ?? [0, 0])] as [
-                number,
-                number,
-              ])
+            : ([...(layout.furnitureOffsets[layer] ?? [0, 0])] as [number, number])
         setDragState({ layer, startCanvasPos: [x, y], originalOffset: origOffset })
         setDragCurrentPos([x, y])
         setSelectedLayer(layer)
@@ -286,16 +280,25 @@ function RoomEditorContent({ data }: { data: RoomData }) {
         playSound('flip')
       }
     },
-    [activeTool, layout, selectedLayer, setSelectedLayer, flipLayer]
+    [activeTool, layout, selectedLayer, setSelectedLayer, flipLayer, playSound]
   )
 
   const handleLayerHover = useCallback((layer: string | null) => {
     setHoveredLayer(layer)
   }, [])
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Throttle hover position updates to prevent re-renders on every mouse pixel
+  const hoverRafRef = useRef(0)
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
-    setHoverPos({ x: e.clientX, y: e.clientY })
+    hoverPosRef.current = { x: e.clientX, y: e.clientY }
+    if (hoverRafRef.current) return
+    hoverRafRef.current = requestAnimationFrame(() => {
+      hoverRafRef.current = 0
+      setHoverPos(hoverPosRef.current)
+    })
   }, [])
+  // --- END AI-MODIFIED ---
 
   const handleToolClick = useCallback(
     (tool: EditorTool) => {

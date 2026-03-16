@@ -13,10 +13,8 @@ import {
   useEffect,
   useCallback,
   useMemo,
-  useReducer,
 } from 'react'
 import {
-  getRoomLayerUrl,
   getLionSpriteUrl,
   getLionExpressionUrl,
   getItemImageUrl,
@@ -31,7 +29,7 @@ import {
 } from '@/utils/roomConstraints'
 
 const BLOB_BASE = process.env.NEXT_PUBLIC_BLOB_URL || ''
-const DEFAULT_DISPLAY_SIZE = CANVAS_SIZE * DISPLAY_SCALE
+const FIXED_DISPLAY = CANVAS_SIZE * DISPLAY_SCALE
 const FRAME_COUNT = 4
 const FRAME_INTERVAL_MS = 250
 const LION_PARTS = ['body', 'head', 'hair'] as const
@@ -88,12 +86,7 @@ function drawHighlight(
     ctx.save()
     ctx.strokeStyle = color
     ctx.lineWidth = 1
-    ctx.strokeRect(
-      lx - 0.5,
-      ly - 0.5,
-      LION_DISPLAY_SIZE + 1,
-      LION_DISPLAY_SIZE + 1,
-    )
+    ctx.strokeRect(lx - 0.5, ly - 0.5, LION_DISPLAY_SIZE + 1, LION_DISPLAY_SIZE + 1)
     ctx.restore()
     return
   }
@@ -109,8 +102,6 @@ function drawHighlight(
 
   tmpCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
   drawLayer(tmpCtx, img, offset, flip)
-
-  // Tint only non-transparent pixels via source-atop composite
   tmpCtx.globalCompositeOperation = 'source-atop'
   tmpCtx.fillStyle = color
   tmpCtx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
@@ -134,8 +125,6 @@ export default function RoomCanvas({
   onLayerHover,
   className,
 }: RoomCanvasProps) {
-  const displaySize = size ?? DEFAULT_DISPLAY_SIZE
-
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
   const lionOffscreenRef = useRef<HTMLCanvasElement | null>(null)
@@ -145,22 +134,30 @@ export default function RoomCanvas({
   const frameRef = useRef(0)
   const rafIdRef = useRef(0)
 
-  const [initialLoaded, setInitialLoaded] = useState(false)
-  const [, bumpRender] = useReducer((x: number) => x + 1, 0)
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Store frequently-changing props in refs so the animation loop
+  //          never needs to restart. renderScene reads from refs, not closure vars.
+  const layoutRef = useRef(layout)
+  const selectedRef = useRef(selectedLayer)
+  const hoveredRef = useRef(hoveredLayer)
+  const equipRef = useRef(equipment)
 
-  // ---- Collect every image URL the scene needs ----
+  layoutRef.current = layout
+  selectedRef.current = selectedLayer
+  hoveredRef.current = hoveredLayer
+  equipRef.current = equipment
+  // --- END AI-MODIFIED ---
+
+  const [imagesReady, setImagesReady] = useState(false)
 
   const imageUrls = useMemo(() => {
     const urls: Record<string, string> = {}
 
-    // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Load all room layers from furniture map (API now includes defaults)
     for (const layer of ROOM_LAYERS) {
       if (furniture[layer]) {
         urls[`room_${layer}`] = petAssetUrl(furniture[layer])
       }
     }
-    // --- END AI-MODIFIED ---
 
     for (let f = 0; f < FRAME_COUNT; f++) {
       for (const part of LION_PARTS) {
@@ -177,18 +174,16 @@ export default function RoomCanvas({
     return urls
   }, [roomPrefix, furniture, expression, equipment])
 
-  // ---- Load images into cache, bump render on each load ----
-
   useEffect(() => {
     let active = true
     const cache = new Map<string, HTMLImageElement>()
     imageCacheRef.current = cache
     alphaCacheRef.current = new Map()
-    setInitialLoaded(false)
+    setImagesReady(false)
 
     const entries = Object.entries(imageUrls)
     if (entries.length === 0) {
-      setInitialLoaded(true)
+      setImagesReady(true)
       return
     }
 
@@ -196,25 +191,22 @@ export default function RoomCanvas({
     for (const [key, url] of entries) {
       const img = new Image()
       img.crossOrigin = 'anonymous'
+      const done = () => {
+        if (!active) return
+        remaining--
+        if (remaining <= 0) setImagesReady(true)
+      }
       img.onload = () => {
         if (!active) return
         cache.set(key, img)
-        remaining--
-        bumpRender()
-        if (remaining <= 0) setInitialLoaded(true)
+        done()
       }
-      img.onerror = () => {
-        if (!active) return
-        remaining--
-        if (remaining <= 0) setInitialLoaded(true)
-      }
+      img.onerror = done
       img.src = url
     }
 
     return () => { active = false }
   }, [imageUrls])
-
-  // ---- Create offscreen canvases once ----
 
   useEffect(() => {
     const os = document.createElement('canvas')
@@ -233,133 +225,119 @@ export default function RoomCanvas({
     highlightRef.current = hl
   }, [])
 
-  // ---- Core scene renderer ----
-
-  const renderScene = useCallback(() => {
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Single stable animation loop that reads ALL data from refs.
+  //          Never restarts -- depends only on [animated, imagesReady].
+  useEffect(() => {
     const canvas = canvasRef.current
     const offscreen = offscreenRef.current
     const lionOffscreen = lionOffscreenRef.current
     const hl = highlightRef.current
     if (!canvas || !offscreen || !lionOffscreen || !hl) return
+    if (!imagesReady) return
 
     const ctx = canvas.getContext('2d')
     const osCtx = offscreen.getContext('2d')
     const lionCtx = lionOffscreen.getContext('2d')
     if (!ctx || !osCtx || !lionCtx) return
 
-    const cache = imageCacheRef.current
-    const frame = frameRef.current
+    let lastFrameTime = 0
+    let running = true
 
-    // --- Room layers ---
-    osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
+    const paint = (ts: number) => {
+      if (!running) return
 
-    for (const layer of ROOM_LAYERS) {
-      const img = cache.get(`room_${layer}`)
-      if (!img) continue
-      const offset: [number, number] = layout.furnitureOffsets[layer] ?? [0, 0]
-      const flip = layout.furnitureFlips[layer] ?? false
-      drawLayer(osCtx, img, offset, flip)
-    }
-
-    // --- Back equipment (behind the lion) ---
-    const backEquip = equipment['back']
-    if (backEquip) {
-      const backImg = cache.get('equip_back')
-      if (backImg) {
-        const [lx, ly] = layout.lionPosition
-        osCtx.drawImage(
-          backImg,
-          0, 0, backImg.naturalWidth, backImg.naturalHeight,
-          lx, ly, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE,
-        )
-      }
-    }
-
-    // --- Composite lion on its own 64x64 canvas ---
-    lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE)
-
-    for (const part of LION_PARTS) {
-      const img = cache.get(`lion_${part}_${frame}`)
-      if (img) lionCtx.drawImage(img, 0, 0)
-    }
-
-    const exprImg = cache.get(`lion_expr_${frame}`)
-    if (exprImg) lionCtx.drawImage(exprImg, 0, 0)
-
-    for (const slot of layout.equipmentOrder) {
-      if (slot === 'back') continue
-      const img = cache.get(`equip_${slot}`)
-      if (img) lionCtx.drawImage(img, 0, 0)
-    }
-
-    // --- Draw lion composite onto room, scaled 64 -> 80 ---
-    const [lionX, lionY] = layout.lionPosition
-    osCtx.drawImage(
-      lionOffscreen,
-      0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE,
-      lionX, lionY, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE,
-    )
-
-    // --- Selection / hover highlights ---
-    if (hoveredLayer && hoveredLayer !== selectedLayer) {
-      drawHighlight(osCtx, hl, cache, layout, hoveredLayer, 'rgba(147,197,253,0.2)')
-    }
-    if (selectedLayer) {
-      drawHighlight(osCtx, hl, cache, layout, selectedLayer, 'rgba(96,165,250,0.35)')
-    }
-
-    // --- Scale 200x200 up to display size with nearest-neighbor ---
-    ctx.clearRect(0, 0, displaySize, displaySize)
-    ctx.imageSmoothingEnabled = false
-    ctx.drawImage(offscreen, 0, 0, displaySize, displaySize)
-  }, [layout, equipment, displaySize, selectedLayer, hoveredLayer])
-
-  // ---- Animation loop (animated) ----
-
-  useEffect(() => {
-    if (!animated) return
-
-    let lastTime = 0
-    const tick = (ts: number) => {
-      if (ts - lastTime >= FRAME_INTERVAL_MS) {
+      if (animated && ts - lastFrameTime >= FRAME_INTERVAL_MS) {
         frameRef.current = (frameRef.current + 1) % FRAME_COUNT
-        lastTime = ts
+        lastFrameTime = ts
       }
-      renderScene()
-      rafIdRef.current = requestAnimationFrame(tick)
+
+      const cache = imageCacheRef.current
+      const frame = frameRef.current
+      const curLayout = layoutRef.current
+      const curSelected = selectedRef.current
+      const curHovered = hoveredRef.current
+      const curEquip = equipRef.current
+
+      osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
+
+      for (const layer of ROOM_LAYERS) {
+        const img = cache.get(`room_${layer}`)
+        if (!img) continue
+        const offset: [number, number] = curLayout.furnitureOffsets[layer] ?? [0, 0]
+        const flip = curLayout.furnitureFlips[layer] ?? false
+        drawLayer(osCtx, img, offset, flip)
+      }
+
+      const backEquip = curEquip['back']
+      if (backEquip) {
+        const backImg = cache.get('equip_back')
+        if (backImg) {
+          const [lx, ly] = curLayout.lionPosition
+          osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, lx, ly, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE)
+        }
+      }
+
+      lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE)
+      for (const part of LION_PARTS) {
+        const img = cache.get(`lion_${part}_${frame}`)
+        if (img) lionCtx.drawImage(img, 0, 0)
+      }
+      const exprImg = cache.get(`lion_expr_${frame}`)
+      if (exprImg) lionCtx.drawImage(exprImg, 0, 0)
+
+      for (const slot of curLayout.equipmentOrder) {
+        if (slot === 'back') continue
+        const img = cache.get(`equip_${slot}`)
+        if (img) lionCtx.drawImage(img, 0, 0)
+      }
+
+      const [lionX, lionY] = curLayout.lionPosition
+      osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE, lionX, lionY, LION_DISPLAY_SIZE, LION_DISPLAY_SIZE)
+
+      if (curHovered && curHovered !== curSelected) {
+        drawHighlight(osCtx, hl, cache, curLayout, curHovered, 'rgba(147,197,253,0.2)')
+      }
+      if (curSelected) {
+        drawHighlight(osCtx, hl, cache, curLayout, curSelected, 'rgba(96,165,250,0.35)')
+      }
+
+      ctx.clearRect(0, 0, FIXED_DISPLAY, FIXED_DISPLAY)
+      ctx.imageSmoothingEnabled = false
+      ctx.drawImage(offscreen, 0, 0, FIXED_DISPLAY, FIXED_DISPLAY)
+
+      if (animated) {
+        rafIdRef.current = requestAnimationFrame(paint)
+      }
     }
 
-    rafIdRef.current = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(rafIdRef.current)
-  }, [animated, renderScene])
+    if (animated) {
+      rafIdRef.current = requestAnimationFrame(paint)
+    } else {
+      frameRef.current = 0
+      paint(0)
+    }
 
-  // ---- Static render (non-animated), re-fires on every image load ----
-
-  useEffect(() => {
-    if (animated) return
-    frameRef.current = 0
-    renderScene()
-  }) // intentionally no deps: re-renders whenever React re-renders (driven by bumpRender)
-
-  // ---- Alpha hit-testing (lazy per-layer computation) ----
+    return () => {
+      running = false
+      cancelAnimationFrame(rafIdRef.current)
+    }
+  }, [animated, imagesReady])
+  // --- END AI-MODIFIED ---
 
   const getAlphaAt = useCallback(
     (key: string, px: number, py: number): number => {
       if (px < 0 || px >= CANVAS_SIZE || py < 0 || py >= CANVAS_SIZE) return 0
-
       const ac = alphaCacheRef.current
       let alphas = ac.get(key)
-
       if (!alphas) {
         const img = imageCacheRef.current.get(key)
         if (!img) return 0
-
         const tmp = document.createElement('canvas')
         tmp.width = CANVAS_SIZE
         tmp.height = CANVAS_SIZE
         const tmpCtx = tmp.getContext('2d')
         if (!tmpCtx) return 0
-
         tmpCtx.drawImage(img, 0, 0)
         const data = tmpCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data
         alphas = new Uint8ClampedArray(CANVAS_SIZE * CANVAS_SIZE)
@@ -368,44 +346,35 @@ export default function RoomCanvas({
         }
         ac.set(key, alphas)
       }
-
       return alphas[py * CANVAS_SIZE + px]
     },
     [],
   )
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: hitTest reads layout from ref so it doesn't invalidate on every layout change
   const hitTest = useCallback(
     (mx: number, my: number): string | null => {
-      // Lion takes priority (drawn on top)
-      const [lx, ly] = layout.lionPosition
-      if (
-        mx >= lx && mx < lx + LION_DISPLAY_SIZE &&
-        my >= ly && my < ly + LION_DISPLAY_SIZE
-      ) {
+      const curLayout = layoutRef.current
+      const [lx, ly] = curLayout.lionPosition
+      if (mx >= lx && mx < lx + LION_DISPLAY_SIZE && my >= ly && my < ly + LION_DISPLAY_SIZE) {
         return 'lion'
       }
-
-      // Walk room layers top-to-bottom, return first opaque hit
       for (let i = ROOM_LAYERS.length - 1; i >= 0; i--) {
         const layer = ROOM_LAYERS[i]
         if (!imageCacheRef.current.has(`room_${layer}`)) continue
-
-        const offset = layout.furnitureOffsets[layer] ?? [0, 0]
-        const flip = layout.furnitureFlips[layer] ?? false
-
+        const offset = curLayout.furnitureOffsets[layer] ?? [0, 0]
+        const flip = curLayout.furnitureFlips[layer] ?? false
         let px = Math.floor(mx - offset[0])
         let py = Math.floor(my - offset[1])
         if (flip) px = CANVAS_SIZE - 1 - px
-
         if (getAlphaAt(`room_${layer}`, px, py) > 0) return layer
       }
-
       return null
     },
-    [layout, getAlphaAt],
+    [getAlphaAt],
   )
-
-  // ---- Mouse coordinate conversion (CSS px -> 200x200 canvas space) ----
+  // --- END AI-MODIFIED ---
 
   const toCanvasCoords = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>): [number, number] => {
@@ -418,14 +387,33 @@ export default function RoomCanvas({
     [],
   )
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Throttle hit-testing to max once per animation frame
+  const hoverRafRef = useRef(0)
+  const lastHoverRef = useRef<string | null>(null)
+
   const handleMouseMove = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
       if (!onLayerHover) return
-      const [mx, my] = toCanvasCoords(e)
-      onLayerHover(hitTest(mx, my))
+      const clientX = e.clientX
+      const clientY = e.clientY
+      if (hoverRafRef.current) return
+      hoverRafRef.current = requestAnimationFrame(() => {
+        hoverRafRef.current = 0
+        const rect = canvasRef.current?.getBoundingClientRect()
+        if (!rect) return
+        const mx = (clientX - rect.left) * (CANVAS_SIZE / rect.width)
+        const my = (clientY - rect.top) * (CANVAS_SIZE / rect.height)
+        const hit = hitTest(mx, my)
+        if (hit !== lastHoverRef.current) {
+          lastHoverRef.current = hit
+          onLayerHover(hit)
+        }
+      })
     },
-    [onLayerHover, hitTest, toCanvasCoords],
+    [onLayerHover, hitTest],
   )
+  // --- END AI-MODIFIED ---
 
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -438,19 +426,29 @@ export default function RoomCanvas({
   )
 
   const handleMouseLeave = useCallback(() => {
+    lastHoverRef.current = null
     onLayerHover?.(null)
   }, [onLayerHover])
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Fixed 800x800 canvas, use CSS transform for zoom
+  const cssScale = (size ?? FIXED_DISPLAY) / FIXED_DISPLAY
 
   return (
     <canvas
       ref={canvasRef}
-      width={displaySize}
-      height={displaySize}
+      width={FIXED_DISPLAY}
+      height={FIXED_DISPLAY}
       className={className}
-      style={{ imageRendering: 'pixelated' }}
+      style={{
+        imageRendering: 'pixelated',
+        width: FIXED_DISPLAY * cssScale,
+        height: FIXED_DISPLAY * cssScale,
+      }}
       onMouseMove={interactive ? handleMouseMove : undefined}
       onMouseLeave={interactive ? handleMouseLeave : undefined}
       onClick={interactive ? handleClick : undefined}
     />
   )
+  // --- END AI-MODIFIED ---
 }
