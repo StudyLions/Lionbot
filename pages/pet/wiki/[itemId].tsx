@@ -2,7 +2,7 @@
 // AI-GENERATED FILE
 // Created: 2026-03-15
 // Purpose: Item encyclopedia detail page - full item view with
-//          stats, ownership, recipes, enhancement info, scroll
+//          stats, ownership, drop info, enhancement info, scroll
 //          properties, leaderboard, marketplace mock, related
 // ============================================================
 import Layout from "@/components/Layout/Layout"
@@ -13,7 +13,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import {
-  Coins, Gem, Users, Package, ShoppingCart, Hammer,
+  Coins, Gem, Users, Package, ShoppingCart,
   Sparkles, Shield, Droplets, Mic, MessageSquare, Lock,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
@@ -191,6 +191,8 @@ export default function ItemDetailPage() {
                     </div>
                   </div>
 
+                  {/* --- AI-MODIFIED (2026-03-16) --- */}
+                  {/* Purpose: Crafting removed -- show drop info instead of recipes */}
                   {/* How to Obtain */}
                   <PixelCard className="p-4" corners>
                     <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
@@ -203,80 +205,26 @@ export default function ItemDetailPage() {
                           Buy for {item.goldPrice ? `${item.goldPrice.toLocaleString()} Gold` : ""}{item.goldPrice && item.gemPrice ? " or " : ""}{item.gemPrice ? `${item.gemPrice} Gems` : ""}
                         </div>
                       )}
-                      {data.craftedFrom && (
-                        <div className="flex items-start gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Hammer size={16} className="text-[var(--pet-gold,#f0c040)] mt-0.5 flex-shrink-0" />
-                          <div>
-                            <span>Craft from: </span>
-                            {data.craftedFrom.ingredients.map((ing: any, i: number) => (
-                              <span key={i}>
-                                <Link
-                                  href={`/pet/wiki/${ing.item.id}`}
-                                  className="hover:underline"
-                                  style={{ color: RARITY_TEXT[ing.item.rarity] || "#a0a8b4" }}
-                                >
-                                  {ing.item.name}
-                                </Link>
-                                <span className="text-[#4a5a6a]"> x{ing.quantity}</span>
-                                {i < data.craftedFrom.ingredients.length - 1 && ", "}
-                              </span>
-                            ))}
-                            {data.craftedFrom.goldCost > 0 && (
-                              <span className="text-[var(--pet-gold,#f0c040)]"> + {data.craftedFrom.goldCost} Gold</span>
-                            )}
-                          </div>
-                        </div>
-                      )}
                       {data.dropInfo && (
                         <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
                           <Droplets size={16} className="text-[#80b0ff]" />
-                          Drops from activity. Drop tier: {item.rarity} ({data.dropInfo.dropTierPercent}% of material drops)
+                          Drops from activity (chatting, voice, farm harvests)
                         </div>
                       )}
                       {data.dropInfo && (
                         <div className="flex items-center gap-4 ml-5 text-[12px] text-[#4a5a6a]">
                           <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
-                          <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per text session</span>
+                          <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
                         </div>
                       )}
-                      {!item.goldPrice && !item.gemPrice && !data.craftedFrom && !data.dropInfo && (
+                      {!item.goldPrice && !item.gemPrice && !data.dropInfo && (
                         <div className="flex items-center gap-2 text-[#4a5a6a]">
                           <Lock size={16} /> Acquisition method unknown
                         </div>
                       )}
                     </div>
                   </PixelCard>
-
-                  {/* Used In Recipes */}
-                  {data.usedInRecipes?.length > 0 && (
-                    <PixelCard className="p-4" corners>
-                      <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                        <Hammer size={18} /> USED IN RECIPES
-                      </h3>
-                      <div className="space-y-1">
-                        {data.usedInRecipes.map((r: any) => {
-                          const resultImg = getItemImageUrl(r.resultItem.assetPath, r.resultItem.category)
-                          return (
-                            <Link key={r.recipeId} href={`/pet/wiki/${r.resultItem.id}`}>
-                              <div className="flex items-center gap-3 px-2 py-1.5 border border-transparent hover:border-[#2a3a5c] hover:bg-[#0c1020] transition-all">
-                                <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center border border-[#1a2a3c] bg-[#080c18]">
-                                  {resultImg ? (
-                                    <CroppedItemImage src={resultImg} alt="" className="w-full h-full object-contain" />
-                                  ) : (
-                                    <span>{getCategoryPlaceholder(r.resultItem.category)}</span>
-                                  )}
-                                </div>
-                                <span className="font-pixel text-[13px]" style={{ color: RARITY_TEXT[r.resultItem.rarity] || "#a0a8b4" }}>
-                                  {r.resultItem.name}
-                                </span>
-                                <span className="font-pixel text-[12px] text-[#4a5a6a] ml-auto">needs x{r.quantityNeeded}</span>
-                              </div>
-                            </Link>
-                          )
-                        })}
-                      </div>
-                    </PixelCard>
-                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Enhancement Info (equipment) */}
                   {data.enhancement && (

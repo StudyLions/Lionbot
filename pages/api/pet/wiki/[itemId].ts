@@ -2,7 +2,7 @@
 // AI-GENERATED FILE
 // Created: 2026-03-15
 // Purpose: Wiki item detail API - full encyclopedia data for
-//          one item: stats, ownership, recipes, leaderboard,
+//          one item: stats, ownership, drop info, leaderboard,
 //          related items, scroll props, enhancement info
 // ============================================================
 import { prisma } from "@/utils/prisma"
@@ -49,31 +49,11 @@ export default apiHandler({
       userOwned = inv._sum.quantity ?? 0
     }
 
-    const usedInRecipes = await prisma.lg_recipe_ingredients.findMany({
-      where: { itemid: itemId },
-      select: {
-        quantity: true,
-        lg_crafting_recipes: {
-          select: {
-            recipeid: true, result_quantity: true, gold_cost: true,
-            lg_items: { select: { itemid: true, name: true, rarity: true, category: true, asset_path: true } },
-          },
-        },
-      },
-    })
-
-    const craftedFrom = await prisma.lg_crafting_recipes.findFirst({
-      where: { result_itemid: itemId },
-      select: {
-        recipeid: true, result_quantity: true, gold_cost: true, description: true,
-        lg_recipe_ingredients: {
-          select: {
-            quantity: true,
-            lg_items: { select: { itemid: true, name: true, rarity: true, category: true, asset_path: true } },
-          },
-        },
-      },
-    })
+    // --- AI-MODIFIED (2026-03-16) ---
+    // Purpose: Crafting removed -- skip recipe queries, return empty
+    const usedInRecipes: any[] = []
+    const craftedFrom = null
+    // --- END AI-MODIFIED ---
 
     let scrollProperties = null
     if (item.category === "SCROLL") {
@@ -145,35 +125,11 @@ export default apiHandler({
         setName: item.item_set?.name ?? null,
       },
       ownership: { count: ownerCount, tier: getOwnershipTier(ownerCount), userOwned },
-      usedInRecipes: usedInRecipes.map((r) => ({
-        recipeId: r.lg_crafting_recipes.recipeid,
-        quantityNeeded: r.quantity,
-        resultItem: {
-          id: r.lg_crafting_recipes.lg_items.itemid,
-          name: r.lg_crafting_recipes.lg_items.name,
-          rarity: r.lg_crafting_recipes.lg_items.rarity,
-          category: r.lg_crafting_recipes.lg_items.category,
-          assetPath: r.lg_crafting_recipes.lg_items.asset_path,
-        },
-        resultQuantity: r.lg_crafting_recipes.result_quantity,
-        goldCost: r.lg_crafting_recipes.gold_cost,
-      })),
-      craftedFrom: craftedFrom
-        ? {
-            recipeId: craftedFrom.recipeid,
-            resultQuantity: craftedFrom.result_quantity,
-            goldCost: craftedFrom.gold_cost,
-            description: craftedFrom.description,
-            ingredients: craftedFrom.lg_recipe_ingredients.map((ing) => ({
-              quantity: ing.quantity,
-              item: {
-                id: ing.lg_items.itemid, name: ing.lg_items.name,
-                rarity: ing.lg_items.rarity, category: ing.lg_items.category,
-                assetPath: ing.lg_items.asset_path,
-              },
-            })),
-          }
-        : null,
+      // --- AI-MODIFIED (2026-03-16) ---
+      // Purpose: Crafting removed -- always return empty/null for recipe fields
+      usedInRecipes: [],
+      craftedFrom: null,
+      // --- END AI-MODIFIED ---
       scrollProperties,
       enhancementLeaderboard,
       enhancement: isEquipment
