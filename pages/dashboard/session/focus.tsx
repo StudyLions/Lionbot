@@ -19,9 +19,12 @@ import Link from "next/link"
 import {
   ArrowLeft, ExternalLink, Clock, Maximize, Minimize,
   Bell, BellOff, Volume2, VolumeX, Waves, CloudRain, Users,
-  MonitorUp,
+  MonitorUp, Palette,
 } from "lucide-react"
 import InstallPrompt from "@/components/dashboard/InstallPrompt"
+import TimerThemePicker from "@/components/dashboard/TimerThemePicker"
+import TimerParticles from "@/components/dashboard/TimerParticles"
+import { getTheme, userTierFromSub, type ThemeTier } from "@/constants/TimerThemes"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -136,6 +139,20 @@ export default function FocusModePage() {
   }, [data?.active])
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: fetch user's saved timer theme on mount
+  useEffect(() => {
+    if (!session) return
+    fetch("/api/dashboard/focus-preferences")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.theme) setThemeId(d.theme)
+        if (d.themeTier) setUserTier(d.themeTier)
+      })
+      .catch(() => {})
+  }, [session])
+  // --- END AI-MODIFIED ---
+
   const [remaining, setRemaining] = useState<number>(0)
   const [totalSecs, setTotalSecs] = useState<number>(0)
   const [stage, setStage] = useState<"focus" | "break" | null>(null)
@@ -145,6 +162,14 @@ export default function FocusModePage() {
   const prevStageRef = useRef<string | null>(null)
   const [transitioning, setTransitioning] = useState(false)
   const [showSoundPanel, setShowSoundPanel] = useState(false)
+
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: Timer theme state (LionHeart premium perk)
+  const [themeId, setThemeId] = useState("classic")
+  const [userTier, setUserTier] = useState<ThemeTier>("FREE")
+  const [showThemePicker, setShowThemePicker] = useState(false)
+  const theme = getTheme(themeId)
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: cycle completion celebration animation
@@ -375,8 +400,15 @@ export default function FocusModePage() {
   const seconds = isPomodoro ? remaining % 60 : elapsedSecs % 60
   const formatted = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
 
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: use theme-driven ring dimensions
+  // --- Original code (commented out for rollback) ---
+  // const ringSize = isPopout ? 240 : 320
+  // const strokeWidth = isPopout ? 6 : 8
+  // --- End original code ---
   const ringSize = isPopout ? 240 : 320
-  const strokeWidth = isPopout ? 6 : 8
+  const strokeWidth = isPopout ? theme.ringWidth.popout : theme.ringWidth.normal
+  // --- END AI-MODIFIED ---
   const radius = (ringSize - strokeWidth * 2) / 2
   const circumference = 2 * Math.PI * radius
 
@@ -393,34 +425,18 @@ export default function FocusModePage() {
 
   const urgent = isPomodoro && totalSecs > 0 && remaining / totalSecs < 0.1
 
-  const focusColors = {
-    bg: "from-amber-950/40 via-gray-950 to-gray-950",
-    stroke: "#f59e0b",
-    glow: "rgba(245, 158, 11, 0.15)",
-    glowStrong: "rgba(245, 158, 11, 0.3)",
-    text: "text-amber-400",
-    label: "FOCUS",
-  }
-  const breakColors = {
-    bg: "from-cyan-950/40 via-gray-950 to-gray-950",
-    stroke: "#06b6d4",
-    glow: "rgba(6, 182, 212, 0.15)",
-    glowStrong: "rgba(6, 182, 212, 0.3)",
-    text: "text-cyan-400",
-    label: "BREAK",
-  }
-  const sessionColors = {
-    bg: "from-violet-950/30 via-gray-950 to-gray-950",
-    stroke: "#8b5cf6",
-    glow: "rgba(139, 92, 246, 0.12)",
-    glowStrong: "rgba(139, 92, 246, 0.25)",
-    text: "text-violet-400",
-    label: "SESSION",
-  }
-
+  // --- AI-MODIFIED (2026-03-16) ---
+  // Purpose: use theme-driven colors instead of hardcoded values
+  // --- Original code (commented out for rollback) ---
+  // const focusColors = { bg: "from-amber-950/40 via-gray-950 to-gray-950", stroke: "#f59e0b", ... }
+  // const breakColors = { bg: "from-cyan-950/40 via-gray-950 to-gray-950", stroke: "#06b6d4", ... }
+  // const sessionColors = { bg: "from-violet-950/30 via-gray-950 to-gray-950", stroke: "#8b5cf6", ... }
+  // const c = isPomodoro ? (stage === "focus" ? focusColors : breakColors) : sessionColors
+  // --- End original code ---
   const c = isPomodoro
-    ? (stage === "focus" ? focusColors : breakColors)
-    : sessionColors
+    ? (stage === "focus" ? theme.focus : theme.break)
+    : theme.session
+  // --- END AI-MODIFIED ---
 
   pipDataRef.current = { formatted, stage: c.label, stageColor: c.stroke }
 
@@ -428,6 +444,9 @@ export default function FocusModePage() {
     <>
       <Head>
         <title>{formatted} - {c.label} | LionBot</title>
+        {theme.fontImport && (
+          <link rel="stylesheet" href={theme.fontImport} />
+        )}
       </Head>
 
       <style jsx global>{`
@@ -453,12 +472,52 @@ export default function FocusModePage() {
           50% { filter: drop-shadow(0 0 60px rgba(250, 204, 21, 0.4)); }
           100% { filter: drop-shadow(0 0 20px rgba(250, 204, 21, 0)); }
         }
+        .neon-scanlines::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(255,255,255,0.015) 2px,
+            rgba(255,255,255,0.015) 4px
+          );
+          pointer-events: none;
+          z-index: 1;
+        }
+        .terminal-scanlines::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 3px,
+            rgba(34,197,94,0.03) 3px,
+            rgba(34,197,94,0.03) 6px
+          );
+          pointer-events: none;
+          z-index: 1;
+        }
+        @keyframes luxe-shimmer-anim {
+          0%   { filter: drop-shadow(0 0 8px var(--shimmer-color)) brightness(1); }
+          50%  { filter: drop-shadow(0 0 20px var(--shimmer-color)) brightness(1.15); }
+          100% { filter: drop-shadow(0 0 8px var(--shimmer-color)) brightness(1); }
+        }
+        @keyframes aurora-hue-shift {
+          0%   { filter: hue-rotate(0deg) drop-shadow(0 0 12px var(--shimmer-color)); }
+          33%  { filter: hue-rotate(40deg) drop-shadow(0 0 18px var(--shimmer-color)); }
+          66%  { filter: hue-rotate(-30deg) drop-shadow(0 0 14px var(--shimmer-color)); }
+          100% { filter: hue-rotate(0deg) drop-shadow(0 0 12px var(--shimmer-color)); }
+        }
       `}</style>
 
       <div
         className={cn(
           "min-h-screen flex flex-col items-center justify-center relative overflow-hidden transition-all duration-1000",
-          `bg-gradient-to-b ${c.bg}`
+          `bg-gradient-to-b ${c.bg}`,
+          theme.backgroundCss
         )}
       >
         {/* Ambient glow */}
@@ -468,6 +527,9 @@ export default function FocusModePage() {
             background: `radial-gradient(ellipse at 50% 40%, ${c.glow} 0%, transparent 70%)`,
           }}
         />
+
+        {/* Theme particles */}
+        {theme.particles && <TimerParticles config={theme.particles} />}
 
         {/* Stage transition flash */}
         {transitioning && (
@@ -529,6 +591,21 @@ export default function FocusModePage() {
                 </button>
               )}
               {/* --- END AI-MODIFIED --- */}
+              {/* --- AI-MODIFIED (2026-03-16) --- */}
+              {/* Purpose: theme picker button */}
+              <button
+                onClick={() => setShowThemePicker(true)}
+                className={cn(
+                  "transition-colors p-1.5 rounded-lg",
+                  themeId !== "classic"
+                    ? "text-amber-400 hover:text-amber-300 bg-amber-400/10"
+                    : "text-gray-500 hover:text-gray-300"
+                )}
+                title="Timer theme"
+              >
+                <Palette size={16} />
+              </button>
+              {/* --- END AI-MODIFIED --- */}
               <button
                 onClick={toggleFullscreen}
                 className="text-gray-500 hover:text-gray-300 transition-colors p-1.5"
@@ -542,12 +619,18 @@ export default function FocusModePage() {
 
         {/* Timer */}
         <div className="relative z-10 flex flex-col items-center gap-6">
+          {/* --- AI-MODIFIED (2026-03-16) --- */}
+          {/* Purpose: theme-driven ring styling, font, and ring animations */}
           <div
             className={cn("relative", transitioning && "animate-[pulse_0.8s_ease-in-out]")}
             style={{
               width: ringSize,
               height: ringSize,
-              filter: `drop-shadow(0 0 ${ringSize * 0.1}px ${c.glowStrong})`,
+              ...(theme.ringExtraCss === "luxe-shimmer"
+                ? { "--shimmer-color": c.glowStrong, animation: "luxe-shimmer-anim 3s ease-in-out infinite", filter: `drop-shadow(0 0 ${ringSize * 0.1}px ${c.glowStrong})` } as React.CSSProperties
+                : theme.ringExtraCss === "aurora-gradient-ring"
+                ? { "--shimmer-color": c.glowStrong, animation: "aurora-hue-shift 8s ease-in-out infinite", filter: `drop-shadow(0 0 ${ringSize * 0.1}px ${c.glowStrong})` } as React.CSSProperties
+                : { filter: `drop-shadow(0 0 ${ringSize * 0.1}px ${c.glowStrong})` }),
             }}
           >
             <svg width={ringSize} height={ringSize} className="transform -rotate-90">
@@ -566,7 +649,7 @@ export default function FocusModePage() {
                 stroke={c.stroke}
                 strokeWidth={strokeWidth}
                 fill="none"
-                strokeLinecap="round"
+                strokeLinecap={theme.ringLinecap}
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 className={cn(
@@ -577,12 +660,18 @@ export default function FocusModePage() {
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className={cn(
-                "font-mono font-bold tabular-nums leading-none tracking-tight",
+                "tabular-nums leading-none",
                 isPopout ? "text-5xl" : "text-7xl"
-              )} style={{ color: "#f0f0f0" }}>
+              )} style={{
+                color: "#f0f0f0",
+                fontFamily: theme.fontFamily,
+                fontWeight: theme.fontWeight,
+                letterSpacing: theme.letterSpacing ?? "-0.02em",
+              }}>
                 {formatted}
               </span>
             </div>
+          {/* --- END AI-MODIFIED --- */}
 
             {/* --- AI-MODIFIED (2026-03-16) --- */}
             {/* Purpose: celebration particle burst on cycle completion */}
@@ -782,6 +871,18 @@ export default function FocusModePage() {
           </div>
         )}
       </div>
+
+      {/* --- AI-MODIFIED (2026-03-16) --- */}
+      {/* Purpose: theme picker modal */}
+      {showThemePicker && (
+        <TimerThemePicker
+          currentTheme={themeId}
+          userTier={userTier}
+          onSelect={(id) => setThemeId(id)}
+          onClose={() => setShowThemePicker(false)}
+        />
+      )}
+      {/* --- END AI-MODIFIED --- */}
     </>
   )
 }

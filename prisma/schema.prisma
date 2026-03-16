@@ -1238,6 +1238,7 @@ enum lggoldtransactiontype {
   ITEM_DROP
   TRADE
   ADMIN
+  FARM_PLANT
   MARKETPLACE_SALE
   MARKETPLACE_PURCHASE
 }
@@ -1504,4 +1505,60 @@ model lg_marketplace_sales {
   @@index([sold_at], map: "idx_mp_sales_sold_at")
 }
 
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: LionHeart subscription tiers (user premium via Stripe recurring billing)
+
+model user_subscriptions {
+  userid                BigInt    @id
+  stripe_customer_id    String
+  stripe_subscription_id String?
+  tier                  String    @default("NONE")
+  status                String    @default("INACTIVE")
+  current_period_start  DateTime? @db.Timestamptz(6)
+  current_period_end    DateTime? @db.Timestamptz(6)
+  created_at            DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([stripe_customer_id], map: "user_subscriptions_stripe_customer")
+}
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: User focus timer theme preferences (LionHeart premium perk)
+
+model user_timer_preferences {
+  userid     BigInt   @id
+  theme      String   @default("classic")
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-16) ---
+// Purpose: Data deletion request tracking for GDPR/privacy compliance
+
+enum deletionrequeststatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  REJECTED
+}
+
+model data_deletion_requests {
+  requestid    Int                    @id @default(autoincrement())
+  userid       BigInt
+  discord_tag  String?
+  reason       String?
+  status       deletionrequeststatus  @default(PENDING)
+  requested_at DateTime               @default(now()) @db.Timestamptz(6)
+  resolved_at  DateTime?              @db.Timestamptz(6)
+  resolved_by  String?
+  notes        String?
+
+  @@index([userid], map: "data_deletion_requests_userid")
+  @@index([status], map: "data_deletion_requests_status")
+}
 // --- END AI-MODIFIED ---
