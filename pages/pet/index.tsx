@@ -44,7 +44,10 @@ interface PetOverviewData {
     fullscreenMode: boolean
     createdAt: string
   } | null
-  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }>
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Include glow tier/intensity for equipment rendering
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  // --- END AI-MODIFIED ---
   inventoryCount: number
   activeFarmPlots: number
   gold: string
@@ -176,7 +179,7 @@ export default function PetOverview() {
                           layout={mergeLayout(data.roomLayout ?? {})}
                           equipment={Object.fromEntries(
                             Object.entries(equipment).map(([slot, item]) => [
-                              slot, { assetPath: item.assetPath, category: item.category }
+                              slot, { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity }
                             ])
                           )}
                           expression={pet.expression}

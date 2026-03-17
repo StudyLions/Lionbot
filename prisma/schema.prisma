@@ -1307,17 +1307,26 @@ model lg_items {
   set_id                Int?
   item_set              lg_item_sets?           @relation(fields: [set_id], references: [set_id])
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Thematic tag for grouping related items in wiki
+  tag                   String?                 @db.VarChar(32)
+  // --- END AI-MODIFIED ---
   lg_user_inventory     lg_user_inventory[]
   lg_pet_equipment      lg_pet_equipment[]
   lg_user_furniture     lg_user_furniture[]
   lg_crafting_recipes        lg_crafting_recipes[]
   lg_recipe_ingredients      lg_recipe_ingredients[]
   lg_scroll_properties       lg_scroll_properties?
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Reverse relation for scroll trace history
+  lg_enhancement_slots       lg_enhancement_slots[]
+  // --- END AI-MODIFIED ---
   lg_marketplace_listings    lg_marketplace_listings[]
   lg_marketplace_sales       lg_marketplace_sales[]
 
   @@index([category], map: "lg_items_category")
   @@index([set_id])
+  @@index([tag])
 }
 
 // --- AI-MODIFIED (2026-03-15) ---
@@ -1340,6 +1349,10 @@ model lg_user_inventory {
   enhancement_level Int          @default(0)
   user_config       user_config  @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
   lg_items          lg_items     @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Scroll trace -- which scrolls were used at each enhancement slot
+  lg_enhancement_slots lg_enhancement_slots[]
+  // --- END AI-MODIFIED ---
 
   @@index([userid], map: "lg_user_inventory_user")
 }
@@ -1477,8 +1490,31 @@ model lg_scroll_properties {
   target_slot  String?
   success_rate Float    @default(0.7) @db.Real
   destroy_rate Float    @default(0.1) @db.Real
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Scroll bonus multiplier for MapleStory-style enhancement quality
+  bonus_value  Float    @default(1.0) @db.Real
+  // --- END AI-MODIFIED ---
   lg_items     lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
 }
+
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Track which scroll was used at each enhancement level (scroll trace)
+model lg_enhancement_slots {
+  slotid        Int       @id @default(autoincrement())
+  inventoryid   Int
+  slot_number   Int
+  scroll_itemid Int
+  scroll_name   String    @db.VarChar(64)
+  bonus_value   Float     @default(1.0) @db.Real
+  enhanced_at   DateTime  @default(now()) @db.Timestamptz(6)
+
+  lg_user_inventory lg_user_inventory @relation(fields: [inventoryid], references: [inventoryid], onDelete: Cascade)
+  lg_items          lg_items          @relation(fields: [scroll_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([inventoryid, slot_number])
+  @@index([inventoryid])
+}
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: Added marketplace models for LionGotchi trading system

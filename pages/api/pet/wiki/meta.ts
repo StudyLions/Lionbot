@@ -77,8 +77,10 @@ export default apiHandler({
       select: { itemid: true, name: true, rarity: true },
       orderBy: { rarity: "asc" },
     })
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Include bonus_value in scroll wiki data
     const scrollProps = await prisma.lg_scroll_properties.findMany({
-      select: { itemid: true, success_rate: true, destroy_rate: true, target_slot: true },
+      select: { itemid: true, success_rate: true, destroy_rate: true, target_slot: true, bonus_value: true },
     })
     const scrollPropMap: Record<number, typeof scrollProps[0]> = {}
     for (const sp of scrollProps) scrollPropMap[sp.itemid] = sp
@@ -87,7 +89,9 @@ export default apiHandler({
       itemId: s.itemid, name: s.name, rarity: s.rarity,
       successRate: scrollPropMap[s.itemid]?.success_rate ?? 0,
       destroyRate: scrollPropMap[s.itemid]?.destroy_rate ?? 0,
+      bonusValue: scrollPropMap[s.itemid]?.bonus_value ?? 1.0,
     }))
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-16) ---

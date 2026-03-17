@@ -3,14 +3,18 @@
 // Created: 2026-03-15
 // Purpose: Pet enhancement API - enhance equipment with scrolls
 // ============================================================
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: MapleStory-style scroll system -- bonus_value per scroll,
+//          enhancement slot history, glow tier calculation
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
+import { GAME_CONSTANTS, calcGlowTier, calcGlowIntensity } from "@/utils/gameConstants"
 
-const MAX_ENHANCEMENT_BY_RARITY: Record<string, number> = {
-  COMMON: 5, UNCOMMON: 7, RARE: 10, EPIC: 12, LEGENDARY: 15, MYTHICAL: 20,
-}
-const LEVEL_PENALTY_FACTOR = 0.08
+const MAX_ENHANCEMENT_BY_RARITY: Record<string, number> = GAME_CONSTANTS.MAX_ENHANCEMENT_BY_RARITY
+const LEVEL_PENALTY_FACTOR = GAME_CONSTANTS.LEVEL_PENALTY_FACTOR
+const ENHANCEMENT_GOLD_BONUS = GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS
+const ENHANCEMENT_DROP_BONUS = GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS
 
 export default apiHandler({
   async GET(req, res) {
@@ -18,7 +22,7 @@ export default apiHandler({
     if (!auth) return
 
     const userId = BigInt(auth.discordId)
-    const equipCategories = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS"]
+    const equipCategories = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"]
 
     const [equipment, scrolls] = await Promise.all([
       prisma.lg_user_inventory.findMany({
@@ -27,10 +31,14 @@ export default apiHandler({
           inventoryid: true,
           enhancement_level: true,
           lg_items: { select: { itemid: true, name: true, rarity: true, slot: true, category: true, asset_path: true } },
+          lg_enhancement_slots: {
+            select: { slot_number: true, scroll_name: true, bonus_value: true, scroll_itemid: true },
+            orderBy: { slot_number: "asc" },
+          },
         },
       }),
       prisma.lg_user_inventory.findMany({
-        where: { userid: userId, lg_items: { category: "SCROLL" as any } },
+        where: { userid: userId, lg_items: { category: "SCROLL" as any }, quantity: { gt: 0 } },
         select: {
           inventoryid: true,
           quantity: true,
@@ -39,26 +47,40 @@ export default apiHandler({
               itemid: true,
               name: true,
               rarity: true,
-              lg_scroll_properties: { select: { success_rate: true, destroy_rate: true, target_slot: true } },
+              asset_path: true,
+              lg_scroll_properties: { select: { success_rate: true, destroy_rate: true, target_slot: true, bonus_value: true } },
             },
           },
         },
       }),
     ])
 
-    const equipResult = equipment.map((e) => ({
-      inventoryId: e.inventoryid,
-      enhancementLevel: e.enhancement_level,
-      maxLevel: MAX_ENHANCEMENT_BY_RARITY[e.lg_items.rarity] ?? 5,
-      item: {
-        id: e.lg_items.itemid,
-        name: e.lg_items.name,
-        rarity: e.lg_items.rarity,
-        slot: e.lg_items.slot,
-        category: e.lg_items.category,
-        assetPath: e.lg_items.asset_path,
-      },
-    }))
+    const equipResult = equipment.map((e) => {
+      const totalBonus = e.lg_enhancement_slots.reduce((sum, s) => sum + s.bonus_value, 0)
+      const glowTier = calcGlowTier(e.enhancement_level, totalBonus)
+      const glowIntensity = calcGlowIntensity(e.enhancement_level)
+      return {
+        inventoryId: e.inventoryid,
+        enhancementLevel: e.enhancement_level,
+        maxLevel: MAX_ENHANCEMENT_BY_RARITY[e.lg_items.rarity] ?? 5,
+        totalBonus,
+        glowTier,
+        glowIntensity,
+        item: {
+          id: e.lg_items.itemid,
+          name: e.lg_items.name,
+          rarity: e.lg_items.rarity,
+          slot: e.lg_items.slot,
+          category: e.lg_items.category,
+          assetPath: e.lg_items.asset_path,
+        },
+        slots: e.lg_enhancement_slots.map((s) => ({
+          slotNumber: s.slot_number,
+          scrollName: s.scroll_name,
+          bonusValue: s.bonus_value,
+        })),
+      }
+    })
 
     const scrollResult = scrolls.map((s) => ({
       inventoryId: s.inventoryid,
@@ -67,12 +89,14 @@ export default apiHandler({
         id: s.lg_items.itemid,
         name: s.lg_items.name,
         rarity: s.lg_items.rarity,
+        assetPath: s.lg_items.asset_path,
       },
       properties: s.lg_items.lg_scroll_properties
         ? {
             successRate: s.lg_items.lg_scroll_properties.success_rate,
             destroyRate: s.lg_items.lg_scroll_properties.destroy_rate,
             targetSlot: s.lg_items.lg_scroll_properties.target_slot,
+            bonusValue: s.lg_items.lg_scroll_properties.bonus_value,
           }
         : null,
     }))
@@ -129,15 +153,47 @@ export default apiHandler({
     const roll = Math.random()
 
     if (roll < effectiveSuccess) {
-      await prisma.lg_user_inventory.update({
+      const newLevel = equipInv.enhancement_level + 1
+      const bonusValue = scrollProps.bonus_value
+
+      await prisma.$transaction([
+        prisma.lg_user_inventory.update({
+          where: { inventoryid: equipInv.inventoryid },
+          data: { enhancement_level: newLevel },
+        }),
+        prisma.lg_enhancement_slots.upsert({
+          where: { inventoryid_slot_number: { inventoryid: equipInv.inventoryid, slot_number: newLevel } },
+          create: {
+            inventoryid: equipInv.inventoryid,
+            slot_number: newLevel,
+            scroll_itemid: scrollInv.lg_items.itemid,
+            scroll_name: scrollInv.lg_items.name,
+            bonus_value: bonusValue,
+          },
+          update: {},
+        }),
+      ])
+
+      const allSlots = await prisma.lg_enhancement_slots.findMany({
         where: { inventoryid: equipInv.inventoryid },
-        data: { enhancement_level: equipInv.enhancement_level + 1 },
       })
+      const totalBonus = allSlots.reduce((sum, s) => sum + s.bonus_value, 0)
+      const glowTier = calcGlowTier(newLevel, totalBonus)
+
+      const goldGained = bonusValue * ENHANCEMENT_GOLD_BONUS * 100
+      const dropGained = bonusValue * ENHANCEMENT_DROP_BONUS * 100
+
       return res.status(200).json({
         outcome: "success",
         itemName: equipInv.lg_items.name,
-        newLevel: equipInv.enhancement_level + 1,
+        newLevel,
         maxLevel,
+        bonusGained: bonusValue,
+        goldGained: Math.round(goldGained * 10) / 10,
+        dropGained: Math.round(dropGained * 100) / 100,
+        totalBonus,
+        glowTier,
+        scrollName: scrollInv.lg_items.name,
       })
     }
 
@@ -159,3 +215,4 @@ export default apiHandler({
     })
   },
 })
+// --- END AI-MODIFIED ---

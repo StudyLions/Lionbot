@@ -36,11 +36,13 @@ const FIXED_DISPLAY = CANVAS_SIZE * DISPLAY_SCALE
 const FRAME_COUNT = 4
 const FRAME_INTERVAL_MS = 250
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Extended equipment type with glow tier/intensity for enhancement visuals
 interface RoomCanvasProps {
   roomPrefix: string
   furniture: Record<string, string>
   layout: RoomLayout
-  equipment: Record<string, { assetPath: string; category: string }>
+  equipment: Record<string, { assetPath: string; category: string; glowTier?: string; glowIntensity?: number }>
   expression: string
   size?: number
   animated?: boolean
@@ -56,6 +58,28 @@ interface RoomCanvasProps {
 function petAssetUrl(path: string): string {
   return `${BLOB_BASE}/pet-assets/${path}`
 }
+
+const GLOW_CONFIG: Record<string, { color: string; baseBlur: number }> = {
+  bronze: { color: 'rgba(205, 127, 50, 0.7)', baseBlur: 4 },
+  silver: { color: 'rgba(192, 210, 240, 0.8)', baseBlur: 6 },
+  gold: { color: 'rgba(255, 215, 0, 0.9)', baseBlur: 8 },
+  diamond: { color: 'rgba(100, 200, 255, 0.9)', baseBlur: 10 },
+  celestial: { color: 'rgba(200, 100, 255, 0.9)', baseBlur: 12 },
+}
+
+function applyGlow(ctx: CanvasRenderingContext2D, glowTier?: string, glowIntensity?: number): void {
+  const config = glowTier ? GLOW_CONFIG[glowTier] : undefined
+  if (!config) return
+  const intensityScale = 1 + (glowIntensity ?? 0) * 0.5
+  ctx.shadowColor = config.color
+  ctx.shadowBlur = config.baseBlur * intensityScale
+}
+
+function clearGlow(ctx: CanvasRenderingContext2D): void {
+  ctx.shadowColor = 'transparent'
+  ctx.shadowBlur = 0
+}
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Support per-layer scaling. Scale is applied around the center
@@ -312,7 +336,12 @@ export default function RoomCanvas({
           const bScale = LION_SPRITE_SIZE > 0 ? scaledLionSize / LION_SPRITE_SIZE : 1
           const bx = lx + Math.round(backOff[0] * bScale)
           const by = ly + Math.round(backOff[1] * bScale)
+          // --- AI-MODIFIED (2026-03-17) ---
+          // Purpose: Apply glow to BACK equipment slot
+          applyGlow(osCtx, backEquip.glowTier, backEquip.glowIntensity)
           osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, bx, by, scaledLionSize, scaledLionSize)
+          clearGlow(osCtx)
+          // --- END AI-MODIFIED ---
         }
       }
 
@@ -336,7 +365,13 @@ export default function RoomCanvas({
           const img = animImg || staticImg
           if (img) {
             const eqOff = curLayout.equipmentOffsets?.[slot] ?? [0, 0]
+            // --- AI-MODIFIED (2026-03-17) ---
+            // Purpose: Apply glow effect based on enhancement quality
+            const eqData = curEquip[slot]
+            applyGlow(lionCtx, eqData?.glowTier, eqData?.glowIntensity)
             lionCtx.drawImage(img, eqOff[0], eqOff[1])
+            clearGlow(lionCtx)
+            // --- END AI-MODIFIED ---
           }
         }
       }

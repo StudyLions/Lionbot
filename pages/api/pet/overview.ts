@@ -60,7 +60,10 @@ export default apiHandler({
         where: { userid: userId },
         select: {
           slot: true,
-          lg_items: { select: { name: true, category: true, rarity: true, asset_path: true } },
+          // --- AI-MODIFIED (2026-03-17) ---
+          // Purpose: Include itemid for enhancement slot lookup
+          lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } },
+          // --- END AI-MODIFIED ---
         },
       }),
       prisma.lg_user_inventory.count({ where: { userid: userId } }),
@@ -84,15 +87,38 @@ export default apiHandler({
     ])
     // --- END AI-MODIFIED ---
 
-    const equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Include glow tier/intensity data for equipment (from enhancement slots)
+    const equipItemIds = equipmentRows.map((e) => e.lg_items.itemid ?? 0).filter(Boolean)
+    const equipInvRows = equipItemIds.length > 0
+      ? await prisma.lg_user_inventory.findMany({
+          where: { userid: userId, itemid: { in: equipItemIds } },
+          select: {
+            itemid: true,
+            enhancement_level: true,
+            lg_enhancement_slots: { select: { bonus_value: true } },
+          },
+        })
+      : []
+    const equipInvMap = new Map(equipInvRows.map((r) => [r.itemid, r]))
+
+    const { calcGlowTier, calcGlowIntensity } = await import("@/utils/gameConstants")
+
+    const equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier: string; glowIntensity: number }> = {}
     for (const e of equipmentRows) {
+      const inv = equipInvMap.get(e.lg_items.itemid ?? 0)
+      const lvl = inv?.enhancement_level ?? 0
+      const totalBonus = inv?.lg_enhancement_slots.reduce((sum, s) => sum + s.bonus_value, 0) ?? 0
       equipment[e.slot] = {
         name: e.lg_items.name,
         category: e.lg_items.category,
         rarity: e.lg_items.rarity,
         assetPath: e.lg_items.asset_path,
+        glowTier: calcGlowTier(lvl, totalBonus),
+        glowIntensity: calcGlowIntensity(lvl),
       }
     }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Build furniture map with room defaults merged, extract layout

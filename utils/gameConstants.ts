@@ -12,6 +12,10 @@ export const GAME_CONSTANTS = {
   LEVEL_PENALTY_FACTOR: 0.08,
   ENHANCEMENT_GOLD_BONUS: 0.02,
   ENHANCEMENT_XP_BONUS: 0.02,
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Drop rate bonus from enhancement + glow tier thresholds
+  ENHANCEMENT_DROP_BONUS: 0.005,
+  // --- END AI-MODIFIED ---
 
   MAX_ENHANCEMENT_BY_RARITY: {
     COMMON: 5,
@@ -36,6 +40,62 @@ export const GAME_CONSTANTS = {
   ITEM_DROP_CHANCE_HARVEST: 0.15,
 
   SCROLL_DROP_RATIO: 0.6,
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Glow tier thresholds and calculation helpers (MapleStory-style scroll quality)
+export type GlowTier = 'none' | 'bronze' | 'silver' | 'gold' | 'diamond' | 'celestial'
+
+const GLOW_TIERS: [number, GlowTier][] = [
+  [6.0, 'celestial'],
+  [4.0, 'diamond'],
+  [2.5, 'gold'],
+  [1.5, 'silver'],
+  [0.01, 'bronze'],
+]
+
+export function calcGlowTier(enhancementLevel: number, totalBonus: number): GlowTier {
+  if (enhancementLevel <= 0 || totalBonus <= 0) return 'none'
+  const avg = totalBonus / enhancementLevel
+  for (const [threshold, tier] of GLOW_TIERS) {
+    if (avg >= threshold) return tier
+  }
+  return 'none'
+}
+
+export function calcGlowIntensity(enhancementLevel: number): number {
+  if (enhancementLevel >= 13) return 3
+  if (enhancementLevel >= 8) return 2
+  if (enhancementLevel >= 4) return 1
+  return 0
+}
+
+export const GLOW_COLORS: Record<GlowTier, string> = {
+  none: 'transparent',
+  bronze: 'rgba(205, 127, 50, 0.7)',
+  silver: 'rgba(192, 210, 240, 0.8)',
+  gold: 'rgba(255, 215, 0, 0.9)',
+  diamond: 'rgba(100, 200, 255, 0.9)',
+  celestial: 'rgba(200, 100, 255, 0.9)',
+}
+
+export const GLOW_LABELS: Record<GlowTier, string> = {
+  none: '',
+  bronze: 'Bronze',
+  silver: 'Silver',
+  gold: 'Gold',
+  diamond: 'Diamond',
+  celestial: 'Celestial',
+}
+
+export const GLOW_TEXT_COLORS: Record<GlowTier, string> = {
+  none: '',
+  bronze: 'text-amber-500',
+  silver: 'text-slate-300',
+  gold: 'text-yellow-400',
+  diamond: 'text-cyan-300',
+  celestial: 'text-purple-400',
 }
 // --- END AI-MODIFIED ---
 

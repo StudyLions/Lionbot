@@ -3,6 +3,9 @@
 // Created: 2026-03-15
 // Purpose: Pet enhancement page - pixel art RPG style
 // ============================================================
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: MapleStory-style scroll system -- show bonus_value per scroll,
+//          scroll trace per equipment slot, glow tier badges
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
@@ -11,7 +14,8 @@ import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
-import { getItemImageUrl, getCategoryPlaceholder, getUiIconUrl, getFarmAnimationUrl } from "@/utils/petAssets"
+import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
@@ -19,18 +23,28 @@ import PixelBadge from "@/components/pet/ui/PixelBadge"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
+interface EnhancementSlot {
+  slotNumber: number
+  scrollName: string
+  bonusValue: number
+}
+
 interface EquipmentItem {
   inventoryId: number
   enhancementLevel: number
   maxLevel: number
+  totalBonus: number
+  glowTier: GlowTier
+  glowIntensity: number
   item: { id: number; name: string; rarity: string; slot: string | null; category: string; assetPath: string }
+  slots: EnhancementSlot[]
 }
 
 interface ScrollItem {
   inventoryId: number
   quantity: number
-  item: { id: number; name: string; rarity: string }
-  properties: { successRate: number; destroyRate: number; targetSlot: string | null } | null
+  item: { id: number; name: string; rarity: string; assetPath: string }
+  properties: { successRate: number; destroyRate: number; targetSlot: string | null; bonusValue: number } | null
 }
 
 interface EnhancementData {
@@ -43,7 +57,16 @@ const RARITY_BORDER: Record<string, string> = {
   EPIC: "#f0c040", LEGENDARY: "#d060f0", MYTHICAL: "#ff6080",
 }
 
-const LEVEL_PENALTY_FACTOR = 0.08
+const GLOW_BORDER: Record<GlowTier, string> = {
+  none: "#3a4a6c",
+  bronze: "#cd7f32",
+  silver: "#c0d2f0",
+  gold: "#ffd700",
+  diamond: "#64c8ff",
+  celestial: "#c864ff",
+}
+
+const LEVEL_PENALTY_FACTOR = GAME_CONSTANTS.LEVEL_PENALTY_FACTOR
 
 export default function EnhancementPage() {
   const { data: session } = useSession()
@@ -57,6 +80,7 @@ export default function EnhancementPage() {
   const [result, setResult] = useState<{
     outcome: "success" | "failed" | "destroyed"; itemName: string
     newLevel?: number; currentLevel?: number
+    bonusGained?: number; goldGained?: number; dropGained?: number; glowTier?: GlowTier; scrollName?: string
   } | null>(null)
 
   const equip = data?.equipment.find((e) => e.inventoryId === selectedEquip)
@@ -113,7 +137,7 @@ export default function EnhancementPage() {
                   <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
                 </div>
                 <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
-                  Use scrolls to upgrade equipment for Gold & XP bonuses
+                  Use scrolls to upgrade equipment. Riskier scrolls give bigger bonuses!
                 </p>
               </div>
 
@@ -128,12 +152,19 @@ export default function EnhancementPage() {
                   }}
                 >
                   {result.outcome === "success" && (
-                    <>
-                      <img src={getUiIconUrl("trophy")} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
-                      <span className="font-pixel text-sm text-[var(--pet-green,#40d870)]">
+                    <div className="flex-1">
+                      <span className="font-pixel text-sm text-[var(--pet-green,#40d870)] block">
                         {result.itemName} enhanced to +{result.newLevel}!
                       </span>
-                    </>
+                      <span className="font-pixel text-[11px] text-[var(--pet-text-dim)]">
+                        {result.scrollName} added +{result.goldGained}% Gold/XP, +{result.dropGained}% Drop Rate
+                        {result.glowTier && result.glowTier !== "none" && (
+                          <span className={cn("ml-1", GLOW_TEXT_COLORS[result.glowTier as GlowTier])}>
+                            [{GLOW_LABELS[result.glowTier as GlowTier]} Glow]
+                          </span>
+                        )}
+                      </span>
+                    </div>
                   )}
                   {result.outcome === "failed" && (
                     <span className="font-pixel text-sm text-[var(--pet-gold,#f0c040)]">
@@ -141,12 +172,9 @@ export default function EnhancementPage() {
                     </span>
                   )}
                   {result.outcome === "destroyed" && (
-                    <>
-                      <img src={getFarmAnimationUrl("skull", 1)} alt="" width={16} height={16} style={{ imageRendering: "pixelated" }} />
-                      <span className="font-pixel text-sm text-[var(--pet-red,#e04040)]">
-                        {result.itemName} was destroyed!
-                      </span>
-                    </>
+                    <span className="font-pixel text-sm text-[var(--pet-red,#e04040)]">
+                      {result.itemName} was destroyed!
+                    </span>
                   )}
                 </div>
               )}
@@ -170,11 +198,12 @@ export default function EnhancementPage() {
                     {!data?.equipment.length ? (
                       <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No equipment owned</p>
                     ) : (
-                      <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+                      <div className="p-2 space-y-1 max-h-72 overflow-y-auto scrollbar-hide">
                         {data.equipment.map((e) => {
-                          const bc = RARITY_BORDER[e.item.rarity] || "#3a4a6c"
+                          const bc = e.glowTier !== "none" ? GLOW_BORDER[e.glowTier as GlowTier] : RARITY_BORDER[e.item.rarity] || "#3a4a6c"
                           const imgUrl = getItemImageUrl(e.item.assetPath, e.item.category)
                           const isSelected = selectedEquip === e.inventoryId
+                          const totalGold = (e.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100)
                           return (
                             <button
                               key={e.inventoryId}
@@ -197,7 +226,19 @@ export default function EnhancementPage() {
                                   {e.item.name}
                                   {e.enhancementLevel > 0 && <span className="text-[var(--pet-gold)] ml-1">+{e.enhancementLevel}</span>}
                                 </span>
-                                <PixelBadge rarity={e.item.rarity} />
+                                <div className="flex items-center gap-1.5">
+                                  <PixelBadge rarity={e.item.rarity} />
+                                  {e.glowTier !== "none" && (
+                                    <span className={cn("font-pixel text-[10px]", GLOW_TEXT_COLORS[e.glowTier as GlowTier])}>
+                                      {GLOW_LABELS[e.glowTier as GlowTier]}
+                                    </span>
+                                  )}
+                                  {totalGold > 0 && (
+                                    <span className="font-pixel text-[10px] text-[var(--pet-text-dim)]">
+                                      +{totalGold.toFixed(1)}%
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                               <span className="font-pixel text-[12px] text-[var(--pet-text-dim)] flex-shrink-0">
                                 {e.enhancementLevel}/{e.maxLevel}
@@ -217,23 +258,49 @@ export default function EnhancementPage() {
                     {!data?.scrolls.length ? (
                       <p className="font-pixel text-[13px] text-[var(--pet-text-dim)] py-6 text-center">No scrolls owned. Keep studying to earn scroll drops!</p>
                     ) : (
-                      <div className="p-2 space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+                      <div className="p-2 space-y-1 max-h-72 overflow-y-auto scrollbar-hide">
                         {data.scrolls.map((s) => {
                           const isSelected = selectedScroll === s.inventoryId
                           const bc = RARITY_BORDER[s.item.rarity] || "#3a4a6c"
+                          const bv = s.properties?.bonusValue ?? 1
+                          const goldPer = (bv * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100)
+                          const dropPer = (bv * GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS * 100)
+                          const imgUrl = getItemImageUrl(s.item.assetPath, "SCROLL")
                           return (
                             <button
                               key={s.inventoryId}
                               onClick={() => setSelectedScroll(s.inventoryId)}
                               className={cn(
-                                "w-full text-left px-2.5 py-2 border-2 flex items-center justify-between transition-all",
+                                "w-full text-left px-2.5 py-2 border-2 flex items-center gap-2 transition-all",
                                 isSelected ? "bg-[#4080f0]/6" : "bg-[#0a0e1a] hover:bg-[#101828]"
                               )}
                               style={{ borderColor: isSelected ? bc : "#1a2a3c" }}
                             >
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)]">{s.item.name}</span>
-                                <PixelBadge rarity={s.item.rarity} />
+                              <div className="w-8 h-8 border border-[#1a2a3c] bg-[#080c18] flex items-center justify-center flex-shrink-0">
+                                {imgUrl ? (
+                                  <img src={imgUrl} alt="" className="w-6 h-6 object-contain" style={{ imageRendering: "pixelated" }} />
+                                ) : (
+                                  <span className="text-lg">📜</span>
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate">{s.item.name}</span>
+                                  <PixelBadge rarity={s.item.rarity} />
+                                </div>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <span className="font-pixel text-[10px] text-green-400">
+                                    {s.properties ? `${(s.properties.successRate * 100).toFixed(0)}% OK` : "?"}
+                                  </span>
+                                  {s.properties && s.properties.destroyRate > 0 && (
+                                    <span className="font-pixel text-[10px] text-red-400">
+                                      {(s.properties.destroyRate * 100).toFixed(0)}% Destroy
+                                    </span>
+                                  )}
+                                  <span className="font-pixel text-[10px] text-[var(--pet-gold)]">
+                                    +{goldPer.toFixed(1)}% G/XP
+                                  </span>
+                                </div>
                               </div>
                               <span className="font-pixel text-[13px] text-[var(--pet-text-dim)]">x{s.quantity}</span>
                             </button>
@@ -245,7 +312,7 @@ export default function EnhancementPage() {
                 </div>
               )}
 
-              {/* Enhancement preview */}
+              {/* Enhancement preview + scroll trace */}
               {equip && scroll && (
                 <div
                   className="border-[3px] border-[var(--pet-gold,#f0c040)] p-[3px]"
@@ -266,6 +333,12 @@ export default function EnhancementPage() {
                           <PixelBar value={effectiveSuccess} max={100} label="Success" color="green" segments={10} />
                           <PixelBar value={effectiveDestroy} max={100} label="Destroy" color="red" segments={10} />
                         </div>
+                        {scroll.properties && (
+                          <p className="font-pixel text-[11px] text-[var(--pet-gold)]">
+                            +{(scroll.properties.bonusValue * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)}% Gold/XP,
+                            {" "}+{(scroll.properties.bonusValue * GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS * 100).toFixed(2)}% Drop Rate
+                          </p>
+                        )}
                       </div>
                       <PixelButton
                         variant="gold"
@@ -283,6 +356,48 @@ export default function EnhancementPage() {
                   </div>
                 </div>
               )}
+
+              {/* Scroll Trace for selected equipment */}
+              {equip && equip.slots.length > 0 && (
+                <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
+                  <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c] flex items-center justify-between">
+                    <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">SCROLL TRACE</span>
+                    {equip.glowTier !== "none" && (
+                      <span className={cn("font-pixel text-[11px]", GLOW_TEXT_COLORS[equip.glowTier as GlowTier])}>
+                        {GLOW_LABELS[equip.glowTier as GlowTier]} Glow
+                      </span>
+                    )}
+                  </div>
+                  <div className="p-3 space-y-1">
+                    {Array.from({ length: equip.maxLevel }, (_, i) => i + 1).map((slotNum) => {
+                      const slot = equip.slots.find((s) => s.slotNumber === slotNum)
+                      if (slot) {
+                        const goldPct = (slot.bonusValue * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)
+                        return (
+                          <div key={slotNum} className="flex items-center gap-2 px-2 py-1 bg-[#0a0e1a] border border-[#1a2a3c]">
+                            <span className="font-pixel text-[11px] text-[var(--pet-text-dim)] w-6">+{slotNum}</span>
+                            <span className="font-pixel text-[11px] text-[var(--pet-text)] flex-1">{slot.scrollName}</span>
+                            <span className="font-pixel text-[10px] text-[var(--pet-gold)]">+{goldPct}%</span>
+                          </div>
+                        )
+                      }
+                      return (
+                        <div key={slotNum} className="flex items-center gap-2 px-2 py-1 bg-[#080c18] border border-[#141c2c] opacity-40">
+                          <span className="font-pixel text-[11px] text-[var(--pet-text-dim)] w-6">+{slotNum}</span>
+                          <span className="font-pixel text-[11px] text-[var(--pet-text-dim)] flex-1 italic">empty</span>
+                        </div>
+                      )
+                    })}
+                    <div className="flex items-center justify-between px-2 pt-2 border-t border-[#1a2a3c] mt-1">
+                      <span className="font-pixel text-[11px] text-[var(--pet-text-dim)]">Total</span>
+                      <span className="font-pixel text-[12px] text-[var(--pet-gold)]">
+                        +{(equip.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)}% Gold/XP,
+                        {" "}+{(equip.totalBonus * GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS * 100).toFixed(1)}% Drop
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -296,3 +411,4 @@ export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
     ...(await serverSideTranslations(locale ?? "en", ["common"])),
   },
 })
+// --- END AI-MODIFIED ---

@@ -12,6 +12,10 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState } from "react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Import glow display helpers for enhanced equipment
+import { GLOW_LABELS, GLOW_TEXT_COLORS, GAME_CONSTANTS, type GlowTier } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
@@ -26,6 +30,12 @@ interface InventoryItem {
   source: string
   acquiredAt: string
   equipped: boolean
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Glow tier from scroll quality
+  totalBonus: number
+  glowTier: GlowTier
+  glowIntensity: number
+  // --- END AI-MODIFIED ---
   item: {
     id: number; name: string; category: string; slot: string | null
     rarity: string; description: string; assetPath: string
@@ -148,6 +158,18 @@ export default function InventoryPage() {
                             {inv.item.slot && (
                               <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">{inv.item.slot}</span>
                             )}
+                            {/* --- AI-MODIFIED (2026-03-17) --- */}
+                            {inv.glowTier !== "none" && (
+                              <span className={cn("font-pixel text-[10px]", GLOW_TEXT_COLORS[inv.glowTier])}>
+                                {GLOW_LABELS[inv.glowTier]}
+                              </span>
+                            )}
+                            {inv.totalBonus > 0 && (
+                              <span className="font-pixel text-[10px] text-[var(--pet-gold)]">
+                                +{(inv.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)}%
+                              </span>
+                            )}
+                            {/* --- END AI-MODIFIED --- */}
                           </div>
                         </div>
                         {inv.quantity > 1 && (
