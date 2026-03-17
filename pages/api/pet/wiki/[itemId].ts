@@ -22,14 +22,14 @@ export default apiHandler({
     const itemId = parseInt(req.query.itemId as string)
     if (isNaN(itemId)) return res.status(400).json({ error: "Invalid itemId" })
 
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: Include set_id and set name in item queries
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Include set_id, set name, and tag in item queries
     const item = await prisma.lg_items.findUnique({
       where: { itemid: itemId },
       select: {
         itemid: true, name: true, category: true, slot: true, rarity: true,
         asset_path: true, gold_price: true, gem_price: true, tradeable: true,
-        description: true, copyright_flag: true, set_id: true,
+        description: true, copyright_flag: true, set_id: true, tag: true,
         item_set: { select: { name: true } },
       },
     })
@@ -86,27 +86,46 @@ export default apiHandler({
       }
     }
 
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: Prioritize set members in related items when item belongs to a set
-    let setMembers: Array<{ itemid: number; name: string; rarity: string; category: string; asset_path: string | null; gold_price: number | null }> = []
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Rarity variants, deduplicated set/tag items for rarity-expanded item pool
+    const relSelect = { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true }
+
+    const rarityVariants = await prisma.lg_items.findMany({
+      where: { name: item.name, category: item.category, itemid: { not: itemId } },
+      select: relSelect,
+      orderBy: { rarity: "asc" },
+    })
+    const excludeNames = new Set([item.name])
+    const excludeIds = [itemId, ...rarityVariants.map((r: any) => r.itemid)]
+
+    let setItems: any[] = []
     if (item.set_id) {
-      setMembers = await prisma.lg_items.findMany({
-        where: { set_id: item.set_id, itemid: { not: itemId } },
-        select: { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true },
+      const allSetItems = await prisma.lg_items.findMany({
+        where: { set_id: item.set_id, name: { not: item.name } },
+        select: relSelect,
+        orderBy: { rarity: "asc" },
+      })
+      const byName: Record<string, any> = {}
+      for (const si of allSetItems) {
+        if (!byName[si.name] || si.rarity === item.rarity) byName[si.name] = si
+      }
+      setItems = Object.values(byName)
+      for (const si of allSetItems) {
+        excludeIds.push(si.itemid)
+        excludeNames.add(si.name)
+      }
+    }
+
+    let tagItems: any[] = []
+    if (item.tag) {
+      tagItems = await prisma.lg_items.findMany({
+        where: { tag: item.tag, itemid: { notIn: excludeIds }, name: { notIn: Array.from(excludeNames) } },
+        select: relSelect,
+        distinct: ["name"],
         orderBy: { rarity: "desc" },
+        take: 12,
       })
     }
-    const remainingSlots = 6 - setMembers.length
-    const setMemberIds = setMembers.map((s) => s.itemid)
-    const categoryRelated = remainingSlots > 0
-      ? await prisma.lg_items.findMany({
-          where: { category: item.category, itemid: { notIn: [itemId, ...setMemberIds] } },
-          select: { itemid: true, name: true, rarity: true, category: true, asset_path: true, gold_price: true },
-          orderBy: { rarity: "desc" },
-          take: remainingSlots,
-        })
-      : []
-    const related = [...setMembers, ...categoryRelated]
     // --- END AI-MODIFIED ---
 
     const isEquipment = EQUIP_CATEGORIES.includes(item.category)
@@ -135,12 +154,14 @@ export default apiHandler({
     })
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Include tag and separate related sections in response
     return res.status(200).json({
       item: {
         id: item.itemid, name: item.name, category: item.category, slot: item.slot,
         rarity: item.rarity, assetPath: item.asset_path, goldPrice: item.gold_price,
         gemPrice: item.gem_price, tradeable: item.tradeable, description: item.description,
-        setName: item.item_set?.name ?? null,
+        setName: item.item_set?.name ?? null, tag: item.tag ?? null,
       },
       ownership: { count: ownerCount, tier: getOwnershipTier(ownerCount), userOwned },
       // --- AI-MODIFIED (2026-03-16) ---
@@ -165,10 +186,19 @@ export default apiHandler({
         ? { dropTierPercent: dropTier, voiceChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_VOICE, textChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_TEXT }
         : null,
       // --- END AI-MODIFIED ---
-      related: related.map((r) => ({
+      rarityVariants: rarityVariants.map((r: any) => ({
         id: r.itemid, name: r.name, rarity: r.rarity, category: r.category,
         assetPath: r.asset_path, goldPrice: r.gold_price,
       })),
+      setItems: setItems.map((r: any) => ({
+        id: r.itemid, name: r.name, rarity: r.rarity, category: r.category,
+        assetPath: r.asset_path, goldPrice: r.gold_price,
+      })),
+      tagItems: tagItems.map((r: any) => ({
+        id: r.itemid, name: r.name, rarity: r.rarity, category: r.category,
+        assetPath: r.asset_path, goldPrice: r.gold_price,
+      })),
+      // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-03-17) ---
       // Purpose: Marketplace summary for stats grid (replaces gold/gem price cards)
       marketplaceSummary: {

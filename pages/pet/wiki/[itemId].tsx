@@ -286,8 +286,19 @@ export default function ItemDetailPage() {
                   {/* Marketplace */}
                   <MarketplaceWidget itemId={item.id} itemName={item.name} />
 
-                  {/* Related Items */}
-                  {data.related?.length > 0 && <RelatedItems items={data.related} />}
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Rarity variants, deduplicated set/tag for expanded item pool */}
+                  {(data.rarityVariants?.length > 0 || data.setItems?.length > 0 || data.tagItems?.length > 0) && (
+                    <RelatedItems
+                      rarityVariants={data.rarityVariants}
+                      setItems={data.setItems}
+                      tagItems={data.tagItems}
+                      setName={data.item?.setName}
+                      tag={data.item?.tag}
+                      currentRarity={data.item?.rarity}
+                    />
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
                 </>
               )}
             </div>
