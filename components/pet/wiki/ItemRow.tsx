@@ -9,7 +9,6 @@ import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { Users } from "lucide-react"
 import type { WikiItemData } from "./ItemGrid"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
-import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 const rarityTextColor: Record<string, string> = {
   COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
@@ -51,13 +50,6 @@ export default function ItemListView({ items }: { items: WikiItemData[] }) {
               </span>
               <span className="font-pixel text-[12px] text-[#4a5a70]">{item.category.replace("_", " ")}</span>
               <PixelBadge rarity={item.rarity} />
-              <span>
-                {item.goldPrice ? (
-                  <GoldDisplay amount={item.goldPrice} size="sm" />
-                ) : (
-                  <span className="font-pixel text-[9px] text-[#2a3a50]">--</span>
-                )}
-              </span>
               <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-0.5">
                 <Users size={16} /> {item.ownerCount}
               </span>

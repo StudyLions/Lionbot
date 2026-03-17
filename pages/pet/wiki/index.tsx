@@ -39,8 +39,6 @@ const SORT_OPTIONS = [
   { value: "rarity_asc", label: "Rarity Low-High" },
   { value: "name_asc", label: "Name A-Z" },
   { value: "name_desc", label: "Name Z-A" },
-  { value: "price_desc", label: "Price High-Low" },
-  { value: "price_asc", label: "Price Low-High" },
 ]
 
 const RARITY_ORDER = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHICAL"]

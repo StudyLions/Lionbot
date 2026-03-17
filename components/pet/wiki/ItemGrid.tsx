@@ -8,7 +8,6 @@ import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { Users } from "lucide-react"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
-import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 const rarityBorderColor: Record<string, string> = {
   COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
@@ -52,9 +51,6 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
                 {item.name}
               </p>
               <PixelBadge rarity={item.rarity} />
-              {item.goldPrice != null && item.goldPrice > 0 && (
-                <GoldDisplay amount={item.goldPrice} size="sm" />
-              )}
               {item.userOwned > 0 && (
                 <span
                   className="absolute top-1 right-1 font-pixel px-1.5 py-0.5 text-[12px] border bg-[#40d870]/15 text-[#40d870] border-[#40d870]"

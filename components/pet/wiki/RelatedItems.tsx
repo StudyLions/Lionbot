@@ -8,7 +8,6 @@
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
-import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 
 const rarityBorderColor: Record<string, string> = {
   COMMON: "#6a7a8a", UNCOMMON: "#4080f0", RARE: "#e04040",
@@ -48,9 +47,6 @@ function ItemRow({ items }: { items: Item[] }) {
               >
                 {item.name}
               </span>
-              {item.goldPrice != null && item.goldPrice > 0 && (
-                <GoldDisplay amount={item.goldPrice} size="sm" />
-              )}
             </div>
           </Link>
         )
