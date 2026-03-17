@@ -15,7 +15,7 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
-  Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio,
+  Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown,
 } from "lucide-react"
 
 interface NavItem {
@@ -53,6 +53,10 @@ const sections: NavSection[] = [
     items: [
       { href: "/dashboard/inventory", label: "Skins", icon: <Palette size={16} /> },
       { href: "/dashboard/gems", label: "LionGems", icon: <Gem size={16} /> },
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Add LionHeart supporter page to nav
+      { href: "/dashboard/supporter", label: "LionHeart", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
       { href: "/dashboard/leaderboard", label: "Leaderboard", icon: <Trophy size={16} /> },
     ],
   },

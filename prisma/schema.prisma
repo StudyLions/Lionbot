@@ -880,6 +880,9 @@ model user_config {
   user_weekly_goals           user_weekly_goals[]
   lg_pets                     lg_pets?
   lg_user_inventory           lg_user_inventory[]
+  // --- AI-MODIFIED (2026-03-17) ---
+  lg_user_gameboy_skins       lg_user_gameboy_skins[]
+  // --- END AI-MODIFIED ---
 }
 
 model user_experience {
@@ -1392,7 +1395,24 @@ model lg_gameboy_skins {
   unlock_level Int?
   gold_price   Int?
   gem_price    Int?
+  // --- AI-MODIFIED (2026-03-17) ---
+  lg_user_gameboy_skins lg_user_gameboy_skins[]
+  // --- END AI-MODIFIED ---
 }
+
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Track user ownership of purchased gameboy skins (GOLD/GEMS types)
+model lg_user_gameboy_skins {
+  userid      BigInt
+  skin_id     Int
+  acquired_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user_config      user_config      @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_gameboy_skins lg_gameboy_skins @relation(fields: [skin_id], references: [skin_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, skin_id])
+}
+// --- END AI-MODIFIED ---
 
 model lg_farm_seeds {
   seed_id              Int            @id @default(autoincrement())
@@ -1533,6 +1553,20 @@ model user_timer_preferences {
   userid     BigInt   @id
   theme      String   @default("classic")
   updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Per-user animated card effect preferences (color overrides, enable/disable)
+
+model user_card_preferences {
+  userid          BigInt    @id
+  effects_enabled Boolean   @default(true)
+  sparkle_color   String?
+  ring_color      String?
+  created_at      DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 // --- END AI-MODIFIED ---
