@@ -10,15 +10,14 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import { PageHeader, Toggle, toast } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
-import { COLOR_PRESETS, DEFAULT_PRESET_ID } from "@/constants/CardEffectPresets"
+import { COLOR_PRESETS } from "@/constants/CardEffectPresets"
 import {
   SUBSCRIPTION_TIERS,
   TIER_ORDER,
   FREE_TIER,
   type SubscriptionTier,
-  type TierConfig,
 } from "@/constants/SubscriptionData"
 import { cn } from "@/lib/utils"
 import {
@@ -26,7 +25,6 @@ import {
   Heart,
   Gem,
   Sparkles,
-  Zap,
   Shield,
   Sprout,
   Droplets,
@@ -37,6 +35,9 @@ import {
   Check,
   AlertTriangle,
   ChevronRight,
+  Timer,
+  Palette,
+  ImageOff,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -71,15 +72,15 @@ interface CardPreferences {
 }
 
 const PERK_CARDS = [
-  { key: "monthlyGems", label: "Monthly Gems", icon: <Gem size={18} />, format: (v: number) => `${v.toLocaleString()} gems/month` },
-  { key: "gemsPerVote", label: "Gems per Vote", icon: <Heart size={18} />, format: (v: number) => `${v} gems` },
-  { key: "lionCoinBoost", label: "LionCoin Boost", icon: <Coins size={18} />, format: (v: number) => `${v}x multiplier` },
-  { key: "lgGoldBoost", label: "LionGotchi Gold", icon: <Coins size={18} />, format: (v: number) => `${v}x bonus` },
-  { key: "dropRateBonus", label: "Drop Rate Bonus", icon: <Sparkles size={18} />, format: (v: number) => `+${Math.round(v * 100)}%` },
-  { key: "farmGrowthSpeed", label: "Farm Growth", icon: <Sprout size={18} />, format: (v: number) => `${v}x speed` },
-  { key: "seedCostDiscount", label: "Seed Discount", icon: <Sprout size={18} />, format: (v: number) => `${Math.round(v * 100)}% off` },
-  { key: "harvestGoldBonus", label: "Harvest Bonus", icon: <Droplets size={18} />, format: (v: number) => `+${Math.round(v * 100)}%` },
-  { key: "uprootRefund", label: "Uproot Refund", icon: <Shield size={18} />, format: (v: number) => `${Math.round(v * 100)}%` },
+  { key: "monthlyGems", label: "Monthly Gems", icon: <Gem size={18} />, format: (v: number) => `${v.toLocaleString()} gems/month`, freeValue: 0 },
+  { key: "gemsPerVote", label: "Gems per Vote", icon: <Heart size={18} />, format: (v: number) => `${v} gems`, freeValue: FREE_TIER.gemsPerVote },
+  { key: "lionCoinBoost", label: "LionCoin Boost", icon: <Coins size={18} />, format: (v: number) => `${v}x multiplier`, freeValue: FREE_TIER.lionCoinBoost },
+  { key: "lgGoldBoost", label: "LionGotchi Gold", icon: <Coins size={18} />, format: (v: number) => `${v}x bonus`, freeValue: FREE_TIER.lgGoldBoost },
+  { key: "dropRateBonus", label: "Drop Rate Bonus", icon: <Sparkles size={18} />, format: (v: number) => `+${Math.round(v * 100)}%`, freeValue: FREE_TIER.dropRateBonus },
+  { key: "farmGrowthSpeed", label: "Farm Growth", icon: <Sprout size={18} />, format: (v: number) => `${v}x speed`, freeValue: FREE_TIER.farmGrowthSpeed },
+  { key: "seedCostDiscount", label: "Seed Discount", icon: <Sprout size={18} />, format: (v: number) => `${Math.round(v * 100)}% off`, freeValue: FREE_TIER.seedCostDiscount },
+  { key: "harvestGoldBonus", label: "Harvest Bonus", icon: <Droplets size={18} />, format: (v: number) => `+${Math.round(v * 100)}%`, freeValue: FREE_TIER.harvestGoldBonus },
+  { key: "uprootRefund", label: "Uproot Refund", icon: <Shield size={18} />, format: (v: number) => `${Math.round(v * 100)}%`, freeValue: FREE_TIER.uprootRefund },
 ]
 
 function ColorSwatch({
@@ -138,8 +139,13 @@ function SubscriptionBanner({ sub }: { sub: SubscriptionData }) {
     try {
       const result = await dashboardMutate("POST", "/api/subscription/portal")
       if (result.url) window.open(result.url, "_blank")
-    } catch {
-      toast.error("Failed to open subscription management")
+    } catch (e: any) {
+      const msg = e?.message || "Failed to open subscription management"
+      if (msg.includes("test mode")) {
+        toast.error("Subscription management is only available in production.")
+      } else {
+        toast.error(msg)
+      }
     }
     setPortalLoading(false)
   }
@@ -228,6 +234,10 @@ function SubscriptionBanner({ sub }: { sub: SubscriptionData }) {
 }
 
 function PerksGrid({ sub }: { sub: SubscriptionData }) {
+  const tierConfig = sub.tier in SUBSCRIPTION_TIERS
+    ? SUBSCRIPTION_TIERS[sub.tier as SubscriptionTier]
+    : null
+
   return (
     <div>
       <h3 className="text-lg font-semibold text-foreground mb-4">Your Perks</h3>
@@ -235,6 +245,7 @@ function PerksGrid({ sub }: { sub: SubscriptionData }) {
         {PERK_CARDS.map((perk) => {
           const value = (sub as unknown as Record<string, unknown>)[perk.key] as number | null
           if (value == null || value === 0) return null
+          const isUpgraded = perk.freeValue !== undefined && value > perk.freeValue
           return (
             <div key={perk.key} className="bg-card rounded-xl p-4 border border-border">
               <div className="flex items-center gap-2 mb-2">
@@ -244,9 +255,35 @@ function PerksGrid({ sub }: { sub: SubscriptionData }) {
                 </span>
               </div>
               <p className="text-lg font-bold text-foreground">{perk.format(value)}</p>
+              {isUpgraded && perk.freeValue > 0 && (
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Free: {perk.format(perk.freeValue)}
+                </p>
+              )}
             </div>
           )
         })}
+        {tierConfig && (
+          <div className="bg-card rounded-xl p-4 border border-border">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-primary/70"><Timer size={18} /></span>
+              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Timer Themes
+              </span>
+            </div>
+            <p className="text-lg font-bold text-foreground">{tierConfig.timerThemes} unlocked</p>
+          </div>
+        )}
+        <div className="bg-card rounded-xl p-4 border border-border">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-primary/70"><Palette size={18} /></span>
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Card Effects
+            </span>
+          </div>
+          <p className="text-lg font-bold text-foreground">Animated</p>
+          <p className="text-[10px] text-muted-foreground mt-1">Sparkles + ring glow</p>
+        </div>
       </div>
     </div>
   )
@@ -259,6 +296,7 @@ function EffectsEditor({
   saving,
   isSupporter,
   previewUrl,
+  previewError,
   onRefreshPreview,
   previewLoading,
 }: {
@@ -268,6 +306,7 @@ function EffectsEditor({
   saving: boolean
   isSupporter: boolean
   previewUrl: string | null
+  previewError: string | null
   onRefreshPreview: () => void
   previewLoading: boolean
 }) {
@@ -388,6 +427,16 @@ function EffectsEditor({
                       <span className="text-xs text-muted-foreground">Rendering card...</span>
                     </div>
                   </div>
+                ) : previewError ? (
+                  <div className="w-full aspect-[2.17/1] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-2 px-4 text-center">
+                      <ImageOff size={24} className="text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground">{previewError}</span>
+                      <Button variant="ghost" size="sm" onClick={onRefreshPreview} className="mt-1">
+                        <RefreshCw size={12} className="mr-1" /> Try Again
+                      </Button>
+                    </div>
+                  </div>
                 ) : previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -397,9 +446,10 @@ function EffectsEditor({
                   />
                 ) : (
                   <div className="w-full aspect-[2.17/1] flex items-center justify-center">
-                    <span className="text-xs text-muted-foreground">
-                      Click &ldquo;Refresh Preview&rdquo; to generate
-                    </span>
+                    <div className="flex flex-col items-center gap-2">
+                      <RefreshCw size={24} className="text-muted-foreground animate-spin" />
+                      <span className="text-xs text-muted-foreground">Loading preview...</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -465,6 +515,14 @@ function TierComparison({ currentTier }: { currentTier: string }) {
                 </li>
                 <li className="flex items-center gap-1.5">
                   <Check size={12} className="text-primary flex-shrink-0" />
+                  {tier.farmGrowthSpeed}x farm growth
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check size={12} className="text-primary flex-shrink-0" />
+                  {tier.timerThemes} timer themes
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Check size={12} className="text-primary flex-shrink-0" />
                   Animated profile card effects
                 </li>
               </ul>
@@ -503,7 +561,9 @@ export default function SupporterPage() {
   })
   const [saving, setSaving] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const [previewLoading, setPreviewLoading] = useState(false)
+  const initialPreviewDone = useRef(false)
 
   useEffect(() => {
     if (prefsData) {
@@ -513,28 +573,21 @@ export default function SupporterPage() {
 
   const isSupporter = sub?.status === "ACTIVE" && sub?.tier !== "NONE"
 
-  const handleSave = useCallback(async () => {
-    setSaving(true)
-    try {
-      await dashboardMutate("PATCH", "/api/dashboard/card-preferences", prefs)
-      toast.success("Preferences saved")
-    } catch {
-      toast.error("Failed to save preferences")
-    }
-    setSaving(false)
-  }, [prefs])
-
-  const handleRefreshPreview = useCallback(async () => {
+  const renderPreview = useCallback(async (prefsToRender: CardPreferences) => {
     setPreviewLoading(true)
+    setPreviewError(null)
     try {
       const params = new URLSearchParams()
-      if (prefs.sparkle_color) params.set("sparkle_color", prefs.sparkle_color)
-      if (prefs.ring_color) params.set("ring_color", prefs.ring_color)
-      params.set("effects_enabled", String(prefs.effects_enabled))
+      if (prefsToRender.sparkle_color) params.set("sparkle_color", prefsToRender.sparkle_color)
+      if (prefsToRender.ring_color) params.set("ring_color", prefsToRender.ring_color)
+      params.set("effects_enabled", String(prefsToRender.effects_enabled))
 
       const url = `/api/dashboard/supporter-preview?${params}`
       const res = await fetch(url)
-      if (!res.ok) throw new Error("Render failed")
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body.error || `Render failed (${res.status})`)
+      }
 
       const blob = await res.blob()
       const objectUrl = URL.createObjectURL(blob)
@@ -542,11 +595,35 @@ export default function SupporterPage() {
         if (prev) URL.revokeObjectURL(prev)
         return objectUrl
       })
-    } catch {
-      toast.error("Failed to render preview. The render service may be busy.")
+    } catch (e: any) {
+      const msg = e?.message || "Card rendering service unavailable"
+      setPreviewError(msg)
     }
     setPreviewLoading(false)
-  }, [prefs])
+  }, [])
+
+  useEffect(() => {
+    if (isSupporter && prefsData && !initialPreviewDone.current) {
+      initialPreviewDone.current = true
+      renderPreview(prefsData)
+    }
+  }, [isSupporter, prefsData, renderPreview])
+
+  const handleSave = useCallback(async () => {
+    setSaving(true)
+    try {
+      const result = await dashboardMutate("PATCH", "/api/dashboard/card-preferences", prefs)
+      toast.success("Preferences saved")
+      renderPreview(result || prefs)
+    } catch {
+      toast.error("Failed to save preferences")
+    }
+    setSaving(false)
+  }, [prefs, renderPreview])
+
+  const handleRefreshPreview = useCallback(() => {
+    renderPreview(prefs)
+  }, [prefs, renderPreview])
 
   const loading = subLoading || prefsLoading
 
@@ -590,6 +667,7 @@ export default function SupporterPage() {
                     saving={saving}
                     isSupporter={!!isSupporter}
                     previewUrl={previewUrl}
+                    previewError={previewError}
                     onRefreshPreview={handleRefreshPreview}
                     previewLoading={previewLoading}
                   />

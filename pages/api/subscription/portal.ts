@@ -61,6 +61,16 @@ export default async function handler(
       });
     }
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Skip Stripe portal for test/fake customer IDs
+    if (customerId.startsWith("cus_test")) {
+      return res.status(400).json({
+        error: "Subscription management is not available in test mode.",
+        code: "TEST_MODE",
+      });
+    }
+    // --- END AI-MODIFIED ---
+
     const baseUrl =
       req.headers.origin ||
       process.env.NEXTAUTH_URL ||

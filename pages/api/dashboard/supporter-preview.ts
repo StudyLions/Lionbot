@@ -92,13 +92,23 @@ export default async function handler(
       signal: AbortSignal.timeout(30000),
     });
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Better error messages for render failures
     if (!response.ok) {
       const text = await response.text();
+      console.error(`Render API returned ${response.status}: ${text}`);
+      if (response.status === 401) {
+        return res.status(503).json({
+          error: "Card rendering service authentication failed. Please contact support.",
+          fallback: true,
+        });
+      }
       return res.status(response.status).json({
-        error: `Render failed: ${text}`,
+        error: `Card rendering failed (${response.status}). Try again in a moment.`,
         fallback: true,
       });
     }
+    // --- END AI-MODIFIED ---
 
     const buffer = Buffer.from(await response.arrayBuffer());
 

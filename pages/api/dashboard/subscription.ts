@@ -51,9 +51,12 @@ export default async function handler(
         ? SUBSCRIPTION_TIERS[row.tier as SubscriptionTier]
         : null;
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Skip Stripe API call for test/fake subscription IDs to avoid 404s
     let cancelAtPeriodEnd = false;
     if (
       row.stripe_subscription_id &&
+      !row.stripe_subscription_id.startsWith("sub_test") &&
       (row.status === "ACTIVE" || row.status === "CANCELLING")
     ) {
       try {
@@ -65,6 +68,7 @@ export default async function handler(
         // non-critical
       }
     }
+    // --- END AI-MODIFIED ---
 
     const effectiveStatus = cancelAtPeriodEnd ? "CANCELLING" : row.status;
 
