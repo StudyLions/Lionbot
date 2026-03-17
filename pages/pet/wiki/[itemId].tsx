@@ -13,7 +13,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import {
-  Coins, Gem, Users, Package, ShoppingCart,
+  Coins, Users, Package, ShoppingCart,
   Sparkles, Shield, Droplets, Mic, MessageSquare, Lock,
 } from "lucide-react"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
@@ -57,7 +57,7 @@ export default function ItemDetailPage() {
   if (!session) {
     return (
       <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse item details" }}>
-        <AdminGuard>
+        <AdminGuard variant="pet">
           <div className="pet-section pet-scanline min-h-screen flex items-center justify-center">
             <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">Sign in to view item details</p>
           </div>
@@ -74,7 +74,7 @@ export default function ItemDetailPage() {
 
   return (
     <Layout SEO={{ title: item ? `${item.name} - Item Wiki` : "Item Wiki", description: item?.description ?? "" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
@@ -152,28 +152,29 @@ export default function ItemDetailPage() {
                     </div>
                   </div>
 
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Replaced gold/gem price cards with marketplace stats */}
                   {/* Stats Grid */}
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
                       <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
-                        <Coins size={14} className="text-[var(--pet-gold,#f0c040)]" /> GOLD PRICE
+                        <Coins size={14} className="text-[var(--pet-gold,#f0c040)]" /> MARKET PRICE
                       </span>
-                      {item.goldPrice ? (
-                        <GoldDisplay amount={item.goldPrice} size="lg" className="mt-1" />
+                      {data.marketplaceSummary?.avgPrice > 0 ? (
+                        <GoldDisplay amount={data.marketplaceSummary.avgPrice} size="lg" className="mt-1" />
                       ) : (
-                        <p className="font-pixel text-sm text-[#4a5a6a] mt-1">N/A</p>
+                        <p className="font-pixel text-sm text-[#4a5a6a] mt-1">--</p>
                       )}
+                      <p className="font-pixel text-[11px] text-[#3a4a5a]">30d avg</p>
                     </div>
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
                       <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
-                        <Gem size={18} className="text-[#a855f7]" /> GEM PRICE
+                        <ShoppingCart size={14} className="text-[#80b0ff]" /> TOTAL TRADED
                       </span>
-                      {item.gemPrice ? (
-                        <GoldDisplay amount={item.gemPrice} size="lg" type="gem" className="mt-1" />
-                      ) : (
-                        <p className="font-pixel text-sm text-[#4a5a6a] mt-1">N/A</p>
-                      )}
+                      <p className="font-pixel text-base text-[var(--pet-text,#e2e8f0)] mt-1">{data.marketplaceSummary?.totalVolume ?? 0}</p>
+                      <p className="font-pixel text-[11px] text-[#3a4a5a]">units (30d)</p>
                     </div>
+                  {/* --- END AI-MODIFIED --- */}
                     <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
                       <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1">
                         <Users size={14} /> OWNERS
@@ -191,33 +192,26 @@ export default function ItemDetailPage() {
                     </div>
                   </div>
 
-                  {/* --- AI-MODIFIED (2026-03-16) --- */}
-                  {/* Purpose: Crafting removed -- show drop info instead of recipes */}
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Items are drop-only; removed "Buy for Gold/Gems" option */}
                   {/* How to Obtain */}
                   <PixelCard className="p-4" corners>
                     <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                      <ShoppingCart size={18} /> HOW TO OBTAIN
+                      <Droplets size={18} /> HOW TO OBTAIN
                     </h3>
                     <div className="space-y-2 font-pixel text-[13px]">
-                      {(item.goldPrice || item.gemPrice) && (
-                        <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Coins size={16} className="text-[var(--pet-gold,#f0c040)]" />
-                          Buy for {item.goldPrice ? `${item.goldPrice.toLocaleString()} Gold` : ""}{item.goldPrice && item.gemPrice ? " or " : ""}{item.gemPrice ? `${item.gemPrice} Gems` : ""}
-                        </div>
-                      )}
-                      {data.dropInfo && (
-                        <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
-                          <Droplets size={16} className="text-[#80b0ff]" />
-                          Drops from activity (chatting, voice, farm harvests)
-                        </div>
-                      )}
-                      {data.dropInfo && (
-                        <div className="flex items-center gap-4 ml-5 text-[12px] text-[#4a5a6a]">
-                          <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
-                          <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
-                        </div>
-                      )}
-                      {!item.goldPrice && !item.gemPrice && !data.dropInfo && (
+                      {data.dropInfo ? (
+                        <>
+                          <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
+                            <Droplets size={16} className="text-[#80b0ff]" />
+                            Drops from activity (chatting, voice, farm harvests)
+                          </div>
+                          <div className="flex items-center gap-4 ml-5 text-[12px] text-[#4a5a6a]">
+                            <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
+                            <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
+                          </div>
+                        </>
+                      ) : (
                         <div className="flex items-center gap-2 text-[#4a5a6a]">
                           <Lock size={16} /> Acquisition method unknown
                         </div>

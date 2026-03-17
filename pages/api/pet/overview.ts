@@ -43,6 +43,16 @@ export default apiHandler({
       return res.status(200).json({ hasPet: false, pet: null, gold: 0, gems: 0 })
     }
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Also fetch active gameboy skin asset path for frame rendering
+    const skinRow = pet.active_gameboy_skin_id
+      ? await prisma.lg_gameboy_skins.findUnique({
+          where: { skin_id: pet.active_gameboy_skin_id },
+          select: { asset_path: true },
+        })
+      : null
+    // --- END AI-MODIFIED ---
+
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Also fetch active room, user furniture, and room layout for room preview
     const [equipmentRows, inventoryCount, farmPlots, room, furnitureRows, layoutRows] = await Promise.all([
@@ -139,6 +149,10 @@ export default apiHandler({
       roomPrefix: room?.asset_prefix ?? 'rooms/default',
       furniture: furnitureMap,
       roomLayout: layoutRow?.layout ?? {},
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Include active gameboy skin asset path for frame rendering
+      gameboySkinPath: skinRow?.asset_path ?? null,
       // --- END AI-MODIFIED ---
     })
   },

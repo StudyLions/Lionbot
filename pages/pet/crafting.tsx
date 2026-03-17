@@ -17,7 +17,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 export default function CraftingPage() {
   return (
     <Layout SEO={{ title: "Crafting - LionGotchi", description: "Crafting coming soon" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />

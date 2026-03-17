@@ -24,6 +24,10 @@ import Link from "next/link"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import { DEFAULT_LAYOUT, mergeLayout } from "@/utils/roomConstraints"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Import GameboyFrame for wrapping the room preview with active skin
+import GameboyFrame from "@/components/pet/GameboyFrame"
+// --- END AI-MODIFIED ---
 
 interface PetOverviewData {
   hasPet: boolean
@@ -51,6 +55,9 @@ interface PetOverviewData {
   furniture?: Record<string, string>
   roomLayout?: any
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-17) ---
+  gameboySkinPath?: string | null
+  // --- END AI-MODIFIED ---
 }
 
 const RARITY_BORDER: Record<string, string> = {
@@ -70,7 +77,7 @@ export default function PetOverview() {
 
   return (
     <Layout SEO={{ title: "LionGotchi - LionBot", description: "Your virtual pet companion" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
@@ -136,22 +143,33 @@ export default function PetOverview() {
                     </div>
                   </div>
 
-                  {/* --- AI-MODIFIED (2026-03-16) --- */}
-                  {/* Purpose: Room preview section with RoomCanvas and link to /pet/room */}
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Room preview wrapped in GameboyFrame with active skin */}
                   <PixelCard className="p-4 space-y-3" corners>
                     <div className="flex items-center justify-between pb-2 border-b-2 border-[#1a2a3c]">
                       <div className="flex items-center gap-2">
                         <span className="font-pixel text-[14px]">🏠</span>
                         <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Room</span>
                       </div>
-                      <Link href="/pet/room">
-                        <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] hover:text-[#ffd860] transition-colors cursor-pointer">
-                          Customize &rarr;
-                        </span>
-                      </Link>
+                      <div className="flex items-center gap-3">
+                        <Link href="/pet/skins">
+                          <span className="font-pixel text-[10px] text-[#d060f0] hover:text-[#e080ff] transition-colors cursor-pointer">
+                            Change Skin
+                          </span>
+                        </Link>
+                        <Link href="/pet/room">
+                          <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] hover:text-[#ffd860] transition-colors cursor-pointer">
+                            Customize &rarr;
+                          </span>
+                        </Link>
+                      </div>
                     </div>
-                    <div className="flex justify-center">
-                      <div className="border-2 border-[#2a3a5c] bg-[#080c18]" style={{ boxShadow: "2px 2px 0 #060810" }}>
+                    <div className="flex justify-center overflow-x-auto">
+                      <GameboyFrame
+                        isFullscreen={false}
+                        skinAssetPath={data.gameboySkinPath ?? undefined}
+                        width={453}
+                      >
                         <RoomCanvas
                           roomPrefix={data.roomPrefix ?? "rooms/default"}
                           furniture={data.furniture ?? {}}
@@ -162,10 +180,10 @@ export default function PetOverview() {
                             ])
                           )}
                           expression={pet.expression}
-                          size={400}
+                          size={348}
                           animated
                         />
-                      </div>
+                      </GameboyFrame>
                     </div>
                   </PixelCard>
                   {/* --- END AI-MODIFIED --- */}

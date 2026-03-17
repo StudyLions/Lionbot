@@ -211,7 +211,10 @@ export default apiHandler({
       }),
       prisma.lg_pets.findUnique({
         where: { userid: userId },
-        select: { fullscreen_mode: true },
+        // --- AI-MODIFIED (2026-03-17) ---
+        // Purpose: Also fetch active_gameboy_skin_id for frame rendering
+        select: { fullscreen_mode: true, active_gameboy_skin_id: true },
+        // --- END AI-MODIFIED ---
       }),
     ])
 
@@ -311,10 +314,21 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Resolve active gameboy skin asset path for frame rendering
+    const skinRow = pet?.active_gameboy_skin_id
+      ? await prisma.lg_gameboy_skins.findUnique({
+          where: { skin_id: pet.active_gameboy_skin_id },
+          select: { asset_path: true },
+        })
+      : null
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       plots: result,
       history,
       fullscreenMode: pet?.fullscreen_mode ?? false,
+      gameboySkinPath: skinRow?.asset_path ?? null,
       availableSeeds: seeds.map((s) => {
         const { plantType, typeId } = parseAssetPrefix(s.asset_prefix)
         return {

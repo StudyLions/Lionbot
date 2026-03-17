@@ -165,7 +165,7 @@ export function buildRenderSequence(
       }
     }
 
-    for (const slot of equipped) {
+    for (const slot of Array.from(equipped)) {
       if (!placed.has(slot)) {
         const defaultIdx = DEFAULT_RENDER_SEQUENCE.findIndex(
           s => s.type === 'equip' && s.key === slot

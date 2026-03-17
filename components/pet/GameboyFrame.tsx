@@ -1,46 +1,51 @@
 // ============================================================
 // AI-GENERATED FILE
-// Created: 2026-03-15
-// Purpose: Gameboy device frame wrapper around the farm scene
+// Created: 2026-03-17
+// Purpose: Shared Gameboy device frame wrapper used by farm,
+//          overview, and any page that shows a gameboy-framed view.
+//          Supports custom skins and responsive width.
 // ============================================================
 import { getGameboyFrameUrl } from "@/utils/petAssets"
 
 interface GameboyFrameProps {
   children: React.ReactNode
   isFullscreen: boolean
+  skinAssetPath?: string
+  width?: number
 }
 
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Fullscreen shows the upper half of the Gameboy (bezel + screen)
-// cropped below the screen, so each skin still looks like a device.
-// Frame PNG is 260x400: screen top at y=36 (9%), screen bottom at y=236 (59%).
-// Crop at y=244 (61%) to include ~8px of bezel below the screen.
-
-const FRAME_WIDTH = 260
+const FRAME_NATIVE_W = 260
+const FRAME_NATIVE_H = 400
+const SCREEN_TOP = 36
+const SCREEN_LEFT = 30
+const SCREEN_SIZE = 200
 const CROP_Y = 244
-const CROP_RATIO = CROP_Y / 400
 
-export default function GameboyFrame({ children, isFullscreen }: GameboyFrameProps) {
+export default function GameboyFrame({
+  children,
+  isFullscreen,
+  skinAssetPath,
+  width = 880,
+}: GameboyFrameProps) {
+  const frameUrl = getGameboyFrameUrl(skinAssetPath)
+
   if (isFullscreen) {
-    const displayWidth = 880
-    const displayHeight = displayWidth * (CROP_Y / FRAME_WIDTH)
-    const screenTopPct = (36 / CROP_Y) * 100
-    const screenLeftPct = (30 / FRAME_WIDTH) * 100
-    const screenWidthPct = (200 / FRAME_WIDTH) * 100
-    const screenHeightPct = (200 / CROP_Y) * 100
+    const displayHeight = width * (CROP_Y / FRAME_NATIVE_W)
+    const screenTopPct = (SCREEN_TOP / CROP_Y) * 100
+    const screenLeftPct = (SCREEN_LEFT / FRAME_NATIVE_W) * 100
+    const screenWidthPct = (SCREEN_SIZE / FRAME_NATIVE_W) * 100
+    const screenHeightPct = (SCREEN_SIZE / CROP_Y) * 100
 
     return (
-      <div className="relative inline-block" style={{ width: displayWidth, height: displayHeight }}>
-        <div
-          className="absolute inset-0 overflow-hidden z-10 pointer-events-none select-none"
-        >
+      <div className="relative inline-block" style={{ width, height: displayHeight }}>
+        <div className="absolute inset-0 overflow-hidden z-10 pointer-events-none select-none">
           <img
-            src={getGameboyFrameUrl()}
+            src={frameUrl}
             alt=""
             style={{
               imageRendering: "pixelated",
-              width: displayWidth,
-              height: displayWidth * (400 / FRAME_WIDTH),
+              width,
+              height: width * (FRAME_NATIVE_H / FRAME_NATIVE_W),
             }}
             draggable={false}
           />
@@ -61,17 +66,16 @@ export default function GameboyFrame({ children, isFullscreen }: GameboyFramePro
       </div>
     )
   }
-  // --- END AI-MODIFIED ---
 
   return (
     <div className="relative inline-block">
       <img
-        src={getGameboyFrameUrl()}
+        src={frameUrl}
         alt=""
         className="relative z-10 pointer-events-none select-none"
         style={{
           imageRendering: "pixelated",
-          width: 880,
+          width,
           height: "auto",
         }}
         draggable={false}
@@ -79,10 +83,10 @@ export default function GameboyFrame({ children, isFullscreen }: GameboyFramePro
       <div
         className="absolute z-0 flex items-center justify-center"
         style={{
-          top: "8.5%",
-          left: "5.8%",
-          width: "88.4%",
-          height: "58%",
+          top: `${(SCREEN_TOP / FRAME_NATIVE_H) * 100}%`,
+          left: `${(SCREEN_LEFT / FRAME_NATIVE_W) * 100}%`,
+          width: `${(SCREEN_SIZE / FRAME_NATIVE_W) * 100}%`,
+          height: `${(SCREEN_SIZE / FRAME_NATIVE_H) * 100}%`,
           overflow: "hidden",
           backgroundColor: "#0a0e1a",
         }}

@@ -233,7 +233,7 @@ function PerksGrid({ sub }: { sub: SubscriptionData }) {
       <h3 className="text-lg font-semibold text-foreground mb-4">Your Perks</h3>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
         {PERK_CARDS.map((perk) => {
-          const value = (sub as Record<string, unknown>)[perk.key] as number | null
+          const value = (sub as unknown as Record<string, unknown>)[perk.key] as number | null
           if (value == null || value === 0) return null
           return (
             <div key={perk.key} className="bg-card rounded-xl p-4 border border-border">

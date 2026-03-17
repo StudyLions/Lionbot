@@ -117,6 +117,24 @@ export default apiHandler({
     const dropTier = isDroppable ? (GAME_CONSTANTS.ITEM_DROP_WEIGHTS[item.rarity] ?? null) : null
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Add marketplace summary stats (replaces gold/gem price cards on the frontend)
+    const mpSince = new Date()
+    mpSince.setDate(mpSince.getDate() - 30)
+
+    const mpSales = await prisma.lg_marketplace_sales.findMany({
+      where: { itemid: itemId, sold_at: { gte: mpSince } },
+      select: { price_per_unit: true, quantity: true },
+    })
+    const mpTotalVolume = mpSales.reduce((sum, s) => sum + s.quantity, 0)
+    const mpAvgPrice = mpSales.length > 0
+      ? Math.round(mpSales.reduce((sum, s) => sum + s.price_per_unit, 0) / mpSales.length)
+      : 0
+    const mpActiveListings = await prisma.lg_marketplace_listings.count({
+      where: { itemid: itemId, status: "ACTIVE" },
+    })
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       item: {
         id: item.itemid, name: item.name, category: item.category, slot: item.slot,
@@ -151,6 +169,14 @@ export default apiHandler({
         id: r.itemid, name: r.name, rarity: r.rarity, category: r.category,
         assetPath: r.asset_path, goldPrice: r.gold_price,
       })),
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Marketplace summary for stats grid (replaces gold/gem price cards)
+      marketplaceSummary: {
+        avgPrice: mpAvgPrice,
+        totalVolume: mpTotalVolume,
+        activeListings: mpActiveListings,
+      },
+      // --- END AI-MODIFIED ---
       gameConstants: GAME_CONSTANTS,
     })
   },

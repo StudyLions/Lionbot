@@ -26,7 +26,10 @@ const PlotDetail = dynamic(() => import("@/components/pet/farm/PlotDetail"), { s
 const SeedSelector = dynamic(() => import("@/components/pet/farm/SeedSelector"), { ssr: false })
 const HarvestModal = dynamic(() => import("@/components/pet/farm/HarvestModal"), { ssr: false })
 const FarmHistory = dynamic(() => import("@/components/pet/farm/FarmHistory"), { ssr: false })
-const GameboyFrame = dynamic(() => import("@/components/pet/farm/GameboyFrame"), { ssr: false })
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Use shared GameboyFrame from components/pet/ (supports skin + width props)
+const GameboyFrame = dynamic(() => import("@/components/pet/GameboyFrame"), { ssr: false })
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Add fullscreenMode and materialDrops to FarmData/HarvestResult types
@@ -41,6 +44,9 @@ interface FarmData {
   gold: number
   history: Array<{ type: string; amount: number; description: string; createdAt: string }>
   fullscreenMode: boolean
+  // --- AI-MODIFIED (2026-03-17) ---
+  gameboySkinPath?: string | null
+  // --- END AI-MODIFIED ---
 }
 
 interface HarvestResult {
@@ -233,7 +239,7 @@ export default function FarmPage() {
 
   return (
     <Layout SEO={{ title: "Farm - LionGotchi", description: "Grow plants for Gold" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
@@ -315,7 +321,7 @@ export default function FarmPage() {
                   <FarmStats plots={data.plots} gold={data.gold} />
 
                   <div className="flex justify-center">
-                    <GameboyFrame isFullscreen={isFullscreen}>
+                    <GameboyFrame isFullscreen={isFullscreen} skinAssetPath={data.gameboySkinPath ?? undefined}>
                       <FarmScene
                         plots={data.plots}
                         selectedPlot={selectedPlot}

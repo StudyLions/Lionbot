@@ -61,7 +61,7 @@ export default function InventoryPage() {
 
   return (
     <Layout SEO={{ title: "Inventory - LionGotchi", description: "Your pet inventory" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />

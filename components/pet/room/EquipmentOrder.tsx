@@ -146,7 +146,7 @@ export default function EquipmentOrder({
       {backItem && (
         <div className="mb-2">
           <div className="text-[12px] text-[#6b7fa0] mb-1 flex items-center gap-1">
-            <span>\u{1F512}</span>
+            <span>{'\u{1F512}'}</span>
             <span>Behind Lion (scene level)</span>
           </div>
           <div
@@ -232,8 +232,8 @@ export default function EquipmentOrder({
       </div>
 
       <div className="flex items-center justify-between mt-2 text-[11px] text-[#6b7fa0]">
-        <span>\u2191 Renders in front</span>
-        <span>\u2193 Renders behind</span>
+        <span>{'\u2191'} Renders in front</span>
+        <span>{'\u2193'} Renders behind</span>
       </div>
 
       {selectedSlot && selectedItem && (

@@ -12,10 +12,13 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Added Home icon import for the new Room nav link
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Added Palette icon for the Skins nav link
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
-  Store, Menu, ChevronLeft, Home,
+  Store, Menu, ChevronLeft, Home, Palette,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Added balance display imports for persistent gold/gems in nav
@@ -45,6 +48,10 @@ const sections: NavSection[] = [
       { href: "/pet/room", label: "Room", icon: <Home size={14} /> },
       // --- END AI-MODIFIED ---
       { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} /> },
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Added Skins link for gameboy frame customization
+      { href: "/pet/skins", label: "Skins", icon: <Palette size={14} /> },
+      // --- END AI-MODIFIED ---
       { href: "/pet/farm", label: "Farm", icon: <Sprout size={14} /> },
     ],
   },

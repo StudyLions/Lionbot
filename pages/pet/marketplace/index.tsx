@@ -79,7 +79,7 @@ export default function MarketplacePage() {
 
   return (
     <Layout SEO={{ title: "Marketplace - LionGotchi", description: "Buy and sell items on the LionGotchi marketplace" }}>
-      <AdminGuard>
+      <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />

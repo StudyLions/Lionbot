@@ -124,9 +124,13 @@ export function getUiBarUrl(type: string, level: number, max: number): string {
   return blobUrl(`ui/bars/${type}_bars_${level}_${max}.png`)
 }
 
-export function getGameboyFrameUrl(skin: string = "gameboy-basic-01"): string {
-  return blobUrl(`gameboy/frames/${skin}.png`)
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Accept full asset_path from DB (e.g. "gameboy/frames/flat/blue.png")
+//          instead of constructing the path from a short name
+export function getGameboyFrameUrl(assetPath?: string): string {
+  return blobUrl(assetPath || "gameboy/frames/gameboy-basic-01.png")
 }
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Room layer and lion sprite URL helpers for the room editor
