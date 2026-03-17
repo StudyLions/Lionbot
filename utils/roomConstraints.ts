@@ -97,6 +97,114 @@ export function isResizable(layer: string): boolean {
   return c ? c.movable : false
 }
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Interleaved render sequence system -- equipment is drawn between
+//          lion body layers instead of all on top, with per-slot position offsets
+//          and full user control over layer ordering.
+
+export interface RenderStep {
+  type: 'lion' | 'equip'
+  key: string
+}
+
+export const LION_LAYER_KEYS = ['body', 'head', 'expression', 'hair'] as const
+
+export const DEFAULT_RENDER_SEQUENCE: RenderStep[] = [
+  { type: 'lion', key: 'body' },
+  { type: 'equip', key: 'FEET' },
+  { type: 'equip', key: 'BODY' },
+  { type: 'lion', key: 'head' },
+  { type: 'lion', key: 'expression' },
+  { type: 'equip', key: 'FACE' },
+  { type: 'lion', key: 'hair' },
+  { type: 'equip', key: 'HEAD' },
+]
+
+export function buildRenderSequence(
+  equippedSlots: string[],
+  savedSequence?: RenderStep[],
+): RenderStep[] {
+  const equipped = new Set(equippedSlots.map(s => s.toUpperCase()).filter(s => s !== 'BACK'))
+
+  if (savedSequence && savedSequence.length > 0) {
+    const result: RenderStep[] = []
+    const placed = new Set<string>()
+
+    for (const step of savedSequence) {
+      if (step.type === 'lion') {
+        result.push(step)
+      } else {
+        const slot = step.key.toUpperCase()
+        if (equipped.has(slot)) {
+          result.push({ type: 'equip', key: slot })
+          placed.add(slot)
+        }
+      }
+    }
+
+    const lionKeys = new Set(LION_LAYER_KEYS as readonly string[])
+    const hasAllLionLayers = (LION_LAYER_KEYS as readonly string[]).every(
+      k => result.some(s => s.type === 'lion' && s.key === k)
+    )
+    if (!hasAllLionLayers) {
+      for (const k of LION_LAYER_KEYS) {
+        if (!result.some(s => s.type === 'lion' && s.key === k)) {
+          const defaultIdx = DEFAULT_RENDER_SEQUENCE.findIndex(
+            s => s.type === 'lion' && s.key === k
+          )
+          let insertAt = result.length
+          for (let i = defaultIdx + 1; i < DEFAULT_RENDER_SEQUENCE.length; i++) {
+            const after = DEFAULT_RENDER_SEQUENCE[i]
+            const found = result.findIndex(
+              s => s.type === after.type && s.key === after.key
+            )
+            if (found !== -1) { insertAt = found; break }
+          }
+          result.splice(insertAt, 0, { type: 'lion', key: k })
+        }
+      }
+    }
+
+    for (const slot of equipped) {
+      if (!placed.has(slot)) {
+        const defaultIdx = DEFAULT_RENDER_SEQUENCE.findIndex(
+          s => s.type === 'equip' && s.key === slot
+        )
+        if (defaultIdx !== -1) {
+          const beforeLion = DEFAULT_RENDER_SEQUENCE.slice(0, defaultIdx)
+            .filter(s => s.type === 'lion').pop()
+          if (beforeLion) {
+            const anchorIdx = result.findIndex(
+              s => s.type === 'lion' && s.key === beforeLion.key
+            )
+            if (anchorIdx !== -1) {
+              result.splice(anchorIdx + 1, 0, { type: 'equip', key: slot })
+              continue
+            }
+          }
+        }
+        result.push({ type: 'equip', key: slot })
+      }
+    }
+
+    return result
+  }
+
+  return DEFAULT_RENDER_SEQUENCE.filter(
+    step => step.type === 'lion' || equipped.has(step.key)
+  )
+}
+
+export const EQUIP_OFFSET_RANGE = 16
+
+export function clampEquipOffset(offset: [number, number]): [number, number] {
+  return [
+    Math.max(-EQUIP_OFFSET_RANGE, Math.min(EQUIP_OFFSET_RANGE, Math.round(offset[0]))),
+    Math.max(-EQUIP_OFFSET_RANGE, Math.min(EQUIP_OFFSET_RANGE, Math.round(offset[1]))),
+  ]
+}
+// --- END AI-MODIFIED ---
+
 export interface RoomLayout {
   furnitureOffsets: Record<string, [number, number]>
   furnitureFlips: Record<string, boolean>
@@ -104,7 +212,11 @@ export interface RoomLayout {
   lionPosition: [number, number]
   lionScale: number
   layerOrder: string[]
-  equipmentOrder: string[]
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Replace flat equipmentOrder with full render sequence + per-slot offsets
+  renderSequence: RenderStep[]
+  equipmentOffsets: Record<string, [number, number]>
+  // --- END AI-MODIFIED ---
   activeSlot: number
 }
 
@@ -115,11 +227,15 @@ export const DEFAULT_LAYOUT: RoomLayout = {
   lionPosition: [...DEFAULT_LION_POSITION],
   lionScale: DEFAULT_SCALE,
   layerOrder: [...ROOM_LAYERS],
-  equipmentOrder: ['body', 'face', 'head'],
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Default interleaved render sequence with empty offsets
+  renderSequence: [...DEFAULT_RENDER_SEQUENCE],
+  equipmentOffsets: {},
+  // --- END AI-MODIFIED ---
   activeSlot: 0,
 }
 
-export function mergeLayout(saved: Partial<RoomLayout>): RoomLayout {
+export function mergeLayout(saved: Partial<RoomLayout> & { equipmentOrder?: string[] }): RoomLayout {
   return {
     furnitureOffsets: saved.furnitureOffsets ?? {},
     furnitureFlips: saved.furnitureFlips ?? {},
@@ -127,7 +243,11 @@ export function mergeLayout(saved: Partial<RoomLayout>): RoomLayout {
     lionPosition: saved.lionPosition ?? [...DEFAULT_LION_POSITION],
     lionScale: saved.lionScale ?? DEFAULT_SCALE,
     layerOrder: saved.layerOrder ?? [...ROOM_LAYERS],
-    equipmentOrder: saved.equipmentOrder ?? ['body', 'face', 'head'],
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Migrate old equipmentOrder to renderSequence if present
+    renderSequence: saved.renderSequence ?? [...DEFAULT_RENDER_SEQUENCE],
+    equipmentOffsets: saved.equipmentOffsets ?? {},
+    // --- END AI-MODIFIED ---
     activeSlot: saved.activeSlot ?? 0,
   }
 }

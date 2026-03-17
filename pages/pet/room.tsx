@@ -13,6 +13,10 @@ import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import FurniturePanel from "@/components/pet/room/FurniturePanel"
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Import render stack editor for interleaved equipment layer control
+import EquipmentOrder from "@/components/pet/room/EquipmentOrder"
+// --- END AI-MODIFIED ---
 import { useRoomEditor, type EditorTool } from "@/hooks/useRoomEditor"
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Import smart snap and sound hooks for editor polish
@@ -187,6 +191,11 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     moveLayer,
     flipLayer,
     scaleLayer,
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Destructure render sequence and equipment offset controls
+    setRenderSequence,
+    setEquipmentOffset,
+    // --- END AI-MODIFIED ---
     undo,
     redo,
     saveLayout,
@@ -199,6 +208,11 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
   //          the preview layout in a single useMemo (no setState inside useMemo).
   const { getSnapResult } = useSmartSnap(layout, showGrid)
   const { play: playSound } = useRoomSounds()
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Track selected equipment slot for offset controls in EquipmentOrder
+  const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
   // --- END AI-MODIFIED ---
 
   const [activeTab, setActiveTab] = useState<string>("wall")
@@ -689,6 +703,21 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
         }}
       />
       {/* --- END AI-MODIFIED --- */}
+      {/* --- END AI-MODIFIED --- */}
+
+      {/* --- AI-MODIFIED (2026-03-17) --- */}
+      {/* Purpose: Render stack editor for interleaved equipment layer ordering and offset control */}
+      {Object.keys(equipment).length > 0 && (
+        <EquipmentOrder
+          equipment={equipment}
+          renderSequence={layout.renderSequence}
+          equipmentOffsets={layout.equipmentOffsets}
+          selectedSlot={selectedEquipSlot}
+          onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
+          onSelectSlot={setSelectedEquipSlot}
+          onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
+        />
+      )}
       {/* --- END AI-MODIFIED --- */}
 
       {/* Floating info card on hover */}

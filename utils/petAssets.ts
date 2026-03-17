@@ -154,6 +154,19 @@ export function getRoomPreviewUrl(roomPrefix: string): string {
 export function getFurnitureUrl(assetPath: string): string {
   return blobUrl(`rooms/furniture/${assetPath}`)
 }
+
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Per-frame equipment URL for animated equipment (4 frames like the lion).
+//          Strips the file extension, appends _{frame+1}.png.
+//          Falls back to static URL if frame images don't exist.
+export function getEquipmentFrameUrl(assetPath: string, category: string, frame: number): string | null {
+  if (!assetPath) return null
+  if (!EQUIPMENT_CATEGORIES.has(category)) return null
+  const dotIdx = assetPath.lastIndexOf('.')
+  const base = dotIdx !== -1 ? assetPath.substring(0, dotIdx) : assetPath
+  return blobUrl(`equipment/${base}_${frame + 1}.png`)
+}
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 export function parseAssetPrefix(assetPrefix: string): { plantType: string; typeId: number } {

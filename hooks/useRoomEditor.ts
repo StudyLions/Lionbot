@@ -7,7 +7,7 @@
 // ============================================================
 
 import { useState, useCallback, useRef } from 'react'
-import { RoomLayout, DEFAULT_LAYOUT, mergeLayout, clampOffset, isMovable, clampScale, isResizable } from '@/utils/roomConstraints'
+import { RoomLayout, DEFAULT_LAYOUT, mergeLayout, clampOffset, isMovable, clampScale, isResizable, clampEquipOffset, type RenderStep } from '@/utils/roomConstraints'
 
 interface RoomEditorState {
   layout: RoomLayout
@@ -104,9 +104,20 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     updateLayout(prev => ({ ...prev, layerOrder: newOrder }))
   }, [updateLayout])
 
-  const reorderEquipment = useCallback((newOrder: string[]) => {
-    updateLayout(prev => ({ ...prev, equipmentOrder: newOrder }))
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Replace flat equipmentOrder with full renderSequence + per-slot offsets
+  const setRenderSequence = useCallback((newSequence: RenderStep[]) => {
+    updateLayout(prev => ({ ...prev, renderSequence: newSequence }))
   }, [updateLayout])
+
+  const setEquipmentOffset = useCallback((slot: string, offset: [number, number]) => {
+    const clamped = clampEquipOffset(offset)
+    updateLayout(prev => ({
+      ...prev,
+      equipmentOffsets: { ...prev.equipmentOffsets, [slot]: clamped },
+    }))
+  }, [updateLayout])
+  // --- END AI-MODIFIED ---
 
   const undo = useCallback(() => {
     if (undoStack.length === 0) return
@@ -192,7 +203,11 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     flipLayer,
     scaleLayer,
     reorderLayers,
-    reorderEquipment,
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Expose render sequence and equipment offset controls
+    setRenderSequence,
+    setEquipmentOffset,
+    // --- END AI-MODIFIED ---
     undo,
     redo,
     resetLayout,

@@ -18,6 +18,7 @@ import {
   getLionSpriteUrl,
   getLionExpressionUrl,
   getItemImageUrl,
+  getEquipmentFrameUrl,
 } from '@/utils/petAssets'
 import {
   ROOM_LAYERS,
@@ -26,13 +27,14 @@ import {
   LION_SPRITE_SIZE,
   LION_DISPLAY_SIZE,
   type RoomLayout,
+  type RenderStep,
+  buildRenderSequence,
 } from '@/utils/roomConstraints'
 
 const BLOB_BASE = process.env.NEXT_PUBLIC_BLOB_URL || ''
 const FIXED_DISPLAY = CANVAS_SIZE * DISPLAY_SCALE
 const FRAME_COUNT = 4
 const FRAME_INTERVAL_MS = 250
-const LION_PARTS = ['body', 'head', 'hair'] as const
 
 interface RoomCanvasProps {
   roomPrefix: string
@@ -158,6 +160,16 @@ export default function RoomCanvas({
 
   const [imagesReady, setImagesReady] = useState(false)
 
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Compute render sequence from equipped slots + saved layout,
+  //          and load both static and per-frame equipment image URLs
+  const activeRenderSequence = useMemo(() =>
+    buildRenderSequence(Object.keys(equipment), layout.renderSequence),
+    [equipment, layout.renderSequence]
+  )
+  const renderSeqRef = useRef(activeRenderSequence)
+  renderSeqRef.current = activeRenderSequence
+
   const imageUrls = useMemo(() => {
     const urls: Record<string, string> = {}
 
@@ -167,6 +179,7 @@ export default function RoomCanvas({
       }
     }
 
+    const LION_PARTS = ['body', 'head', 'hair'] as const
     for (let f = 0; f < FRAME_COUNT; f++) {
       for (const part of LION_PARTS) {
         urls[`lion_${part}_${f}`] = getLionSpriteUrl(part, f)
@@ -175,12 +188,18 @@ export default function RoomCanvas({
     }
 
     for (const [slot, eq] of Object.entries(equipment)) {
-      const url = getItemImageUrl(eq.assetPath, eq.category)
-      if (url) urls[`equip_${slot}`] = url
+      const staticUrl = getItemImageUrl(eq.assetPath, eq.category)
+      if (staticUrl) urls[`equip_${slot}`] = staticUrl
+
+      for (let f = 0; f < FRAME_COUNT; f++) {
+        const frameUrl = getEquipmentFrameUrl(eq.assetPath, eq.category, f)
+        if (frameUrl) urls[`equip_${slot}_${f}`] = frameUrl
+      }
     }
 
     return urls
   }, [roomPrefix, furniture, expression, equipment])
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     let active = true
@@ -269,8 +288,9 @@ export default function RoomCanvas({
 
       osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
 
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Apply per-layer scale from furnitureScales, and lionScale for the lion
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Interleaved rendering -- walk renderSequence to draw lion parts
+      //          and equipment in the correct z-order with per-slot offsets
       for (const layer of ROOM_LAYERS) {
         const img = cache.get(`room_${layer}`)
         if (!img) continue
@@ -283,27 +303,42 @@ export default function RoomCanvas({
       const lionScale = curLayout.lionScale ?? 1
       const scaledLionSize = Math.round(LION_DISPLAY_SIZE * lionScale)
 
-      const backEquip = curEquip['back']
+      const backEquip = curEquip['BACK'] || curEquip['back']
       if (backEquip) {
-        const backImg = cache.get('equip_back')
+        const backImg = cache.get('equip_BACK') || cache.get('equip_back')
         if (backImg) {
           const [lx, ly] = curLayout.lionPosition
-          osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, lx, ly, scaledLionSize, scaledLionSize)
+          const backOff = curLayout.equipmentOffsets?.['BACK'] ?? [0, 0]
+          const bScale = LION_SPRITE_SIZE > 0 ? scaledLionSize / LION_SPRITE_SIZE : 1
+          const bx = lx + Math.round(backOff[0] * bScale)
+          const by = ly + Math.round(backOff[1] * bScale)
+          osCtx.drawImage(backImg, 0, 0, backImg.naturalWidth, backImg.naturalHeight, bx, by, scaledLionSize, scaledLionSize)
         }
       }
 
       lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE)
-      for (const part of LION_PARTS) {
-        const img = cache.get(`lion_${part}_${frame}`)
-        if (img) lionCtx.drawImage(img, 0, 0)
-      }
-      const exprImg = cache.get(`lion_expr_${frame}`)
-      if (exprImg) lionCtx.drawImage(exprImg, 0, 0)
+      const curSeq = renderSeqRef.current
 
-      for (const slot of curLayout.equipmentOrder) {
-        if (slot === 'back') continue
-        const img = cache.get(`equip_${slot}`)
-        if (img) lionCtx.drawImage(img, 0, 0)
+      for (const step of curSeq) {
+        if (step.type === 'lion') {
+          if (step.key === 'expression') {
+            const exprImg = cache.get(`lion_expr_${frame}`)
+            if (exprImg) lionCtx.drawImage(exprImg, 0, 0)
+          } else {
+            const img = cache.get(`lion_${step.key}_${frame}`)
+            if (img) lionCtx.drawImage(img, 0, 0)
+          }
+        } else {
+          const slot = step.key
+          if (slot === 'BACK') continue
+          const animImg = cache.get(`equip_${slot}_${frame}`)
+          const staticImg = cache.get(`equip_${slot}`)
+          const img = animImg || staticImg
+          if (img) {
+            const eqOff = curLayout.equipmentOffsets?.[slot] ?? [0, 0]
+            lionCtx.drawImage(img, eqOff[0], eqOff[1])
+          }
+        }
       }
 
       const [lionX, lionY] = curLayout.lionPosition
