@@ -278,9 +278,12 @@ const PLOT_CENTERS: [number, number][] = [
   [158, 138], [166, 154], [176, 174],
 ];
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Reduced heights to prevent tree overflow on edge plots (matched to bot renderer)
 const STAGE_HEIGHTS: Record<number, number> = {
-  0: 0, 1: 30, 2: 40, 3: 52, 4: 64, 5: 78,
+  0: 0, 1: 18, 2: 24, 3: 30, 4: 36, 5: 44,
 };
+// --- END AI-MODIFIED ---
 
 const RARITY_GLOW_CSS: Record<string, string> = {
   COMMON: "",
@@ -503,7 +506,7 @@ function FarmSceneDemo() {
           {PLOT_CENTERS.map(([cx, cy], plotNum) => {
             const plot = plots[plotNum];
             if (!plot.readyToHarvest) return null;
-            const h = STAGE_HEIGHTS[5] || 78;
+            const h = STAGE_HEIGHTS[5] || 44;
             return (
               <React.Fragment key={`fx-${plotNum}`}>
                 <img

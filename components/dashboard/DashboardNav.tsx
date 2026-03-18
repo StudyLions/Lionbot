@@ -13,10 +13,13 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useDashboard } from "@/hooks/useDashboard"
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Added PawPrint icon for LionGotchi pet nav button
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
-  Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown,
+  Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 
 interface NavItem {
   href: string
@@ -53,10 +56,6 @@ const sections: NavSection[] = [
     items: [
       { href: "/dashboard/inventory", label: "Skins", icon: <Palette size={16} /> },
       { href: "/dashboard/gems", label: "LionGems", icon: <Gem size={16} /> },
-      // --- AI-MODIFIED (2026-03-17) ---
-      // Purpose: Add LionHeart supporter page to nav
-      { href: "/dashboard/supporter", label: "LionHeart", icon: <Crown size={16} /> },
-      // --- END AI-MODIFIED ---
       { href: "/dashboard/leaderboard", label: "Leaderboard", icon: <Trophy size={16} /> },
     ],
   },
@@ -249,8 +248,57 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       </div>
       {/* --- END AI-MODIFIED --- */}
+      {/* --- AI-MODIFIED (2026-03-17) --- */}
+      {/* Purpose: LionGotchi pet button so users can find the pet section from the dashboard */}
+      <div className="px-3 pb-2">
+        <Link href="/pet" onClick={onNavigate}>
+          <span
+            className={cn(
+              "flex items-center gap-3 px-4 py-3 rounded-xl text-sm transition-all cursor-pointer",
+              "shadow-sm hover:shadow-md",
+              router.pathname.startsWith("/pet")
+                ? "bg-amber-500 text-white shadow-amber-500/25 hover:bg-amber-400"
+                : "bg-amber-500/80 text-amber-50 hover:bg-amber-500 shadow-amber-500/15"
+            )}
+          >
+            <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0">
+              <PawPrint size={18} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <span className="block font-semibold leading-tight">LionGotchi</span>
+              <span className="block text-[10px] text-amber-200/70 font-normal leading-tight">
+                Your pet
+              </span>
+            </div>
+            <ChevronRight size={16} className="flex-shrink-0 opacity-60" />
+          </span>
+        </Link>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
       <Separator />
       <ScrollArea className="flex-1 px-3 py-3">
+        {/* --- AI-MODIFIED (2026-03-17) --- */}
+        {/* Purpose: Highlighted LionHeart supporter link at top of nav for visibility */}
+        <div className="mb-3">
+          <Link href="/dashboard/supporter" onClick={onNavigate}>
+            <span
+              className={cn(
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all",
+                "bg-gradient-to-r from-rose-500/10 via-pink-500/10 to-purple-500/10",
+                "border border-rose-500/20",
+                router.pathname.startsWith("/dashboard/supporter")
+                  ? "text-rose-300 border-rose-400/40 from-rose-500/20 via-pink-500/20 to-purple-500/20"
+                  : "text-rose-400/80 hover:text-rose-300 hover:border-rose-400/30 hover:from-rose-500/15 hover:via-pink-500/15 hover:to-purple-500/15"
+              )}
+              aria-current={router.pathname.startsWith("/dashboard/supporter") ? "page" : undefined}
+            >
+              <Crown size={16} className="flex-shrink-0" />
+              <span className="font-medium">LionHeart</span>
+              <span className="ml-auto text-[10px] opacity-60">Supporter</span>
+            </span>
+          </Link>
+        </div>
+        {/* --- END AI-MODIFIED --- */}
         {sections.map((section) => (
           <div key={section.title} className="mb-4">
             <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">

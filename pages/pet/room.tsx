@@ -2,10 +2,11 @@
 // AI-GENERATED FILE
 // Created: 2026-03-16
 // Purpose: Room Editor page - Animal Crossing-style room customization
-//          with drag-and-drop furniture, toolbar, and layer management
+//          with click-to-select, drag-to-move, and contextual actions
 // ============================================================
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react"
+import { useRouter } from "next/router"
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
@@ -13,32 +14,27 @@ import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import FurniturePanel from "@/components/pet/room/FurniturePanel"
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Import render stack editor for interleaved equipment layer control
 import EquipmentOrder from "@/components/pet/room/EquipmentOrder"
-// --- END AI-MODIFIED ---
-import { useRoomEditor, type EditorTool } from "@/hooks/useRoomEditor"
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Import smart snap and sound hooks for editor polish
+import ContextualBar from "@/components/pet/room/ContextualBar"
+import UnsavedModal from "@/components/pet/room/UnsavedModal"
+import { useRoomEditor } from "@/hooks/useRoomEditor"
 import { useSmartSnap, type SnapGuide } from "@/hooks/useSmartSnap"
 import { useRoomSounds } from "@/hooks/useRoomSounds"
-// --- END AI-MODIFIED ---
 import {
   ROOM_LAYERS,
   mergeLayout,
   isMovable,
   isFlippable,
-  isResizable,
   clampOffset,
   CANVAS_SIZE,
   DISPLAY_SCALE,
-  MIN_SCALE,
-  MAX_SCALE,
 } from "@/utils/roomConstraints"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import { Toaster, toast } from "react-hot-toast"
+import ArtistAttribution from "@/components/pet/ui/ArtistAttribution"
 
 interface RoomData {
   activeRoom: { roomId: number; name: string; assetPrefix: string } | null
@@ -71,21 +67,6 @@ interface RoomData {
   }>
 }
 
-const TOOLS: { id: EditorTool; label: string; icon: string }[] = [
-  { id: "move", label: "Move", icon: "✥" },
-  { id: "select", label: "Select", icon: "◎" },
-  { id: "resize", label: "Resize", icon: "⤡" },
-  { id: "flip", label: "Flip", icon: "⇔" },
-  { id: "color", label: "Color", icon: "◐" },
-  { id: "remove", label: "Remove", icon: "✕" },
-  { id: "zoom", label: "Zoom", icon: "⊕" },
-  { id: "layers", label: "Layers", icon: "☰" },
-  { id: "grid", label: "Grid", icon: "⊞" },
-]
-
-
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Color variant lists for cycling through furniture colors with the Color tool
 const DEFAULT_VARIANTS: Record<string, string[]> = {
   wall: ['wall_checker_blue', 'wall_checker_green', 'wall_checker_grey', 'wall_checker_pink', 'wall_checker_yellow', 'walldots_blue', 'walldots_green', 'walldots_grey', 'walldots_pink', 'walldots_yellow', 'wall_stripe_green', 'wall_stripe_grey', 'wall_stripe_light_blue', 'wall_stripe_pink', 'wall_stripe_yellow'],
   floor: ['floor_blue', 'floor_brown', 'floor_green', 'floor_orange', 'floor_purple'],
@@ -97,7 +78,6 @@ const DEFAULT_VARIANTS: Record<string, string[]> = {
   picture: ['picture_blue', 'picture_brown', 'picture_grey', 'picture_orange', 'picture_red'],
   window: ['window_blue', 'window_green', 'window_purple_pink', 'window_red_blue', 'window_yellow'],
 }
-// --- END AI-MODIFIED ---
 
 export default function RoomEditorPage() {
   const { data: session } = useSession()
@@ -113,14 +93,26 @@ export default function RoomEditorPage() {
       }}
     >
       <AdminGuard variant="pet">
+        <Toaster
+          position="bottom-right"
+          toastOptions={{
+            duration: 3000,
+            style: {
+              background: '#0f1628',
+              color: '#e2e8f0',
+              border: '2px solid #3a4a6c',
+              fontFamily: 'var(--font-pixel, monospace)',
+              fontSize: '13px',
+            },
+          }}
+        />
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-6">
+          <div className="max-w-7xl mx-auto flex gap-6">
             <PetNav />
-            <div className="flex-1 min-w-0 space-y-4">
+            <div className="flex-1 min-w-0">
               {isLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-12" />
-                  <Skeleton className="h-10" />
                   <Skeleton className="h-[400px]" />
                   <Skeleton className="h-32" />
                 </div>
@@ -132,7 +124,7 @@ export default function RoomEditorPage() {
                 </PixelCard>
               ) : !data?.activeRoom || !data?.pet ? (
                 <PixelCard className="p-12 text-center space-y-4" corners>
-                  <span className="font-pixel text-2xl">🏠</span>
+                  <span className="font-pixel text-2xl">{'🏠'}</span>
                   <h2 className="font-pixel text-xl text-[#e2e8f0]">
                     No room yet!
                   </h2>
@@ -159,16 +151,14 @@ interface DragState {
 }
 
 function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => void }) {
+  const router = useRouter()
   const room = data.activeRoom!
   const pet = data.pet!
   const furniture = data.furniture ?? {}
   const equipment = data.equipment ?? {}
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Local overrides for immediate color cycling preview without waiting for API
   const [furnitureOverrides, setFurnitureOverrides] = useState<Record<string, string>>({})
   const mergedFurniture = { ...furniture, ...furnitureOverrides }
-  // --- END AI-MODIFIED ---
 
   const editor = useRoomEditor(
     data.layout ? mergeLayout(data.layout) : undefined
@@ -179,23 +169,17 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     isSaving,
     selectedLayer,
     setSelectedLayer,
-    activeTool,
-    setActiveTool,
     zoom,
     showGrid,
     setShowGrid,
-    showLayers,
-    setShowLayers,
     undoCount,
     redoCount,
     moveLayer,
     flipLayer,
     scaleLayer,
-    // --- AI-MODIFIED (2026-03-17) ---
-    // Purpose: Destructure render sequence and equipment offset controls
+    removeLayer,
     setRenderSequence,
     setEquipmentOffset,
-    // --- END AI-MODIFIED ---
     undo,
     redo,
     saveLayout,
@@ -203,18 +187,13 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     zoomOut,
   } = editor
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Wire up smart snap and sounds. Snap guides are computed alongside
-  //          the preview layout in a single useMemo (no setState inside useMemo).
-  const { getSnapResult } = useSmartSnap(layout, showGrid)
-  const { play: playSound } = useRoomSounds()
-  // --- END AI-MODIFIED ---
-
   // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Track selected equipment slot for offset controls in EquipmentOrder
-  const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
+  // Purpose: Snap is always enabled; grid overlay is a separate visual toggle
+  const { getSnapResult } = useSmartSnap(layout, true)
   // --- END AI-MODIFIED ---
+  const { play: playSound } = useRoomSounds()
 
+  const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>("wall")
   const [hoveredLayer, setHoveredLayer] = useState<string | null>(null)
   const hoverPosRef = useRef({ x: 0, y: 0 })
@@ -224,22 +203,30 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
   const [dragCurrentPos, setDragCurrentPos] = useState<[number, number]>([0, 0])
   const canvasWrapperRef = useRef<HTMLDivElement>(null)
 
-  const mouseToCanvas = useCallback(
-    (e: MouseEvent | React.MouseEvent): [number, number] => {
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false)
+  const pendingNavRef = useRef<string | null>(null)
+  const skipNavGuardRef = useRef(false)
+
+  const clientToCanvas = useCallback(
+    (clientX: number, clientY: number): [number, number] => {
       const canvas = canvasWrapperRef.current?.querySelector("canvas")
       if (!canvas) return [0, 0]
       const rect = canvas.getBoundingClientRect()
       return [
-        (e.clientX - rect.left) * (CANVAS_SIZE / rect.width),
-        (e.clientY - rect.top) * (CANVAS_SIZE / rect.height),
+        (clientX - rect.left) * (CANVAS_SIZE / rect.width),
+        (clientY - rect.top) * (CANVAS_SIZE / rect.height),
       ]
     },
     []
   )
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Compute preview layout AND snap guides together in a single useMemo.
-  //          No setState calls inside -- returns a tuple { layout, guides }.
+  const mouseToCanvas = useCallback(
+    (e: MouseEvent | React.MouseEvent): [number, number] => {
+      return clientToCanvas(e.clientX, e.clientY)
+    },
+    [clientToCanvas]
+  )
+
   const dragPreview = useMemo(() => {
     if (!dragState) {
       return { layout, guides: [] as SnapGuide[] }
@@ -265,18 +252,13 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
 
   const previewLayout = dragPreview.layout
   const snapGuides = dragPreview.guides
-  // --- END AI-MODIFIED ---
 
-  // Window-level drag listeners -- only active while dragging
-  useEffect(() => {
-    if (!dragState) return
-
-    const handleMouseMove = (e: MouseEvent) => {
-      setDragCurrentPos(mouseToCanvas(e))
-    }
-
-    const handleMouseUp = (e: MouseEvent) => {
-      const pos = mouseToCanvas(e)
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Unified drag finalization for both mouse and touch
+  const finalizeDrag = useCallback(
+    (clientX: number, clientY: number) => {
+      if (!dragState) return
+      const pos = clientToCanvas(clientX, clientY)
       const { layer, startCanvasPos, originalOffset } = dragState
       const delta: [number, number] = [
         pos[0] - startCanvasPos[0],
@@ -291,73 +273,89 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
       moveLayer(layer, finalOffset)
       setDragState(null)
       playSound('place')
-      // Prevent the click event (which fires after mouseup) from starting a new drag
       justDroppedRef.current = true
       requestAnimationFrame(() => { justDroppedRef.current = false })
+    },
+    [dragState, clientToCanvas, moveLayer, getSnapResult, playSound]
+  )
+
+  useEffect(() => {
+    if (!dragState) return
+
+    const handleMouseMove = (e: MouseEvent) => {
+      setDragCurrentPos(mouseToCanvas(e))
+    }
+    const handleMouseUp = (e: MouseEvent) => {
+      finalizeDrag(e.clientX, e.clientY)
+    }
+    const handleTouchMove = (e: TouchEvent) => {
+      e.preventDefault()
+      if (e.touches.length > 0) {
+        setDragCurrentPos(clientToCanvas(e.touches[0].clientX, e.touches[0].clientY))
+      }
+    }
+    const handleTouchEnd = (e: TouchEvent) => {
+      const touch = e.changedTouches[0]
+      if (touch) finalizeDrag(touch.clientX, touch.clientY)
     }
 
     window.addEventListener("mousemove", handleMouseMove)
     window.addEventListener("mouseup", handleMouseUp)
+    window.addEventListener("touchmove", handleTouchMove, { passive: false })
+    window.addEventListener("touchend", handleTouchEnd)
     return () => {
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("mouseup", handleMouseUp)
+      window.removeEventListener("touchmove", handleTouchMove)
+      window.removeEventListener("touchend", handleTouchEnd)
     }
-  }, [dragState, mouseToCanvas, moveLayer, getSnapResult, playSound])
+  }, [dragState, mouseToCanvas, clientToCanvas, finalizeDrag])
+  // --- END AI-MODIFIED ---
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Drag initiation moved to onMouseDown so mouseup can cleanly
-  //          end the drag without click re-triggering a new drag.
-  //          onClick only handles non-drag tools (select, flip, etc.).
   const justDroppedRef = useRef(false)
+
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Click-to-select is the default. No tool switching needed.
+  //          Clicking a layer selects it, clicking empty space deselects.
+  const startDrag = useCallback(
+    (layer: string, x: number, y: number) => {
+      if (!isMovable(layer) || dragState) return
+      const origOffset: [number, number] =
+        layer === "lion"
+          ? ([...layout.lionPosition] as [number, number])
+          : ([...(layout.furnitureOffsets[layer] ?? [0, 0])] as [number, number])
+      setDragState({ layer, startCanvasPos: [x, y], originalOffset: origOffset })
+      setDragCurrentPos([x, y])
+      setSelectedLayer(layer)
+      playSound('pickup')
+    },
+    [layout, dragState, setSelectedLayer, playSound]
+  )
 
   const handleLayerMouseDown = useCallback(
     (layer: string, x: number, y: number) => {
-      if (activeTool === "move" && isMovable(layer) && !dragState) {
-        const origOffset: [number, number] =
-          layer === "lion"
-            ? ([...layout.lionPosition] as [number, number])
-            : ([...(layout.furnitureOffsets[layer] ?? [0, 0])] as [number, number])
-        setDragState({ layer, startCanvasPos: [x, y], originalOffset: origOffset })
-        setDragCurrentPos([x, y])
-        setSelectedLayer(layer)
-        playSound('pickup')
-      }
+      startDrag(layer, x, y)
     },
-    [activeTool, layout, dragState, setSelectedLayer, playSound]
+    [startDrag]
+  )
+
+  const handleTouchLayerStart = useCallback(
+    (layer: string, x: number, y: number) => {
+      startDrag(layer, x, y)
+    },
+    [startDrag]
   )
 
   const handleLayerClick = useCallback(
-    (layer: string, _x: number, _y: number) => {
+    (layer: string | null, _x: number, _y: number) => {
       if (justDroppedRef.current) return
-      if (activeTool === "move") return
-      if (activeTool === "select") {
+      if (layer === null) {
+        setSelectedLayer(null)
+      } else {
         setSelectedLayer(selectedLayer === layer ? null : layer)
-      } else if (activeTool === "flip" && isFlippable(layer)) {
-        flipLayer(layer)
-        playSound('flip')
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Color tool cycles through variant colors for furniture items
-      } else if (activeTool === "color" && layer !== "lion") {
-        const currentPath = mergedFurniture[layer]
-        if (!currentPath) return
-        const fileName = currentPath.split('/').pop()?.replace('.png', '') ?? ''
-        const variants = DEFAULT_VARIANTS[layer]
-        if (!variants) return
-        const currentIdx = variants.indexOf(fileName)
-        const nextIdx = (currentIdx + 1) % variants.length
-        const roomPrefix = data.activeRoom?.assetPrefix ?? 'rooms/default'
-        const nextPath = `${roomPrefix}/${variants[nextIdx]}.png`
-        setFurnitureOverrides(prev => ({ ...prev, [layer]: nextPath }))
-        fetch('/api/pet/room/furniture', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ slot: layer, assetPath: nextPath }),
-        })
-        playSound('colorCycle')
-      // --- END AI-MODIFIED ---
       }
     },
-    [activeTool, selectedLayer, setSelectedLayer, flipLayer, playSound, mergedFurniture, data.activeRoom, setFurnitureOverrides]
+    [selectedLayer, setSelectedLayer]
   )
   // --- END AI-MODIFIED ---
 
@@ -365,8 +363,6 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     setHoveredLayer(layer)
   }, [])
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Throttle hover position updates to prevent re-renders on every mouse pixel
   const hoverRafRef = useRef(0)
   const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
     hoverPosRef.current = { x: e.clientX, y: e.clientY }
@@ -376,29 +372,162 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
       setHoverPos(hoverPosRef.current)
     })
   }, [])
-  // --- END AI-MODIFIED ---
 
-  const handleToolClick = useCallback(
-    (tool: EditorTool) => {
-      if (tool === "grid") {
-        setShowGrid(!showGrid)
-      } else if (tool === "layers") {
-        setShowLayers(!showLayers)
-      } else if (tool === "zoom") {
-        zoomIn()
-      } else {
-        setActiveTool(tool)
-      }
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Contextual actions called from the ContextualBar
+  const handleFlip = useCallback(() => {
+    if (!selectedLayer || !isFlippable(selectedLayer)) return
+    flipLayer(selectedLayer)
+    playSound('flip')
+  }, [selectedLayer, flipLayer, playSound])
+
+  const handleColorCycle = useCallback(() => {
+    if (!selectedLayer || selectedLayer === 'lion') return
+    const currentPath = mergedFurniture[selectedLayer]
+    if (!currentPath) return
+    const fileName = currentPath.split('/').pop()?.replace('.png', '') ?? ''
+    const variants = DEFAULT_VARIANTS[selectedLayer]
+    if (!variants) return
+    const currentIdx = variants.indexOf(fileName)
+    const nextIdx = (currentIdx + 1) % variants.length
+    const roomPrefix = data.activeRoom?.assetPrefix ?? 'rooms/default'
+    const nextPath = `${roomPrefix}/${variants[nextIdx]}.png`
+    setFurnitureOverrides(prev => ({ ...prev, [selectedLayer]: nextPath }))
+    fetch('/api/pet/room/furniture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot: selectedLayer, assetPath: nextPath }),
+    })
+    playSound('colorCycle')
+  }, [selectedLayer, mergedFurniture, data.activeRoom, playSound])
+
+  const handleRemove = useCallback(() => {
+    if (!selectedLayer || selectedLayer === 'lion') return
+    removeLayer(selectedLayer)
+    setFurnitureOverrides(prev => {
+      const next = { ...prev }
+      delete next[selectedLayer]
+      return next
+    })
+    fetch('/api/pet/room/furniture', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slot: selectedLayer }),
+    })
+    setSelectedLayer(null)
+    playSound('place')
+  }, [selectedLayer, removeLayer, setSelectedLayer, playSound])
+
+  const handleScale = useCallback(
+    (scale: number) => {
+      if (!selectedLayer) return
+      scaleLayer(selectedLayer, scale)
     },
-    [showGrid, showLayers, setShowGrid, setShowLayers, setActiveTool, zoomIn]
+    [selectedLayer, scaleLayer]
   )
 
+  const handleSave = useCallback(async () => {
+    const ok = await saveLayout()
+    playSound(ok ? 'save' : 'error')
+    if (ok) {
+      toast.success('Room layout saved!')
+    } else {
+      toast.error('Failed to save layout')
+    }
+  }, [saveLayout, playSound])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Keyboard shortcuts -- Delete/Backspace=remove, Escape=deselect,
+  //          Ctrl+Z=undo, Ctrl+Shift+Z=redo, G=toggle grid
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return
+
+      if (e.key === 'Escape') {
+        setSelectedLayer(null)
+      } else if ((e.key === 'Delete' || e.key === 'Backspace') && selectedLayer) {
+        e.preventDefault()
+        handleRemove()
+      } else if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+        e.preventDefault()
+        undo()
+        playSound('undo')
+      } else if ((e.ctrlKey && e.shiftKey && e.key === 'z') || (e.ctrlKey && e.key === 'y')) {
+        e.preventDefault()
+        redo()
+        playSound('undo')
+      } else if (e.key === 'g' && !e.ctrlKey && !e.metaKey) {
+        setShowGrid(prev => !prev)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [selectedLayer, handleRemove, undo, redo, setSelectedLayer, setShowGrid, playSound])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: beforeunload warning for unsaved changes
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty])
+
+  useEffect(() => {
+    if (!isDirty) return
+    const handler = (url: string) => {
+      if (skipNavGuardRef.current) return
+      pendingNavRef.current = url
+      setShowUnsavedModal(true)
+      router.events.emit('routeChangeError')
+      throw 'Route change aborted due to unsaved changes'
+    }
+    router.events.on('routeChangeStart', handler)
+    return () => {
+      router.events.off('routeChangeStart', handler)
+    }
+  }, [isDirty, router])
+
+  const handleSaveAndLeave = useCallback(async () => {
+    const ok = await saveLayout()
+    setShowUnsavedModal(false)
+    skipNavGuardRef.current = true
+    if (ok && pendingNavRef.current) {
+      router.push(pendingNavRef.current)
+    }
+  }, [saveLayout, router])
+
+  const handleLeaveWithout = useCallback(() => {
+    setShowUnsavedModal(false)
+    skipNavGuardRef.current = true
+    if (pendingNavRef.current) {
+      router.push(pendingNavRef.current)
+    }
+  }, [router])
+  // --- END AI-MODIFIED ---
+
   const displaySize = CANVAS_SIZE * DISPLAY_SCALE * zoom
+
+  const selectedScale = selectedLayer
+    ? selectedLayer === 'lion'
+      ? layout.lionScale
+      : (layout.furnitureScales[selectedLayer] ?? 1)
+    : 1
+
+  const hasColorVariants = selectedLayer
+    ? selectedLayer !== 'lion' && !!DEFAULT_VARIANTS[selectedLayer]
+    : false
 
   return (
     <>
       {/* Header bar */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
+      <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div>
           <h1 className="font-pixel text-2xl text-[#e2e8f0]">{room.name}</h1>
           <div className="mt-1.5 flex items-center gap-1">
@@ -408,14 +537,15 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Undo / Redo */}
           <button
             onClick={() => { undo(); playSound('undo') }}
             disabled={undoCount === 0}
             className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
-            title="Undo"
+            title="Undo (Ctrl+Z)"
           >
-            ↩{undoCount > 0 && (
+            {'↩'}{undoCount > 0 && (
               <span className="text-[11px] ml-0.5">({undoCount})</span>
             )}
           </button>
@@ -423,17 +553,55 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
             onClick={() => { redo(); playSound('undo') }}
             disabled={redoCount === 0}
             className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
-            title="Redo"
+            title="Redo (Ctrl+Shift+Z)"
           >
-            ↪{redoCount > 0 && (
+            {'↪'}{redoCount > 0 && (
               <span className="text-[11px] ml-0.5">({redoCount})</span>
             )}
           </button>
 
           <div className="w-px h-6 bg-[#2a3a5c]" />
 
+          {/* Grid toggle */}
           <button
-            onClick={() => { saveLayout(); playSound('save') }}
+            onClick={() => setShowGrid(!showGrid)}
+            className="font-pixel text-[13px] px-2.5 py-1.5 border-2 transition-colors"
+            style={{
+              borderColor: showGrid ? '#4080f0' : '#3a4a6c',
+              backgroundColor: showGrid ? '#1a2850' : '#111828',
+              color: showGrid ? '#93c5fd' : '#8899aa',
+            }}
+            title="Toggle grid (G)"
+          >
+            {'⊞'}
+          </button>
+
+          {/* Zoom */}
+          <div className="flex items-center gap-1">
+            <button
+              onClick={zoomOut}
+              className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              title="Zoom out"
+            >
+              {'−'}
+            </button>
+            <span className="font-pixel text-[13px] text-[#8899aa] min-w-[3ch] text-center tabular-nums">
+              {Math.round(zoom * 100)}%
+            </span>
+            <button
+              onClick={zoomIn}
+              className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              title="Zoom in"
+            >
+              {'+'}
+            </button>
+          </div>
+
+          <div className="w-px h-6 bg-[#2a3a5c]" />
+
+          {/* Save */}
+          <button
+            onClick={handleSave}
             disabled={!isDirty || isSaving}
             className="font-pixel text-[13px] px-4 py-1.5 border-2 bg-[#111828] disabled:opacity-30 hover:bg-[#1a2438] transition-colors flex items-center gap-1.5"
             style={{
@@ -452,275 +620,200 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
         </div>
       </div>
 
-      {/* Toolbar */}
-      <PixelCard className="px-3 py-2">
-        <div className="flex items-center gap-1 flex-wrap">
-          {TOOLS.map((tool) => {
-            const isActive =
-              tool.id === activeTool ||
-              (tool.id === "grid" && showGrid) ||
-              (tool.id === "layers" && showLayers)
-            return (
-              <button
-                key={tool.id}
-                onClick={() => handleToolClick(tool.id)}
-                className="font-pixel text-sm px-3 py-1.5 border-2 transition-colors"
-                style={{
-                  borderColor: isActive ? "#4080f0" : "#2a3a5c",
-                  backgroundColor: isActive ? "#1a2850" : "#0a0e1a",
-                  color: isActive ? "#93c5fd" : "#8899aa",
-                  boxShadow: isActive
-                    ? "0 0 8px rgba(64,128,240,0.2)"
-                    : "none",
-                }}
-                title={tool.label}
-              >
-                <span className="text-sm">{tool.icon}</span>
-                <span className="ml-1.5 sm:hidden">{tool.label}</span>
-              </button>
-            )
-          })}
-
-          <div className="flex-1" />
-
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1 border-l-2 border-[#2a3a5c] pl-2 ml-1">
-            <button
-              onClick={zoomOut}
-              className="font-pixel text-sm px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
-            >
-              −
-            </button>
-            <span className="font-pixel text-[13px] text-[#8899aa] min-w-[3ch] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={zoomIn}
-              className="font-pixel text-sm px-1.5 py-1 border border-[#2a3a5c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
-            >
-              +
-            </button>
-          </div>
-        </div>
-      </PixelCard>
-
-      {/* --- AI-MODIFIED (2026-03-16) --- */}
-      {/* Purpose: Scale slider bar -- visible when resize tool is active and a resizable layer is selected */}
-      {activeTool === "resize" && selectedLayer && isResizable(selectedLayer) && (
-        <PixelCard className="px-4 py-2">
-          <div className="flex items-center gap-3">
-            <span className="font-pixel text-[13px] text-[#8899aa] whitespace-nowrap capitalize">
-              {selectedLayer} size
-            </span>
-            <input
-              type="range"
-              min={MIN_SCALE * 100}
-              max={MAX_SCALE * 100}
-              value={Math.round(
-                (selectedLayer === "lion"
-                  ? layout.lionScale
-                  : (layout.furnitureScales[selectedLayer] ?? 1)) * 100
-              )}
-              onChange={(e) => {
-                scaleLayer(selectedLayer, Number(e.target.value) / 100)
-              }}
-              className="flex-1 h-1.5 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
-              style={{ accentColor: "#4080f0" }}
+      {/* 2-column layout: canvas left, shop right */}
+      <div className="flex gap-4 lg:flex-col">
+        {/* Left column: contextual bar + canvas + equipment */}
+        <div className="flex-1 min-w-0 space-y-3">
+          {/* Contextual action bar */}
+          {selectedLayer && (
+            <ContextualBar
+              layer={selectedLayer}
+              currentScale={selectedScale}
+              hasColorVariants={hasColorVariants}
+              onFlip={handleFlip}
+              onColor={handleColorCycle}
+              onScale={handleScale}
+              onRemove={handleRemove}
+              onDeselect={() => setSelectedLayer(null)}
             />
-            <span className="font-pixel text-[13px] text-[#e2e8f0] min-w-[4ch] text-right tabular-nums">
-              {Math.round(
-                (selectedLayer === "lion"
-                  ? layout.lionScale
-                  : (layout.furnitureScales[selectedLayer] ?? 1)) * 100
-              )}%
-            </span>
-            <button
-              onClick={() => scaleLayer(selectedLayer, 1)}
-              className="font-pixel text-[11px] px-2 py-1 border border-[#3a4a6c] bg-[#0a0e1a] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
-              title="Reset to 100%"
-            >
-              Reset
-            </button>
-          </div>
-        </PixelCard>
-      )}
-      {/* --- END AI-MODIFIED --- */}
+          )}
 
-      {/* Canvas */}
-      <PixelCard
-        className="p-4 overflow-auto flex items-center justify-center"
-        corners
-      >
-        <div
-          ref={canvasWrapperRef}
-          className="relative"
-          style={{
-            cursor:
-              activeTool === "move"
-                ? dragState
-                  ? "grabbing"
-                  : "grab"
-                : "crosshair",
-          }}
-          onMouseMove={handleCanvasMouseMove}
-        >
-          {/* --- AI-MODIFIED (2026-03-16) --- */}
-          {/* Purpose: Use mergedFurniture for immediate color cycling preview */}
-          <RoomCanvas
-            roomPrefix={room.assetPrefix}
-            furniture={mergedFurniture}
-            layout={previewLayout}
-            equipment={equipment}
-            expression={pet.expression}
-            size={displaySize}
-            interactive
-            animated
-            selectedLayer={selectedLayer}
-            hoveredLayer={hoveredLayer}
-            onLayerClick={handleLayerClick}
-            onLayerMouseDown={handleLayerMouseDown}
-            onLayerHover={handleLayerHover}
-            className="max-w-full h-auto"
-          />
-          {/* --- END AI-MODIFIED --- */}
-
-          {showGrid && (
+          {/* Canvas */}
+          <PixelCard
+            className="p-4 overflow-auto flex items-center justify-center"
+            corners
+          >
             <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                backgroundImage: `
-                  linear-gradient(rgba(64,128,240,0.15) 1px, transparent 1px),
-                  linear-gradient(90deg, rgba(64,128,240,0.15) 1px, transparent 1px)
-                `,
-                backgroundSize: `${displaySize / 10}px ${displaySize / 10}px`,
-              }}
+              ref={canvasWrapperRef}
+              className="relative"
+              style={{ cursor: dragState ? "grabbing" : "grab" }}
+              onMouseMove={handleCanvasMouseMove}
+            >
+              <RoomCanvas
+                roomPrefix={room.assetPrefix}
+                furniture={mergedFurniture}
+                layout={previewLayout}
+                equipment={equipment}
+                expression={pet.expression}
+                size={displaySize}
+                interactive
+                animated
+                selectedLayer={selectedLayer}
+                hoveredLayer={hoveredLayer}
+                onLayerClick={handleLayerClick}
+                onLayerMouseDown={handleLayerMouseDown}
+                onLayerHover={handleLayerHover}
+                onTouchLayerStart={handleTouchLayerStart}
+                className="max-w-full h-auto"
+              />
+
+              {showGrid && (
+                <div
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `
+                      linear-gradient(rgba(64,128,240,0.15) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(64,128,240,0.15) 1px, transparent 1px)
+                    `,
+                    backgroundSize: `${displaySize / 10}px ${displaySize / 10}px`,
+                  }}
+                />
+              )}
+
+              {snapGuides.length > 0 && (
+                <svg
+                  className="absolute inset-0 pointer-events-none"
+                  width={displaySize}
+                  height={displaySize}
+                  viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
+                  style={{ imageRendering: "auto" }}
+                >
+                  {snapGuides.map((g, i) =>
+                    g.type === "vertical" ? (
+                      <line
+                        key={i}
+                        x1={g.position}
+                        y1={g.from}
+                        x2={g.position}
+                        y2={g.to}
+                        stroke={g.color}
+                        strokeWidth={0.5}
+                        strokeDasharray="2 2"
+                        opacity={0.8}
+                      />
+                    ) : (
+                      <line
+                        key={i}
+                        x1={g.from}
+                        y1={g.position}
+                        x2={g.to}
+                        y2={g.position}
+                        stroke={g.color}
+                        strokeWidth={0.5}
+                        strokeDasharray="2 2"
+                        opacity={0.8}
+                      />
+                    )
+                  )}
+                </svg>
+              )}
+            </div>
+          </PixelCard>
+
+          {/* Hint text */}
+          <p className="font-pixel text-[11px] text-[#5a6a7c] text-center">
+            Click to select {'·'} Drag to move {'·'} Esc to deselect {'·'} Del to remove {'·'} G for grid
+          </p>
+
+          {/* --- AI-MODIFIED (2026-03-17) --- */}
+          {/* Purpose: Artist attribution note below the room canvas */}
+          <ArtistAttribution />
+          {/* --- END AI-MODIFIED --- */}
+
+          {/* Equipment render order */}
+          {Object.keys(equipment).length > 0 && (
+            <EquipmentOrder
+              equipment={equipment}
+              renderSequence={layout.renderSequence}
+              equipmentOffsets={layout.equipmentOffsets}
+              selectedSlot={selectedEquipSlot}
+              onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
+              onSelectSlot={setSelectedEquipSlot}
+              onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
             />
           )}
-
-          {/* --- AI-MODIFIED (2026-03-16) --- */}
-          {/* Purpose: Render smart snap alignment guides during drag */}
-          {snapGuides.length > 0 && (
-            <svg
-              className="absolute inset-0 pointer-events-none"
-              width={displaySize}
-              height={displaySize}
-              viewBox={`0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}`}
-              style={{ imageRendering: "auto" }}
-            >
-              {snapGuides.map((g, i) =>
-                g.type === "vertical" ? (
-                  <line
-                    key={i}
-                    x1={g.position}
-                    y1={g.from}
-                    x2={g.position}
-                    y2={g.to}
-                    stroke={g.color}
-                    strokeWidth={0.5}
-                    strokeDasharray="2 2"
-                    opacity={0.8}
-                  />
-                ) : (
-                  <line
-                    key={i}
-                    x1={g.from}
-                    y1={g.position}
-                    x2={g.to}
-                    y2={g.position}
-                    stroke={g.color}
-                    strokeWidth={0.5}
-                    strokeDasharray="2 2"
-                    opacity={0.8}
-                  />
-                )
-              )}
-            </svg>
-          )}
-          {/* --- END AI-MODIFIED --- */}
         </div>
-      </PixelCard>
 
-      {/* --- AI-MODIFIED (2026-03-16) --- */}
-      {/* Purpose: Replace inline furniture panel with full item shop component */}
-      {/* --- AI-MODIFIED (2026-03-16) --- */}
-      {/* Purpose: Pass roomPrefix for room-theme variants, normalize asset paths,
-          send itemId with purchases for inventory tracking, add preview support */}
-      <FurniturePanel
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        furniture={mergedFurniture}
-        availableItems={data.availableItems ?? []}
-        gold={data.gold}
-        gems={data.gems}
-        rooms={data.rooms}
-        activeRoomPrefix={room.assetPrefix}
-        onPreviewItem={(slot, assetPath) => {
-          setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-        }}
-        onCancelPreview={(slot) => {
-          setFurnitureOverrides(prev => {
-            const next = { ...prev }
-            delete next[slot]
-            return next
-          })
-        }}
-        onEquipItem={(slot, assetPath) => {
-          setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-          fetch('/api/pet/room/furniture', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slot, assetPath }),
-          })
-          setSelectedLayer(slot)
-          playSound('place')
-        }}
-        onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
-          const res = await fetch('/api/pet/room/cart', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ items: [{ itemId, slot, assetPath, price, currency }] }),
-          })
-          if (res.ok) {
-            setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-            playSound('purchase')
-          } else {
-            playSound('error')
-          }
-        }}
-        onPurchaseRoom={async (roomId) => {
-          const res = await fetch('/api/pet/room/purchase-room', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId }),
-          })
-          if (res.ok) {
-            playSound('purchase')
-            mutate()
-            return true
-          }
-          playSound('error')
-          return false
-        }}
-      />
-      {/* --- END AI-MODIFIED --- */}
-      {/* --- END AI-MODIFIED --- */}
+        {/* Right column: furniture shop */}
+        <div className="w-[340px] lg:w-full flex-shrink-0">
+          <PixelCard className="overflow-hidden" corners>
+            <FurniturePanel
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
+              furniture={mergedFurniture}
+              availableItems={data.availableItems ?? []}
+              gold={data.gold}
+              gems={data.gems}
+              rooms={data.rooms}
+              activeRoomPrefix={room.assetPrefix}
+              onPreviewItem={(slot, assetPath) => {
+                setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+              }}
+              onCancelPreview={(slot) => {
+                setFurnitureOverrides(prev => {
+                  const next = { ...prev }
+                  delete next[slot]
+                  return next
+                })
+              }}
+              onEquipItem={(slot, assetPath) => {
+                setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                fetch('/api/pet/room/furniture', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ slot, assetPath }),
+                })
+                setSelectedLayer(slot)
+                playSound('place')
+              }}
+              onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
+                const res = await fetch('/api/pet/room/cart', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ items: [{ itemId, slot, assetPath, price, currency }] }),
+                })
+                if (res.ok) {
+                  setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                  playSound('purchase')
+                  toast.success('Item purchased!')
+                  mutate()
+                } else {
+                  playSound('error')
+                  toast.error('Purchase failed')
+                }
+              }}
+              onPurchaseRoom={async (roomId) => {
+                const res = await fetch('/api/pet/room/purchase-room', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ roomId }),
+                })
+                if (res.ok) {
+                  playSound('purchase')
+                  toast.success('Room unlocked!')
+                  mutate()
+                  return true
+                }
+                playSound('error')
+                toast.error('Failed to unlock room')
+                return false
+              }}
+            />
+          </PixelCard>
+        </div>
+      </div>
 
-      {/* --- AI-MODIFIED (2026-03-17) --- */}
-      {/* Purpose: Render stack editor for interleaved equipment layer ordering and offset control */}
-      {Object.keys(equipment).length > 0 && (
-        <EquipmentOrder
-          equipment={equipment}
-          renderSequence={layout.renderSequence}
-          equipmentOffsets={layout.equipmentOffsets}
-          selectedSlot={selectedEquipSlot}
-          onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
-          onSelectSlot={setSelectedEquipSlot}
-          onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
-        />
-      )}
-      {/* --- END AI-MODIFIED --- */}
-
-      {/* Floating info card on hover */}
+      {/* Floating hover tooltip */}
       {hoveredLayer && !dragState && (
         <div
           className="fixed z-50 pointer-events-none"
@@ -738,19 +831,25 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                   : "Default"}
             </p>
             {isMovable(hoveredLayer) && (
-              <p className="font-pixel text-sm text-[#5a7a9c] mt-0.5">
-                {activeTool === "move"
-                  ? "Click + drag to move"
-                  : "Switch to Move tool"}
+              <p className="font-pixel text-[11px] text-[#5a7a9c] mt-0.5">
+                Click + drag to move
               </p>
             )}
           </PixelCard>
         </div>
       )}
+
+      {/* Unsaved changes modal */}
+      <UnsavedModal
+        open={showUnsavedModal}
+        onSaveAndLeave={handleSaveAndLeave}
+        onLeaveWithout={handleLeaveWithout}
+        onStay={() => setShowUnsavedModal(false)}
+        isSaving={isSaving}
+      />
     </>
   )
 }
-
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {

@@ -18,6 +18,7 @@ import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import { getUiIconUrl, getFarmAnimationUrl } from "@/utils/petAssets"
+import ArtistAttribution from "@/components/pet/ui/ArtistAttribution"
 import type { FarmPlot } from "@/components/pet/farm/FarmScene"
 
 const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), { ssr: false })
@@ -331,6 +332,11 @@ export default function FarmPage() {
                       />
                     </GameboyFrame>
                   </div>
+
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Artist attribution note below the farm scene */}
+                  <ArtistAttribution />
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Action Toolbar */}
                   <div

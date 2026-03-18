@@ -1302,6 +1302,10 @@ model lg_items {
   tradeable             Boolean                 @default(true)
   description           String                  @default("")
   copyright_flag        Boolean                 @default(false)
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Per-item drop weight for weighted random drops (lower = rarer within tier)
+  drop_weight           Float                   @default(1.0) @db.Real
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-15) ---
   // Purpose: Link items to item sets
   set_id                Int?

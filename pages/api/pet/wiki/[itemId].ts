@@ -29,7 +29,7 @@ export default apiHandler({
       select: {
         itemid: true, name: true, category: true, slot: true, rarity: true,
         asset_path: true, gold_price: true, gem_price: true, tradeable: true,
-        description: true, copyright_flag: true, set_id: true, tag: true,
+        description: true, copyright_flag: true, set_id: true, tag: true, drop_weight: true,
         item_set: { select: { name: true } },
       },
     })
@@ -55,13 +55,16 @@ export default apiHandler({
     const craftedFrom = null
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-17) ---
+    // Purpose: Include bonus_value in scroll properties for wiki display
     let scrollProperties = null
     if (item.category === "SCROLL") {
       scrollProperties = await prisma.lg_scroll_properties.findUnique({
         where: { itemid: itemId },
-        select: { success_rate: true, destroy_rate: true, target_slot: true },
+        select: { success_rate: true, destroy_rate: true, target_slot: true, bonus_value: true },
       })
     }
+    // --- END AI-MODIFIED ---
 
     let enhancementLeaderboard: Array<{ name: string; level: number }> = []
     if (EQUIP_CATEGORIES.includes(item.category)) {
@@ -155,13 +158,34 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-17) ---
-    // Purpose: Include tag and separate related sections in response
+    // Purpose: Include tag, drop_weight, and tier-relative rarity in response
+    let tierDropStats = null
+    if (isDroppable && item.drop_weight !== undefined) {
+      const itemsInTier = await prisma.lg_items.findMany({
+        where: {
+          rarity: item.rarity as any,
+          category: isEquipment
+            ? { in: EQUIP_CATEGORIES as any }
+            : ("SCROLL" as any),
+        },
+        select: { itemid: true, drop_weight: true },
+      })
+      const totalWeight = itemsInTier.reduce((s, i) => s + (i.drop_weight ?? 1.0), 0)
+      const thisWeight = item.drop_weight ?? 1.0
+      tierDropStats = {
+        itemsInTier: itemsInTier.length,
+        totalWeight,
+        relativeChance: totalWeight > 0 ? thisWeight / totalWeight : 0,
+      }
+    }
+
     return res.status(200).json({
       item: {
         id: item.itemid, name: item.name, category: item.category, slot: item.slot,
         rarity: item.rarity, assetPath: item.asset_path, goldPrice: item.gold_price,
         gemPrice: item.gem_price, tradeable: item.tradeable, description: item.description,
         setName: item.item_set?.name ?? null, tag: item.tag ?? null,
+        dropWeight: item.drop_weight ?? 1.0,
       },
       ownership: { count: ownerCount, tier: getOwnershipTier(ownerCount), userOwned },
       // --- AI-MODIFIED (2026-03-16) ---
@@ -171,19 +195,29 @@ export default apiHandler({
       // --- END AI-MODIFIED ---
       scrollProperties,
       enhancementLeaderboard,
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Scroll-aware enhancement data with min/max bonus ranges instead of fixed values
       enhancement: isEquipment
         ? {
             maxLevel: maxEnhancement,
-            goldBonusPerLevel: GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS,
-            xpBonusPerLevel: GAME_CONSTANTS.ENHANCEMENT_XP_BONUS,
-            maxGoldBonus: (maxEnhancement ?? 0) * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS,
-            maxXpBonus: (maxEnhancement ?? 0) * GAME_CONSTANTS.ENHANCEMENT_XP_BONUS,
+            minBonusPerLevel: GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 1.0,
+            maxBonusPerLevel: GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 7.0,
+            dropBonusRate: GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS,
+            safeBonus: (maxEnhancement ?? 0) * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 1.0,
+            perfectBonus: (maxEnhancement ?? 0) * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 7.0,
           }
         : null,
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Drop info for equipment/scrolls instead of materials
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-03-17) ---
+      // Purpose: Drop info with per-item weight and tier-relative rarity
       dropInfo: isDroppable
-        ? { dropTierPercent: dropTier, voiceChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_VOICE, textChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_TEXT }
+        ? {
+            dropTierPercent: dropTier,
+            voiceChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_VOICE,
+            textChance: GAME_CONSTANTS.ITEM_DROP_CHANCE_TEXT,
+            dropWeight: item.drop_weight ?? 1.0,
+            ...(tierDropStats ?? {}),
+          }
         : null,
       // --- END AI-MODIFIED ---
       rarityVariants: rarityVariants.map((r: any) => ({

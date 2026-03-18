@@ -27,9 +27,12 @@ const PLOT_CENTERS: Record<number, [number, number]> = {
   12: [158, 138], 13: [166, 154], 14: [176, 174],
 }
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Reduced heights to prevent tree overflow on edge plots (matched to bot renderer)
 const STAGE_HEIGHTS: Record<number, number> = {
-  0: 0, 1: 30, 2: 40, 3: 52, 4: 64, 5: 78,
+  0: 0, 1: 18, 2: 24, 3: 30, 4: 36, 5: 44,
 }
+// --- END AI-MODIFIED ---
 
 const STAGE_LABELS = ["", "Sprout", "Seedling", "Growing", "Budding", "Harvest!"]
 
@@ -273,7 +276,7 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
             const plotNum = Number(key)
             const plot = plotMap[plotNum]
             if (!plot || !plot.readyToHarvest || plot.dead) return null
-            const h = STAGE_HEIGHTS[5] || 78
+            const h = STAGE_HEIGHTS[5] || 44
 
             return (
               <div key={`harvest-fx-${plotNum}`}>

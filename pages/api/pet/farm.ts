@@ -82,24 +82,35 @@ async function tryItemDrop(
   const isScroll = Math.random() < SCROLL_DROP_RATIO
   const rarity = pickDropRarity(boostedWeights)
 
-  let item
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Weighted random item selection using drop_weight + rarity filter for scrolls
+  type ItemRow = { itemid: number; name: string; rarity: string; category: string }
+  let item: ItemRow | null = null
   if (isScroll) {
-    item = await prisma.lg_items.findFirst({
-      where: { category: "SCROLL" as any },
-      select: { itemid: true, name: true, rarity: true, category: true },
-    })
+    const rows = await prisma.$queryRaw<ItemRow[]>`
+      SELECT itemid, name, rarity::text, category::text FROM lg_items
+      WHERE category = 'SCROLL' AND rarity = ${rarity}::lgrarity
+      ORDER BY -LN(1.0 - RANDOM()) / GREATEST(drop_weight, 0.001)
+      LIMIT 1`
+    item = rows[0] ?? null
   } else {
-    item = await prisma.lg_items.findFirst({
-      where: { category: { in: EQUIPMENT_CATEGORIES as any }, rarity: rarity as any },
-      select: { itemid: true, name: true, rarity: true, category: true },
-    })
+    const rows = await prisma.$queryRaw<ItemRow[]>`
+      SELECT itemid, name, rarity::text, category::text FROM lg_items
+      WHERE category IN ('HAT','GLASSES','COSTUME','SHIRT','WINGS','BOOTS')
+        AND rarity = ${rarity}::lgrarity
+      ORDER BY -LN(1.0 - RANDOM()) / GREATEST(drop_weight, 0.001)
+      LIMIT 1`
+    item = rows[0] ?? null
   }
   if (!item) {
-    item = await prisma.lg_items.findFirst({
-      where: { category: { in: [...EQUIPMENT_CATEGORIES, "SCROLL"] as any } },
-      select: { itemid: true, name: true, rarity: true, category: true },
-    })
+    const rows = await prisma.$queryRaw<ItemRow[]>`
+      SELECT itemid, name, rarity::text, category::text FROM lg_items
+      WHERE category IN ('HAT','GLASSES','COSTUME','SHIRT','WINGS','BOOTS','SCROLL')
+      ORDER BY -LN(1.0 - RANDOM()) / GREATEST(drop_weight, 0.001)
+      LIMIT 1`
+    item = rows[0] ?? null
   }
+  // --- END AI-MODIFIED ---
   if (!item) return null
 
   const cat = String(item.category)

@@ -16,6 +16,7 @@ import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+import ArtistAttribution from "@/components/pet/ui/ArtistAttribution"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 // --- AI-MODIFIED (2026-03-16) ---
@@ -189,6 +190,11 @@ export default function PetOverview() {
                       </GameboyFrame>
                     </div>
                   </PixelCard>
+                  {/* --- END AI-MODIFIED --- */}
+
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Artist attribution note below the room preview */}
+                  <ArtistAttribution />
                   {/* --- END AI-MODIFIED --- */}
 
                   {/* Needs */}

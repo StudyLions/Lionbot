@@ -13,10 +13,14 @@ interface GameConstants {
   ENHANCEMENT_XP_BONUS: number
 }
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Add bonusValue to scroll data for bonus power display
 interface ScrollData {
   itemId: number; name: string; rarity: string
   successRate: number; destroyRate: number
+  bonusValue?: number
 }
+// --- END AI-MODIFIED ---
 
 interface Props {
   gameConstants: GameConstants
@@ -95,10 +99,18 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
           const successW = total > 0 ? (rates.success / total) * 100 : 0
           const failW = total > 0 ? (rates.fail / total) * 100 : 0
           const destroyW = total > 0 ? (rates.destroy / total) * 100 : 0
+          // --- AI-MODIFIED (2026-03-17) ---
+          // Purpose: Show bonus_value multiplier + Gold/XP per level alongside success rates
+          const bv = scroll.bonusValue ?? 1
+          const goldPct = (bv * 0.02 * 100).toFixed(1)
           return (
             <div key={scroll.itemId} className="border-2 border-[#1a2a3c] bg-[#0f1628] p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-pixel text-[13px] text-[#c0d0e0]">{scroll.name}</span>
+              <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-pixel text-[13px] text-[#c0d0e0]">{scroll.name}</span>
+                  <span className="font-pixel text-[12px] px-1.5 py-0.5 border border-[#4080f040] text-[#80b0ff] bg-[#4080f008]">{bv}x</span>
+                  <span className="font-pixel text-[11px] text-[#6a8a6a]">+{goldPct}%/lvl</span>
+                </div>
                 <div className="flex gap-3 font-pixel text-[12px]">
                   <span className="text-[#40e070]">{rates.success.toFixed(1)}% success</span>
                   <span className="text-[#f0c040]">{rates.fail.toFixed(1)}% fail</span>
@@ -112,6 +124,7 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
               </div>
             </div>
           )
+          // --- END AI-MODIFIED ---
         })}
       </div>
 

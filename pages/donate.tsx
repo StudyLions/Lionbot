@@ -2,7 +2,7 @@
 // Purpose: Redesigned donate page with LionHeart subscription tiers,
 //          full subscription management (upgrade/downgrade/cancel via
 //          Stripe Customer Portal), and existing gem packages.
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
@@ -27,6 +27,7 @@ import {
   CreditCard,
   RefreshCw,
   Loader2,
+  Palette,
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -373,19 +374,19 @@ function SubscriptionCard({
     LIONHEART_PLUS_PLUS: "\u{1F451}",
   };
 
+  const heroStats = [
+    { value: numberWithCommas(tier.monthlyGems), label: "gems / month", icon: Diamond },
+    { value: String(tier.gemsPerVote), label: "per vote", icon: Star },
+  ];
+
   const perks = [
-    {
-      label: `${numberWithCommas(tier.monthlyGems)} gems/month`,
-      icon: Diamond,
-    },
-    { label: `${tier.gemsPerVote} gems per vote`, icon: Star },
-    { label: `${tier.lionCoinBoost}x vote bonus`, icon: TrendingUp },
-    { label: `+${tier.dropRateBonus * 100}% drop rates`, icon: Sparkles },
-    { label: `${tier.farmGrowthSpeed}x farm growth`, icon: Sprout },
+    { label: `${tier.lionCoinBoost}x vote bonus`, icon: TrendingUp, highlight: false },
+    { label: `+${tier.dropRateBonus * 100}% drop rates`, icon: Sparkles, highlight: false },
+    { label: `${tier.farmGrowthSpeed}x farm growth`, icon: Sprout, highlight: false },
     ...(tier.deathTimerHours === null
-      ? [{ label: "Plants never die!", icon: Shield }]
-      : [{ label: `${tier.deathTimerHours}h death timer`, icon: Shield }]),
-    { label: `${tier.uprootRefund * 100}% uproot refund`, icon: Zap },
+      ? [{ label: "Plants never die!", icon: Shield, highlight: true }]
+      : [{ label: `${tier.deathTimerHours}h death timer`, icon: Shield, highlight: false }]),
+    { label: `${tier.uprootRefund * 100}% uproot refund`, icon: Zap, highlight: false },
   ];
 
   const renderButton = () => {
@@ -482,20 +483,44 @@ function SubscriptionCard({
       <div className="text-center mb-6">
         <span className="text-3xl">{tierIcons[tierId]}</span>
         <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
-        <div className="mt-2">
-          <span className="text-3xl font-bold text-white">${tier.price}</span>
-          <span className="text-gray-400">/month</span>
+        <div className="mt-3">
+          <span className="text-4xl font-black text-white">${tier.price}</span>
+          <span className="text-gray-400 text-sm ml-0.5">/month</span>
         </div>
       </div>
 
       <div
-        className="w-full h-1 rounded-full mb-6"
+        className="w-full h-1 rounded-full mb-5"
         style={{
           background: `linear-gradient(90deg, ${tier.color}80, ${tier.color})`,
         }}
       />
 
-      <ul className="space-y-3 flex-1 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-5">
+        {heroStats.map((stat, i) => {
+          const StatIcon = stat.icon;
+          return (
+            <div
+              key={i}
+              className="rounded-xl p-3 text-center"
+              style={{
+                background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}0a)`,
+                border: `1px solid ${tier.color}15`,
+              }}
+            >
+              <StatIcon className="h-4 w-4 mx-auto mb-1.5 opacity-80" style={{ color: tier.color }} />
+              <div className="text-2xl font-black leading-tight" style={{ color: tier.color }}>
+                {stat.value}
+              </div>
+              <div className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">
+                {stat.label}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <ul className="space-y-2.5 flex-1 mb-5">
         {perks.map((perk, i) => (
           <li key={i} className="flex items-center gap-3 text-sm">
             <div
@@ -504,27 +529,45 @@ function SubscriptionCard({
             >
               <Check className="h-3 w-3" style={{ color: tier.color }} />
             </div>
-            <span className="text-gray-300">{perk.label}</span>
+            <span className={perk.highlight ? "text-white font-semibold" : "text-gray-300"}>
+              {perk.label}
+            </span>
           </li>
         ))}
-        <li className="flex items-center gap-3 text-sm">
-          <div
-            className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-            style={{ backgroundColor: `${tier.color}20` }}
-          >
-            <Check className="h-3 w-3" style={{ color: tier.color }} />
-          </div>
-          <span className="text-gray-300">
-            Animated glowing cards
-            <span
-              className="ml-1 text-xs font-semibold"
-              style={{ color: tier.color }}
-            >
-              ({tier.name} glow)
-            </span>
-          </span>
-        </li>
       </ul>
+
+      <div
+        className="relative rounded-xl p-3.5 mb-6 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}08)`,
+          border: `1px solid ${tier.color}30`,
+          boxShadow: `0 0 20px ${tier.color}10, inset 0 0 20px ${tier.color}05`,
+        }}
+      >
+        <div
+          className="absolute inset-0 shimmer-sweep"
+          style={{
+            background: `linear-gradient(90deg, transparent 0%, ${tier.color}20 50%, transparent 100%)`,
+          }}
+        />
+        <div className="relative flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+            style={{
+              background: `linear-gradient(135deg, ${tier.color}35, ${tier.color}15)`,
+              boxShadow: `0 0 12px ${tier.color}25`,
+            }}
+          >
+            <Sparkles className="h-4 w-4" style={{ color: tier.color }} />
+          </div>
+          <div>
+            <div className="text-sm font-semibold text-white">Animated glowing cards</div>
+            <div className="text-xs font-bold mt-0.5" style={{ color: tier.color }}>
+              {tier.name} glow
+            </div>
+          </div>
+        </div>
+      </div>
 
       {renderButton()}
     </div>
@@ -657,6 +700,294 @@ function ComparisonTable() {
   );
 }
 
+// --- AI-MODIFIED (2026-03-17) ---
+// Purpose: Server Premium showcase with bot-rendered card demo and fake editor
+const DEMO_SKINS = [
+  {
+    id: "obsidian",
+    name: "Obsidian",
+    accent: "#6366f1",
+    swatches: [
+      { label: "Username", color: "#A5A8FF" },
+      { label: "Badge BG", color: "#2D2D5E" },
+      { label: "Progress Bar", color: "#6366F1" },
+      { label: "Counter Text", color: "#8B8DCC" },
+    ],
+  },
+  {
+    id: "cotton_candy",
+    name: "Cotton Candy",
+    accent: "#FF69B4",
+    swatches: [
+      { label: "Username", color: "#FFB6C1" },
+      { label: "Badge BG", color: "#CC5490" },
+      { label: "Progress Bar", color: "#FF69B4" },
+      { label: "Counter Text", color: "#FFD4E0" },
+    ],
+  },
+  {
+    id: "boston_blue",
+    name: "Boston Blue",
+    accent: "#3B82C4",
+    swatches: [
+      { label: "Username", color: "#93C5FD" },
+      { label: "Badge BG", color: "#1E3A5F" },
+      { label: "Progress Bar", color: "#3B82C4" },
+      { label: "Counter Text", color: "#60A5FA" },
+    ],
+  },
+  {
+    id: "platinum",
+    name: "Platinum",
+    accent: "#A0A0B0",
+    swatches: [
+      { label: "Username", color: "#E8E8F0" },
+      { label: "Badge BG", color: "#505060" },
+      { label: "Progress Bar", color: "#C0C0CC" },
+      { label: "Counter Text", color: "#D4D4E0" },
+    ],
+  },
+];
+
+function ServerPremiumShowcase() {
+  const [activeSkin, setActiveSkin] = useState(0);
+  const [imagesReady, setImagesReady] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const loadedCount = useRef(0);
+  const errorCount = useRef(0);
+
+  useEffect(() => {
+    if (!imagesReady || isHovering) return;
+    const timer = setInterval(() => {
+      setActiveSkin((prev) => (prev + 1) % DEMO_SKINS.length);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [imagesReady, isHovering]);
+
+  const handleImageLoad = () => {
+    loadedCount.current++;
+    if (loadedCount.current >= 1) setImagesReady(true);
+  };
+
+  const handleImageError = () => {
+    errorCount.current++;
+    if (errorCount.current >= DEMO_SKINS.length) setHasError(true);
+  };
+
+  const currentSkin = DEMO_SKINS[activeSkin];
+
+  return (
+    <section className="py-16 lg:py-20 border-t border-gray-800">
+      <div className="max-w-5xl mx-auto px-4 lg:px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-white">Server Premium</h2>
+          <p className="text-gray-400 mt-2 max-w-xl mx-auto">
+            Give your server its own identity &mdash; customize every card your
+            members see with the full branding editor
+          </p>
+        </div>
+
+        <div
+          className="rounded-2xl border border-gray-700 bg-gray-800/50 overflow-hidden"
+          onMouseEnter={() => setIsHovering(true)}
+          onMouseLeave={() => setIsHovering(false)}
+        >
+          <div className="grid grid-cols-1 lg:grid-cols-2">
+            {/* Card Preview */}
+            <div className="relative bg-gray-900/60 flex items-center justify-center p-8 min-h-[320px] lg:min-h-[420px]">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />
+
+              {!hasError &&
+                DEMO_SKINS.map((skin, i) => (
+                  <img
+                    key={skin.id}
+                    src={`/api/card-demo?type=profile&skin=${skin.id}`}
+                    alt={`${skin.name} profile card`}
+                    className="absolute max-w-[240px] lg:max-w-[280px] w-full h-auto rounded-lg shadow-2xl"
+                    style={{
+                      opacity: i === activeSkin ? 1 : 0,
+                      transform:
+                        i === activeSkin
+                          ? "scale(1) translateY(0)"
+                          : "scale(0.95) translateY(10px)",
+                      transition: "opacity 0.7s ease, transform 0.7s ease",
+                      willChange: "opacity, transform",
+                    }}
+                    onLoad={handleImageLoad}
+                    onError={handleImageError}
+                    loading={i === 0 ? "eager" : "lazy"}
+                  />
+                ))}
+
+              {hasError && (
+                <div className="text-center text-gray-500">
+                  <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p className="text-sm">Card preview temporarily unavailable</p>
+                </div>
+              )}
+
+              {!imagesReady && !hasError && (
+                <div className="w-[240px] h-[310px] rounded-lg bg-gray-700/30 animate-pulse flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 text-gray-500 animate-spin" />
+                </div>
+              )}
+
+              {/* Skin indicator dots */}
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {DEMO_SKINS.map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setActiveSkin(i)}
+                    className="p-0.5"
+                    aria-label={`Show ${DEMO_SKINS[i].name} skin`}
+                  >
+                    <div
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i === activeSkin
+                          ? "bg-white w-5"
+                          : "bg-white/25 w-1.5 hover:bg-white/40"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+
+              <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 hidden lg:block">
+                Rendered by LionBot
+              </div>
+            </div>
+
+            {/* Mock Editor */}
+            <div className="p-7 lg:p-8 border-t lg:border-t-0 lg:border-l border-gray-700">
+              <div className="flex items-center gap-2 mb-6">
+                <Palette className="h-5 w-5 text-blue-400" />
+                <h3 className="text-lg font-semibold text-white">
+                  Branding Editor
+                </h3>
+                <span className="ml-auto text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full font-medium uppercase tracking-wider">
+                  Live Demo
+                </span>
+              </div>
+
+              {/* Skin selector */}
+              <div className="mb-6">
+                <p className="text-[11px] font-medium text-gray-500 mb-2 uppercase tracking-wider">
+                  Base Skin
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {DEMO_SKINS.map((skin, i) => (
+                    <button
+                      key={skin.id}
+                      onClick={() => setActiveSkin(i)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border ${
+                        i === activeSkin
+                          ? "bg-white/10 text-white border-white/20"
+                          : "text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-700"
+                      }`}
+                    >
+                      <div
+                        className="w-3 h-3 rounded-sm transition-colors duration-700"
+                        style={{ backgroundColor: skin.accent }}
+                      />
+                      {skin.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Color swatches */}
+              <div className="mb-6">
+                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
+                  Profile Colours
+                </p>
+                <div className="space-y-2.5">
+                  {currentSkin.swatches.map((swatch) => (
+                    <div
+                      key={swatch.label}
+                      className="flex items-center justify-between"
+                    >
+                      <span className="text-sm text-gray-400">
+                        {swatch.label}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-5 h-5 rounded border border-white/10 shadow-sm"
+                          style={{
+                            backgroundColor: swatch.color,
+                            transition: "background-color 0.7s ease",
+                          }}
+                        />
+                        <span
+                          className="text-[11px] text-gray-600 font-mono w-16 text-right"
+                          style={{ transition: "color 0.7s ease" }}
+                        >
+                          {swatch.color}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Features */}
+              <div className="border-t border-gray-700 pt-5">
+                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
+                  Included with Server Premium
+                </p>
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      Custom skins & colors for{" "}
+                      <span className="text-white font-medium">
+                        all 7 card types
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      Applies to{" "}
+                      <span className="text-white font-medium">
+                        every member
+                      </span>{" "}
+                      in your server
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      LionGotchi bonuses:{" "}
+                      <span className="text-blue-400 font-semibold">
+                        +15% Gold
+                      </span>{" "}
+                      &{" "}
+                      <span className="text-blue-400 font-semibold">
+                        +15% Drop Rate
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      Purchase with LionGems via{" "}
+                      <code className="text-xs bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">
+                        /premium
+                      </code>
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+// --- END AI-MODIFIED ---
+
 export default function Donate() {
   const { t } = useTranslation("donate");
   const { data: session } = useSession();
@@ -766,6 +1097,15 @@ export default function Donate() {
   return (
     <Layout SEO={DonationSEO}>
       <div className="bg-gray-900 min-h-screen">
+        <style>{`
+          @keyframes shimmerSweep {
+            0%, 100% { transform: translateX(-100%); }
+            40% { transform: translateX(100%); }
+          }
+          .shimmer-sweep {
+            animation: shimmerSweep 4s ease-in-out infinite;
+          }
+        `}</style>
         {/* Hero */}
         <section className="relative pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(91,141,239,0.08),_transparent_50%)]" />
@@ -896,28 +1236,7 @@ export default function Donate() {
           </div>
         </section>
 
-        {/* Server Premium Banner */}
-        <section className="py-12 border-t border-gray-800">
-          <div className="max-w-4xl mx-auto px-4 lg:px-6">
-            <div className="rounded-2xl border border-gray-700 bg-gray-800/50 p-8 text-center">
-              <Shield className="h-8 w-8 text-blue-400 mx-auto mb-3" />
-              <h3 className="text-xl font-bold text-white">Server Premium</h3>
-              <p className="text-gray-400 mt-2 max-w-lg mx-auto">
-                Premium servers now include LionGotchi bonuses:{" "}
-                <span className="text-blue-400 font-semibold">+15% Gold</span>{" "}
-                and{" "}
-                <span className="text-blue-400 font-semibold">
-                  +15% Drop Rate
-                </span>{" "}
-                for all members. Purchase with LionGems using{" "}
-                <code className="text-sm bg-gray-700 px-2 py-0.5 rounded">
-                  /premium
-                </code>{" "}
-                in Discord.
-              </p>
-            </div>
-          </div>
-        </section>
+        <ServerPremiumShowcase />
 
         {/* Gem Packages */}
         <section

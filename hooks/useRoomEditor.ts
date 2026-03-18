@@ -9,21 +9,14 @@
 import { useState, useCallback, useRef } from 'react'
 import { RoomLayout, DEFAULT_LAYOUT, mergeLayout, clampOffset, isMovable, clampScale, isResizable, clampEquipOffset, type RenderStep } from '@/utils/roomConstraints'
 
-interface RoomEditorState {
-  layout: RoomLayout
-  undoStack: RoomLayout[]
-  redoStack: RoomLayout[]
-  isDirty: boolean
-  isSaving: boolean
-  selectedLayer: string | null
-  activeTool: EditorTool
-  zoom: number
-  showGrid: boolean
-  showLayers: boolean
-  cart: CartItem[]
-}
-
-type EditorTool = 'move' | 'select' | 'resize' | 'flip' | 'color' | 'remove' | 'zoom' | 'layers' | 'grid'
+// --- AI-REPLACED (2026-03-17) ---
+// Reason: Removed EditorTool type -- the new UX uses click-to-select + contextual actions
+// What the new code does better: No tool switching needed; kept type for backwards compat
+// --- Original code (commented out for rollback) ---
+// type EditorTool = 'move' | 'select' | 'resize' | 'flip' | 'color' | 'remove' | 'zoom' | 'layers' | 'grid'
+// --- End original code ---
+type EditorTool = string
+// --- END AI-REPLACED ---
 
 interface CartItem {
   slot: string
@@ -40,11 +33,8 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [selectedLayer, setSelectedLayer] = useState<string | null>(null)
-  const [activeTool, setActiveTool] = useState<EditorTool>('move')
   const [zoom, setZoom] = useState(1)
   const [showGrid, setShowGrid] = useState(false)
-  const [showLayers, setShowLayers] = useState(false)
-  const [cart, setCart] = useState<CartItem[]>([])
 
   const savedLayoutRef = useRef<RoomLayout>(layout)
 
@@ -119,6 +109,27 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
   }, [updateLayout])
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Remove a furniture layer's layout data (offsets, flips, scales)
+  const removeLayer = useCallback((layer: string) => {
+    if (layer === 'lion') return
+    updateLayout(prev => {
+      const newOffsets = { ...prev.furnitureOffsets }
+      const newFlips = { ...prev.furnitureFlips }
+      const newScales = { ...prev.furnitureScales }
+      delete newOffsets[layer]
+      delete newFlips[layer]
+      delete newScales[layer]
+      return {
+        ...prev,
+        furnitureOffsets: newOffsets,
+        furnitureFlips: newFlips,
+        furnitureScales: newScales,
+      }
+    })
+  }, [updateLayout])
+  // --- END AI-MODIFIED ---
+
   const undo = useCallback(() => {
     if (undoStack.length === 0) return
     setRedoStack(prev => [...prev, structuredClone(layout)])
@@ -142,7 +153,9 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     setLayoutInternal({ ...DEFAULT_LAYOUT })
   }, [pushUndo])
 
-  const saveLayout = useCallback(async () => {
+  // --- AI-MODIFIED (2026-03-17) ---
+  // Purpose: Return boolean for success/failure so callers can show toast feedback
+  const saveLayout = useCallback(async (): Promise<boolean> => {
     setIsSaving(true)
     try {
       const res = await fetch('/api/pet/room', {
@@ -153,23 +166,14 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
       if (!res.ok) throw new Error('Save failed')
       savedLayoutRef.current = structuredClone(layout)
       setIsDirty(false)
+      return true
+    } catch {
+      return false
     } finally {
       setIsSaving(false)
     }
   }, [layout])
-
-  const addToCart = useCallback((item: CartItem) => {
-    setCart(prev => {
-      if (prev.some(c => c.slot === item.slot && c.assetPath === item.assetPath)) return prev
-      return [...prev, item]
-    })
-  }, [])
-
-  const removeFromCart = useCallback((index: number) => {
-    setCart(prev => prev.filter((_, i) => i !== index))
-  }, [])
-
-  const clearCart = useCallback(() => setCart([]), [])
+  // --- END AI-MODIFIED ---
 
   const zoomIn = useCallback(() => setZoom(z => Math.min(4, z + 0.5)), [])
   const zoomOut = useCallback(() => setZoom(z => Math.max(0.5, z - 0.5)), [])
@@ -181,8 +185,6 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     isSaving,
     selectedLayer,
     setSelectedLayer,
-    activeTool,
-    setActiveTool,
     zoom,
     setZoom,
     zoomIn,
@@ -190,12 +192,6 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     resetZoom,
     showGrid,
     setShowGrid,
-    showLayers,
-    setShowLayers,
-    cart,
-    addToCart,
-    removeFromCart,
-    clearCart,
     undoCount: undoStack.length,
     redoCount: redoStack.length,
 
@@ -203,11 +199,9 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
     flipLayer,
     scaleLayer,
     reorderLayers,
-    // --- AI-MODIFIED (2026-03-17) ---
-    // Purpose: Expose render sequence and equipment offset controls
+    removeLayer,
     setRenderSequence,
     setEquipmentOffset,
-    // --- END AI-MODIFIED ---
     undo,
     redo,
     resetLayout,
@@ -216,4 +210,4 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
   }
 }
 
-export type { EditorTool, CartItem, RoomEditorState }
+export type { EditorTool, CartItem }

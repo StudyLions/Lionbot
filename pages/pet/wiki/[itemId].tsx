@@ -193,8 +193,7 @@ export default function ItemDetailPage() {
                   </div>
 
                   {/* --- AI-MODIFIED (2026-03-17) --- */}
-                  {/* Purpose: Items are drop-only; removed "Buy for Gold/Gems" option */}
-                  {/* How to Obtain */}
+                  {/* Purpose: Items are drop-only + per-item drop weight rarity badge */}
                   <PixelCard className="p-4" corners>
                     <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
                       <Droplets size={18} /> HOW TO OBTAIN
@@ -210,6 +209,26 @@ export default function ItemDetailPage() {
                             <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
                             <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
                           </div>
+                          {data.dropInfo.dropWeight != null && data.dropInfo.itemsInTier && (
+                            <div className="mt-2 border-t border-[#1a2a3c] pt-2 space-y-1">
+                              {data.dropInfo.dropWeight < 0.2 ? (
+                                <span className="font-pixel text-[12px] px-2 py-0.5 border border-[#ff60a0] text-[#ffa0c0] bg-[#ff60a010] inline-block">
+                                  ULTRA RARE — {(data.dropInfo.relativeChance * 100).toFixed(1)}% within {item.rarity} drops
+                                </span>
+                              ) : data.dropInfo.dropWeight < 0.5 ? (
+                                <span className="font-pixel text-[12px] px-2 py-0.5 border border-[#d060f0] text-[#e0a0ff] bg-[#d060f010] inline-block">
+                                  SUPER RARE — {(data.dropInfo.relativeChance * 100).toFixed(1)}% within {item.rarity} drops
+                                </span>
+                              ) : data.dropInfo.dropWeight < 1.0 ? (
+                                <span className="font-pixel text-[12px] px-2 py-0.5 border border-[#f0c040] text-[#ffe080] bg-[#f0c04010] inline-block">
+                                  UNCOMMON DROP — {(data.dropInfo.relativeChance * 100).toFixed(1)}% within {item.rarity} drops
+                                </span>
+                              ) : null}
+                              <p className="font-pixel text-[11px] text-[#3a4a5a]">
+                                {data.dropInfo.itemsInTier} {item.rarity.toLowerCase()} {item.category === "SCROLL" ? "scrolls" : "items"} in the drop pool
+                              </p>
+                            </div>
+                          )}
                         </>
                       ) : (
                         <div className="flex items-center gap-2 text-[#4a5a6a]">
@@ -220,63 +239,113 @@ export default function ItemDetailPage() {
                   </PixelCard>
                   {/* --- END AI-MODIFIED --- */}
 
-                  {/* Enhancement Info (equipment) */}
-                  {data.enhancement && (
-                    <PixelCard className="p-4" corners>
-                      <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
-                        <Sparkles size={18} /> ENHANCEMENT INFO
-                      </h3>
-                      <div className="grid grid-cols-3 gap-3 text-center">
-                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                          <p className="font-pixel text-lg text-[var(--pet-blue,#4080f0)]">+{data.enhancement.maxLevel}</p>
-                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Max Level</p>
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Redesigned Enhancement Info with scroll-aware variable bonus ranges */}
+                  {data.enhancement && (() => {
+                    const e = data.enhancement
+                    const minPct = (e.minBonusPerLevel * 100).toFixed(1)
+                    const maxPct = (e.maxBonusPerLevel * 100).toFixed(1)
+                    const dropMin = (e.dropBonusRate * 1.0 * 100).toFixed(1)
+                    const dropMax = (e.dropBonusRate * 7.0 * 100).toFixed(1)
+                    const safePct = (e.safeBonus * 100).toFixed(0)
+                    const perfectPct = (e.perfectBonus * 100).toFixed(0)
+                    return (
+                      <PixelCard className="p-4" corners>
+                        <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                          <Sparkles size={18} /> ENHANCEMENT INFO
+                        </h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                          <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                            <p className="font-pixel text-lg text-[var(--pet-blue,#4080f0)]">+{e.maxLevel}</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Max Level</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                            <p className="font-pixel text-base text-[var(--pet-green,#40d870)]">{minPct}% – {maxPct}%</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Gold/XP per lvl</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                            <p className="font-pixel text-base text-[#80b0ff]">{dropMin}% – {dropMax}%</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Drop Rate per lvl</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                            <p className="font-pixel text-[12px] text-[#4a5a6a] mb-0.5">Depends on scrolls used</p>
+                            <p className="font-pixel text-[12px] text-[#6a7a8a]">No fixed max</p>
+                          </div>
                         </div>
-                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                          <p className="font-pixel text-xl text-[var(--pet-green,#40d870)]">+{(data.enhancement.goldBonusPerLevel * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Gold/XP per lvl</p>
+                        <div className="mt-3 border-2 border-[#1a2a3c] bg-[#080c18] p-3">
+                          <p className="font-pixel text-[12px] text-[#4a5a6a] mb-2">POTENTIAL AT +{e.maxLevel}</p>
+                          <div className="flex items-center gap-3">
+                            <div className="flex-1">
+                              <div className="flex justify-between font-pixel text-[12px] mb-1">
+                                <span className="text-[#6a8a6a]">Safe (Dusty)</span>
+                                <span className="text-[var(--pet-green,#40d870)]">+{safePct}% Gold/XP</span>
+                              </div>
+                              <div className="h-2 bg-[#0c1020] border border-[#1a2a3c] overflow-hidden">
+                                <div className="h-full bg-[#40d87060]" style={{ width: `${Math.min((Number(safePct) / Number(perfectPct)) * 100, 100)}%` }} />
+                              </div>
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex justify-between font-pixel text-[12px] mb-1">
+                                <span className="text-[#8a6a8a]">Perfect (Doom)</span>
+                                <span className="text-[#ff60a0]">+{perfectPct}% Gold/XP</span>
+                              </div>
+                              <div className="h-2 bg-[#0c1020] border border-[#1a2a3c] overflow-hidden">
+                                <div className="h-full bg-gradient-to-r from-[#d060f0] to-[#ff60a0]" style={{ width: "100%" }} />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="font-pixel text-[11px] text-[#3a4a5a] mt-2">Bonus depends on which scrolls are used — riskier scrolls yield higher bonuses per level</p>
                         </div>
-                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                          <p className="font-pixel text-lg text-[var(--pet-gold,#f0c040)]">+{(data.enhancement.maxGoldBonus * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Max Bonus</p>
-                        </div>
-                      </div>
-                      <div className="mt-3 h-3 bg-[#0c1020] overflow-hidden border border-[#1a2a3c]">
-                        <div className="h-full bg-gradient-to-r from-[var(--pet-green,#40d870)] to-[var(--pet-blue,#4080f0)]" style={{ width: "100%" }} />
-                      </div>
-                      <div className="flex justify-between font-pixel text-[12px] text-[#4a5a6a] mt-1">
-                        <span>+0</span>
-                        <span>+{data.enhancement.maxLevel}</span>
-                      </div>
-                    </PixelCard>
-                  )}
+                      </PixelCard>
+                    )
+                  })()}
+                  {/* --- END AI-MODIFIED --- */}
 
-                  {/* Scroll Properties */}
-                  {data.scrollProperties && (
-                    <PixelCard className="p-4 space-y-4" corners>
-                      <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] flex items-center gap-2">
-                        <Shield size={18} /> SCROLL PROPERTIES
-                      </h3>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="border-2 border-[#40d87040] bg-[#40d87008] p-3 text-center">
-                          <p className="font-pixel text-2xl text-[var(--pet-green,#40d870)]">{(data.scrollProperties.success_rate * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Base Success Rate</p>
+                  {/* --- AI-MODIFIED (2026-03-17) --- */}
+                  {/* Purpose: Scroll Properties with bonus_value display */}
+                  {data.scrollProperties && (() => {
+                    const sp = data.scrollProperties
+                    const goldPerLevel = ((sp.bonus_value ?? 1) * 0.02 * 100).toFixed(1)
+                    const dropPerLevel = ((sp.bonus_value ?? 1) * 0.005 * 100).toFixed(2)
+                    return (
+                      <PixelCard className="p-4 space-y-4" corners>
+                        <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] flex items-center gap-2">
+                          <Shield size={18} /> SCROLL PROPERTIES
+                        </h3>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div className="border-2 border-[#40d87040] bg-[#40d87008] p-3 text-center">
+                            <p className="font-pixel text-2xl text-[var(--pet-green,#40d870)]">{(sp.success_rate * 100).toFixed(0)}%</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Base Success Rate</p>
+                          </div>
+                          <div className="border-2 border-[#e0404040] bg-[#e0404008] p-3 text-center">
+                            <p className="font-pixel text-2xl text-[var(--pet-red,#e04040)]">{(sp.destroy_rate * 100).toFixed(0)}%</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Destroy Rate</p>
+                          </div>
+                          <div className="border-2 border-[#4080f040] bg-[#4080f008] p-3 text-center">
+                            <p className="font-pixel text-2xl text-[#80b0ff]">{sp.bonus_value ?? 1}x</p>
+                            <p className="font-pixel text-[12px] text-[#4a5a6a]">Bonus Power</p>
+                          </div>
                         </div>
-                        <div className="border-2 border-[#e0404040] bg-[#e0404008] p-3 text-center">
-                          <p className="font-pixel text-2xl text-[var(--pet-red,#e04040)]">{(data.scrollProperties.destroy_rate * 100).toFixed(0)}%</p>
-                          <p className="font-pixel text-[12px] text-[#4a5a6a]">Destroy Rate</p>
+                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                          <p className="font-pixel text-[12px] text-[#4a5a6a] mb-1">BONUS PER LEVEL</p>
+                          <div className="flex gap-4 font-pixel text-[13px]">
+                            <span className="text-[var(--pet-green,#40d870)]">+{goldPerLevel}% Gold/XP</span>
+                            <span className="text-[#80b0ff]">+{dropPerLevel}% Drop Rate</span>
+                          </div>
                         </div>
-                      </div>
-                      {data.scrollProperties.target_slot && (
-                        <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
-                          Target slot: {data.scrollProperties.target_slot}
-                        </p>
-                      )}
-                      <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
-                        <h4 className="font-pixel text-[12px] uppercase text-[#4a5a6a] mb-2">SUCCESS RATE BY ENHANCEMENT LEVEL</h4>
-                        <SuccessCurveChart scrollProps={data.scrollProperties} gameConstants={data.gameConstants} />
-                      </div>
-                    </PixelCard>
-                  )}
+                        {sp.target_slot && (
+                          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                            Target slot: {sp.target_slot}
+                          </p>
+                        )}
+                        <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-3">
+                          <h4 className="font-pixel text-[12px] uppercase text-[#4a5a6a] mb-2">SUCCESS RATE BY ENHANCEMENT LEVEL</h4>
+                          <SuccessCurveChart scrollProps={sp} gameConstants={data.gameConstants} />
+                        </div>
+                      </PixelCard>
+                    )
+                  })()}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Enhancement Leaderboard (equipment) */}
                   {isEquipment && (
