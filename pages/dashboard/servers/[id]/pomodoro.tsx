@@ -18,12 +18,13 @@ import CountdownRing from "@/components/dashboard/CountdownRing"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
+import Link from "next/link"
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import {
   Timer, Activity, BarChart3, Users, Clock, Award,
-  TrendingUp, Zap, Settings,
+  TrendingUp, Zap, Settings, Sparkles, Lock,
 } from "lucide-react"
 import {
   ComposedChart, Area, Bar, Line, XAxis, YAxis, CartesianGrid,
@@ -280,10 +281,54 @@ export default function PomodoroPage() {
   const [deleteTarget, setDeleteTarget] = useState<PomodoroTimer | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [pomodoroChannel, setPomodoroChannel] = useState<string | null>(null)
+  // --- AI-MODIFIED (2026-03-18) ---
+  // Purpose: Premium pomodoro feature state
+  const [premConfig, setPremConfig] = useState<any>(null)
+  const [isPremium, setIsPremium] = useState(false)
+  const [premLoading, setPremLoading] = useState(true)
+  const [savingPrem, setSavingPrem] = useState(false)
+  const [themes] = useState(["default", "neon", "forest", "ocean", "sunset", "midnight", "sakura", "retro", "minimal", "seasonal"])
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (data) setPomodoroChannel(data.pomodoro_channel)
   }, [data])
+
+  // --- AI-MODIFIED (2026-03-18) ---
+  // Purpose: Fetch and save premium pomodoro config
+  useEffect(() => {
+    if (!guildId) return
+    fetch(`/api/dashboard/servers/${guildId}/premium-pomodoro`)
+      .then(r => r.json())
+      .then(data => {
+        setPremConfig(data.config)
+        setIsPremium(data.isPremium)
+        setPremLoading(false)
+      })
+      .catch(() => setPremLoading(false))
+  }, [guildId])
+
+  const handleSavePremium = useCallback(async () => {
+    if (!guildId || !premConfig) return
+    setSavingPrem(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${guildId}/premium-pomodoro`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(premConfig),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setPremConfig(data.config)
+        toast.success('Premium settings saved!')
+      } else {
+        const err = await res.json()
+        toast.error(err.error || 'Failed to save')
+      }
+    } catch { toast.error('Failed to save') }
+    finally { setSavingPrem(false) }
+  }, [guildId, premConfig])
+  // --- END AI-MODIFIED ---
 
   // Timer control
   const controlTimer = async (channelid: string, action: string) => {
@@ -862,6 +907,106 @@ export default function PomodoroPage() {
                   )}
                 </div>
               )}
+
+              {/* --- AI-MODIFIED (2026-03-18) --- */}
+              {/* Purpose: Premium Pomodoro Features section */}
+              <div className="mt-6">
+                <SectionCard
+                  title="Premium Pomodoro Features"
+                  description="Enhanced timer features for premium servers"
+                  icon={<Sparkles size={18} />}
+                >
+                  {premLoading ? (
+                    <div className="animate-pulse space-y-3">
+                      <div className="h-10 bg-muted rounded" />
+                      <div className="h-10 bg-muted rounded w-3/4" />
+                    </div>
+                  ) : !isPremium ? (
+                    <div className="text-center py-8">
+                      <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+                        <Lock size={24} className="text-amber-400" />
+                      </div>
+                      <h4 className="text-md font-semibold text-foreground mb-2">Premium Feature</h4>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
+                        Unlock premium pomodoro features for your server! Animated timers, themes, streaks, economy bonuses, and more.
+                      </p>
+                      <Link href="/premium">
+                        <a className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                          <Sparkles size={14} /> Upgrade to Premium
+                        </a>
+                      </Link>
+                    </div>
+                  ) : premConfig ? (
+                    <div className="space-y-0">
+                      <SettingRow label="Animated timer" description="Show an animated countdown in the timer card">
+                        <Toggle
+                          checked={premConfig.animated_timer ?? false}
+                          onChange={(v) => setPremConfig((c: any) => ({ ...c, animated_timer: v }))}
+                        />
+                      </SettingRow>
+                      <SettingRow label="Timer theme" description="Visual theme for the timer display">
+                        <select
+                          value={premConfig.timer_theme ?? "default"}
+                          onChange={(e) => setPremConfig((c: any) => ({ ...c, timer_theme: e.target.value }))}
+                          className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          {themes.map((t) => (
+                            <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                          ))}
+                        </select>
+                      </SettingRow>
+                      <SettingRow label="Focus role" description="Role granted to members while in a focus session">
+                        <RoleSelect
+                          guildId={guildId}
+                          value={premConfig.focus_roleid ?? null}
+                          onChange={(v) => setPremConfig((c: any) => ({ ...c, focus_roleid: Array.isArray(v) ? v[0] ?? null : v }))}
+                          placeholder="None"
+                        />
+                      </SettingRow>
+                      <SettingRow label="Session summaries" description="Post a summary after each completed session">
+                        <Toggle
+                          checked={premConfig.session_summary ?? false}
+                          onChange={(v) => setPremConfig((c: any) => ({ ...c, session_summary: v }))}
+                        />
+                      </SettingRow>
+                      <SettingRow label="Coin multiplier" description="Bonus coins for pomodoro focus sessions">
+                        <Toggle
+                          checked={premConfig.coin_multiplier ?? false}
+                          onChange={(v) => setPremConfig((c: any) => ({ ...c, coin_multiplier: v }))}
+                        />
+                      </SettingRow>
+                      <SettingRow label="Group goal" description="Weekly study hours goal for the server" tooltip="Set to 0 to disable">
+                        <NumberInput
+                          value={premConfig.group_goal_hours ?? 0}
+                          onChange={(v) => setPremConfig((c: any) => ({ ...c, group_goal_hours: v }))}
+                          unit="hours/week"
+                          min={0}
+                          max={1000}
+                        />
+                      </SettingRow>
+                      <div className="pt-4 border-t border-border/50">
+                        <button
+                          onClick={handleSavePremium}
+                          disabled={savingPrem}
+                          className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
+                        >
+                          {savingPrem ? "Saving..." : "Save Premium Settings"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                </SectionCard>
+                {isPremium && (
+                  <div className="mt-3">
+                    <Link href={`/dashboard/servers/${guildId}/pomodoro-analytics`}>
+                      <a className="text-sm text-primary hover:text-primary/80 transition-colors">
+                        View Premium Analytics →
+                      </a>
+                    </Link>
+                  </div>
+                )}
+              </div>
+              {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
         </div>

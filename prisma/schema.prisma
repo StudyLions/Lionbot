@@ -253,11 +253,13 @@ model guild_config {
   coin_transactions       coin_transactions[]
   members                 members[]
   msg_ranks               msg_ranks[]
-  premium_guilds          premium_guilds?
-  role_menus              role_menus[]
-  schedule_guild_config   schedule_guild_config?
-  tasklist_channels       tasklist_channels[]       @ignore
-  timers                  timers[]
+  premium_guilds              premium_guilds?
+  premium_pomodoro_config     premium_pomodoro_config?
+  pomodoro_milestones         pomodoro_milestones[]
+  role_menus                  role_menus[]
+  schedule_guild_config       schedule_guild_config?
+  tasklist_channels           tasklist_channels[]       @ignore
+  timers                      timers[]
   tracked_channels        tracked_channels[]
   untracked_text_channels untracked_text_channels[]
   video_exempt_roles      video_exempt_roles[]
@@ -882,6 +884,10 @@ model user_config {
   lg_user_inventory           lg_user_inventory[]
   // --- AI-MODIFIED (2026-03-17) ---
   lg_user_gameboy_skins       lg_user_gameboy_skins[]
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-18) ---
+  pomodoro_streaks            pomodoro_streaks?
+  pomodoro_milestones         pomodoro_milestones[]
   // --- END AI-MODIFIED ---
 }
 
@@ -1607,6 +1613,51 @@ model user_card_preferences {
   ring_color      String?
   created_at      DateTime? @default(now()) @db.Timestamptz(6)
   updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-18) ---
+// Purpose: Premium pomodoro feature tables (config, streaks, milestones)
+
+model premium_pomodoro_config {
+  guildid          BigInt   @id
+  focus_roleid     BigInt?
+  session_summary  Boolean  @default(true)
+  animated_timer   Boolean  @default(true)
+  timer_theme      String?  @default("default") @db.VarChar(32)
+  group_goal_hours Int?
+  coin_multiplier  Boolean  @default(true)
+  golden_hour_start DateTime? @db.Time(6)
+  golden_hour_end   DateTime? @db.Time(6)
+  guild_config     guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pomodoro_streaks {
+  userid                 BigInt   @id
+  current_daily_streak   Int      @default(0)
+  longest_daily_streak   Int      @default(0)
+  current_weekly_streak  Int      @default(0)
+  longest_weekly_streak  Int      @default(0)
+  last_pomodoro_date     DateTime? @db.Date
+  total_cycles_completed Int      @default(0)
+  total_focus_minutes    Int      @default(0)
+  focus_power            Int      @default(0)
+  user_config            user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model pomodoro_milestones {
+  milestoneid     Int      @id @default(autoincrement())
+  userid          BigInt
+  guildid         BigInt
+  milestone_type  String   @db.VarChar(32)
+  milestone_value Int
+  achieved_at     DateTime @default(now()) @db.Timestamptz(6)
+  user_config     user_config  @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  guild_config    guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userid, guildid, milestone_type, milestone_value])
+  @@index([userid], map: "pomodoro_milestones_user")
 }
 
 // --- END AI-MODIFIED ---
