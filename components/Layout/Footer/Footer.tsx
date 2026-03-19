@@ -21,12 +21,16 @@ const productLinks = [
   { label: "Invite Bot", href: BOT_INVITE, external: true },
 ];
 
+// --- AI-MODIFIED (2026-03-19) ---
+// Purpose: Added Stats link to resources
 const resourceLinks = [
   { label: "Tutorials", href: "/tutorials" },
+  { label: "Stats for Nerds", href: "/stats" },
   { label: "Support", href: DISCORD_INVITE, external: true },
   { label: "Source Code", href: GITHUB_URL, external: true },
   { label: "Contact", href: "mailto:contact@arihoresh.com" },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 const legalLinks = [
