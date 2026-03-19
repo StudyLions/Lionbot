@@ -294,19 +294,44 @@ export default function PomodoroPage() {
     if (data) setPomodoroChannel(data.pomodoro_channel)
   }, [data])
 
-  // --- AI-MODIFIED (2026-03-18) ---
-  // Purpose: Fetch and save premium pomodoro config
+  // --- AI-REPLACED (2026-03-19) ---
+  // Reason: When a premium guild has no config row yet, premConfig was null and the settings form
+  // rendered nothing. Now we initialize with sensible defaults so the form always appears.
+  // --- Original code (commented out for rollback) ---
+  // useEffect(() => {
+  //   if (!guildId) return
+  //   fetch(`/api/dashboard/servers/${guildId}/premium-pomodoro`)
+  //     .then(r => r.json())
+  //     .then(data => {
+  //       setPremConfig(data.config)
+  //       setIsPremium(data.isPremium)
+  //       setPremLoading(false)
+  //     })
+  //     .catch(() => setPremLoading(false))
+  // }, [guildId])
+  // --- End original code ---
   useEffect(() => {
     if (!guildId) return
     fetch(`/api/dashboard/servers/${guildId}/premium-pomodoro`)
       .then(r => r.json())
       .then(data => {
-        setPremConfig(data.config)
+        const defaults = {
+          animated_timer: false,
+          timer_theme: "default",
+          focus_roleid: null,
+          session_summary: true,
+          coin_multiplier: true,
+          group_goal_hours: null,
+          golden_hour_start: null,
+          golden_hour_end: null,
+        }
+        setPremConfig(data.config ?? (data.isPremium ? defaults : null))
         setIsPremium(data.isPremium)
         setPremLoading(false)
       })
       .catch(() => setPremLoading(false))
   }, [guildId])
+  // --- END AI-REPLACED ---
 
   const handleSavePremium = useCallback(async () => {
     if (!guildId || !premConfig) return
@@ -938,13 +963,7 @@ export default function PomodoroPage() {
                     </div>
                   ) : premConfig ? (
                     <div className="space-y-0">
-                      <SettingRow label="Animated timer" description="Show an animated countdown in the timer card">
-                        <Toggle
-                          checked={premConfig.animated_timer ?? false}
-                          onChange={(v) => setPremConfig((c: any) => ({ ...c, animated_timer: v }))}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Timer theme" description="Visual theme for the timer display">
+                      <SettingRow label="Timer theme" description="Color theme applied to the timer card (progress bar, header, footer)">
                         <select
                           value={premConfig.timer_theme ?? "default"}
                           onChange={(e) => setPremConfig((c: any) => ({ ...c, timer_theme: e.target.value }))}
