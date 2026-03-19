@@ -91,12 +91,16 @@ interface PomodoroServerStats {
 
 // ---- Constants ----
 
+// --- AI-MODIFIED (2026-03-19) ---
+// Purpose: Add "Premium" as a dedicated third tab so it's easy to find
 const TABS = [
   { id: "overview", label: "Overview", icon: <BarChart3 size={14} /> },
   { id: "timers", label: "Timers", icon: <Timer size={14} /> },
+  { id: "premium", label: "Premium", icon: <Sparkles size={14} /> },
 ] as const
 
 type TabId = typeof TABS[number]["id"]
+// --- END AI-MODIFIED ---
 
 const PRESETS = [
   { label: "Classic", focus: 25, break: 5, description: "The original Pomodoro technique" },
@@ -933,99 +937,113 @@ export default function PomodoroPage() {
                 </div>
               )}
 
-              {/* --- AI-MODIFIED (2026-03-18) --- */}
-              {/* Purpose: Premium Pomodoro Features section */}
-              <div className="mt-6">
-                <SectionCard
-                  title="Premium Pomodoro Features"
-                  description="Enhanced timer features for premium servers"
-                  icon={<Sparkles size={18} />}
-                >
+              {/* --- AI-REPLACED (2026-03-19) --- */}
+              {/* Reason: Premium section was buried at page bottom; moved into its own tab */}
+              {tab === "premium" && (
+                <div className="space-y-6">
                   {premLoading ? (
-                    <div className="animate-pulse space-y-3">
-                      <div className="h-10 bg-muted rounded" />
-                      <div className="h-10 bg-muted rounded w-3/4" />
+                    <div className="space-y-4">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-card/50 border border-border rounded-xl p-6 animate-pulse">
+                          <div className="h-5 bg-muted rounded w-1/4 mb-4" />
+                          <div className="h-10 bg-muted rounded" />
+                        </div>
+                      ))}
                     </div>
                   ) : !isPremium ? (
-                    <div className="text-center py-8">
-                      <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
-                        <Lock size={24} className="text-amber-400" />
+                    <div className="bg-card/50 border border-border rounded-xl p-12 text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+                        <Lock size={28} className="text-amber-400" />
                       </div>
-                      <h4 className="text-md font-semibold text-foreground mb-2">Premium Feature</h4>
-                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-4">
-                        Unlock premium pomodoro features for your server! Animated timers, themes, streaks, economy bonuses, and more.
+                      <h3 className="text-lg font-semibold text-foreground mb-2">Premium Pomodoro Features</h3>
+                      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+                        Unlock custom timer themes, focus roles, session summaries, economy bonuses, streaks, and advanced analytics for your server.
                       </p>
                       <Link href="/premium">
-                        <a className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
+                        <a className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
                           <Sparkles size={14} /> Upgrade to Premium
                         </a>
                       </Link>
                     </div>
                   ) : premConfig ? (
-                    <div className="space-y-0">
-                      <SettingRow label="Timer theme" description="Color theme applied to the timer card (progress bar, header, footer)">
-                        <select
-                          value={premConfig.timer_theme ?? "default"}
-                          onChange={(e) => setPremConfig((c: any) => ({ ...c, timer_theme: e.target.value }))}
-                          className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          {themes.map((t) => (
-                            <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
-                          ))}
-                        </select>
-                      </SettingRow>
-                      <SettingRow label="Focus role" description="Role granted to members while in a focus session">
-                        <RoleSelect
-                          guildId={guildId}
-                          value={premConfig.focus_roleid ?? null}
-                          onChange={(v) => setPremConfig((c: any) => ({ ...c, focus_roleid: Array.isArray(v) ? v[0] ?? null : v }))}
-                          placeholder="None"
-                        />
-                      </SettingRow>
-                      <SettingRow label="Session summaries" description="Post a summary after each completed session">
-                        <Toggle
-                          checked={premConfig.session_summary ?? false}
-                          onChange={(v) => setPremConfig((c: any) => ({ ...c, session_summary: v }))}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Coin multiplier" description="Bonus coins for pomodoro focus sessions">
-                        <Toggle
-                          checked={premConfig.coin_multiplier ?? false}
-                          onChange={(v) => setPremConfig((c: any) => ({ ...c, coin_multiplier: v }))}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Group goal" description="Weekly study hours goal for the server" tooltip="Set to 0 to disable">
-                        <NumberInput
-                          value={premConfig.group_goal_hours ?? 0}
-                          onChange={(v) => setPremConfig((c: any) => ({ ...c, group_goal_hours: v }))}
-                          unit="hours/week"
-                          min={0}
-                          max={1000}
-                        />
-                      </SettingRow>
-                      <div className="pt-4 border-t border-border/50">
+                    <>
+                      <SectionCard
+                        title="Timer Customization"
+                        description="Customize how your pomodoro timer looks and behaves"
+                        icon={<Sparkles size={18} />}
+                      >
+                        <div className="space-y-0">
+                          <SettingRow label="Timer theme" description="Color theme applied to the timer card (progress bar, header, footer)">
+                            <select
+                              value={premConfig.timer_theme ?? "default"}
+                              onChange={(e) => setPremConfig((c: any) => ({ ...c, timer_theme: e.target.value }))}
+                              className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                            >
+                              {themes.map((t) => (
+                                <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>
+                              ))}
+                            </select>
+                          </SettingRow>
+                          <SettingRow label="Focus role" description="Role granted to members while in a focus session">
+                            <RoleSelect
+                              guildId={guildId}
+                              value={premConfig.focus_roleid ?? null}
+                              onChange={(v) => setPremConfig((c: any) => ({ ...c, focus_roleid: Array.isArray(v) ? v[0] ?? null : v }))}
+                              placeholder="None"
+                            />
+                          </SettingRow>
+                        </div>
+                      </SectionCard>
+
+                      <SectionCard
+                        title="Economy & Gamification"
+                        description="Reward members for focused study sessions"
+                        icon={<Zap size={18} />}
+                      >
+                        <div className="space-y-0">
+                          <SettingRow label="Session summaries" description="Post a summary after each completed focus session">
+                            <Toggle
+                              checked={premConfig.session_summary ?? false}
+                              onChange={(v) => setPremConfig((c: any) => ({ ...c, session_summary: v }))}
+                            />
+                          </SettingRow>
+                          <SettingRow label="Coin multiplier" description="Bonus coins for pomodoro focus sessions">
+                            <Toggle
+                              checked={premConfig.coin_multiplier ?? false}
+                              onChange={(v) => setPremConfig((c: any) => ({ ...c, coin_multiplier: v }))}
+                            />
+                          </SettingRow>
+                          <SettingRow label="Group goal" description="Weekly study hours goal for the server" tooltip="Set to 0 to disable">
+                            <NumberInput
+                              value={premConfig.group_goal_hours ?? 0}
+                              onChange={(v) => setPremConfig((c: any) => ({ ...c, group_goal_hours: v }))}
+                              unit="hours/week"
+                              min={0}
+                              max={1000}
+                            />
+                          </SettingRow>
+                        </div>
+                      </SectionCard>
+
+                      <div className="flex items-center justify-between">
                         <button
                           onClick={handleSavePremium}
                           disabled={savingPrem}
-                          className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
+                          className="px-5 py-2.5 text-sm font-medium text-white bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
                         >
                           {savingPrem ? "Saving..." : "Save Premium Settings"}
                         </button>
+                        <Link href={`/dashboard/servers/${guildId}/pomodoro-analytics`}>
+                          <a className="text-sm text-primary hover:text-primary/80 transition-colors flex items-center gap-1">
+                            <TrendingUp size={14} /> View Premium Analytics
+                          </a>
+                        </Link>
                       </div>
-                    </div>
+                    </>
                   ) : null}
-                </SectionCard>
-                {isPremium && (
-                  <div className="mt-3">
-                    <Link href={`/dashboard/servers/${guildId}/pomodoro-analytics`}>
-                      <a className="text-sm text-primary hover:text-primary/80 transition-colors">
-                        View Premium Analytics →
-                      </a>
-                    </Link>
-                  </div>
-                )}
-              </div>
-              {/* --- END AI-MODIFIED --- */}
+                </div>
+              )}
+              {/* --- END AI-REPLACED --- */}
             </div>
           </div>
         </div>
