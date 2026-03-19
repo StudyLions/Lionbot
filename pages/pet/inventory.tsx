@@ -217,7 +217,7 @@ export default function InventoryPage() {
                   {/* Equipment Slots */}
                   <PixelCard className="p-3" corners>
                     <div className="flex items-center gap-2 pb-2 mb-2 border-b-2 border-[#1a2a3c]">
-                      <span className="font-pixel text-[14px]">{"\u{2694\uFE0F}"}</span>
+                      <span className="font-pixel text-[14px]">{"\u2694\uFE0F"}</span>
                       <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">Equipped</span>
                     </div>
                     <div className="space-y-1.5">
