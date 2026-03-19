@@ -150,6 +150,30 @@ export default apiHandler({
     const layoutRow = layoutRows[0] ?? null
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-19) ---
+    // Purpose: Calculate effective stats with lazy decay and derive mood + multiplier
+    const DECAY_INTERVAL_HOURS = 6
+    const now = new Date()
+    const elapsedHours = (now.getTime() - pet.last_decay_at.getTime()) / (1000 * 3600)
+    const decayTicks = Math.floor(elapsedHours / DECAY_INTERVAL_HOURS)
+    const effectiveFood = Math.max(0, pet.food - decayTicks)
+    const effectiveBath = Math.max(0, pet.bath - decayTicks)
+    const effectiveSleep = Math.max(0, pet.sleep - decayTicks)
+    const mood = Math.floor((effectiveFood + effectiveBath + effectiveSleep) / 3)
+
+    const MOOD_MULTS: Record<number, number> = {
+      8: 1.25, 7: 1.20, 6: 1.10, 5: 1.00,
+      4: 0.95, 3: 0.85, 2: 0.75, 1: 0.60, 0: 0.50,
+    }
+    const MOOD_LABELS: Record<number, string> = {
+      8: 'Ecstatic', 7: 'Ecstatic', 6: 'Happy', 5: 'Happy',
+      4: 'Okay', 3: 'Okay', 2: 'Sad', 1: 'Sad', 0: 'Fainted',
+    }
+    const moodMult = MOOD_MULTS[mood] ?? 1.0
+    const moodLabel = MOOD_LABELS[mood] ?? 'Okay'
+    const nextDecayAt = new Date(pet.last_decay_at.getTime() + DECAY_INTERVAL_HOURS * 3600 * 1000)
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       hasPet: true,
       pet: {
@@ -157,14 +181,21 @@ export default apiHandler({
         expression: (pet.expression ?? 'default').toLowerCase(),
         level: pet.level,
         xp: pet.xp.toString(),
-        food: pet.food,
-        bath: pet.bath,
-        sleep: pet.sleep,
+        food: effectiveFood,
+        bath: effectiveBath,
+        sleep: effectiveSleep,
         life: pet.life,
         lastDecayAt: pet.last_decay_at.toISOString(),
         fullscreenMode: pet.fullscreen_mode,
         createdAt: pet.created_at.toISOString(),
       },
+      // --- AI-MODIFIED (2026-03-19) ---
+      // Purpose: Mood system data for the overview page
+      mood,
+      moodLabel,
+      moodMult,
+      nextDecayAt: nextDecayAt.toISOString(),
+      // --- END AI-MODIFIED ---
       equipment,
       inventoryCount,
       activeFarmPlots: farmPlots,
