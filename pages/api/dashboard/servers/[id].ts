@@ -11,7 +11,7 @@ import { requireAuth, getUserGuilds } from "@/utils/adminAuth"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 export default apiHandler({
@@ -23,7 +23,10 @@ export default apiHandler({
 
     const userId = BigInt(auth.discordId)
     // --- END AI-MODIFIED ---
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild id from query via parseBigInt (400 on invalid); keep auth.discordId as BigInt()
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-14) ---
     // Purpose: fetch Discord guild data for icon and banner URLs
@@ -106,7 +109,9 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
-    if (!membership) {
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: allow newly added servers where no members row exists yet (bot creates lazily)
+    if (!membership && !discordGuild) {
       return res.status(404).json({ error: "You are not a member of this server" })
     }
 
@@ -116,10 +121,7 @@ export default apiHandler({
       name: discordGuild?.name || guildConfig?.name || "Unknown Server",
       iconUrl,
       bannerUrl,
-      // --- AI-MODIFIED (2026-03-15) ---
-      // Purpose: pass Discord's real member count to frontend
       memberCount: discordGuild?.approximate_member_count || null,
-      // --- END AI-MODIFIED ---
       settings: guildConfig ? {
         studyHourlyReward: guildConfig.study_hourly_reward,
         studyHourlyLiveBonus: guildConfig.study_hourly_live_bonus,
@@ -130,24 +132,20 @@ export default apiHandler({
         timezone: guildConfig.timezone,
       } : null,
     },
-    // --- AI-MODIFIED (2026-03-14) ---
-    // Purpose: use voice_sessions aggregate instead of members.tracked_time (which is always 0)
     you: {
       trackedTimeSeconds: Number(userStudyTime?.[0]?.total || 0),
       trackedTimeHours: Math.round(Number(userStudyTime?.[0]?.total || 0) / 3600 * 10) / 10,
-      coins: membership.coins || 0,
-      displayName: membership.display_name,
-      workoutCount: membership.workout_count,
-      firstJoined: membership.first_joined,
-      // --- AI-MODIFIED (2026-03-13) ---
-      // Purpose: serialize BigInt rank IDs to prevent JSON.stringify crash
+      coins: membership?.coins || 0,
+      displayName: membership?.display_name || discordGuild?.name || null,
+      workoutCount: membership?.workout_count || 0,
+      firstJoined: membership?.first_joined || null,
       ranks: userRank ? {
         currentXpRankId: userRank.current_xp_rankid?.toString() || null,
         currentVoiceRankId: userRank.current_voice_rankid?.toString() || null,
         currentMsgRankId: userRank.current_msg_rankid?.toString() || null,
       } : null,
-      // --- END AI-MODIFIED ---
     },
+    // --- END AI-MODIFIED ---
     // --- AI-MODIFIED (2026-03-14) ---
     // Purpose: use voice_sessions aggregation result fields
     leaderboard: leaderboard.map((m, i) => ({
