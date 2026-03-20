@@ -8,6 +8,8 @@
 import { signIn } from "next-auth/react"
 import { motion, type Variants } from "framer-motion"
 import useSWR from "swr"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Replaced Hammer with Sparkles for Equipment & Drops card
 import {
   BarChart3,
   Timer,
@@ -15,14 +17,14 @@ import {
   History,
   Heart,
   Sprout,
-  Hammer,
+  Sparkles,
   Store,
   ArrowRight,
-  Sparkles,
   Users,
   Clock,
   Activity,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import type { ReactNode } from "react"
 
 const fadeUp: Variants = {
@@ -82,30 +84,32 @@ const dashboardFeatures: FeatureCard[] = [
   },
 ]
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Replaced "Crafting" with "Equipment & Enhancement" since crafting was removed
 const petFeatures: FeatureCard[] = [
   {
     icon: <Heart className="h-6 w-6" />,
     title: "Your Pet",
     description:
-      "A virtual companion that grows as you study. Feed, play, and watch it evolve.",
+      "A virtual companion that grows as you study. Feed it, keep it happy, and watch it level up.",
     accent: "text-pink-400",
     glow: "bg-pink-500/10",
+  },
+  {
+    icon: <Sparkles className="h-6 w-6" />,
+    title: "Equipment & Drops",
+    description:
+      "Earn equipment and scrolls automatically while you study. Enhance gear for powerful bonuses.",
+    accent: "text-amber-400",
+    glow: "bg-amber-500/10",
   },
   {
     icon: <Sprout className="h-6 w-6" />,
     title: "Farm",
     description:
-      "Plant seeds, harvest crops, and discover rare produce to use in crafting.",
+      "Plant seeds, water your crops daily, and harvest for gold and bonus item drops.",
     accent: "text-emerald-400",
     glow: "bg-emerald-500/10",
-  },
-  {
-    icon: <Hammer className="h-6 w-6" />,
-    title: "Crafting",
-    description:
-      "Combine ingredients to create items, food, and gear for your pet.",
-    accent: "text-amber-400",
-    glow: "bg-amber-500/10",
   },
   {
     icon: <Store className="h-6 w-6" />,
@@ -116,6 +120,7 @@ const petFeatures: FeatureCard[] = [
     glow: "bg-cyan-500/10",
   },
 ]
+// --- END AI-MODIFIED ---
 
 const variantConfig = {
   dashboard: {
@@ -128,16 +133,19 @@ const variantConfig = {
     accentTo: "to-violet-500/10",
     gradientText: "from-blue-400 to-violet-400",
   },
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Updated subtitle to remove crafting reference
   pet: {
     badge: "LionGotchi",
     heading: "Meet Your LionGotchi",
     subtitle:
-      "Raise your own pet, grow a farm, craft items, and trade on the marketplace \u2014 powered by your study sessions.",
+      "Raise your own pet, earn equipment, grow a farm, and trade on the marketplace \u2014 all powered by your study sessions.",
     features: petFeatures,
     accentFrom: "from-amber-500/15",
     accentTo: "to-pink-500/10",
     gradientText: "from-amber-400 to-pink-400",
   },
+  // --- END AI-MODIFIED ---
 } as const
 
 interface PublicStats {

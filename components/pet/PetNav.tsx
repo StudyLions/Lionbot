@@ -16,10 +16,13 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: Added Palette icon for the Skins nav link
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Added Volume2/VolumeX for sound toggle
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Added Lock icon for no-pet nav items
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
-  Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX,
+  Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX, Lock,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-16) ---
@@ -33,6 +36,7 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   disabled?: boolean
+  requiresPet?: boolean
 }
 
 interface NavSection {
@@ -40,28 +44,24 @@ interface NavSection {
   items: NavItem[]
 }
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Added requiresPet flag to items that need a pet to access
 const sections: NavSection[] = [
   {
     title: "PET",
     items: [
       { href: "/pet", label: "Overview", icon: <PawPrint size={14} /> },
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Added Room link between Overview and Inventory
-      { href: "/pet/room", label: "Room", icon: <Home size={14} /> },
-      // --- END AI-MODIFIED ---
-      { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} /> },
-      // --- AI-MODIFIED (2026-03-17) ---
-      // Purpose: Added Skins link for gameboy frame customization
-      { href: "/pet/skins", label: "Skins", icon: <Palette size={14} /> },
-      // --- END AI-MODIFIED ---
-      { href: "/pet/farm", label: "Farm", icon: <Sprout size={14} /> },
+      { href: "/pet/room", label: "Room", icon: <Home size={14} />, requiresPet: true },
+      { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} />, requiresPet: true },
+      { href: "/pet/skins", label: "Skins", icon: <Palette size={14} />, requiresPet: true },
+      { href: "/pet/farm", label: "Farm", icon: <Sprout size={14} />, requiresPet: true },
     ],
   },
   {
     title: "CRAFTING",
     items: [
-      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={14} /> },
-      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={14} /> },
+      { href: "/pet/crafting", label: "Crafting", icon: <Hammer size={14} />, requiresPet: true },
+      { href: "/pet/enhancement", label: "Enhancement", icon: <Sparkles size={14} />, requiresPet: true },
     ],
   },
   {
@@ -72,14 +72,28 @@ const sections: NavSection[] = [
     ],
   },
 ]
+// --- END AI-MODIFIED ---
 
-function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Support locked state for items requiring a pet
+function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isActive: boolean; onClick?: () => void; locked?: boolean }) {
   if (item.disabled) {
     return (
       <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#4a5568] cursor-not-allowed">
         <span className="opacity-40">{item.icon}</span>
         {item.label}
         <span className="ml-auto text-[11px] text-[#3a4050]">SOON</span>
+      </span>
+    )
+  }
+
+  if (locked) {
+    return (
+      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#3a4a5c] cursor-not-allowed border-l-2 border-l-transparent"
+            title="Adopt a pet to unlock">
+        <span className="opacity-30">{item.icon}</span>
+        <span className="opacity-50">{item.label}</span>
+        <Lock size={10} className="ml-auto opacity-40" />
       </span>
     )
   }
@@ -101,8 +115,12 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
     </Link>
   )
 }
+// --- END AI-MODIFIED ---
 
-function NavContent({ onNavigate }: { onNavigate?: () => void }) {
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Accept hasPet prop to show locked nav items for users without a pet
+function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; hasPet?: boolean }) {
+// --- END AI-MODIFIED ---
   const router = useRouter()
   const { data: session } = useSession()
   // --- AI-MODIFIED (2026-03-20) ---
@@ -179,12 +197,17 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                 const isActive = item.href === "/pet"
                   ? router.pathname === "/pet"
                   : router.pathname.startsWith(item.href)
+                // --- AI-MODIFIED (2026-03-20) ---
+                // Purpose: Lock items that require a pet when user has no pet
+                const isLocked = !hasPet && item.requiresPet
+                // --- END AI-MODIFIED ---
                 return (
                   <NavItemLink
                     key={item.href}
                     item={item}
                     isActive={isActive}
                     onClick={onNavigate}
+                    locked={isLocked}
                   />
                 )
               })}
@@ -220,7 +243,9 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   )
 }
 
-export default function PetNav() {
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Accept hasPet prop to show locked nav items
+export default function PetNav({ hasPet = true }: { hasPet?: boolean }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -229,7 +254,7 @@ export default function PetNav() {
         className="hidden lg:flex flex-col w-56 flex-shrink-0 sticky top-6 self-start border-r-2 border-[var(--pet-border,#2a3a5c)] h-[calc(100vh-3rem)] bg-[var(--pet-card,#0f1628)]"
         aria-label="Pet navigation"
       >
-        <NavContent />
+        <NavContent hasPet={hasPet} />
       </nav>
 
       <div className="fixed top-16 left-4 z-40 lg:hidden">
@@ -243,10 +268,11 @@ export default function PetNav() {
             <SheetHeader className="sr-only">
               <SheetTitle>Pet Navigation</SheetTitle>
             </SheetHeader>
-            <NavContent onNavigate={() => setOpen(false)} />
+            <NavContent onNavigate={() => setOpen(false)} hasPet={hasPet} />
           </SheetContent>
         </Sheet>
       </div>
     </>
   )
 }
+// --- END AI-MODIFIED ---

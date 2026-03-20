@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils"
 import { getItemImageUrl, getUiIconUrl } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Import NoPetShowcase for rich no-pet experience
+import NoPetShowcase from "@/components/pet/NoPetShowcase"
+// --- END AI-MODIFIED ---
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -213,7 +217,10 @@ export default function PetOverview() {
       <AdminGuard variant="pet">
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
-            <PetNav />
+            {/* --- AI-MODIFIED (2026-03-20) --- */}
+            {/* Purpose: Pass hasPet to PetNav for locked item display */}
+            <PetNav hasPet={data?.hasPet ?? true} />
+            {/* --- END AI-MODIFIED --- */}
             <div className="flex-1 min-w-0 space-y-4">
               {isLoading ? (
                 <div className="space-y-4">
@@ -226,15 +233,18 @@ export default function PetOverview() {
                 <PixelCard className="p-8 text-center" corners>
                   <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
-              ) : !data?.hasPet ? (
+              {/* --- AI-REPLACED (2026-03-20) --- */}
+              {/* Reason: Rich showcase instead of dead-end "No pet yet!" card */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* ) : !data?.hasPet ? (
                 <PixelCard className="p-12 text-center space-y-4" corners>
-                  <img src={getUiIconUrl("liongotchi_heart")} alt="" width={48} height={48}
-                    className="mx-auto" style={{ imageRendering: "pixelated" }} />
-                  <h2 className="font-pixel text-xl text-[var(--pet-text,#e2e8f0)]">No pet yet!</h2>
-                  <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] max-w-sm mx-auto">
-                    Use the /pet command in any Discord server with LionBot to create your LionGotchi.
-                  </p>
-                </PixelCard>
+                  <img src={getUiIconUrl("liongotchi_heart")} alt="" width={48} height={48} />
+                  <h2 className="font-pixel text-xl">No pet yet!</h2>
+                  <p className="font-pixel text-[13px]">Use the /pet command...</p>
+                </PixelCard> */}
+              {/* --- End original code --- */}
+              ) : !data?.hasPet ? (
+                <NoPetShowcase />
               ) : pet && (
                 <>
                   {/* Hero */}
