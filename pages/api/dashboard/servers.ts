@@ -129,7 +129,7 @@ export default apiHandler({
     const candidateGuilds = discordGuilds.filter((g) => {
       if (existingGuildIds.has(g.id)) return false
       const perms = BigInt(g.permissions)
-      return (perms & BigInt(ADMINISTRATOR)) !== 0n || (perms & BigInt(MANAGE_GUILD)) !== 0n
+      return (perms & BigInt(ADMINISTRATOR)) !== BigInt(0) || (perms & BigInt(MANAGE_GUILD)) !== BigInt(0)
     })
 
     const newServerChecks = await Promise.all(
@@ -154,7 +154,7 @@ export default apiHandler({
         iconUrl = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.${ext}?size=128`
       }
       const perms = BigInt(g.permissions)
-      const role: ServerRole = (perms & BigInt(ADMINISTRATOR)) !== 0n ? "admin" : "moderator"
+      const role: ServerRole = (perms & BigInt(ADMINISTRATOR)) !== BigInt(0) ? "admin" : "moderator"
 
       servers.push({
         guildId: g.id,
