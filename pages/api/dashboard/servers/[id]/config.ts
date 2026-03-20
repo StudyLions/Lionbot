@@ -6,8 +6,11 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
-import { requireAdmin, requireAuth, isModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { requireAdmin, requireAuth, isModerator, getUserGuilds } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and bigint fields/IDs from import body
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: added missing settings fields (channels, roles, season, rooms, XP per word)
@@ -40,17 +43,30 @@ const BIGINT_FIELDS = new Set([
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAuth(req, res)
     if (!auth) return
 
     const hasModPerms = await isModerator(auth, guildId)
     if (!hasModPerms) return res.status(403).json({ error: "Not a moderator of this server" })
 
-    const config = await prisma.guild_config.findUnique({
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: auto-create guild_config for newly added servers (bot creates lazily on first command,
+    // but users may visit the dashboard before running any command)
+    let config = await prisma.guild_config.findUnique({
       where: { guildid: guildId },
     })
-    if (!config) return res.status(404).json({ error: "Server not found" })
+    if (!config) {
+      const guilds = await getUserGuilds(auth.accessToken, auth.discordId)
+      const discordGuild = guilds.find((g) => g.id === guildId.toString())
+      config = await prisma.guild_config.create({
+        data: {
+          guildid: guildId,
+          name: discordGuild?.name ?? null,
+        },
+      })
+    }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-13) ---
     // Purpose: serialize BigInt fields to strings for JSON
@@ -105,7 +121,7 @@ export default apiHandler({
     return res.status(200).json(safeConfig)
   },
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -118,7 +134,7 @@ export default apiHandler({
       if (field in body) {
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
-          updates[field] = val ? BigInt(val) : null
+          updates[field] = val ? parseBigInt(val, field) : null
         } else if (field === 'season_start') {
           updates[field] = val ? new Date(val) : null
         } else {
@@ -143,7 +159,7 @@ export default apiHandler({
   // --- AI-MODIFIED (2026-03-14) ---
   // Purpose: full config import (applies all settings at once in a transaction)
   async PUT(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -157,7 +173,7 @@ export default apiHandler({
       if (field in body) {
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
-          configUpdates[field] = val ? BigInt(val) : null
+          configUpdates[field] = val ? parseBigInt(val, field) : null
         } else if (field === "season_start") {
           configUpdates[field] = val ? new Date(val) : null
         } else {
@@ -177,7 +193,7 @@ export default apiHandler({
 
     for (const [key, { table, idCol, usePrisma }] of Object.entries(LIST_TABLES)) {
       if (key in body && Array.isArray(body[key])) {
-        const ids = body[key].map((id: string) => BigInt(id))
+        const ids = body[key].map((id: string) => parseBigInt(id, `${key} entry`))
         listOps.push(async () => {
           if (usePrisma) {
             await prisma.untracked_text_channels.deleteMany({ where: { guildid: guildId } })
