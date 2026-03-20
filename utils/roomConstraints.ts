@@ -26,45 +26,37 @@ interface ConstraintZone {
   flippable: boolean
 }
 
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Tightened constraints to prevent items from leaving the room.
-//          Offsets are relative to each item's default position within the
-//          200x200 canvas. Keeping ranges small ensures items stay visible.
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Removed tight placement constraints. All furniture and lion
+// can be placed anywhere on the canvas — users have full creative freedom.
+// Wall and floor stay fixed (they're full-canvas backgrounds).
 export const LAYER_CONSTRAINTS: Record<string, ConstraintZone> = {
   wall:    { category: 'BACKGROUND',    yRange: [0, 0],     xRange: [0, 0],     movable: false, flippable: false },
   floor:   { category: 'BACKGROUND',    yRange: [0, 0],     xRange: [0, 0],     movable: false, flippable: false },
-  mat:     { category: 'FLOOR_SURFACE', yRange: [-10, 15],  xRange: [-25, 25],  movable: true,  flippable: true },
-  table:   { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
-  chair:   { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
-  bed:     { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
-  lamp:    { category: 'FLOOR_ITEMS',   yRange: [-15, 20],  xRange: [-30, 30],  movable: true,  flippable: true },
-  picture: { category: 'WALL_ITEMS',    yRange: [-15, 15],  xRange: [-30, 30],  movable: true,  flippable: true },
-  window:  { category: 'WALL_ITEMS',    yRange: [-15, 15],  xRange: [-30, 30],  movable: true,  flippable: true },
+  mat:     { category: 'FLOOR_SURFACE', yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  table:   { category: 'FLOOR_ITEMS',   yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  chair:   { category: 'FLOOR_ITEMS',   yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  bed:     { category: 'FLOOR_ITEMS',   yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  lamp:    { category: 'FLOOR_ITEMS',   yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  picture: { category: 'WALL_ITEMS',    yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
+  window:  { category: 'WALL_ITEMS',    yRange: [-999, 999], xRange: [-999, 999], movable: true, flippable: true },
 }
 
-// Lion uses ABSOLUTE position in the 200x200 canvas, not offsets.
-// The sprite renders at 80x80, so max x = 200-80=120, max y = 200-80=120.
-// Keep lion on the "floor" area (bottom portion of room).
 export const LION_CONSTRAINTS: ConstraintZone = {
   category: 'LION',
-  yRange: [75, 115],
-  xRange: [0, 120],
+  yRange: [-999, 999],
+  xRange: [-999, 999],
   movable: true,
   flippable: true,
 }
-// --- END AI-MODIFIED ---
 
 export function clampOffset(
   offset: [number, number],
-  layer: string
+  _layer: string
 ): [number, number] {
-  const constraint = layer === 'lion' ? LION_CONSTRAINTS : LAYER_CONSTRAINTS[layer]
-  if (!constraint || !constraint.movable) return [0, 0]
-  return [
-    Math.max(constraint.xRange[0], Math.min(constraint.xRange[1], offset[0])),
-    Math.max(constraint.yRange[0], Math.min(constraint.yRange[1], offset[1])),
-  ]
+  return [Math.round(offset[0]), Math.round(offset[1])]
 }
+// --- END AI-MODIFIED ---
 
 export function isMovable(layer: string): boolean {
   if (layer === 'lion') return true
@@ -195,14 +187,14 @@ export function buildRenderSequence(
   )
 }
 
-export const EQUIP_OFFSET_RANGE = 16
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Expanded equipment offset range for full positioning freedom
+export const EQUIP_OFFSET_RANGE = 64
 
 export function clampEquipOffset(offset: [number, number]): [number, number] {
-  return [
-    Math.max(-EQUIP_OFFSET_RANGE, Math.min(EQUIP_OFFSET_RANGE, Math.round(offset[0]))),
-    Math.max(-EQUIP_OFFSET_RANGE, Math.min(EQUIP_OFFSET_RANGE, Math.round(offset[1]))),
-  ]
+  return [Math.round(offset[0]), Math.round(offset[1])]
 }
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 export interface RoomLayout {

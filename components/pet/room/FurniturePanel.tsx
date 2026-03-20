@@ -395,7 +395,7 @@ export default function FurniturePanel({
   }, [rooms])
 
   return (
-    <div className="bg-[#0c1020] border-t border-[#3a4a6c] font-pixel select-none flex flex-col">
+    <div className="bg-[#0c1020] font-pixel select-none flex flex-col">
       {/* --- AI-MODIFIED (2026-03-16) --- */}
       {/* Purpose: Bumped header text sizes for readability */}
       <div className="flex items-center justify-between px-3 pt-2 pb-1">
@@ -535,7 +535,7 @@ export default function FurniturePanel({
          Bumped all text/tile/grid sizes for readability. */}
       <div
         ref={scrollRef}
-        className="flex flex-col gap-2 px-3 py-2 overflow-y-auto max-h-[300px] scrollbar-thin scrollbar-thumb-[#3a4a6c] scrollbar-track-transparent"
+        className="flex flex-col gap-2 px-3 py-2 scrollbar-thin scrollbar-thumb-[#3a4a6c] scrollbar-track-transparent"
       >
         {activeTab === 'rooms' ? (
           <>

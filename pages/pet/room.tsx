@@ -15,7 +15,6 @@ import { useDashboard } from "@/hooks/useDashboard"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import FurniturePanel from "@/components/pet/room/FurniturePanel"
 import EquipmentOrder from "@/components/pet/room/EquipmentOrder"
-import ContextualBar from "@/components/pet/room/ContextualBar"
 import UnsavedModal from "@/components/pet/room/UnsavedModal"
 import { useRoomEditor } from "@/hooks/useRoomEditor"
 import { useSmartSnap, type SnapGuide } from "@/hooks/useSmartSnap"
@@ -25,9 +24,12 @@ import {
   mergeLayout,
   isMovable,
   isFlippable,
+  isResizable,
   clampOffset,
   CANVAS_SIZE,
   DISPLAY_SCALE,
+  MIN_SCALE,
+  MAX_SCALE,
 } from "@/utils/roomConstraints"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -195,6 +197,10 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
 
   const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>("wall")
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Sidebar tabs unify Shop + Layers into one panel
+  const [sidebarTab, setSidebarTab] = useState<'shop' | 'layers'>('shop')
+  // --- END AI-MODIFIED ---
   const [hoveredLayer, setHoveredLayer] = useState<string | null>(null)
   const hoverPosRef = useRef({ x: 0, y: 0 })
   const [hoverPos, setHoverPos] = useState({ x: 0, y: 0 })
@@ -524,9 +530,12 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     ? selectedLayer !== 'lion' && !!DEFAULT_VARIANTS[selectedLayer]
     : false
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Redesigned layout — canvas-first with unified tabbed sidebar
+  // containing Shop + Layers tabs and inline selection controls
   return (
     <>
-      {/* Header bar */}
+      {/* Header toolbar */}
       <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
         <div>
           <h1 className="font-pixel text-2xl text-[#e2e8f0]">{room.name}</h1>
@@ -537,17 +546,14 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
           </div>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Undo / Redo */}
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button
             onClick={() => { undo(); playSound('undo') }}
             disabled={undoCount === 0}
             className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
             title="Undo (Ctrl+Z)"
           >
-            {'↩'}{undoCount > 0 && (
-              <span className="text-[11px] ml-0.5">({undoCount})</span>
-            )}
+            {'↩'}{undoCount > 0 && <span className="text-[11px] ml-0.5">({undoCount})</span>}
           </button>
           <button
             onClick={() => { redo(); playSound('undo') }}
@@ -555,14 +561,11 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
             className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
             title="Redo (Ctrl+Shift+Z)"
           >
-            {'↪'}{redoCount > 0 && (
-              <span className="text-[11px] ml-0.5">({redoCount})</span>
-            )}
+            {'↪'}{redoCount > 0 && <span className="text-[11px] ml-0.5">({redoCount})</span>}
           </button>
 
           <div className="w-px h-6 bg-[#2a3a5c]" />
 
-          {/* Grid toggle */}
           <button
             onClick={() => setShowGrid(!showGrid)}
             className="font-pixel text-[13px] px-2.5 py-1.5 border-2 transition-colors"
@@ -576,15 +579,12 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
             {'⊞'}
           </button>
 
-          {/* Zoom */}
           <div className="flex items-center gap-1">
             <button
               onClick={zoomOut}
               className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
               title="Zoom out"
-            >
-              {'−'}
-            </button>
+            >{'−'}</button>
             <span className="font-pixel text-[13px] text-[#8899aa] min-w-[3ch] text-center tabular-nums">
               {Math.round(zoom * 100)}%
             </span>
@@ -592,14 +592,11 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
               onClick={zoomIn}
               className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
               title="Zoom in"
-            >
-              {'+'}
-            </button>
+            >{'+'}</button>
           </div>
 
           <div className="w-px h-6 bg-[#2a3a5c]" />
 
-          {/* Save */}
           <button
             onClick={handleSave}
             disabled={!isDirty || isSaving}
@@ -620,33 +617,18 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
         </div>
       </div>
 
-      {/* 2-column layout: canvas left, shop right */}
-      <div className="flex gap-4 lg:flex-col">
-        {/* Left column: contextual bar + canvas + equipment */}
-        <div className="flex-1 min-w-0 space-y-3">
-          {/* Contextual action bar */}
-          {selectedLayer && (
-            <ContextualBar
-              layer={selectedLayer}
-              currentScale={selectedScale}
-              hasColorVariants={hasColorVariants}
-              onFlip={handleFlip}
-              onColor={handleColorCycle}
-              onScale={handleScale}
-              onRemove={handleRemove}
-              onDeselect={() => setSelectedLayer(null)}
-            />
-          )}
-
-          {/* Canvas */}
+      {/* Main content: canvas + sidebar */}
+      <div className="flex gap-5 md:flex-col items-start">
+        {/* Canvas area */}
+        <div className="flex-1 min-w-0 space-y-2">
           <PixelCard
-            className="p-4 overflow-auto flex items-center justify-center"
+            className="p-3 overflow-auto flex items-center justify-center"
             corners
           >
             <div
               ref={canvasWrapperRef}
               className="relative"
-              style={{ cursor: dragState ? "grabbing" : "grab" }}
+              style={{ cursor: dragState ? "grabbing" : "default" }}
               onMouseMove={handleCanvasMouseMove}
             >
               <RoomCanvas
@@ -690,29 +672,11 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                 >
                   {snapGuides.map((g, i) =>
                     g.type === "vertical" ? (
-                      <line
-                        key={i}
-                        x1={g.position}
-                        y1={g.from}
-                        x2={g.position}
-                        y2={g.to}
-                        stroke={g.color}
-                        strokeWidth={0.5}
-                        strokeDasharray="2 2"
-                        opacity={0.8}
-                      />
+                      <line key={i} x1={g.position} y1={g.from} x2={g.position} y2={g.to}
+                        stroke={g.color} strokeWidth={0.5} strokeDasharray="2 2" opacity={0.8} />
                     ) : (
-                      <line
-                        key={i}
-                        x1={g.from}
-                        y1={g.position}
-                        x2={g.to}
-                        y2={g.position}
-                        stroke={g.color}
-                        strokeWidth={0.5}
-                        strokeDasharray="2 2"
-                        opacity={0.8}
-                      />
+                      <line key={i} x1={g.from} y1={g.position} x2={g.to} y2={g.position}
+                        stroke={g.color} strokeWidth={0.5} strokeDasharray="2 2" opacity={0.8} />
                     )
                   )}
                 </svg>
@@ -720,95 +684,187 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
             </div>
           </PixelCard>
 
-          {/* Hint text */}
-          <p className="font-pixel text-[11px] text-[#5a6a7c] text-center">
-            Click to select {'·'} Drag to move {'·'} Esc to deselect {'·'} Del to remove {'·'} G for grid
-          </p>
-
-          {/* --- AI-MODIFIED (2026-03-17) --- */}
-          {/* Purpose: Artist attribution note below the room canvas */}
+          <div className="flex items-center justify-between px-1">
+            <p className="font-pixel text-[11px] text-[#5a6a7c]">
+              Click to select {'·'} Drag to move {'·'} Esc to deselect {'·'} Del to remove
+            </p>
+            <p className="font-pixel text-[11px] text-[#5a6a7c]">G for grid</p>
+          </div>
           <ArtistAttribution />
-          {/* --- END AI-MODIFIED --- */}
-
-          {/* Equipment render order */}
-          {Object.keys(equipment).length > 0 && (
-            <EquipmentOrder
-              equipment={equipment}
-              renderSequence={layout.renderSequence}
-              equipmentOffsets={layout.equipmentOffsets}
-              selectedSlot={selectedEquipSlot}
-              onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
-              onSelectSlot={setSelectedEquipSlot}
-              onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
-            />
-          )}
         </div>
 
-        {/* Right column: furniture shop */}
-        <div className="w-[340px] lg:w-full flex-shrink-0">
-          <PixelCard className="overflow-hidden" corners>
-            <FurniturePanel
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              furniture={mergedFurniture}
-              availableItems={data.availableItems ?? []}
-              gold={data.gold}
-              gems={data.gems}
-              rooms={data.rooms}
-              activeRoomPrefix={room.assetPrefix}
-              onPreviewItem={(slot, assetPath) => {
-                setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-              }}
-              onCancelPreview={(slot) => {
-                setFurnitureOverrides(prev => {
-                  const next = { ...prev }
-                  delete next[slot]
-                  return next
-                })
-              }}
-              onEquipItem={(slot, assetPath) => {
-                setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-                fetch('/api/pet/room/furniture', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ slot, assetPath }),
-                })
-                setSelectedLayer(slot)
-                playSound('place')
-              }}
-              onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
-                const res = await fetch('/api/pet/room/cart', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ items: [{ itemId, slot, assetPath, price, currency }] }),
-                })
-                if (res.ok) {
-                  setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
-                  playSound('purchase')
-                  toast.success('Item purchased!')
-                  mutate()
-                } else {
-                  playSound('error')
-                  toast.error('Purchase failed')
-                }
-              }}
-              onPurchaseRoom={async (roomId) => {
-                const res = await fetch('/api/pet/room/purchase-room', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ roomId }),
-                })
-                if (res.ok) {
-                  playSound('purchase')
-                  toast.success('Room unlocked!')
-                  mutate()
-                  return true
-                }
-                playSound('error')
-                toast.error('Failed to unlock room')
-                return false
-              }}
-            />
+        {/* Right sidebar */}
+        <div className="w-[400px] md:w-full flex-shrink-0 space-y-3 sticky top-6 md:static">
+          {/* Selection controls */}
+          {selectedLayer && (
+            <PixelCard className="p-3 space-y-2.5" corners borderColor="#4080f0">
+              <div className="flex items-center justify-between">
+                <span className="font-pixel text-sm text-[#93c5fd] capitalize font-bold tracking-wide">
+                  {selectedLayer === 'lion' ? `${pet.name} (Lion)` : selectedLayer}
+                </span>
+                <button
+                  onClick={() => setSelectedLayer(null)}
+                  className="font-pixel text-[13px] w-6 h-6 flex items-center justify-center text-[#6b7fa0] hover:text-[#e2e8f0] hover:bg-[#1a2438] rounded transition-colors"
+                  title="Deselect (Esc)"
+                >{'✕'}</button>
+              </div>
+
+              <div className="flex flex-wrap gap-1.5">
+                {isFlippable(selectedLayer) && (
+                  <button
+                    onClick={handleFlip}
+                    className="font-pixel text-[13px] px-3 py-1.5 border border-[#3a4a6c] bg-[#111828] text-[#c8d4e8] hover:border-[#5a6a8c] hover:text-[#e2e8f0] transition-colors"
+                    title="Flip"
+                  >{'⇔ Flip'}</button>
+                )}
+                {hasColorVariants && (
+                  <button
+                    onClick={handleColorCycle}
+                    className="font-pixel text-[13px] px-3 py-1.5 border border-[#3a4a6c] bg-[#111828] text-[#c8d4e8] hover:border-[#5a6a8c] hover:text-[#e2e8f0] transition-colors"
+                    title="Cycle color variant"
+                  >{'◐ Color'}</button>
+                )}
+                {selectedLayer !== 'lion' && (
+                  <button
+                    onClick={handleRemove}
+                    className="font-pixel text-[13px] px-3 py-1.5 border border-[#5a2020] bg-[#1a0808] text-[#e05050] hover:border-[#804040] hover:text-[#ff7070] transition-colors"
+                    title="Remove furniture (Del)"
+                  >{'🗑 Remove'}</button>
+                )}
+              </div>
+
+              {isResizable(selectedLayer) && (
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="font-pixel text-[12px] text-[#6b7fa0]">Scale</span>
+                  <input
+                    type="range"
+                    min={MIN_SCALE * 100}
+                    max={MAX_SCALE * 100}
+                    value={Math.round(selectedScale * 100)}
+                    onChange={(e) => handleScale(Number(e.target.value) / 100)}
+                    className="flex-1 h-1 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
+                  />
+                  <span className="font-pixel text-[12px] text-[#e2e8f0] min-w-[3.5ch] text-right tabular-nums">
+                    {Math.round(selectedScale * 100)}%
+                  </span>
+                  {selectedScale !== 1 && (
+                    <button
+                      onClick={() => handleScale(1)}
+                      className="font-pixel text-[11px] px-1 py-0.5 text-[#6b7fa0] hover:text-[#e2e8f0] transition-colors"
+                      title="Reset size"
+                    >{'↺'}</button>
+                  )}
+                </div>
+              )}
+            </PixelCard>
+          )}
+
+          {/* Tabbed panel: Shop + Layers */}
+          <PixelCard className="flex flex-col overflow-hidden" corners>
+            <div className="flex border-b-2 border-[#2a3a5c]">
+              <button
+                onClick={() => setSidebarTab('shop')}
+                className={`flex-1 font-pixel text-sm py-2.5 px-4 transition-colors ${
+                  sidebarTab === 'shop'
+                    ? 'text-[#f0c040] bg-[#111828] border-b-2 border-[#f0c040] -mb-[2px]'
+                    : 'text-[#6b7fa0] hover:text-[#c8d4e8] hover:bg-[#0c1020]'
+                }`}
+              >
+                {'🛒 Shop'}
+              </button>
+              <button
+                onClick={() => setSidebarTab('layers')}
+                className={`flex-1 font-pixel text-sm py-2.5 px-4 transition-colors ${
+                  sidebarTab === 'layers'
+                    ? 'text-[#f0c040] bg-[#111828] border-b-2 border-[#f0c040] -mb-[2px]'
+                    : 'text-[#6b7fa0] hover:text-[#c8d4e8] hover:bg-[#0c1020]'
+                }`}
+              >
+                {'📑 Layers'}
+                {Object.keys(equipment).length > 0 && (
+                  <span className="text-[11px] ml-1 opacity-60">({Object.keys(equipment).length})</span>
+                )}
+              </button>
+            </div>
+
+            <div className="overflow-y-auto max-h-[550px] scrollbar-thin scrollbar-thumb-[#3a4a6c] scrollbar-track-transparent">
+              {sidebarTab === 'shop' ? (
+                <FurniturePanel
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  furniture={mergedFurniture}
+                  availableItems={data.availableItems ?? []}
+                  gold={data.gold}
+                  gems={data.gems}
+                  rooms={data.rooms}
+                  activeRoomPrefix={room.assetPrefix}
+                  onPreviewItem={(slot, assetPath) => {
+                    setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                  }}
+                  onCancelPreview={(slot) => {
+                    setFurnitureOverrides(prev => {
+                      const next = { ...prev }
+                      delete next[slot]
+                      return next
+                    })
+                  }}
+                  onEquipItem={(slot, assetPath) => {
+                    setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                    fetch('/api/pet/room/furniture', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ slot, assetPath }),
+                    })
+                    setSelectedLayer(slot)
+                    playSound('place')
+                  }}
+                  onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
+                    const res = await fetch('/api/pet/room/cart', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ items: [{ itemId, slot, assetPath, price, currency }] }),
+                    })
+                    if (res.ok) {
+                      setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                      playSound('purchase')
+                      toast.success('Item purchased!')
+                      mutate()
+                    } else {
+                      playSound('error')
+                      toast.error('Purchase failed')
+                    }
+                  }}
+                  onPurchaseRoom={async (roomId) => {
+                    const res = await fetch('/api/pet/room/purchase-room', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ roomId }),
+                    })
+                    if (res.ok) {
+                      playSound('purchase')
+                      toast.success('Room unlocked!')
+                      mutate()
+                      return true
+                    }
+                    playSound('error')
+                    toast.error('Failed to unlock room')
+                    return false
+                  }}
+                />
+              ) : (
+                <div className="p-3">
+                  <EquipmentOrder
+                    equipment={equipment}
+                    renderSequence={layout.renderSequence}
+                    equipmentOffsets={layout.equipmentOffsets}
+                    selectedSlot={selectedEquipSlot}
+                    onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
+                    onSelectSlot={setSelectedEquipSlot}
+                    onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
+                  />
+                </div>
+              )}
+            </div>
           </PixelCard>
         </div>
       </div>
@@ -830,11 +886,9 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                   ? "Equipped"
                   : "Default"}
             </p>
-            {isMovable(hoveredLayer) && (
-              <p className="font-pixel text-[11px] text-[#5a7a9c] mt-0.5">
-                Click + drag to move
-              </p>
-            )}
+            <p className="font-pixel text-[11px] text-[#5a7a9c] mt-0.5">
+              Click + drag to move
+            </p>
           </PixelCard>
         </div>
       )}
@@ -849,6 +903,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
       />
     </>
   )
+  // --- END AI-MODIFIED ---
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({

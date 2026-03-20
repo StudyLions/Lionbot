@@ -124,7 +124,7 @@ export default function EquipmentOrder({
 
   if (Object.keys(equipment).length === 0) {
     return (
-      <div className="bg-[#111828] border border-[#3a4a6c] rounded-lg p-4 font-pixel">
+      <div className="font-pixel">
         <h4 className="text-sm text-yellow-300 mb-2">Render Stack</h4>
         <p className="text-[13px] text-[#6b7fa0] italic">
           No equipment worn. Equip items in Discord to arrange their layers.
@@ -137,7 +137,7 @@ export default function EquipmentOrder({
   const selectedOffset = selectedSlot ? (equipmentOffsets[selectedSlot] ?? [0, 0]) : [0, 0]
 
   return (
-    <div className="bg-[#111828] border border-[#3a4a6c] rounded-lg p-3 font-pixel select-none">
+    <div className="font-pixel select-none">
       <h4 className="text-sm text-yellow-300 mb-1">Render Stack</h4>
       <p className="text-[12px] text-[#6b7fa0] mb-2.5">
         Drag equipment between lion layers. Click to select and adjust position.
