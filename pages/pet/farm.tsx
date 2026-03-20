@@ -318,65 +318,65 @@ export default function FarmPage() {
                   </p>
                 </PixelCard>
               ) : (
+                // --- AI-MODIFIED (2026-03-20) ---
+                // Purpose: Improved layout -- gameboy frame + toolbar grouped as one
+                //          visual unit, responsive sizing, better flow
                 <>
                   <FarmStats plots={data.plots} gold={data.gold} />
 
-                  <div className="flex justify-center">
+                  {/* Gameboy + toolbar unit -- centered, max-width constrained */}
+                  <div className="w-full max-w-[880px] mx-auto space-y-0">
                     <GameboyFrame isFullscreen={isFullscreen} skinAssetPath={data.gameboySkinPath ?? undefined}>
                       <FarmScene
                         plots={data.plots}
                         selectedPlot={selectedPlot}
                         onSelectPlot={handleSelectPlot}
                         justWatered={justWatered}
-                        isFullscreen={isFullscreen}
                       />
                     </GameboyFrame>
+
+                    {/* Toolbar flush under the frame */}
+                    <div
+                      className="flex items-center justify-center flex-wrap border-x-[3px] border-b-[3px] border-[#2a3a5c] bg-[#0c1020]/90"
+                      style={{ boxShadow: "3px 3px 0 #060810" }}
+                    >
+                      {hasPlanted && (
+                        <ToolbarButton
+                          iconUrl={getUiIconUrl("liongotchi_greenpot")}
+                          label="Water All"
+                          onClick={handleWaterAll}
+                          color="#4080f0"
+                        />
+                      )}
+                      {hasPlanted && hasHarvestable && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                      {hasHarvestable && (
+                        <ToolbarButton
+                          iconUrl={getUiIconUrl("trophy")}
+                          label="Harvest All"
+                          onClick={handleHarvestAll}
+                          color="#f0c040"
+                        />
+                      )}
+                      {(hasPlanted || hasHarvestable) && hasDead && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                      {hasDead && (
+                        <ToolbarButton
+                          iconUrl={getFarmAnimationUrl("skull", 1)}
+                          label="Clear Dead"
+                          onClick={handleClearDead}
+                          color="#e04040"
+                        />
+                      )}
+                      {(hasPlanted || hasHarvestable || hasDead) && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                      <ToolbarButton
+                        iconUrl={getUiIconUrl(isFullscreen ? "liongotchi_heart" : "liongotchi_greenpot")}
+                        label={isFullscreen ? "Compact" : "Fullscreen"}
+                        onClick={toggleFullscreen}
+                        color="#8899aa"
+                      />
+                    </div>
                   </div>
 
-                  {/* --- AI-MODIFIED (2026-03-17) --- */}
-                  {/* Purpose: Artist attribution note below the farm scene */}
                   <ArtistAttribution />
-                  {/* --- END AI-MODIFIED --- */}
-
-                  {/* Action Toolbar */}
-                  <div
-                    className="flex items-center justify-center gap-0 border-[3px] border-[#2a3a5c] bg-[#0c1020]"
-                    style={{ boxShadow: "3px 3px 0 #060810" }}
-                  >
-                    {hasPlanted && (
-                      <ToolbarButton
-                        iconUrl={getUiIconUrl("liongotchi_greenpot")}
-                        label="Water All"
-                        onClick={handleWaterAll}
-                        color="#4080f0"
-                      />
-                    )}
-                    {hasPlanted && hasHarvestable && <div className="w-px h-10 bg-[#1a2a3c]" />}
-                    {hasHarvestable && (
-                      <ToolbarButton
-                        iconUrl={getUiIconUrl("trophy")}
-                        label="Harvest All"
-                        onClick={handleHarvestAll}
-                        color="#f0c040"
-                      />
-                    )}
-                    {(hasPlanted || hasHarvestable) && hasDead && <div className="w-px h-10 bg-[#1a2a3c]" />}
-                    {hasDead && (
-                      <ToolbarButton
-                        iconUrl={getFarmAnimationUrl("skull", 1)}
-                        label="Clear Dead"
-                        onClick={handleClearDead}
-                        color="#e04040"
-                      />
-                    )}
-                    {(hasPlanted || hasHarvestable || hasDead) && <div className="w-px h-10 bg-[#1a2a3c]" />}
-                    <ToolbarButton
-                      iconUrl={getUiIconUrl(isFullscreen ? "liongotchi_heart" : "liongotchi_greenpot")}
-                      label={isFullscreen ? "Compact" : "Fullscreen"}
-                      onClick={toggleFullscreen}
-                      color="#8899aa"
-                    />
-                  </div>
 
                   {selectedPlotData && !showSeedSelector && (
                     <PlotDetail
@@ -397,10 +397,10 @@ export default function FarmPage() {
                     />
                   )}
 
-                  {selectedPlot === null && (
+                  {selectedPlot === null && !hasPlanted && (
                     <div className="text-center py-3">
                       <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)]">
-                        Click on any plot to view details and take actions
+                        Click on any plot to plant a seed
                       </p>
                     </div>
                   )}
@@ -409,6 +409,7 @@ export default function FarmPage() {
                     <FarmHistory history={data.history} />
                   )}
                 </>
+                // --- END AI-MODIFIED ---
               )}
             </div>
           </div>

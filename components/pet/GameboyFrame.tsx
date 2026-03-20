@@ -5,6 +5,11 @@
 //          overview, and any page that shows a gameboy-framed view.
 //          Supports custom skins and responsive width.
 // ============================================================
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Responsive rewrite. Uses width + max-width:100% + aspect-ratio
+//          so the frame always maintains correct proportions and shrinks
+//          gracefully on narrow viewports without breaking small usages
+//          (skin previews at 120/180/220px etc.)
 import { getGameboyFrameUrl } from "@/utils/petAssets"
 
 interface GameboyFrameProps {
@@ -14,8 +19,8 @@ interface GameboyFrameProps {
   width?: number
 }
 
-const FRAME_NATIVE_W = 260
-const FRAME_NATIVE_H = 400
+const FRAME_W = 260
+const FRAME_H = 400
 const SCREEN_TOP = 36
 const SCREEN_LEFT = 30
 const SCREEN_SIZE = 200
@@ -28,66 +33,44 @@ export default function GameboyFrame({
   width = 880,
 }: GameboyFrameProps) {
   const frameUrl = getGameboyFrameUrl(skinAssetPath)
+  const refH = isFullscreen ? CROP_Y : FRAME_H
 
-  if (isFullscreen) {
-    const displayHeight = width * (CROP_Y / FRAME_NATIVE_W)
-    const screenTopPct = (SCREEN_TOP / CROP_Y) * 100
-    const screenLeftPct = (SCREEN_LEFT / FRAME_NATIVE_W) * 100
-    const screenWidthPct = (SCREEN_SIZE / FRAME_NATIVE_W) * 100
-    const screenHeightPct = (SCREEN_SIZE / CROP_Y) * 100
-
-    return (
-      <div className="relative inline-block" style={{ width, height: displayHeight }}>
-        <div className="absolute inset-0 overflow-hidden z-10 pointer-events-none select-none">
-          <img
-            src={frameUrl}
-            alt=""
-            style={{
-              imageRendering: "pixelated",
-              width,
-              height: width * (FRAME_NATIVE_H / FRAME_NATIVE_W),
-            }}
-            draggable={false}
-          />
-        </div>
-        <div
-          className="absolute z-0 flex items-center justify-center"
-          style={{
-            top: `${screenTopPct}%`,
-            left: `${screenLeftPct}%`,
-            width: `${screenWidthPct}%`,
-            height: `${screenHeightPct}%`,
-            overflow: "hidden",
-            backgroundColor: "#0a0e1a",
-          }}
-        >
-          {children}
-        </div>
-      </div>
-    )
-  }
+  const screenTopPct = (SCREEN_TOP / refH) * 100
+  const screenLeftPct = (SCREEN_LEFT / FRAME_W) * 100
+  const screenWPct = (SCREEN_SIZE / FRAME_W) * 100
+  const screenHPct = (SCREEN_SIZE / refH) * 100
 
   return (
-    <div className="relative inline-block">
-      <img
-        src={frameUrl}
-        alt=""
-        className="relative z-10 pointer-events-none select-none"
-        style={{
-          imageRendering: "pixelated",
-          width,
-          height: "auto",
-        }}
-        draggable={false}
-      />
+    <div
+      className="relative"
+      style={{
+        width,
+        maxWidth: "100%",
+        aspectRatio: `${FRAME_W} / ${refH}`,
+      }}
+    >
+      <div className="absolute inset-0 overflow-hidden z-10 pointer-events-none select-none">
+        <img
+          src={frameUrl}
+          alt=""
+          className="w-full"
+          style={{
+            imageRendering: "pixelated",
+            height: isFullscreen
+              ? `${(FRAME_H / CROP_Y) * 100}%`
+              : "100%",
+          }}
+          draggable={false}
+        />
+      </div>
+
       <div
-        className="absolute z-0 flex items-center justify-center"
+        className="absolute z-0 overflow-hidden"
         style={{
-          top: `${(SCREEN_TOP / FRAME_NATIVE_H) * 100}%`,
-          left: `${(SCREEN_LEFT / FRAME_NATIVE_W) * 100}%`,
-          width: `${(SCREEN_SIZE / FRAME_NATIVE_W) * 100}%`,
-          height: `${(SCREEN_SIZE / FRAME_NATIVE_H) * 100}%`,
-          overflow: "hidden",
+          top: `${screenTopPct}%`,
+          left: `${screenLeftPct}%`,
+          width: `${screenWPct}%`,
+          height: `${screenHPct}%`,
           backgroundColor: "#0a0e1a",
         }}
       >
@@ -96,3 +79,4 @@ export default function GameboyFrame({
     </div>
   )
 }
+// --- END AI-MODIFIED ---

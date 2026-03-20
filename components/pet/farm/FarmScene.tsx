@@ -4,7 +4,11 @@
 // Purpose: Interactive isometric farm scene with layered pixel
 //          art, atmospheric effects, plant animations, tooltips
 // ============================================================
-import { useState, useEffect, useMemo, useCallback } from "react"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Dynamic scaling via ResizeObserver so the 200x200
+//          native scene always fills its parent container
+//          (the GameboyFrame screen area) proportionally.
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { cn } from "@/lib/utils"
 import {
   getFarmBackgroundUrl,
@@ -27,12 +31,9 @@ const PLOT_CENTERS: Record<number, [number, number]> = {
   12: [158, 138], 13: [166, 154], 14: [176, 174],
 }
 
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Reduced heights to prevent tree overflow on edge plots (matched to bot renderer)
 const STAGE_HEIGHTS: Record<number, number> = {
   0: 0, 1: 18, 2: 24, 3: 30, 4: 36, 5: 44,
 }
-// --- END AI-MODIFIED ---
 
 const STAGE_LABELS = ["", "Sprout", "Seedling", "Growing", "Budding", "Harvest!"]
 
@@ -110,13 +111,31 @@ function WaterTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
   return <span className="text-[9px] text-[#4080f0]">{m}:{String(s).padStart(2, "0")}</span>
 }
 
-export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWatered, isFullscreen }: FarmSceneProps) {
+export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWatered }: FarmSceneProps) {
   const isNight = useMemo(() => {
     const hour = new Date().getHours()
     return hour < 6 || hour >= 20
   }, [])
 
   const [hoveredPlot, setHoveredPlot] = useState<number | null>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
+
+  useEffect(() => {
+    const el = containerRef.current
+    if (!el) return
+    const measure = () => {
+      const w = el.clientWidth
+      const h = el.clientHeight
+      if (w > 0 && h > 0) {
+        setScale(Math.min(w / SCENE_W, h / SCENE_H))
+      }
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
 
   const plotMap = useMemo(() => {
     const map: Record<number, FarmPlot> = {}
@@ -124,326 +143,320 @@ export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWater
     return map
   }, [plots])
 
-  const scale = isFullscreen ? 4 : 4
-
   const handlePlotClick = useCallback((plotId: number) => {
     onSelectPlot(plotId)
   }, [onSelectPlot])
 
   return (
-    <div className="flex flex-col items-center">
+    <div ref={containerRef} className="w-full h-full relative overflow-hidden">
       <div
-        className="relative select-none overflow-hidden"
-        style={{ width: SCENE_W * scale, height: SCENE_H * scale }}
+        className="absolute top-0 left-0 origin-top-left select-none"
+        style={{
+          width: SCENE_W,
+          height: SCENE_H,
+          transform: `scale(${scale})`,
+          imageRendering: "pixelated" as any,
+        }}
       >
-        <div
-          className="absolute inset-0 origin-top-left"
-          style={{
-            width: SCENE_W,
-            height: SCENE_H,
-            transform: `scale(${scale})`,
-            imageRendering: "pixelated" as any,
-          }}
-        >
-          {/* Layer 1: Background */}
-          <img
-            src={getFarmBackgroundUrl(isNight)}
-            alt=""
-            className="absolute inset-0 w-full h-full"
-            style={{ imageRendering: "pixelated" }}
-            draggable={false}
+        {/* Layer 1: Background */}
+        <img
+          src={getFarmBackgroundUrl(isNight)}
+          alt=""
+          className="absolute inset-0 w-full h-full"
+          style={{ imageRendering: "pixelated" }}
+          draggable={false}
+        />
+
+        {/* Layer 2: Atmospheric particles */}
+        {!isNight && LEAF_PARTICLES.map((leaf, i) => (
+          <div
+            key={`leaf-${i}`}
+            className="absolute animate-drift"
+            style={{
+              left: leaf.x,
+              top: leaf.y,
+              width: 3,
+              height: 2,
+              backgroundColor: LEAF_COLORS[i % LEAF_COLORS.length],
+              animationDelay: `${i * 1.1}s`,
+              animationDuration: `${6 + (i % 3) * 2}s`,
+              zIndex: 5,
+            }}
           />
+        ))}
+        {isNight && FIREFLY_POSITIONS.map((ff, i) => (
+          <div
+            key={`firefly-${i}`}
+            className="absolute animate-firefly"
+            style={{
+              left: ff.x,
+              top: ff.y,
+              width: 3,
+              height: 3,
+              borderRadius: "50%",
+              backgroundColor: "rgba(255,255,120,0.9)",
+              boxShadow: "0 0 4px 2px rgba(255,255,100,0.3)",
+              animationDelay: `${i * 0.5}s`,
+              animationDuration: `${2 + (i % 3)}s`,
+              zIndex: 5,
+            }}
+          />
+        ))}
 
-          {/* Layer 2: Atmospheric particles */}
-          {!isNight && LEAF_PARTICLES.map((leaf, i) => (
+        {/* Layer 3: Soil overlays */}
+        {Object.keys(PLOT_CENTERS).map((key) => {
+          const plotNum = Number(key)
+          const plotData = plotMap[plotNum]
+          const watered = plotData?.isWatered ?? false
+          return (
+            <img
+              key={`soil-${plotNum}`}
+              src={getFarmSoilUrl(plotNum + 1, watered)}
+              alt=""
+              className="absolute inset-0 w-full h-full"
+              style={{ imageRendering: "pixelated" }}
+              draggable={false}
+            />
+          )
+        })}
+
+        {/* Layer 3b: Water shimmer on watered plots */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          if (!plot || plot.empty || !plot.isWatered || plot.dead) return null
+          return (
             <div
-              key={`leaf-${i}`}
-              className="absolute animate-drift"
+              key={`shimmer-${plotNum}`}
+              className="absolute animate-shimmer"
               style={{
-                left: leaf.x,
-                top: leaf.y,
-                width: 3,
-                height: 2,
-                backgroundColor: LEAF_COLORS[i % LEAF_COLORS.length],
-                animationDelay: `${i * 1.1}s`,
-                animationDuration: `${6 + (i % 3) * 2}s`,
-                zIndex: 5,
+                left: cx - 7,
+                top: cy - 1,
+                width: 14,
+                height: 4,
+                backgroundColor: "rgba(100,170,255,0.25)",
+                zIndex: 10,
+                animationDelay: `${plotNum * 0.2}s`,
               }}
             />
-          ))}
-          {isNight && FIREFLY_POSITIONS.map((ff, i) => (
-            <div
-              key={`firefly-${i}`}
-              className="absolute animate-firefly"
-              style={{
-                left: ff.x,
-                top: ff.y,
-                width: 3,
-                height: 3,
-                borderRadius: "50%",
-                backgroundColor: "rgba(255,255,120,0.9)",
-                boxShadow: "0 0 4px 2px rgba(255,255,100,0.3)",
-                animationDelay: `${i * 0.5}s`,
-                animationDuration: `${2 + (i % 3)}s`,
-                zIndex: 5,
-              }}
-            />
-          ))}
+          )
+        })}
 
-          {/* Layer 3: Soil overlays */}
-          {Object.keys(PLOT_CENTERS).map((key) => {
-            const plotNum = Number(key)
-            const plotData = plotMap[plotNum]
-            const watered = plotData?.isWatered ?? false
-            return (
+        {/* Layer 4: Plants */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          if (!plot || plot.empty || !plot.assetPrefix || plot.stage < 1 || plot.dead) return null
+
+          const h = STAGE_HEIGHTS[plot.stage] || 20
+          const imgUrl = getFarmPlantImageUrl(
+            plot.assetPrefix, plot.plantType || "tree",
+            plot.typeId || 1, plot.stage, plot.rarity
+          )
+          if (!imgUrl) return null
+
+          const swayClass = plot.stage >= 4 ? "animate-sway-fast" : plot.stage >= 2 ? "animate-sway-slow" : ""
+          const glowFilter = RARITY_GLOW_CSS[plot.rarity] || ""
+          const hasGlow = plot.rarity !== "COMMON" && plot.stage >= 2
+
+          const w = Math.round(h * 0.75)
+
+          return (
+            <img
+              key={`plant-${plotNum}`}
+              src={imgUrl}
+              alt={plot.seed?.name || "Plant"}
+              className={cn("absolute", swayClass, plot.readyToHarvest && "animate-harvest-pulse")}
+              style={{
+                left: cx - w / 2,
+                top: cy - h + 4,
+                height: h,
+                width: w,
+                objectFit: "contain",
+                imageRendering: "pixelated",
+                filter: glowFilter || undefined,
+                zIndex: cy,
+                animationDelay: `${plotNum * 0.3}s`,
+                ...(hasGlow ? { ["--glow-color" as string]: plot.rarity === "LEGENDARY" ? "#d060f0" : plot.rarity === "EPIC" ? "#f0c040" : plot.rarity === "RARE" ? "#e04040" : "#4080f0" } : {}),
+              }}
+              draggable={false}
+            />
+          )
+        })}
+
+        {/* Layer 5: Harvest effects (sparkles + coins) */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          if (!plot || !plot.readyToHarvest || plot.dead) return null
+          const h = STAGE_HEIGHTS[5] || 44
+
+          return (
+            <div key={`harvest-fx-${plotNum}`}>
               <img
-                key={`soil-${plotNum}`}
-                src={getFarmSoilUrl(plotNum + 1, watered)}
+                src={getFarmAnimationUrl("sparkle", ((plotNum % 3) + 1))}
                 alt=""
-                className="absolute inset-0 w-full h-full"
-                style={{ imageRendering: "pixelated" }}
-                draggable={false}
-              />
-            )
-          })}
-
-          {/* Layer 3b: Water shimmer on watered plots */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            if (!plot || plot.empty || !plot.isWatered || plot.dead) return null
-            return (
-              <div
-                key={`shimmer-${plotNum}`}
-                className="absolute animate-shimmer"
+                className="absolute animate-sparkle"
                 style={{
-                  left: cx - 7,
-                  top: cy - 1,
-                  width: 14,
-                  height: 4,
-                  backgroundColor: "rgba(100,170,255,0.25)",
-                  zIndex: 10,
+                  left: cx - 10,
+                  top: cy - h - 6,
+                  width: 20,
+                  height: 12,
+                  imageRendering: "pixelated",
+                  zIndex: cy + 2,
                   animationDelay: `${plotNum * 0.2}s`,
                 }}
+                draggable={false}
               />
-            )
-          })}
-
-          {/* Layer 4: Plants */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            if (!plot || plot.empty || !plot.assetPrefix || plot.stage < 1 || plot.dead) return null
-
-            const h = STAGE_HEIGHTS[plot.stage] || 20
-            const imgUrl = getFarmPlantImageUrl(
-              plot.assetPrefix, plot.plantType || "tree",
-              plot.typeId || 1, plot.stage, plot.rarity
-            )
-            if (!imgUrl) return null
-
-            const swayClass = plot.stage >= 4 ? "animate-sway-fast" : plot.stage >= 2 ? "animate-sway-slow" : ""
-            const glowFilter = RARITY_GLOW_CSS[plot.rarity] || ""
-            const hasGlow = plot.rarity !== "COMMON" && plot.stage >= 2
-
-            const w = Math.round(h * 0.75)
-
-            return (
               <img
-                key={`plant-${plotNum}`}
-                src={imgUrl}
-                alt={plot.seed?.name || "Plant"}
-                className={cn("absolute", swayClass, plot.readyToHarvest && "animate-harvest-pulse")}
+                src={getUiIconUrl("coin")}
+                alt=""
+                className="absolute animate-coin-bob"
                 style={{
-                  left: cx - w / 2,
-                  top: cy - h + 4,
-                  height: h,
-                  width: w,
-                  objectFit: "contain",
+                  left: cx + 6,
+                  top: cy - h - 12,
+                  width: 8,
+                  height: 8,
                   imageRendering: "pixelated",
-                  filter: glowFilter || undefined,
-                  zIndex: cy,
-                  animationDelay: `${plotNum * 0.3}s`,
-                  ...(hasGlow ? { ["--glow-color" as string]: plot.rarity === "LEGENDARY" ? "#d060f0" : plot.rarity === "EPIC" ? "#f0c040" : plot.rarity === "RARE" ? "#e04040" : "#4080f0" } : {}),
+                  zIndex: cy + 3,
+                  animationDelay: `${plotNum * 0.4}s`,
                 }}
                 draggable={false}
               />
-            )
-          })}
+            </div>
+          )
+        })}
 
-          {/* Layer 5: Harvest effects (sparkles + coins) */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            if (!plot || !plot.readyToHarvest || plot.dead) return null
-            const h = STAGE_HEIGHTS[5] || 44
+        {/* Layer 6: Dead skulls */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          if (!plot || !plot.dead) return null
+          return (
+            <img
+              key={`skull-${plotNum}`}
+              src={getFarmAnimationUrl("skull", ((plotNum % 5) + 1))}
+              alt="Dead"
+              className="absolute animate-bob"
+              style={{
+                left: cx - 8,
+                top: cy - 22,
+                width: 16,
+                height: 16,
+                imageRendering: "pixelated",
+                zIndex: cy + 1,
+                animationDelay: `${plotNum * 0.5}s`,
+              }}
+              draggable={false}
+            />
+          )
+        })}
 
-            return (
-              <div key={`harvest-fx-${plotNum}`}>
-                <img
-                  src={getFarmAnimationUrl("sparkle", ((plotNum % 3) + 1))}
-                  alt=""
-                  className="absolute animate-sparkle"
-                  style={{
-                    left: cx - 10,
-                    top: cy - h - 6,
-                    width: 20,
-                    height: 12,
-                    imageRendering: "pixelated",
-                    zIndex: cy + 2,
-                    animationDelay: `${plotNum * 0.2}s`,
-                  }}
-                  draggable={false}
-                />
-                <img
-                  src={getUiIconUrl("coin")}
-                  alt=""
-                  className="absolute animate-coin-bob"
-                  style={{
-                    left: cx + 6,
-                    top: cy - h - 12,
-                    width: 8,
-                    height: 8,
-                    imageRendering: "pixelated",
-                    zIndex: cy + 3,
-                    animationDelay: `${plotNum * 0.4}s`,
-                  }}
-                  draggable={false}
-                />
-              </div>
-            )
-          })}
+        {/* Layer 7: Rain drops (just watered) */}
+        {justWatered && Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          if (!plot || plot.empty || plot.dead) return null
+          return [-4, 3, -1, 5].map((dx, i) => (
+            <div
+              key={`rain-${plotNum}-${i}`}
+              className="absolute animate-rain"
+              style={{
+                left: cx + dx,
+                top: cy - 28 + i * 3,
+                width: 1,
+                height: 4,
+                backgroundColor: "rgba(100,160,255,0.8)",
+                zIndex: cy + 5,
+                animationDelay: `${i * 0.15 + plotNum * 0.1}s`,
+              }}
+            />
+          ))
+        })}
 
-          {/* Layer 6: Dead skulls */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            if (!plot || !plot.dead) return null
-            return (
-              <img
-                key={`skull-${plotNum}`}
-                src={getFarmAnimationUrl("skull", ((plotNum % 5) + 1))}
-                alt="Dead"
-                className="absolute animate-bob"
-                style={{
-                  left: cx - 8,
-                  top: cy - 22,
-                  width: 16,
-                  height: 16,
-                  imageRendering: "pixelated",
-                  zIndex: cy + 1,
-                  animationDelay: `${plotNum * 0.5}s`,
-                }}
-                draggable={false}
-              />
-            )
-          })}
+        {/* Layer 8: Interaction zones */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const isSelected = selectedPlot === plotNum
+          const isHovered = hoveredPlot === plotNum
 
-          {/* Layer 7: Rain drops (just watered) */}
-          {justWatered && Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            if (!plot || plot.empty || plot.dead) return null
-            return [-4, 3, -1, 5].map((dx, i) => (
-              <div
-                key={`rain-${plotNum}-${i}`}
-                className="absolute animate-rain"
-                style={{
-                  left: cx + dx,
-                  top: cy - 28 + i * 3,
-                  width: 1,
-                  height: 4,
-                  backgroundColor: "rgba(100,160,255,0.8)",
-                  zIndex: cy + 5,
-                  animationDelay: `${i * 0.15 + plotNum * 0.1}s`,
-                }}
-              />
-            ))
-          })}
+          return (
+            <div
+              key={`zone-${plotNum}`}
+              className={cn(
+                "absolute cursor-pointer transition-all duration-100",
+                isSelected && "outline outline-2 outline-[#f0c040] bg-[#f0c040]/10",
+                isHovered && !isSelected && "outline outline-1 outline-[#4080f0]/60 bg-[#4080f0]/5",
+              )}
+              style={{
+                left: cx - 14,
+                top: cy - 34,
+                width: 28,
+                height: 38,
+                zIndex: 200 + plotNum,
+              }}
+              onClick={() => handlePlotClick(plotNum)}
+              onMouseEnter={() => setHoveredPlot(plotNum)}
+              onMouseLeave={() => setHoveredPlot(null)}
+            />
+          )
+        })}
 
-          {/* Layer 8: Interaction zones */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const isSelected = selectedPlot === plotNum
-            const isHovered = hoveredPlot === plotNum
+        {/* Layer 9: Floating pixel tooltips */}
+        {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
+          const plotNum = Number(key)
+          const plot = plotMap[plotNum]
+          const show = hoveredPlot === plotNum || selectedPlot === plotNum
+          if (!show || !plot) return null
 
-            return (
-              <div
-                key={`zone-${plotNum}`}
-                className={cn(
-                  "absolute cursor-pointer transition-all duration-100",
-                  isSelected && "outline outline-2 outline-[#f0c040] bg-[#f0c040]/10",
-                  isHovered && !isSelected && "outline outline-1 outline-[#4080f0]/60 bg-[#4080f0]/5",
+          return (
+            <div
+              key={`tip-${plotNum}`}
+              className="absolute pointer-events-none"
+              style={{
+                left: cx,
+                top: cy - 46,
+                transform: "translateX(-50%)",
+                zIndex: 300,
+              }}
+            >
+              <div className="bg-[#0a0e1a]/95 border border-[#4080f0] px-1.5 py-0.5 font-pixel text-center whitespace-nowrap">
+                {plot.empty ? (
+                  <span className="text-[8px] text-[#6a7a8a]">Empty Plot</span>
+                ) : plot.dead ? (
+                  <span className="text-[8px] text-[#e04040]">Dead</span>
+                ) : (
+                  <div className="flex flex-col items-center gap-0">
+                    <span className={cn(
+                      "text-[5px] font-bold",
+                      plot.rarity === "LEGENDARY" ? "text-[#e0a0ff]" :
+                      plot.rarity === "EPIC" ? "text-[#ffe080]" :
+                      plot.rarity === "RARE" ? "text-[#ff8080]" :
+                      plot.rarity === "UNCOMMON" ? "text-[#80b0ff]" :
+                      "text-[#e2e8f0]"
+                    )}>
+                      {plot.seed?.name}
+                    </span>
+                    <span className="text-[7px] text-[#40d870]">
+                      {STAGE_LABELS[plot.stage]} {plot.progress}%
+                    </span>
+                    {plot.needsWater && (
+                      <span className="text-[7px] text-[#4080f0]">Needs water!</span>
+                    )}
+                    {!plot.needsWater && !plot.readyToHarvest && plot.nextWaterAt && (
+                      <WaterTimer nextWaterAt={plot.nextWaterAt} />
+                    )}
+                    {plot.readyToHarvest && (
+                      <span className="text-[7px] text-[#f0c040]">HARVEST!</span>
+                    )}
+                  </div>
                 )}
-                style={{
-                  left: cx - 14,
-                  top: cy - 34,
-                  width: 28,
-                  height: 38,
-                  zIndex: 200 + plotNum,
-                }}
-                onClick={() => handlePlotClick(plotNum)}
-                onMouseEnter={() => setHoveredPlot(plotNum)}
-                onMouseLeave={() => setHoveredPlot(null)}
-              />
-            )
-          })}
-
-          {/* Layer 9: Floating pixel tooltips */}
-          {Object.entries(PLOT_CENTERS).map(([key, [cx, cy]]) => {
-            const plotNum = Number(key)
-            const plot = plotMap[plotNum]
-            const show = hoveredPlot === plotNum || selectedPlot === plotNum
-            if (!show || !plot) return null
-
-            return (
-              <div
-                key={`tip-${plotNum}`}
-                className="absolute pointer-events-none"
-                style={{
-                  left: cx,
-                  top: cy - 46,
-                  transform: "translateX(-50%)",
-                  zIndex: 300,
-                }}
-              >
-                <div className="bg-[#0a0e1a]/95 border border-[#4080f0] px-1.5 py-0.5 font-pixel text-center whitespace-nowrap">
-                  {plot.empty ? (
-                    <span className="text-[8px] text-[#6a7a8a]">Empty Plot</span>
-                  ) : plot.dead ? (
-                    <span className="text-[8px] text-[#e04040]">Dead</span>
-                  ) : (
-                    <div className="flex flex-col items-center gap-0">
-                      <span className={cn(
-                        "text-[5px] font-bold",
-                        plot.rarity === "LEGENDARY" ? "text-[#e0a0ff]" :
-                        plot.rarity === "EPIC" ? "text-[#ffe080]" :
-                        plot.rarity === "RARE" ? "text-[#ff8080]" :
-                        plot.rarity === "UNCOMMON" ? "text-[#80b0ff]" :
-                        "text-[#e2e8f0]"
-                      )}>
-                        {plot.seed?.name}
-                      </span>
-                      <span className="text-[7px] text-[#40d870]">
-                        {STAGE_LABELS[plot.stage]} {plot.progress}%
-                      </span>
-                      {plot.needsWater && (
-                        <span className="text-[7px] text-[#4080f0]">Needs water!</span>
-                      )}
-                      {!plot.needsWater && !plot.readyToHarvest && plot.nextWaterAt && (
-                        <WaterTimer nextWaterAt={plot.nextWaterAt} />
-                      )}
-                      {plot.readyToHarvest && (
-                        <span className="text-[7px] text-[#f0c040]">HARVEST!</span>
-                      )}
-                    </div>
-                  )}
-                </div>
               </div>
-            )
-          })}
-        </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
 }
+// --- END AI-MODIFIED ---
