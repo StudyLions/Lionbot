@@ -299,3 +299,40 @@ p, a, b {
 .animate-gold-flyout { animation: gold-flyout 1s ease-out forwards; }
 .animate-coin-bob { animation: coin-bob 1.5s ease-in-out infinite; }
 // --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Rarity-based item card glow and sparkle particle animations
+
+@keyframes item-glow-pulse {
+  0%, 100% { box-shadow: 0 0 var(--glow-spread-min, 4px) var(--glow-color), inset 0 0 var(--glow-inset-min, 2px) var(--glow-color); }
+  50% { box-shadow: 0 0 var(--glow-spread-max, 10px) var(--glow-color), inset 0 0 var(--glow-inset-max, 4px) var(--glow-color); }
+}
+@keyframes item-sparkle-float {
+  0% { transform: translateY(0) scale(0); opacity: 0; }
+  15% { transform: translateY(-4px) scale(1); opacity: 1; }
+  70% { opacity: 0.6; }
+  100% { transform: translateY(-24px) scale(0.3); opacity: 0; }
+}
+@keyframes item-sparkle-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  20% { opacity: 1; transform: scale(1) rotate(45deg); }
+  50% { opacity: 0.4; transform: scale(0.8) rotate(90deg); }
+  80% { opacity: 0.9; transform: scale(1.1) rotate(135deg); }
+}
+@keyframes item-border-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes item-celestial-rotate {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.item-glow {
+  animation: item-glow-pulse var(--glow-speed, 3s) ease-in-out infinite;
+}
+.item-glow-celestial {
+  animation: item-glow-pulse var(--glow-speed, 1.8s) ease-in-out infinite,
+             item-celestial-rotate 6s linear infinite;
+}
+// --- END AI-MODIFIED ---

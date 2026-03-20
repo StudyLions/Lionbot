@@ -13,13 +13,15 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/router"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
+import ItemGlow from "@/components/pet/ui/ItemGlow"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -74,9 +76,22 @@ export default function EnhancementPage() {
     session ? "/api/pet/enhancement" : null
   )
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Pre-select scroll from query param when navigating from inventory
+  const router = useRouter()
   const [selectedEquip, setSelectedEquip] = useState<number | null>(null)
   const [selectedScroll, setSelectedScroll] = useState<number | null>(null)
   const [enhancing, setEnhancing] = useState(false)
+
+  useEffect(() => {
+    if (router.query.scroll && data) {
+      const scrollId = Number(router.query.scroll)
+      if (data.scrolls.some((s) => s.inventoryId === scrollId)) {
+        setSelectedScroll(scrollId)
+      }
+    }
+  }, [router.query.scroll, data])
+  // --- END AI-MODIFIED ---
   const [result, setResult] = useState<{
     outcome: "success" | "failed" | "destroyed"; itemName: string
     newLevel?: number; currentLevel?: number
@@ -205,8 +220,8 @@ export default function EnhancementPage() {
                           const isSelected = selectedEquip === e.inventoryId
                           const totalGold = (e.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100)
                           return (
+                            <ItemGlow key={e.inventoryId} rarity={e.item.rarity} glowTier={e.glowTier as GlowTier} glowIntensity={e.glowIntensity}>
                             <button
-                              key={e.inventoryId}
                               onClick={() => setSelectedEquip(e.inventoryId)}
                               className={cn(
                                 "w-full text-left px-2.5 py-2 border-2 flex items-center gap-2 transition-all",
@@ -244,6 +259,7 @@ export default function EnhancementPage() {
                                 {e.enhancementLevel}/{e.maxLevel}
                               </span>
                             </button>
+                            </ItemGlow>
                           )
                         })}
                       </div>
@@ -267,8 +283,8 @@ export default function EnhancementPage() {
                           const dropPer = (bv * GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS * 100)
                           const imgUrl = getItemImageUrl(s.item.assetPath, "SCROLL")
                           return (
+                            <ItemGlow key={s.inventoryId} rarity={s.item.rarity}>
                             <button
-                              key={s.inventoryId}
                               onClick={() => setSelectedScroll(s.inventoryId)}
                               className={cn(
                                 "w-full text-left px-2.5 py-2 border-2 flex items-center gap-2 transition-all",
@@ -280,7 +296,7 @@ export default function EnhancementPage() {
                                 {imgUrl ? (
                                   <img src={imgUrl} alt="" className="w-6 h-6 object-contain" style={{ imageRendering: "pixelated" }} />
                                 ) : (
-                                  <span className="text-lg">📜</span>
+                                  <span className="text-lg">{"\u{1F4DC}"}</span>
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
@@ -304,6 +320,7 @@ export default function EnhancementPage() {
                               </div>
                               <span className="font-pixel text-[13px] text-[var(--pet-text-dim)]">x{s.quantity}</span>
                             </button>
+                            </ItemGlow>
                           )
                         })}
                       </div>

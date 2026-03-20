@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
+import ItemGlow from "@/components/pet/ui/ItemGlow"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 
 export interface EnhancementSlot {
@@ -173,16 +174,18 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
             {/* Header */}
             <div className="px-3 py-2.5 border-b border-[#1a2a3c]" style={{ background: headerBg }}>
               <div className="flex items-start gap-2.5">
-                <div
-                  className="w-11 h-11 border bg-[#080c18] flex items-center justify-center flex-shrink-0 overflow-hidden"
-                  style={{ borderColor: `${bc}80` }}
-                >
-                  {imgUrl ? (
-                    <CroppedItemImage src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <span className="text-lg">{getCategoryPlaceholder(inv.item.category)}</span>
-                  )}
-                </div>
+                <ItemGlow rarity={inv.item.rarity} glowTier={inv.glowTier} glowIntensity={inv.glowIntensity} className="flex-shrink-0">
+                  <div
+                    className="w-11 h-11 border bg-[#080c18] flex items-center justify-center overflow-hidden"
+                    style={{ borderColor: `${bc}80` }}
+                  >
+                    {imgUrl ? (
+                      <CroppedItemImage src={imgUrl} alt={inv.item.name} className="w-full h-full object-contain" />
+                    ) : (
+                      <span className="text-lg">{getCategoryPlaceholder(inv.item.category)}</span>
+                    )}
+                  </div>
+                </ItemGlow>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
                     <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">

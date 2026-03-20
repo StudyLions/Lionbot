@@ -20,6 +20,7 @@ import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import { useState, useCallback } from "react"
+import { useRouter } from "next/router"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
@@ -27,6 +28,7 @@ import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import ItemTooltip, { type InventoryItem } from "@/components/pet/inventory/ItemTooltip"
+import ItemGlow from "@/components/pet/ui/ItemGlow"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import GameboyFrame from "@/components/pet/GameboyFrame"
 import { mergeLayout } from "@/utils/roomConstraints"
@@ -79,6 +81,18 @@ const SLOT_ICONS: Record<string, string> = {
   BACK: "\u{1FABD}", FEET: "\u{1F462}",
 }
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Category-to-slot fallback mapping, mirroring the API.
+//          Used for optimistic updates and display when item.slot is null.
+const CATEGORY_TO_SLOT: Record<string, string> = {
+  HAT: "HEAD", GLASSES: "FACE", COSTUME: "BODY",
+  SHIRT: "BODY", WINGS: "BACK", BOOTS: "FEET",
+}
+function resolveSlot(item: { slot: string | null; category: string }): string | null {
+  return item.slot || CATEGORY_TO_SLOT[item.category] || null
+}
+// --- END AI-MODIFIED ---
+
 export default function InventoryPage() {
   const { data: session } = useSession()
   const [filter, setFilter] = useState<FilterTab>("equipment")
@@ -90,9 +104,47 @@ export default function InventoryPage() {
   const { data: overview, isLoading: overviewLoading, mutate: mutateOverview } =
     useDashboard<OverviewData>(session ? "/api/pet/overview" : null)
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Optimistic SWR updates so equip/unequip reflects instantly in the UI.
+  //          Fixes the "need to press twice" issue and makes item replacement feel seamless.
   const handleEquip = useCallback(async (inventoryId: number, action: "equip" | "unequip") => {
     if (equipping) return
     setEquipping(inventoryId)
+
+    const targetItem = invData?.items.find((i) => i.inventoryId === inventoryId)
+    const targetSlot = targetItem ? resolveSlot(targetItem.item) : null
+
+    const optimisticInv = invData ? {
+      ...invData,
+      items: invData.items.map((i) => {
+        if (i.inventoryId === inventoryId) return { ...i, equipped: action === "equip" }
+        if (action === "equip" && targetSlot && resolveSlot(i.item) === targetSlot && i.equipped) {
+          return { ...i, equipped: false }
+        }
+        return i
+      }),
+    } : undefined
+
+    const optimisticOverview = overview && targetItem && targetSlot ? (() => {
+      const newEquip = { ...overview.equipment }
+      if (action === "equip") {
+        newEquip[targetSlot] = {
+          name: targetItem.item.name,
+          category: targetItem.item.category,
+          rarity: targetItem.item.rarity,
+          assetPath: targetItem.item.assetPath,
+          glowTier: targetItem.glowTier,
+          glowIntensity: targetItem.glowIntensity,
+        }
+      } else {
+        delete newEquip[targetSlot]
+      }
+      return { ...overview, equipment: newEquip }
+    })() : undefined
+
+    if (optimisticInv) mutateInv(optimisticInv, { revalidate: false })
+    if (optimisticOverview) mutateOverview(optimisticOverview, { revalidate: false })
+
     try {
       const res = await fetch("/api/pet/inventory/equip", {
         method: "POST",
@@ -102,23 +154,43 @@ export default function InventoryPage() {
       const body = await res.json()
       if (!res.ok) {
         toast.error(body.error || "Failed")
+        mutateInv()
+        mutateOverview()
         return
       }
       toast.success(action === "equip" ? "Equipped!" : "Unequipped!")
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
       mutateInv()
       mutateOverview()
       invalidate("/api/pet/inventory?filter=equipment")
       invalidate("/api/pet/inventory?filter=scrolls")
-    } catch {
-      toast.error("Something went wrong")
-    } finally {
       setEquipping(null)
     }
-  }, [equipping, mutateInv, mutateOverview])
+  }, [equipping, invData, overview, mutateInv, mutateOverview])
 
   const handleUnequipSlot = useCallback(async (slot: string) => {
     if (equipping) return
     setEquipping(-1)
+
+    const optimisticOverview = overview ? (() => {
+      const newEquip = { ...overview.equipment }
+      delete newEquip[slot]
+      return { ...overview, equipment: newEquip }
+    })() : undefined
+
+    const optimisticInv = invData ? {
+      ...invData,
+      items: invData.items.map((i) => {
+        if (i.equipped && resolveSlot(i.item) === slot) return { ...i, equipped: false }
+        return i
+      }),
+    } : undefined
+
+    if (optimisticInv) mutateInv(optimisticInv, { revalidate: false })
+    if (optimisticOverview) mutateOverview(optimisticOverview, { revalidate: false })
+
     try {
       const res = await fetch("/api/pet/inventory/equip", {
         method: "POST",
@@ -128,19 +200,22 @@ export default function InventoryPage() {
       const body = await res.json()
       if (!res.ok) {
         toast.error(body.error || "Failed")
+        mutateInv()
+        mutateOverview()
         return
       }
       toast.success("Unequipped!")
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
       mutateInv()
       mutateOverview()
       invalidate("/api/pet/inventory?filter=equipment")
       invalidate("/api/pet/inventory?filter=scrolls")
-    } catch {
-      toast.error("Something went wrong")
-    } finally {
       setEquipping(null)
     }
-  }, [equipping, mutateInv, mutateOverview])
+  }, [equipping, invData, overview, mutateInv, mutateOverview])
+  // --- END AI-MODIFIED ---
 
   const equipment = overview?.equipment ?? {}
   const pet = overview?.pet
@@ -313,6 +388,7 @@ export default function InventoryPage() {
                           equipping={equipping}
                           onEquip={handleEquip}
                           isEquipmentTab={filter === "equipment"}
+                          isScrollsTab={filter === "scrolls"}
                         />
                       ))}
                     </div>
@@ -327,109 +403,133 @@ export default function InventoryPage() {
   )
 }
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Use resolveSlot for button label, add scroll "Use in Enhancement" button
 function InventoryItemCard({
   inv,
   equipping,
   onEquip,
   isEquipmentTab,
+  isScrollsTab,
 }: {
   inv: InventoryItem
   equipping: number | null
   onEquip: (id: number, action: "equip" | "unequip") => void
   isEquipmentTab: boolean
+  isScrollsTab: boolean
 }) {
+  const router = useRouter()
   const bc = RARITY_BORDER[inv.item.rarity] || "#3a4a6c"
   const glowBc = inv.glowTier !== "none" ? GLOW_BORDER[inv.glowTier] : null
   const effectiveBorder = glowBc || bc
   const imgUrl = getItemImageUrl(inv.item.assetPath, inv.item.category)
   const isEquipping = equipping === inv.inventoryId
+  const slot = resolveSlot(inv.item)
 
   return (
     <ItemTooltip inv={inv}>
-      <div
-        className="flex flex-col border-2 bg-[#0c1020] transition-all hover:bg-[#101830] group"
-        style={{
-          borderColor: `${effectiveBorder}80`,
-          boxShadow: `2px 2px 0 #060810${inv.glowTier !== "none" ? `, 0 0 8px ${effectiveBorder}30` : ""}`,
-        }}
-      >
-        {/* Item Image */}
-        <div className="relative flex items-center justify-center h-[72px] bg-[#080c18] border-b border-[#1a2a3c]">
-          {imgUrl ? (
-            <CroppedItemImage
-              src={imgUrl}
-              alt={inv.item.name}
-              className="w-14 h-14 object-contain"
-            />
-          ) : (
-            <span className="text-2xl">{getCategoryPlaceholder(inv.item.category)}</span>
-          )}
-          {inv.quantity > 1 && (
-            <span className="absolute bottom-1 right-1 font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] bg-[#0a0e1a]/80 px-1">
-              x{inv.quantity}
-            </span>
-          )}
-          {inv.equipped && (
-            <span className="absolute top-1 right-1 font-pixel text-[8px] px-1 py-0.5 border border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#1a3020]/90">
-              EQP
-            </span>
-          )}
-        </div>
+      <ItemGlow rarity={inv.item.rarity} glowTier={inv.glowTier} glowIntensity={inv.glowIntensity}>
+        <div
+          className="flex flex-col border-2 bg-[#0c1020] transition-all hover:bg-[#101830] group"
+          style={{
+            borderColor: `${effectiveBorder}80`,
+            boxShadow: `2px 2px 0 #060810`,
+          }}
+        >
+          {/* Item Image */}
+          <div className="relative flex items-center justify-center h-[72px] bg-[#080c18] border-b border-[#1a2a3c]">
+            {imgUrl ? (
+              <CroppedItemImage
+                src={imgUrl}
+                alt={inv.item.name}
+                className="w-14 h-14 object-contain"
+              />
+            ) : (
+              <span className="text-2xl">{getCategoryPlaceholder(inv.item.category)}</span>
+            )}
+            {inv.quantity > 1 && (
+              <span className="absolute bottom-1 right-1 font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] bg-[#0a0e1a]/80 px-1">
+                x{inv.quantity}
+              </span>
+            )}
+            {inv.equipped && (
+              <span className="absolute top-1 right-1 font-pixel text-[8px] px-1 py-0.5 border border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#1a3020]/90">
+                EQP
+              </span>
+            )}
+          </div>
 
-        {/* Item Info */}
-        <div className="px-2 py-1.5 flex-1 min-h-0">
-          <div className="flex items-center gap-1">
-            <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate">
-              {inv.item.name}
-            </span>
-            {inv.enhancementLevel > 0 && (
-              <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] flex-shrink-0">
-                +{inv.enhancementLevel}
+          {/* Item Info */}
+          <div className="px-2 py-1.5 flex-1 min-h-0">
+            <div className="flex items-center gap-1">
+              <span className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate">
+                {inv.item.name}
               </span>
+              {inv.enhancementLevel > 0 && (
+                <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] flex-shrink-0">
+                  +{inv.enhancementLevel}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+              <PixelBadge rarity={inv.item.rarity} className="text-[8px] px-1 py-0" />
+              {inv.glowTier !== "none" && (
+                <span className={cn("font-pixel text-[8px]", GLOW_TEXT_COLORS[inv.glowTier])}>
+                  {GLOW_LABELS[inv.glowTier]}
+                </span>
+              )}
+            </div>
+            {inv.totalBonus > 0 && (
+              <div className="mt-0.5">
+                <span className="font-pixel text-[8px] text-[var(--pet-gold,#f0c040)]">
+                  +{(inv.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)}% gold
+                </span>
+              </div>
             )}
           </div>
-          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-            <PixelBadge rarity={inv.item.rarity} className="text-[8px] px-1 py-0" />
-            {inv.glowTier !== "none" && (
-              <span className={cn("font-pixel text-[8px]", GLOW_TEXT_COLORS[inv.glowTier])}>
-                {GLOW_LABELS[inv.glowTier]}
-              </span>
-            )}
-          </div>
-          {inv.totalBonus > 0 && (
-            <div className="mt-0.5">
-              <span className="font-pixel text-[8px] text-[var(--pet-gold,#f0c040)]">
-                +{(inv.totalBonus * GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS * 100).toFixed(1)}% gold
-              </span>
+
+          {/* Equip/Unequip Button */}
+          {isEquipmentTab && slot && (
+            <div className="px-2 pb-1.5">
+              <button
+                className={cn(
+                  "w-full font-pixel text-[9px] py-1 border transition-all",
+                  "hover:brightness-125 active:translate-y-px disabled:opacity-40",
+                  inv.equipped
+                    ? "border-[var(--pet-red,#e04040)] text-[var(--pet-red,#e04040)] bg-[#e04040]/5 hover:bg-[#e04040]/10"
+                    : "border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#40d870]/5 hover:bg-[#40d870]/10"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onEquip(inv.inventoryId, inv.equipped ? "unequip" : "equip")
+                }}
+                disabled={isEquipping}
+              >
+                {isEquipping ? "..." : inv.equipped ? "Unequip" : `Equip \u2192 ${slot}`}
+              </button>
+            </div>
+          )}
+
+          {/* Scroll "Use in Enhancement" Button */}
+          {isScrollsTab && (
+            <div className="px-2 pb-1.5">
+              <button
+                className="w-full font-pixel text-[9px] py-1 border transition-all hover:brightness-125 active:translate-y-px border-[var(--pet-gold,#f0c040)] text-[var(--pet-gold,#f0c040)] bg-[#f0c040]/5 hover:bg-[#f0c040]/10"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(`/pet/enhancement?scroll=${inv.inventoryId}`)
+                }}
+              >
+                Enhance {"\u2192"}
+              </button>
             </div>
           )}
         </div>
-
-        {/* Equip/Unequip Button */}
-        {isEquipmentTab && inv.item.slot && (
-          <div className="px-2 pb-1.5">
-            <button
-              className={cn(
-                "w-full font-pixel text-[9px] py-1 border transition-all",
-                "hover:brightness-125 active:translate-y-px disabled:opacity-40",
-                inv.equipped
-                  ? "border-[var(--pet-red,#e04040)] text-[var(--pet-red,#e04040)] bg-[#e04040]/5 hover:bg-[#e04040]/10"
-                  : "border-[var(--pet-green,#40d870)] text-[var(--pet-green,#40d870)] bg-[#40d870]/5 hover:bg-[#40d870]/10"
-              )}
-              onClick={(e) => {
-                e.stopPropagation()
-                onEquip(inv.inventoryId, inv.equipped ? "unequip" : "equip")
-              }}
-              disabled={isEquipping}
-            >
-              {isEquipping ? "..." : inv.equipped ? "Unequip" : `Equip \u2192 ${inv.item.slot}`}
-            </button>
-          </div>
-        )}
-      </div>
+      </ItemGlow>
     </ItemTooltip>
   )
 }
+// --- END AI-MODIFIED ---
 
 function BonusSummary({ filter, items }: { filter: FilterTab; items?: InventoryItem[] }) {
   const equippedItems = items?.filter((i) => i.equipped) ?? []

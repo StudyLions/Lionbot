@@ -62,7 +62,14 @@ export default apiHandler({
         return res.status(400).json({ error: "Only equipment items can be equipped" })
       }
 
-      const slot = CATEGORY_TO_SLOT[invItem.lg_items.category]
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Use the canonical slot field from lg_items instead of deriving from category.
+      //          Fixes items like sneakers with category COSTUME being placed in BODY instead of FEET.
+      // --- Original code (commented out for rollback) ---
+      // const slot = CATEGORY_TO_SLOT[invItem.lg_items.category]
+      // --- End original code ---
+      const slot = invItem.lg_items.slot || CATEGORY_TO_SLOT[invItem.lg_items.category]
+      // --- END AI-MODIFIED ---
       if (!slot) {
         return res.status(400).json({ error: "Unknown equipment slot for this item category" })
       }
