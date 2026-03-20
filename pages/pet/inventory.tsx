@@ -19,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from "next/router"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
@@ -31,7 +31,10 @@ import ItemTooltip, { type InventoryItem } from "@/components/pet/inventory/Item
 import ItemGlow from "@/components/pet/ui/ItemGlow"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { mergeLayout } from "@/utils/roomConstraints"
+import {
+  mergeLayout, buildRenderSequence, clampEquipOffset,
+  EQUIP_OFFSET_RANGE, type RenderStep, type RoomLayout,
+} from "@/utils/roomConstraints"
 import { toast } from "sonner"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -220,6 +223,53 @@ export default function InventoryPage() {
   const equipment = overview?.equipment ?? {}
   const pet = overview?.pet
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Render stack state -- local edits to layer order and equipment offsets,
+  //          with auto-save to the room layout API on change.
+  const layout = useMemo(() => mergeLayout(overview?.roomLayout ?? {}), [overview?.roomLayout])
+  const [localSequence, setLocalSequence] = useState<RenderStep[] | null>(null)
+  const [localOffsets, setLocalOffsets] = useState<Record<string, [number, number]> | null>(null)
+  const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
+  const [savingLayout, setSavingLayout] = useState(false)
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>()
+
+  const activeSequence = useMemo(
+    () => localSequence ?? buildRenderSequence(Object.keys(equipment), layout.renderSequence),
+    [localSequence, equipment, layout.renderSequence]
+  )
+  const activeOffsets = localOffsets ?? layout.equipmentOffsets
+
+  const saveLayoutDebounced = useCallback((seq: RenderStep[], offsets: Record<string, [number, number]>) => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current)
+    saveTimerRef.current = setTimeout(async () => {
+      setSavingLayout(true)
+      try {
+        const res = await fetch("/api/pet/room", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            layout: { ...layout, renderSequence: seq, equipmentOffsets: offsets },
+          }),
+        })
+        if (res.ok) mutateOverview()
+      } catch { /* silent */ }
+      finally { setSavingLayout(false) }
+    }, 600)
+  }, [layout, mutateOverview])
+
+  const handleReorderSequence = useCallback((newSeq: RenderStep[]) => {
+    setLocalSequence(newSeq)
+    saveLayoutDebounced(newSeq, localOffsets ?? layout.equipmentOffsets)
+  }, [saveLayoutDebounced, localOffsets, layout.equipmentOffsets])
+
+  const handleOffsetChange = useCallback((slot: string, offset: [number, number]) => {
+    const clamped = clampEquipOffset(offset)
+    const newOffsets = { ...(localOffsets ?? layout.equipmentOffsets), [slot]: clamped }
+    setLocalOffsets(newOffsets)
+    saveLayoutDebounced(localSequence ?? buildRenderSequence(Object.keys(equipment), layout.renderSequence), newOffsets)
+  }, [saveLayoutDebounced, localOffsets, localSequence, layout, equipment])
+  // --- END AI-MODIFIED ---
+
   return (
     <Layout SEO={{ title: "Inventory - LionGotchi", description: "Your pet inventory" }}>
       <AdminGuard variant="pet">
@@ -269,7 +319,7 @@ export default function InventoryPage() {
                           <RoomCanvas
                             roomPrefix={overview.roomPrefix ?? "rooms/default"}
                             furniture={overview.furniture ?? {}}
-                            layout={mergeLayout(overview.roomLayout ?? {})}
+                            layout={{ ...layout, renderSequence: activeSequence, equipmentOffsets: activeOffsets }}
                             equipment={Object.fromEntries(
                               Object.entries(equipment).map(([slot, item]) => [
                                 slot,
@@ -289,53 +339,21 @@ export default function InventoryPage() {
                     </div>
                   </PixelCard>
 
-                  {/* Equipment Slots */}
-                  <PixelCard className="p-3" corners>
-                    <div className="flex items-center gap-2 pb-2 mb-2 border-b-2 border-[#1a2a3c]">
-                      <span className="font-pixel text-[14px]">{"\u2694\uFE0F"}</span>
-                      <span className="font-pixel text-xs text-[var(--pet-text,#e2e8f0)]">Equipped</span>
-                    </div>
-                    <div className="space-y-1.5">
-                      {EQUIP_SLOTS.map((slot) => {
-                        const item = equipment[slot]
-                        const bc = item ? (RARITY_BORDER[item.rarity] || "#3a4a6c") : "#1a2a3c"
-                        const imgUrl = item ? getItemImageUrl(item.assetPath, item.category) : null
-                        return (
-                          <div
-                            key={slot}
-                            className={cn(
-                              "flex items-center gap-2 px-2 py-1.5 border-2 bg-[#080c18] transition-colors",
-                              item && "cursor-pointer hover:bg-[#0f1628]"
-                            )}
-                            style={{ borderColor: bc, boxShadow: "1px 1px 0 #060810" }}
-                            onClick={() => item && handleUnequipSlot(slot)}
-                            title={item ? "Click to unequip" : undefined}
-                          >
-                            <div className="w-8 h-8 border border-[#1a2a3c] bg-[#0a0e1a] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                              {imgUrl ? (
-                                <CroppedItemImage src={imgUrl} alt={item?.name ?? ""} className="w-full h-full object-contain" />
-                              ) : (
-                                <span className="text-xs opacity-40">{SLOT_ICONS[slot]}</span>
-                              )}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] uppercase">{slot}</p>
-                              {item ? (
-                                <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate">{item.name}</p>
-                              ) : (
-                                <p className="font-pixel text-[10px] text-[#3a4a5c]">Empty</p>
-                              )}
-                            </div>
-                            {item && (
-                              <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] flex-shrink-0 opacity-0 group-hover:opacity-100">
-                                {"\u2716"}
-                              </span>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </PixelCard>
+                  {/* --- AI-MODIFIED (2026-03-20) --- */}
+                  {/* Purpose: Full render stack panel replacing the simple equipped list. Shows
+                      interleaved lion layers + equipment with drag reorder and position offsets. */}
+                  <RenderStackPanel
+                    equipment={equipment}
+                    renderSequence={activeSequence}
+                    equipmentOffsets={activeOffsets}
+                    selectedSlot={selectedEquipSlot}
+                    saving={savingLayout}
+                    onReorder={handleReorderSequence}
+                    onSelectSlot={setSelectedEquipSlot}
+                    onOffsetChange={handleOffsetChange}
+                    onUnequipSlot={handleUnequipSlot}
+                  />
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Bonus Summary */}
                   <BonusSummary filter={filter} items={invData?.items} />
@@ -527,6 +545,300 @@ function InventoryItemCard({
         </div>
       </ItemGlow>
     </ItemTooltip>
+  )
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Render stack panel for the inventory page. Shows the full interleaved
+//          lion + equipment layer stack with drag-to-reorder and per-item position
+//          offset sliders. Auto-saves changes to the room layout API.
+const LION_LAYER_LABELS: Record<string, string> = {
+  body: "Body", head: "Head", expression: "Expression", hair: "Mane",
+}
+const LION_LAYER_ICONS: Record<string, string> = {
+  body: "\u{1F9B4}", head: "\u{1F981}", expression: "\u{1F60A}", hair: "\u{1F981}",
+}
+const RARITY_ACCENT: Record<string, string> = {
+  COMMON: "#6b7280", UNCOMMON: "#3b82f6", RARE: "#ef4444",
+  EPIC: "#eab308", LEGENDARY: "#ec4899", MYTHICAL: "#f43f5e",
+}
+
+function RenderStackPanel({
+  equipment,
+  renderSequence,
+  equipmentOffsets,
+  selectedSlot,
+  saving,
+  onReorder,
+  onSelectSlot,
+  onOffsetChange,
+  onUnequipSlot,
+}: {
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  renderSequence: RenderStep[]
+  equipmentOffsets: Record<string, [number, number]>
+  selectedSlot: string | null
+  saving: boolean
+  onReorder: (seq: RenderStep[]) => void
+  onSelectSlot: (slot: string | null) => void
+  onOffsetChange: (slot: string, offset: [number, number]) => void
+  onUnequipSlot: (slot: string) => void
+}) {
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [overIdx, setOverIdx] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((e: React.DragEvent, idx: number) => {
+    setDragIdx(idx)
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("text/plain", String(idx))
+  }, [])
+
+  const handleDrop = useCallback((e: React.DragEvent, targetIdx: number) => {
+    e.preventDefault()
+    if (dragIdx === null || dragIdx === targetIdx) {
+      setDragIdx(null); setOverIdx(null); return
+    }
+    const seq = [...renderSequence]
+    const [moved] = seq.splice(dragIdx, 1)
+    seq.splice(targetIdx, 0, moved)
+    onReorder(seq)
+    setDragIdx(null); setOverIdx(null)
+  }, [dragIdx, renderSequence, onReorder])
+
+  const hasEquipment = Object.keys(equipment).length > 0
+  const backItem = equipment["BACK"]
+  const selectedItem = selectedSlot ? equipment[selectedSlot] : null
+  const selectedOffset = selectedSlot ? (equipmentOffsets[selectedSlot] ?? [0, 0]) : [0, 0]
+
+  return (
+    <PixelCard className="p-3" corners>
+      <div className="flex items-center gap-2 pb-2 mb-2 border-b-2 border-[#1a2a3c]">
+        <span className="font-pixel text-[14px]">{"\u{1F4DA}"}</span>
+        <span className="font-pixel text-xs text-[var(--pet-gold,#f0c040)]">Render Stack</span>
+        {saving && (
+          <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] ml-auto animate-pulse">
+            saving...
+          </span>
+        )}
+      </div>
+
+      {!hasEquipment ? (
+        <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] italic py-2">
+          No equipment worn. Equip items to arrange their layers.
+        </p>
+      ) : (
+        <div className="space-y-1">
+          {/* BACK is always behind the lion */}
+          {backItem && (
+            <div className="mb-1">
+              <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] uppercase mb-0.5 flex items-center gap-1">
+                <span>{"\u{1F512}"}</span> Behind Lion
+              </p>
+              <RenderStackRow
+                slot="BACK"
+                item={backItem}
+                isSelected={selectedSlot === "BACK"}
+                isDragging={false}
+                isOver={false}
+                locked
+                onClick={() => onSelectSlot(selectedSlot === "BACK" ? null : "BACK")}
+                onUnequip={() => onUnequipSlot("BACK")}
+              />
+            </div>
+          )}
+
+          {/* Separator */}
+          {backItem && renderSequence.length > 0 && (
+            <div className="flex items-center gap-1.5 py-0.5">
+              <div className="flex-1 h-px bg-[#2a3a5c]" />
+              <span className="font-pixel text-[8px] text-[#5a6a7c] uppercase tracking-wider">Lion Sprite</span>
+              <div className="flex-1 h-px bg-[#2a3a5c]" />
+            </div>
+          )}
+
+          {/* Interleaved stack */}
+          <div className="flex flex-col gap-0.5">
+            {renderSequence.map((step, idx) => {
+              if (step.type === "lion") {
+                return (
+                  <div
+                    key={`lion_${step.key}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDragEnter={() => setOverIdx(idx)}
+                    onDrop={(e) => handleDrop(e, idx)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2 py-1 transition-all border",
+                      overIdx === idx && dragIdx !== null
+                        ? "border-[var(--pet-gold,#f0c040)]/30 bg-[var(--pet-gold,#f0c040)]/5"
+                        : "border-transparent"
+                    )}
+                  >
+                    <span className="text-[11px] opacity-40">{LION_LAYER_ICONS[step.key] || "\u{1F981}"}</span>
+                    <span className="font-pixel text-[9px] text-[#5a6a7c] uppercase tracking-wider flex-1">
+                      {LION_LAYER_LABELS[step.key] || step.key}
+                    </span>
+                    <span className="font-pixel text-[7px] text-[#3a4a5c]">anchor</span>
+                  </div>
+                )
+              }
+
+              const slot = step.key
+              const item = equipment[slot]
+              if (!item) return null
+
+              return (
+                <div
+                  key={`equip_${slot}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDragEnter={() => setOverIdx(idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
+                >
+                  <RenderStackRow
+                    slot={slot}
+                    item={item}
+                    isSelected={selectedSlot === slot}
+                    isDragging={dragIdx === idx}
+                    isOver={overIdx === idx && dragIdx !== idx}
+                    onClick={() => onSelectSlot(selectedSlot === slot ? null : slot)}
+                    onUnequip={() => onUnequipSlot(slot)}
+                  />
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Direction legend */}
+          <div className="flex items-center justify-between pt-1 text-[8px] font-pixel text-[#5a6a7c]">
+            <span>{"\u2191"} Front</span>
+            <span>{"\u2193"} Back</span>
+          </div>
+        </div>
+      )}
+
+      {/* Position offsets for selected equipment */}
+      {selectedSlot && selectedItem && (
+        <div className="mt-2 pt-2 border-t-2 border-[#1a2a3c]">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="font-pixel text-[10px]">{SLOT_ICONS[selectedSlot] || "\u{1F4E6}"}</span>
+            <span className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] truncate">
+              {selectedItem.name} — Position
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-2">
+              <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] w-4">X</span>
+              <input
+                type="range"
+                min={-EQUIP_OFFSET_RANGE}
+                max={EQUIP_OFFSET_RANGE}
+                value={selectedOffset[0]}
+                onChange={(e) => onOffsetChange(selectedSlot, [Number(e.target.value), selectedOffset[1]])}
+                className="flex-1 h-1 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
+              />
+              <span className="font-pixel text-[9px] text-[var(--pet-text,#e2e8f0)] w-6 text-right tabular-nums">
+                {selectedOffset[0]}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] w-4">Y</span>
+              <input
+                type="range"
+                min={-EQUIP_OFFSET_RANGE}
+                max={EQUIP_OFFSET_RANGE}
+                value={selectedOffset[1]}
+                onChange={(e) => onOffsetChange(selectedSlot, [selectedOffset[0], Number(e.target.value)])}
+                className="flex-1 h-1 appearance-none bg-[#2a3a5c] rounded cursor-pointer accent-[#4080f0]"
+              />
+              <span className="font-pixel text-[9px] text-[var(--pet-text,#e2e8f0)] w-6 text-right tabular-nums">
+                {selectedOffset[1]}
+              </span>
+            </div>
+            <button
+              onClick={() => onOffsetChange(selectedSlot, [0, 0])}
+              className="w-full font-pixel text-[9px] py-1 border border-[#3a4a6c] bg-[#0a0e1a] text-[var(--pet-text-dim,#8899aa)] hover:text-[var(--pet-text,#e2e8f0)] transition-colors"
+            >
+              Reset Position
+            </button>
+          </div>
+        </div>
+      )}
+    </PixelCard>
+  )
+}
+
+function RenderStackRow({
+  slot,
+  item,
+  isSelected,
+  isDragging,
+  isOver,
+  locked,
+  onClick,
+  onUnequip,
+}: {
+  slot: string
+  item: { name: string; category: string; rarity: string; assetPath: string }
+  isSelected: boolean
+  isDragging: boolean
+  isOver: boolean
+  locked?: boolean
+  onClick: () => void
+  onUnequip: () => void
+}) {
+  const imgUrl = getItemImageUrl(item.assetPath, item.category)
+  const accent = RARITY_ACCENT[item.rarity] || RARITY_ACCENT.COMMON
+
+  return (
+    <div
+      className={cn(
+        "relative flex items-center gap-1.5 bg-[#0a0e1a] border transition-all overflow-hidden cursor-pointer",
+        locked
+          ? "border-[#2a3a5c] opacity-70"
+          : isDragging
+            ? "border-[var(--pet-gold,#f0c040)]/50 opacity-50 scale-95"
+            : isOver
+              ? "border-[var(--pet-gold,#f0c040)] shadow-[0_0_8px_rgba(240,192,64,0.2)] scale-[1.01]"
+              : isSelected
+                ? "border-[#4080f0] shadow-[0_0_6px_rgba(64,128,240,0.25)]"
+                : "border-[#2a3a5c] hover:border-[#4a5a7c]"
+      )}
+      onClick={onClick}
+    >
+      <div className="w-1 self-stretch flex-shrink-0" style={{ backgroundColor: accent }} />
+      <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center my-0.5">
+        {imgUrl ? (
+          <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
+        ) : (
+          <span className="text-xs">{SLOT_ICONS[slot] || "\u{1F4E6}"}</span>
+        )}
+      </div>
+      <div className="flex-1 min-w-0 py-1 pr-1">
+        <div className="flex items-center gap-1">
+          <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">{SLOT_ICONS[slot]}</span>
+          <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] uppercase">{slot}</span>
+          <PixelBadge rarity={item.rarity} className="text-[7px] px-0.5 py-0 ml-auto" />
+        </div>
+        <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate">{item.name}</p>
+      </div>
+      {!locked && (
+        <button
+          className="flex-shrink-0 pr-1.5 text-[var(--pet-text-dim,#8899aa)] hover:text-[var(--pet-red,#e04040)] text-[10px] transition-colors"
+          onClick={(e) => { e.stopPropagation(); onUnequip() }}
+          title="Unequip"
+        >
+          {"\u2716"}
+        </button>
+      )}
+      {!locked && (
+        <div className="flex-shrink-0 pr-1.5 text-[#5a6a7c] text-[10px] cursor-grab active:cursor-grabbing">
+          {"\u2807"}
+        </div>
+      )}
+    </div>
   )
 }
 // --- END AI-MODIFIED ---
