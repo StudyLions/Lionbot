@@ -122,6 +122,55 @@ export default apiHandler({
       })
     )
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: discover admin/mod guilds where the bot is present but no members row exists yet
+    // (the bot creates members rows lazily on first command, so newly added servers are invisible)
+    const existingGuildIds = new Set(servers.map((s) => s.guildId))
+    const candidateGuilds = discordGuilds.filter((g) => {
+      if (existingGuildIds.has(g.id)) return false
+      const perms = BigInt(g.permissions)
+      return (perms & BigInt(ADMINISTRATOR)) !== 0n || (perms & BigInt(MANAGE_GUILD)) !== 0n
+    })
+
+    const newServerChecks = await Promise.all(
+      candidateGuilds.map(async (g) => {
+        const botPresent = await checkBotInGuild(g.id)
+        return { guild: g, botPresent }
+      })
+    )
+
+    for (const { guild: g, botPresent } of newServerChecks) {
+      if (!botPresent) continue
+
+      await prisma.guild_config.upsert({
+        where: { guildid: BigInt(g.id) },
+        update: {},
+        create: { guildid: BigInt(g.id), name: g.name },
+      })
+
+      let iconUrl: string | null = null
+      if (g.icon) {
+        const ext = g.icon.startsWith("a_") ? "gif" : "webp"
+        iconUrl = `https://cdn.discordapp.com/icons/${g.id}/${g.icon}.${ext}?size=128`
+      }
+      const perms = BigInt(g.permissions)
+      const role: ServerRole = (perms & BigInt(ADMINISTRATOR)) !== 0n ? "admin" : "moderator"
+
+      servers.push({
+        guildId: g.id,
+        guildName: g.name || "Unknown Server",
+        displayName: null,
+        trackedTimeSeconds: 0,
+        trackedTimeHours: 0,
+        coins: 0,
+        firstJoined: null,
+        role,
+        iconUrl,
+        botPresent: true,
+      })
+    }
+    // --- END AI-MODIFIED ---
+
     servers.sort((a, b) => {
       const tierDiff = rolePriority[a.role] - rolePriority[b.role]
       if (tierDiff !== 0) return tierDiff
@@ -131,4 +180,3 @@ export default apiHandler({
     res.status(200).json({ servers })
   },
 })
-// --- END AI-MODIFIED ---
