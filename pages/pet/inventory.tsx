@@ -611,9 +611,11 @@ function RenderStackPanel({
   const selectedItem = selectedSlot ? equipment[selectedSlot] : null
   const selectedOffset = selectedSlot ? (equipmentOffsets[selectedSlot] ?? [0, 0]) : [0, 0]
 
+  const router = useRouter()
+
   return (
-    <PixelCard className="p-3" corners>
-      <div className="flex items-center gap-2 pb-2 mb-2 border-b-2 border-[#1a2a3c]">
+    <PixelCard className="p-3 border-[var(--pet-gold,#f0c040)]/30" corners>
+      <div className="flex items-center gap-2 pb-2 mb-2 border-b-2 border-[var(--pet-gold,#f0c040)]/20">
         <span className="font-pixel text-[14px]">{"\u{1F4DA}"}</span>
         <span className="font-pixel text-xs text-[var(--pet-gold,#f0c040)]">Render Stack</span>
         {saving && (
@@ -621,6 +623,19 @@ function RenderStackPanel({
             saving...
           </span>
         )}
+      </div>
+
+      {/* Info box */}
+      <div className="mb-2 px-2 py-1.5 border border-[#4080f0]/20 bg-[#4080f0]/5">
+        <p className="font-pixel text-[9px] text-[#80b0ff] leading-relaxed">
+          Items not aligned? Drag equipment between lion layers to change what renders in front or behind. Click an item to adjust its X/Y position.
+        </p>
+        <button
+          onClick={() => router.push("/pet/room")}
+          className="mt-1 w-full font-pixel text-[9px] py-1 border border-[#4080f0]/30 text-[#80b0ff] bg-[#4080f0]/5 hover:bg-[#4080f0]/10 transition-colors"
+        >
+          Open Full Room Editor {"\u2192"}
+        </button>
       </div>
 
       {!hasEquipment ? (

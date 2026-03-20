@@ -853,6 +853,17 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                 />
               ) : (
                 <div className="p-3">
+                  {/* --- AI-MODIFIED (2026-03-20) --- */}
+                  {/* Purpose: Info box explaining how the render stack works */}
+                  <div className="mb-3 px-2.5 py-2 border border-[#4080f0]/20 bg-[#4080f0]/5 rounded">
+                    <p className="font-pixel text-[12px] text-[#80b0ff] leading-relaxed">
+                      Drag equipment between the lion&apos;s body layers to control what renders in front or behind. Click any item to fine-tune its X/Y position on the sprite.
+                    </p>
+                    <p className="font-pixel text-[11px] text-[#6090c0] mt-1">
+                      Changes save automatically. You can also edit this from your Inventory page.
+                    </p>
+                  </div>
+                  {/* --- END AI-MODIFIED --- */}
                   <EquipmentOrder
                     equipment={equipment}
                     renderSequence={layout.renderSequence}
