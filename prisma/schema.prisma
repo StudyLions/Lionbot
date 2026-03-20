@@ -250,6 +250,15 @@ model guild_config {
   renting_visible         Boolean?
   first_joined_at         DateTime?                 @default(now()) @db.Timestamptz(6)
   left_at                 DateTime?                 @db.Timestamptz(6)
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: LionGotchi guild-level settings for admin dashboard
+  lg_drop_channel         BigInt?
+  lg_enabled              Boolean?                  @default(true)
+  lg_guild_display_name   String?                   @db.VarChar(12)
+  lg_teaser_enabled       Boolean?                  @default(true)
+  lg_activity_role        BigInt?
+  lg_drop_delete_after    Int?
+  // --- END AI-MODIFIED ---
   coin_transactions       coin_transactions[]
   members                 members[]
   msg_ranks               msg_ranks[]

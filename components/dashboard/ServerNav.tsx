@@ -17,7 +17,7 @@ import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
-  Volume2, VolumeX,
+  Volume2, VolumeX, PawPrint,
 } from "lucide-react"
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -82,6 +82,15 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
       ],
     })
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: LionGotchi admin settings section
+    sections.push({
+      title: "LionGotchi",
+      links: [
+        { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
+      ],
+    })
+    // --- END AI-MODIFIED ---
   }
 
   return sections
