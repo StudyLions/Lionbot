@@ -233,17 +233,8 @@ export default function PetOverview() {
                 <PixelCard className="p-8 text-center" corners>
                   <p className="font-pixel text-sm text-[var(--pet-red,#e04040)]">{(error as Error).message}</p>
                 </PixelCard>
-              {/* --- AI-REPLACED (2026-03-20) --- */}
-              {/* Reason: Rich showcase instead of dead-end "No pet yet!" card */}
-              {/* --- Original code (commented out for rollback) --- */}
-              {/* ) : !data?.hasPet ? (
-                <PixelCard className="p-12 text-center space-y-4" corners>
-                  <img src={getUiIconUrl("liongotchi_heart")} alt="" width={48} height={48} />
-                  <h2 className="font-pixel text-xl">No pet yet!</h2>
-                  <p className="font-pixel text-[13px]">Use the /pet command...</p>
-                </PixelCard> */}
-              {/* --- End original code --- */}
               ) : !data?.hasPet ? (
+                // AI-REPLACED (2026-03-20): was a basic "No pet yet!" PixelCard, now uses NoPetShowcase
                 <NoPetShowcase />
               ) : pet && (
                 <>
