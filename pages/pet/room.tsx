@@ -857,9 +857,9 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                   }}
                 />
               ) : (
-                {/* --- AI-REPLACED (2026-03-20) --- */}
-                {/* Reason: Layers tab now shows room furniture layers instead of lion render stack */}
-                {/* What the new code does better: Users can reorder, position, and scale room items */}
+                // --- AI-REPLACED (2026-03-20) ---
+                // Reason: Layers tab now shows room furniture layers instead of lion render stack
+                // What the new code does better: Users can reorder, position, and scale room items
                 <div className="p-3">
                   <div className="mb-3 px-2.5 py-2 border border-[#4080f0]/20 bg-[#4080f0]/5 rounded">
                     <p className="font-pixel text-[12px] text-[#80b0ff] leading-relaxed">
@@ -883,7 +883,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                     onScaleLayer={scaleLayer}
                   />
                 </div>
-                {/* --- END AI-REPLACED --- */}
+                // --- END AI-REPLACED ---
               )}
             </div>
           </PixelCard>

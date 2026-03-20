@@ -1,6 +1,14 @@
+# *
 User-agent: *
 Allow: /
+
+# *
+User-agent: *
 Disallow: /api/
 Disallow: /dashboard/
 
+# Host
+Host: https://lionbot.org
+
+# Sitemaps
 Sitemap: https://lionbot.org/sitemap.xml
