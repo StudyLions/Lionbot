@@ -84,9 +84,9 @@ export default function MarketplaceMock({ itemId, goldPrice, rarity }: Props) {
         <ResponsiveContainer width="100%" height={140}>
           <LineChart data={priceData} margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-            <XAxis dataKey="day" tick={{ fontSize: 8, fill: "#666" }} interval={6} />
-            <YAxis tick={{ fontSize: 9, fill: "#999" }} width={40} />
-            <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 11 }} />
+            <XAxis dataKey="day" tick={{ fontSize: 11, fill: "#666" }} interval={6} />
+            <YAxis tick={{ fontSize: 12, fill: "#999" }} width={40} />
+            <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: 8, fontSize: 15 }} />
             <Line type="monotone" dataKey="price" stroke="#fbbf24" strokeWidth={1.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>

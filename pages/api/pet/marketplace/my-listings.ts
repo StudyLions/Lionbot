@@ -7,7 +7,10 @@
 import { prisma } from "@/utils/prisma"
 import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { expireListings } from "@/utils/marketplace"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Use debounced expireListings to avoid running full expiry scan on every request
+import { expireListingsDebounced } from "@/utils/marketplace"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -15,7 +18,12 @@ export default apiHandler({
     if (!auth) return res.status(401).json({ error: "Not authenticated" })
     const userId = BigInt(auth.discordId)
 
-    await expireListings()
+    // --- AI-MODIFIED (2026-03-20) ---
+    // --- Original code (commented out for rollback) ---
+    // await expireListings()
+    // --- End original code ---
+    await expireListingsDebounced()
+    // --- END AI-MODIFIED ---
 
     const [activeListings, pastListings, sales, goldRevenue, gemRevenue] = await Promise.all([
       prisma.lg_marketplace_listings.findMany({

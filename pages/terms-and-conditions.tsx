@@ -1,5 +1,13 @@
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Updated imports, styling wrapper, i18n support
+// --- AI-REPLACED (2026-03-20) ---
+// Reason: Complete rewrite to cover all current products/services (LionGems,
+//         LionHeart subscriptions, LionGotchi, Server Premium) with clear
+//         no-refund policy, modern styling consistent with privacy policy page.
+// What the new code does better: Comprehensive legal coverage, explicit
+//         no-refund clauses for every digital product, proper structure.
+// --- Original code (commented out for rollback) ---
+// See git history for previous version — entire file was a single
+// flat component with minimal refund policy referencing only LionGems.
+// --- End original code ---
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import Layout from "@/components/Layout/Layout";
@@ -9,189 +17,593 @@ export default function TermsAndConditions() {
   return (
     <Layout SEO={TermsAndConditionsSEO}>
       <div className="bg-background min-h-screen">
-      <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6 [&_h1]:text-2xl [&_h1]:sm:text-3xl [&_h1]:font-bold [&_h1]:text-foreground [&_h1]:my-6 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-4 [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-3 [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7 [&_li]:my-2 [&_li]:bg-card [&_li]:p-3 [&_li]:rounded-lg [&_li]:border [&_li]:border-border">
-        <h1 className="text-3xl my-4">
-          Welcome to “LionBot.org”. Please read on to learn the rules and restrictions that govern your use of our
-          website(s), products, services, proprietary bots, as well as any related services on which these Terms appear:
-          Such as our Discord, Anki addon, Desktop widgets and mobile applications
-        </h1>
+        <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6">
+          <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+            Terms and Conditions
+          </h1>
+          <p className="text-muted-foreground mb-10">Last updated: March 20, 2026</p>
 
-        <p className="my-2 leading-6">
-          If you have any questions, comments, or concerns regarding these terms or the Services, please contact us at
-          Email: contact@arihoresh.com
-        </p>
+          <div className="space-y-10 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7">
 
-        <p className="my-2 leading-6">
-          Under no circumstances shall LionBot.org and its development team be liable for any direct, indirect, special,
-          incidental, or consequential damages, including, but not limited to, loss of data or profit, arising out of
-          the use, or the inability to use, the materials on this site, even if LionBot.org or an authorized representative
-          has been advised of the possibility of such damages. If your use of materials from this site results in the
-          need for servicing, repair, or correction of equipment or data, you assume any costs thereof should only be
-          provided by the user of the application.
-          {/* AI-MODIFIED: Fixed "Teller" reference to "LionBot.org" */}
-        </p>
-        <p className="my-2 leading-6">
-          By continuing to use this Site or services, you agree to these Terms, as updated from time to time.
-        </p>
-        <h2 className="text-3xl mt-4">Usage and Limitations of Liability</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
-        <p className="my-2 leading-6">
-          We do not take any responsibility and we are not liable for any damage caused through the use of products,
-          information, forum, or any kind of services used through our products, be it indirect, special, incidental, or
-          consequential damages (including but not limited to damages for loss of business, loss of profits,
-          interruption or the like)
-        </p>
+            {/* Agreement */}
+            <section>
+              <h2>Agreement to Terms</h2>
+              <p>
+                Welcome to LionBot.org. These Terms and Conditions (&ldquo;Terms&rdquo;) govern your
+                use of our website(s), Discord bot (StudyLion), web dashboard, virtual pet system
+                (LionGotchi), mobile applications, and all related products and services (collectively,
+                the &ldquo;Services&rdquo;). By accessing or using any part of the Services, you agree
+                to be bound by these Terms. If you do not agree, do not use the Services.
+              </p>
+              <p>
+                If you have any questions, contact us at{" "}
+                <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
+                  contact@arihoresh.com
+                </a>.
+              </p>
+            </section>
 
-        <h2 className="text-3xl mt-4">License</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
-        <p className="my-2 leading-6">
-          Unless otherwise stated, LionBot.org and/or its licensors own the intellectual property rights for all
-          material on LionBot.org. All intellectual property rights are reserved.
-        </p>
+            {/* Eligibility */}
+            <section>
+              <h2>Eligibility</h2>
+              <p>
+                You represent and warrant that you are at least 13 years of age (or the minimum age
+                required by Discord&apos;s Terms of Service in your jurisdiction) and are of legal age
+                to form a binding contract. If you are under the age of majority in your jurisdiction,
+                you must have your parent or legal guardian&apos;s consent to use the Services and agree
+                to these Terms on your behalf.
+              </p>
+              <p>
+                If you are agreeing to these Terms on behalf of an organization or entity, you represent
+                and warrant that you are authorized to bind that organization to these Terms.
+              </p>
+            </section>
 
-        <h2 className="text-3xl mt-4">You must not:</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
-        <ul>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">Republish material from LionBot.org</li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            Sell, rent or sub-license material from LionBot.org
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            Reproduce, duplicate or copy material from LionBot.org
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">Redistribute content from LionBot.org</li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            We respect others’ intellectual property rights, and we reserve the right to delete or disable Content
-            alleged to be infringing, and to terminate the accounts of repeat alleged infringers; to review our complete
-            Copyright Dispute Policy and learn how to report potentially infringing content send us an email at
-            contact@arihoresh.com
-          </li>
-        </ul>
+            {/* Description of Services */}
+            <section>
+              <h2>Description of Services</h2>
+              <p>LionBot.org provides the following services:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong className="text-foreground">StudyLion Discord Bot</strong> — A productivity
+                  bot that tracks study time, manages tasks, goals, reminders, and provides economy,
+                  ranking, and moderation features within Discord servers.
+                </li>
+                <li>
+                  <strong className="text-foreground">LionGotchi</strong> — A virtual pet system
+                  within the bot, featuring pet care, equipment, rooms, farming, crafting,
+                  enhancement, and a player marketplace.
+                </li>
+                <li>
+                  <strong className="text-foreground">Web Dashboard</strong> — A website at
+                  LionBot.org where users can manage their account, view study statistics, configure
+                  server settings, and access premium features.
+                </li>
+                <li>
+                  <strong className="text-foreground">Premium Features</strong> — Paid features
+                  including LionGem purchases, LionHeart subscriptions, Server Premium, profile card
+                  skins, and animated card effects.
+                </li>
+              </ul>
+            </section>
 
-        <h2 className="text-3xl mt-4">Using LionBot.org</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+            {/* Account & Third-Party Access */}
+            <section>
+              <h2>Your Account</h2>
+              <p>
+                You may access certain features of the Services by signing in with your Discord account
+                (&ldquo;Third Party Account&rdquo;). By doing so, you permit us to access certain
+                information from your Discord account as described in our{" "}
+                <a href="/privacy-policy" className="text-primary hover:underline">
+                  Privacy Policy
+                </a>.
+              </p>
+              <p>
+                You are responsible for maintaining the security of your account. You may not use
+                another person&apos;s account without their authorization. You may not transfer your
+                account to anyone else without our prior written permission.
+              </p>
+            </section>
 
-        <p className="my-2 leading-6">
-          You may need to access certain parts or features of the Services (e.g. our proprietary bots) by using your
-          account credentials and password from other services (“Third Party Account”), such as those offered by
-          Discord. By using the Services through a Third Party Account, you permit us to access certain information from
-          such account for use by the Services. You are ultimately in control of how much information is accessible to
-          us and may exercise such control by adjusting your privacy settings on your Third-Party Account. We store your
-          account credentials but will not store your password. You promise to provide us with accurate, complete, and
-          updated registration information about yourself. You may not use any Third Party Account that you do not have
-          the right to use, or another person’s account credentials without authorization from that other person. You
-          may not transfer your account to anyone else without our prior written permission.
-        </p>
-        <p className="my-2 leading-6">
-          You represent and warrant that you are an individual of legal age to form a binding contract (or if not,
-          you’ve received your parent’s or guardian’s permission to use the Services and have gotten your parent or
-          guardian to agree to these Terms on your behalf). If you’re agreeing to these Terms on behalf of an
-          organization or entity, you represent and warrant that you are authorized to agree to these Terms on that
-          organization’s or entity’s behalf and bind them to these Terms (in which case, the references to “you” and
-          “your” in these Terms, except for in this sentence, refer to that organization or entity).
-        </p>
+            {/* Intellectual Property */}
+            <section>
+              <h2>Intellectual Property</h2>
+              <p>
+                Unless otherwise stated, LionBot.org and/or its licensors own the intellectual property
+                rights for all material, content, designs, code, and artwork used in the Services. All
+                intellectual property rights are reserved.
+              </p>
+              <p>You must not:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>Republish, sell, rent, or sub-license material from the Services</li>
+                <li>Reproduce, duplicate, or copy material from the Services</li>
+                <li>Redistribute content from the Services</li>
+                <li>
+                  Reverse engineer, decompile, or attempt to extract source code from the Services
+                </li>
+              </ul>
+              <p>
+                We respect others&apos; intellectual property rights and reserve the right to remove
+                content alleged to be infringing. To report potentially infringing content, email{" "}
+                <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
+                  contact@arihoresh.com
+                </a>.
+              </p>
+            </section>
 
-        <h2 className="text-3xl mt-4">Restrictions</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+            {/* Prohibited Conduct */}
+            <section>
+              <h2>Prohibited Conduct</h2>
+              <p>
+                You agree not to use the Services in any manner that:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  Infringes or violates the intellectual property rights or any other rights of anyone
+                  else (including LionBot.org)
+                </li>
+                <li>
+                  Violates any law or regulation, including export control laws and privacy laws
+                </li>
+                <li>
+                  Is dangerous, harmful, fraudulent, deceptive, threatening, harassing, defamatory,
+                  obscene, or otherwise objectionable
+                </li>
+                <li>
+                  Jeopardizes the security of your account or anyone else&apos;s account
+                </li>
+                <li>
+                  Attempts to obtain passwords, account information, or other security information
+                  from any other user
+                </li>
+                <li>Violates the security of any computer network or cracks security encryption codes</li>
+                <li>
+                  Runs auto-responders, &ldquo;spam,&rdquo; scrapers, crawlers, or any automated process
+                  that interferes with the proper working of the Services or places an unreasonable
+                  load on infrastructure
+                </li>
+                <li>
+                  Copies or stores any significant portion of the Services&apos; content or data
+                </li>
+                <li>
+                  <strong className="text-foreground">Fakes statistics</strong> — including but not
+                  limited to idling in voice channels without actually studying or working, using
+                  automated tools to inflate study time, or any other method of artificially
+                  boosting tracked activity
+                </li>
+                <li>
+                  Exploits bugs, glitches, or unintended mechanics in the bot, LionGotchi, economy
+                  system, or any other part of the Services for unfair advantage
+                </li>
+                <li>
+                  Creates multiple accounts to circumvent bans, restrictions, or to gain additional
+                  benefits
+                </li>
+              </ul>
+              <p>
+                A violation of any of the foregoing is grounds for immediate termination of your right
+                to use or access the Services, including forfeiture of any purchased digital content
+                without refund.
+              </p>
+            </section>
 
-        <p className="my-2 leading-6">
-          You represent, warrant, and agree that you will not contribute any Content or User Submission (each of those
-          terms is defined below) or otherwise use the Services or interact with the Services in a manner that:
-        </p>
-        <ul>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            infringes or violates the intellectual property rights or any other rights of anyone else (including
-            LionBot.org);
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            violates any law or regulation, including, without limitation, any applicable export control laws, privacy
-            laws or any other purpose not reasonably intended by LionBot.org;
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            is dangerous, harmful, fraudulent, deceptive, threatening, harassing, defamatory, obscene, or otherwise
-            objectionable;
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            jeopardizes the security of your account or anyone else’s (such as allowing someone else to log in to the
-            Services as you);
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            attempts, in any manner, to obtain the password, account, or other security information from any other user;
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            violates the security of any computer network, or cracks any passwords or security encryption codes;
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            runs Maillist, Listserv, any form of auto-responder or “spam” on the Services, or any processes that run or
-            are activated while you are not logged into the Services, or that otherwise interfere with the proper
-            working of the Services (including by placing an unreasonable load on the Services’ infrastructure);
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            “crawls,” “scrapes,” or “spiders” any page, data, or portion of or relating to the Services or Content
-            (through use of manual or automated means);
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            copies or stores any significant portion of the Content; or decompiles, reverse engineers, or otherwise
-            attempts to obtain the source code or underlying ideas or information of or relating to the Services.
-          </li>
-          <li className="my-2 leading-6 bg-slate-900 p-3 rounded-xl">
-            Faking statistics in order to gain an advantage over other users (staying in a voice channel without working
-            or studying);
-          </li>
-        </ul>
+            {/* Cheating, Abuse & Account Bans */}
+            <section>
+              <div className="rounded-2xl border-2 border-red-500/30 bg-red-500/5 p-6 sm:p-8 mt-4">
+                <h2 className="!mt-0">Cheating, Abuse &amp; Account Bans</h2>
+                <p>
+                  LionBot.org is committed to providing a fair, safe, and enjoyable environment for
+                  all users. We take cheating and abuse extremely seriously. Any user found to be
+                  engaging in the behaviors described below will be subject to{" "}
+                  <strong className="text-foreground">
+                    immediate and permanent account termination
+                  </strong>{" "}
+                  at our sole discretion.
+                </p>
 
-        <h2 className="text-3xl mt-4">CHANGES TO THE SITE AND SERVICES</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  Behaviors That Will Result in a Ban
+                </h3>
+                <p>The following actions constitute cheating or abuse and are grounds for a permanent ban:</p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong className="text-foreground">Faking study time</strong> — Idling in voice
+                    channels without studying, using bots or scripts to simulate activity, or any
+                    other method of artificially inflating tracked statistics
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Exploiting bugs or glitches</strong> — Knowingly
+                    using any bug, glitch, exploit, or unintended mechanic to duplicate items, generate
+                    currency, gain unfair advantages, or otherwise manipulate any system within the
+                    Services
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Economy manipulation</strong> — Exploiting the
+                    LionCoin, LionGem, or LionGold economy systems through any unauthorized means,
+                    including but not limited to trade scams, currency duplication, or coordinated
+                    manipulation with other users
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Account abuse</strong> — Creating multiple
+                    accounts (&ldquo;alts&rdquo;) to circumvent bans, evade restrictions, farm
+                    currencies or rewards, or gain any advantage not available to a single account
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Marketplace fraud</strong> — Scamming other
+                    users on the LionGotchi marketplace, listing items under false pretenses, or
+                    engaging in any deceptive trading practices
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Automation &amp; botting</strong> — Using
+                    third-party tools, scripts, macros, self-bots, or any automated means to interact
+                    with the Services in ways not intended by normal usage
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Real-money trading (RMT)</strong> — Selling,
+                    buying, or trading LionCoins, LionGems, LionGold, items, accounts, or any other
+                    virtual content for real-world money or goods outside of official channels
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Harassment &amp; toxicity</strong> — Persistent
+                    harassment, hate speech, threats, doxxing, or any behavior that makes the Services
+                    unsafe or unwelcoming for other users
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Abuse of support or moderation systems</strong> —
+                    Filing false reports, spamming support channels, impersonating staff, or attempting
+                    to manipulate moderation decisions
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Unauthorized access</strong> — Attempting to
+                    access other users&apos; accounts, private data, or any restricted part of the
+                    Services infrastructure
+                  </li>
+                </ul>
 
-        <p className="my-2 leading-6">
-          LionBot.org may make changes to the Site or services, including, without limitation, the information contained
-          within the Site or services, at any time without notice.
-        </p>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  Consequences of a Ban
+                </h3>
+                <p>
+                  If your account is banned for any of the above reasons or for any other violation of
+                  these Terms:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong className="text-foreground">Your account will be permanently terminated</strong> and
+                    you will lose access to all Services
+                  </li>
+                  <li>
+                    <strong className="text-foreground">All of your data, progress, and content will be
+                    deleted</strong>, including but not limited to: study history, statistics, ranks,
+                    tasks, goals, reminders, economy balances, LionGotchi pets, pet inventory,
+                    equipment, farm data, marketplace listings, profile skins, card effects, and
+                    any other content tied to your account
+                  </li>
+                  <li>
+                    <strong className="text-foreground">All virtual currencies will be
+                    forfeited</strong> — this includes LionCoins, LionGems, and LionGold, regardless
+                    of whether they were purchased with real money, earned through gameplay, or
+                    received as bonuses
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Active subscriptions will be
+                    cancelled</strong> — any active LionHeart, LionHeart+, or LionHeart++ subscription
+                    will be terminated immediately with no refund for the current or any remaining
+                    billing period
+                  </li>
+                  <li>
+                    <strong className="text-foreground">No refunds will be issued under any
+                    circumstances</strong> — you will not receive a refund for any LionGems purchased,
+                    any subscription payments made, any Server Premium purchased, any LionGotchi items
+                    acquired, or any other digital content — regardless of the amount spent or how
+                    recently the purchases were made
+                  </li>
+                </ul>
+                <p>
+                  <strong className="text-foreground">
+                    By using the Services, you acknowledge and accept that a ban means you will lose
+                    everything associated with your account, permanently and without compensation.
+                  </strong>{" "}
+                  This is non-negotiable and applies equally to free users and paying subscribers.
+                </p>
+              </div>
+            </section>
 
-        <h2 className="text-3xl mt-4">DISCLAIMER</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+            {/* Right to Monitor */}
+            <section>
+              <h2>Right to Monitor &amp; Inspect Usage</h2>
+              <p>
+                To maintain a safe, fair, and enjoyable environment for all users, we reserve the
+                right to access, review, and analyze user data, account activity, transaction history,
+                gameplay patterns, and usage behavior at any time, with or without notice to you.
+              </p>
+              <p>
+                This includes but is not limited to:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  Reviewing study session patterns and voice channel activity to detect fake or
+                  automated usage
+                </li>
+                <li>
+                  Inspecting economy transactions (LionCoins, LionGems, LionGold) to identify
+                  suspicious activity, duplication, or exploitation
+                </li>
+                <li>
+                  Analyzing LionGotchi inventory, marketplace transactions, and crafting/enhancement
+                  history for evidence of abuse or exploitation
+                </li>
+                <li>
+                  Monitoring account creation patterns to detect multi-accounting or ban evasion
+                </li>
+                <li>
+                  Examining server-level data to investigate reports of abuse, harassment, or
+                  moderation manipulation
+                </li>
+                <li>
+                  Using automated systems and manual review to flag and investigate anomalous
+                  behavior
+                </li>
+              </ul>
+              <p>
+                This monitoring is conducted solely for the purpose of enforcing these Terms,
+                preventing abuse, protecting the integrity of the Services, and ensuring the safety
+                and fairness of the community. We will not use this data for advertising or share it
+                with third parties, as described in our{" "}
+                <a href="/privacy-policy" className="text-primary hover:underline">
+                  Privacy Policy
+                </a>.
+              </p>
+              <p>
+                By using the Services, you consent to this monitoring and agree that any evidence of
+                cheating, abuse, or Terms violations discovered through this process may be used as
+                grounds for account termination as described above.
+              </p>
+            </section>
 
-        <h4 className="text-xl mt-2">
-          THE SITE AND SERVICES, INCLUDING ANY CONTENT OR INFORMATION CONTAINED THEREIN, ARE PROVIDED “AS IS” WITH NO
-          REPRESENTATIONS OR WARRANTIES OF ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE
-          IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT. SOME
-          JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES; SO, IN THOSE JURISDICTIONS ONLY THE ABOVE
-          EXCLUSION MAY NOT APPLY TO YOU.
-        </h4>
+            {/* DIGITAL PURCHASES — NO REFUNDS */}
+            <section>
+              <div className="rounded-2xl border-2 border-amber-500/30 bg-amber-500/5 p-6 sm:p-8 mt-4">
+                <h2 className="!mt-0">Digital Purchases &amp; No Refund Policy</h2>
+                <p>
+                  <strong className="text-foreground">
+                    ALL PURCHASES OF DIGITAL CONTENT THROUGH THE SERVICES ARE FINAL AND
+                    NON-REFUNDABLE.
+                  </strong>{" "}
+                  By completing any purchase, you acknowledge that you are buying digital content and
+                  you expressly waive any right to cancel, return, or claim a refund once the
+                  transaction is complete. This applies to all of the following:
+                </p>
 
-        <h2 className="text-3xl mt-4">USER COMMUNICATIONS</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  LionGems (Premium Currency)
+                </h3>
+                <p>
+                  LionGems are a virtual premium currency purchased with real money. LionGem purchases
+                  are <strong className="text-foreground">non-refundable</strong> under any circumstances.
+                  LionGems have no real-world monetary value, cannot be exchanged for cash, and
+                  are not transferable outside the Services. We reserve the right to modify gem
+                  pricing, bonus amounts, and the items available for purchase with gems at any time.
+                </p>
 
-        <p className="my-2 leading-6">
-          Any material, information, or other communications you voluntarily transmit, post, or otherwise submit
-          electronically to or through the Site or services, including in any chats, blogs, or discussions
-          (collectively, “Submissions”), will be deemed non-confidential. Do not send any data through our services that
-          you believe to be sensitive, confidential, or proprietary information. LionBot.org primarily operates the Site
-          and services from Israel.
-        </p>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  LionHeart Subscriptions
+                </h3>
+                <p>
+                  LionHeart, LionHeart+, and LionHeart++ are recurring monthly subscription plans
+                  that provide premium perks. Subscription payments are{" "}
+                  <strong className="text-foreground">non-refundable</strong>. This includes:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>The initial subscription payment</li>
+                  <li>All subsequent recurring monthly payments</li>
+                  <li>Partial periods (no pro-rated refunds for cancellation mid-cycle)</li>
+                  <li>Tier upgrades or downgrades (adjustments are handled by billing proration going forward, not refunds)</li>
+                </ul>
+                <p>
+                  You may cancel your subscription at any time through the Stripe Customer Portal.
+                  Upon cancellation, you retain access to your subscription perks until the end of
+                  your current billing period. No refund will be issued for the remaining time.
+                </p>
 
-        <p className="my-2 leading-6">
-          The Terms are governed by and construed in accordance with the laws of the State of Israel, any legal suit,
-          action, or proceeding arising out of, or related to, these Terms or the Site or services shall be instituted
-          exclusively in the judicial system of Israel specifically in Tel Aviv District Court.
-        </p>
-        <p className="my-2 leading-6">
-          A violation of any of the foregoing is grounds for termination of your right to use or access the Services.
-        </p>
-        <p className="my-2 leading-6">
-          We reserve the right to monitor all users and servers and to terminate the access of any user and servers from
-          using our product.
-        </p>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  Server Premium
+                </h3>
+                <p>
+                  Server Premium is purchased using LionGems and provides cosmetic and gameplay
+                  bonuses for an entire Discord server. Server Premium purchases are{" "}
+                  <strong className="text-foreground">non-refundable</strong>. The LionGems spent on
+                  Server Premium will not be returned under any circumstances, including if the
+                  server is deleted, the bot is removed from the server, or the purchaser leaves
+                  the server.
+                </p>
 
-        <h2 className="text-3xl mt-4">REFUND POLICY</h2>
-        <div className="border-solid border-b-4 border-slate-900 w-3/12 my-3"></div>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  LionGotchi Items, Equipment &amp; In-Game Purchases
+                </h3>
+                <p>
+                  All purchases, trades, and transactions within the LionGotchi virtual pet system
+                  are <strong className="text-foreground">final and non-refundable</strong>. This
+                  includes but is not limited to:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>Pet equipment, furniture, rooms, and cosmetic items</li>
+                  <li>Seeds, farm supplies, and crafting materials</li>
+                  <li>Item enhancements and upgrades</li>
+                  <li>Marketplace purchases between players</li>
+                  <li>Any LionGold (in-game currency) spent on any item or service</li>
+                  <li>Any LionGems spent on LionGotchi items, gacha pulls, or content</li>
+                </ul>
+                <p>
+                  If an item is lost due to game mechanics (e.g., failed enhancement, crop death,
+                  pet mood decay), this is part of normal gameplay and does not entitle you to a
+                  refund or replacement.
+                </p>
 
-        <p className="my-2 leading-6">
-          Digital Content - "LionGems" Purchase – You may have purchased our Game Currency or in-game content with real
-          money. If you used real money to purchase our Game-Currency please notice that there are no returns and no
-          refunds. You lose any right to cancel or to claim a refund once you have made the purchase.
-        </p>
-      </div>
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  Profile Skins &amp; Cosmetics
+                </h3>
+                <p>
+                  Profile card skins, animated card effects, and other cosmetic purchases made with
+                  LionGems are <strong className="text-foreground">non-refundable</strong>. Cosmetic
+                  items may be modified, updated, or retired at our discretion.
+                </p>
+
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  Chargebacks &amp; Payment Disputes
+                </h3>
+                <p>
+                  If you initiate a chargeback or payment dispute with your bank or payment provider
+                  for a legitimate transaction, we reserve the right to immediately suspend or
+                  terminate your account and revoke all associated digital content, including but
+                  not limited to LionGems, subscription perks, skins, and LionGotchi items. Fraudulent
+                  chargebacks may be reported to the relevant authorities.
+                </p>
+              </div>
+            </section>
+
+            {/* Virtual Currency */}
+            <section>
+              <h2>Virtual Currencies &amp; Items</h2>
+              <p>
+                The Services include virtual currencies (LionCoins, LionGems, LionGold) and virtual
+                items. These have no real-world monetary value. You do not own virtual currencies or
+                items — you hold a limited, revocable license to use them within the Services.
+              </p>
+              <p>
+                We reserve the right to manage, regulate, modify, or remove virtual currencies and
+                items at any time, with or without notice. We are not liable for any changes to the
+                value, availability, or functionality of virtual currencies or items.
+              </p>
+              <p>
+                You may not sell, trade, or transfer virtual currencies or items outside of the
+                Services. Any attempt to do so may result in termination of your account.
+              </p>
+            </section>
+
+            {/* Changes to Services */}
+            <section>
+              <h2>Changes to the Services</h2>
+              <p>
+                LionBot.org may modify, update, suspend, or discontinue any part of the Services at
+                any time without prior notice. This includes changes to features, pricing, virtual
+                currency values, item stats, game mechanics, subscription benefits, and availability.
+                We are not liable for any modifications or discontinuation of the Services.
+              </p>
+            </section>
+
+            {/* Disclaimer */}
+            <section>
+              <h2>Disclaimer of Warranties</h2>
+              <p>
+                THE SERVICES ARE PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE&rdquo; WITHOUT
+                WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+                IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+                NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE SERVICES WILL BE UNINTERRUPTED,
+                ERROR-FREE, OR SECURE.
+              </p>
+              <p className="text-xs !text-muted-foreground/70">
+                Some jurisdictions do not allow the exclusion of implied warranties. In those
+                jurisdictions, the above exclusions may not apply to you to the extent prohibited
+                by applicable law.
+              </p>
+            </section>
+
+            {/* Limitation of Liability */}
+            <section>
+              <h2>Limitation of Liability</h2>
+              <p>
+                Under no circumstances shall LionBot.org, its owner, developers, or affiliates be
+                liable for any direct, indirect, special, incidental, consequential, or punitive
+                damages arising out of your use of, or inability to use, the Services. This includes
+                but is not limited to damages for loss of data, loss of profits, loss of virtual
+                currency or items, business interruption, or any other losses — even if we have been
+                advised of the possibility of such damages.
+              </p>
+              <p>
+                If your use of the Services results in the need for servicing, repair, or correction
+                of equipment or data, you assume all costs thereof.
+              </p>
+            </section>
+
+            {/* User Communications */}
+            <section>
+              <h2>User Communications</h2>
+              <p>
+                Any material, information, or other communications you voluntarily transmit, post, or
+                submit through the Services (collectively, &ldquo;Submissions&rdquo;) will be deemed
+                non-confidential. Do not send any data through our Services that you believe to be
+                sensitive, confidential, or proprietary information.
+              </p>
+            </section>
+
+            {/* Termination */}
+            <section>
+              <h2>Termination</h2>
+              <p>
+                We reserve the right to monitor all users and servers and to terminate or suspend
+                access to the Services for any user or server at our sole discretion, with or without
+                cause and with or without notice. Grounds for termination include but are not limited
+                to violation of these Terms, fraudulent activity, abuse of the economy system, or
+                any conduct we deem harmful to other users or the Services.
+              </p>
+              <p>
+                Upon termination, you forfeit all rights to any digital content, virtual currencies,
+                virtual items, and subscription benefits associated with your account.{" "}
+                <strong className="text-foreground">No refunds will be issued upon termination.</strong>
+              </p>
+            </section>
+
+            {/* Governing Law */}
+            <section>
+              <h2>Governing Law &amp; Jurisdiction</h2>
+              <p>
+                These Terms are governed by and construed in accordance with the laws of the State
+                of Israel. Any legal suit, action, or proceeding arising out of, or related to, these
+                Terms or the Services shall be instituted exclusively in the judicial system of Israel,
+                specifically in Tel Aviv District Court.
+              </p>
+            </section>
+
+            {/* Changes to Terms */}
+            <section>
+              <h2>Changes to These Terms</h2>
+              <p>
+                We may update these Terms from time to time. When we do, we will update the
+                &ldquo;Last updated&rdquo; date at the top of this page. By continuing to use the
+                Services after changes are posted, you agree to the revised Terms. For significant
+                changes, we may notify users through the bot or our Discord server.
+              </p>
+            </section>
+
+            {/* Contact */}
+            <section>
+              <h2>Contact Us</h2>
+              <p>
+                If you have any questions about these Terms, please contact us:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  Email:{" "}
+                  <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
+                    contact@arihoresh.com
+                  </a>
+                </li>
+                <li>
+                  Discord:{" "}
+                  <a
+                    href="https://discord.gg/studylions"
+                    className="text-primary hover:underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    discord.gg/studylions
+                  </a>
+                </li>
+              </ul>
+            </section>
+          </div>
+        </div>
       </div>
     </Layout>
   );
@@ -202,4 +614,4 @@ export const getStaticProps: GetStaticProps = async ({ locale }) => ({
     ...(await serverSideTranslations(locale ?? "en", ["common", "legal"])),
   },
 });
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---

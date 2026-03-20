@@ -23,10 +23,6 @@ import {
   // Purpose: icon for Support nav link
   HelpCircle,
   // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-19) ---
-  // Purpose: icon for Stats nav link
-  BarChart3,
-  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -50,12 +46,11 @@ import Banner from "@/components/Layout/Header/Banner";
 // Purpose: added Support link to Discord server
 const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 
-// --- AI-MODIFIED (2026-03-19) ---
-// Purpose: Added Stats nav link
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Removed Stats from nav (kept in footer only)
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Skins", href: "/skins", icon: Palette },
-  { label: "Stats", href: "/stats", icon: BarChart3 },
   { label: "Tutorials", href: "/tutorials", icon: BookOpen },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];

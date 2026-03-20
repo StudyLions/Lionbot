@@ -1,21 +1,28 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-17
+// Modified: 2026-03-20
 // Purpose: Proxy to bot render API for supporter card effect
-//          previews. Passes custom sparkle/ring colors and
-//          effects_enabled flag alongside user data.
+//          previews. Passes all customization preferences
+//          (per-effect toggles, colors, particle style, intensity,
+//          speed, border style, seasonal effects).
 //          Rate limited to 1 request per 5 seconds per user.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAuth } from "@/utils/adminAuth";
 import { prisma } from "@/utils/prisma";
-import { isValidPresetColor } from "@/constants/CardEffectPresets";
+import { isValidHexColor } from "@/constants/CardEffectPresets";
 
 const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100";
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || "";
 
 const lastRequestMap = new Map<string, number>();
 const RATE_LIMIT_MS = 5000;
+
+const COLOR_FIELDS = ["sparkle_color", "ring_color", "edge_glow_color", "particle_color"] as const;
+const STRING_FIELDS = ["effects_enabled", "sparkles_enabled", "ring_enabled",
+  "edge_glow_enabled", "particles_enabled", "effect_intensity",
+  "particle_style", "animation_speed", "border_style", "seasonal_effects"] as const;
 
 export default async function handler(
   req: NextApiRequest,
@@ -47,19 +54,12 @@ export default async function handler(
         ? sub.tier
         : null;
 
-    const {
-      sparkle_color,
-      ring_color,
-      effects_enabled,
-      skin,
-      guildid,
-    } = req.query as Record<string, string | undefined>;
+    const query = req.query as Record<string, string | undefined>;
 
-    if (sparkle_color && !isValidPresetColor(sparkle_color)) {
-      return res.status(400).json({ error: "Invalid sparkle color" });
-    }
-    if (ring_color && !isValidPresetColor(ring_color)) {
-      return res.status(400).json({ error: "Invalid ring color" });
+    for (const field of COLOR_FIELDS) {
+      if (query[field] && !isValidHexColor(query[field])) {
+        return res.status(400).json({ error: `Invalid color: ${field}` });
+      }
     }
 
     const servers = await prisma.members.findMany({
@@ -68,7 +68,7 @@ export default async function handler(
       take: 1,
     });
 
-    const resolvedGuildId = guildid || (servers[0]?.guildid?.toString() ?? "0");
+    const resolvedGuildId = query.guildid || (servers[0]?.guildid?.toString() ?? "0");
 
     const params = new URLSearchParams({
       type: "profile",
@@ -77,10 +77,14 @@ export default async function handler(
     });
 
     if (supporterTier) params.set("supporter_tier", supporterTier);
-    if (sparkle_color) params.set("sparkle_color", sparkle_color);
-    if (ring_color) params.set("ring_color", ring_color);
-    if (effects_enabled !== undefined) params.set("effects_enabled", effects_enabled);
-    if (skin) params.set("skin", skin);
+
+    for (const field of COLOR_FIELDS) {
+      if (query[field]) params.set(field, query[field]!);
+    }
+    for (const field of STRING_FIELDS) {
+      if (query[field] !== undefined) params.set(field, query[field]!);
+    }
+    if (query.skin) params.set("skin", query.skin);
 
     const headers: Record<string, string> = {};
     if (BOT_RENDER_AUTH) {
@@ -92,8 +96,6 @@ export default async function handler(
       signal: AbortSignal.timeout(30000),
     });
 
-    // --- AI-MODIFIED (2026-03-17) ---
-    // Purpose: Better error messages for render failures
     if (!response.ok) {
       const text = await response.text();
       console.error(`Render API returned ${response.status}: ${text}`);
@@ -108,7 +110,6 @@ export default async function handler(
         fallback: true,
       });
     }
-    // --- END AI-MODIFIED ---
 
     const buffer = Buffer.from(await response.arrayBuffer());
 
@@ -116,7 +117,7 @@ export default async function handler(
     res.setHeader("Content-Type", isGif ? "image/gif" : "image/png");
     res.setHeader("Cache-Control", "no-cache, no-store");
     return res.send(buffer);
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error("Supporter preview error:", err);
     return res.status(503).json({
       error: "Card rendering service unavailable",

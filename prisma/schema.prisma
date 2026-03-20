@@ -1605,23 +1605,43 @@ model user_subscriptions {
 // Purpose: User focus timer theme preferences (LionHeart premium perk)
 
 model user_timer_preferences {
-  userid     BigInt   @id
-  theme      String   @default("classic")
-  updated_at DateTime @default(now()) @db.Timestamptz(6)
+  userid              BigInt   @id
+  theme               String   @default("classic")
+  custom_accent_color String?
+  focus_label         String?  @db.VarChar(20)
+  break_label         String?  @db.VarChar(20)
+  session_label       String?  @db.VarChar(20)
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
 }
 
 // --- END AI-MODIFIED ---
 
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Per-user animated card effect preferences (color overrides, enable/disable)
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Per-user animated card effect preferences -- expanded for full
+//          premium customization (Phase 1-3: per-effect toggles, intensity,
+//          particle styles, animation speed, bio, borders, seasonal effects)
 
 model user_card_preferences {
-  userid          BigInt    @id
-  effects_enabled Boolean   @default(true)
-  sparkle_color   String?
-  ring_color      String?
-  created_at      DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at      DateTime? @default(now()) @db.Timestamptz(6)
+  userid            BigInt    @id
+  effects_enabled   Boolean   @default(true)
+  sparkle_color     String?
+  ring_color        String?
+  sparkles_enabled  Boolean   @default(true)
+  ring_enabled      Boolean   @default(true)
+  edge_glow_enabled Boolean   @default(true)
+  particles_enabled Boolean   @default(true)
+  effect_intensity  String    @default("normal") @db.VarChar(16)
+  edge_glow_color   String?
+  particle_color    String?
+  particle_style    String    @default("stars") @db.VarChar(16)
+  animation_speed   String    @default("normal") @db.VarChar(16)
+  username_color    String?
+  bio_text          String?   @db.VarChar(50)
+  border_style      String    @default("clean") @db.VarChar(16)
+  seasonal_effects  Boolean   @default(false)
+  embed_color       String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
 }
 
 // --- END AI-MODIFIED ---

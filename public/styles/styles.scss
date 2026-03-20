@@ -301,6 +301,34 @@ p, a, b {
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Scale all pet section text by 35% for better readability
+.pet-section {
+  --pet-text-scale: 1.35;
+
+  & p, & a, & b { font-size: calc(18px * var(--pet-text-scale)) !important; }
+
+  & .text-xs   { font-size: calc(0.75rem  * var(--pet-text-scale)) !important; line-height: calc(1rem    * var(--pet-text-scale)) !important; }
+  & .text-sm   { font-size: calc(0.875rem * var(--pet-text-scale)) !important; line-height: calc(1.25rem * var(--pet-text-scale)) !important; }
+  & .text-base { font-size: calc(1rem     * var(--pet-text-scale)) !important; line-height: calc(1.5rem  * var(--pet-text-scale)) !important; }
+  & .text-lg   { font-size: calc(1.125rem * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+  & .text-xl   { font-size: calc(1.25rem  * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+  & .text-2xl  { font-size: calc(1.5rem   * var(--pet-text-scale)) !important; line-height: calc(2rem    * var(--pet-text-scale)) !important; }
+  & .text-3xl  { font-size: calc(1.875rem * var(--pet-text-scale)) !important; line-height: calc(2.25rem * var(--pet-text-scale)) !important; }
+  & .text-5xl  { font-size: calc(3rem     * var(--pet-text-scale)) !important; }
+
+  & .text-\[5px\]  { font-size: 7px  !important; }
+  & .text-\[7px\]  { font-size: 9px  !important; }
+  & .text-\[8px\]  { font-size: 11px !important; }
+  & .text-\[9px\]  { font-size: 12px !important; }
+  & .text-\[10px\] { font-size: 14px !important; }
+  & .text-\[11px\] { font-size: 15px !important; }
+  & .text-\[12px\] { font-size: 16px !important; }
+  & .text-\[13px\] { font-size: 18px !important; }
+  & .text-\[14px\] { font-size: 19px !important; }
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Rarity-based item card glow and sparkle particle animations
 
 @keyframes item-glow-pulse {

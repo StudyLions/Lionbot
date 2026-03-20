@@ -50,6 +50,10 @@ export default apiHandler({
             rarity: true,
             description: true,
             asset_path: true,
+            // --- AI-MODIFIED (2026-03-20) ---
+            // Purpose: Include tradeable flag so sell page can filter non-tradeable items
+            tradeable: true,
+            // --- END AI-MODIFIED ---
           },
         },
         lg_enhancement_slots: {
@@ -124,6 +128,9 @@ export default apiHandler({
           rarity: inv.lg_items.rarity,
           description: inv.lg_items.description,
           assetPath: inv.lg_items.asset_path,
+          // --- AI-MODIFIED (2026-03-20) ---
+          tradeable: inv.lg_items.tradeable,
+          // --- END AI-MODIFIED ---
         },
       }
     })

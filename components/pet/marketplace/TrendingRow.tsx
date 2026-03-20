@@ -35,9 +35,11 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
           const imgUrl = getItemImageUrl(t.item.assetPath, t.item.category)
           const borderColor = RARITY_BORDER[t.item.rarity] || RARITY_BORDER.COMMON
           const textColor = RARITY_TEXT[t.item.rarity] || RARITY_TEXT.COMMON
+          // --- AI-MODIFIED (2026-03-20) ---
+          // Purpose: Wrap Link child in <a> for Next.js 12 Pages Router compatibility
           return (
             <Link key={t.item.id} href={`/pet/wiki/${t.item.id}`}>
-              <div
+              <a
                 className="flex-shrink-0 w-28 flex flex-col items-center gap-1.5 p-2.5 border-2 bg-[#0a0e1a] shadow-[2px_2px_0_#060810] hover:brightness-125 transition-all"
                 style={{ borderColor }}
               >
@@ -55,9 +57,10 @@ export default function TrendingRow({ items }: { items: TrendingItem[] }) {
                   {t.item.name}
                 </span>
                 <span className="font-pixel text-[8px] text-[#3a4a60]">{t.tradeCount} trades</span>
-              </div>
+              </a>
             </Link>
           )
+          // --- END AI-MODIFIED ---
         })}
       </div>
     </div>

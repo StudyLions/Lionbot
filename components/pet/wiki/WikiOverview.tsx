@@ -16,7 +16,7 @@ const TOOLTIP_STYLE = {
   backgroundColor: "#0f1628",
   border: "2px solid #2a3a5c",
   borderRadius: 0,
-  fontSize: 11,
+  fontSize: 15,
   fontFamily: "var(--font-pixel, monospace)",
 }
 
@@ -98,8 +98,8 @@ export default function WikiOverview({ data }: { data: MetaData }) {
               <h4 className="font-pixel text-[12px] uppercase text-[#4a5a70] mb-2">Rarity Distribution</h4>
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={rarityData} layout="vertical" margin={{ left: 0, right: 10, top: 0, bottom: 0 }}>
-                  <XAxis type="number" tick={{ fontSize: 12, fill: "#4a5a70" }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 12, fill: "#4a5a70" }} width={70} axisLine={false} tickLine={false} />
+                  <XAxis type="number" tick={{ fontSize: 16, fill: "#4a5a70" }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 16, fill: "#4a5a70" }} width={70} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={TOOLTIP_STYLE} cursor={{ fill: "rgba(255,255,255,0.03)" }} />
                   <Bar dataKey="count" radius={0}>
                     {rarityData.map((d, i) => <Cell key={i} fill={d.fill} />)}

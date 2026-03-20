@@ -34,7 +34,7 @@ const TOOLTIP_STYLE = {
   backgroundColor: "#0f1628",
   border: "2px solid #2a3a5c",
   borderRadius: 0,
-  fontSize: 13,
+  fontSize: 18,
   fontFamily: "var(--font-pixel, monospace)",
 }
 
@@ -133,10 +133,10 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
         <ResponsiveContainer width="100%" height={250}>
           <LineChart data={curveData} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1a2a3c" />
-            <XAxis dataKey="level" tick={{ fontSize: 12, fill: "#4a5a70" }} label={{ value: "Enhancement Level", fontSize: 12, fill: "#4a5a70", position: "insideBottomRight", offset: -5 }} />
-            <YAxis tick={{ fontSize: 12, fill: "#4a5a70" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 12, fill: "#4a5a70", angle: -90, position: "insideLeft" }} />
+            <XAxis dataKey="level" tick={{ fontSize: 16, fill: "#4a5a70" }} label={{ value: "Enhancement Level", fontSize: 16, fill: "#4a5a70", position: "insideBottomRight", offset: -5 }} />
+            <YAxis tick={{ fontSize: 16, fill: "#4a5a70" }} domain={[0, 100]} label={{ value: "Success %", fontSize: 16, fill: "#4a5a70", angle: -90, position: "insideLeft" }} />
             <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(value: number) => `${value}%`} />
-            <Legend wrapperStyle={{ fontSize: 12, fontFamily: "var(--font-pixel, monospace)" }} />
+            <Legend wrapperStyle={{ fontSize: 16, fontFamily: "var(--font-pixel, monospace)" }} />
             {scrolls.map((scroll, i) => (
               <Line
                 key={scroll.itemId} type="monotone" dataKey={scroll.name}

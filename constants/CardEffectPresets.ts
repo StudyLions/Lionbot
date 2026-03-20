@@ -1,9 +1,10 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-17
-// Purpose: Curated color presets for LionHeart animated card
-//          effects (sparkles, avatar ring). Validated server-side
-//          to prevent arbitrary color injection.
+// Modified: 2026-03-20
+// Purpose: Color presets and validation for LionHeart animated
+//          card effects. Presets are quick-select shortcuts;
+//          any valid hex color is now accepted (Phase 2).
 // ============================================================
 
 export interface ColorPreset {
@@ -32,9 +33,51 @@ export const COLOR_PRESETS: ColorPreset[] = [
 
 export const PRESET_HEX_SET = new Set(COLOR_PRESETS.map((p) => p.hex));
 
-export function isValidPresetColor(hex: string | null | undefined): boolean {
+const HEX_COLOR_REGEX = /^#[0-9A-Fa-f]{6}$/;
+
+export function isValidHexColor(hex: string | null | undefined): boolean {
   if (!hex) return true;
-  return PRESET_HEX_SET.has(hex);
+  return HEX_COLOR_REGEX.test(hex);
+}
+
+export function isValidPresetColor(hex: string | null | undefined): boolean {
+  return isValidHexColor(hex);
 }
 
 export const DEFAULT_PRESET_ID = "default";
+
+export const PARTICLE_STYLES = [
+  { id: "stars", name: "Stars", icon: "✦" },
+  { id: "hearts", name: "Hearts", icon: "♥" },
+  { id: "diamonds", name: "Diamonds", icon: "◆" },
+  { id: "circles", name: "Circles", icon: "●" },
+  { id: "snowflakes", name: "Snowflakes", icon: "❄" },
+  { id: "lightning", name: "Lightning", icon: "⚡" },
+] as const;
+
+export const EFFECT_INTENSITIES = [
+  { id: "subtle", name: "Subtle" },
+  { id: "normal", name: "Normal" },
+  { id: "dense", name: "Dense" },
+  { id: "maximum", name: "Maximum" },
+] as const;
+
+export const ANIMATION_SPEEDS = [
+  { id: "slow", name: "Slow" },
+  { id: "normal", name: "Normal" },
+  { id: "fast", name: "Fast" },
+] as const;
+
+export const BORDER_STYLES = [
+  { id: "clean", name: "None" },
+  { id: "minimal", name: "Minimal" },
+  { id: "neon", name: "Neon" },
+  { id: "ornate", name: "Ornate" },
+  { id: "regal", name: "Regal" },
+  { id: "pixel", name: "Pixel" },
+] as const;
+
+export type ParticleStyle = typeof PARTICLE_STYLES[number]["id"];
+export type EffectIntensity = typeof EFFECT_INTENSITIES[number]["id"];
+export type AnimationSpeed = typeof ANIMATION_SPEEDS[number]["id"];
+export type BorderStyle = typeof BORDER_STYLES[number]["id"];

@@ -41,12 +41,12 @@ export default function PriceChart({ data, height = 180, showVolume = false }: P
           <CartesianGrid strokeDasharray="2 4" stroke="#1a2a3c" />
           <XAxis
             dataKey="date"
-            tick={{ fontSize: 12, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
+            tick={{ fontSize: 16, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
             interval="preserveStartEnd"
             stroke="#1a2a3c"
           />
           <YAxis
-            tick={{ fontSize: 12, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
+            tick={{ fontSize: 16, fill: "#4a5a70", fontFamily: "var(--font-pixel)" }}
             width={40}
             stroke="#1a2a3c"
           />
@@ -55,7 +55,7 @@ export default function PriceChart({ data, height = 180, showVolume = false }: P
               backgroundColor: "#0f1628",
               border: "2px solid #2a3a5c",
               borderRadius: 0,
-              fontSize: 13,
+              fontSize: 18,
               fontFamily: "var(--font-pixel)",
               color: "#c0d0e0",
               boxShadow: "2px 2px 0 #060810",

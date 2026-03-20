@@ -6,11 +6,19 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { apiHandler } from "@/utils/apiHandler"
-import { expireListings } from "@/utils/marketplace"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Use debounced expireListings to avoid running full expiry scan on every browse request
+import { expireListingsDebounced } from "@/utils/marketplace"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
-    await expireListings()
+    // --- AI-MODIFIED (2026-03-20) ---
+    // --- Original code (commented out for rollback) ---
+    // await expireListings()
+    // --- End original code ---
+    await expireListingsDebounced()
+    // --- END AI-MODIFIED ---
 
     const search = (req.query.search as string) || ""
     const category = (req.query.category as string) || ""

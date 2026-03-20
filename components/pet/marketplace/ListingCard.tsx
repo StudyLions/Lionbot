@@ -56,27 +56,32 @@ export default function ListingCard({ listing, onBuy }: Props) {
       borderColor={borderColor}
       className="p-3 flex flex-col gap-2 group hover:brightness-110 transition-all"
     >
-      <Link href={`/pet/wiki/${item.id}`} className="flex flex-col items-center gap-2">
-        <div className="relative w-20 h-20 flex items-center justify-center bg-[#0a0e1a] border border-[#1a2a3c]">
-          {imgUrl ? (
-            <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
-          ) : (
-            <div className="w-12 h-12 flex items-center justify-center text-2xl">
-              {getCategoryPlaceholder(item.category)}
-            </div>
-          )}
-          {listing.enhancementLevel > 0 && (
-            <span
-              className="font-pixel absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[11px] border bg-[#2a7a3a]/80 border-[#40d870] text-[#d0ffd8]"
-            >
-              +{listing.enhancementLevel}
-            </span>
-          )}
-        </div>
-        <p className="font-pixel text-[13px] text-center truncate w-full" style={{ color: textColor }}>
-          {item.name}
-        </p>
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Wrap Link children in <a> tag - Next.js Pages Router requires single child in <Link> */}
+      <Link href={`/pet/wiki/${item.id}`}>
+        <a className="flex flex-col items-center gap-2">
+          <div className="relative w-20 h-20 flex items-center justify-center bg-[#0a0e1a] border border-[#1a2a3c]">
+            {imgUrl ? (
+              <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
+            ) : (
+              <div className="w-12 h-12 flex items-center justify-center text-2xl">
+                {getCategoryPlaceholder(item.category)}
+              </div>
+            )}
+            {listing.enhancementLevel > 0 && (
+              <span
+                className="font-pixel absolute -top-1.5 -right-1.5 px-1.5 py-0.5 text-[11px] border bg-[#2a7a3a]/80 border-[#40d870] text-[#d0ffd8]"
+              >
+                +{listing.enhancementLevel}
+              </span>
+            )}
+          </div>
+          <p className="font-pixel text-[13px] text-center truncate w-full" style={{ color: textColor }}>
+            {item.name}
+          </p>
+        </a>
       </Link>
+      {/* --- END AI-MODIFIED --- */}
 
       <div className="flex items-center justify-center gap-1">
         <GoldDisplay

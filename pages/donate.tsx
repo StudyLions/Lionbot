@@ -9,7 +9,6 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
 import { signIn, useSession } from "next-auth/react";
 import {
-  Diamond,
   Crown,
   Zap,
   Star,
@@ -28,6 +27,7 @@ import {
   RefreshCw,
   Loader2,
   Palette,
+  Server,
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -46,6 +46,21 @@ import {
   TIER_ORDER,
   SubscriptionTier,
 } from "@/constants/SubscriptionData";
+
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: LionGems icon from blob storage, replacing generic lucide Diamond
+const BLOB_BASE = process.env.NEXT_PUBLIC_BLOB_URL || "";
+function GemIcon({ className = "h-4 w-4", style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <img
+      src={`${BLOB_BASE}/pet-assets/ui/icons/gem.png`}
+      alt="LionGems"
+      className={className}
+      style={{ objectFit: "contain", ...style }}
+    />
+  );
+}
+// --- END AI-MODIFIED ---
 
 interface SubscriptionStatus {
   tier: string;
@@ -102,7 +117,8 @@ function PurchaseModal({
               objectFit="contain"
             />
           </div>
-          <h2 className="text-2xl font-bold text-white text-center">
+          <h2 className="text-2xl font-bold text-white text-center flex items-center justify-center gap-2">
+            <GemIcon className="h-6 w-6" />
             {numberWithCommas(item.tokens * quantity)} LionGems
           </h2>
           {item.tokens_bonus > 0 && (
@@ -374,10 +390,13 @@ function SubscriptionCard({
     LIONHEART_PLUS_PLUS: "\u{1F451}",
   };
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Use GemIcon (blob asset) instead of lucide Diamond for gem stats
   const heroStats = [
-    { value: numberWithCommas(tier.monthlyGems), label: "gems / month", icon: Diamond },
-    { value: String(tier.gemsPerVote), label: "per vote", icon: Star },
+    { value: numberWithCommas(tier.monthlyGems), label: "gems / month" },
+    { value: String(tier.gemsPerVote), label: "per vote" },
   ];
+  // --- END AI-MODIFIED ---
 
   const perks = [
     { label: `${tier.lionCoinBoost}x vote bonus`, icon: TrendingUp, highlight: false },
@@ -496,29 +515,29 @@ function SubscriptionCard({
         }}
       />
 
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Use GemIcon instead of lucide Diamond for gem stat boxes */}
       <div className="grid grid-cols-2 gap-3 mb-5">
-        {heroStats.map((stat, i) => {
-          const StatIcon = stat.icon;
-          return (
-            <div
-              key={i}
-              className="rounded-xl p-3 text-center"
-              style={{
-                background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}0a)`,
-                border: `1px solid ${tier.color}15`,
-              }}
-            >
-              <StatIcon className="h-4 w-4 mx-auto mb-1.5 opacity-80" style={{ color: tier.color }} />
-              <div className="text-2xl font-black leading-tight" style={{ color: tier.color }}>
-                {stat.value}
-              </div>
-              <div className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">
-                {stat.label}
-              </div>
+        {heroStats.map((stat, i) => (
+          <div
+            key={i}
+            className="rounded-xl p-3 text-center"
+            style={{
+              background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}0a)`,
+              border: `1px solid ${tier.color}15`,
+            }}
+          >
+            <GemIcon className="h-5 w-5 mx-auto mb-1.5 opacity-90" />
+            <div className="text-2xl font-black leading-tight" style={{ color: tier.color }}>
+              {stat.value}
             </div>
-          );
-        })}
+            <div className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">
+              {stat.label}
+            </div>
+          </div>
+        ))}
       </div>
+      {/* --- END AI-MODIFIED --- */}
 
       <ul className="space-y-2.5 flex-1 mb-5">
         {perks.map((perk, i) => (
@@ -780,13 +799,19 @@ function ServerPremiumShowcase() {
   return (
     <section className="py-16 lg:py-20 border-t border-gray-800">
       <div className="max-w-5xl mx-auto px-4 lg:px-6">
+        {/* --- AI-MODIFIED (2026-03-20) --- */}
+        {/* Purpose: Updated header with server icon and clearer description */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl font-bold text-white">Server Premium</h2>
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Server className="h-7 w-7 text-blue-400" />
+            <h2 className="text-3xl font-bold text-white">Server Premium</h2>
+          </div>
           <p className="text-gray-400 mt-2 max-w-xl mx-auto">
-            Give your server its own identity &mdash; customize every card your
-            members see with the full branding editor
+            Upgrade your entire server &mdash; custom branding, remove prompts,
+            and boost LionGotchi rewards for all members
           </p>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         <div
           className="rounded-2xl border border-gray-700 bg-gray-800/50 overflow-hidden"
@@ -930,7 +955,8 @@ function ServerPremiumShowcase() {
                 </div>
               </div>
 
-              {/* Features */}
+              {/* --- AI-MODIFIED (2026-03-20) --- */}
+              {/* Purpose: Full server premium feature list and pricing tiers */}
               <div className="border-t border-gray-700 pt-5">
                 <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
                   Included with Server Premium
@@ -958,27 +984,72 @@ function ServerPremiumShowcase() {
                   <div className="flex items-start gap-2.5 text-sm">
                     <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      LionGotchi bonuses:{" "}
-                      <span className="text-blue-400 font-semibold">
-                        +15% Gold
+                      <span className="text-white font-medium">
+                        Remove vote &amp; sponsor prompt
                       </span>{" "}
-                      &{" "}
-                      <span className="text-blue-400 font-semibold">
-                        +15% Drop Rate
-                      </span>
+                      from all bot messages
                     </span>
                   </div>
                   <div className="flex items-start gap-2.5 text-sm">
                     <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      Purchase with LionGems via{" "}
-                      <code className="text-xs bg-gray-700 px-1.5 py-0.5 rounded text-gray-300">
-                        /premium
-                      </code>
+                      LionGotchi bonuses:{" "}
+                      <span className="text-blue-400 font-semibold">
+                        +15% Gold
+                      </span>{" "}
+                      &amp;{" "}
+                      <span className="text-blue-400 font-semibold">
+                        +15% Drop Rate
+                      </span>{" "}
+                      for all members
                     </span>
                   </div>
                 </div>
               </div>
+
+              {/* Pricing tiers */}
+              <div className="border-t border-gray-700 pt-5 mt-5">
+                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
+                  Plans &mdash; pay with LionGems
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { period: "Monthly", gems: 1500 },
+                    { period: "3 Months", gems: 4000, tag: "Save 11%" },
+                    { period: "1 Year", gems: 12000, tag: "Save 33%" },
+                  ].map((plan) => (
+                    <div
+                      key={plan.period}
+                      className="flex items-center justify-between rounded-lg bg-gray-900/60 border border-gray-700/60 px-3 py-2"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white font-medium">
+                          {plan.period}
+                        </span>
+                        {plan.tag && (
+                          <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full">
+                            {plan.tag}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <GemIcon className="h-4 w-4" />
+                        <span className="text-sm font-bold text-blue-400">
+                          {numberWithCommas(plan.gems)}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[11px] text-gray-600 mt-3 text-center">
+                  Use{" "}
+                  <code className="text-[11px] bg-gray-700/60 px-1.5 py-0.5 rounded text-gray-400">
+                    /premium
+                  </code>{" "}
+                  in Discord to purchase
+                </p>
+              </div>
+              {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
         </div>
@@ -1133,7 +1204,7 @@ export default function Donate() {
                   href="#gems"
                   className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors"
                 >
-                  <Diamond className="h-4 w-4" />
+                  <GemIcon className="h-5 w-5" />
                   Buy LionGems
                 </a>
               </div>
@@ -1245,11 +1316,14 @@ export default function Donate() {
         >
           <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-10">
-              <h2 className="text-3xl font-bold text-white">
-                LionGem Packages
-              </h2>
+              <div className="flex items-center justify-center gap-3 mb-2">
+                <GemIcon className="h-8 w-8" />
+                <h2 className="text-3xl font-bold text-white">
+                  LionGem Packages
+                </h2>
+              </div>
               <p className="text-gray-400 mt-2">
-                One-time purchases — use gems for skins, server premium, and
+                One-time purchases &mdash; use gems for skins, server premium, and
                 more
               </p>
             </div>
@@ -1270,7 +1344,8 @@ export default function Donate() {
                     />
                   </div>
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-400">
+                    <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-blue-400">
+                      <GemIcon className="h-5 w-5" />
                       {numberWithCommas(item.tokens)}
                     </div>
                     {item.tokens_bonus > 0 && (

@@ -14,7 +14,14 @@ import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
 import FurniturePanel from "@/components/pet/room/FurniturePanel"
-import EquipmentOrder from "@/components/pet/room/EquipmentOrder"
+// --- AI-REPLACED (2026-03-20) ---
+// Reason: Layers tab now shows room furniture layers instead of lion render stack
+// What the new code does better: Users can reorder, position, and scale room items
+// --- Original code (commented out for rollback) ---
+// import EquipmentOrder from "@/components/pet/room/EquipmentOrder"
+// --- End original code ---
+import RoomLayersPanel from "@/components/pet/room/RoomLayersPanel"
+// --- END AI-REPLACED ---
 import UnsavedModal from "@/components/pet/room/UnsavedModal"
 import { useRoomEditor } from "@/hooks/useRoomEditor"
 import { useSmartSnap, type SnapGuide } from "@/hooks/useSmartSnap"
@@ -104,7 +111,7 @@ export default function RoomEditorPage() {
               color: '#e2e8f0',
               border: '2px solid #3a4a6c',
               fontFamily: 'var(--font-pixel, monospace)',
-              fontSize: '13px',
+              fontSize: '18px',
             },
           }}
         />
@@ -180,8 +187,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     flipLayer,
     scaleLayer,
     removeLayer,
-    setRenderSequence,
-    setEquipmentOffset,
+    reorderLayers,
     undo,
     redo,
     saveLayout,
@@ -195,7 +201,6 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
   // --- END AI-MODIFIED ---
   const { play: playSound } = useRoomSounds()
 
-  const [selectedEquipSlot, setSelectedEquipSlot] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState<string>("wall")
   // --- AI-MODIFIED (2026-03-20) ---
   // Purpose: Sidebar tabs unify Shop + Layers into one panel
@@ -781,8 +786,8 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                 }`}
               >
                 {'📑 Layers'}
-                {Object.keys(equipment).length > 0 && (
-                  <span className="text-[11px] ml-1 opacity-60">({Object.keys(equipment).length})</span>
+                {Object.keys(mergedFurniture).length > 0 && (
+                  <span className="text-[11px] ml-1 opacity-60">({Object.keys(mergedFurniture).length})</span>
                 )}
               </button>
             </div>
@@ -852,28 +857,33 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                   }}
                 />
               ) : (
+                {/* --- AI-REPLACED (2026-03-20) --- */}
+                {/* Reason: Layers tab now shows room furniture layers instead of lion render stack */}
+                {/* What the new code does better: Users can reorder, position, and scale room items */}
                 <div className="p-3">
-                  {/* --- AI-MODIFIED (2026-03-20) --- */}
-                  {/* Purpose: Info box explaining how the render stack works */}
                   <div className="mb-3 px-2.5 py-2 border border-[#4080f0]/20 bg-[#4080f0]/5 rounded">
                     <p className="font-pixel text-[12px] text-[#80b0ff] leading-relaxed">
-                      Drag equipment between the lion&apos;s body layers to control what renders in front or behind. Click any item to fine-tune its X/Y position on the sprite.
+                      Drag items to change their layer order. Click any item to adjust its position and scale on the canvas.
                     </p>
                     <p className="font-pixel text-[11px] text-[#6090c0] mt-1">
-                      Changes save automatically. You can also edit this from your Inventory page.
+                      Changes are saved when you click Save.
                     </p>
                   </div>
-                  {/* --- END AI-MODIFIED --- */}
-                  <EquipmentOrder
-                    equipment={equipment}
-                    renderSequence={layout.renderSequence}
-                    equipmentOffsets={layout.equipmentOffsets}
-                    selectedSlot={selectedEquipSlot}
-                    onReorder={(seq) => { setRenderSequence(seq); playSound('place') }}
-                    onSelectSlot={setSelectedEquipSlot}
-                    onOffsetChange={(slot, offset) => setEquipmentOffset(slot, offset)}
+                  <RoomLayersPanel
+                    layerOrder={layout.layerOrder}
+                    furniture={mergedFurniture}
+                    furnitureOffsets={layout.furnitureOffsets}
+                    furnitureScales={layout.furnitureScales}
+                    lionPosition={layout.lionPosition}
+                    lionScale={layout.lionScale}
+                    selectedLayer={selectedLayer}
+                    onSelectLayer={setSelectedLayer}
+                    onReorder={(newOrder) => { reorderLayers(newOrder); playSound('place') }}
+                    onMoveLayer={moveLayer}
+                    onScaleLayer={scaleLayer}
                   />
                 </div>
+                {/* --- END AI-REPLACED --- */}
               )}
             </div>
           </PixelCard>

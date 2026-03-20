@@ -186,11 +186,16 @@ function drawHighlight(
   const tmpCtx = tmpCanvas.getContext('2d')
   if (!tmpCtx) return
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Use nearest-neighbor + pass scale so highlight matches actual rendered size
+  tmpCtx.imageSmoothingEnabled = false
   const offset: [number, number] = layout.furnitureOffsets[layer] ?? [0, 0]
   const flip = layout.furnitureFlips[layer] ?? false
+  const scale = layout.furnitureScales?.[layer] ?? 1
 
   tmpCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
-  drawLayer(tmpCtx, img, offset, flip)
+  drawLayer(tmpCtx, img, offset, flip, scale)
+  // --- END AI-MODIFIED ---
 
   if (isSelection) {
     const alphaData = tmpCtx.getImageData(0, 0, CANVAS_SIZE, CANVAS_SIZE).data
@@ -376,6 +381,12 @@ export default function RoomCanvas({
     const lionCtx = lionOffscreen.getContext('2d')
     if (!ctx || !osCtx || !lionCtx) return
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Nearest-neighbor scaling on all offscreen canvases to keep pixel art crisp
+    osCtx.imageSmoothingEnabled = false
+    lionCtx.imageSmoothingEnabled = false
+    // --- END AI-MODIFIED ---
+
     let lastFrameTime = 0
     let running = true
 
@@ -396,10 +407,11 @@ export default function RoomCanvas({
 
       osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
 
-      // --- AI-MODIFIED (2026-03-17) ---
-      // Purpose: Interleaved rendering -- walk renderSequence to draw lion parts
-      //          and equipment in the correct z-order with per-slot offsets
-      for (const layer of ROOM_LAYERS) {
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Use layout.layerOrder for draw order so user layer reordering
+      //          is respected. Falls back to ROOM_LAYERS if layerOrder is missing.
+      const drawOrder = curLayout.layerOrder ?? ROOM_LAYERS as unknown as string[]
+      for (const layer of drawOrder) {
         const img = cache.get(`room_${layer}`)
         if (!img) continue
         const offset: [number, number] = curLayout.furnitureOffsets[layer] ?? [0, 0]
@@ -407,6 +419,7 @@ export default function RoomCanvas({
         const scale = curLayout.furnitureScales?.[layer] ?? 1
         drawLayer(osCtx, img, offset, flip, scale)
       }
+      // --- END AI-MODIFIED ---
 
       const lionScale = curLayout.lionScale ?? 1
       const scaledLionSize = Math.round(LION_DISPLAY_SIZE * lionScale)
@@ -533,8 +546,11 @@ export default function RoomCanvas({
       if (mx >= lx && mx < lx + ls && my >= ly && my < ly + ls) {
         return 'lion'
       }
-      for (let i = ROOM_LAYERS.length - 1; i >= 0; i--) {
-        const layer = ROOM_LAYERS[i]
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Use layerOrder for hit detection so clicks respect custom layer order
+      const hitLayers = curLayout.layerOrder ?? ROOM_LAYERS as unknown as string[]
+      for (let i = hitLayers.length - 1; i >= 0; i--) {
+        const layer = hitLayers[i]
         if (!imageCacheRef.current.has(`room_${layer}`)) continue
         const offset = curLayout.furnitureOffsets[layer] ?? [0, 0]
         const flip = curLayout.furnitureFlips[layer] ?? false
@@ -543,6 +559,7 @@ export default function RoomCanvas({
         if (flip) px = CANVAS_SIZE - 1 - px
         if (getAlphaAt(`room_${layer}`, px, py) > 0) return layer
       }
+      // --- END AI-MODIFIED ---
       return null
     },
     [getAlphaAt],

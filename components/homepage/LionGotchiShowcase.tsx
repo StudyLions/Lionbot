@@ -20,7 +20,6 @@ import {
   TrendingUp,
   ShoppingBag,
   Tags,
-  BarChart3,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
@@ -53,8 +52,6 @@ const scaleIn: Variants = {
 const FRAME_COUNT = 4;
 const FRAME_INTERVAL = 250;
 const LION_PARTS = ["body", "head", "hair"] as const;
-const CANVAS_PX = 200;
-const DISPLAY_PX = 400;
 
 interface RoomConfig {
   prefix: string;
@@ -76,6 +73,28 @@ const ROOM_CYCLE: RoomConfig[] = [
 
 const ROOM_CYCLE_INTERVAL = 3500;
 
+const GB_W = 260;
+const GB_H = 400;
+const GB_SCREEN_T = 36;
+const GB_SCREEN_L = 30;
+const GB_SCREEN_S = 200;
+const SHOWCASE_W = 340;
+
+const SHOWCASE_SKINS = [
+  { path: "gameboy/frames/wave/purple.png", label: "Wave" },
+  { path: "gameboy/frames/gameboy-flowers-01.png", label: "Flowers" },
+  { path: "gameboy/frames/japan_flowers/design.png", label: "Japan Flowers" },
+  { path: "gameboy/frames/gameboy-hearts-01.png", label: "Hearts" },
+  { path: "gameboy/frames/gameboy-candy-01.png", label: "Candy" },
+  { path: "gameboy/frames/fire/red.png", label: "Fire" },
+  { path: "gameboy/frames/gameboy-leaves-03.png", label: "Leaves" },
+  { path: "gameboy/frames/japan_pattern/japan_pattern_4.png", label: "Sakura" },
+  { path: "gameboy/frames/love/peach.png", label: "Love" },
+  { path: "gameboy/frames/fish_n_flower/fish_n_flower_1.png", label: "Fish & Flower" },
+];
+
+const SKIN_CYCLE_MS = 4200;
+
 const LION_HIGHLIGHTS = [
   { Icon: Heart, label: "highlight1", color: "text-rose-400", bg: "bg-rose-500/10" },
   { Icon: Home, label: "highlight2", color: "text-blue-400", bg: "bg-blue-500/10" },
@@ -83,9 +102,13 @@ const LION_HIGHLIGHTS = [
   { Icon: Palette, label: "highlight4", color: "text-purple-400", bg: "bg-purple-500/10" },
 ];
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Replace plain room preview with Gameboy frame showcase that cycles
+//          through beautiful skins (wave, flowers, hearts, etc.)
 function PetRoomDemo() {
   const [frame, setFrame] = useState(0);
   const [roomIdx, setRoomIdx] = useState(0);
+  const [skinIdx, setSkinIdx] = useState(0);
 
   useEffect(() => {
     const id = setInterval(() => setFrame((f) => (f + 1) % FRAME_COUNT), FRAME_INTERVAL);
@@ -97,90 +120,113 @@ function PetRoomDemo() {
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const id = setInterval(() => setSkinIdx((s) => (s + 1) % SHOWCASE_SKINS.length), SKIN_CYCLE_MS);
+    return () => clearInterval(id);
+  }, []);
+
   const room = ROOM_CYCLE[roomIdx];
+  const skin = SHOWCASE_SKINS[skinIdx];
+
+  const screenTopPct = (GB_SCREEN_T / GB_H) * 100;
+  const screenLeftPct = (GB_SCREEN_L / GB_W) * 100;
+  const screenWPct = (GB_SCREEN_S / GB_W) * 100;
+  const screenHPct = (GB_SCREEN_S / GB_H) * 100;
 
   return (
-    <div className="relative" style={{ width: DISPLAY_PX, height: DISPLAY_PX }}>
-      <div className="absolute -inset-8 bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-transparent rounded-3xl blur-3xl opacity-50" />
+    <div className="relative" style={{ width: SHOWCASE_W, maxWidth: "100%" }}>
+      <div className="absolute -inset-10 bg-gradient-to-br from-purple-500/25 via-blue-500/15 to-pink-500/10 rounded-3xl blur-3xl opacity-60" />
 
-      <div
-        className="relative overflow-hidden rounded-xl border-2 border-border/60 shadow-2xl"
-        style={{ width: DISPLAY_PX, height: DISPLAY_PX }}
-      >
-        <AnimatePresence mode="wait">
+      <div className="relative" style={{ aspectRatio: `${GB_W} / ${GB_H}` }}>
+        {/* Pet room screen (behind frame) */}
+        <div
+          className="absolute overflow-hidden z-0"
+          style={{
+            top: `${screenTopPct}%`,
+            left: `${screenLeftPct}%`,
+            width: `${screenWPct}%`,
+            height: `${screenHPct}%`,
+            backgroundColor: "#0a0e1a",
+          }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={room.prefix}
+              className="absolute inset-0"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <img src={blobUrl(room.wall)} alt="" className="absolute inset-0 w-full h-full" style={{ imageRendering: "pixelated" }} draggable={false} />
+              <img src={blobUrl(room.floor)} alt="" className="absolute inset-0 w-full h-full" style={{ imageRendering: "pixelated" }} draggable={false} />
+              <img src={blobUrl(room.mat)} alt="" className="absolute inset-0 w-full h-full" style={{ imageRendering: "pixelated" }} draggable={false} />
+
+              <div className="absolute" style={{ left: "30%", top: "52.5%", width: "40%", height: "40%" }}>
+                {LION_PARTS.map((part) => (
+                  <img
+                    key={`${part}-${frame}`}
+                    src={blobUrl(`lion/${part}/${part}_${frame + 1}.png`)}
+                    alt=""
+                    className="absolute inset-0 w-full h-full"
+                    style={{ imageRendering: "pixelated" }}
+                    draggable={false}
+                  />
+                ))}
+                <img
+                  key={`expr-${frame}`}
+                  src={blobUrl(`lion/expressions/happy/face_${frame + 1}.png`)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full"
+                  style={{ imageRendering: "pixelated" }}
+                  draggable={false}
+                />
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* Gameboy frame overlay — crossfades through showcase skins */}
+        <AnimatePresence>
           <motion.div
-            key={room.prefix}
-            className="absolute inset-0 origin-top-left"
-            style={{
-              width: CANVAS_PX,
-              height: CANVAS_PX,
-              transform: `scale(${DISPLAY_PX / CANVAS_PX})`,
-              imageRendering: "pixelated" as any,
-            }}
+            key={skin.path}
+            className="absolute inset-0 z-10 pointer-events-none select-none"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.6 }}
           >
             <img
-              src={blobUrl(room.wall)}
-              alt=""
-              className="absolute inset-0 w-full h-full"
+              src={blobUrl(skin.path)}
+              alt={skin.label}
+              className="w-full"
               style={{ imageRendering: "pixelated" }}
               draggable={false}
             />
-            <img
-              src={blobUrl(room.floor)}
-              alt=""
-              className="absolute inset-0 w-full h-full"
-              style={{ imageRendering: "pixelated" }}
-              draggable={false}
-            />
-            <img
-              src={blobUrl(room.mat)}
-              alt=""
-              className="absolute inset-0 w-full h-full"
-              style={{ imageRendering: "pixelated" }}
-              draggable={false}
-            />
-
-            {/* Lion sprite */}
-            <div className="absolute" style={{ left: 60, top: 105, width: 80, height: 80 }}>
-              {LION_PARTS.map((part) => (
-                <img
-                  key={`${part}-${frame}`}
-                  src={blobUrl(`lion/${part}/${part}_${frame + 1}.png`)}
-                  alt=""
-                  className="absolute inset-0"
-                  style={{ width: 64, height: 64, imageRendering: "pixelated", transform: "scale(1.25)", transformOrigin: "top left" }}
-                  draggable={false}
-                />
-              ))}
-              <img
-                key={`expr-${frame}`}
-                src={blobUrl(`lion/expressions/happy/face_${frame + 1}.png`)}
-                alt=""
-                className="absolute inset-0"
-                style={{ width: 64, height: 64, imageRendering: "pixelated", transform: "scale(1.25)", transformOrigin: "top left" }}
-                draggable={false}
-              />
-            </div>
           </motion.div>
         </AnimatePresence>
+      </div>
 
-        {/* Room name badge */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background/80 backdrop-blur-sm border border-border/60 text-[11px] text-muted-foreground font-medium z-10">
-          {room.prefix.replace("rooms/", "").replace(/^\w/, (c) => c.toUpperCase())}
-        </div>
-
-        <div className="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-primary/40 rounded-tl" />
-        <div className="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-primary/40 rounded-tr" />
-        <div className="absolute bottom-10 left-2 w-3 h-3 border-b-2 border-l-2 border-primary/40 rounded-bl" />
-        <div className="absolute bottom-10 right-2 w-3 h-3 border-b-2 border-r-2 border-primary/40 rounded-br" />
+      {/* Skin label below frame */}
+      <div className="mt-3 flex justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={skin.label}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-medium"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Palette className="h-3 w-3" />
+            {skin.label} Skin
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );
 }
+// --- END AI-MODIFIED ---
 
 export function LionGotchiHeroSection() {
   const { t } = useTranslation("homepage");
@@ -641,18 +687,21 @@ interface ShowcaseItem {
   gemPrice: number | null;
 }
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Use real item asset_paths so actual PNGs render instead of emoji placeholders
 const FALLBACK_ITEMS: ShowcaseItem[] = [
-  { id: 1, name: "Royal Crown", category: "HAT", rarity: "LEGENDARY", assetPath: null, goldPrice: 8500, gemPrice: null },
-  { id: 2, name: "Star Glasses", category: "GLASSES", rarity: "EPIC", assetPath: null, goldPrice: 3200, gemPrice: null },
-  { id: 3, name: "Night Wings", category: "WINGS", rarity: "RARE", assetPath: null, goldPrice: 1800, gemPrice: null },
-  { id: 4, name: "Gold Shirt", category: "SHIRT", rarity: "UNCOMMON", assetPath: null, goldPrice: 650, gemPrice: null },
-  { id: 5, name: "Iron Boots", category: "BOOTS", rarity: "COMMON", assetPath: null, goldPrice: 200, gemPrice: null },
-  { id: 6, name: "Phoenix Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: null, goldPrice: null, gemPrice: 120 },
-  { id: 7, name: "Oak Seeds", category: "FARM_SEED", rarity: "UNCOMMON", assetPath: null, goldPrice: 400, gemPrice: null },
-  { id: 8, name: "Crystal Shard", category: "MATERIAL", rarity: "RARE", assetPath: null, goldPrice: 950, gemPrice: null },
-  { id: 9, name: "Velvet Costume", category: "COSTUME", rarity: "EPIC", assetPath: null, goldPrice: 4100, gemPrice: null },
-  { id: 10, name: "Desk Lamp", category: "FURNITURE", rarity: "COMMON", assetPath: null, goldPrice: 300, gemPrice: null },
+  { id: 114, name: "Sparkle Tiara", category: "HAT", rarity: "COMMON", assetPath: "hats/crown.png", goldPrice: 150, gemPrice: null },
+  { id: 953, name: "Rose Petal", category: "MATERIAL", rarity: "UNCOMMON", assetPath: "materials/rose_petal.png", goldPrice: 350, gemPrice: null },
+  { id: 1153, name: "Lucky Scroll", category: "SCROLL", rarity: "UNCOMMON", assetPath: "scrolls/lucky_scroll.png", goldPrice: 500, gemPrice: null },
+  { id: 1156, name: "Arcane Scroll", category: "SCROLL", rarity: "RARE", assetPath: "scrolls/arcane_scroll.png", goldPrice: 1200, gemPrice: null },
+  { id: 303, name: "Phantom Visage", category: "GLASSES", rarity: "EPIC", assetPath: "glasses/anonymous_mask_epic.png", goldPrice: 3500, gemPrice: null },
+  { id: 1021, name: "Griffin Feather", category: "MATERIAL", rarity: "EPIC", assetPath: "materials/griffin_feather.png", goldPrice: 2800, gemPrice: null },
+  { id: 454, name: "Titan Slayer Jacket", category: "SHIRT", rarity: "EPIC", assetPath: "shirts/aot_shirt_aot_shirt_epic.png", goldPrice: 4100, gemPrice: null },
+  { id: 804, name: "Bouncy Kicks", category: "BOOTS", rarity: "LEGENDARY", assetPath: "boots/boots_boots_legendary_.png", goldPrice: 6500, gemPrice: null },
+  { id: 1159, name: "Divine Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: "scrolls/divine_scroll.png", goldPrice: null, gemPrice: 80 },
+  { id: 1028, name: "Ethereal Orchid", category: "MATERIAL", rarity: "LEGENDARY", assetPath: "materials/ethereal_orchid.png", goldPrice: 8500, gemPrice: null },
 ];
+// --- END AI-MODIFIED ---
 
 const itemsFetcher = (url: string) =>
   fetch(url).then((r) => {
@@ -834,27 +883,40 @@ export function MarketplaceShowcaseSection() {
             </div>
           </motion.div>
 
+          {/* --- AI-MODIFIED (2026-03-20) --- */}
+          {/* Purpose: Replaced fake stats with a real rarity guide */}
           <motion.div variants={fadeUp} className="flex-shrink-0 w-full max-w-xs">
             <div className="rounded-xl border border-border bg-card/80 backdrop-blur-sm shadow-lg p-5 space-y-4">
               <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                <BarChart3 className="h-4 w-4 text-amber-400" />
-                Marketplace Stats
+                <Gem className="h-4 w-4 text-purple-400" />
+                Item Rarities
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 {[
-                  { label: "Active Listings", value: "1,247", color: "text-foreground" },
-                  { label: "Trades Today", value: "89", color: "text-green-400" },
-                  { label: "Total Volume", value: "2.4M gold", color: "text-amber-400" },
-                  { label: "Unique Traders", value: "342", color: "text-blue-400" },
-                ].map((stat) => (
-                  <div key={stat.label} className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">{stat.label}</span>
-                    <span className={`text-sm font-bold ${stat.color}`}>{stat.value}</span>
+                  { rarity: "Common", dot: "#6a7a8a", desc: "Easy to find" },
+                  { rarity: "Uncommon", dot: "#4080f0", desc: "A bit harder" },
+                  { rarity: "Rare", dot: "#e04040", desc: "Sought after" },
+                  { rarity: "Epic", dot: "#f0c040", desc: "Powerful gear" },
+                  { rarity: "Legendary", dot: "#d060f0", desc: "Extremely rare" },
+                ].map((tier) => (
+                  <div key={tier.rarity} className="flex items-center gap-3">
+                    <span
+                      className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                      style={{ backgroundColor: tier.dot, boxShadow: `0 0 6px ${tier.dot}60` }}
+                    />
+                    <span className="text-sm font-medium text-foreground flex-1">{tier.rarity}</span>
+                    <span className="text-xs text-muted-foreground">{tier.desc}</span>
                   </div>
                 ))}
               </div>
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Higher rarity items are harder to obtain and more valuable on the marketplace.
+                </p>
+              </div>
             </div>
           </motion.div>
+          {/* --- END AI-MODIFIED --- */}
         </motion.div>
       </div>
     </section>
