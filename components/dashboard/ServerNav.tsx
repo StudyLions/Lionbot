@@ -11,13 +11,15 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add Sparkles icon for supporter perk highlight
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: add Sparkles icon for supporter perk highlight + Volume2/VolumeX for sound toggle
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
+  Volume2, VolumeX,
 } from "lucide-react"
+import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 
 interface ServerNavProps {
@@ -93,6 +95,9 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
 }) {
   const router = useRouter()
   const basePath = `/dashboard/servers/${serverId}`
+  // --- AI-MODIFIED (2026-03-20) ---
+  const { soundEnabled, setSoundEnabled, playSound } = useUISound()
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="flex flex-col h-full">
@@ -154,6 +159,30 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
           </div>
         ))}
       </ScrollArea>
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Sound toggle at bottom of server nav */}
+      <div className="px-3 py-3 border-t border-border/40">
+        <button
+          onClick={() => {
+            const next = !soundEnabled
+            setSoundEnabled(next)
+            if (next) playSound('toggleOn')
+          }}
+          className={cn(
+            "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            soundEnabled
+              ? "text-muted-foreground hover:text-foreground hover:bg-accent"
+              : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent"
+          )}
+          title={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
+        >
+          <span className="flex-shrink-0 opacity-70">
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </span>
+          <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
+        </button>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

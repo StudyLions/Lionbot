@@ -5,6 +5,10 @@
 // ============================================================
 import { AlertTriangle, X } from "lucide-react"
 import { useEffect, useRef } from "react"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Play 8-bit sounds on modal open, confirm, and cancel
+import { getUISoundEngine } from "@/lib/uiSoundEngine"
+// --- END AI-MODIFIED ---
 
 interface ConfirmModalProps {
   open: boolean
@@ -36,9 +40,15 @@ export default function ConfirmModal({
 }: ConfirmModalProps) {
   const confirmRef = useRef<HTMLButtonElement>(null)
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Play warning sound when modal opens
   useEffect(() => {
-    if (open) confirmRef.current?.focus()
-  }, [open])
+    if (open) {
+      confirmRef.current?.focus()
+      getUISoundEngine().play(variant === 'danger' ? 'warning' : 'open')
+    }
+  }, [open, variant])
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     function handleEsc(e: KeyboardEvent) {
@@ -82,7 +92,7 @@ export default function ConfirmModal({
           {!customContent && (
           <div className="flex justify-end gap-3 mt-6">
             <button
-              onClick={onCancel}
+              onClick={() => { getUISoundEngine().play('close'); onCancel() }}
               disabled={loading}
               className="px-4 py-2 text-sm font-medium text-muted-foreground bg-muted hover:bg-accent rounded-lg transition-colors"
             >
@@ -91,7 +101,7 @@ export default function ConfirmModal({
             {confirmLabel && (
             <button
               ref={confirmRef}
-              onClick={onConfirm}
+              onClick={() => { getUISoundEngine().play(variant === 'danger' ? 'delete' : 'confirm'); onConfirm() }}
               disabled={loading}
               className={`px-4 py-2 text-sm font-medium text-foreground ${colors.btn} rounded-lg transition-colors disabled:opacity-50`}
             >

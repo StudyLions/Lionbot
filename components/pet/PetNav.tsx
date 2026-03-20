@@ -14,11 +14,13 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: Added Home icon import for the new Room nav link
 // --- AI-MODIFIED (2026-03-17) ---
 // Purpose: Added Palette icon for the Skins nav link
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Added Volume2/VolumeX for sound toggle
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
-  Store, Menu, ChevronLeft, Home, Palette,
+  Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX,
 } from "lucide-react"
-// --- END AI-MODIFIED ---
+import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Added balance display imports for persistent gold/gems in nav
@@ -103,6 +105,9 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-20) ---
+  const { soundEnabled, setSoundEnabled, playSound } = useUISound()
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: Fetch balance for persistent display in sidebar
   const { data: balanceData } = useDashboard<{ gold: string; gems: number }>(
@@ -187,6 +192,30 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </div>
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Sound toggle matching pixel art style */}
+      <div className="px-3 py-3 border-t-2 border-[var(--pet-border,#2a3a5c)]">
+        <button
+          onClick={() => {
+            const next = !soundEnabled
+            setSoundEnabled(next)
+            if (next) playSound('toggleOn')
+          }}
+          className={cn(
+            "font-pixel flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-all border-l-2",
+            soundEnabled
+              ? "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438]"
+              : "border-l-transparent text-[#4a5568] hover:text-[#8899aa] hover:bg-[#1a2438]"
+          )}
+          title={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
+        >
+          <span className="opacity-70">
+            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+          </span>
+          <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
+        </button>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

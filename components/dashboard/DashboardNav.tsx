@@ -13,12 +13,14 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useDashboard } from "@/hooks/useDashboard"
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Added PawPrint icon for LionGotchi pet nav button
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Added PawPrint icon + Volume2/VolumeX for sound toggle
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
+  Volume2, VolumeX,
 } from "lucide-react"
+import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 
 interface NavItem {
@@ -98,6 +100,10 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Sound toggle state from global context
+  const { soundEnabled, setSoundEnabled, playSound } = useUISound()
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-13) ---
   // Purpose: add gem balance display in sidebar
   const { data: gemsData } = useDashboard<{ gemBalance: number }>(
@@ -322,6 +328,30 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </div>
         ))}
       </ScrollArea>
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Sound toggle at bottom of nav for enabling/disabling 8-bit UI sounds */}
+      <div className="px-3 py-3 border-t border-border/40">
+        <button
+          onClick={() => {
+            const next = !soundEnabled
+            setSoundEnabled(next)
+            if (next) playSound('toggleOn')
+          }}
+          className={cn(
+            "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            soundEnabled
+              ? "text-muted-foreground hover:text-foreground hover:bg-accent"
+              : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent"
+          )}
+          title={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
+        >
+          <span className="flex-shrink-0 opacity-70">
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+          </span>
+          <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
+        </button>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

@@ -1,10 +1,11 @@
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Added DefaultSeo, i18n wrapping, ToastProvider
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Added DefaultSeo, i18n wrapping, ToastProvider, SoundProvider
 import { SessionProvider } from "next-auth/react";
 import { DefaultSeo } from "next-seo";
 import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
+import { SoundProvider } from "@/lib/SoundContext";
 import MiniSessionTimer from "@/components/dashboard/MiniSessionTimer";
 import defaultSEO from "next-seo.config";
 
@@ -49,12 +50,17 @@ function App({ Component, pageProps }) {
       {/* Purpose: Site-wide default SEO tags */}
       <DefaultSeo {...defaultSEO} />
       {/* --- END AI-MODIFIED --- */}
-      <Component {...pageProps} />
-      {/* --- AI-MODIFIED (2026-03-16) --- */}
-      {/* Purpose: Persistent mini-timer on all dashboard pages when user has active session */}
-      <MiniSessionTimer />
+      {/* --- AI-MODIFIED (2026-03-20) --- */}
+      {/* Purpose: Global 8-bit UI sound system wrapping all pages */}
+      <SoundProvider>
+        <Component {...pageProps} />
+        {/* --- AI-MODIFIED (2026-03-16) --- */}
+        {/* Purpose: Persistent mini-timer on all dashboard pages when user has active session */}
+        <MiniSessionTimer />
+        {/* --- END AI-MODIFIED --- */}
+        <ToastProvider />
+      </SoundProvider>
       {/* --- END AI-MODIFIED --- */}
-      <ToastProvider />
     </SessionProvider>
   );
 }

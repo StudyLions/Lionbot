@@ -4,6 +4,10 @@
 // Purpose: Sticky save/reset bar for settings pages
 // ============================================================
 import { Save, RotateCcw } from "lucide-react"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Play 8-bit sound on save and undo/reset actions
+import { getUISoundEngine } from "@/lib/uiSoundEngine"
+// --- END AI-MODIFIED ---
 
 interface SaveBarProps {
   show: boolean
@@ -25,7 +29,7 @@ export default function SaveBar({ show, onSave, onReset, saving = false, label }
           </span>
           <div className="flex items-center gap-3">
             <button
-              onClick={onReset}
+              onClick={() => { getUISoundEngine().play('undo'); onReset() }}
               disabled={saving}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground bg-muted hover:bg-accent rounded-lg transition-colors"
             >
@@ -33,7 +37,7 @@ export default function SaveBar({ show, onSave, onReset, saving = false, label }
               Reset
             </button>
             <button
-              onClick={onSave}
+              onClick={() => { getUISoundEngine().play('confirm'); onSave() }}
               disabled={saving}
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
             >
