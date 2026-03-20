@@ -23,40 +23,26 @@ import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import {
-  Wand2,
-  Globe,
-  BookOpen,
-  Trophy,
-  Coins,
-  ChevronLeft,
-  ChevronRight,
-  Check,
-  ArrowLeft,
-  ShoppingBag,
-  ListChecks,
-  Timer,
-  Calendar,
-  Video,
-  Pencil,
+  Wand2, Globe, BookOpen, Trophy, Coins, ChevronLeft, ChevronRight, Check,
+  ArrowLeft, ShoppingBag, ListChecks, Timer, Calendar, Video, Pencil,
+  Gamepad2, Users, Briefcase, Eye, ChevronDown, Sparkles,
 } from "lucide-react"
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add i18n imports for serverSideTranslations
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-// --- END AI-MODIFIED ---
 
-const TOTAL_STEPS = 6
-const STEP_LABELS = ["Basics", "Study Rewards", "Ranks", "Economy", "Optional Features", "Summary"]
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Updated to 7 steps with new Server Type template step at the beginning
+const TOTAL_STEPS = 7
+const STEP_LABELS = ["Server Type", "Basics", "Study Rewards", "Ranks", "Economy", "Optional Features", "Summary"]
 
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: step descriptions for onboarding clarity
 const STEP_DESCRIPTIONS: Record<number, string> = {
-  1: "Set your server's timezone, language, and welcome message so new members feel at home.",
-  2: "Configure how members earn coins from studying. These rewards drive engagement in your study channels.",
-  3: "Choose how members rank up. Ranks reward activity and give members goals to work toward.",
-  4: "Control the economy: starting coins, transfers, and XP-to-coin conversion.",
-  5: "Explore optional features like the shop, role menus, and video channels. You can configure these later.",
-  6: "Review your configuration and finish setup.",
+  1: "Choose a template that matches your server to get the best defaults. You can customize everything in the next steps.",
+  2: "Set your server's timezone, language, and welcome message so new members feel at home.",
+  3: "Configure how members earn coins from studying. These rewards drive engagement in your study channels.",
+  4: "Choose how members rank up. Ranks reward activity and give members goals to work toward.",
+  5: "Control the economy: starting coins, transfers, and XP-to-coin conversion.",
+  6: "Explore optional features like the shop, role menus, and video channels. You can configure these later.",
+  7: "Review your configuration and finish setup.",
 }
 // --- END AI-MODIFIED ---
 
@@ -139,6 +125,129 @@ const OPTIONAL_FEATURES = [
   },
 ]
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Server type templates for quick one-click configuration
+const TEMPLATES: Record<string, {
+  title: string
+  icon: React.ReactNode
+  description: string
+  bullets: string[]
+  config: Record<string, any>
+}> = {
+  study: {
+    title: "Study Community",
+    icon: <BookOpen size={24} />,
+    description: "Optimized for study groups, tutoring servers, and academic communities",
+    bullets: [
+      "Higher hourly voice rewards (150 coins/hr)",
+      "Ranks based on voice study time",
+      "Pomodoro timers and video channels ready",
+      "Camera bonus for accountability",
+    ],
+    config: {
+      study_hourly_reward: 150,
+      study_hourly_live_bonus: 50,
+      daily_study_cap: null,
+      rank_type: "VOICE",
+      dm_ranks: true,
+      xp_per_period: 5,
+      starting_funds: 0,
+      allow_transfers: true,
+      coins_per_centixp: 50,
+    },
+  },
+  gaming: {
+    title: "Gaming Server",
+    icon: <Gamepad2 size={24} />,
+    description: "Economy-focused with shop, role menus, and message-based progression",
+    bullets: [
+      "Ranks based on message activity",
+      "Members start with 100 coins",
+      "Higher coin conversion for shopping",
+      "Shop and role menus emphasis",
+    ],
+    config: {
+      study_hourly_reward: 50,
+      study_hourly_live_bonus: 10,
+      daily_study_cap: null,
+      rank_type: "MESSAGE",
+      dm_ranks: true,
+      xp_per_period: 3,
+      starting_funds: 100,
+      allow_transfers: true,
+      coins_per_centixp: 100,
+    },
+  },
+  general: {
+    title: "General / Social",
+    icon: <Users size={24} />,
+    description: "Balanced defaults that work well for any type of community",
+    bullets: [
+      "Combined XP ranking (voice + text)",
+      "Moderate hourly rewards (100 coins/hr)",
+      "Good defaults for all features",
+      "Easy to customize later",
+    ],
+    config: {
+      study_hourly_reward: 100,
+      study_hourly_live_bonus: 25,
+      daily_study_cap: null,
+      rank_type: "XP",
+      dm_ranks: true,
+      xp_per_period: 5,
+      starting_funds: 0,
+      allow_transfers: true,
+      coins_per_centixp: 50,
+    },
+  },
+  work: {
+    title: "Work / Professional",
+    icon: <Briefcase size={24} />,
+    description: "Task management, scheduling, and accountability for professional teams",
+    bullets: [
+      "Task and schedule emphasis",
+      "Combined XP ranking",
+      "Minimal economy distractions",
+      "Transfers disabled for simplicity",
+    ],
+    config: {
+      study_hourly_reward: 75,
+      study_hourly_live_bonus: 20,
+      daily_study_cap: null,
+      rank_type: "XP",
+      dm_ranks: false,
+      xp_per_period: 5,
+      starting_funds: 0,
+      allow_transfers: false,
+      coins_per_centixp: 25,
+    },
+  },
+}
+
+const PREVIEW_IMAGES: Record<string, { src: string; alt: string; description: string }> = {
+  welcome: {
+    src: "",
+    alt: "Welcome message preview",
+    description: "This is what your members will see when they join your server.",
+  },
+  stats: {
+    src: "",
+    alt: "Stats card preview",
+    description: "Members can view their study stats, coin earnings, and activity with /me.",
+  },
+  ranks: {
+    src: "",
+    alt: "Rank notification preview",
+    description: "Members receive a notification when they reach a new rank tier.",
+  },
+  economy: {
+    src: "",
+    alt: "Shop interface preview",
+    description: "Members can browse and purchase colour roles and items from the shop.",
+  },
+}
+// --- END AI-MODIFIED ---
+
 const DEFAULTS: Record<string, any> = {
   timezone: "UTC",
   locale: "en_GB",
@@ -154,6 +263,44 @@ const DEFAULTS: Record<string, any> = {
   coins_per_centixp: 50,
 }
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Collapsible feature preview component for setup wizard steps
+function FeaturePreview({ previewKey }: { previewKey: string }) {
+  const [open, setOpen] = useState(false)
+  const preview = PREVIEW_IMAGES[previewKey]
+  if (!preview) return null
+
+  return (
+    <div className="mt-4 border border-border/50 rounded-lg overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 w-full px-4 py-3 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/20 transition-colors"
+      >
+        <Eye size={15} />
+        <span>Preview: What this looks like</span>
+        <ChevronDown size={15} className={`ml-auto transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="px-4 pb-4">
+          <p className="text-sm text-muted-foreground mb-3">{preview.description}</p>
+          <div className="relative aspect-video bg-muted/20 rounded-lg overflow-hidden flex items-center justify-center border border-border/30">
+            {preview.src ? (
+              <img src={preview.src} alt={preview.alt} className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-center p-6">
+                <Eye size={32} className="mx-auto mb-2 text-muted-foreground/40" />
+                <p className="text-sm text-muted-foreground/60">Preview image coming soon</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+// --- END AI-MODIFIED ---
+
 export default function SetupWizard() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -162,8 +309,6 @@ export default function SetupWizard() {
   const [config, setConfig] = useState<Record<string, any> | null>(null)
   const [perms, setPerms] = useState<{ isAdmin: boolean; isModerator: boolean }>({ isAdmin: false, isModerator: false })
   const [saving, setSaving] = useState(false)
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: store detected timezone for Quick Setup
   const [detectedTimezone, setDetectedTimezone] = useState<string>("UTC")
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -175,10 +320,7 @@ export default function SetupWizard() {
       }
     }
   }, [])
-  // --- END AI-MODIFIED ---
 
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
   const { data: configData, isLoading: configLoading, mutate } = useDashboard<Record<string, any>>(
     id && session ? `/api/dashboard/servers/${id}/config` : null
   )
@@ -194,7 +336,6 @@ export default function SetupWizard() {
   useEffect(() => {
     if (permData) setPerms({ isAdmin: permData.isAdmin, isModerator: permData.isModerator })
   }, [permData])
-  // --- END AI-MODIFIED ---
 
   const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -220,26 +361,28 @@ export default function SetupWizard() {
     }
   }
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Shifted step numbers by +1 to accommodate new Server Type step
   const handleNext = async () => {
     if (!config) return
 
     const stepUpdates: Record<number, Record<string, any>> = {
-      1: {
+      2: {
         timezone: config.timezone || DEFAULTS.timezone,
         locale: config.locale || DEFAULTS.locale,
         greeting_message: config.greeting_message ?? DEFAULTS.greeting_message,
       },
-      2: {
+      3: {
         study_hourly_reward: config.study_hourly_reward ?? DEFAULTS.study_hourly_reward,
         study_hourly_live_bonus: config.study_hourly_live_bonus ?? DEFAULTS.study_hourly_live_bonus,
         daily_study_cap: config.daily_study_cap ?? DEFAULTS.daily_study_cap,
       },
-      3: {
+      4: {
         rank_type: config.rank_type || DEFAULTS.rank_type,
         dm_ranks: config.dm_ranks ?? DEFAULTS.dm_ranks,
         xp_per_period: config.xp_per_period ?? DEFAULTS.xp_per_period,
       },
-      4: {
+      5: {
         starting_funds: config.starting_funds ?? DEFAULTS.starting_funds,
         allow_transfers: config.allow_transfers ?? DEFAULTS.allow_transfers,
         coins_per_centixp: config.coins_per_centixp ?? DEFAULTS.coins_per_centixp,
@@ -247,14 +390,15 @@ export default function SetupWizard() {
     }
 
     const updates = stepUpdates[step]
-    if (updates && step < 5) {
+    if (updates && step >= 2 && step <= 5) {
       const ok = await saveStep(updates)
       if (!ok) return
-      mutate() // revalidate config after successful PATCH
+      mutate()
     }
 
     if (step < TOTAL_STEPS) setStep(step + 1)
   }
+  // --- END AI-MODIFIED ---
 
   const handleBack = () => {
     if (step > 1) setStep(step - 1)
@@ -264,38 +408,39 @@ export default function SetupWizard() {
     if (s >= 1 && s <= TOTAL_STEPS) setStep(s)
   }
 
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: Quick Setup applies sensible defaults and skips to Summary
-  const handleQuickSetup = async () => {
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Apply a server type template's config values and skip to Summary
+  const handleApplyTemplate = async (templateId: string) => {
     if (!id) return
-    const quickDefaults = {
+    const template = TEMPLATES[templateId]
+    if (!template) return
+
+    const updates = {
+      ...template.config,
       timezone: detectedTimezone,
       locale: "en_GB",
-      study_hourly_reward: 100,
-      study_hourly_live_bonus: 25,
-      starting_funds: 0,
-      allow_transfers: true,
-      rank_type: "XP",
-      dm_ranks: true,
-      xp_per_period: 5,
     }
-    setConfig((prev) => (prev ? { ...prev, ...quickDefaults } : prev))
+    setConfig((prev) => (prev ? { ...prev, ...updates } : prev))
     setSaving(true)
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(quickDefaults),
+        body: JSON.stringify(updates),
       })
       if (!res.ok) throw new Error("Save failed")
       mutate()
-      toast.success("Quick setup applied! Review your settings below.")
-      setStep(6)
+      toast.success(`${template.title} template applied! Review your settings below.`)
+      setStep(TOTAL_STEPS)
     } catch {
-      toast.error("Failed to apply quick setup. Check your admin permissions.")
+      toast.error("Failed to apply template. Check your admin permissions.")
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleQuickSetup = async () => {
+    await handleApplyTemplate("general")
   }
   // --- END AI-MODIFIED ---
 
@@ -366,12 +511,11 @@ export default function SetupWizard() {
               </div>
             ) : (
               <>
-                {/* Step 1: Basics */}
+                {/* --- AI-MODIFIED (2026-03-20) --- */}
+                {/* Purpose: New Step 1 - Server Type template selection */}
                 {step === 1 && (
-                  <SectionCard title="Basics" description={STEP_DESCRIPTIONS[1]} icon={<Globe size={18} />} defaultOpen>
-                    {/* --- AI-MODIFIED (2026-03-13) ---
-                        Purpose: Quick Setup button for one-click sensible defaults */}
-                    <div className="mb-6">
+                  <SectionCard title="Choose Your Server Type" description={STEP_DESCRIPTIONS[1]} icon={<Sparkles size={18} />} defaultOpen>
+                    <div className="mb-4">
                       <button
                         type="button"
                         onClick={handleQuickSetup}
@@ -381,9 +525,49 @@ export default function SetupWizard() {
                         <Wand2 size={18} />
                         Quick Setup
                       </button>
-                      <p className="text-xs text-muted-foreground mt-1.5">Apply sensible defaults and skip to Summary</p>
+                      <p className="text-xs text-muted-foreground mt-1.5">Apply balanced defaults and skip to Summary</p>
                     </div>
-                    {/* --- END AI-MODIFIED --- */}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      {Object.entries(TEMPLATES).map(([key, template]) => (
+                        <button
+                          key={key}
+                          type="button"
+                          onClick={() => handleApplyTemplate(key)}
+                          disabled={saving}
+                          className="flex flex-col items-start gap-3 p-5 rounded-xl bg-muted/20 hover:bg-muted/40 border border-border hover:border-primary/40 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed group"
+                        >
+                          <div className="flex items-center gap-3 w-full">
+                            <span className="text-primary/80 group-hover:text-primary transition-colors flex-shrink-0">
+                              {template.icon}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-foreground">{template.title}</div>
+                              <p className="text-xs text-muted-foreground mt-0.5">{template.description}</p>
+                            </div>
+                          </div>
+                          <ul className="space-y-1 w-full">
+                            {template.bullets.map((bullet, i) => (
+                              <li key={i} className="flex items-start gap-2 text-xs text-muted-foreground">
+                                <Check size={12} className="text-primary/60 flex-shrink-0 mt-0.5" />
+                                {bullet}
+                              </li>
+                            ))}
+                          </ul>
+                        </button>
+                      ))}
+                    </div>
+
+                    <p className="text-xs text-muted-foreground mt-4 text-center">
+                      Or click <strong>Next</strong> below to skip templates and customize everything manually.
+                    </p>
+                  </SectionCard>
+                )}
+                {/* --- END AI-MODIFIED --- */}
+
+                {/* Step 2: Basics (was Step 1) */}
+                {step === 2 && (
+                  <SectionCard title="Basics" description={STEP_DESCRIPTIONS[2]} icon={<Globe size={18} />} defaultOpen>
                     <SettingRow label="Timezone" description="Server timezone for schedules and time displays">
                       <SearchSelect options={TIMEZONE_OPTIONS} value={config.timezone || null} onChange={(v) => set("timezone", v)} placeholder="Select timezone" />
                     </SettingRow>
@@ -393,12 +577,13 @@ export default function SetupWizard() {
                     <SettingRow label="Welcome Message" description="Sent when a new member joins. Use: {mention}, {user_name}, {server_name}">
                       <TextInput value={config.greeting_message || ""} onChange={(v) => set("greeting_message", v || null)} multiline rows={4} placeholder="Welcome to {server_name}, {mention}!" maxLength={2000} />
                     </SettingRow>
+                    <FeaturePreview previewKey="welcome" />
                   </SectionCard>
                 )}
 
-                {/* Step 2: Study Rewards */}
-                {step === 2 && (
-                  <SectionCard title="Study Rewards" description={STEP_DESCRIPTIONS[2]} icon={<BookOpen size={18} />} defaultOpen>
+                {/* Step 3: Study Rewards (was Step 2) */}
+                {step === 3 && (
+                  <SectionCard title="Study Rewards" description={STEP_DESCRIPTIONS[3]} icon={<BookOpen size={18} />} defaultOpen>
                     <SettingRow label="Hourly Reward" description="Coins earned per hour of study in voice channels" defaultBadge={String(DEFAULTS.study_hourly_reward)}>
                       <NumberInput value={config.study_hourly_reward} onChange={(v) => set("study_hourly_reward", v)} unit="coins/hr" min={0} defaultValue={DEFAULTS.study_hourly_reward} allowNull />
                     </SettingRow>
@@ -408,12 +593,13 @@ export default function SetupWizard() {
                     <SettingRow label="Daily Cap" description="Max hours of study that earn rewards per day. Leave empty for no limit." defaultBadge="No limit">
                       <NumberInput value={config.daily_study_cap} onChange={(v) => set("daily_study_cap", v)} unit="hours" min={1} placeholder="No limit" allowNull />
                     </SettingRow>
+                    <FeaturePreview previewKey="stats" />
                   </SectionCard>
                 )}
 
-                {/* Step 3: Ranks */}
-                {step === 3 && (
-                  <SectionCard title="Ranks" description={STEP_DESCRIPTIONS[3]} icon={<Trophy size={18} />} defaultOpen>
+                {/* Step 4: Ranks (was Step 3) */}
+                {step === 4 && (
+                  <SectionCard title="Ranks" description={STEP_DESCRIPTIONS[4]} icon={<Trophy size={18} />} defaultOpen>
                     <SettingRow label="Rank Type" description={RANK_DESCRIPTIONS[config.rank_type || "XP"] || ""}>
                       <SearchSelect options={RANK_TYPE_OPTIONS} value={config.rank_type || null} onChange={(v) => set("rank_type", v)} placeholder="Select rank type" />
                     </SettingRow>
@@ -423,12 +609,13 @@ export default function SetupWizard() {
                     <SettingRow label="XP per Period" description="Voice XP earned per tracking interval" defaultBadge={String(DEFAULTS.xp_per_period)}>
                       <NumberInput value={config.xp_per_period} onChange={(v) => set("xp_per_period", v)} unit="XP" min={0} defaultValue={DEFAULTS.xp_per_period} allowNull />
                     </SettingRow>
+                    <FeaturePreview previewKey="ranks" />
                   </SectionCard>
                 )}
 
-                {/* Step 4: Economy */}
-                {step === 4 && (
-                  <SectionCard title="Economy" description={STEP_DESCRIPTIONS[4]} icon={<Coins size={18} />} defaultOpen>
+                {/* Step 5: Economy (was Step 4) */}
+                {step === 5 && (
+                  <SectionCard title="Economy" description={STEP_DESCRIPTIONS[5]} icon={<Coins size={18} />} defaultOpen>
                     <SettingRow label="Starting Coins" description="Coins given to new members when they join" defaultBadge={String(DEFAULTS.starting_funds)}>
                       <NumberInput value={config.starting_funds} onChange={(v) => set("starting_funds", v)} unit="coins" min={0} defaultValue={DEFAULTS.starting_funds} allowNull />
                     </SettingRow>
@@ -438,12 +625,13 @@ export default function SetupWizard() {
                     <SettingRow label="Coins per 100 XP" description="Conversion rate between XP and coins" defaultBadge={String(DEFAULTS.coins_per_centixp)}>
                       <NumberInput value={config.coins_per_centixp} onChange={(v) => set("coins_per_centixp", v)} unit="coins" min={0} defaultValue={DEFAULTS.coins_per_centixp} allowNull />
                     </SettingRow>
+                    <FeaturePreview previewKey="economy" />
                   </SectionCard>
                 )}
 
-                {/* Step 5: Optional Features */}
-                {step === 5 && (
-                  <SectionCard title="Optional Features" description={STEP_DESCRIPTIONS[5]} icon={<Wand2 size={18} />} defaultOpen>
+                {/* Step 6: Optional Features (was Step 5) */}
+                {step === 6 && (
+                  <SectionCard title="Optional Features" description={STEP_DESCRIPTIONS[6]} icon={<Wand2 size={18} />} defaultOpen>
                     <div className="pt-4 space-y-3">
                       {OPTIONAL_FEATURES.map((feat) => (
                         <Link key={feat.id} href={`/dashboard/servers/${id}/${feat.href}`}>
@@ -461,13 +649,13 @@ export default function SetupWizard() {
                   </SectionCard>
                 )}
 
-                {/* Step 6: Summary */}
-                {step === 6 && (
-                  <SectionCard title="All Set!" description={STEP_DESCRIPTIONS[6]} icon={<Check size={18} />} defaultOpen>
+                {/* Step 7: Summary (was Step 6) */}
+                {step === 7 && (
+                  <SectionCard title="All Set!" description={STEP_DESCRIPTIONS[7]} icon={<Check size={18} />} defaultOpen>
                     <div className="pt-4 space-y-6">
                       <div className="flex items-center justify-between py-2 border-b border-border">
                         <span className="text-muted-foreground">Basics</span>
-                        <button type="button" onClick={() => goToStep(1)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
+                        <button type="button" onClick={() => goToStep(2)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
@@ -479,7 +667,7 @@ export default function SetupWizard() {
 
                       <div className="flex items-center justify-between py-2 border-b border-border">
                         <span className="text-muted-foreground">Study Rewards</span>
-                        <button type="button" onClick={() => goToStep(2)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
+                        <button type="button" onClick={() => goToStep(3)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
@@ -489,7 +677,7 @@ export default function SetupWizard() {
 
                       <div className="flex items-center justify-between py-2 border-b border-border">
                         <span className="text-muted-foreground">Ranks</span>
-                        <button type="button" onClick={() => goToStep(3)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
+                        <button type="button" onClick={() => goToStep(4)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
@@ -499,7 +687,7 @@ export default function SetupWizard() {
 
                       <div className="flex items-center justify-between py-2 border-b border-border">
                         <span className="text-muted-foreground">Economy</span>
-                        <button type="button" onClick={() => goToStep(4)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
+                        <button type="button" onClick={() => goToStep(5)} className="flex items-center gap-1 text-primary hover:text-primary text-sm cursor-pointer">
                           <Pencil size={14} /> Edit
                         </button>
                       </div>
@@ -513,8 +701,6 @@ export default function SetupWizard() {
                         </a>
                       </Link>
 
-                      {/* --- AI-MODIFIED (2026-03-13) ---
-                          Purpose: What's Next section with links to key config pages */}
                       <div className="pt-4 border-t border-border">
                         <p className="text-sm font-medium text-foreground mb-3">What&apos;s Next?</p>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -544,7 +730,6 @@ export default function SetupWizard() {
                           </Link>
                         </div>
                       </div>
-                      {/* --- END AI-MODIFIED --- */}
 
                       <Link href={`/dashboard/servers/${id}`}>
                         <a className="flex items-center justify-center gap-2 w-full py-4 px-6 rounded-xl bg-primary hover:bg-primary/90 text-foreground font-semibold text-lg transition-colors">
@@ -557,7 +742,7 @@ export default function SetupWizard() {
                 )}
 
                 {/* Back / Next */}
-                {step < 6 && (
+                {step < TOTAL_STEPS && (
                   <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">
                     <button
                       type="button"
@@ -574,7 +759,7 @@ export default function SetupWizard() {
                       disabled={saving}
                       className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {saving ? "Saving..." : step === 5 ? "Finish" : "Next"}
+                      {saving ? "Saving..." : step === TOTAL_STEPS - 1 ? "Finish" : "Next"}
                       <ChevronRight size={18} />
                     </button>
                   </div>
@@ -589,11 +774,8 @@ export default function SetupWizard() {
   )
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: add getServerSideProps for i18n serverSideTranslations
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
   },
 })
-// --- END AI-MODIFIED ---

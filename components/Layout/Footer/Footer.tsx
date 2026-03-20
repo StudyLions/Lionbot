@@ -9,17 +9,23 @@ import { Github } from "lucide-react";
 const DISCORD_INVITE = "https://discord.gg/the-study-lions-780195610154237993";
 // --- END AI-MODIFIED ---
 const GITHUB_URL = "https://github.com/StudyLions/StudyLion/";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Updated invite URL with applications.commands scope, added Features link
+// --- Original code (commented out for rollback) ---
+// const BOT_INVITE =
+//   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
+// --- End original code ---
 const BOT_INVITE =
-  "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Changed Tutorials from external Notion link to internal /tutorials page
+  "https://discord.com/oauth2/authorize?client_id=889078613817831495&permissions=1376674495606&scope=bot+applications.commands";
 const productLinks = [
   { label: "Home", href: "/" },
+  { label: "Features", href: "/features" },
   { label: "Donate", href: "/donate" },
   { label: "Skins", href: "/skins" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "Invite Bot", href: BOT_INVITE, external: true },
 ];
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-19) ---
 // Purpose: Added Stats link to resources

@@ -23,6 +23,7 @@ import {
   // Purpose: icon for Support nav link
   HelpCircle,
   // --- END AI-MODIFIED ---
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -47,17 +48,25 @@ import Banner from "@/components/Layout/Header/Banner";
 const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 
 // --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Removed Stats from nav (kept in footer only)
+// Purpose: Added Features link, removed Stats from nav (kept in footer only)
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
+  { label: "Features", href: "/features", icon: Sparkles },
   { label: "Skins", href: "/skins", icon: Palette },
   { label: "Tutorials", href: "/tutorials", icon: BookOpen },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Updated invite URL to include applications.commands scope for slash commands
+// --- Original code (commented out for rollback) ---
+// const INVITE_URL =
+//   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
+// --- End original code ---
 const INVITE_URL =
-  "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
+  "https://discord.com/oauth2/authorize?client_id=889078613817831495&permissions=1376674495606&scope=bot+applications.commands";
+// --- END AI-MODIFIED ---
 
 export default function Header() {
   const { data: session } = useSession();
