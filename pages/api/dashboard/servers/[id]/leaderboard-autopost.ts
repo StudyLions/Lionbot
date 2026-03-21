@@ -9,6 +9,17 @@ import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const MAX_CONFIGS_PER_GUILD = 10
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Premium-only gate for leaderboard autopost
+async function isPremiumGuild(guildId: bigint): Promise<boolean> {
+  const row = await prisma.premium_guilds.findUnique({
+    where: { guildid: guildId },
+    select: { premium_until: true },
+  })
+  return !!row && row.premium_until > new Date()
+}
+// --- END AI-MODIFIED ---
+
 const BLOCKED_MENTION_RE = /@(everyone|here)/i
 
 function validateTemplateField(value: string | null | undefined, fieldName: string, maxLen: number) {
@@ -92,10 +103,16 @@ export default apiHandler({
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
-    const configs = await prisma.leaderboard_autopost_config.findMany({
-      where: { guildid: guildId },
-      orderBy: { created_at: "asc" },
-    })
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Return premium status so the frontend can show/hide the feature
+    const [configs, isPremium] = await Promise.all([
+      prisma.leaderboard_autopost_config.findMany({
+        where: { guildid: guildId },
+        orderBy: { created_at: "asc" },
+      }),
+      isPremiumGuild(guildId),
+    ])
+    // --- END AI-MODIFIED ---
 
     const historyConfigId = req.query.history
       ? parseInt(req.query.history as string, 10)
@@ -126,6 +143,7 @@ export default apiHandler({
     return res.status(200).json({
       configs: configs.map(serializeConfig),
       history,
+      isPremium,
     })
   },
 
@@ -133,6 +151,13 @@ export default apiHandler({
     const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
+
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Premium-only gate
+    if (!(await isPremiumGuild(guildId))) {
+      return res.status(403).json({ error: "Leaderboard auto-post requires a premium server subscription" })
+    }
+    // --- END AI-MODIFIED ---
 
     const existingCount = await prisma.leaderboard_autopost_config.count({
       where: { guildid: guildId },
@@ -217,6 +242,13 @@ export default apiHandler({
     const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
+
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Premium-only gate
+    if (!(await isPremiumGuild(guildId))) {
+      return res.status(403).json({ error: "Leaderboard auto-post requires a premium server subscription" })
+    }
+    // --- END AI-MODIFIED ---
 
     const { configid, ...updates } = req.body
     if (!configid) {

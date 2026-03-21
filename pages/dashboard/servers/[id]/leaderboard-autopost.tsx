@@ -1225,6 +1225,10 @@ function ConfigEditor({
 interface PageData {
   configs: AutopostConfig[]
   history: HistoryEntry[]
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Premium gate flag from API
+  isPremium: boolean
+  // --- END AI-MODIFIED ---
 }
 
 export default function LeaderboardAutopostPage() {
@@ -1241,6 +1245,10 @@ export default function LeaderboardAutopostPage() {
   )
 
   const configs = data?.configs ?? []
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Premium gate
+  const isPremium = data?.isPremium ?? false
+  // --- END AI-MODIFIED ---
 
   const startNew = (preset?: Partial<AutopostConfig>) => {
     const base = makeDefaultConfig()
@@ -1273,6 +1281,23 @@ export default function LeaderboardAutopostPage() {
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-20 bg-gray-800/50 rounded-lg animate-pulse" />
           ))}
+        </div>
+      ) : !isPremium ? (
+        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-12 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
+            <Trophy size={28} className="text-amber-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-foreground mb-2">Premium Feature</h3>
+          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+            Automated leaderboard posting with role rewards, coin prizes, and winner DMs
+            is available for premium servers. Upgrade to unlock this feature.
+          </p>
+          <a
+            href="/premium"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
+          >
+            <Trophy size={14} /> Upgrade to Premium
+          </a>
         </div>
       ) : configs.length === 0 ? (
         <div className="space-y-6">
