@@ -1539,6 +1539,10 @@ model lg_enhancement_slots {
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: Added marketplace models for LionGotchi trading system
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Add scroll_data (JSONB) and total_bonus (REAL) to preserve scroll/enhancement
+// data when items are listed on the marketplace. scroll_data stores a JSON snapshot of
+// lg_enhancement_slots; total_bonus is precomputed for filtering/sorting.
 model lg_marketplace_listings {
   listingid          Int       @id @default(autoincrement())
   seller_userid      BigInt
@@ -1551,6 +1555,8 @@ model lg_marketplace_listings {
   status             String    @default("ACTIVE")
   created_at         DateTime  @default(now()) @db.Timestamptz(6)
   expires_at         DateTime  @db.Timestamptz(6)
+  scroll_data        Json?     @db.JsonB
+  total_bonus        Float     @default(0) @db.Real
   lg_items           lg_items  @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
   lg_marketplace_sales lg_marketplace_sales[]
 
@@ -1559,7 +1565,10 @@ model lg_marketplace_listings {
   @@index([seller_userid], map: "idx_mp_listings_seller")
   @@index([expires_at], map: "idx_mp_listings_expires")
 }
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Add scroll_data and total_bonus for audit trail of what was actually sold
 model lg_marketplace_sales {
   saleid             Int      @id @default(autoincrement())
   listingid          Int
@@ -1572,6 +1581,8 @@ model lg_marketplace_sales {
   total_price        Int
   currency           String
   sold_at            DateTime @default(now()) @db.Timestamptz(6)
+  scroll_data        Json?    @db.JsonB
+  total_bonus        Float    @default(0) @db.Real
   lg_marketplace_listings lg_marketplace_listings @relation(fields: [listingid], references: [listingid], onDelete: NoAction, onUpdate: NoAction)
   lg_items           lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
 
@@ -1580,6 +1591,7 @@ model lg_marketplace_sales {
   @@index([seller_userid], map: "idx_mp_sales_seller")
   @@index([sold_at], map: "idx_mp_sales_sold_at")
 }
+// --- END AI-MODIFIED ---
 
 // --- END AI-MODIFIED ---
 

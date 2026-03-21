@@ -56,6 +56,11 @@ export default apiHandler({
         status: listing.status,
         createdAt: listing.created_at.toISOString(),
         expiresAt: listing.expires_at.toISOString(),
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Include scroll/enhancement data in listing detail response
+        scrollData: listing.scroll_data ?? null,
+        totalBonus: listing.total_bonus ?? 0,
+        // --- END AI-MODIFIED ---
       },
       recentSales: recentSales.map((s) => ({
         quantity: s.quantity, pricePerUnit: s.price_per_unit, totalPrice: s.total_price,

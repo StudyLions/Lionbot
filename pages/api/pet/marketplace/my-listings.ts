@@ -64,6 +64,8 @@ export default apiHandler({
     for (const b of buyers) buyerMap[b.userid.toString()] = b.name ? b.name.slice(0, 4) + "***" : `P${b.userid.toString().slice(-4)}`
 
     return res.status(200).json({
+      // --- AI-MODIFIED (2026-03-21) ---
+      // Purpose: Include scroll_data and totalBonus in seller dashboard listing data
       active: activeListings.map((l) => ({
         listingId: l.listingid,
         item: { id: l.lg_items.itemid, name: l.lg_items.name, category: l.lg_items.category, rarity: l.lg_items.rarity, assetPath: l.lg_items.asset_path },
@@ -71,6 +73,7 @@ export default apiHandler({
         quantityListed: l.quantity_listed, quantityRemaining: l.quantity_remaining,
         pricePerUnit: l.price_per_unit, currency: l.currency,
         createdAt: l.created_at.toISOString(), expiresAt: l.expires_at.toISOString(),
+        scrollData: l.scroll_data ?? null, totalBonus: l.total_bonus ?? 0,
       })),
       past: pastListings.map((l) => ({
         listingId: l.listingid,
@@ -78,7 +81,9 @@ export default apiHandler({
         status: l.status, quantityListed: l.quantity_listed, quantityRemaining: l.quantity_remaining,
         pricePerUnit: l.price_per_unit, currency: l.currency,
         createdAt: l.created_at.toISOString(),
+        scrollData: l.scroll_data ?? null, totalBonus: l.total_bonus ?? 0,
       })),
+      // --- END AI-MODIFIED ---
       sales: sales.map((s) => ({
         buyerName: buyerMap[s.buyer_userid.toString()] ?? "Player",
         itemName: s.lg_items.name, quantity: s.quantity,

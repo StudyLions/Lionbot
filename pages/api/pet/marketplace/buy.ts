@@ -125,7 +125,13 @@
 import { prisma } from "@/utils/prisma"
 import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { notifySellerDM, MARKETPLACE_FEE_PERCENT, upsertInventory } from "@/utils/marketplace"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import scroll-aware restoration + type for scroll data transfer on purchase
+import {
+  notifySellerDM, MARKETPLACE_FEE_PERCENT, upsertInventory,
+  restoreInventoryWithScrolls, type ScrollSlotSnapshot,
+} from "@/utils/marketplace"
+// --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
 
 class HttpError extends Error {
@@ -154,6 +160,8 @@ export default apiHandler({
 
     try {
       const result = await prisma.$transaction(async (tx) => {
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Also read scroll_data and total_bonus so they can be transferred to buyer
         const listings = await tx.$queryRaw<any[]>`
           SELECT l.*, i.name as item_name
           FROM lg_marketplace_listings l
@@ -161,6 +169,7 @@ export default apiHandler({
           WHERE l.listingid = ${listingId}
           FOR UPDATE OF l
         `
+        // --- END AI-MODIFIED ---
         const listing = listings[0]
         if (!listing) throw new HttpError(404, "Listing not found")
         if (listing.status !== "ACTIVE") throw new HttpError(400, "Listing is no longer active")
@@ -241,7 +250,17 @@ export default apiHandler({
           })
         }
 
-        await upsertInventory(tx, buyerId, listing.itemid, listing.enhancement_level, quantity)
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Use scroll-aware restoration so buyers receive items with
+        // their full scroll/enhancement data intact. Also store scroll_data
+        // on the sale record for audit trail.
+        const scrollData: ScrollSlotSnapshot[] | null = listing.scroll_data ?? null
+        const listingTotalBonus: number = listing.total_bonus ?? 0
+
+        await restoreInventoryWithScrolls(
+          tx, buyerId, listing.itemid, listing.enhancement_level,
+          quantity, scrollData,
+        )
 
         await tx.lg_marketplace_listings.update({
           where: { listingid: listingId },
@@ -259,8 +278,11 @@ export default apiHandler({
             price_per_unit: listing.price_per_unit,
             total_price: totalPrice,
             currency: listing.currency,
+            scroll_data: scrollData ?? undefined,
+            total_bonus: listingTotalBonus,
           },
         })
+        // --- END AI-MODIFIED ---
 
         return {
           itemName: listing.item_name as string,

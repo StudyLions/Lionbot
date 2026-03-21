@@ -46,6 +46,34 @@
 
 import { prisma } from "@/utils/prisma"
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Shared type for scroll data JSON snapshots stored on marketplace listings/sales
+export interface ScrollSlotSnapshot {
+  slotNumber: number
+  scrollItemId: number
+  scrollName: string
+  bonusValue: number
+  enhancedAt: string
+  successRate: number | null
+}
+
+export function snapshotScrollSlots(slots: any[]): ScrollSlotSnapshot[] {
+  return slots.map((s) => ({
+    slotNumber: s.slot_number,
+    scrollItemId: s.scroll_itemid,
+    scrollName: s.scroll_name ?? s.lg_items?.name ?? "Unknown Scroll",
+    bonusValue: s.bonus_value,
+    enhancedAt: s.enhanced_at instanceof Date ? s.enhanced_at.toISOString() : String(s.enhanced_at),
+    successRate: s.lg_items?.lg_scroll_properties?.success_rate ?? null,
+  }))
+}
+
+export function computeTotalBonus(scrollData: ScrollSlotSnapshot[] | null): number {
+  if (!scrollData || scrollData.length === 0) return 0
+  return scrollData.reduce((sum, s) => sum + s.bonusValue, 0)
+}
+// --- END AI-MODIFIED ---
+
 const LISTING_DURATION_DAYS = 7
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Remove hardcoded IP fallback -- staging and production use different ports
@@ -71,23 +99,34 @@ export async function expireListingsDebounced() {
   return expireListings()
 }
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Include scroll_data in expired listings RETURNING clause so scroll
+// data can be restored to the seller's inventory on expiry
 export async function expireListings() {
   const expired = await prisma.$queryRaw<
-    Array<{ listingid: number; seller_userid: bigint; itemid: number; enhancement_level: number; quantity_remaining: number }>
+    Array<{
+      listingid: number
+      seller_userid: bigint
+      itemid: number
+      enhancement_level: number
+      quantity_remaining: number
+      scroll_data: ScrollSlotSnapshot[] | null
+    }>
   >`
     UPDATE lg_marketplace_listings
     SET status = 'EXPIRED'
     WHERE status = 'ACTIVE' AND expires_at < NOW()
-    RETURNING listingid, seller_userid, itemid, enhancement_level, quantity_remaining
+    RETURNING listingid, seller_userid, itemid, enhancement_level, quantity_remaining, scroll_data
   `
 
   for (const listing of expired) {
     try {
-      await upsertInventoryStandalone(
+      await restoreInventoryStandalone(
         listing.seller_userid,
         listing.itemid,
         listing.enhancement_level,
         listing.quantity_remaining,
+        listing.scroll_data,
       )
     } catch (e) {
       console.error(`Failed to return items for expired listing ${listing.listingid}:`, e)
@@ -96,6 +135,7 @@ export async function expireListings() {
 
   return expired.length
 }
+// --- END AI-MODIFIED ---
 
 export async function upsertInventory(
   tx: any,
@@ -120,26 +160,78 @@ export async function upsertInventory(
   }
 }
 
-async function upsertInventoryStandalone(
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Scroll-aware inventory restoration for buy, cancel, and expire flows.
+// Items with scroll_data always get their own inventory row + recreated enhancement slots.
+// Items without scroll_data use the original merge-by-key behavior.
+export async function restoreInventoryWithScrolls(
+  tx: any,
   userid: bigint,
   itemid: number,
   enhancementLevel: number,
   quantity: number,
+  scrollData: ScrollSlotSnapshot[] | null,
+  source: string = "TRADE",
 ) {
-  const existing = await prisma.lg_user_inventory.findFirst({
-    where: { userid, itemid, enhancement_level: enhancementLevel },
-  })
-  if (existing) {
-    await prisma.lg_user_inventory.update({
-      where: { inventoryid: existing.inventoryid },
-      data: { quantity: { increment: quantity } },
+  if (scrollData && scrollData.length > 0) {
+    const newRow = await tx.lg_user_inventory.create({
+      data: { userid, itemid, enhancement_level: enhancementLevel, quantity, source },
+    })
+    await tx.lg_enhancement_slots.createMany({
+      data: scrollData.map((s) => ({
+        inventoryid: newRow.inventoryid,
+        slot_number: s.slotNumber,
+        scroll_itemid: s.scrollItemId,
+        scroll_name: s.scrollName,
+        bonus_value: s.bonusValue,
+        enhanced_at: new Date(s.enhancedAt),
+      })),
     })
   } else {
-    await prisma.lg_user_inventory.create({
-      data: { userid, itemid, enhancement_level: enhancementLevel, quantity, source: "TRADE" },
-    })
+    await upsertInventory(tx, userid, itemid, enhancementLevel, quantity, source)
   }
 }
+
+async function restoreInventoryStandalone(
+  userid: bigint,
+  itemid: number,
+  enhancementLevel: number,
+  quantity: number,
+  scrollData: ScrollSlotSnapshot[] | null,
+) {
+  if (scrollData && scrollData.length > 0) {
+    await prisma.$transaction(async (tx) => {
+      const newRow = await tx.lg_user_inventory.create({
+        data: { userid, itemid, enhancement_level: enhancementLevel, quantity, source: "TRADE" },
+      })
+      await tx.lg_enhancement_slots.createMany({
+        data: scrollData.map((s) => ({
+          inventoryid: newRow.inventoryid,
+          slot_number: s.slotNumber,
+          scroll_itemid: s.scrollItemId,
+          scroll_name: s.scrollName,
+          bonus_value: s.bonusValue,
+          enhanced_at: new Date(s.enhancedAt),
+        })),
+      })
+    })
+  } else {
+    const existing = await prisma.lg_user_inventory.findFirst({
+      where: { userid, itemid, enhancement_level: enhancementLevel },
+    })
+    if (existing) {
+      await prisma.lg_user_inventory.update({
+        where: { inventoryid: existing.inventoryid },
+        data: { quantity: { increment: quantity } },
+      })
+    } else {
+      await prisma.lg_user_inventory.create({
+        data: { userid, itemid, enhancement_level: enhancementLevel, quantity, source: "TRADE" },
+      })
+    }
+  }
+}
+// --- END AI-MODIFIED ---
 
 export function getExpiresAt(): Date {
   const d = new Date()

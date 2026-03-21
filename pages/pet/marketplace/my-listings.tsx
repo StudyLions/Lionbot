@@ -11,9 +11,12 @@ import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
 import { useState } from "react"
 import Link from "next/link"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import ScrollText icon for scroll indicator on listings
 import {
-  Coins, Gem, Clock, CheckCircle, XCircle, AlertTriangle,
+  Coins, Gem, Clock, CheckCircle, XCircle, AlertTriangle, ScrollText,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { GetServerSideProps } from "next"
@@ -181,12 +184,32 @@ export default function MyListingsPage() {
                               )}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p
-                                className="font-pixel text-[13px] truncate"
-                                style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
-                              >
-                                {l.item.name}
-                              </p>
+                              {/* --- AI-MODIFIED (2026-03-21) --- */}
+                              {/* Purpose: Show enhancement level and scroll count on active listings */}
+                              <div className="flex items-center gap-1.5">
+                                <p
+                                  className="font-pixel text-[13px] truncate"
+                                  style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
+                                >
+                                  {l.item.name}
+                                </p>
+                                {l.enhancementLevel > 0 && (
+                                  <span className="font-pixel text-[11px] border border-[#40d870] bg-[#2a7a3a]/40 text-[#d0ffd8] px-1">
+                                    +{l.enhancementLevel}
+                                  </span>
+                                )}
+                                {l.scrollData?.length > 0 && (
+                                  <span className="font-pixel text-[9px] border border-[#6090e0] bg-[#4060a0]/40 text-[#c0d8ff] px-1 flex items-center gap-0.5">
+                                    <ScrollText size={8} />{l.scrollData.length}
+                                  </span>
+                                )}
+                                {l.totalBonus > 0 && (
+                                  <span className="font-pixel text-[9px] text-[var(--pet-gold,#f0c040)]">
+                                    +{l.totalBonus.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                              {/* --- END AI-MODIFIED --- */}
                               <div className="flex items-center gap-2 font-pixel text-[12px] text-[#4a5a6a] mt-0.5">
                                 <span className={`flex items-center gap-1 ${l.currency === "GOLD" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"}`}>
                                   <CIcon size={13} /> {l.pricePerUnit} each
@@ -234,12 +257,23 @@ export default function MyListingsPage() {
                             className="flex items-center gap-3 px-4 py-2.5 border-2 border-[#1a2a3c] bg-[#0c1020]"
                           >
                             <StatusIcon size={16} className={st.color} />
+                            {/* --- AI-MODIFIED (2026-03-21) --- */}
+                            {/* Purpose: Show enhancement and scroll indicators on past listings */}
                             <span
-                              className="font-pixel text-[13px] flex-1 truncate"
+                              className="font-pixel text-[13px] flex-1 truncate flex items-center gap-1.5"
                               style={{ color: RARITY_TEXT[l.item.rarity] || "#a0a8b4" }}
                             >
                               {l.item.name}
+                              {l.enhancementLevel > 0 && (
+                                <span className="font-pixel text-[10px] text-[#d0ffd8]">+{l.enhancementLevel}</span>
+                              )}
+                              {l.scrollData?.length > 0 && (
+                                <span className="font-pixel text-[9px] text-[#c0d8ff] flex items-center gap-0.5">
+                                  <ScrollText size={8} />{l.scrollData.length}
+                                </span>
+                              )}
                             </span>
+                            {/* --- END AI-MODIFIED --- */}
                             <span className="font-pixel text-[12px] text-[#4a5a6a]">
                               {l.quantityListed - l.quantityRemaining}/{l.quantityListed} sold
                             </span>

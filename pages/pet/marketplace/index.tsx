@@ -12,9 +12,12 @@ import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
 import { useState, useMemo, useCallback } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import ScrollText icon for "Has Scrolls" filter toggle
 import {
-  Search, Coins, Gem, ChevronLeft, ChevronRight,
+  Search, Coins, Gem, ChevronLeft, ChevronRight, ScrollText,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -27,12 +30,17 @@ import TrendingRow from "@/components/pet/marketplace/TrendingRow"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelCard from "@/components/pet/ui/PixelCard"
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Add enhancement/bonus sort options
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest First" },
   { value: "ending_soon", label: "Ending Soon" },
   { value: "price_asc", label: "Price Low-High" },
   { value: "price_desc", label: "Price High-Low" },
+  { value: "enhancement_desc", label: "Enhancement High" },
+  { value: "bonus_desc", label: "Bonus High" },
 ]
+// --- END AI-MODIFIED ---
 
 export default function MarketplacePage() {
   const { data: session } = useSession()
@@ -49,6 +57,11 @@ export default function MarketplacePage() {
   const [sort, setSort] = useState((q.sort as string) || "newest")
   const [page, setPage] = useState(parseInt(q.page as string) || 1)
   const [buyTarget, setBuyTarget] = useState<any>(null)
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Enhancement/scroll filter state
+  const [minEnhancement, setMinEnhancement] = useState(parseInt(q.minEnh as string) || 0)
+  const [hasScrolls, setHasScrolls] = useState(q.scrolls === "true")
+  // --- END AI-MODIFIED ---
 
   const queryStr = useMemo(() => {
     const p = new URLSearchParams()
@@ -56,10 +69,15 @@ export default function MarketplacePage() {
     if (category) p.set("category", category)
     if (selectedRarities.size) p.set("rarity", Array.from(selectedRarities).join(","))
     if (currency) p.set("currency", currency)
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Include enhancement/scroll filters in API query
+    if (minEnhancement > 0) p.set("minEnhancement", String(minEnhancement))
+    if (hasScrolls) p.set("hasScrolls", "true")
+    // --- END AI-MODIFIED ---
     p.set("sort", sort)
     p.set("page", String(page))
     return p.toString()
-  }, [search, category, selectedRarities, currency, sort, page])
+  }, [search, category, selectedRarities, currency, sort, page, minEnhancement, hasScrolls])
 
   const { data: statsData } = useDashboard<any>(session ? "/api/pet/marketplace/stats" : null)
   const { data: listingsData, isLoading } = useDashboard<any>(session ? `/api/pet/marketplace?${queryStr}` : null)
@@ -158,6 +176,35 @@ export default function MarketplacePage() {
                 {metaData?.categories && (
                   <CategoryChips categories={metaData.categories} selected={category} onChange={(c) => { setCategory(c); setPage(1) }} />
                 )}
+
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Enhancement level and scroll filter controls */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    onClick={() => { setHasScrolls(!hasScrolls); setPage(1) }}
+                    className={`font-pixel text-[12px] px-3 py-2 border-2 flex items-center gap-1.5 transition-all ${
+                      hasScrolls
+                        ? "border-[#6090e0] bg-[#4060a0]/20 text-[#c0d8ff]"
+                        : "border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
+                    }`}
+                  >
+                    <ScrollText size={14} /> Has Scrolls
+                  </button>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-pixel text-[11px] text-[#4a5a6a]">Min +</span>
+                    <select
+                      value={minEnhancement}
+                      onChange={(e) => { setMinEnhancement(parseInt(e.target.value)); setPage(1) }}
+                      className="font-pixel text-[12px] px-2 py-2 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]"
+                    >
+                      <option value={0}>Any</option>
+                      {[1, 2, 3, 5, 7, 10].map((v) => (
+                        <option key={v} value={v}>+{v}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                {/* --- END AI-MODIFIED --- */}
               </div>
 
               {/* Listings Grid */}
@@ -203,7 +250,7 @@ export default function MarketplacePage() {
                     NO LISTINGS FOUND
                   </p>
                   <p className="font-pixel text-[13px] text-[#4a5a6a] mt-1">
-                    {search || category || selectedRarities.size
+                    {search || category || selectedRarities.size || hasScrolls || minEnhancement > 0
                       ? "Try adjusting your filters"
                       : "The marketplace is empty -- be the first to list an item!"}
                   </p>

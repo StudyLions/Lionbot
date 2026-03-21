@@ -57,7 +57,10 @@
 import { prisma } from "@/utils/prisma"
 import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { upsertInventory } from "@/utils/marketplace"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import scroll-aware restoration to preserve scroll data on cancel
+import { restoreInventoryWithScrolls, type ScrollSlotSnapshot } from "@/utils/marketplace"
+// --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
 
 class HttpError extends Error {
@@ -100,7 +103,14 @@ export default apiHandler({
           data: { status: "CANCELLED" },
         })
 
-        await upsertInventory(tx, userId, listing.itemid, listing.enhancement_level, listing.quantity_remaining)
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Restore items with scroll data intact on cancellation
+        const scrollData: ScrollSlotSnapshot[] | null = listing.scroll_data ?? null
+        await restoreInventoryWithScrolls(
+          tx, userId, listing.itemid, listing.enhancement_level,
+          listing.quantity_remaining, scrollData,
+        )
+        // --- END AI-MODIFIED ---
 
         return {
           quantityRemaining: listing.quantity_remaining,

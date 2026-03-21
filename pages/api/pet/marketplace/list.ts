@@ -76,7 +76,13 @@
 import { prisma } from "@/utils/prisma"
 import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { getExpiresAt, MAX_PRICE_PER_UNIT, MAX_ACTIVE_LISTINGS_PER_USER } from "@/utils/marketplace"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import scroll snapshot helpers to preserve enhancement data on listings
+import {
+  getExpiresAt, MAX_PRICE_PER_UNIT, MAX_ACTIVE_LISTINGS_PER_USER,
+  snapshotScrollSlots, computeTotalBonus,
+} from "@/utils/marketplace"
+// --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
 
 class HttpError extends Error {
@@ -150,6 +156,25 @@ export default apiHandler({
           throw new HttpError(400, `You don't have enough of this item (have ${inventoryRow?.quantity ?? 0}, need ${quantity})`)
         }
 
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Snapshot enhancement slots before removing inventory, so scroll
+        // data is preserved on the listing and can be restored to the buyer
+        const rawSlots = await tx.lg_enhancement_slots.findMany({
+          where: { inventoryid: inventoryRow.inventoryid },
+          orderBy: { slot_number: "asc" },
+          include: {
+            lg_items: {
+              select: {
+                name: true,
+                lg_scroll_properties: { select: { success_rate: true } },
+              },
+            },
+          },
+        })
+        const scrollData = rawSlots.length > 0 ? snapshotScrollSlots(rawSlots) : null
+        const totalBonus = computeTotalBonus(scrollData)
+        // --- END AI-MODIFIED ---
+
         if (inventoryRow.quantity === quantity) {
           await tx.lg_user_inventory.delete({ where: { inventoryid: inventoryRow.inventoryid } })
         } else {
@@ -159,6 +184,8 @@ export default apiHandler({
           })
         }
 
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Store scroll_data and total_bonus on the listing
         await tx.lg_marketplace_listings.create({
           data: {
             seller_userid: userId,
@@ -170,8 +197,11 @@ export default apiHandler({
             currency,
             status: "ACTIVE",
             expires_at: getExpiresAt(),
+            scroll_data: scrollData ?? undefined,
+            total_bonus: totalBonus,
           },
         })
+        // --- END AI-MODIFIED ---
       })
 
       return res.status(200).json({
