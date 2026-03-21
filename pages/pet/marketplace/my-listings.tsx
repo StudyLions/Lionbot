@@ -104,7 +104,10 @@ export default function MyListingsPage() {
 
               {/* Revenue Summary */}
               {data?.revenue && (
-                <div className="grid grid-cols-3 gap-3">
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Stack revenue summary on mobile */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* --- END AI-MODIFIED --- */}
                   <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
                     <span className="font-pixel text-[12px] text-[#4a5a6a] flex items-center gap-1.5">
                       <Coins size={14} className="text-[var(--pet-gold,#f0c040)]" /> GOLD EARNED

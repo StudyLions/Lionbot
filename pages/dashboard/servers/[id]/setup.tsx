@@ -476,7 +476,9 @@ export default function SetupWizard() {
                     key={s}
                     type="button"
                     onClick={() => step >= s && goToStep(s)}
-                    className={`flex items-center justify-center w-10 h-10 rounded-full text-sm font-medium transition-all ${
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Smaller step circles on mobile */}
+                    className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-medium transition-all ${
                       s === step ? "bg-primary text-foreground ring-2 ring-primary ring-offset-2 ring-offset-background" : s < step ? "bg-primary/60 text-foreground" : "bg-muted text-muted-foreground"
                     } ${step >= s ? "cursor-pointer hover:bg-primary/90" : "cursor-default"}`}
                     title={STEP_LABELS[s - 1]}
@@ -485,12 +487,15 @@ export default function SetupWizard() {
                   </button>
                 ))}
               </div>
+              {/* --- AI-MODIFIED (2026-03-21) --- */}
+              {/* Purpose: Hide step labels on mobile, show only current step */}
               <div className="flex justify-between text-xs text-muted-foreground px-1">
                 {STEP_LABELS.map((label, i) => (
-                  <span key={i} className={`flex-1 text-center truncate ${i === step - 1 ? "text-primary font-medium" : ""}`} style={{ maxWidth: "4rem" }}>
+                  <span key={i} className={`flex-1 text-center truncate ${i === step - 1 ? "text-primary font-medium" : "hidden sm:inline"}`} style={{ maxWidth: "5rem" }}>
                     {label}
                   </span>
                 ))}
+              {/* --- END AI-MODIFIED --- */}
               </div>
             </div>
 

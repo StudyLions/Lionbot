@@ -408,7 +408,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                               {isRefundable && (
                                 <button
                                   onClick={() => onRefund!(t.id)}
-                                  className="text-[10px] text-muted-foreground/40 hover:text-amber-400 transition-colors opacity-0 group-hover:opacity-100 flex items-center gap-1"
+                                  className="text-[10px] text-muted-foreground/40 hover:text-amber-400 transition-colors lg:opacity-0 lg:group-hover:opacity-100 flex items-center gap-1"
                                   title="Refund this transaction"
                                 >
                                   <RotateCcw size={10} /> Refund

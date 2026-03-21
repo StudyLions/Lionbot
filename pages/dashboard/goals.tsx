@@ -456,7 +456,10 @@ export default function GoalsPage() {
                             </div>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-center gap-6 mb-4">
+                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                          {/* Purpose: Stack radial charts on very small screens */}
+                          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-4">
+                          {/* --- END AI-MODIFIED --- */}
                             <RadialProgress
                               value={g.studyProgress} max={g.studyGoal}
                               label="Study" unit="h"
@@ -524,7 +527,7 @@ export default function GoalsPage() {
                                   {isCurrent && (
                                     <button
                                       onClick={() => deleteTask(t.id)}
-                                      className="p-0.5 text-muted-foreground/30 hover:text-destructive opacity-0 group-hover:opacity-100 transition-all"
+                                      className="p-0.5 text-muted-foreground/30 hover:text-destructive lg:opacity-0 lg:group-hover:opacity-100 transition-all"
                                     >
                                       <Trash2 size={12} />
                                     </button>

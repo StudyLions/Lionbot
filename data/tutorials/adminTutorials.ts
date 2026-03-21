@@ -374,6 +374,7 @@ export const adminTutorials: Tutorial[] = [
     iconName: "Video",
     estimatedMinutes: 4,
     prevSlug: "economy-and-moderation",
+    nextSlug: "liongotchi-admin",
     steps: [
       {
         id: "video-channels",
@@ -407,6 +408,56 @@ export const adminTutorials: Tutorial[] = [
           "Remember, you can always come back to the dashboard to tweak settings. And if you need help, join the LionBot Discord server for support.",
         ],
         tip: "Don't enable everything at once. Start with the features your community will use most (usually study tracking + ranks), then add the shop, role menus, and other features over time.",
+      },
+    ],
+  },
+
+  // ── 9. LionGotchi Admin ─────────────────────────────────
+  {
+    slug: "liongotchi-admin",
+    title: "LionGotchi Admin",
+    description: "Set up the LionGotchi pet system for your server — configure drop notifications and help members get started.",
+    audience: "admin",
+    iconName: "Cat",
+    estimatedMinutes: 3,
+    prevSlug: "video-and-branding",
+    steps: [
+      {
+        id: "liongotchi-overview",
+        title: "LionGotchi for Your Server",
+        paragraphs: [
+          "LionGotchi is an optional virtual pet system that adds a gamification layer on top of LionBot's study tracking. Members adopt a pet lion, care for it, collect equipment drops, farm resources, and trade on a marketplace.",
+          "As a server admin, there's minimal setup required — the system works out of the box once members start using /pet. But there's one key thing you should configure: the drop notification channel.",
+        ],
+      },
+      {
+        id: "drop-channel",
+        title: "Setting Up Drop Notifications",
+        paragraphs: [
+          "When members study in voice channels or chat in text channels, they have a chance to receive equipment drops. By default, these drop notifications are sent as DMs.",
+          "Use /petdrops to set a channel where drop notifications are posted publicly. This creates excitement — members see each other's drops and it encourages more activity.",
+        ],
+        command: "/petdrops <#channel>",
+        tip: "Pick a channel where some chatter is fine, like a general or bot-commands channel. Drop notifications are brief but frequent in active servers.",
+      },
+      {
+        id: "what-members-see",
+        title: "What Members Can Do",
+        paragraphs: [
+          "Here's a quick overview of the LionGotchi features your members have access to, so you know what to expect:",
+          "/pet — Adopt a pet, feed/bathe/rest it, check inventory and farm. The entry point for everything.",
+          "Website /pet section — Full-featured pages for inventory management, room decoration, farming, enhancement, marketplace trading, item wiki, and Gameboy skins.",
+          "Members earn equipment drops passively from studying and chatting. They can farm resources, enhance gear with scrolls, buy and sell items with other players, and decorate their pet's room.",
+        ],
+      },
+      {
+        id: "communicating",
+        title: "Getting Members Started",
+        paragraphs: [
+          "The best way to introduce LionGotchi is with a quick announcement in your server. Let members know they can use /pet to adopt their pet, and point them to the LionGotchi tutorials on this website for a full walkthrough.",
+          "Consider creating a dedicated channel for pet-related discussion and marketplace trades. It helps build community around the feature without cluttering your main study channels.",
+        ],
+        tip: "Pin a message in your pet channel with links to the three LionGotchi member tutorials. Members will have most of their questions answered there.",
       },
     ],
   },

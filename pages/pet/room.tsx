@@ -623,7 +623,10 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
       </div>
 
       {/* Main content: canvas + sidebar */}
-      <div className="flex gap-5 md:flex-col items-start">
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Fix reversed breakpoints -- stack on mobile, row on lg+ */}
+      <div className="flex flex-col lg:flex-row gap-5 items-start">
+      {/* --- END AI-MODIFIED --- */}
         {/* Canvas area */}
         <div className="flex-1 min-w-0 space-y-2">
           <PixelCard
@@ -699,7 +702,9 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
         </div>
 
         {/* Right sidebar */}
-        <div className="w-[400px] md:w-full flex-shrink-0 space-y-3 sticky top-6 md:static">
+        {/* --- AI-MODIFIED (2026-03-21) --- */}
+        {/* Purpose: Fix reversed width -- full width on mobile, fixed on lg+ */}
+        <div className="w-full lg:w-[400px] lg:flex-shrink-0 space-y-3 lg:sticky lg:top-6">
           {/* Selection controls */}
           {selectedLayer && (
             <PixelCard className="p-3 space-y-2.5" corners borderColor="#4080f0">
@@ -890,11 +895,16 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
         </div>
       </div>
 
-      {/* Floating hover tooltip */}
+      {/* Floating hover tooltip -- hidden on touch devices */}
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Hide tooltip on touch (no hover), clamp to viewport */}
       {hoveredLayer && !dragState && (
         <div
-          className="fixed z-50 pointer-events-none"
-          style={{ left: hoverPos.x + 16, top: hoverPos.y - 8 }}
+          className="fixed z-50 pointer-events-none hidden lg:block"
+          style={{
+            left: Math.min(hoverPos.x + 16, (typeof window !== 'undefined' ? window.innerWidth : 9999) - 160),
+            top: Math.max(8, hoverPos.y - 8),
+          }}
         >
           <PixelCard className="px-3 py-2 min-w-[120px]" borderColor="#4080f0">
             <p className="font-pixel text-[13px] text-[#e2e8f0] capitalize">

@@ -456,7 +456,10 @@ export default function TasksPage() {
 
               {/* Add Task Form */}
               <div className="bg-card rounded-xl border border-border p-3">
-                <div className="flex gap-2">
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Wrap add-task form on mobile */}
+                <div className="flex gap-2 flex-wrap">
+                {/* --- END AI-MODIFIED --- */}
                   <input
                     ref={addInputRef}
                     type="text"
@@ -491,7 +494,7 @@ export default function TasksPage() {
                     {selectedParentId ? (
                       <div className="flex items-center gap-2">
                         <span className="text-[10px] text-muted-foreground">Adding under:</span>
-                        <span className="text-xs text-foreground font-medium truncate max-w-[200px]">
+                        <span className="text-xs text-foreground font-medium truncate max-w-[140px] sm:max-w-[200px]">
                           {tasks.find(t => t.id === selectedParentId)?.content}
                         </span>
                         <button
@@ -838,7 +841,7 @@ function TaskRow({
 
       {/* Actions (hover-visible) */}
       {!selectMode && (
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0">
+        <div className="flex items-center gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex-shrink-0">
           {!isSubtask && !task.completed && (
             <button
               onClick={onAddSubtask}

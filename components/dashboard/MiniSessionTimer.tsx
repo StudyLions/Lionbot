@@ -82,7 +82,7 @@ export default function MiniSessionTimer() {
   return (
     <div
       className={cn(
-        "fixed bottom-4 right-4 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-full",
+        "fixed bottom-6 sm:bottom-4 right-4 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-full",
         "shadow-lg backdrop-blur cursor-pointer transition-all hover:scale-105",
         "animate-in slide-in-from-bottom-4 fade-in duration-300",
         stage === "focus"

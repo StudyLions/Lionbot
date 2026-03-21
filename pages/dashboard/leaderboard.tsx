@@ -130,7 +130,7 @@ function ServerPicker({
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-all w-full sm:w-auto min-w-[240px]"
+        className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-all w-full sm:w-auto sm:min-w-[240px]"
       >
         {current?.iconUrl ? (
           <img src={current.iconUrl} alt="" className="w-7 h-7 rounded-full" />
@@ -213,7 +213,7 @@ function Podium({ entries, type }: { entries: LBEntry[]; type: LBType }) {
           key={entry.userId}
           className={cn(
             "flex flex-col items-center gap-2 transition-all",
-            entry.rank === 1 ? "w-36 sm:w-28" : "w-28 sm:w-24"
+            entry.rank === 1 ? "w-24 sm:w-28 md:w-36" : "w-20 sm:w-24 md:w-28"
           )}
         >
           {/* --- AI-MODIFIED (2025-03-15) ---
@@ -521,14 +521,17 @@ export default function LeaderboardPage() {
                             )}
                           >
                             <Icon size={15} />
-                            <span className="hidden sm:inline">{opt.label}</span>
+                            <span className="hidden sm:inline" title={opt.label}>{opt.label}</span>
                           </button>
                         )
                       })}
                     </div>
 
                     {/* Period Filter + Search Row */}
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Better wrapping for period pills on mobile */}
+                    <div className="flex items-center justify-between gap-2 sm:gap-3 flex-wrap">
+                    {/* --- END AI-MODIFIED --- */}
                       {type !== "coins" && (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           {visiblePeriods.map((opt) => (

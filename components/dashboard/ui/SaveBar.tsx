@@ -23,8 +23,10 @@ export default function SaveBar({ show, onSave, onReset, saving = false, label }
   return (
     <div className="fixed bottom-0 left-0 right-0 z-40 min-[1024px]:left-56">
       <div className="mx-auto max-w-5xl px-4 py-3">
-        <div className="flex items-center justify-between gap-4 bg-card border border-indigo-500/30 rounded-xl px-5 py-3 shadow-xl shadow-black/30">
-          <span className="text-sm text-muted-foreground">
+        {/* --- AI-MODIFIED (2026-03-21) --- */}
+        {/* Purpose: Stack label and buttons on mobile for better fit */}
+        <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-2 sm:gap-4 bg-card border border-indigo-500/30 rounded-xl px-4 sm:px-5 py-3 shadow-xl shadow-black/30">
+          <span className="text-sm text-muted-foreground text-center sm:text-left">
             {label || "You have unsaved changes"}
           </span>
           <div className="flex items-center gap-3">
@@ -42,10 +44,11 @@ export default function SaveBar({ show, onSave, onReset, saving = false, label }
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors disabled:opacity-50"
             >
               <Save size={14} />
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? "Saving..." : "Save"}
             </button>
           </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </div>
   )

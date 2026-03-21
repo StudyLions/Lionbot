@@ -515,7 +515,10 @@ export default function RanksPage() {
                 <>
                   {/* ── Stats Cards ── */}
                   {stats && (
-                    <div className="grid grid-cols-3 gap-3 mb-6">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Stack stats cards on mobile */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    {/* --- END AI-MODIFIED --- */}
                       <div className="bg-card/50 border border-border rounded-xl p-4">
                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Trophy size={14} />
@@ -761,7 +764,10 @@ export default function RanksPage() {
                                 {/* Edit panel */}
                                 {isEditing && (
                                   <div className="px-4 py-3 bg-primary/5 border-t border-primary/20">
-                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                                    {/* Purpose: Stack edit panel grids on mobile */}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                                    {/* --- END AI-MODIFIED --- */}
                                       <div>
                                         <label className="block text-xs font-medium text-muted-foreground mb-1">Required ({unitForType(currentTab)})</label>
                                         <input
@@ -840,7 +846,10 @@ export default function RanksPage() {
                         Add New Rank
                       </h3>
                       <p className="text-xs text-muted-foreground mb-4">Select the role members will receive and set the requirement threshold.</p>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
+                      {/* --- AI-MODIFIED (2026-03-21) --- */}
+                      {/* Purpose: Stack add form on mobile */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                      {/* --- END AI-MODIFIED --- */}
                         <RoleSelect
                           guildId={guildId}
                           value={addForm.roleId}
@@ -859,7 +868,7 @@ export default function RanksPage() {
                           />
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3 mb-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                         <div>
                           <label className="block text-sm font-medium text-foreground/80 mb-1">Coin Reward</label>
                           <input

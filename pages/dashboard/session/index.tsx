@@ -456,7 +456,7 @@ export default function SessionPage() {
                         totalSeconds={data.pomodoro.stageDurationSeconds}
                         remainingSeconds={data.pomodoro.remainingSeconds}
                         stage={data.pomodoro.stage}
-                        size={180}
+                        size={typeof window !== 'undefined' && window.innerWidth < 640 ? 130 : 180}
                       />
                       <div className="text-center space-y-1">
                         <p className={cn(
@@ -794,7 +794,7 @@ function TaskRow({
       )}
       <button
         onClick={onDelete}
-        className="flex-shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all p-1"
+        className="flex-shrink-0 lg:opacity-0 lg:group-hover:opacity-100 text-muted-foreground hover:text-red-400 transition-all p-1"
       >
         <Trash2 size={13} />
       </button>

@@ -876,7 +876,10 @@ function TimerPersonalization({
           <p className="text-[10px] text-muted-foreground mb-3">
             Replace the default &quot;FOCUS&quot;, &quot;BREAK&quot;, and &quot;SESSION&quot; labels with your own text (max 20 chars each).
           </p>
-          <div className="grid grid-cols-3 gap-3">
+          {/* --- AI-MODIFIED (2026-03-21) --- */}
+          {/* Purpose: Stack timer labels on mobile */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {/* --- END AI-MODIFIED --- */}
             {([
               { key: "focus_label" as const, placeholder: "FOCUS", defaultLabel: "Focus" },
               { key: "break_label" as const, placeholder: "BREAK", defaultLabel: "Break" },

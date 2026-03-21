@@ -1,0 +1,14 @@
+[AI] fix: comprehensive mobile dashboard overhaul -- 35 files across 25 issues
+
+Tier 1 (Critical): Fix reversed breakpoints in SettingRow, PageHeader, NumberInput;
+Shop editor; Pet Room sidebar + hover tooltip; Members page ActionMenu + table overflow
+
+Tier 2 (High): SaveBar, Moderation rows, Server Overview, StatsCard, Ranks grids,
+Role Menus table, Economy charts/tabs, Setup wizard step indicator
+
+Tier 3 (Medium): Leaderboard podium, Schedule/Pomodoro tabs, Marketplace/Wiki filters,
+Pomodoro Analytics table, Session countdown ring, Branding toolbar, MemberDetailPanel,
+Tasks add form
+
+Tier 4 (Polish): MiniSessionTimer safe-area, Goals/Supporter grids, touch-friendly
+hover audit, Pet marketplace listings, remaining fixed-width audit

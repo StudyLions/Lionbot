@@ -205,7 +205,10 @@ export default function ItemDetailPage() {
                             <Droplets size={16} className="text-[#80b0ff]" />
                             Drops from activity (chatting, voice, farm harvests)
                           </div>
-                          <div className="flex items-center gap-4 ml-5 text-[12px] text-[#4a5a6a]">
+                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                          {/* Purpose: Add flex-wrap so drop info doesn't overflow on mobile */}
+                          <div className="flex items-center gap-2 sm:gap-4 ml-5 text-[12px] text-[#4a5a6a] flex-wrap">
+                          {/* --- END AI-MODIFIED --- */}
                             <span className="flex items-center gap-1"><Mic size={12} /> {(data.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
                             <span className="flex items-center gap-1"><MessageSquare size={12} /> {(data.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
                           </div>
@@ -312,7 +315,10 @@ export default function ItemDetailPage() {
                         <h3 className="font-pixel text-xs text-[var(--pet-gold,#f0c040)] flex items-center gap-2">
                           <Shield size={18} /> SCROLL PROPERTIES
                         </h3>
-                        <div className="grid grid-cols-3 gap-3">
+                        {/* --- AI-MODIFIED (2026-03-21) --- */}
+                        {/* Purpose: Stack scroll properties on mobile */}
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        {/* --- END AI-MODIFIED --- */}
                           <div className="border-2 border-[#40d87040] bg-[#40d87008] p-3 text-center">
                             <p className="font-pixel text-2xl text-[var(--pet-green,#40d870)]">{(sp.success_rate * 100).toFixed(0)}%</p>
                             <p className="font-pixel text-[12px] text-[#4a5a6a]">Base Success Rate</p>

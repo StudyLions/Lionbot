@@ -309,7 +309,10 @@ export default function EconomyPage() {
               />
 
               {/* Tabs */}
-              <div className="flex gap-1 border-b border-border">
+              {/* --- AI-MODIFIED (2026-03-21) --- */}
+              {/* Purpose: Add overflow-x-auto for tab scrolling on mobile */}
+              <div className="flex gap-1 border-b border-border overflow-x-auto">
+              {/* --- END AI-MODIFIED --- */}
                 {tabs.map((t) => (
                   <button
                     key={t.key}
@@ -513,7 +516,9 @@ export default function EconomyPage() {
                               Edit Shop <ExternalLink size={12} />
                             </button>
                           </div>
-                          <div className="flex gap-4 mb-4">
+                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                          {/* Purpose: Stack shop analytics blocks on mobile */}
+                          <div className="flex flex-col sm:flex-row gap-4 mb-4">
                             <div className="flex-1 bg-background/50 rounded-lg p-3 text-center">
                               <p className="text-lg font-bold text-amber-400">{formatNum(stats.shopAnalytics.totalShopRevenue30d)}</p>
                               <p className="text-xs text-muted-foreground">Revenue</p>
@@ -523,6 +528,7 @@ export default function EconomyPage() {
                               <p className="text-xs text-muted-foreground">Items Sold</p>
                             </div>
                             <div className="flex-1 bg-background/50 rounded-lg p-3 text-center">
+                          {/* --- END AI-MODIFIED --- */}
                               <p className={`text-lg font-bold ${stats.shopAnalytics.neverPurchased > 0 ? "text-amber-400" : "text-emerald-400"}`}>
                                 {stats.shopAnalytics.neverPurchased}
                               </p>
@@ -1024,10 +1030,13 @@ function PieSection({ title, subtitle, data }: {
       {chartData.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
       ) : (
-        <div className="flex items-center gap-4">
+        {/* --- AI-MODIFIED (2026-03-21) --- */}
+        {/* Purpose: Stack pie chart and legend on mobile */}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="w-36 h-36 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
+        {/* --- END AI-MODIFIED --- */}
                 <Pie
                   data={chartData}
                   cx="50%"

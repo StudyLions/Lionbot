@@ -519,13 +519,13 @@ export default function PomodoroPage() {
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                       tab === t.id
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-gray-800/50"
                     }`}
                   >
-                    {t.icon} {t.label}
+                    {t.icon} <span className="truncate">{t.label}</span>
                   </button>
                 ))}
               </div>

@@ -220,11 +220,14 @@ export default function PomodoroAnalyticsPage() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="text-xs text-muted-foreground uppercase tracking-wider">
+                              {/* --- AI-MODIFIED (2026-03-21) --- */}
+                              {/* Purpose: Hide less important columns on mobile */}
                               <th className="text-left py-2 px-2 w-12">Rank</th>
                               <th className="text-left py-2 px-2">Member</th>
                               <th className="text-right py-2 px-2">Current Streak</th>
-                              <th className="text-right py-2 px-2">Longest Streak</th>
-                              <th className="text-right py-2 px-2">Total Cycles</th>
+                              <th className="text-right py-2 px-2 hidden sm:table-cell">Longest Streak</th>
+                              <th className="text-right py-2 px-2 hidden sm:table-cell">Total Cycles</th>
+                              {/* --- END AI-MODIFIED --- */}
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/50">
@@ -250,10 +253,10 @@ export default function PomodoroAnalyticsPage() {
                                     {user.current_daily_streak} 🔥
                                   </span>
                                 </td>
-                                <td className="py-2.5 px-2 text-right text-muted-foreground">
+                                <td className="py-2.5 px-2 text-right text-muted-foreground hidden sm:table-cell">
                                   {user.longest_daily_streak}
                                 </td>
-                                <td className="py-2.5 px-2 text-right text-muted-foreground">
+                                <td className="py-2.5 px-2 text-right text-muted-foreground hidden sm:table-cell">
                                   {user.total_cycles_completed.toLocaleString()}
                                 </td>
                               </tr>
@@ -281,7 +284,7 @@ export default function PomodoroAnalyticsPage() {
                               <th className="text-left py-2 px-2 w-12">Rank</th>
                               <th className="text-left py-2 px-2">Member</th>
                               <th className="text-right py-2 px-2">Focus Power</th>
-                              <th className="text-right py-2 px-2">Total Focus Hours</th>
+                              <th className="text-right py-2 px-2 hidden sm:table-cell">Total Focus Hours</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-border/50">
@@ -308,7 +311,7 @@ export default function PomodoroAnalyticsPage() {
                                     {user.focus_power}
                                   </span>
                                 </td>
-                                <td className="py-2.5 px-2 text-right text-muted-foreground">
+                                <td className="py-2.5 px-2 text-right text-muted-foreground hidden sm:table-cell">
                                   {Math.round(user.total_focus_minutes / 60).toLocaleString()}h
                                 </td>
                               </tr>

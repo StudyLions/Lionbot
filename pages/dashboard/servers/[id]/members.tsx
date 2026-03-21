@@ -85,12 +85,19 @@ function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
   const btnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Clamp menu position to viewport so it doesn't drop off-screen on mobile
   useEffect(() => {
     if (isOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
-      setPos({ top: rect.bottom + 4, left: rect.right - 176 })
+      const vw = typeof window !== 'undefined' ? window.innerWidth : 9999
+      setPos({
+        top: rect.bottom + 4,
+        left: Math.max(8, Math.min(rect.right - 176, vw - 184)),
+      })
     }
   }, [isOpen])
+  // --- END AI-MODIFIED ---
 
   return (
     <>
@@ -300,8 +307,11 @@ export default function MembersPage() {
               ) : error ? (
                 <div className="text-center py-12 text-destructive">{error.message || "Failed to load members"}</div>
               ) : (
-                <div className="bg-card border border-border rounded-2xl overflow-hidden">
-                  <table className="w-full">
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Add overflow-x-auto so table scrolls on narrow screens */}
+                <div className="bg-card border border-border rounded-2xl overflow-hidden overflow-x-auto">
+                  <table className="w-full min-w-[480px]">
+                {/* --- END AI-MODIFIED --- */}
                     <thead>
                       <tr className="border-b border-border/50">
                         <th className="w-10 py-3 px-3">
@@ -406,7 +416,10 @@ export default function MembersPage() {
 
               {/* Bulk Action Bar */}
               {selectedIds.size > 0 && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-card border border-border rounded-xl shadow-2xl px-6 py-3 flex items-center gap-4">
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Add flex-wrap and responsive padding for mobile bulk bar */}
+                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-30 bg-card border border-border rounded-xl shadow-2xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4 flex-wrap justify-center max-w-[calc(100vw-2rem)]">
+                {/* --- END AI-MODIFIED --- */}
                   <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
                   <div className="w-px h-6 bg-border" />
                   <button onClick={() => setBulkOp("coins")} className="flex items-center gap-2 px-3 py-1.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-lg text-sm hover:bg-amber-500/15 transition-colors">
