@@ -275,6 +275,10 @@ model guild_config {
   visible_statistics      visible_statistics[]      @ignore
   voice_ranks             voice_ranks[]
   xp_ranks                xp_ranks[]
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Leaderboard auto-post relation
+  leaderboard_autopost_configs leaderboard_autopost_config[]
+  // --- END AI-MODIFIED ---
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1728,4 +1732,121 @@ model data_deletion_requests {
   @@index([userid], map: "data_deletion_requests_userid")
   @@index([status], map: "data_deletion_requests_status")
 }
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Leaderboard auto-post module models
+
+model leaderboard_autopost_config {
+  configid              Int       @id @default(autoincrement())
+  guildid               BigInt
+  config_name           String    @default("Leaderboard") @db.VarChar(64)
+  enabled               Boolean   @default(true)
+
+  lb_type               String    @default("study")
+  messages_metric       String    @default("count")
+  frequency             String    @default("weekly")
+  seasonal_mode         String?
+  week_starts_on        String    @default("monday")
+  top_count             Int       @default(10)
+
+  post_channel          BigInt
+  post_day              Int?      @default(0)
+  post_hour             Int       @default(20)
+  post_minute           Int       @default(0)
+
+  top1_role             BigInt?
+  topn_role             BigInt?
+  top1_also_gets_topn_role Boolean @default(true)
+  auto_remove_roles     Boolean   @default(true)
+
+  reward_tiers          Json      @default("[]")
+
+  announce_content      String?
+  embed_title           String?
+  embed_description     String?
+  embed_footer          String?
+  embed_color           Int?      @default(16766720)
+  embed_url             String?
+  embed_author_name     String?
+  embed_author_url      String?
+  embed_fields          Json      @default("[]")
+  include_image         Boolean   @default(true)
+  mention_winners       Boolean   @default(false)
+  pin_post              Boolean   @default(false)
+  delete_previous       Boolean   @default(false)
+  min_threshold         Int?      @default(0)
+
+  notify_public_post    Boolean   @default(true)
+  notify_dm_winners     Boolean   @default(false)
+  dm_scope              String    @default("top_n")
+  dm_template_title     String?
+  dm_template_body      String?
+  dm_stagger_seconds    Int       @default(2)
+  notify_mod_log        Boolean   @default(false)
+  mod_log_channel       BigInt?
+
+  skip_if_empty         Boolean   @default(true)
+  skip_if_same_as_last  Boolean   @default(false)
+  continue_on_partial   Boolean   @default(true)
+  max_coins_per_user    Int?
+
+  last_posted_at        DateTime? @db.Timestamptz(6)
+  last_message_id       BigInt?
+  last_winner_ids       Json?
+  created_at            DateTime  @default(now()) @db.Timestamptz(6)
+
+  guild_config          guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade)
+  history               leaderboard_autopost_history[]
+  action_queue          leaderboard_autopost_action_queue[]
+
+  @@unique([guildid, config_name])
+  @@index([guildid])
+}
+
+model leaderboard_autopost_history {
+  historyid     Int       @id @default(autoincrement())
+  configid      Int
+  guildid       BigInt
+  posted_at     DateTime  @default(now()) @db.Timestamptz(6)
+  top_users     Json?
+  roles_added   Int?      @default(0)
+  roles_removed Int?      @default(0)
+  coins_awarded Int?      @default(0)
+  dms_sent      Int?      @default(0)
+  dms_failed    Int?      @default(0)
+  status        String?   @default("success")
+  error_message String?
+
+  config        leaderboard_autopost_config @relation(fields: [configid], references: [configid], onDelete: Cascade)
+
+  @@index([configid, posted_at(sort: Desc)])
+}
+
+model leaderboard_autopost_test_log {
+  id          Int      @id @default(autoincrement())
+  guildid     BigInt
+  action_type String   @default("test")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid, created_at(sort: Desc)])
+}
+
+model leaderboard_autopost_action_queue {
+  queueid      Int       @id @default(autoincrement())
+  guildid      BigInt
+  configid     Int?
+  requested_by BigInt
+  action_type  String
+  payload      Json?
+  status       String    @default("pending")
+  result       Json?
+  created_at   DateTime  @default(now()) @db.Timestamptz(6)
+  processed_at DateTime? @db.Timestamptz(6)
+
+  config       leaderboard_autopost_config? @relation(fields: [configid], references: [configid], onDelete: SetNull)
+
+  @@index([status, created_at])
+}
+
 // --- END AI-MODIFIED ---

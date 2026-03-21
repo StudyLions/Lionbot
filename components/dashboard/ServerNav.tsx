@@ -80,6 +80,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/videochannels", label: "Video Channels", icon: <Video size={16} /> },
         { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Leaderboard auto-post config page link
+        { href: "/leaderboard-autopost", label: "Leaderboard", icon: <Trophy size={16} /> },
+        // --- END AI-MODIFIED ---
       ],
     })
     // --- AI-MODIFIED (2026-03-20) ---
