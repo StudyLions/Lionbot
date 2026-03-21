@@ -38,8 +38,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const m: Record<string, number> = {}
     for (const r of estimates) m[r.relname] = Number(r.estimate)
     guilds = guildCount
-    users = m["user_config"] || 0
-    sessions = (m["voice_sessions"] || 0) + (m["text_sessions"] || 0)
+    users = Math.max(m["user_config"] || 0, 0)
+    sessions = Math.max(m["voice_sessions"] || 0, 0) + Math.max(m["text_sessions"] || 0, 0)
     studyingNow = studyCount
     activeTimers = timerCount
   } catch {}

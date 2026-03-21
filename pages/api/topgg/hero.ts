@@ -38,8 +38,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const m: Record<string, number> = {}
     for (const r of estimates) m[r.relname] = Number(r.estimate)
     guilds = guildCount
-    users = m["user_config"] || users
-    sessions = (m["voice_sessions"] || 0) + (m["text_sessions"] || 0) || sessions
+    users = Math.max(m["user_config"] || 0, 0) || users
+    const rawSessions = (Math.max(m["voice_sessions"] || 0, 0)) + (Math.max(m["text_sessions"] || 0, 0))
+    sessions = rawSessions > 0 ? rawSessions : sessions
   } catch {}
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="200" viewBox="0 0 800 200">
