@@ -1383,10 +1383,13 @@ export default function LeaderboardAutopostPage() {
     </main>
   )
 
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Add missing SEO prop required by Layout component
   return (
-    <Layout>
+    <Layout SEO={{ title: "Leaderboard Auto-Post", description: "Configure automatic leaderboard posting" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
+  {/* --- END AI-MODIFIED --- */}
           <div className="min-h-screen bg-background pt-6 pb-20 px-4">
             <div className="max-w-6xl mx-auto flex gap-8">
               <ServerNav serverId={serverId} serverName="..." isAdmin isMod />
