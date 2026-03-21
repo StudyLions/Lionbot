@@ -204,6 +204,9 @@ export default apiHandler({
         skip_if_same_as_last: body.skip_if_same_as_last ?? false,
         continue_on_partial: body.continue_on_partial ?? true,
         max_coins_per_user: body.max_coins_per_user ?? null,
+        // Seed last_posted_at so the bot doesn't fire immediately for the
+        // current period. First real post happens at the NEXT scheduled time.
+        last_posted_at: new Date(),
       },
     })
 
