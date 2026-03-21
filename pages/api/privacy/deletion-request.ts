@@ -6,19 +6,21 @@
 //          Discord bot message in the admin server.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
-import { getToken } from "next-auth/jwt"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from raw getToken (no rate limit) to requireAuth (rate-limited).
+//          Move hardcoded Discord IDs to env vars.
+import { requireAuth } from "@/utils/adminAuth"
+// --- End original code ---
+// import { getToken } from "next-auth/jwt"
+// --- END AI-MODIFIED ---
 import { prisma } from "@/utils/prisma"
 
-const secret = process.env.SECRET
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
-const NOTIFICATION_CHANNEL = "1141300314524373042"
-const ADMIN_USER_ID = "757652191656804413"
-
-async function getAuth(req: NextApiRequest) {
-  const token = await getToken({ req, secret })
-  if (!token?.discordId) return null
-  return { discordId: token.discordId as string }
-}
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Move hardcoded Discord IDs to env vars for flexibility
+const NOTIFICATION_CHANNEL = process.env.DELETION_NOTIFICATION_CHANNEL || "1141300314524373042"
+const ADMIN_USER_ID = process.env.DELETION_ADMIN_USER_ID || "757652191656804413"
+// --- END AI-MODIFIED ---
 
 async function sendDiscordNotification(discordId: string, discordTag: string | null, reason: string | null, requestId: number) {
   if (!BOT_TOKEN) {
@@ -63,8 +65,11 @@ async function sendDiscordNotification(discordId: string, discordTag: string | n
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method === "GET") {
-    const auth = await getAuth(req)
-    if (!auth) return res.status(401).json({ error: "Not authenticated" })
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    // --- END AI-MODIFIED ---
 
     const existing = await prisma.data_deletion_requests.findFirst({
       where: {
@@ -85,8 +90,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   if (req.method === "POST") {
-    const auth = await getAuth(req)
-    if (!auth) return res.status(401).json({ error: "Not authenticated" })
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    // --- END AI-MODIFIED ---
 
     const existing = await prisma.data_deletion_requests.findFirst({
       where: {

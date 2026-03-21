@@ -20,9 +20,12 @@ export default apiHandler({
     if (!slot || !VALID_SLOTS.includes(slot)) {
       return res.status(400).json({ error: `Invalid slot. Must be one of: ${VALID_SLOTS.join(", ")}` })
     }
-    if (!assetPath || typeof assetPath !== "string") {
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Validate assetPath format to prevent path traversal
+    if (!assetPath || typeof assetPath !== "string" || !/^[a-zA-Z0-9/_.-]+$/.test(assetPath) || assetPath.includes("..")) {
       return res.status(400).json({ error: "Missing or invalid assetPath" })
     }
+    // --- END AI-MODIFIED ---
 
     await prisma.$queryRawUnsafe(
       `INSERT INTO lg_user_furniture (userid, slot, asset_path) VALUES ($1, $2, $3) ON CONFLICT (userid, slot) DO UPDATE SET asset_path = $3`,

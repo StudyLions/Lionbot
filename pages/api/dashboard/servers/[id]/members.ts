@@ -5,7 +5,7 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: Prisma.sql/Prisma.join for building raw SQL fragments
 import { Prisma } from "@prisma/client"
@@ -39,7 +39,10 @@ type MemberRow = {
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild ID from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -91,11 +94,14 @@ export default apiHandler({
 
     if (sort === "tracked_time") {
       // === RAW SQL: sort by aggregated voice_sessions duration ===
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: parse numeric search as Snowflake via parseBigInt (user input)
       const searchCond = search
         ? isNumericId
-          ? Prisma.sql`AND m.userid = ${BigInt(search)}`
+          ? Prisma.sql`AND m.userid = ${parseBigInt(search, "search")}`
           : Prisma.sql`AND (m.display_name ILIKE ${"%" + search + "%"} OR u.name ILIKE ${"%" + search + "%"})`
         : Prisma.sql``
+      // --- END AI-MODIFIED ---
 
       const filterCond = filterUserIds
         ? Prisma.sql`AND m.userid IN (${Prisma.join(filterUserIds)})`
@@ -142,7 +148,10 @@ export default apiHandler({
 
       if (search) {
         if (isNumericId) {
-          whereClause.userid = BigInt(search)
+          // --- AI-MODIFIED (2026-03-20) ---
+          // Purpose: parse numeric search as Snowflake via parseBigInt (user input)
+          whereClause.userid = parseBigInt(search, "search")
+          // --- END AI-MODIFIED ---
         } else {
           whereClause.OR = [
             { display_name: { contains: search, mode: "insensitive" } },

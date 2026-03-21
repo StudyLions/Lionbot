@@ -10,8 +10,16 @@ import { apiHandler } from "@/utils/apiHandler"
 
 export default apiHandler({
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
-    const targetUserId = BigInt(req.query.userId as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Wrap BigInt in try/catch; add integer and bounds validation for amount
+    let guildId: bigint, targetUserId: bigint
+    try {
+      guildId = BigInt(req.query.id as string)
+      targetUserId = BigInt(req.query.userId as string)
+    } catch {
+      return res.status(400).json({ error: "Invalid guild or user ID" })
+    }
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -23,9 +31,17 @@ export default apiHandler({
     if (!["add", "set", "reset"].includes(action)) {
       return res.status(400).json({ error: "Action must be 'add', 'set', or 'reset'" })
     }
-    if (action !== "reset" && (amount === undefined || typeof amount !== "number")) {
-      return res.status(400).json({ error: "Amount is required for add/set actions" })
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Validate amount is an integer within safe bounds
+    if (action !== "reset") {
+      if (amount === undefined || typeof amount !== "number" || !Number.isInteger(amount)) {
+        return res.status(400).json({ error: "Amount must be an integer" })
+      }
+      if (Math.abs(amount) > 1_000_000_000) {
+        return res.status(400).json({ error: "Amount exceeds maximum allowed value" })
+      }
     }
+    // --- END AI-MODIFIED ---
 
     const member = await prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: targetUserId } },

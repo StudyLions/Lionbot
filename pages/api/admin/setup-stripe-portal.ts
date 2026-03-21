@@ -37,10 +37,24 @@ export default async function handler(
     return res.status(405).json({ error: "Method not allowed" });
   }
 
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Use dedicated ADMIN_API_KEY instead of reusing STRIPE_WEBHOOK_SECRET.
+  //          The webhook secret should only be used for stripe.webhooks.constructEvent().
+  // --- Original code (commented out for rollback) ---
+  // const authHeader = req.headers.authorization;
+  // if (authHeader !== `Bearer ${process.env.STRIPE_WEBHOOK_SECRET}`) {
+  //   return res.status(403).json({ error: "Forbidden" });
+  // }
+  // --- End original code ---
+  const adminKey = process.env.ADMIN_API_KEY;
+  if (!adminKey) {
+    return res.status(500).json({ error: "Admin API key not configured" });
+  }
   const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.STRIPE_WEBHOOK_SECRET}`) {
+  if (authHeader !== `Bearer ${adminKey}`) {
     return res.status(403).json({ error: "Forbidden" });
   }
+  // --- END AI-MODIFIED ---
 
   try {
     const existing = await (stripe.billingPortal.configurations as any).list({
@@ -104,12 +118,13 @@ export default async function handler(
       configurationId: configuration.id,
       isDefault: configuration.is_default,
     });
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Don't leak Stripe error details (message, type, code) to client
   } catch (err: any) {
-    console.error("Setup portal error:", err);
+    console.error("Setup portal error:", err?.message || err);
     return res.status(500).json({
-      error: err.message || "Failed to configure portal",
-      type: err.type,
-      code: err.code,
+      error: "Failed to configure portal",
     });
   }
+  // --- END AI-MODIFIED ---
 }

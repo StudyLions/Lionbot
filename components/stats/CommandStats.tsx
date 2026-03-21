@@ -53,7 +53,10 @@ export default function CommandStats({
   topCommands: Command[]
   commandTrend: TrendPoint[]
   totalCommands: number
-  avgResponseTime: number
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: avg response redacted from public stats API
+  avgResponseTime?: number
+  // --- END AI-MODIFIED ---
   commandsPerMinute: number
 }) {
   if (!topCommands || topCommands.length === 0) return null
@@ -109,10 +112,15 @@ export default function CommandStats({
             {topPct}% of all commands are /{topCommands[0].name} --
             competition drives engagement
           </div>
-          <div>
-            {"// avg_response_time: "}
-            <span className="text-green-400">{Math.round(avgResponseTime)}ms</span>
-          </div>
+          {typeof avgResponseTime === "number" &&
+            !Number.isNaN(avgResponseTime) && (
+              <div>
+                {"// avg_response_time: "}
+                <span className="text-green-400">
+                  {Math.round(avgResponseTime)}ms
+                </span>
+              </div>
+            )}
           <div>
             {"// throughput: "}
             <span className="text-green-400">~{commandsPerMinute} cmds/min</span>

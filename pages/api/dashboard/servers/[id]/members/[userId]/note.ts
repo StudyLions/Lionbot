@@ -5,12 +5,15 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 export default apiHandler({
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
-    const targetUserId = BigInt(req.query.userId as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild/user IDs from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    const targetUserId = parseBigInt(req.query.userId, "userId")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -18,6 +21,12 @@ export default apiHandler({
     if (!content || typeof content !== "string" || content.trim().length === 0) {
       return res.status(400).json({ error: "Note content is required" })
     }
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: cap note content length to reduce DB abuse and align with ticket limits
+    if (content.length > 2000) {
+      return res.status(400).json({ error: "Content too long (max 2000 characters)" })
+    }
+    // --- END AI-MODIFIED ---
 
     const member = await prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: targetUserId } },

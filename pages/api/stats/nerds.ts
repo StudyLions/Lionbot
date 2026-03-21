@@ -131,7 +131,6 @@ export default async function handler(
       studyByDayResult,
       topCommandsResult,
       commandTrendResult,
-      avgResponseResult,
       votesResult,
       retentionResult,
       serverSizesResult,
@@ -161,7 +160,6 @@ export default async function handler(
       safeQuery(() =>
         prisma.shard_data.findMany({
           select: {
-            shardname: true,
             shard_id: true,
             shard_count: true,
             guild_count: true,
@@ -254,17 +252,7 @@ export default async function handler(
         `
       ),
 
-      // 10. Avg response time
-      safeQuery(async () => {
-        const result = await prisma.$queryRaw<[{ avg_time: number }]>`
-          SELECT AVG(execution_time)::real AS avg_time
-          FROM analytics.commands
-          WHERE execution_time > 0 AND execution_time < 30000
-        `
-        return result[0]?.avg_time || 0
-      }),
-
-      // 11. Votes by month
+      // 10. Votes by month
       safeQuery(() =>
         prisma.$queryRaw<VoteRow[]>`
           SELECT
@@ -442,7 +430,6 @@ export default async function handler(
     const studyByDay = val(studyByDayResult)
     const topCommands = val(topCommandsResult)
     const commandTrend = val(commandTrendResult)
-    const avgResponseTime = val(avgResponseResult) as number | null
     const votesByMonth = val(votesResult)
     const retention = val(retentionResult)
     const serverSizes = val(serverSizesResult)
@@ -483,15 +470,16 @@ export default async function handler(
       (estMap["guild_config"] || 0)
 
     const now10min = new Date(Date.now() - 10 * 60 * 1000)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Redact sensitive details from public stats endpoint
     const shards = shardsRaw
       ? shardsRaw.map((s: any) => ({
           shardId: s.shard_id,
-          name: s.shardname,
           guildCount: s.guild_count || 0,
-          lastLogin: s.last_login?.toISOString() || null,
           online: s.last_login ? new Date(s.last_login) > now10min : false,
         }))
       : []
+    // --- END AI-MODIFIED ---
 
     const shardsOnline = shards.filter((s: any) => s.online).length
 
@@ -577,9 +565,9 @@ export default async function handler(
           }))
         : [],
 
-      avgResponseTime: avgResponseTime
-        ? Math.round(avgResponseTime * 100) / 100
-        : 0,
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Redact sensitive details from public stats endpoint (removed avgResponseTime)
+      // --- END AI-MODIFIED ---
       commandsPerMinute,
 
       votesByMonth: votesByMonth
@@ -641,13 +629,16 @@ export default async function handler(
           }))
         : [],
 
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Redact sensitive details from public stats endpoint
       topServers: topServers
-        ? topServers.map((r: any) => ({
-            name: r.name,
+        ? topServers.map((r: any, i: number) => ({
+            name: `Server #${i + 1}`,
             studyHours: Number(r.study_hours),
             memberCount: Number(r.member_count),
           }))
         : [],
+      // --- END AI-MODIFIED ---
 
       calendarHeatmap: calendar
         ? calendar.map((r: any) => ({

@@ -5,7 +5,12 @@
 //          revenue summary
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { getAuthContext } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from getAuthContext (no rate limit) to requireAuth (rate-limited)
+import { requireAuth } from "@/utils/adminAuth"
+// --- End original code ---
+// import { getAuthContext } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 import { apiHandler } from "@/utils/apiHandler"
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Use debounced expireListings to avoid running full expiry scan on every request
@@ -14,8 +19,11 @@ import { expireListingsDebounced } from "@/utils/marketplace"
 
 export default apiHandler({
   async GET(req, res) {
-    const auth = await getAuthContext(req)
-    if (!auth) return res.status(401).json({ error: "Not authenticated" })
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+    // --- END AI-MODIFIED ---
     const userId = BigInt(auth.discordId)
 
     // --- AI-MODIFIED (2026-03-20) ---

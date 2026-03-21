@@ -141,7 +141,7 @@ export default function LayersPanel({
               </button>
 
               {/* Thumbnail */}
-              <div className="w-7 h-7 rounded border border-[#3a4a6c] bg-[#0c1020] overflow-hidden flex-shrink-0 flex items-center justify-center">
+              <div className="w-7 h-7 rounded border border-[#3a4a6c] bg-[#0c1020] overflow-hidden flex-shrink-0 flex items-center justify-center text-[13px]">
                 {asset ? (
                   <img
                     src={thumbnailUrl(asset)}
@@ -150,8 +150,15 @@ export default function LayersPanel({
                     style={{ imageRendering: 'pixelated' }}
                     onError={(e) => {
                       const img = e.target as HTMLImageElement
-                      img.style.display = 'none'
-                      img.parentElement!.innerHTML = `<span class="text-[13px]">${icon}</span>`
+                      const parent = img.parentElement
+                      // --- AI-MODIFIED (2026-03-20) ---
+                      // Purpose: Show fallback layer icon without innerHTML to prevent XSS if icon source ever changed
+                      // --- Original code (commented out for rollback) ---
+                      // img.style.display = 'none'
+                      // img.parentElement!.innerHTML = `<span class="text-[13px]">${icon}</span>`
+                      // --- End original code ---
+                      if (parent) parent.textContent = icon
+                      // --- END AI-MODIFIED ---
                     }}
                   />
                 ) : (

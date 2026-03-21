@@ -7,7 +7,10 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth } from "@/utils/adminAuth"
 
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Remove hardcoded IP fallback -- staging and production use different ports
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL
+// --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 
 const VALID_CARD_TYPES = new Set([
@@ -30,6 +33,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!VALID_CARD_TYPES.has(cardType)) {
     return res.status(400).json({ error: `Invalid card type: ${cardType}` })
   }
+
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Fail fast when render URL is not configured
+  if (!BOT_RENDER_URL) {
+    return res.status(503).json({ error: "Render service not configured" })
+  }
+  // --- END AI-MODIFIED ---
 
   const headers: Record<string, string> = {}
   if (BOT_RENDER_AUTH) {

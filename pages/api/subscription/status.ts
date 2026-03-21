@@ -6,15 +6,18 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { getToken } from "next-auth/jwt";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from raw getToken (no rate limit) to requireAuth (rate-limited)
+import { requireAuth } from "@/utils/adminAuth";
+// --- End original code ---
+// import { getToken } from "next-auth/jwt";
+// --- END AI-MODIFIED ---
 import { prisma } from "@/utils/prisma";
 import { SUBSCRIPTION_TIERS, SubscriptionTier } from "@/constants/SubscriptionData";
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
 });
-
-const secret = process.env.SECRET;
 
 export default async function handler(
   req: NextApiRequest,
@@ -26,12 +29,12 @@ export default async function handler(
   }
 
   try {
-    const token = await getToken({ req, secret });
-    const discordId = (token?.discordId ?? token?.sub) as string | undefined;
-
-    if (!discordId) {
-      return res.status(401).json({ error: "Not authenticated." });
-    }
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+    const discordId = auth.discordId;
+    // --- END AI-MODIFIED ---
 
     const row = await prisma.user_subscriptions.findUnique({
       where: { userid: BigInt(discordId) },
@@ -46,7 +49,6 @@ export default async function handler(
         tierColor: null,
         currentPeriodEnd: null,
         cancelAtPeriodEnd: false,
-        stripeCustomerId: row?.stripe_customer_id ?? null,
       });
     }
 
@@ -81,7 +83,6 @@ export default async function handler(
       currentPeriodStart: row.current_period_start?.toISOString() ?? null,
       currentPeriodEnd: row.current_period_end?.toISOString() ?? null,
       cancelAtPeriodEnd,
-      stripeCustomerId: row.stripe_customer_id ?? null,
     });
   } catch (err: unknown) {
     console.error("Subscription status error:", err);

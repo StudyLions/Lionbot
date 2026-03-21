@@ -5,11 +5,14 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 export default apiHandler({
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild ID from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -17,6 +20,13 @@ export default apiHandler({
     if (!Array.isArray(ticketIds) || ticketIds.length === 0) {
       return res.status(400).json({ error: "At least one ticket ID is required" })
     }
+
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add array size limit to prevent DoS
+    if (ticketIds.length > 100) {
+      return res.status(400).json({ error: "Too many ticket IDs (max 100)" })
+    }
+    // --- END AI-MODIFIED ---
 
     const validIds = ticketIds.filter((id: any) => typeof id === "number" && id > 0)
     if (validIds.length === 0) {

@@ -5,12 +5,16 @@
 //          for all, active, or inactive members with audit trail
 // ============================================================
 import { prisma } from "@/utils/prisma"
+import { Prisma } from "@prisma/client"
 import { requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID from query
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -56,7 +60,7 @@ export default apiHandler({
   },
 
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -113,75 +117,86 @@ export default apiHandler({
 
     const members = await prisma.members.findMany({
       where: memberFilter,
-      select: { userid: true, coins: true },
+      select: { userid: true },
     })
 
     if (members.length === 0) {
       return res.status(200).json({ affected: 0, message: "No members matched the target criteria" })
     }
 
-    const BATCH_SIZE = 100
-    let affected = 0
+    // --- AI-REPLACED (2026-03-20) ---
+    // Reason: Read-compute-write pattern allows race conditions where concurrent
+    //         admin operations could double-credit/double-debit users
+    // What the new code does better: Uses atomic SQL UPDATE (coins = coins + amount)
+    //         so each operation is safe against concurrent access
+    // --- Original code (commented out for rollback) ---
+    // for (let i = 0; i < members.length; i += BATCH_SIZE) {
+    //   const batch = members.slice(i, i + BATCH_SIZE)
+    //   for (const m of batch) {
+    //     const currentCoins = m.coins || 0; let newCoins, txAmount;
+    //     switch (operation) { case "give": newCoins = currentCoins + amount; ... }
+    //     ops.push(prisma.members.update({ data: { coins: newCoins } }))
+    //   }
+    //   await prisma.$transaction(ops)
+    // }
+    // --- End original code ---
+
+    const memberIds = members.map((m) => m.userid)
     const reasonStr = reason?.trim() || `Bulk ${operation} via dashboard`
+    let affected = 0
 
-    for (let i = 0; i < members.length; i += BATCH_SIZE) {
-      const batch = members.slice(i, i + BATCH_SIZE)
-      const ops: any[] = []
+    const BATCH_SIZE = 100
+    for (let i = 0; i < memberIds.length; i += BATCH_SIZE) {
+      const batchIds = memberIds.slice(i, i + BATCH_SIZE)
 
-      for (const m of batch) {
-        const currentCoins = m.coins || 0
-        let newCoins: number
-        let txAmount: number
-
+      await prisma.$transaction(async (tx) => {
         switch (operation) {
           case "give":
-            newCoins = currentCoins + (amount as number)
-            txAmount = amount as number
+            await tx.$executeRaw`
+              UPDATE members SET coins = COALESCE(coins, 0) + ${amount as number}
+              WHERE guildid = ${guildId} AND userid IN (${Prisma.join(batchIds)})
+            `
             break
           case "take":
-            newCoins = Math.max(0, currentCoins - (amount as number))
-            txAmount = -(Math.min(currentCoins, amount as number))
+            await tx.$executeRaw`
+              UPDATE members SET coins = GREATEST(0, COALESCE(coins, 0) - ${amount as number})
+              WHERE guildid = ${guildId} AND userid IN (${Prisma.join(batchIds)})
+            `
             break
           case "set":
-            newCoins = amount as number
-            txAmount = (amount as number) - currentCoins
+            await tx.$executeRaw`
+              UPDATE members SET coins = ${amount as number}
+              WHERE guildid = ${guildId} AND userid IN (${Prisma.join(batchIds)})
+            `
             break
           case "reset":
-            newCoins = 0
-            txAmount = -currentCoins
+            await tx.$executeRaw`
+              UPDATE members SET coins = 0
+              WHERE guildid = ${guildId} AND userid IN (${Prisma.join(batchIds)})
+            `
             break
-          default:
-            continue
         }
 
-        if (txAmount === 0 && operation !== "set") continue
-
-        ops.push(
-          prisma.members.update({
-            where: { guildid_userid: { guildid: guildId, userid: m.userid } },
-            data: { coins: newCoins },
-          })
-        )
-        ops.push(
-          prisma.coin_transactions.create({
+        const txAmount = operation === "reset" ? 0 : (amount as number)
+        const txOps = batchIds.map((uid) =>
+          tx.coin_transactions.create({
             data: {
               transactiontype: "ADMIN",
               guildid: guildId,
               actorid: auth.userId,
-              amount: txAmount,
+              amount: operation === "take" ? -(txAmount) : operation === "reset" ? 0 : txAmount,
               bonus: 0,
-              from_account: txAmount < 0 ? m.userid : null,
-              to_account: txAmount >= 0 ? m.userid : null,
+              from_account: (operation === "take" || operation === "reset") ? uid : null,
+              to_account: (operation === "give" || operation === "set") ? uid : null,
             },
           })
         )
-      }
+        await Promise.all(txOps)
+      })
 
-      if (ops.length > 0) {
-        await prisma.$transaction(ops)
-        affected += batch.length
-      }
+      affected += batchIds.length
     }
+    // --- END AI-REPLACED ---
 
     const opLabels: Record<string, string> = {
       give: `Gave ${amount?.toLocaleString()} coins to`,

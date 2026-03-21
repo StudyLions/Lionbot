@@ -6,7 +6,10 @@
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and PATCH id list entries
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 const LIST_TABLE_MAP: Record<string, { table: string; idCol: string; useRawAll: boolean }> = {
   untrackedVoiceChannels: { table: "untracked_channels", idCol: "channelid", useRawAll: true },
@@ -18,7 +21,7 @@ const LIST_TABLE_MAP: Record<string, { table: string; idCol: string; useRawAll: 
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -46,7 +49,7 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -60,13 +63,20 @@ export default apiHandler({
       return res.status(400).json({ error: "Missing list, action, or ids" })
     }
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add array size limit to prevent DoS
+    if (Array.isArray(ids) && ids.length > 500) {
+      return res.status(400).json({ error: "Too many items (max 500)" })
+    }
+    // --- END AI-MODIFIED ---
+
     const mapping = LIST_TABLE_MAP[list]
     if (!mapping) {
       return res.status(400).json({ error: `Unknown list: ${list}` })
     }
 
     const { table, idCol } = mapping
-    const bigIds = ids.map((id) => BigInt(id))
+    const bigIds = ids.map((id) => parseBigInt(id, "list ID"))
 
     if (action === "add") {
       for (const bid of bigIds) {

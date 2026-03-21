@@ -20,15 +20,24 @@ export default apiHandler({
 
     const userId = BigInt(auth.discordId)
 
-    const [skin, pet, userConfig, alreadyOwned] = await Promise.all([
+    // --- AI-REPLACED (2026-03-20) ---
+    // Reason: Balance was checked outside transaction, allowing race condition
+    //         where two concurrent purchases both pass the check and cause negative balance
+    // What the new code does better: Non-financial checks outside, balance check + deduction
+    //         inside a transaction with SELECT FOR UPDATE row locking
+    // --- Original code (commented out for rollback) ---
+    // const [skin, pet, userConfig, alreadyOwned] = await Promise.all([...])
+    // const gold = Number(userConfig?.gold ?? BigInt(0))
+    // const gems = userConfig?.gems ?? 0
+    // if (unlockType === "GOLD") { if (gold < price) ... await prisma.$transaction([...]) }
+    // if (unlockType === "GEMS") { if (gems < price) ... await prisma.$transaction([...]) }
+    // --- End original code ---
+
+    const [skin, pet, alreadyOwned] = await Promise.all([
       prisma.lg_gameboy_skins.findUnique({ where: { skin_id: skinId } }),
       prisma.lg_pets.findUnique({
         where: { userid: userId },
         select: { level: true },
-      }),
-      prisma.user_config.findUnique({
-        where: { userid: userId },
-        select: { gold: true, gems: true },
       }),
       prisma.lg_user_gameboy_skins.findUnique({
         where: { userid_skin_id: { userid: userId, skin_id: skinId } },
@@ -50,21 +59,28 @@ export default apiHandler({
       return res.status(400).json({ error: "You already own this skin" })
     }
 
-    const gold = Number(userConfig?.gold ?? BigInt(0))
-    const gems = userConfig?.gems ?? 0
-
     if (unlockType === "GOLD") {
       const price = skin.gold_price ?? 0
-      if (gold < price) {
-        return res.status(400).json({ error: `Not enough gold. Need ${price - gold} more.` })
-      }
 
-      await prisma.$transaction([
-        prisma.user_config.update({
-          where: { userid: userId },
-          data: { gold: { decrement: price } },
-        }),
-        prisma.lg_gold_transactions.create({
+      const result = await prisma.$transaction(async (tx) => {
+        const [locked] = await tx.$queryRawUnsafe<{ gold: bigint }[]>(
+          `SELECT gold FROM user_config WHERE userid = $1 FOR UPDATE`,
+          userId
+        )
+        if (!locked || Number(locked.gold) < price) {
+          return { error: `Not enough gold. Need ${price - Number(locked?.gold ?? 0)} more.` }
+        }
+
+        const goldResult = await tx.$queryRawUnsafe<{ gold: bigint }[]>(
+          `UPDATE user_config SET gold = gold - $2 WHERE userid = $1 AND gold >= $2 RETURNING gold`,
+          userId,
+          BigInt(price)
+        )
+        if (goldResult.length === 0) {
+          return { error: "Insufficient gold (race condition)" }
+        }
+
+        await tx.lg_gold_transactions.create({
           data: {
             transaction_type: "SHOP_PURCHASE",
             actorid: userId,
@@ -72,41 +88,53 @@ export default apiHandler({
             amount: price,
             description: `Purchased gameboy skin: ${skin.theme} ${skin.color}`,
           },
-        }),
-        prisma.lg_user_gameboy_skins.create({
+        })
+        await tx.lg_user_gameboy_skins.create({
           data: { userid: userId, skin_id: skinId },
-        }),
-        prisma.lg_pets.update({
+        })
+        await tx.lg_pets.update({
           where: { userid: userId },
           data: { active_gameboy_skin_id: skinId },
-        }),
-      ])
+        })
 
-      const updated = await prisma.user_config.findUnique({
-        where: { userid: userId },
-        select: { gold: true, gems: true },
+        const updated = await tx.user_config.findUnique({
+          where: { userid: userId },
+          select: { gold: true, gems: true },
+        })
+        return {
+          success: true,
+          newGold: (updated?.gold ?? BigInt(0)).toString(),
+          newGems: updated?.gems ?? 0,
+          activeSkinId: skinId,
+        }
       })
 
-      return res.status(200).json({
-        success: true,
-        newGold: (updated?.gold ?? BigInt(0)).toString(),
-        newGems: updated?.gems ?? 0,
-        activeSkinId: skinId,
-      })
+      if ("error" in result) return res.status(400).json(result)
+      return res.status(200).json(result)
     }
 
     if (unlockType === "GEMS") {
       const price = skin.gem_price ?? 0
-      if (gems < price) {
-        return res.status(400).json({ error: `Not enough gems. Need ${price - gems} more.` })
-      }
 
-      await prisma.$transaction([
-        prisma.user_config.update({
-          where: { userid: userId },
-          data: { gems: { decrement: price } },
-        }),
-        prisma.gem_transactions.create({
+      const result = await prisma.$transaction(async (tx) => {
+        const [locked] = await tx.$queryRawUnsafe<{ gems: number }[]>(
+          `SELECT gems FROM user_config WHERE userid = $1 FOR UPDATE`,
+          userId
+        )
+        if (!locked || locked.gems < price) {
+          return { error: `Not enough gems. Need ${price - (locked?.gems ?? 0)} more.` }
+        }
+
+        const gemsResult = await tx.$queryRawUnsafe<{ gems: number }[]>(
+          `UPDATE user_config SET gems = gems - $2 WHERE userid = $1 AND gems >= $2 RETURNING gems`,
+          userId,
+          price
+        )
+        if (gemsResult.length === 0) {
+          return { error: "Insufficient gems (race condition)" }
+        }
+
+        await tx.gem_transactions.create({
           data: {
             transaction_type: "PURCHASE",
             actorid: userId,
@@ -114,29 +142,32 @@ export default apiHandler({
             amount: price,
             description: `Purchased gameboy skin: ${skin.theme} ${skin.color}`,
           },
-        }),
-        prisma.lg_user_gameboy_skins.create({
+        })
+        await tx.lg_user_gameboy_skins.create({
           data: { userid: userId, skin_id: skinId },
-        }),
-        prisma.lg_pets.update({
+        })
+        await tx.lg_pets.update({
           where: { userid: userId },
           data: { active_gameboy_skin_id: skinId },
-        }),
-      ])
+        })
 
-      const updated = await prisma.user_config.findUnique({
-        where: { userid: userId },
-        select: { gold: true, gems: true },
+        const updated = await tx.user_config.findUnique({
+          where: { userid: userId },
+          select: { gold: true, gems: true },
+        })
+        return {
+          success: true,
+          newGold: (updated?.gold ?? BigInt(0)).toString(),
+          newGems: updated?.gems ?? 0,
+          activeSkinId: skinId,
+        }
       })
 
-      return res.status(200).json({
-        success: true,
-        newGold: (updated?.gold ?? BigInt(0)).toString(),
-        newGems: updated?.gems ?? 0,
-        activeSkinId: skinId,
-      })
+      if ("error" in result) return res.status(400).json(result)
+      return res.status(200).json(result)
     }
 
     return res.status(400).json({ error: "Invalid skin unlock type" })
+    // --- END AI-REPLACED ---
   },
 })

@@ -6,7 +6,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: added pretty_name, channel_name to patchable fields; added unit conversion (seconds <-> minutes)
@@ -62,7 +62,10 @@ function validateFocusBreak(focus: number, breakLen: number): string | null {
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild id from query via parseBigInt (400 on invalid)
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -83,14 +86,18 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
     const { timerId, ...fields } = req.body
     if (!timerId) return res.status(400).json({ error: "timerId is required" })
 
-    const channelId = BigInt(timerId)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const channelId = parseBigInt(timerId, "timerId")
+    // --- END AI-MODIFIED ---
     const updates: Record<string, unknown> = {}
 
     for (const field of PATCHABLE_FIELDS) {
@@ -98,7 +105,10 @@ export default apiHandler({
       const val = (fields as Record<string, unknown>)[field]
 
       if (field === "manager_roleid" || field === "notification_channelid") {
-        updates[field] = val === null || val === "" ? null : BigInt(val as string)
+        // --- AI-MODIFIED (2026-03-20) ---
+        // Purpose: validate role/channel id from body via parseBigInt
+        updates[field] = val === null || val === "" ? null : parseBigInt(val, field)
+        // --- END AI-MODIFIED ---
       } else if (field === "focus_length" || field === "break_length") {
         const num = typeof val === "number" ? val : parseInt(String(val), 10)
         if (isNaN(num) || num < 1 || num > 1440) {
@@ -138,7 +148,9 @@ export default apiHandler({
   },
 
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -150,7 +162,9 @@ export default apiHandler({
     } = req.body
 
     if (!channelid) return res.status(400).json({ error: "channelid is required" })
-    const channelId = BigInt(channelid)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const channelId = parseBigInt(channelid, "channelid")
+    // --- END AI-MODIFIED ---
 
     const focus = typeof focus_length === "number" ? focus_length : parseInt(String(focus_length), 10)
     const breakLen = typeof break_length === "number" ? break_length : parseInt(String(break_length), 10)
@@ -178,11 +192,17 @@ export default apiHandler({
         guildid: guildId,
         focus_length: focus * 60,
         break_length: breakLen * 60,
-        notification_channelid: notification_channelid ? BigInt(notification_channelid) : null,
+        // --- AI-MODIFIED (2026-03-20) ---
+        notification_channelid: notification_channelid
+          ? parseBigInt(notification_channelid, "notification_channelid")
+          : null,
+        // --- END AI-MODIFIED ---
         inactivity_threshold: inactThresh,
         voice_alerts: voice_alerts ?? true,
         auto_restart: auto_restart ?? true,
-        manager_roleid: manager_roleid ? BigInt(manager_roleid) : null,
+        // --- AI-MODIFIED (2026-03-20) ---
+        manager_roleid: manager_roleid ? parseBigInt(manager_roleid, "manager_roleid") : null,
+        // --- END AI-MODIFIED ---
         pretty_name: pretty_name || null,
         channel_name: channel_name || null,
       },
@@ -192,13 +212,17 @@ export default apiHandler({
   },
 
   async DELETE(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
     const { channelid } = req.body
     if (!channelid) return res.status(400).json({ error: "channelid is required" })
-    const channelId = BigInt(channelid)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const channelId = parseBigInt(channelid, "channelid")
+    // --- END AI-MODIFIED ---
 
     const existing = await prisma.timers.findFirst({
       where: { channelid: channelId, guildid: guildId },

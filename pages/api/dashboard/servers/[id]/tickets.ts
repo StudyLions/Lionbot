@@ -6,7 +6,10 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and numeric search query (target user ID)
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 function buildAvatarUrl(userId: string, avatarHash: string | null): string {
   if (avatarHash) {
@@ -21,7 +24,7 @@ function buildAvatarUrl(userId: string, avatarHash: string | null): string {
 // Purpose: join member names/avatars, add bulk resolve, add search by member
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -38,7 +41,7 @@ export default apiHandler({
     if (search) {
       const isNumericId = /^\d{17,20}$/.test(search)
       if (isNumericId) {
-        where.targetid = BigInt(search)
+        where.targetid = parseBigInt(search, "search")
       } else {
         const matchingMembers = await prisma.members.findMany({
           where: { guildid: guildId, display_name: { contains: search, mode: "insensitive" } },
@@ -117,12 +120,19 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
     const { ticketId, ticketIds, reason } = req.body
     const reasonStr = typeof reason === "string" ? reason.trim() : ""
+
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add array size limit to prevent DoS
+    if (Array.isArray(ticketIds) && ticketIds.length > 100) {
+      return res.status(400).json({ error: "Too many ticket IDs (max 100)" })
+    }
+    // --- END AI-MODIFIED ---
 
     const idsToResolve: number[] = []
     if (Array.isArray(ticketIds) && ticketIds.length > 0) {

@@ -313,10 +313,19 @@ export default async function handler(
     const rawBody = await getRawBody(req);
     const signature = req.headers["stripe-signature"] as string;
     event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Don't leak Stripe error details to caller
+  // --- Original code (commented out for rollback) ---
+  // } catch (err: any) {
+  //   console.error(`Stripe webhook signature verification failed: ${err.message}`);
+  //   return res.status(400).send(`Webhook Error: ${err.message}`);
+  // }
+  // --- End original code ---
   } catch (err: any) {
     console.error(`Stripe webhook signature verification failed: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send("Webhook signature verification failed");
   }
+  // --- END AI-MODIFIED ---
 
   try {
     switch (event.type) {

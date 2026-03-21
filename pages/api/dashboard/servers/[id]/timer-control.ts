@@ -6,7 +6,10 @@
 import { apiHandler } from "@/utils/apiHandler"
 import { requireAdmin } from "@/utils/adminAuth"
 
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Remove hardcoded IP fallback -- staging and production use different ports
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL
+// --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 
 export default apiHandler({
@@ -29,6 +32,13 @@ export default apiHandler({
       return res.status(400).json({ error: `Invalid action. Must be one of: ${validActions.join(", ")}` })
     }
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Fail fast when render URL is not configured
+    if (!BOT_RENDER_URL) {
+      return res.status(503).json({ error: "Render service not configured" })
+    }
+    // --- END AI-MODIFIED ---
+
     try {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
@@ -50,11 +60,22 @@ export default apiHandler({
       }
 
       return res.status(200).json(data)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Don't leak internal error details to client
+    // --- Original code (commented out for rollback) ---
+    // } catch (err: unknown) {
+    //   return res.status(503).json({
+    //     error: "Timer control service unavailable",
+    //     reason: err instanceof Error ? err.message : "Unknown error",
+    //   })
+    // }
+    // --- End original code ---
     } catch (err: unknown) {
+      console.error("Timer control error:", err instanceof Error ? err.message : err)
       return res.status(503).json({
         error: "Timer control service unavailable",
-        reason: err instanceof Error ? err.message : "Unknown error",
       })
     }
+    // --- END AI-MODIFIED ---
   },
 })

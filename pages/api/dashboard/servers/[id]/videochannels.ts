@@ -9,14 +9,16 @@ import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and channel/role IDs from body
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -51,7 +53,7 @@ export default apiHandler({
     })
   },
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -65,12 +67,22 @@ export default apiHandler({
       studybanDurations?: number[]
     }
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add array size limit to prevent DoS
+    if (Array.isArray(body.videoChannelIds) && body.videoChannelIds.length > 200) {
+      return res.status(400).json({ error: "Too many video channels (max 200)" })
+    }
+    if (Array.isArray(body.exemptRoleIds) && body.exemptRoleIds.length > 200) {
+      return res.status(400).json({ error: "Too many exempt roles (max 200)" })
+    }
+    // --- END AI-MODIFIED ---
+
     const updates: { video_grace_period?: number | null; studyban_role?: bigint | null } = {}
     if ("videoGracePeriod" in body) {
       updates.video_grace_period = body.videoGracePeriod ?? null
     }
     if ("studybanRole" in body) {
-      updates.studyban_role = body.studybanRole ? BigInt(body.studybanRole) : null
+      updates.studyban_role = body.studybanRole ? parseBigInt(body.studybanRole, "studyban role ID") : null
     }
     // --- END AI-MODIFIED ---
 
@@ -86,7 +98,7 @@ export default apiHandler({
       await prisma.$executeRaw`DELETE FROM video_channels WHERE guildid = ${guildId}`
       const uniqueChannels = Array.from(new Set(body.videoChannelIds)) as string[]
       for (const channelId of uniqueChannels) {
-        const cid = BigInt(channelId)
+        const cid = parseBigInt(channelId, "video channel ID")
         await prisma.$executeRaw`INSERT INTO video_channels (guildid, channelid) VALUES (${guildId}, ${cid})`
       }
     }
@@ -95,7 +107,7 @@ export default apiHandler({
     if ("exemptRoleIds" in body && Array.isArray(body.exemptRoleIds)) {
       await prisma.video_exempt_roles.deleteMany({ where: { guildid: guildId } })
       for (const roleId of body.exemptRoleIds) {
-        const rid = BigInt(roleId)
+        const rid = parseBigInt(roleId, "exempt role ID")
         await prisma.video_exempt_roles.upsert({
           where: { guildid_roleid: { guildid: guildId, roleid: rid } },
           create: { guildid: guildId, roleid: rid },

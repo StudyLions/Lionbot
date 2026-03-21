@@ -8,14 +8,16 @@ import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and body roleId
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -40,7 +42,7 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
   },
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -57,7 +59,7 @@ export default apiHandler({
         purchasable: true,
         deleted: false,
         shop_items_colour_roles: {
-          create: { roleid: BigInt(roleId) },
+          create: { roleid: parseBigInt(roleId, "role ID") },
         },
       },
       include: { shop_items_colour_roles: true },
@@ -75,7 +77,7 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
   },
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -88,7 +90,13 @@ export default apiHandler({
     }
 
     const updates: Record<string, any> = {}
-    if (typeof price === "number") updates.price = price
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Reject negative prices on PATCH (POST already validates >= 0)
+    if (typeof price === "number") {
+      if (price < 0) return res.status(400).json({ error: "Price must be non-negative" })
+      updates.price = price
+    }
+    // --- END AI-MODIFIED ---
     if (typeof purchasable === "boolean") updates.purchasable = purchasable
 
     if (Object.keys(updates).length === 0) {
@@ -99,7 +107,7 @@ export default apiHandler({
     return res.status(200).json({ success: true })
   },
   async DELETE(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 

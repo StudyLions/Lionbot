@@ -22,7 +22,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    const userID = await getToken({ req, secret });
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add secureCookie for correct session reading in HTTPS/Vercel production
+    const userID = await getToken({
+      req,
+      secret,
+      secureCookie: process.env.NEXTAUTH_URL?.startsWith("https://") ?? !!process.env.VERCEL_URL,
+    });
+    // --- END AI-MODIFIED ---
     if (!userID?.sub || !userID?.name) {
       return res.status(401).json({ error: "Not authenticated. Please sign in." });
     }
@@ -41,9 +48,12 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
 
     const { donationID, quantity } = req.body;
 
-    if (!donationID || !quantity || quantity < 1 || quantity > 100) {
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Validate quantity is a positive integer (not decimal/NaN)
+    if (!donationID || !quantity || !Number.isInteger(quantity) || quantity < 1 || quantity > 100) {
       return res.status(400).json({ error: "Invalid donation parameters" });
     }
+    // --- END AI-MODIFIED ---
 
     const donationInfo: any = DonationsData.find((d) => d.id == donationID);
     if (!donationInfo) {
@@ -71,8 +81,11 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         totalGems: String(totalGems),
       },
       mode: "payment",
-      success_url: `${req.headers.origin + NavigationPaths.donate}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin + NavigationPaths.donate}?payment=failed`,
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Safe fallback chain instead of raw req.headers.origin which may be undefined
+      success_url: `${(req.headers.origin || process.env.NEXTAUTH_URL || "https://lionbot-website.vercel.app") + NavigationPaths.donate}?payment=success&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${(req.headers.origin || process.env.NEXTAUTH_URL || "https://lionbot-website.vercel.app") + NavigationPaths.donate}?payment=failed`,
+      // --- END AI-MODIFIED ---
     });
 
     res.status(200).json({ sessionId: session.id });

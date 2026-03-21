@@ -7,7 +7,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 const THEMES = [
   "default", "neon", "forest", "ocean", "sunset",
@@ -38,7 +38,10 @@ async function isPremiumGuild(guildId: bigint): Promise<boolean> {
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild id from query via parseBigInt (400 on invalid)
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -55,7 +58,9 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -78,9 +83,12 @@ export default apiHandler({
     const data: Record<string, unknown> = {}
 
     if ("focus_roleid" in req.body) {
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: validate focus_roleid from body via parseBigInt when set
       data.focus_roleid = focus_roleid === null || focus_roleid === ""
         ? null
-        : BigInt(focus_roleid as string)
+        : parseBigInt(focus_roleid, "focus_roleid")
+      // --- END AI-MODIFIED ---
     }
 
     if ("session_summary" in req.body) {

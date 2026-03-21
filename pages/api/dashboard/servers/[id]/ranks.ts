@@ -7,7 +7,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild/role IDs from query/body so invalid input returns 400
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 type RankType = "XP" | "VOICE" | "MESSAGE"
 
@@ -34,7 +37,7 @@ function serializeRank(r: any) {
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -96,31 +99,40 @@ export default apiHandler({
     // --- END AI-MODIFIED ---
   },
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add non-negative validation for required/reward, message length limit
     const { rankType, roleId, required, reward, message } = req.body
     const model = getRankModel(rankType)
     if (!model) return res.status(400).json({ error: "Invalid rankType (XP, VOICE, or MESSAGE)" })
     if (!roleId || typeof required !== "number" || typeof reward !== "number") {
       return res.status(400).json({ error: "roleId, required (number), and reward (number) are required" })
     }
+    if (required < 0) return res.status(400).json({ error: "required must be non-negative" })
+    if (reward < 0) return res.status(400).json({ error: "reward must be non-negative" })
 
     const rank = await (model as any).create({
       data: {
         guildid: guildId,
-        roleid: BigInt(roleId),
+        roleid: parseBigInt(roleId, "role ID"),
         required,
         reward,
-        message: message || null,
+        message: typeof message === "string" ? (message || "").slice(0, 2000) || null : null,
       },
     })
+    // --- END AI-MODIFIED ---
 
     return res.status(201).json(serializeRank(rank))
   },
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Add guildid to PATCH/DELETE WHERE clauses to prevent cross-guild
+  //          rank manipulation. Add required/reward non-negative validation.
+  //          Add message length limit.
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -128,10 +140,21 @@ export default apiHandler({
     const model = getRankModel(rankType)
     if (!model || !rankId) return res.status(400).json({ error: "rankType and rankId required" })
 
+    const existing = await (model as any).findUnique({ where: { rankid: rankId } })
+    if (!existing || existing.guildid !== guildId) {
+      return res.status(404).json({ error: "Rank not found in this server" })
+    }
+
     const updates: Record<string, any> = {}
-    if (typeof required === "number") updates.required = required
-    if (typeof reward === "number") updates.reward = reward
-    if (typeof message === "string") updates.message = message || null
+    if (typeof required === "number") {
+      if (required < 0) return res.status(400).json({ error: "required must be non-negative" })
+      updates.required = required
+    }
+    if (typeof reward === "number") {
+      if (reward < 0) return res.status(400).json({ error: "reward must be non-negative" })
+      updates.reward = reward
+    }
+    if (typeof message === "string") updates.message = (message || "").slice(0, 2000) || null
 
     if (Object.keys(updates).length === 0) {
       return res.status(400).json({ error: "No valid fields to update" })
@@ -141,7 +164,7 @@ export default apiHandler({
     return res.status(200).json({ success: true })
   },
   async DELETE(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -149,8 +172,14 @@ export default apiHandler({
     const model = getRankModel(rankType)
     if (!model || !rankId) return res.status(400).json({ error: "rankType and rankId required" })
 
+    const existing = await (model as any).findUnique({ where: { rankid: rankId } })
+    if (!existing || existing.guildid !== guildId) {
+      return res.status(404).json({ error: "Rank not found in this server" })
+    }
+
     await (model as any).delete({ where: { rankid: rankId } })
     return res.status(200).json({ success: true })
   },
+  // --- END AI-MODIFIED ---
 })
 // --- END AI-MODIFIED ---

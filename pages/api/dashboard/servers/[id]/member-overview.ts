@@ -5,7 +5,7 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 function getWeekId(date: Date): number {
   const d = new Date(date)
@@ -41,7 +41,10 @@ export default apiHandler({
     const auth = await requireAuth(req, res)
     if (!auth) return
 
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild ID from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    // --- END AI-MODIFIED ---
     const userId = auth.userId
     const now = new Date()
 

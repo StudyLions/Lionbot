@@ -32,51 +32,63 @@ export default apiHandler({
     const price = SKIN_PRICES[normalizedId]
     const userId = auth.userId
 
-    // Ensure user_config exists
-    let userConfig = await prisma.user_config.findUnique({
-      where: { userid: userId },
-      select: { gems: true },
-    })
-
-    if (!userConfig) {
-      await prisma.user_config.create({
-        data: { userid: userId, gems: 0 },
-      })
-      userConfig = { gems: 0 }
-    }
-
-    const currentGems = userConfig.gems ?? 0
-    if (currentGems < price) {
-      return res.status(400).json({
-        error: `Not enough gems. You need ${price - currentGems} more.`,
-      })
-    }
-
-    // Check if user already owns this skin (by base skin name)
-    const existingInventory = await prisma.user_skin_inventory.findMany({
-      where: { userid: userId },
-      include: {
-        customised_skins: {
-          include: { global_available_skins: { select: { skin_name: true } } },
-        },
-      },
-    })
-    const ownedSkinNames = new Set(
-      existingInventory
-        .map((i) => i.customised_skins?.global_available_skins?.skin_name)
-        .filter(Boolean)
-    )
-    if (ownedSkinNames.has(normalizedId)) {
-      return res.status(400).json({ error: "You already own this skin" })
-    }
+    // --- AI-REPLACED (2026-03-20) ---
+    // Reason: Balance was checked outside transaction, allowing race condition
+    //         where two concurrent purchases both pass the check and cause negative gems
+    // What the new code does better: Moves balance check + ownership check inside
+    //         a transaction with SELECT FOR UPDATE row locking
+    // --- Original code (commented out for rollback) ---
+    // let userConfig = await prisma.user_config.findUnique({ ... })
+    // const currentGems = userConfig.gems ?? 0
+    // if (currentGems < price) { ... }
+    // const existingInventory = await prisma.user_skin_inventory.findMany({ ... })
+    // if (ownedSkinNames.has(normalizedId)) { ... }
+    // const result = await prisma.$transaction(async (tx) => { ... deduct without re-check ... })
+    // --- End original code ---
 
     const skinName = normalizedId
       .split("_")
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
       .join(" ")
 
+    let purchaseError: string | null = null
+
     const result = await prisma.$transaction(async (tx) => {
-      // 1. Find or create global_available_skins
+      const [lockedUser] = await tx.$queryRawUnsafe<{ gems: number }[]>(
+        `SELECT gems FROM user_config WHERE userid = $1 FOR UPDATE`,
+        userId
+      )
+
+      if (!lockedUser) {
+        await tx.user_config.create({ data: { userid: userId, gems: 0 } })
+        purchaseError = `Not enough gems. You need ${price} more.`
+        return 0
+      }
+
+      const currentGems = lockedUser.gems ?? 0
+      if (currentGems < price) {
+        purchaseError = `Not enough gems. You need ${price - currentGems} more.`
+        return currentGems
+      }
+
+      const existingInventory = await tx.user_skin_inventory.findMany({
+        where: { userid: userId },
+        include: {
+          customised_skins: {
+            include: { global_available_skins: { select: { skin_name: true } } },
+          },
+        },
+      })
+      const ownedSkinNames = new Set(
+        existingInventory
+          .map((i) => i.customised_skins?.global_available_skins?.skin_name)
+          .filter(Boolean)
+      )
+      if (ownedSkinNames.has(normalizedId)) {
+        purchaseError = "You already own this skin"
+        return currentGems
+      }
+
       let globalSkin = await tx.global_available_skins.findFirst({
         where: { skin_name: normalizedId },
       })
@@ -86,12 +98,10 @@ export default apiHandler({
         })
       }
 
-      // 2. Create customised_skins
       const customSkin = await tx.customised_skins.create({
         data: { base_skin_id: globalSkin.skin_id },
       })
 
-      // 3. Create gem_transaction first (needed for user_skin_inventory FK)
       const gemTx = await tx.gem_transactions.create({
         data: {
           transaction_type: "PURCHASE",
@@ -103,7 +113,6 @@ export default apiHandler({
         },
       })
 
-      // 4. Create user_skin_inventory
       await tx.user_skin_inventory.create({
         data: {
           userid: userId,
@@ -113,18 +122,21 @@ export default apiHandler({
         },
       })
 
-      // 5. Deduct gems
-      await tx.user_config.update({
-        where: { userid: userId },
-        data: { gems: { decrement: price } },
-      })
-
-      const updated = await tx.user_config.findUnique({
-        where: { userid: userId },
-        select: { gems: true },
-      })
-      return updated?.gems ?? currentGems - price
+      const gemsResult = await tx.$queryRawUnsafe<{ gems: number }[]>(
+        `UPDATE user_config SET gems = gems - $2 WHERE userid = $1 AND gems >= $2 RETURNING gems`,
+        userId,
+        price
+      )
+      if (gemsResult.length === 0) {
+        throw new Error("Insufficient gems (race condition)")
+      }
+      return gemsResult[0].gems
     })
+
+    if (purchaseError) {
+      return res.status(400).json({ error: purchaseError })
+    }
+    // --- END AI-REPLACED ---
 
     res.status(200).json({
       success: true,

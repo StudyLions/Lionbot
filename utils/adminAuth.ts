@@ -25,7 +25,14 @@ interface AuthContext {
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>()
 
 export async function getAuthContext(req: NextApiRequest): Promise<AuthContext | null> {
-  const token = await getToken({ req, secret })
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Add secureCookie for correct session reading in HTTPS/Vercel production
+  const token = await getToken({
+    req,
+    secret,
+    secureCookie: process.env.NEXTAUTH_URL?.startsWith("https://") ?? !!process.env.VERCEL_URL,
+  })
+  // --- END AI-MODIFIED ---
   if (!token?.discordId || !token?.accessToken) return null
   return {
     discordId: token.discordId as string,

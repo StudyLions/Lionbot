@@ -8,7 +8,9 @@ import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID, schedule bigint fields, and channel IDs from body
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 const EDITABLE_FIELDS = [
@@ -52,7 +54,7 @@ function toResponse(config: typeof DEFAULTS | null, scheduleChannels: { channeli
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -73,7 +75,7 @@ export default apiHandler({
     return res.status(200).json(payload)
   },
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -92,7 +94,7 @@ export default apiHandler({
         if (val === null || val === undefined || val === "") {
           updates[field] = null
         } else if (field === "lobby_channel" || field === "room_channel" || field === "blacklist_role") {
-          updates[field] = BigInt(val)
+          updates[field] = parseBigInt(val, field)
         } else {
           updates[field] = typeof val === "number" ? val : parseInt(val, 10)
         }
@@ -102,6 +104,16 @@ export default apiHandler({
     // --- AI-MODIFIED (2026-03-13) ---
     // Purpose: support updating schedule_channels (add/remove)
     const hasScheduleChannels = "schedule_channels" in body
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add array size limit to prevent DoS
+    if (
+      hasScheduleChannels &&
+      Array.isArray(body.schedule_channels) &&
+      body.schedule_channels.length > 100
+    ) {
+      return res.status(400).json({ error: "Too many schedule channels (max 100)" })
+    }
+    // --- END AI-MODIFIED ---
     if (Object.keys(updates).length === 0 && !hasScheduleChannels) {
       return res.status(400).json({ error: "No valid fields to update" })
     }
@@ -119,7 +131,7 @@ export default apiHandler({
         .filter((ch: any) => ch && ch.channelid)
         .map((ch: any) => ({
           guildid: guildId,
-          channelid: BigInt(ch.channelid),
+          channelid: parseBigInt(ch.channelid, "channel ID"),
         }))
       if (newChannels.length > 0) {
         await prisma.schedule_channels.createMany({ data: newChannels })

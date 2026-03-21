@@ -6,12 +6,15 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 export default apiHandler({
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
-    const targetUserId = BigInt(req.query.userId as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild/user IDs from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    const targetUserId = parseBigInt(req.query.userId, "userId")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -58,8 +61,17 @@ export default apiHandler({
       return res.status(400).json({ error: "Transaction does not involve this member" })
     }
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Fix refund direction. A refund always reverses the original effect
+    //          on the target user. If they received coins (incoming), subtract them.
+    //          If they spent coins (outgoing), give them back.
+    // --- Original code (commented out for rollback) ---
+    // const wasIncoming = original.to_account === targetUserId
+    // const coinAdjustment = wasIncoming ? -original.amount : original.amount
+    // --- End original code ---
     const wasIncoming = original.to_account === targetUserId
-    const coinAdjustment = wasIncoming ? -original.amount : original.amount
+    const coinAdjustment = wasIncoming ? -Math.abs(original.amount) : Math.abs(original.amount)
+    // --- END AI-MODIFIED ---
 
     const member = await prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: targetUserId } },

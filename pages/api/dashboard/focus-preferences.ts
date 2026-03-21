@@ -8,15 +8,24 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from getDiscordId (no rate limit) to requireAuth (rate-limited)
+import { requireAuth } from "@/utils/adminAuth"
+// --- End original code ---
+// import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
+// --- END AI-MODIFIED ---
 import { canAccessTheme, userTierFromSub, TIMER_THEMES } from "@/constants/TimerThemes"
 import { isValidHexColor } from "@/constants/CardEffectPresets"
 
 const MAX_LABEL_LEN = 20
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const discordId = await getDiscordId(req)
-  if (!discordId) return unauthorized(res)
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Use requireAuth for rate limiting
+  const auth = await requireAuth(req, res)
+  if (!auth) return
+  const discordId = auth.discordId
+  // --- END AI-MODIFIED ---
 
   const uid = BigInt(discordId)
 

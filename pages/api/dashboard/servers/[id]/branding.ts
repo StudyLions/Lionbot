@@ -8,11 +8,14 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: bot render API URL + auth for cache invalidation after branding save
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Remove hardcoded IP fallback -- staging and production use different ports
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL
+// --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 // --- END AI-MODIFIED ---
 
@@ -28,7 +31,10 @@ const AVAILABLE_SKINS = [
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild id from query via parseBigInt (400 on invalid)
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -86,7 +92,9 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -180,6 +188,13 @@ export default apiHandler({
         }
       }
     }
+
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Fail fast when render URL is not configured (before invalidate fetch)
+    if (!BOT_RENDER_URL) {
+      return res.status(503).json({ error: "Render service not configured" })
+    }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-15) ---
     // Purpose: tell the bot to invalidate its in-memory skin/premium caches

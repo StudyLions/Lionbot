@@ -7,7 +7,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { requireModerator } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: add POST handler to create Discord roles via bot token
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
@@ -30,7 +30,10 @@ export default apiHandler({
     return res.status(500).json({ error: "Bot token not configured" })
   }
 
-  const guildId = BigInt(req.query.id as string)
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: validate guild id from query via parseBigInt (400 on invalid)
+  const guildId = parseBigInt(req.query.id, "id")
+  // --- END AI-MODIFIED ---
   const auth = await requireModerator(req, res, guildId)
   if (!auth) return
 
@@ -67,10 +70,13 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Don't leak raw Discord API error text to client
     if (!response.ok) {
-      const text = await response.text()
-      return res.status(response.status).json({ error: `Discord API error: ${text}` })
+      console.error(`Discord roles API error (${response.status}):`, await response.text().catch(() => ""))
+      return res.status(response.status).json({ error: "Failed to fetch roles from Discord" })
     }
+    // --- END AI-MODIFIED ---
 
     const raw = await response.json()
     const roles: DiscordRole[] = raw.map((r: any) => ({
@@ -91,8 +97,10 @@ export default apiHandler({
     if (!BOT_TOKEN) {
       return res.status(500).json({ error: "Bot token not configured" })
     }
-    const guildId = req.query.id as string
-    const auth = await requireModerator(req, res, BigInt(guildId))
+    // --- AI-MODIFIED (2026-03-20) ---
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
+    const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
     const { name, color } = req.body
@@ -106,7 +114,7 @@ export default apiHandler({
 
     try {
       const response = await fetch(
-        `https://discord.com/api/v10/guilds/${guildId}/roles`,
+        `https://discord.com/api/v10/guilds/${guildId.toString()}/roles`,
         {
           method: "POST",
           headers: {
@@ -116,12 +124,15 @@ export default apiHandler({
           body: JSON.stringify({ name: name.trim(), color: colorNum }),
         }
       )
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: Don't leak raw Discord API error text to client
       if (!response.ok) {
-        const text = await response.text()
-        return res.status(response.status).json({ error: `Discord API: ${text}` })
+        console.error(`Discord create role API error (${response.status}):`, await response.text().catch(() => ""))
+        return res.status(response.status).json({ error: "Failed to create role on Discord" })
       }
+      // --- END AI-MODIFIED ---
       const role = await response.json()
-      cache.delete(guildId)
+      cache.delete(guildId.toString())
       return res.status(201).json({
         id: role.id,
         name: role.name,

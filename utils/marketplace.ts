@@ -47,7 +47,13 @@
 import { prisma } from "@/utils/prisma"
 
 const LISTING_DURATION_DAYS = 7
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Remove hardcoded IP fallback -- staging and production use different ports
+// --- Original code (commented out for rollback) ---
+// const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100"
+// --- End original code ---
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL
+// --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 
 export const MARKETPLACE_FEE_PERCENT = 5
@@ -150,6 +156,15 @@ export async function notifySellerDM(data: {
   currency: string
   remaining: number
 }) {
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Skip notification when render URL unset (utility cannot return HTTP 503)
+  if (!BOT_RENDER_URL) {
+    console.warn(
+      "notifySellerDM: BOT_RENDER_URL is not configured; skipping marketplace notification",
+    )
+    return
+  }
+  // --- END AI-MODIFIED ---
   if (!BOT_RENDER_AUTH) return
   try {
     await fetch(`${BOT_RENDER_URL}/marketplace-notify`, {

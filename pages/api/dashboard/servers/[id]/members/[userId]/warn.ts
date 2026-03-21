@@ -5,12 +5,15 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 export default apiHandler({
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
-    const targetUserId = BigInt(req.query.userId as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild/user IDs from query (400 on invalid format via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    const targetUserId = parseBigInt(req.query.userId, "userId")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -18,6 +21,12 @@ export default apiHandler({
     if (!reason || typeof reason !== "string" || reason.trim().length === 0) {
       return res.status(400).json({ error: "Reason is required" })
     }
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: cap warning reason length to match Discord-style limits and reduce abuse
+    if (reason.length > 2000) {
+      return res.status(400).json({ error: "Reason too long (max 2000 characters)" })
+    }
+    // --- END AI-MODIFIED ---
 
     const member = await prisma.members.findUnique({
       where: { guildid_userid: { guildid: guildId, userid: targetUserId } },

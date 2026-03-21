@@ -6,7 +6,12 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { getToken } from "next-auth/jwt";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from raw getToken (no rate limit) to requireAuth (rate-limited)
+import { requireAuth } from "@/utils/adminAuth";
+// --- End original code ---
+// import { getToken } from "next-auth/jwt";
+// --- END AI-MODIFIED ---
 
 import { prisma } from "@/utils/prisma";
 import { NavigationPaths } from "@/constants/types";
@@ -14,8 +19,6 @@ import { NavigationPaths } from "@/constants/types";
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
 });
-
-const secret = process.env.SECRET;
 
 const VALID_TIERS = ["LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"] as const;
 type SubscriptionTier = (typeof VALID_TIERS)[number];
@@ -61,24 +64,13 @@ export default async function handler(
   }
 
   try {
-    const token = await getToken({ req, secret });
-    const discordId = (token?.discordId ?? token?.sub) as string | undefined;
-    const discordName = (token?.name ?? "User") as string;
-
-    if (!discordId) {
-      return res.status(401).json({ error: "Not authenticated. Please sign in." });
-    }
-
-    const now = Date.now();
-    const rl = rateLimits.get(discordId);
-    if (rl && now < rl.resetAt && rl.count >= 10) {
-      return res.status(429).json({ error: "Too many requests. Try again later." });
-    }
-    if (!rl || now >= rl.resetAt) {
-      rateLimits.set(discordId, { count: 1, resetAt: now + 60000 });
-    } else {
-      rl.count++;
-    }
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting (replaces inline rate limiter)
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+    const discordId = auth.discordId;
+    const discordName = "User";
+    // --- END AI-MODIFIED ---
 
     const { tier } = req.body ?? {};
     if (!tier || !VALID_TIERS.includes(tier)) {

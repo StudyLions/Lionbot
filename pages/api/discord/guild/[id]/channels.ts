@@ -27,7 +27,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(500).json({ error: "Bot token not configured" })
   }
 
-  const guildId = BigInt(req.query.id as string)
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: return 400 on invalid guild id (no apiHandler here)
+  let guildId: bigint
+  try {
+    guildId = BigInt(req.query.id as string)
+  } catch {
+    return res.status(400).json({ error: "Invalid guild ID" })
+  }
+  // --- END AI-MODIFIED ---
   const auth = await requireModerator(req, res, guildId)
   if (!auth) return
 
@@ -64,10 +72,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Don't leak raw Discord API error text to client
     if (!response.ok) {
-      const text = await response.text()
-      return res.status(response.status).json({ error: `Discord API error: ${text}` })
+      console.error(`Discord channels API error (${response.status}):`, await response.text().catch(() => ""))
+      return res.status(response.status).json({ error: "Failed to fetch channels from Discord" })
     }
+    // --- END AI-MODIFIED ---
 
     const raw = await response.json()
     const channels: DiscordChannel[] = raw.map((ch: any) => ({

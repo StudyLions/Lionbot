@@ -7,7 +7,13 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 
-const BOT_RENDER_URL = "http://65.109.163.156:7100";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Use env var instead of hardcoded server IP
+// --- Original code (commented out for rollback) ---
+// const BOT_RENDER_URL = "http://65.109.163.156:7100";
+// --- End original code ---
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL;
+// --- END AI-MODIFIED ---
 
 const VALID_TYPES = ["profile", "stats"];
 const VALID_SKINS = [
@@ -19,6 +25,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
   }
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: Return 503 if BOT_RENDER_URL not configured
+  if (!BOT_RENDER_URL) {
+    return res.status(503).json({ error: "Render service not configured" });
+  }
+  // --- END AI-MODIFIED ---
 
   const skin = (req.query.skin as string) || "original";
   const type = (req.query.type as string) || "profile";
@@ -33,12 +45,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const url = `${BOT_RENDER_URL}/render-sample?type=${encodeURIComponent(type)}&skin=${encodeURIComponent(skin)}`;
-    const response = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Add BOT_RENDER_AUTH header for authenticated render API calls
+    const headers: Record<string, string> = {};
+    if (process.env.BOT_RENDER_AUTH) headers["Authorization"] = process.env.BOT_RENDER_AUTH;
+    const response = await fetch(url, { headers, signal: AbortSignal.timeout(10000) });
+    // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Don't leak raw upstream error text to client
     if (!response.ok) {
-      const text = await response.text().catch(() => "Unknown error");
-      return res.status(response.status).json({ error: text });
+      console.error(`Skin preview render error (${response.status}):`, await response.text().catch(() => ""))
+      return res.status(502).json({ error: "Render service returned an error" });
     }
+    // --- END AI-MODIFIED ---
 
     const buffer = Buffer.from(await response.arrayBuffer());
 

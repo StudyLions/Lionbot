@@ -8,7 +8,7 @@
 import { prisma } from "@/utils/prisma"
 import { Prisma } from "@prisma/client"
 import { requireModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 function buildAvatarUrl(userId: string, avatarHash: string | null): string {
   if (avatarHash) {
@@ -58,7 +58,10 @@ async function resolveMemberNames(guildId: bigint, userIds: bigint[]) {
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild id from query via parseBigInt (400 on invalid)
+    const guildId = parseBigInt(req.query.id, "id")
+    // --- END AI-MODIFIED ---
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 

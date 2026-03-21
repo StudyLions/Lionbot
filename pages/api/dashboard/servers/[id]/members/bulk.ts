@@ -5,11 +5,14 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 export default apiHandler({
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guild ID from query and body userIds as Snowflakes (400 via apiHandler)
+    const guildId = parseBigInt(req.query.id, "guildId")
+    // --- END AI-MODIFIED ---
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -30,7 +33,9 @@ export default apiHandler({
       return res.status(400).json({ error: "Operation must be 'coins' or 'warn'" })
     }
 
-    const targetUserIds = userIds.map((id) => BigInt(id))
+    // --- AI-MODIFIED (2026-03-20) ---
+    const targetUserIds = userIds.map((id) => parseBigInt(id, "userId"))
+    // --- END AI-MODIFIED ---
     let affected = 0
 
     if (operation === "coins") {

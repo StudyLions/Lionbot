@@ -13,7 +13,13 @@ import { requireAuth } from "@/utils/adminAuth";
 import { prisma } from "@/utils/prisma";
 import { isValidHexColor } from "@/constants/CardEffectPresets";
 
-const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Remove hardcoded IP fallback -- staging and production use different ports
+// --- Original code (commented out for rollback) ---
+// const BOT_RENDER_URL = process.env.BOT_RENDER_URL || "http://65.109.163.156:7100";
+// --- End original code ---
+const BOT_RENDER_URL = process.env.BOT_RENDER_URL;
+// --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || "";
 
 const lastRequestMap = new Map<string, number>();
@@ -90,6 +96,13 @@ export default async function handler(
     if (BOT_RENDER_AUTH) {
       headers["Authorization"] = BOT_RENDER_AUTH;
     }
+
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Fail fast when render URL is not configured
+    if (!BOT_RENDER_URL) {
+      return res.status(503).json({ error: "Render service not configured" });
+    }
+    // --- END AI-MODIFIED ---
 
     const response = await fetch(`${BOT_RENDER_URL}/render?${params}`, {
       headers,

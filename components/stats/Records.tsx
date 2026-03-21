@@ -34,7 +34,10 @@ export default function Records({
   commandsPerMinute,
 }: {
   records: RecordsData
-  avgResponseTime: number
+  // --- AI-MODIFIED (2026-03-20) ---
+  // Purpose: avg response redacted from public stats API
+  avgResponseTime?: number
+  // --- END AI-MODIFIED ---
   commandsPerMinute: number
 }) {
   const cards: RecordCard[] = []
@@ -83,10 +86,17 @@ export default function Records({
   })
 
   if (commandsPerMinute > 0) {
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Omit avg latency from card when API no longer returns it
+    const latency =
+      typeof avgResponseTime === "number" && !Number.isNaN(avgResponseTime)
+        ? `avg ${Math.round(avgResponseTime)}ms`
+        : ""
+    // --- END AI-MODIFIED ---
     cards.push({
       label: "CMD_THROUGHPUT",
       value: `~${commandsPerMinute}/min`,
-      date: `avg ${Math.round(avgResponseTime)}ms`,
+      date: latency,
       comment: "commands processed per minute",
     })
   }

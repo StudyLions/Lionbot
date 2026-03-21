@@ -14,7 +14,19 @@ export function PurchaseFailedModal(props: IProps) {
   useOnClickOutside(ref, () => props.closeModal());
 
   const retryPayment = () => {
-    let basket: IBasket = JSON.parse(localStorage.getItem("basket"));
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: localStorage basket JSON may be missing or invalid — avoid uncaught JSON.parse errors
+    // --- Original code (commented out for rollback) ---
+    // let basket: IBasket = JSON.parse(localStorage.getItem("basket"));
+    // --- End original code ---
+    let basket: IBasket | null = null;
+    try {
+      const raw = localStorage.getItem("basket");
+      if (raw) basket = JSON.parse(raw) as IBasket;
+    } catch {
+      basket = null;
+    }
+    // --- END AI-MODIFIED ---
     if (basket) {
       createPaymentSession(basket.id, basket.quantity);
     }

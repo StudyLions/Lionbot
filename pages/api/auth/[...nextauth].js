@@ -107,12 +107,33 @@ export default NextAuth({
 
       return token;
     },
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Remove accessToken from client session to prevent token theft via XSS.
+    //          accessToken remains in the JWT and is accessible server-side via getToken().
+    // --- Original code (commented out for rollback) ---
+    // async session({ session, token }) {
+    //   session.discordId = token.discordId;
+    //   session.accessToken = token.accessToken;
+    //   if (token.error) session.error = token.error;
+    //   return session;
+    // },
+    // --- End original code ---
     async session({ session, token }) {
       session.discordId = token.discordId;
-      session.accessToken = token.accessToken;
       if (token.error) session.error = token.error;
       return session;
     },
+    // --- END AI-MODIFIED ---
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Prevent open redirects via callbackUrl -- only allow same-origin redirects
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      try {
+        if (new URL(url).origin === baseUrl) return url;
+      } catch {}
+      return baseUrl;
+    },
+    // --- END AI-MODIFIED ---
   },
   // --- END AI-MODIFIED ---
 

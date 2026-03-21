@@ -8,14 +8,16 @@ import { prisma } from "@/utils/prisma"
 import { requireModerator, requireAdmin } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: parseBigInt for guild ID and roleId from body
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
@@ -52,7 +54,7 @@ export default apiHandler({
     })
   },
   async POST(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -82,6 +84,15 @@ export default apiHandler({
       if (!menuId || !roleId || !label) {
         return res.status(400).json({ error: "menuId, roleId, and label required" })
       }
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: cap role menu label/description length to prevent oversized Discord UI payloads
+      if (typeof label === "string" && label.length > 100) {
+        return res.status(400).json({ error: "Label too long (max 100 characters)" })
+      }
+      if (typeof description === "string" && description.length > 500) {
+        return res.status(400).json({ error: "Description too long (max 500 characters)" })
+      }
+      // --- END AI-MODIFIED ---
 
       const menu = await prisma.role_menus.findUnique({ where: { menuid: menuId } })
       if (!menu || menu.guildid !== guildId) return res.status(404).json({ error: "Menu not found" })
@@ -89,7 +100,7 @@ export default apiHandler({
       const role = await prisma.role_menu_roles.create({
         data: {
           menuid: menuId,
-          roleid: BigInt(roleId),
+          roleid: parseBigInt(roleId, "role ID"),
           label,
           emoji: emoji || null,
           description: description || null,
@@ -104,7 +115,7 @@ export default apiHandler({
     return res.status(400).json({ error: "Invalid action. Use createMenu or addRole." })
   },
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -133,6 +144,15 @@ export default apiHandler({
     if (action === "updateRole") {
       const { roleEntryId, label, emoji, description, price, duration } = req.body
       if (!roleEntryId) return res.status(400).json({ error: "roleEntryId required" })
+      // --- AI-MODIFIED (2026-03-20) ---
+      // Purpose: cap role menu label/description length on update
+      if (typeof label === "string" && label.length > 100) {
+        return res.status(400).json({ error: "Label too long (max 100 characters)" })
+      }
+      if (typeof description === "string" && description.length > 500) {
+        return res.status(400).json({ error: "Description too long (max 500 characters)" })
+      }
+      // --- END AI-MODIFIED ---
 
       const roleEntry = await prisma.role_menu_roles.findUnique({ where: { menuroleid: roleEntryId } })
       if (!roleEntry) return res.status(404).json({ error: "Role entry not found" })
@@ -154,7 +174,7 @@ export default apiHandler({
     return res.status(400).json({ error: "Invalid action. Use updateMenu or updateRole." })
   },
   async DELETE(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 

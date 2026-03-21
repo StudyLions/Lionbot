@@ -5,7 +5,7 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 import { Prisma } from "@prisma/client"
 
 type LBType = "study" | "messages" | "coins"
@@ -118,7 +118,10 @@ export default apiHandler({
     const guildIdStr = req.query.guildId as string
     if (!guildIdStr) return res.status(400).json({ error: "guildId required" })
 
-    const guildId = BigInt(guildIdStr)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guildId query param via parseBigInt (400 on invalid)
+    const guildId = parseBigInt(guildIdStr, "guildId")
+    // --- END AI-MODIFIED ---
     const userId = auth.userId
     const type = (req.query.type as LBType) || "study"
     const period = (req.query.period as LBPeriod) || "all"

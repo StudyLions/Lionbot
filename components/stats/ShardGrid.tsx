@@ -8,18 +8,8 @@ import { useState } from "react"
 
 interface Shard {
   shardId: number
-  name: string
   guildCount: number
-  lastLogin: string | null
   online: boolean
-}
-
-function formatUptime(lastLogin: string | null): string {
-  if (!lastLogin) return "unknown"
-  const diff = Date.now() - new Date(lastLogin).getTime()
-  const days = Math.floor(diff / 86400000)
-  const hours = Math.floor((diff % 86400000) / 3600000)
-  return `${days}d ${hours}h`
 }
 
 export default function ShardGrid({ shards }: { shards: Shard[] }) {
@@ -91,11 +81,12 @@ export default function ShardGrid({ shards }: { shards: Shard[] }) {
 
             {hoveredId === shard.shardId && (
               <div className="absolute z-20 bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black border border-green-500/30 text-[9px] font-mono text-green-400 whitespace-nowrap">
-                {shard.name}
-                <br />
+                {/* --- AI-MODIFIED (2026-03-20) --- */}
+                {/* Purpose: Match redacted /api/stats/nerds (tooltip: guilds + status only) */}
+                {/* --- END AI-MODIFIED --- */}
                 guilds: {shard.guildCount.toLocaleString()}
                 <br />
-                uptime: {formatUptime(shard.lastLogin)}
+                status: {shard.online ? "online" : "offline"}
               </div>
             )}
           </motion.div>

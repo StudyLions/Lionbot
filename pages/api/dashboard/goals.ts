@@ -8,7 +8,7 @@
 // --- END AI-MODIFIED ---
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 function getWeekId(date: Date): number {
   const d = new Date(date)
@@ -317,7 +317,10 @@ export default apiHandler({
     const { guildId, weekid, monthid, type, study_goal, task_goal, message_goal } = req.body
     if (!guildId || !type) return res.status(400).json({ error: "guildId and type required" })
 
-    const guildIdBigInt = BigInt(guildId)
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: validate guildId from body via parseBigInt (400 on invalid)
+    const guildIdBigInt = parseBigInt(guildId, "guildId")
+    // --- END AI-MODIFIED ---
     const updates: Record<string, number | null> = {}
     if (study_goal !== undefined) updates.study_goal = study_goal
     if (task_goal !== undefined) updates.task_goal = task_goal
@@ -360,7 +363,9 @@ export default apiHandler({
         return res.status(400).json({ error: "Content required (max 200 chars)" })
       }
 
-      const guildIdBigInt = BigInt(guildId)
+      // --- AI-MODIFIED (2026-03-20) ---
+      const guildIdBigInt = parseBigInt(guildId, "guildId")
+      // --- END AI-MODIFIED ---
 
       if (type === "weekly") {
         const task = await prisma.member_weekly_goal_tasks.create({

@@ -7,15 +7,18 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { getToken } from "next-auth/jwt";
+// --- AI-MODIFIED (2026-03-20) ---
+// Purpose: Switch from raw getToken (no rate limit) to requireAuth (rate-limited)
+import { requireAuth } from "@/utils/adminAuth";
+// --- End original code ---
+// import { getToken } from "next-auth/jwt";
+// --- END AI-MODIFIED ---
 
 import { prisma } from "@/utils/prisma";
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
 });
-
-const secret = process.env.SECRET;
 
 async function findStripeCustomerByDiscordId(
   discordId: string
@@ -43,14 +46,12 @@ export default async function handler(
   }
 
   try {
-    const token = await getToken({ req, secret });
-    const discordId = (token?.discordId ?? token?.sub) as string | undefined;
-
-    if (!discordId) {
-      return res.status(401).json({
-        error: "Not authenticated. Please sign in with Discord.",
-      });
-    }
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Use requireAuth for rate limiting
+    const auth = await requireAuth(req, res);
+    if (!auth) return;
+    const discordId = auth.discordId;
+    // --- END AI-MODIFIED ---
 
     const customerId = await findStripeCustomerByDiscordId(discordId);
 

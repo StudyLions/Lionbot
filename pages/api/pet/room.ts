@@ -197,15 +197,38 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Verify user owns the room before allowing switch (IDOR fix)
     if (activeRoomId !== undefined) {
+      if (typeof activeRoomId !== "number" || !Number.isInteger(activeRoomId) || activeRoomId < 1) {
+        return res.status(400).json({ error: "Invalid activeRoomId" })
+      }
+      const DEFAULT_ROOM_ID = 1
+      if (activeRoomId !== DEFAULT_ROOM_ID) {
+        const ownedRoom = await prisma.lg_user_rooms.findFirst({
+          where: { userid: userId, room_id: activeRoomId },
+        })
+        if (!ownedRoom) {
+          return res.status(403).json({ error: "You do not own this room" })
+        }
+      }
       await prisma.lg_pets.update({
         where: { userid: userId },
         data: { active_room_id: activeRoomId },
       })
       return res.status(200).json({ success: true })
     }
+    // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-20) ---
+    // Purpose: Validate slot against ROOM_LAYERS and validate assetPath format
     if (slot !== undefined && assetPath !== undefined) {
+      if (typeof slot !== "string" || !ROOM_LAYERS.includes(slot)) {
+        return res.status(400).json({ error: `Invalid slot. Must be one of: ${ROOM_LAYERS.join(", ")}` })
+      }
+      if (typeof assetPath !== "string" || !/^[a-zA-Z0-9/_.-]+$/.test(assetPath) || assetPath.includes("..")) {
+        return res.status(400).json({ error: "Invalid assetPath" })
+      }
       await prisma.$queryRawUnsafe(
         `INSERT INTO lg_user_furniture (userid, slot, asset_path) VALUES ($1, $2, $3) ON CONFLICT (userid, slot) DO UPDATE SET asset_path = $3`,
         userId,
@@ -214,6 +237,7 @@ export default apiHandler({
       )
       return res.status(200).json({ success: true })
     }
+    // --- END AI-MODIFIED ---
 
     return res.status(400).json({ error: "Invalid request body" })
   },
