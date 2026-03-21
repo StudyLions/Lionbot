@@ -183,8 +183,6 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
   const cumulativeProb = calcCumulativeProbability(inv.slots)
 
   return (
-    {/* --- AI-MODIFIED (2026-03-21) --- */}
-    {/* Purpose: Touch-friendly tooltip -- tap toggle, outside dismiss, mobile positioning */}
     <div
       ref={triggerRef}
       className={cn("relative", className)}

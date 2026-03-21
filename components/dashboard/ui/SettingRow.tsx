@@ -33,9 +33,9 @@ export default function SettingRow({
   onReset,
   impactText,
 }: SettingRowProps) {
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Fix reversed breakpoints -- stack vertically on mobile, row on sm+
   return (
-    {/* --- AI-MODIFIED (2026-03-21) --- */}
-    {/* Purpose: Fix reversed breakpoints -- stack vertically on mobile, row on sm+ */}
     <div className={`group flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6 py-4 border-b border-border/50 last:border-b-0 transition-colors ${isModified ? "bg-amber-500/[0.03]" : ""}`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
@@ -72,6 +72,6 @@ export default function SettingRow({
       </div>
       <div className="w-full sm:w-auto sm:flex-shrink-0">{children}</div>
     </div>
-    {/* --- END AI-MODIFIED --- */}
   )
+  // --- END AI-MODIFIED ---
 }

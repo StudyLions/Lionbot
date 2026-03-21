@@ -256,12 +256,12 @@ function RoomCard({
             </span>
           )}
           {room.owned && !isActive && (
-            {/* --- AI-MODIFIED (2026-03-21) --- */}
-            {/* Purpose: Add active: feedback for touch devices */}
+            // --- AI-MODIFIED (2026-03-21) ---
+            // Purpose: Add active: feedback for touch devices
+            // --- END AI-MODIFIED ---
             <span className="text-[12px] text-green-400/80 group-hover:text-green-300 active:text-green-200 transition-colors flex-shrink-0 ml-2">
               Switch →
             </span>
-            {/* --- END AI-MODIFIED --- */}
           )}
         </div>
       </div>

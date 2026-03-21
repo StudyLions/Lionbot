@@ -515,10 +515,7 @@ export default function RanksPage() {
                 <>
                   {/* ── Stats Cards ── */}
                   {stats && (
-                    {/* --- AI-MODIFIED (2026-03-21) --- */}
-                    {/* Purpose: Stack stats cards on mobile */}
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
-                    {/* --- END AI-MODIFIED --- */}
                       <div className="bg-card/50 border border-border rounded-xl p-4">
                         <div className="flex items-center gap-2 text-muted-foreground mb-1">
                           <Trophy size={14} />

@@ -336,11 +336,10 @@ export default function FarmPage() {
                     </GameboyFrame>
 
                     {/* Toolbar flush under the frame */}
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Add gap + padding so wrapped toolbar buttons have breathing room on mobile */}
                     <div
-                      {/* --- AI-MODIFIED (2026-03-21) --- */}
-                      {/* Purpose: Add gap + padding so wrapped toolbar buttons have breathing room on mobile */}
                       className="flex items-center justify-center flex-wrap gap-1 py-1 border-x-[3px] border-b-[3px] border-[#2a3a5c] bg-[#0c1020]/90"
-                      {/* --- END AI-MODIFIED --- */}
                       style={{ boxShadow: "3px 3px 0 #060810" }}
                     >
                       {hasPlanted && (
@@ -377,6 +376,7 @@ export default function FarmPage() {
                         color="#8899aa"
                       />
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
                   </div>
 
                   <ArtistAttribution />

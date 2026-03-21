@@ -476,8 +476,6 @@ export default function SetupWizard() {
                     key={s}
                     type="button"
                     onClick={() => step >= s && goToStep(s)}
-                    {/* --- AI-MODIFIED (2026-03-21) --- */}
-                    {/* Purpose: Smaller step circles on mobile */}
                     className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full text-xs sm:text-sm font-medium transition-all ${
                       s === step ? "bg-primary text-foreground ring-2 ring-primary ring-offset-2 ring-offset-background" : s < step ? "bg-primary/60 text-foreground" : "bg-muted text-muted-foreground"
                     } ${step >= s ? "cursor-pointer hover:bg-primary/90" : "cursor-default"}`}

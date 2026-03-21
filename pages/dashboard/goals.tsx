@@ -456,10 +456,7 @@ export default function GoalsPage() {
                             </div>
                           </div>
                         ) : (
-                          {/* --- AI-MODIFIED (2026-03-21) --- */}
-                          {/* Purpose: Stack radial charts on very small screens */}
                           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-4">
-                          {/* --- END AI-MODIFIED --- */}
                             <RadialProgress
                               value={g.studyProgress} max={g.studyGoal}
                               label="Study" unit="h"

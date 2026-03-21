@@ -541,10 +541,10 @@ export default function FurniturePanel({
           <>
             <p className="text-xs text-[#7a8a9a] tracking-widest uppercase mb-1">Room Themes</p>
             {purchasableRooms.length > 0 ? (
-              {/* --- AI-MODIFIED (2026-03-21) --- */}
-              {/* Purpose: Better mobile density -- 1 col on mobile (sidebar stacks), 2 on sm+ */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {/* --- END AI-MODIFIED --- */}
+                {/* --- AI-MODIFIED (2026-03-21) --- */}
+                {/* Purpose: Better mobile density -- 1 col on mobile (sidebar stacks), 2 on sm+ */}
+                {/* --- END AI-MODIFIED --- */}
                 {purchasableRooms.map((room) => {
                   const isActive = room.assetPrefix === activeRoomPrefix
                   const previewUrl = `${BLOB_BASE}/pet-assets/${room.assetPrefix}/wall_1.png`

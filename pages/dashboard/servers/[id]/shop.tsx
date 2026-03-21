@@ -162,10 +162,7 @@ export default function ShopPage() {
                 ) : (
                   <div className="grid grid-cols-1 gap-3 mb-6">
                     {items.map((item) => (
-                      {/* --- AI-MODIFIED (2026-03-21) --- */}
-                      {/* Purpose: Fix reversed breakpoints -- stack on mobile, row on sm+ */}
                       <div key={item.itemId} className={`bg-card/50 border rounded-xl p-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 transition-all ${item.purchasable ? "border-border" : "border-red-500/20 opacity-60"}`}>
-                      {/* --- END AI-MODIFIED --- */}
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <Badge variant={item.purchasable ? "success" : "error"}>{item.purchasable ? "Available" : "Hidden"}</Badge>

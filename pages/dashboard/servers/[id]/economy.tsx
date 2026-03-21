@@ -1030,13 +1030,10 @@ function PieSection({ title, subtitle, data }: {
       {chartData.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">No data yet</p>
       ) : (
-        {/* --- AI-MODIFIED (2026-03-21) --- */}
-        {/* Purpose: Stack pie chart and legend on mobile */}
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div className="w-36 h-36 flex-shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-        {/* --- END AI-MODIFIED --- */}
                 <Pie
                   data={chartData}
                   cx="50%"

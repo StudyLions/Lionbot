@@ -174,11 +174,11 @@ function AnimatedPetDemo() {
       ctx.drawImage(gbFrame.current, 0, 0, GB_W, GB_H)
   }, [frame])
 
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Add maxWidth 100% so demo scales down on narrow phones
+  // --- END AI-MODIFIED ---
   return (
-    {/* --- AI-MODIFIED (2026-03-21) --- */}
-    {/* Purpose: Add maxWidth 100% so demo scales down on narrow phones */}
     <div className="relative" style={{ width: DISPLAY_W, maxWidth: '100%' }}>
-    {/* --- END AI-MODIFIED --- */}
       <canvas
         ref={canvasRef}
         width={GB_W}
