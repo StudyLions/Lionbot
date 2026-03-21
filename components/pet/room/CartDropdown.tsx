@@ -92,7 +92,10 @@ export default function CartDropdown({
   return (
     <div
       ref={dropdownRef}
-      className="absolute top-full right-0 mt-1 w-64 z-50 font-pixel"
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Clamp dropdown width to viewport so it doesn't overflow left edge */}
+      className="absolute top-full right-0 mt-1 w-64 max-w-[calc(100vw-2rem)] z-50 font-pixel"
+      {/* --- END AI-MODIFIED --- */}
       style={{ boxShadow: '4px 4px 0 rgba(0,0,0,0.5)' }}
     >
       <div className="bg-[#0c1020] border-2 border-[#3a4a6c] rounded-lg overflow-hidden">

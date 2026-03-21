@@ -1,0 +1,16 @@
+[AI] fix: pet section mobile optimization -- 18 files across 17 issues
+
+Tier 1 (Critical): Fix RoomBrowser reversed grid breakpoints, ItemTooltip
+touch support (tap toggle + mobile positioning), Wiki ItemRow responsive
+column hiding
+
+Tier 2 (High): Pet Overview HUD flex-wrap + responsive GameboyFrame width,
+NoPetShowcase max-width, Inventory responsive skeleton/placeholder sizes,
+SkinPreview vertical stacking, FurniturePanel grid density, Room toolbar
+44px touch targets
+
+Tier 3 (Medium): Farm toolbar wrap padding, Sell page 2-col mobile grid,
+CartDropdown viewport clamping, PixelTooltip overflow, SeedSelector/
+PlotDetail/FarmStats flex-wrap, PetNav 44px hamburger target
+
+Tier 4 (Polish): Active feedback on RoomBrowser/ListingCard for touch

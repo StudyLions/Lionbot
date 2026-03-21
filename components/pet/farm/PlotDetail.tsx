@@ -92,7 +92,10 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
           )}
         </div>
 
-        <div className="flex items-start gap-5">
+        {/* --- AI-MODIFIED (2026-03-21) --- */}
+        {/* Purpose: Stack vertically on mobile, row on sm+ */}
+        <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-5">
+        {/* --- END AI-MODIFIED --- */}
           {/* Plant thumbnail with decorative frame */}
           <div className="flex-shrink-0">
             <div

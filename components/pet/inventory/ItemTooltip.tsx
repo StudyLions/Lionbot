@@ -113,27 +113,58 @@ interface ItemTooltipProps {
   className?: string
 }
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Add touch support (tap to toggle), clamp width for mobile,
+// position tooltip below trigger on small screens, dismiss on outside tap
 export default function ItemTooltip({ inv, children, className }: ItemTooltipProps) {
   const [show, setShow] = useState(false)
-  const [position, setPosition] = useState<"right" | "left">("right")
+  const [position, setPosition] = useState<"right" | "left" | "below">("right")
   const triggerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const isTouchRef = useRef(false)
 
   const handleEnter = useCallback(() => {
+    if (isTouchRef.current) return
     timerRef.current = setTimeout(() => setShow(true), 200)
   }, [])
 
   const handleLeave = useCallback(() => {
+    if (isTouchRef.current) return
     if (timerRef.current) clearTimeout(timerRef.current)
     setShow(false)
+  }, [])
+
+  const handleTap = useCallback((e: React.MouseEvent) => {
+    if (!isTouchRef.current) return
+    e.stopPropagation()
+    setShow(prev => !prev)
+  }, [])
+
+  const handleTouchStart = useCallback(() => {
+    isTouchRef.current = true
   }, [])
 
   useEffect(() => {
     if (!show || !triggerRef.current) return
     const rect = triggerRef.current.getBoundingClientRect()
-    const spaceRight = window.innerWidth - rect.right
-    setPosition(spaceRight < 340 ? "left" : "right")
+    const vw = window.innerWidth
+    if (vw < 480) {
+      setPosition("below")
+    } else {
+      const spaceRight = vw - rect.right
+      setPosition(spaceRight < 340 ? "left" : "right")
+    }
+  }, [show])
+
+  useEffect(() => {
+    if (!show || !isTouchRef.current) return
+    const handler = (e: MouseEvent) => {
+      if (triggerRef.current?.contains(e.target as Node)) return
+      setShow(false)
+    }
+    document.addEventListener("click", handler)
+    return () => document.removeEventListener("click", handler)
   }, [show])
 
   useEffect(() => {
@@ -141,6 +172,7 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
       if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [])
+// --- END AI-MODIFIED ---
 
   const bc = RARITY_BORDER[inv.item.rarity] || "#3a4a6c"
   const headerBg = RARITY_HEADER_BG[inv.item.rarity] || "rgba(58, 74, 108, 0.15)"
@@ -151,22 +183,28 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
   const cumulativeProb = calcCumulativeProbability(inv.slots)
 
   return (
+    {/* --- AI-MODIFIED (2026-03-21) --- */}
+    {/* Purpose: Touch-friendly tooltip -- tap toggle, outside dismiss, mobile positioning */}
     <div
       ref={triggerRef}
       className={cn("relative", className)}
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
+      onTouchStart={handleTouchStart}
+      onClick={handleTap}
     >
       {children}
       {show && (
         <div
           ref={tooltipRef}
           className={cn(
-            "absolute z-50 w-[310px] pointer-events-none",
-            position === "right" ? "left-full ml-2" : "right-full mr-2",
-            "top-0"
+            "absolute z-50 w-[310px] max-w-[calc(100vw-2rem)]",
+            position === "below" ? "left-1/2 -translate-x-1/2 top-full mt-2" :
+            position === "right" ? "left-full ml-2 top-0" : "right-full mr-2 top-0",
+            isTouchRef.current ? "pointer-events-auto" : "pointer-events-none"
           )}
         >
+    {/* --- END AI-MODIFIED --- */}
           <div
             className="border-2 bg-[#0a0e1a] shadow-[4px_4px_0_#060810]"
             style={{ borderColor: bc }}

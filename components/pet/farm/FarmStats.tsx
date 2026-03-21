@@ -85,7 +85,10 @@ export default function FarmStats({ plots, gold }: FarmStatsProps) {
           <GoldDisplay amount={gold} size="lg" />
 
           {/* Growing / Harvest / Dead */}
-          <div className="flex items-center gap-4">
+          {/* --- AI-MODIFIED (2026-03-21) --- */}
+          {/* Purpose: Add flex-wrap so HUD stats wrap on narrow screens */}
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+          {/* --- END AI-MODIFIED --- */}
             <HudStat icon={<PixelIcon name="liongotchi_greenpot" size={18} />} value={`${stats.active}/${stats.total}`} color="#40d870"
               sub={stats.needsWater > 0 ? `${stats.needsWater} thirsty` : undefined} subColor="#4080f0" />
             <div className="w-px h-6 bg-[#2a3a5c]" />

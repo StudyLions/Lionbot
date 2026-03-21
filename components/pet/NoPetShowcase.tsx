@@ -175,7 +175,10 @@ function AnimatedPetDemo() {
   }, [frame])
 
   return (
-    <div className="relative" style={{ width: DISPLAY_W }}>
+    {/* --- AI-MODIFIED (2026-03-21) --- */}
+    {/* Purpose: Add maxWidth 100% so demo scales down on narrow phones */}
+    <div className="relative" style={{ width: DISPLAY_W, maxWidth: '100%' }}>
+    {/* --- END AI-MODIFIED --- */}
       <canvas
         ref={canvasRef}
         width={GB_W}
