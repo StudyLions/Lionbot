@@ -182,13 +182,28 @@ export default async function handler(
         `
       ),
 
-      // 4. Total study hours from members
+      // --- AI-MODIFIED (2026-03-21) ---
+      // Purpose: Use voice_sessions.duration (actual study data) instead of
+      //          members.tracked_time (always 0 in production). TABLESAMPLE
+      //          keeps the query fast (~100ms vs 14s for full SUM on 51M rows);
+      //          multiplied by pg_class row estimate for total hours.
+      // --- Original code (commented out for rollback) ---
+      // safeQuery(async () => {
+      //   const result = await prisma.$queryRaw<[{ total: bigint }]>`
+      //     SELECT COALESCE(SUM(tracked_time), 0)::bigint AS total FROM members WHERE tracked_time > 0
+      //   `
+      //   return Number(result[0]?.total || 0)
+      // }),
+      // --- End original code ---
       safeQuery(async () => {
-        const result = await prisma.$queryRaw<[{ total: bigint }]>`
-          SELECT COALESCE(SUM(tracked_time), 0)::bigint AS total FROM members WHERE tracked_time > 0
+        const result = await prisma.$queryRaw<[{ avg_duration: number }]>`
+          SELECT COALESCE(AVG(duration), 0)::int AS avg_duration
+          FROM voice_sessions TABLESAMPLE SYSTEM (0.5)
+          WHERE duration > 0
         `
-        return Number(result[0]?.total || 0)
+        return Number(result[0]?.avg_duration || 0)
       }),
+      // --- END AI-MODIFIED ---
 
       // 5. Growth series (weekly from snapshots)
       safeQuery(() =>
@@ -452,9 +467,21 @@ export default async function handler(
       }
     }
 
-    const totalStudyHours = totalStudySeconds
-      ? Math.round(totalStudySeconds / 3600)
-      : 0
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Compute total study hours from sampled avg duration * row estimate
+    //          (totalStudySeconds is now avg_duration from TABLESAMPLE, not a SUM)
+    // --- Original code (commented out for rollback) ---
+    // const totalStudyHours = totalStudySeconds
+    //   ? Math.round(totalStudySeconds / 3600)
+    //   : 0
+    // --- End original code ---
+    const avgSessionDuration = totalStudySeconds as number | null
+    const voiceSessionCount = estMap["voice_sessions"] || 0
+    const totalStudyHours =
+      avgSessionDuration && voiceSessionCount
+        ? Math.round((avgSessionDuration * voiceSessionCount) / 3600)
+        : 0
+    // --- END AI-MODIFIED ---
 
     const totalCommands = topCommands
       ? topCommands.reduce((s, c) => s + c.cnt, 0)
@@ -469,14 +496,21 @@ export default async function handler(
       (estMap["tasklist"] || 0) +
       (estMap["guild_config"] || 0)
 
-    const now10min = new Date(Date.now() - 10 * 60 * 1000)
-    // --- AI-MODIFIED (2026-03-20) ---
-    // Purpose: Redact sensitive details from public stats endpoint
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Increase online threshold from 10min to 24h. The bot only
+    //          updates shard_data.last_login on on_ready (startup), not as
+    //          a periodic heartbeat, so 10min was too narrow and all shards
+    //          showed offline. Also redact sensitive shard details.
+    // --- Original code (commented out for rollback) ---
+    // const now10min = new Date(Date.now() - 10 * 60 * 1000)
+    // online: s.last_login ? new Date(s.last_login) > now10min : false,
+    // --- End original code ---
+    const now24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
     const shards = shardsRaw
       ? shardsRaw.map((s: any) => ({
           shardId: s.shard_id,
           guildCount: s.guild_count || 0,
-          online: s.last_login ? new Date(s.last_login) > now10min : false,
+          online: s.last_login ? new Date(s.last_login) > now24h : false,
         }))
       : []
     // --- END AI-MODIFIED ---

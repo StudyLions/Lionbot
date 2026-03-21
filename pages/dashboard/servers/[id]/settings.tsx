@@ -169,12 +169,16 @@ const SETTING_LABELS: Record<string, string> = {
   season_start: "Season Start",
 }
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Add listKeys to SectionDef so list-only sections (tracking, autoroles, etc.)
+// properly show modified counts and the save toast accurately reflects list changes.
 // Which section each setting belongs to (for search and modified count)
 interface SectionDef {
   id: string
   label: string
   icon: typeof BookOpen
   settings: string[]
+  listKeys?: string[]
   searchTerms?: string[]
 }
 
@@ -191,11 +195,12 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "workouts", label: "Workouts", icon: Dumbbell, settings: ["min_workout_length", "workout_reward"], searchTerms: ["workout", "exercise", "fitness", "gym"] },
   { id: "channels", label: "Channels", icon: Hash, settings: [], searchTerms: ["channel", "log", "event", "alert", "greeting"] },
   { id: "roles", label: "Roles", icon: UserCog, settings: [], searchTerms: ["role", "admin", "moderator", "permission"] },
-  { id: "tracking", label: "Tracking", icon: EyeOff, settings: [], searchTerms: ["untracked", "tracking", "exclude", "ignore"] },
-  { id: "autoroles", label: "Auto-Roles", icon: Bot, settings: [], searchTerms: ["autorole", "auto", "join", "new member", "bot"] },
-  { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
+  { id: "tracking", label: "Tracking", icon: EyeOff, settings: [], listKeys: ["untrackedVoiceChannels", "untrackedTextChannels"], searchTerms: ["untracked", "tracking", "exclude", "ignore"] },
+  { id: "autoroles", label: "Auto-Roles", icon: Bot, settings: [], listKeys: ["autoroles", "botAutoroles"], searchTerms: ["autorole", "auto", "join", "new member", "bot"] },
+  { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], listKeys: ["unrankedRoles"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle, settings: [], searchTerms: ["reset", "danger", "delete", "clear"] },
 ]
+// --- END AI-MODIFIED ---
 
 // ── Component ──────────────────────────────────────────────────────
 
@@ -308,17 +313,25 @@ export default function ServerSettings() {
   const listsHaveChanges = JSON.stringify(lists) !== JSON.stringify(originalLists)
   const hasChanges = configHasChanges || listsHaveChanges
 
-  // Count modified settings per section
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Include list changes (untracked channels, autoroles, etc.) in modified counts
   const modifiedCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     if (!config || !original) return counts
     for (const section of SECTION_DEFS) {
-      counts[section.id] = section.settings.filter((key) =>
+      let count = section.settings.filter((key) =>
         JSON.stringify(config[key]) !== JSON.stringify(original[key])
       ).length
+      if (section.listKeys) {
+        count += section.listKeys.filter((key) =>
+          JSON.stringify(lists[key]) !== JSON.stringify(originalLists[key])
+        ).length
+      }
+      counts[section.id] = count
     }
     return counts
-  }, [config, original])
+  }, [config, original, lists, originalLists])
+  // --- END AI-MODIFIED ---
 
   // Diff for save preview
   const changeDiff = useMemo(() => {
@@ -397,8 +410,16 @@ export default function ServerSettings() {
       clearRoleCache(guildId)
       clearChannelCache(guildId)
 
-      const changeCount = changeDiff.length
+      // --- AI-MODIFIED (2026-03-21) ---
+      // Purpose: Count both scalar config changes AND list changes in the success toast.
+      // Previously only counted config changes, so list-only edits (e.g. untracked channels)
+      // showed "Saved 0 settings" making users think nothing was saved.
+      const listChangeCount = Object.keys(lists).filter(
+        (key) => JSON.stringify(lists[key]) !== JSON.stringify(originalLists[key])
+      ).length
+      const changeCount = changeDiff.length + listChangeCount
       toast.success(`Saved ${changeCount} setting${changeCount !== 1 ? "s" : ""} successfully`)
+      // --- END AI-MODIFIED ---
     } catch {
       toast.error("Failed to save. Check your permissions.")
     }

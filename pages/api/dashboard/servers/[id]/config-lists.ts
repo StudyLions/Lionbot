@@ -29,12 +29,15 @@ export default apiHandler({
 
     await Promise.all(
       Object.entries(LIST_TABLE_MAP).map(async ([key, { table, idCol, useRawAll }]) => {
+        // --- AI-MODIFIED (2026-03-21) ---
+        // Purpose: Use DISTINCT to prevent duplicate entries (these tables have no unique constraint)
         if (useRawAll) {
           const rows = await prisma.$queryRawUnsafe<{ id: bigint }[]>(
-            `SELECT ${idCol} as id FROM ${table} WHERE guildid = $1`,
+            `SELECT DISTINCT ${idCol} as id FROM ${table} WHERE guildid = $1`,
             guildId
           )
           results[key] = rows.map((r) => r.id.toString())
+        // --- END AI-MODIFIED ---
         } else if (table === "untracked_text_channels") {
           const rows = await prisma.untracked_text_channels.findMany({
             where: { guildid: guildId },
