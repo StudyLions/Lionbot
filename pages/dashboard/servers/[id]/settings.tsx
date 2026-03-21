@@ -6,6 +6,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
@@ -642,6 +643,7 @@ export default function ServerSettings() {
   return (
     <Layout SEO={{ title: `Settings - ${config?.name || "Server"} - LionBot`, description: "Server settings" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />
@@ -1215,6 +1217,7 @@ export default function ServerSettings() {
           confirmLabel={showDangerConfirm === "season" ? "Reset Season" : "Reset All Settings"}
           variant="danger"
         />
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

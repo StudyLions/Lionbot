@@ -6,6 +6,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import { PageHeader, SectionCard, EmptyState } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
@@ -142,6 +143,7 @@ export default function PomodoroAnalyticsPage() {
   return (
     <Layout SEO={{ title: `Premium Pomodoro Analytics - ${serverName} - LionBot`, description: "Advanced pomodoro analytics" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
@@ -362,6 +364,7 @@ export default function PomodoroAnalyticsPage() {
             </div>
           </div>
         </div>
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

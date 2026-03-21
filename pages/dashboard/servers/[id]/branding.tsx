@@ -7,6 +7,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader,
@@ -804,6 +805,7 @@ export default function BrandingPage() {
     return (
       <Layout SEO={{ title: "Branding - LionBot", description: "Server branding editor" }}>
         <AdminGuard>
+          <ServerGuard requiredLevel="admin">
           <div className="min-h-screen bg-background pt-6 pb-20 px-4">
             <div className="max-w-7xl mx-auto flex gap-8">
               <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
@@ -820,6 +822,7 @@ export default function BrandingPage() {
               </div>
             </div>
           </div>
+          </ServerGuard>
         </AdminGuard>
       </Layout>
     )
@@ -835,6 +838,7 @@ export default function BrandingPage() {
       }}
     >
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-7xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
@@ -1275,6 +1279,7 @@ export default function BrandingPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </ServerGuard>
       </AdminGuard>
     </Layout>
   )

@@ -5,6 +5,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader,
@@ -25,7 +26,7 @@ import Link from "next/link"
 import {
   Wand2, Globe, BookOpen, Trophy, Coins, ChevronLeft, ChevronRight, Check,
   ArrowLeft, ShoppingBag, ListChecks, Timer, Calendar, Video, Pencil,
-  Gamepad2, Users, Briefcase, Eye, ChevronDown, Sparkles,
+  Gamepad2, Users, Briefcase, Eye, ChevronDown, Sparkles, Clock,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -449,6 +450,7 @@ export default function SetupWizard() {
   return (
     <Layout SEO={{ title: `Setup - ${config?.name || "Server"} - LionBot`, description: "Server setup wizard" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-3xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin={perms.isAdmin} isMod={perms.isModerator} />
@@ -501,13 +503,32 @@ export default function SetupWizard() {
                 </div>
               </div>
             ) : !config ? (
-              <div className="text-center py-20">
-                <p className="text-muted-foreground">Unable to load settings. You may not have moderator permissions.</p>
-                <Link href={`/dashboard/servers/${id}`}>
-                  <a className="mt-4 inline-block text-primary hover:text-primary">
-                    Go to dashboard
-                  </a>
-                </Link>
+              <div className="text-center py-16">
+                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                  <Clock size={28} className="text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Setting things up...</h3>
+                <p className="text-muted-foreground max-w-md mx-auto mb-1">
+                  If you just added LionBot to your server, it can take a minute or two for everything to sync up.
+                </p>
+                <p className="text-sm text-muted-foreground/70 mb-6">
+                  Refresh this page shortly and you&apos;ll be all set.
+                </p>
+                <div className="flex items-center justify-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-foreground font-medium transition-colors"
+                  >
+                    <ArrowLeft size={16} className="rotate-[225deg]" />
+                    Refresh Page
+                  </button>
+                  <Link href={`/dashboard/servers/${id}`}>
+                    <a className="px-5 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors text-sm">
+                      Go to dashboard
+                    </a>
+                  </Link>
+                </div>
               </div>
             ) : (
               <>
@@ -769,6 +790,7 @@ export default function SetupWizard() {
             </div>
           </div>
         </div>
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

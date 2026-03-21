@@ -6,6 +6,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import { PageHeader, Badge, toast, ConfirmModal } from "@/components/dashboard/ui"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
@@ -297,6 +298,7 @@ export default function EconomyPage() {
   return (
     <Layout SEO={{ title: `Economy - ${serverName} - LionBot`, description: "Economy command center" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="moderator">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
@@ -996,6 +998,7 @@ export default function EconomyPage() {
           confirmLabel={bulkOp === "reset" ? "Reset All Balances" : "Confirm"}
           variant={bulkOp === "reset" || bulkOp === "take" ? "danger" : "warning"}
         />
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

@@ -7,6 +7,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader, SectionCard, SettingRow, ChannelSelect,
@@ -321,6 +322,7 @@ export default function SchedulePage() {
   return (
     <Layout SEO={{ title: `Schedule - ${serverName} - LionBot`, description: "Schedule command center" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
@@ -918,6 +920,7 @@ export default function SchedulePage() {
           onResolve={() => {}}
           onAdjustCoins={() => {}}
         />
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

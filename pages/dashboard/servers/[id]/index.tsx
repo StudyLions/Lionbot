@@ -8,6 +8,7 @@
 // Purpose: full member hub redesign - rank progress, activity chart, goals, economy, sessions, attendance, messages, server info
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
@@ -394,6 +395,7 @@ export default function ServerDetail() {
       SEO={{ title: `${data?.server.name || "Server"} - LionBot Dashboard`, description: "Server dashboard" }}
     >
       <AdminGuard>
+        <ServerGuard requiredLevel="member">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav
@@ -415,9 +417,25 @@ export default function ServerDetail() {
                   <Skeleton className="h-64" />
                 </div>
               ) : error ? (
-                <div className="text-center py-20">
-                  <XCircle className="mx-auto text-destructive mb-4" size={48} />
-                  <p className="text-destructive text-lg">{error}</p>
+                <div className="text-center py-16">
+                  <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Clock size={28} className="text-primary" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Setting things up...</h3>
+                  <p className="text-muted-foreground max-w-md mx-auto mb-1">
+                    If you just added LionBot to your server, it can take a minute or two for everything to sync up.
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 mb-6">
+                    Refresh this page shortly and you&apos;ll be all set.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-foreground font-medium transition-colors mx-auto"
+                  >
+                    <ArrowRight size={16} className="rotate-[225deg]" />
+                    Refresh Page
+                  </button>
                 </div>
               ) : data ? (
                 <>
@@ -1368,6 +1386,7 @@ export default function ServerDetail() {
             </div>
           </div>
         </div>
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

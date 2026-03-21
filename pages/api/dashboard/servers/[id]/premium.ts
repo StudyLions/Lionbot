@@ -5,8 +5,11 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: import requireAdmin + parseBigInt to enforce admin-only premium purchases
+import { requireAdmin } from "@/utils/adminAuth"
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 const PLANS = {
   monthly: { cost: 1500, durationDays: 30 },
@@ -18,10 +21,12 @@ type PlanKey = keyof typeof PLANS
 
 export default apiHandler({
   async POST(req, res) {
-    const auth = await requireAuth(req, res)
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: require admin permission so only server admins can purchase premium
+    const guildId = parseBigInt(req.query.id, "id")
+    const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
-
-    const guildId = BigInt(req.query.id as string)
+    // --- END AI-MODIFIED ---
     const { plan } = req.body as { plan?: string }
 
     if (!plan || !(plan in PLANS)) {

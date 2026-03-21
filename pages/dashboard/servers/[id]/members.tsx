@@ -8,6 +8,7 @@
 // Purpose: polish pass - avatars, filters, last active, record dots, active-now, session tags
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
@@ -246,6 +247,7 @@ export default function MembersPage() {
   return (
     <Layout SEO={{ title: `Members - ${serverName} - LionBot`, description: "Server members" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="moderator">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-8">
             <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
@@ -449,6 +451,7 @@ export default function MembersPage() {
         <ResolveModal open={!!resolveTarget} onClose={() => setResolveTarget(null)} loading={actionLoading} ticketCount={resolveTarget?.ticketIds.length ?? 0} onConfirm={(reason) => { apiAction(`/api/dashboard/servers/${id}/members/${resolveTarget?.userId}/resolve`, "PATCH", { ticketIds: resolveTarget?.ticketIds, reason }).then(() => setResolveTarget(null)) }} />
         <BulkActionModal open={!!bulkOp} onClose={() => setBulkOp(null)} loading={actionLoading} selectedCount={selectedIds.size} operation={bulkOp || "coins"} onConfirm={(data) => { apiAction(`/api/dashboard/servers/${id}/members/bulk`, "PATCH", { userIds: Array.from(selectedIds), operation: bulkOp, ...data }).then(() => { setBulkOp(null); setSelectedIds(new Set()) }) }} />
         <RefundModal open={!!refundTarget} onClose={() => setRefundTarget(null)} loading={actionLoading} transactionAmount={refundTarget?.amount ?? 0} onConfirm={() => { apiAction(`/api/dashboard/servers/${id}/members/${refundTarget?.userId}/refund`, "POST", { transactionId: refundTarget?.transactionId }).then(() => setRefundTarget(null)) }} />
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )
