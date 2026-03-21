@@ -142,13 +142,13 @@ export default function TopggStats() {
 
   if (!stats) {
     return (
-      <EmbedLayout title="LionBot Stats" height="110px">
+      <EmbedLayout title="LionBot Stats" height="80px">
         <div
           style={{
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            height: "110px",
+            height: "80px",
             color: "rgba(255,255,255,0.3)",
             fontSize: "13px",
           }}
@@ -160,7 +160,7 @@ export default function TopggStats() {
   }
 
   return (
-    <EmbedLayout title="LionBot Stats" height="110px">
+    <EmbedLayout title="LionBot Stats" height="80px">
       <style>{`
         @keyframes pulse-dot {
           0%, 100% { opacity: 1; transform: scale(1); }
@@ -173,8 +173,8 @@ export default function TopggStats() {
           justifyContent: "center",
           alignItems: "center",
           gap: "8px",
-          padding: "16px 20px",
-          height: "110px",
+          padding: "10px 20px",
+          height: "80px",
           boxSizing: "border-box",
         }}
       >
