@@ -6,11 +6,20 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Import auth to check if current user owns the listing
+import { getAuthContext } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
     const listingId = parseInt(req.query.listingId as string)
     if (isNaN(listingId)) return res.status(400).json({ error: "Invalid listingId" })
+
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Get auth context to determine isMine flag
+    const auth = await getAuthContext(req)
+    // --- END AI-MODIFIED ---
 
     const listing = await prisma.lg_marketplace_listings.findUnique({
       where: { listingid: listingId },
@@ -57,9 +66,10 @@ export default apiHandler({
         createdAt: listing.created_at.toISOString(),
         expiresAt: listing.expires_at.toISOString(),
         // --- AI-MODIFIED (2026-03-21) ---
-        // Purpose: Include scroll/enhancement data in listing detail response
+        // Purpose: Include scroll/enhancement data and ownership flag in listing detail response
         scrollData: listing.scroll_data ?? null,
         totalBonus: listing.total_bonus ?? 0,
+        isMine: auth ? BigInt(auth.discordId) === listing.seller_userid : false,
         // --- END AI-MODIFIED ---
       },
       recentSales: recentSales.map((s) => ({
