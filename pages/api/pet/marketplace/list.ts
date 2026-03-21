@@ -197,7 +197,7 @@ export default apiHandler({
             currency,
             status: "ACTIVE",
             expires_at: getExpiresAt(),
-            scroll_data: scrollData ?? undefined,
+            scroll_data: scrollData ? (scrollData as any) : undefined,
             total_bonus: totalBonus,
           },
         })

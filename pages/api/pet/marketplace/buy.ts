@@ -278,7 +278,7 @@ export default apiHandler({
             price_per_unit: listing.price_per_unit,
             total_price: totalPrice,
             currency: listing.currency,
-            scroll_data: scrollData ?? undefined,
+            scroll_data: scrollData ? (scrollData as any) : undefined,
             total_bonus: listingTotalBonus,
           },
         })
