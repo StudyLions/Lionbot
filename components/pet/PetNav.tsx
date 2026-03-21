@@ -257,10 +257,13 @@ export default function PetNav({ hasPet = true }: { hasPet?: boolean }) {
         <NavContent hasPet={hasPet} />
       </nav>
 
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Minimum 44px touch target for hamburger button */}
       <div className="fixed top-16 left-4 z-40 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <Button variant="outline" size="icon" className="bg-[var(--pet-card,#0f1628)] border-2 border-[var(--pet-border,#2a3a5c)] shadow-[2px_2px_0_#060810]">
+            <Button variant="outline" size="icon" className="bg-[var(--pet-card,#0f1628)] border-2 border-[var(--pet-border,#2a3a5c)] shadow-[2px_2px_0_#060810] min-w-[44px] min-h-[44px]">
+      {/* --- END AI-MODIFIED --- */}
               <Menu size={18} />
             </Button>
           </SheetTrigger>

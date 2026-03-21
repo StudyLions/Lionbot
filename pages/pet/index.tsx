@@ -262,21 +262,24 @@ export default function PetOverview() {
                   >
                     <div className="flex items-center justify-between flex-wrap gap-3">
                       <GoldDisplay amount={Number(data.gold)} size="lg" />
-                      <div className="flex items-center gap-4">
+                      {/* --- AI-MODIFIED (2026-03-21) --- */}
+                      {/* Purpose: Add flex-wrap so currency stats wrap on narrow phones */}
+                      <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
                         <GoldDisplay amount={data.gems} size="md" type="gem" />
-                        <div className="w-px h-6 bg-[#2a3a5c]" />
+                        <div className="w-px h-6 bg-[#2a3a5c] hidden sm:block" />
                         <div className="flex items-center gap-1.5">
                           <img src={getUiIconUrl("liongotchi_greenpot")} alt="" width={16} height={16}
                             style={{ imageRendering: "pixelated" }} />
                           <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">{data.inventoryCount}</span>
                           <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">items</span>
                         </div>
-                        <div className="w-px h-6 bg-[#2a3a5c]" />
+                        <div className="w-px h-6 bg-[#2a3a5c] hidden sm:block" />
                         <div className="flex items-center gap-1.5">
                           <span className="font-pixel text-sm text-[#40d870]">{data.activeFarmPlots}</span>
                           <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">farm</span>
                         </div>
                       </div>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   </div>
 
@@ -301,12 +304,15 @@ export default function PetOverview() {
                         </Link>
                       </div>
                     </div>
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Responsive GameboyFrame width to avoid forced horizontal scroll */}
                     <div className="flex justify-center overflow-x-auto">
                       <GameboyFrame
                         isFullscreen={false}
                         skinAssetPath={data.gameboySkinPath ?? undefined}
-                        width={453}
+                        width={typeof window !== 'undefined' && window.innerWidth < 500 ? Math.min(340, window.innerWidth - 80) : 453}
                       >
+                    {/* --- END AI-MODIFIED --- */}
                         <RoomCanvas
                           roomPrefix={data.roomPrefix ?? "rooms/default"}
                           furniture={data.furniture ?? {}}

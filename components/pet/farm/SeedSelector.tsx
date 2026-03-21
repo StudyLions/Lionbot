@@ -119,7 +119,10 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
               })}
             </div>
             <div className="flex items-center justify-between px-4 py-2.5">
-              <div className="flex items-center gap-4 font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
+              {/* --- AI-MODIFIED (2026-03-21) --- */}
+              {/* Purpose: Add flex-wrap so purchase summary wraps on narrow screens */}
+              <div className="flex items-center gap-2 sm:gap-4 flex-wrap font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
+              {/* --- END AI-MODIFIED --- */}
                 <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
                 <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
                 <span>{selected.growthPointsNeeded} pts</span>

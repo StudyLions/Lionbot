@@ -81,7 +81,10 @@ export default function RoomBrowser({
         <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-yellow-500 z-10 sticky" />
 
         {/* Header */}
-        <div className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#0c1020] border-b border-[#3a4a6c]">
+        {/* --- AI-MODIFIED (2026-03-21) --- */}
+        {/* Purpose: Add flex-wrap + gap for mobile header layout */}
+        <div className="sticky top-0 z-10 flex items-center justify-between flex-wrap gap-2 px-4 sm:px-5 py-4 bg-[#0c1020] border-b border-[#3a4a6c]">
+        {/* --- END AI-MODIFIED --- */}
           <div>
             <h2 className="text-base text-yellow-300">Browse Rooms</h2>
             <p className="text-[13px] text-[#6b7fa0] mt-0.5">
@@ -112,7 +115,10 @@ export default function RoomBrowser({
                 <span>Your Rooms</span>
                 <span className="text-[12px] text-[#6b7fa0]">({ownedRooms.length})</span>
               </h3>
-              <div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-3">
+              {/* --- AI-MODIFIED (2026-03-21) --- */}
+              {/* Purpose: Fix reversed breakpoints -- mobile-first 1 col, scale up */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* --- END AI-MODIFIED --- */}
                 {ownedRooms.map((room) => (
                   <RoomCard
                     key={room.roomId}
@@ -133,7 +139,10 @@ export default function RoomBrowser({
                 <span>Room Shop</span>
                 <span className="text-[12px] text-[#6b7fa0]">({shopRooms.length})</span>
               </h3>
-              <div className="grid grid-cols-3 md:grid-cols-2 sm:grid-cols-1 gap-3">
+              {/* --- AI-MODIFIED (2026-03-21) --- */}
+              {/* Purpose: Fix reversed breakpoints -- mobile-first 1 col, scale up */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* --- END AI-MODIFIED --- */}
                 {shopRooms.map((room) => (
                   <RoomCard
                     key={room.roomId}
@@ -181,7 +190,7 @@ function RoomCard({
           ? 'border-yellow-500 shadow-[0_0_16px_rgba(234,179,8,0.3)]'
           : isShop
             ? 'border-[#3a4a6c] hover:border-[#5a6a8c] cursor-default'
-            : 'border-[#3a4a6c] hover:border-[#5a6a8c] hover:shadow-[0_0_8px_rgba(58,74,108,0.3)]'
+            : 'border-[#3a4a6c] hover:border-[#5a6a8c] active:border-[#5a6a8c] hover:shadow-[0_0_8px_rgba(58,74,108,0.3)]'
         }
       `}
     >
@@ -247,9 +256,12 @@ function RoomCard({
             </span>
           )}
           {room.owned && !isActive && (
-            <span className="text-[12px] text-green-400/80 group-hover:text-green-300 transition-colors flex-shrink-0 ml-2">
+            {/* --- AI-MODIFIED (2026-03-21) --- */}
+            {/* Purpose: Add active: feedback for touch devices */}
+            <span className="text-[12px] text-green-400/80 group-hover:text-green-300 active:text-green-200 transition-colors flex-shrink-0 ml-2">
               Switch →
             </span>
+            {/* --- END AI-MODIFIED --- */}
           )}
         </div>
       </div>

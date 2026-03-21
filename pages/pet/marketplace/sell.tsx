@@ -208,7 +208,10 @@ export default function SellPage() {
                   </h3>
 
                   {invLoading ? (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Start at 2 cols on small phones for better card sizing */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {/* --- END AI-MODIFIED --- */}
                       {Array.from({ length: 12 }).map((_, i) => (
                         <div key={i} className="h-28 border-2 border-[#1a2a3c] bg-[#0c1020] animate-pulse" />
                       ))}
@@ -220,7 +223,10 @@ export default function SellPage() {
                       </p>
                     </PixelCard>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 max-h-[450px] overflow-y-auto pr-1">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Start at 2 cols on small phones for better card sizing */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 max-h-[450px] overflow-y-auto pr-1">
+                    {/* --- END AI-MODIFIED --- */}
                       {/* --- AI-MODIFIED (2026-03-20) --- */}
                       {/* Purpose: Wrap each card in ItemTooltip, show rarity badge, enhancement badge, glow label */}
                       {tradeableItems.map((inv: InventoryItem) => {

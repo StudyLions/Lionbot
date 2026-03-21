@@ -309,7 +309,10 @@ export default function InventoryPage() {
                     </div>
                     <div className="flex justify-center overflow-hidden">
                       {overviewLoading ? (
-                        <Skeleton className="w-[280px] h-[280px]" />
+                        {/* --- AI-MODIFIED (2026-03-21) --- */}
+                        {/* Purpose: Responsive skeleton -- scale down on narrow screens */}
+                        <Skeleton className="w-full max-w-[280px] aspect-square" />
+                        {/* --- END AI-MODIFIED --- */}
                       ) : overview?.hasPet ? (
                         <GameboyFrame
                           isFullscreen={false}
@@ -332,7 +335,10 @@ export default function InventoryPage() {
                           />
                         </GameboyFrame>
                       ) : (
-                        <div className="w-[280px] h-[200px] flex items-center justify-center">
+                        {/* --- AI-MODIFIED (2026-03-21) --- */}
+                        {/* Purpose: Responsive placeholder -- scale down on narrow screens */}
+                        <div className="w-full max-w-[280px] h-[200px] flex items-center justify-center">
+                        {/* --- END AI-MODIFIED --- */}
                           <span className="font-pixel text-sm text-[var(--pet-text-dim)]">No pet yet</span>
                         </div>
                       )}

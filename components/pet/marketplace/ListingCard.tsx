@@ -54,7 +54,7 @@ export default function ListingCard({ listing, onBuy }: Props) {
   return (
     <PixelCard
       borderColor={borderColor}
-      className="p-3 flex flex-col gap-2 group hover:brightness-110 transition-all"
+      className="p-3 flex flex-col gap-2 group hover:brightness-110 active:brightness-110 transition-all"
     >
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Wrap Link children in <a> tag - Next.js Pages Router requires single child in <Link> */}

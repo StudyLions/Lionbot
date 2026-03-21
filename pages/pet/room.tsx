@@ -555,7 +555,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
           <button
             onClick={() => { undo(); playSound('undo') }}
             disabled={undoCount === 0}
-            className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
+            className="font-pixel text-[13px] px-3 py-2 sm:px-2.5 sm:py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors min-h-[44px] sm:min-h-0"
             title="Undo (Ctrl+Z)"
           >
             {'↩'}{undoCount > 0 && <span className="text-[11px] ml-0.5">({undoCount})</span>}
@@ -563,7 +563,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
           <button
             onClick={() => { redo(); playSound('undo') }}
             disabled={redoCount === 0}
-            className="font-pixel text-[13px] px-2.5 py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors"
+            className="font-pixel text-[13px] px-3 py-2 sm:px-2.5 sm:py-1.5 border-2 border-[#3a4a6c] bg-[#111828] text-[#8899aa] disabled:opacity-30 hover:bg-[#1a2438] hover:text-[#e2e8f0] transition-colors min-h-[44px] sm:min-h-0"
             title="Redo (Ctrl+Shift+Z)"
           >
             {'↪'}{redoCount > 0 && <span className="text-[11px] ml-0.5">({redoCount})</span>}
@@ -587,7 +587,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
           <div className="flex items-center gap-1">
             <button
               onClick={zoomOut}
-              className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              className="font-pixel text-sm px-2 py-1.5 sm:px-1.5 sm:py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
               title="Zoom out"
             >{'−'}</button>
             <span className="font-pixel text-[13px] text-[#8899aa] min-w-[3ch] text-center tabular-nums">
@@ -595,7 +595,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
             </span>
             <button
               onClick={zoomIn}
-              className="font-pixel text-sm px-1.5 py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors"
+              className="font-pixel text-sm px-2 py-1.5 sm:px-1.5 sm:py-1 border border-[#3a4a6c] bg-[#111828] text-[#8899aa] hover:text-[#e2e8f0] transition-colors min-h-[44px] min-w-[44px] sm:min-h-0 sm:min-w-0 flex items-center justify-center"
               title="Zoom in"
             >{'+'}</button>
           </div>

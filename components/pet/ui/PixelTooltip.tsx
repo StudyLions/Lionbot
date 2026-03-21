@@ -16,7 +16,7 @@ export default function PixelTooltip({ children, className, position = "top" }: 
     <div
       className={cn(
         "font-pixel bg-[#0a0e1a] border-2 border-[#4080f0] px-2 py-1",
-        "text-[var(--pet-text,#e2e8f0)] whitespace-nowrap",
+        "text-[var(--pet-text,#e2e8f0)] whitespace-nowrap max-w-[calc(100vw-2rem)]",
         "shadow-[2px_2px_0_#060810]",
         "pointer-events-none select-none",
         className

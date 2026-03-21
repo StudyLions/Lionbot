@@ -86,7 +86,10 @@ export default function SkinPreview({
       <div className="p-4 space-y-4">
         {/* Preview frame(s) */}
         {showCompare ? (
-          <div className="flex items-end justify-center gap-3">
+          {/* --- AI-MODIFIED (2026-03-21) --- */}
+          {/* Purpose: Stack compare frames vertically on small screens */}
+          <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center gap-3">
+          {/* --- END AI-MODIFIED --- */}
             {/* Active (current) */}
             <div className="text-center space-y-1.5">
               <span className="font-pixel text-[9px] text-[#4a5a70] uppercase block">Current</span>
