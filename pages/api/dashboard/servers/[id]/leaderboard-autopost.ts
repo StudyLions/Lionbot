@@ -9,7 +9,7 @@ import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const MAX_CONFIGS_PER_GUILD = 10
 
-const BLOCKED_MENTION_RE = /@(everyone|here)/gi
+const BLOCKED_MENTION_RE = /@(everyone|here)/i
 
 function validateTemplateField(value: string | null | undefined, fieldName: string, maxLen: number) {
   if (!value) return

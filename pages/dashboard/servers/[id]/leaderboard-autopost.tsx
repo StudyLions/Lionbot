@@ -605,12 +605,14 @@ function ConfigEditor({
           const res = await fetch(`${actionApi}?queueid=${queueid}&id=${serverId}`)
           const data = await res.json()
           if (data.status === "done") {
-            setSimulateResult(data.result)
+            const parsed = typeof data.result === "string" ? JSON.parse(data.result) : data.result
+            setSimulateResult(parsed)
             toast.success("Simulation complete!")
             break
           }
           if (data.status === "failed") {
-            toast.error(data.result?.error || "Simulation failed")
+            const err = typeof data.result === "string" ? JSON.parse(data.result) : data.result
+            toast.error(err?.error || "Simulation failed")
             break
           }
           tries++
@@ -624,8 +626,12 @@ function ConfigEditor({
           const res = await fetch(`${actionApi}?queueid=${queueid}&id=${serverId}`)
           const data = await res.json()
           if (data.status === "done" || data.status === "failed") {
-            if (data.status === "done") toast.success("Action completed!")
-            else toast.error(data.result?.error || "Action failed")
+            if (data.status === "done") {
+              toast.success("Action completed!")
+            } else {
+              const err = typeof data.result === "string" ? JSON.parse(data.result) : data.result
+              toast.error(err?.error || "Action failed")
+            }
             break
           }
           tries++
