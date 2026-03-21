@@ -7,7 +7,10 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
-import { requireModerator, requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: branding is admin-only (both GET and PATCH), removed requireModerator
+import { requireAdmin } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 // --- AI-MODIFIED (2026-03-15) ---
@@ -35,7 +38,10 @@ export default apiHandler({
     // Purpose: validate guild id from query via parseBigInt (400 on invalid)
     const guildId = parseBigInt(req.query.id, "id")
     // --- END AI-MODIFIED ---
-    const auth = await requireModerator(req, res, guildId)
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: require admin for GET (was requireModerator) to match ServerNav admin-only gating
+    const auth = await requireAdmin(req, res, guildId)
+    // --- END AI-MODIFIED ---
     if (!auth) return
 
     const premium = await prisma.premium_guilds.findUnique({

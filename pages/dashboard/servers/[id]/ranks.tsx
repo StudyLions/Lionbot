@@ -7,6 +7,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader, ConfirmModal, RoleSelect, EmptyState, toast,
@@ -463,6 +464,7 @@ export default function RanksPage() {
   return (
     <Layout SEO={{ title: `Ranks - ${serverName} - LionBot`, description: "Rank command center" }}>
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
@@ -1055,6 +1057,7 @@ export default function RanksPage() {
           confirmLabel="Load Preset"
           loading={loadingPreset}
         />
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )

@@ -5,6 +5,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
+import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
   PageHeader,
@@ -121,6 +122,7 @@ export default function VideoChannelsPage() {
       }}
     >
       <AdminGuard>
+        <ServerGuard requiredLevel="admin">
         <div className="min-h-screen bg-background pt-6 pb-20 px-4">
           <div className="max-w-5xl mx-auto flex gap-8">
             <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
@@ -299,6 +301,7 @@ export default function VideoChannelsPage() {
             </div>
           </div>
         </div>
+      </ServerGuard>
       </AdminGuard>
     </Layout>
   )
