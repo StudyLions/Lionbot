@@ -349,10 +349,13 @@ export default function ModerationPage() {
                           )}
 
                           {/* Member avatar + name */}
+                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                          {/* Purpose: Reduce fixed member column width on mobile to prevent overflow */}
                           <div
-                            className="flex items-center gap-2.5 min-w-0 w-40 flex-shrink-0 cursor-pointer"
+                            className="flex items-center gap-2.5 min-w-0 w-28 sm:w-40 flex-shrink-0 cursor-pointer"
                             onClick={(e) => { e.stopPropagation(); setPanelUserId(t.targetId) }}
                           >
+                          {/* --- END AI-MODIFIED --- */}
                             <img src={t.targetAvatarUrl} alt="" className="w-8 h-8 rounded-full flex-shrink-0" loading="lazy" />
                             <span className="text-sm font-medium text-foreground truncate hover:text-primary transition-colors">{t.targetDisplayName}</span>
                           </div>

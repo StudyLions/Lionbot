@@ -338,13 +338,13 @@ export default function SchedulePage() {
                   <button
                     key={t.id}
                     onClick={() => setTab(t.id)}
-                    className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    className={`flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
                       tab === t.id
                         ? "bg-primary text-primary-foreground shadow-sm"
                         : "text-muted-foreground hover:text-foreground hover:bg-gray-800/50"
                     }`}
                   >
-                    {t.icon} {t.label}
+                    {t.icon} <span className="truncate">{t.label}</span>
                   </button>
                 ))}
               </div>
@@ -492,7 +492,10 @@ export default function SchedulePage() {
 
                       {/* Coin Flow Summary */}
                       <SectionCard title="Coin Flow" description="How coins move through the schedule system" icon={<Coins size={18} />}>
-                        <div className="flex items-center justify-around py-4">
+                        {/* --- AI-MODIFIED (2026-03-21) --- */}
+                        {/* Purpose: Stack coin flow on mobile */}
+                        <div className="flex flex-col sm:flex-row items-center justify-around py-4 gap-3 sm:gap-0">
+                        {/* --- END AI-MODIFIED --- */}
                           <div className="text-center">
                             <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Booking Costs</p>
                             <p className="text-2xl font-bold text-red-400">{stats.coinFlow.totalSpent.toLocaleString()}</p>

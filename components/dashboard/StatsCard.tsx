@@ -115,10 +115,11 @@ export default function StatsCard({
         </h3>
       </div>
 
-      {/* Two-column layout */}
-      <div className="px-6 pb-4 flex gap-4">
-        {/* Left: Study time by period */}
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Stack columns on mobile so they don't get cramped */}
+      <div className="px-4 sm:px-6 pb-4 flex flex-col sm:flex-row gap-4">
         <div className="flex-1 min-w-0">
+        {/* --- END AI-MODIFIED --- */}
           <div
             className="rounded-lg overflow-hidden"
             style={{ backgroundColor: `${colors.primaryColor}20` }}

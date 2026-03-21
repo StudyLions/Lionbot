@@ -449,7 +449,10 @@ export default function ServerDetail() {
                     ) : (
                       <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 via-purple-500/5 to-background" />
                     )}
-                    <div className="relative px-6 py-5 flex items-center justify-between gap-4">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Add flex-wrap so hero header doesn't overflow on mobile */}
+                    <div className="relative px-4 sm:px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
+                    {/* --- END AI-MODIFIED --- */}
                       <div className="flex items-center gap-4">
                         <ServerIcon name={data.server.name} iconUrl={data.server.iconUrl} size="lg" />
                         <div>
@@ -615,7 +618,9 @@ export default function ServerDetail() {
                                   </p>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm">
+                              {/* --- AI-MODIFIED (2026-03-21) --- */}
+                              {/* Purpose: Add flex-wrap so moderation stats wrap on mobile */}
+                              <div className="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm flex-wrap">
                                 <Shield size={16} className="text-rose-400 flex-shrink-0" />
                                 <span className="text-muted-foreground font-medium mr-auto">Moderation</span>
                                 <Link href={`/dashboard/servers/${id}/moderation`}>
@@ -629,7 +634,10 @@ export default function ServerDetail() {
                                 <span className="text-border">|</span>
                                 <span><span className="font-bold text-foreground">{adminStats.moderation.activeStudyBans}</span><span className="text-muted-foreground ml-1">bans</span></span>
                               </div>
-                              <div className="flex items-center gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm">
+                              {/* --- AI-MODIFIED (2026-03-21) --- */}
+                              {/* Purpose: Add flex-wrap so economy stats wrap on mobile */}
+                              <div className="flex items-center gap-2 sm:gap-4 px-4 py-3 bg-muted/30 rounded-xl text-sm flex-wrap">
+                              {/* --- END AI-MODIFIED --- */}
                                 <Coins size={16} className="text-amber-400 flex-shrink-0" />
                                 <span className="text-muted-foreground font-medium mr-auto">Economy</span>
                                 <Link href={`/dashboard/servers/${id}/economy`}>
@@ -781,7 +789,10 @@ export default function ServerDetail() {
                               </span>
                             </Link>
                           </div>
-                          <div className="grid grid-cols-3 gap-4">
+                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                          {/* Purpose: Stack goals grid on mobile */}
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {/* --- END AI-MODIFIED --- */}
                             {(() => {
                               const g = memberData.goals.weekly || memberData.goals.monthly
                               if (!g) return null

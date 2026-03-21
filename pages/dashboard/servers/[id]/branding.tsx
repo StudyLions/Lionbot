@@ -926,7 +926,10 @@ export default function BrandingPage() {
                 {/* Left: Editor panel */}
                 <div className="space-y-4">
                   {/* Toolbar */}
-                  <div className="flex items-center gap-1.5 flex-wrap rounded-lg border border-border bg-muted/30 p-1">
+                  {/* --- AI-MODIFIED (2026-03-21) --- */}
+                  {/* Purpose: Tighter gap on mobile for toolbar density */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 flex-wrap rounded-lg border border-border bg-muted/30 p-1">
+                  {/* --- END AI-MODIFIED --- */}
                     <Button
                       variant="ghost"
                       size="sm"

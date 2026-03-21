@@ -406,8 +406,12 @@ export default function FocusModePage() {
   // const ringSize = isPopout ? 240 : 320
   // const strokeWidth = isPopout ? 6 : 8
   // --- End original code ---
-  const ringSize = isPopout ? 240 : 320
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Scale ring size down on mobile viewport
+  const isMobileView = typeof window !== 'undefined' && window.innerWidth < 640
+  const ringSize = isPopout ? 240 : isMobileView ? 220 : 320
   const strokeWidth = isPopout ? theme.ringWidth.popout : theme.ringWidth.normal
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   const radius = (ringSize - strokeWidth * 2) / 2
   const circumference = 2 * Math.PI * radius
@@ -661,7 +665,7 @@ export default function FocusModePage() {
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className={cn(
                 "tabular-nums leading-none",
-                isPopout ? "text-5xl" : "text-7xl"
+                isPopout ? "text-5xl" : isMobileView ? "text-4xl" : "text-7xl"
               )} style={{
                 color: "#f0f0f0",
                 fontFamily: theme.fontFamily,

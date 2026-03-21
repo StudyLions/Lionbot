@@ -38,7 +38,9 @@ export default function PageHeader({ title, description, breadcrumbs, actions }:
           ))}
         </nav>
       )}
-      <div className="flex items-start justify-between gap-4 sm:flex-col">
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Fix reversed breakpoints -- stack on mobile, row on sm+ */}
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground">{title}</h1>
           {description && (
@@ -47,6 +49,7 @@ export default function PageHeader({ title, description, breadcrumbs, actions }:
         </div>
         {actions && <div className="flex items-center gap-2 flex-shrink-0">{actions}</div>}
       </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

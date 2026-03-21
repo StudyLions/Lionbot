@@ -56,7 +56,9 @@ export default function NumberInput({
           {label}
         </label>
       )}
-      <div className="flex items-center gap-2">
+      {/* --- AI-MODIFIED (2026-03-21) --- */}
+      {/* Purpose: Fix fixed w-32 that overflows on mobile -- use flexible width with wrap */}
+      <div className="flex items-center gap-2 flex-wrap">
         <input
           id={inputId}
           type="number"
@@ -68,7 +70,7 @@ export default function NumberInput({
           step={step}
           disabled={disabled}
           className={`
-            w-32 px-3 py-2 bg-card border rounded-lg text-sm text-foreground
+            w-full sm:w-32 px-3 py-2 bg-card border rounded-lg text-sm text-foreground
             focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
             disabled:opacity-50 disabled:cursor-not-allowed
             ${isDefault ? "border-input" : "border-indigo-500/50"}
@@ -86,6 +88,7 @@ export default function NumberInput({
           </button>
         )}
       </div>
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

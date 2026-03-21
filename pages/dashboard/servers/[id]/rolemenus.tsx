@@ -202,22 +202,28 @@ export default function RoleMenusPage() {
                                   <table className="w-full text-sm">
                                     <thead>
                                       <tr className="border-b border-border bg-card/50">
+                                        {/* --- AI-MODIFIED (2026-03-21) --- */}
+                                        {/* Purpose: Hide non-essential columns on mobile */}
                                         <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase">Label</th>
-                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase">Emoji</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase hidden sm:table-cell">Emoji</th>
                                         <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase">Role</th>
-                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase">Price</th>
-                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase">Duration</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase hidden sm:table-cell">Price</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-medium text-muted-foreground uppercase hidden sm:table-cell">Duration</th>
                                         <th className="px-4 py-2.5 w-12" />
+                                        {/* --- END AI-MODIFIED --- */}
                                       </tr>
                                     </thead>
                                     <tbody className="divide-y divide-border/30">
                                       {menu.roles.map((role) => (
                                         <tr key={role.roleEntryId} className="hover:bg-card/30 transition-colors">
+                                          {/* --- AI-MODIFIED (2026-03-21) --- */}
+                                          {/* Purpose: Hide non-essential columns on mobile (matching hidden th above) */}
                                           <td className="px-4 py-2.5 text-foreground">{role.label}</td>
-                                          <td className="px-4 py-2.5">{role.emoji || "—"}</td>
+                                          <td className="px-4 py-2.5 hidden sm:table-cell">{role.emoji || "—"}</td>
                                           <td className="px-4 py-2.5 text-muted-foreground font-mono text-xs">{role.roleId}</td>
-                                          <td className="px-4 py-2.5 text-warning">{role.price != null ? `${role.price} coins` : "Free"}</td>
-                                          <td className="px-4 py-2.5 text-muted-foreground">{role.duration != null ? `${Math.round(role.duration / 3600)}h` : "Permanent"}</td>
+                                          <td className="px-4 py-2.5 text-warning hidden sm:table-cell">{role.price != null ? `${role.price} coins` : "Free"}</td>
+                                          <td className="px-4 py-2.5 text-muted-foreground hidden sm:table-cell">{role.duration != null ? `${Math.round(role.duration / 3600)}h` : "Permanent"}</td>
+                                          {/* --- END AI-MODIFIED --- */}
                                           <td className="px-4 py-2.5">
                                             <button onClick={() => setDeleteRoleTarget(role)}
                                               className="p-1 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded transition-colors">
@@ -278,7 +284,7 @@ export default function RoleMenusPage() {
                   <div className="flex gap-3 flex-wrap">
                     <input type="text" placeholder="Menu name" value={newMenu.name}
                       onChange={(e) => setNewMenu((f) => ({ ...f, name: e.target.value }))}
-                      className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 min-w-[180px]" />
+                      className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 min-w-0" />
                     <SearchSelect
                       options={[
                         { value: "BUTTON", label: "Button" },

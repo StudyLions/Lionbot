@@ -175,9 +175,12 @@ export default function WikiPage() {
                         onChange={(c) => { setCategory(c); setPage(1) }}
                       />
                     )}
-                    <div className="flex items-center gap-2">
-                      <div className="relative flex-1">
+                    {/* --- AI-MODIFIED (2026-03-21) --- */}
+                    {/* Purpose: Wrap filter row on mobile */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <div className="relative flex-1 w-full sm:w-auto min-w-[200px]">
                         <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#4a5a6a]" />
+                    {/* --- END AI-MODIFIED --- */}
                         <input
                           type="text" value={search}
                           onChange={(e) => { setSearch(e.target.value); setPage(1) }}

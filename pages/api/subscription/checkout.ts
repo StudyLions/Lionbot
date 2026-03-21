@@ -23,11 +23,14 @@ const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
 const VALID_TIERS = ["LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"] as const;
 type SubscriptionTier = (typeof VALID_TIERS)[number];
 
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: .trim() env vars to strip \r\n that Windows/Vercel CLI can inject
 const PRICE_ENV_MAP: Record<SubscriptionTier, string> = {
-  LIONHEART: process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5",
-  LIONHEART_PLUS: process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "price_1TBgSZAJ9zOg7wY9Z55T26ae",
-  LIONHEART_PLUS_PLUS: process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "price_1TBgSbAJ9zOg7wY9wmMbpVd3",
+  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5").trim(),
+  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "price_1TBgSZAJ9zOg7wY9Z55T26ae").trim(),
+  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "price_1TBgSbAJ9zOg7wY9wmMbpVd3").trim(),
 };
+// --- END AI-MODIFIED ---
 
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
@@ -88,11 +91,14 @@ export default async function handler(
       where: { userid: BigInt(discordId) },
     });
 
-    if (subscription?.status === "ACTIVE") {
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Block checkout for CANCELLING/PAST_DUE too, preventing double subscriptions
+    if (subscription?.status === "ACTIVE" || subscription?.status === "CANCELLING" || subscription?.status === "PAST_DUE") {
       return res.status(409).json({
         error: "You already have an active subscription. Manage it at /donate.",
       });
     }
+    // --- END AI-MODIFIED ---
 
     const customerId = await findOrCreateStripeCustomer(
       stripe,
