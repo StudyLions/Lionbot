@@ -53,15 +53,15 @@ export default function TopggSetup() {
   }, [])
 
   return (
-    <EmbedLayout title="Get Started with LionBot" height="160px">
+    <EmbedLayout title="Get Started with LionBot" height="120px">
       <div
         style={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           gap: "12px",
-          height: "160px",
-          padding: "20px 24px",
+          height: "120px",
+          padding: "12px 24px",
           boxSizing: "border-box",
         }}
       >

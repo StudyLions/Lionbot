@@ -131,7 +131,7 @@ export default function TopggFeatures() {
   const f = FEATURES[active]
 
   return (
-    <EmbedLayout title="LionBot Features" height="370px">
+    <EmbedLayout title="LionBot Features" height="300px">
       <style>{`
         @keyframes slide-up {
           from { opacity: 0; transform: translateY(16px); }
@@ -148,8 +148,8 @@ export default function TopggFeatures() {
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          height: "370px",
-          padding: "24px 32px",
+          height: "300px",
+          padding: "16px 32px",
           boxSizing: "border-box",
           opacity: entered ? 1 : 0,
           transition: "opacity 0.5s ease",
@@ -163,7 +163,7 @@ export default function TopggFeatures() {
             borderRadius: "16px",
             border: `1px solid ${f.color}22`,
             background: f.bgGlow,
-            padding: "28px 32px",
+            padding: "20px 28px",
             position: "relative",
             overflow: "hidden",
             opacity: transitioning ? 0 : 1,
@@ -191,7 +191,7 @@ export default function TopggFeatures() {
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              marginBottom: "20px",
+              marginBottom: "12px",
             }}
           >
             <span style={{ fontSize: "28px", lineHeight: 1 }}>{f.emoji}</span>
@@ -246,7 +246,7 @@ export default function TopggFeatures() {
           style={{
             display: "flex",
             gap: "8px",
-            marginTop: "20px",
+            marginTop: "12px",
           }}
         >
           {FEATURES.map((feat, i) => (
