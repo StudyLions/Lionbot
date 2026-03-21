@@ -24,11 +24,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
+    // --- AI-MODIFIED (2026-03-21) ---
+    // Purpose: Remove invalid { not: null } filter -- asset_path is non-nullable String in schema
     const items = await prisma.lg_items.findMany({
       where: {
-        asset_path: { not: null },
         category: { in: ALL_CATEGORIES as any },
       },
+    // --- END AI-MODIFIED ---
       select: {
         itemid: true,
         name: true,
