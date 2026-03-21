@@ -90,30 +90,51 @@ export async function getUserGuilds(accessToken: string, userId: string): Promis
     return cached.guilds
   }
 
-  try {
-    // --- AI-MODIFIED (2026-03-13) ---
-    // Purpose: handle Discord 429 rate limits with retry
-    // --- AI-MODIFIED (2026-03-15) ---
-    // Purpose: added ?with_counts=true so Discord returns approximate_member_count per guild
-    let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+  // --- AI-REPLACED (2026-03-21) ---
+  // Reason: Returning [] on Discord errors made API failures indistinguishable from
+  //         "user has no guilds", causing false "Access Denied" on transient errors.
+  // What the new code does better: Throws on Discord API errors so callers can
+  //         distinguish "couldn't check" from "user lacks permission". Cache extended
+  //         from 60s to 5min to reduce Discord API calls.
+  // --- Original code (commented out for rollback) ---
+  // try {
+  //   let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+  //     headers: { Authorization: `Bearer ${accessToken}` },
+  //   })
+  //   if (res.status === 429) {
+  //     const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+  //     await new Promise((r) => setTimeout(r, retryAfter * 1000))
+  //     res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+  //       headers: { Authorization: `Bearer ${accessToken}` },
+  //     })
+  //   }
+  //   if (!res.ok) return []
+  //   const guilds = (await res.json()) as DiscordGuild[]
+  //   guildCache.set(userId, { guilds, expiresAt: Date.now() + 60000 })
+  //   return guilds
+  // } catch {
+  //   return []
+  // }
+  // --- End original code ---
+  let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  })
+  if (res.status === 429) {
+    const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+    await new Promise((r) => setTimeout(r, retryAfter * 1000))
+    res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
-    if (res.status === 429) {
-      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
-      await new Promise((r) => setTimeout(r, retryAfter * 1000))
-      res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      })
-    // --- END AI-MODIFIED ---
-    }
-    if (!res.ok) return []
-    // --- END AI-MODIFIED ---
-    const guilds = (await res.json()) as DiscordGuild[]
-    guildCache.set(userId, { guilds, expiresAt: Date.now() + 60000 })
-    return guilds
-  } catch {
-    return []
   }
+  if (!res.ok) {
+    const err: any = new Error(`Discord API returned ${res.status}`)
+    err.discordStatus = res.status
+    throw err
+  }
+  const guilds = (await res.json()) as DiscordGuild[]
+  guildCache.set(userId, { guilds, expiresAt: Date.now() + 300000 })
+  return guilds
+  // --- END AI-REPLACED ---
 }
 
 // --- AI-MODIFIED (2026-03-13) ---
@@ -137,30 +158,54 @@ export async function getUserGuildRoles(guildId: bigint, userId: string): Promis
   const botToken = process.env.DISCORD_BOT_TOKEN
   if (!botToken) return []
 
-  try {
-    // --- AI-MODIFIED (2026-03-13) ---
-    // Purpose: handle Discord 429 rate limits with retry
-    let res = await fetch(
+  // --- AI-REPLACED (2026-03-21) ---
+  // Reason: Same fix as getUserGuilds -- throw on errors instead of returning [].
+  // What the new code does better: Errors propagate to callers. Cache extended to 5min.
+  // --- Original code (commented out for rollback) ---
+  // try {
+  //   let res = await fetch(
+  //     `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+  //     { headers: { Authorization: `Bot ${botToken}` } }
+  //   )
+  //   if (res.status === 429) {
+  //     const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+  //     await new Promise((r) => setTimeout(r, retryAfter * 1000))
+  //     res = await fetch(
+  //       `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+  //       { headers: { Authorization: `Bot ${botToken}` } }
+  //     )
+  //   }
+  //   if (!res.ok) return []
+  //   const member = (await res.json()) as GuildMemberInfo
+  //   const roles = member.roles || []
+  //   memberRoleCache.set(cacheKey, { roles, expiresAt: Date.now() + 60000 })
+  //   return roles
+  // } catch {
+  //   return []
+  // }
+  // --- End original code ---
+  let res = await fetch(
+    `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
+    { headers: { Authorization: `Bot ${botToken}` } }
+  )
+  if (res.status === 429) {
+    const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+    await new Promise((r) => setTimeout(r, retryAfter * 1000))
+    res = await fetch(
       `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
       { headers: { Authorization: `Bot ${botToken}` } }
     )
-    if (res.status === 429) {
-      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
-      await new Promise((r) => setTimeout(r, retryAfter * 1000))
-      res = await fetch(
-        `https://discord.com/api/v10/guilds/${guildId}/members/${userId}`,
-        { headers: { Authorization: `Bot ${botToken}` } }
-      )
-    }
-    if (!res.ok) return []
-    // --- END AI-MODIFIED ---
-    const member = (await res.json()) as GuildMemberInfo
-    const roles = member.roles || []
-    memberRoleCache.set(cacheKey, { roles, expiresAt: Date.now() + 60000 })
-    return roles
-  } catch {
-    return []
   }
+  if (!res.ok) {
+    const err: any = new Error(`Discord member API returned ${res.status}`)
+    err.discordStatus = res.status
+    throw err
+  }
+  const member = (await res.json()) as GuildMemberInfo
+  const roles = member.roles || []
+  memberRoleCache.set(cacheKey, { roles, expiresAt: Date.now() + 300000 })
+  return roles
+  // --- END AI-REPLACED ---
 }
 // --- END AI-MODIFIED ---
 

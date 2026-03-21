@@ -15,6 +15,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const auth = await requireAuth(req, res)
   if (!auth) return
 
+  // --- AI-MODIFIED (2026-03-21) ---
+  // Purpose: Distinguish Discord 401 (expired token → client should re-auth)
+  //          from other errors (transient → client should retry)
   try {
     const guildId = BigInt(req.query.id as string)
 
@@ -29,9 +32,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       isModerator: mod,
       isAdmin: admin,
     })
-  } catch (err) {
+  } catch (err: any) {
     console.error("Permissions error:", err)
+    if (err?.discordStatus === 401) {
+      return res.status(401).json({ error: "Discord session expired. Please sign in again." })
+    }
     return res.status(500).json({ error: "Failed to check permissions" })
   }
+  // --- END AI-MODIFIED ---
 }
 // --- END AI-MODIFIED ---

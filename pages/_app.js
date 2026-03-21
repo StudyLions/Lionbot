@@ -19,21 +19,20 @@ function App({ Component, pageProps }) {
     <SessionProvider
       // Provider options are not required but can be useful in situations where
       // you have a short session maxAge time. Shown here with default values.
+      // --- AI-MODIFIED (2026-03-21) ---
+      // Purpose: Enable periodic session refresh so the JWT callback runs and
+      //          refreshes expired Discord access tokens. Without this, the
+      //          Discord token in the JWT cookie silently expires and API calls
+      //          fail, causing false "Access Denied" on dashboard pages.
+      // --- Original values (for rollback) ---
+      // staleTime: 0, refetchInterval: 0,
+      // --- End original values ---
       options={{
-        // Stale Time controls how often the useSession in the client should
-        // contact the server to sync the session state. Value in seconds.
-        // e.g.
-        // * 0  - Disabled (always use cache value)
-        // * 60 - Sync session state with server if it's older than 60 seconds
-        staleTime: 0,
-        // Refetch Interval tells windows / tabs that are signed in to keep sending
-        // a keep alive request (which extends the current session expiry) to
-        // prevent sessions in open windows from expiring. Value in seconds.
-        //
-        // Note: If a session has expired when keep alive is triggered, all open
-        // windows / tabs will be updated to reflect the user is signed out.
-        refetchInterval: 0,
+        staleTime: 60,
+        refetchInterval: 4 * 60,
+        refetchOnWindowFocus: true,
       }}
+      // --- END AI-MODIFIED ---
       session={pageProps.session}
     >
       <Script strategy={"lazyOnload"} src={"https://www.googletagmanager.com/gtag/js?id=G-5YBLTF11VW"} />

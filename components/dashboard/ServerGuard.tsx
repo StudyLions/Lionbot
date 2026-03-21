@@ -9,7 +9,10 @@ import { useRouter } from "next/router"
 import { useSession } from "next-auth/react"
 import { ReactNode } from "react"
 import { useDashboard } from "@/hooks/useDashboard"
-import { ShieldAlert, ArrowLeft } from "lucide-react"
+// --- AI-MODIFIED (2026-03-21) ---
+// Purpose: Added RefreshCw icon for retry state when Discord API errors occur
+import { ShieldAlert, ArrowLeft, RefreshCw } from "lucide-react"
+// --- END AI-MODIFIED ---
 import Link from "next/link"
 
 type PermissionLevel = "member" | "moderator" | "admin"
@@ -52,11 +55,23 @@ export default function ServerGuard({ children, requiredLevel }: ServerGuardProp
   const { data: session } = useSession()
   const { id } = router.query
 
-  const { data: perms, isLoading } = useDashboard<PermissionsData>(
-    id && session ? `/api/dashboard/servers/${id}/permissions` : null
+  // --- AI-REPLACED (2026-03-21) ---
+  // Reason: Old code didn't track SWR errors, so Discord API failures
+  //         (which now throw instead of returning []) showed "Access Denied".
+  // What the new code does better: Tracks the error state from SWR. When there's
+  //         an error but cached data exists, uses the cached data. When there's an
+  //         error and no cached data, shows a retry state instead of "Access Denied".
+  // --- Original code (commented out for rollback) ---
+  // const { data: perms, isLoading } = useDashboard<PermissionsData>(
+  //   id && session ? `/api/dashboard/servers/${id}/permissions` : null
+  // )
+  // --- End original code ---
+  const { data: perms, error, isLoading, mutate } = useDashboard<PermissionsData>(
+    id && session ? `/api/dashboard/servers/${id}/permissions` : null,
+    { errorRetryInterval: 3000, errorRetryCount: 10 }
   )
 
-  if (isLoading || !perms) {
+  if (isLoading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="space-y-4 w-64">
@@ -67,6 +82,47 @@ export default function ServerGuard({ children, requiredLevel }: ServerGuardProp
       </div>
     )
   }
+
+  if (error && !perms) {
+    const isAuthError = (error as any)?.status === 401
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4">
+        <div className="max-w-md text-center space-y-4">
+          <div className="mx-auto w-14 h-14 rounded-full bg-yellow-500/10 flex items-center justify-center">
+            <RefreshCw size={28} className="text-yellow-400 animate-spin" />
+          </div>
+          <h2 className="text-xl font-bold text-foreground">
+            {isAuthError ? "Session Expired" : "Connection Issue"}
+          </h2>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            {isAuthError
+              ? "Your Discord session has expired. Please sign in again."
+              : "Having trouble verifying your permissions. Retrying automatically\u2026"}
+          </p>
+          <button
+            onClick={() => isAuthError ? router.push("/") : mutate()}
+            className="inline-flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors mt-2"
+          >
+            <RefreshCw size={14} />
+            {isAuthError ? "Sign in again" : "Retry now"}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!perms) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="space-y-4 w-64">
+          <div className="h-4 bg-muted rounded animate-pulse" />
+          <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+          <div className="h-4 bg-muted rounded animate-pulse w-1/2" />
+        </div>
+      </div>
+    )
+  }
+  // --- END AI-REPLACED ---
 
   if (!hasPermission(perms, requiredLevel)) {
     return (
