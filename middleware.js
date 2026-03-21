@@ -52,10 +52,17 @@ export async function middleware(req) {
         !!process.env.VERCEL_URL,
     })
     if (!token?.discordId) {
-      return new NextResponse(
-        JSON.stringify({ error: "Not authenticated. Please sign in with Discord." }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      )
+      // --- AI-REPLACED (2026-03-21) ---
+      // Reason: Next.js 12 middleware cannot return response bodies
+      // What the new code does better: rewrites to a dedicated 401 API endpoint instead
+      // --- Original code (commented out for rollback) ---
+      // return new NextResponse(
+      //   JSON.stringify({ error: "Not authenticated. Please sign in with Discord." }),
+      //   { status: 401, headers: { "Content-Type": "application/json" } }
+      // )
+      // --- End original code ---
+      return NextResponse.rewrite(new URL("/api/auth/unauthorized", req.url))
+      // --- END AI-REPLACED ---
     }
   }
 
