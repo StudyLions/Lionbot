@@ -39,7 +39,7 @@ function MoodDot({ value }: { value: number }) {
 
 function avatarUrl(discordId: string, hash?: string | null): string {
   if (hash) return `https://cdn.discordapp.com/avatars/${discordId}/${hash}.png?size=64`
-  const idx = (BigInt(discordId) >> 22n) % 6n
+  const idx = Number((BigInt(discordId) >> BigInt(22)) % BigInt(6))
   return `https://cdn.discordapp.com/embed/avatars/${idx}.png`
 }
 

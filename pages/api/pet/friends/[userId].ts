@@ -8,7 +8,7 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
-import { fetchPetVisualData } from "@/pages/api/pet/profile/[userId]"
+import { fetchPetVisualData } from "@/utils/petProfile"
 
 export default apiHandler({
   async GET(req, res) {

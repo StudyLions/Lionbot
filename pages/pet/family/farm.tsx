@@ -21,7 +21,11 @@ import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
-import type { FarmPlot } from "@/components/pet/farm/FarmScene"
+import type { FarmPlot as BaseFarmPlot } from "@/components/pet/farm/FarmScene"
+
+interface FamilyFarmPlot extends BaseFarmPlot {
+  plantedBy?: string | null
+}
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -38,7 +42,7 @@ interface FamilyCtx {
 }
 
 interface FamilyFarmData {
-  plots: FarmPlot[]
+  plots: FamilyFarmPlot[]
   availableSeeds: Array<{
     id: number; name: string; plantType: string
     growTimeHours: number; waterIntervalHours: number; harvestGold: number
@@ -407,12 +411,12 @@ export default function FamilyFarmPage() {
                           )}
                           <PlotDetail
                             plot={selectedPlotData}
-                            onAction={(plotId, action) => {
+                            onAction={async (plotId, action) => {
                               if (action === "harvest" && !canHarvest) {
                                 toast.error("No permission to harvest")
                                 return
                               }
-                              handleAction(plotId, action)
+                              await handleAction(plotId, action)
                             }}
                             onPlantClick={() => {
                               if (!canPlant) { toast.error("No permission to plant"); return }

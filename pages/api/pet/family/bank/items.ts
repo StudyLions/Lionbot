@@ -30,7 +30,7 @@ export default apiHandler({
       orderBy: { deposited_at: "desc" },
     })
 
-    const depositorIds = [...new Set(bankItems.map((b) => b.deposited_by))]
+    const depositorIds = Array.from(new Set(bankItems.map((b) => b.deposited_by.toString()))).map(BigInt)
     const depositorPets = await prisma.lg_pets.findMany({
       where: { userid: { in: depositorIds } },
       select: { userid: true, pet_name: true },
@@ -159,14 +159,7 @@ export default apiHandler({
             bonus_value: number
           }>
           for (const slot of slots) {
-            await tx.lg_enhancement_slots.create({
-              data: {
-                inventoryid: newInv.inventoryid,
-                slot_number: slot.slot_number,
-                scroll_itemid: slot.scroll_itemid,
-                bonus_value: slot.bonus_value,
-              },
-            })
+            await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, bonus_value) VALUES (${newInv.inventoryid}, ${slot.slot_number}, ${slot.scroll_itemid}, ${slot.bonus_value})`
           }
         }
 

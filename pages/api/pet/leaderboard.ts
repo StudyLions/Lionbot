@@ -8,7 +8,7 @@
 import { prisma } from "@/utils/prisma"
 import { apiHandler } from "@/utils/apiHandler"
 import { getAuthContext } from "@/utils/adminAuth"
-import { fetchPetVisualData } from "@/pages/api/pet/profile/[userId]"
+import { fetchPetVisualData } from "@/utils/petProfile"
 
 type Category = "vc" | "messages" | "drops" | "marketplace"
 type Timeframe = "daily" | "weekly" | "monthly"
@@ -266,7 +266,7 @@ export default apiHandler({
                   furniture: profile.furniture,
                   roomLayout: profile.roomLayout,
                   equipment: Object.fromEntries(
-                    Object.entries(profile.equipment).map(([slot, eq]) => [
+                    Object.entries(profile.equipment).map(([slot, eq]: [string, any]) => [
                       slot,
                       {
                         assetPath: eq.assetPath,

@@ -41,7 +41,7 @@ export default apiHandler({
       }),
     ])
 
-    const depositorIds = [...new Set(recentLog.map((l) => l.userid))]
+    const depositorIds = Array.from(new Set(recentLog.map((l) => l.userid.toString()))).map(BigInt)
     const depositorPets = await prisma.lg_pets.findMany({
       where: { userid: { in: depositorIds } },
       select: { userid: true, pet_name: true },

@@ -128,7 +128,7 @@ export default apiHandler({
         footer_text: body.footer_text || null,
         interval_seconds: Math.min(Math.max(body.interval_seconds ?? 60, MIN_INTERVAL), MAX_INTERVAL),
         enabled: body.enabled ?? true,
-        created_by: auth.odid ? BigInt(auth.odid) : null,
+        created_by: (auth as any).odid ? BigInt((auth as any).odid) : null,
       },
     })
 

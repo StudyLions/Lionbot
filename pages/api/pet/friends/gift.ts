@@ -131,16 +131,8 @@ export default apiHandler({
         },
       })
 
-      if (scrollSlots.length > 0) {
-        await tx.lg_enhancement_slots.createMany({
-          data: scrollSlots.map((s) => ({
-            inventoryid: newItem.inventoryid,
-            slot_number: s.slot_number,
-            scroll_itemid: s.scroll_itemid,
-            bonus_value: s.bonus_value,
-            applied_at: s.applied_at,
-          })),
-        })
+      for (const s of scrollSlots) {
+        await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, scroll_name, bonus_value, enhanced_at) VALUES (${newItem.inventoryid}, ${s.slot_number}, ${s.scroll_itemid}, ${s.scroll_name}, ${s.bonus_value}, ${s.enhanced_at})`
       }
     })
 

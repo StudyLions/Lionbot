@@ -55,7 +55,7 @@ export default apiHandler({
         where: {
           name: { contains: q, mode: "insensitive" },
           ...(blockedIds.size > 0
-            ? { userid: { notIn: [...blockedIds].map((id) => BigInt(id)) } }
+            ? { userid: { notIn: Array.from(blockedIds).map((id) => BigInt(id)) } }
             : {}),
         },
         select: { userid: true, name: true, avatar_hash: true },
