@@ -9,10 +9,12 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { GAME_CONSTANTS, calcGlowTier, calcGlowIntensity } from "@/utils/gameConstants"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty instead of old LEVEL_PENALTY_FACTOR
+import { GAME_CONSTANTS, calcGlowTier, calcGlowIntensity, calcLevelPenalty } from "@/utils/gameConstants"
 
 const MAX_ENHANCEMENT_BY_RARITY: Record<string, number> = GAME_CONSTANTS.MAX_ENHANCEMENT_BY_RARITY
-const LEVEL_PENALTY_FACTOR = GAME_CONSTANTS.LEVEL_PENALTY_FACTOR
+// --- END AI-MODIFIED ---
 const ENHANCEMENT_GOLD_BONUS = GAME_CONSTANTS.ENHANCEMENT_GOLD_BONUS
 const ENHANCEMENT_DROP_BONUS = GAME_CONSTANTS.ENHANCEMENT_DROP_BONUS
 
@@ -137,9 +139,17 @@ export default apiHandler({
       return res.status(400).json({ error: "Item already at max enhancement" })
     }
 
-    const levelPenalty = Math.max(0.1, 1 - LEVEL_PENALTY_FACTOR * equipInv.enhancement_level)
-    const effectiveSuccess = scrollProps.success_rate * levelPenalty
-    const effectiveDestroy = scrollProps.destroy_rate
+    // --- AI-REPLACED (2026-03-22) ---
+    // Reason: Old linear penalty + unconditional destroy logic didn't match bot
+    // What the new code does better: Diminishing-returns curve + destroy conditional on failure (matches bot)
+    // --- Original code (commented out for rollback) ---
+    // const levelPenalty = Math.max(0.1, 1 - LEVEL_PENALTY_FACTOR * equipInv.enhancement_level)
+    // const effectiveSuccess = scrollProps.success_rate * levelPenalty
+    // const effectiveDestroy = scrollProps.destroy_rate
+    // --- End original code ---
+    const effectiveSuccess = scrollProps.success_rate * calcLevelPenalty(equipInv.enhancement_level)
+    const destroyRate = scrollProps.destroy_rate
+    // --- END AI-REPLACED ---
 
     if (scrollInv.quantity <= 1) {
       await prisma.lg_user_inventory.delete({ where: { inventoryid: scrollInv.inventoryid } })
@@ -197,7 +207,14 @@ export default apiHandler({
       })
     }
 
-    if (roll < effectiveSuccess + effectiveDestroy) {
+    // --- AI-REPLACED (2026-03-22) ---
+    // Reason: Destroy was an unconditional band on same roll, didn't match bot logic
+    // What the new code does better: Destroy is now conditional on failure (second roll), matching the bot
+    // --- Original code (commented out for rollback) ---
+    // if (roll < effectiveSuccess + effectiveDestroy) {
+    // --- End original code ---
+    if (Math.random() < destroyRate) {
+    // --- END AI-REPLACED ---
       await prisma.lg_pet_equipment.deleteMany({
         where: { userid: userId, itemid: equipInv.lg_items.itemid },
       })

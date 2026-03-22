@@ -9,7 +9,15 @@
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Updated to match new drop system (materials removed, equipment/scrolls drop directly)
 export const GAME_CONSTANTS = {
-  LEVEL_PENALTY_FACTOR: 0.08,
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Linear penalty made scrolls unusable at high levels
+  // What the new code does better: Diminishing-returns curve keeps rates challenging but doable
+  // --- Original code (commented out for rollback) ---
+  // LEVEL_PENALTY_FACTOR: 0.08,
+  // --- End original code ---
+  LEVEL_PENALTY_FLOOR: 0.30,
+  LEVEL_DECAY_FACTOR: 0.12,
+  // --- END AI-REPLACED ---
   ENHANCEMENT_GOLD_BONUS: 0.02,
   ENHANCEMENT_XP_BONUS: 0.02,
   // --- AI-MODIFIED (2026-03-17) ---
@@ -40,6 +48,14 @@ export const GAME_CONSTANTS = {
   ITEM_DROP_CHANCE_HARVEST: 0.15,
 
   SCROLL_DROP_RATIO: 0.6,
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Diminishing-returns level penalty for scroll enhancement success rates
+export function calcLevelPenalty(level: number): number {
+  const { LEVEL_PENALTY_FLOOR: floor, LEVEL_DECAY_FACTOR: decay } = GAME_CONSTANTS
+  return floor + (1 - floor) / (1 + decay * level)
 }
 // --- END AI-MODIFIED ---
 

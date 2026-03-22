@@ -289,7 +289,13 @@ export default function WikiPage() {
                       &#x2756; HOW ENHANCEMENT WORKS
                     </h3>
                     <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed">
-                      Use scrolls on equipment to increase its enhancement level. Each level gives +{((metaData?.gameConstants?.ENHANCEMENT_GOLD_BONUS ?? 0.02) * 100).toFixed(0)}% Gold and +{((metaData?.gameConstants?.ENHANCEMENT_XP_BONUS ?? 0.02) * 100).toFixed(0)}% XP bonuses from activity. Higher levels are harder to achieve -- scroll success rates decrease by {((metaData?.gameConstants?.LEVEL_PENALTY_FACTOR ?? 0.08) * 100).toFixed(0)}% per existing level. Failed enhancements may destroy the item.
+                      {/* --- AI-REPLACED (2026-03-22) --- */}
+                      {/* Reason: Old text described linear penalty; new system uses diminishing-returns curve */}
+                      {/* --- Original code (commented out for rollback) --- */}
+                      {/* Use scrolls on equipment to increase its enhancement level. Each level gives +...% Gold and +...% XP bonuses from activity. Higher levels are harder to achieve -- scroll success rates decrease by ...% per existing level. Failed enhancements may destroy the item. */}
+                      {/* --- End original code --- */}
+                      Use scrolls on equipment to increase its enhancement level. Each level gives +{((metaData?.gameConstants?.ENHANCEMENT_GOLD_BONUS ?? 0.02) * 100).toFixed(0)}% Gold and +{((metaData?.gameConstants?.ENHANCEMENT_XP_BONUS ?? 0.02) * 100).toFixed(0)}% XP bonuses from activity. Higher levels are harder to achieve -- success rates decrease with diminishing returns, but never become impossible. Failed enhancements may destroy the item.
+                      {/* --- END AI-REPLACED --- */}
                     </p>
                   </PixelCard>
 

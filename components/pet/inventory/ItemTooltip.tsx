@@ -6,7 +6,10 @@
 // ============================================================
 import { useState, useRef, useEffect, useCallback } from "react"
 import { cn } from "@/lib/utils"
-import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty for new diminishing-returns formula
+import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier, calcLevelPenalty } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
@@ -90,12 +93,21 @@ const SOURCE_LABELS: Record<string, string> = {
 function calcCumulativeProbability(slots: EnhancementSlot[]): number {
   if (slots.length === 0) return 1
   let cumulative = 1
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Old linear penalty replaced with diminishing-returns curve
+  // --- Original code (commented out for rollback) ---
+  // for (const slot of slots) {
+  //   if (slot.successRate == null) continue
+  //   const levelAtRoll = slot.slotNumber - 1
+  //   const penalty = Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * levelAtRoll)
+  //   cumulative *= slot.successRate * penalty
+  // }
+  // --- End original code ---
   for (const slot of slots) {
     if (slot.successRate == null) continue
-    const levelAtRoll = slot.slotNumber - 1
-    const penalty = Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * levelAtRoll)
-    cumulative *= slot.successRate * penalty
+    cumulative *= slot.successRate * calcLevelPenalty(slot.slotNumber - 1)
   }
+  // --- END AI-REPLACED ---
   return cumulative
 }
 
@@ -299,9 +311,17 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
                 </div>
                 <div className="space-y-0.5 max-h-[140px] overflow-y-auto scrollbar-thin">
                   {inv.slots.map((slot) => {
+                    // --- AI-REPLACED (2026-03-22) ---
+                    // Reason: Old linear penalty replaced with diminishing-returns curve
+                    // --- Original code (commented out for rollback) ---
+                    // const effRate = slot.successRate != null
+                    //   ? slot.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (slot.slotNumber - 1))
+                    //   : null
+                    // --- End original code ---
                     const effRate = slot.successRate != null
-                      ? slot.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (slot.slotNumber - 1))
+                      ? slot.successRate * calcLevelPenalty(slot.slotNumber - 1)
                       : null
+                    // --- END AI-REPLACED ---
                     return (
                       <div
                         key={slot.slotNumber}
