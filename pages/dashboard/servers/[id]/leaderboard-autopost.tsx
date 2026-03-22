@@ -1278,8 +1278,6 @@ export default function LeaderboardAutopostPage() {
             <div key={i} className="h-20 bg-gray-800/50 rounded-lg animate-pulse" />
           ))}
         </div>
-      {/* --- AI-MODIFIED (2026-03-22) --- */}
-      {/* Purpose: Rich premium gate with feature demo, mock Discord embed, and community callout */}
       ) : !isPremium ? (
         <PremiumGate
           title="Leaderboard Auto-Post"
@@ -1356,7 +1354,6 @@ export default function LeaderboardAutopostPage() {
             </div>
           </div>
         </PremiumGate>
-      {/* --- END AI-MODIFIED --- */}
       ) : configs.length === 0 ? (
         <div className="space-y-6">
           <EmptyState
