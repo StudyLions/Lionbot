@@ -1849,3 +1849,20 @@ model leaderboard_autopost_action_queue {
 }
 
 // --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Ambient Sounds Bot premium feature - config table for 5 generic sound bots
+model ambient_sounds_config {
+  guildid    BigInt
+  bot_number Int      @db.SmallInt
+  sound_type String?  @db.VarChar(20)
+  channelid  BigInt?
+  volume     Int      @default(50) @db.SmallInt
+  enabled    Boolean  @default(true)
+  status     String   @default("pending") @db.VarChar(20)
+  error_msg  String?
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([guildid, bot_number])
+}
+// --- END AI-MODIFIED ---

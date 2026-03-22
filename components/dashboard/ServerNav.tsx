@@ -93,6 +93,7 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
       links: [
         { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/leaderboard-autopost", label: "Leaderboard Auto-Post", icon: <Trophy size={16} />, supporterPerk: true },
+        { href: "/ambient-sounds", label: "Ambient Sounds", icon: <Volume2 size={16} />, supporterPerk: true },
       ],
     })
     // --- END AI-MODIFIED ---
