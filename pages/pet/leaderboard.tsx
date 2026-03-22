@@ -127,6 +127,7 @@ function PodiumEntry({
 }) {
   const colors = PODIUM_COLORS[rank]
   const visual = entry.profile?.petVisual
+  const screenSize = Math.round(size * (200 / 260))
 
   return (
     <div className={cn("flex flex-col items-center gap-2", rank === 1 && "order-2", rank === 2 && "order-1", rank === 3 && "order-3")}>
@@ -143,6 +144,7 @@ function PodiumEntry({
               layout={mergeLayout(visual.roomLayout as any)}
               equipment={visual.equipment}
               expression={visual.expression}
+              size={screenSize}
               animated
             />
           </GameboyFrame>

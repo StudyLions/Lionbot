@@ -56,7 +56,7 @@ export default apiHandler({
     const now = Date.now()
     const botStatus: Record<number, { online: boolean; username: string | null }> = {}
     try {
-      const heartbeats = await prisma.sounds_bot_heartbeat.findMany({
+      const heartbeats = await (prisma as any).sounds_bot_heartbeat.findMany({
         orderBy: { bot_number: "asc" },
       })
       for (const hb of heartbeats) {
