@@ -18,7 +18,7 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useEffect } from "react"
 import {
   Volume2, CloudRain, Flame, Waves, Wind, Radio,
-  ExternalLink, CircleDot, AlertCircle,
+  ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -65,6 +65,7 @@ interface BotSlotConfig {
 interface ApiResponse {
   isPremium: boolean
   configs: BotSlotConfig[]
+  botStatus: Record<number, { online: boolean; username: string | null }>
 }
 
 type LocalSlot = Omit<BotSlotConfig, "guildid" | "updated_at" | "status" | "error_msg"> & {
@@ -74,12 +75,21 @@ type LocalSlot = Omit<BotSlotConfig, "guildid" | "updated_at" | "status" | "erro
 
 // ── Helpers ───────────────────────────────────────────────
 
-function statusBadge(status: string, errorMsg: string | null) {
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added bot_offline status and botOnline parameter for heartbeat detection
+function statusBadge(status: string, errorMsg: string | null, botOnline?: boolean) {
+  if (botOnline === false && status !== "bot_not_in_guild") {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-red-400">
+        <WifiOff size={10} /> Bot offline
+      </span>
+    )
+  }
   switch (status) {
     case "active":
       return (
         <span className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-400">
-          <CircleDot size={10} className="animate-pulse" /> Active
+          <CircleDot size={10} className="animate-pulse" /> Playing
         </span>
       )
     case "idle":
@@ -108,6 +118,7 @@ function statusBadge(status: string, errorMsg: string | null) {
       )
   }
 }
+// --- END AI-MODIFIED ---
 
 // ── Component ─────────────────────────────────────────────
 
@@ -123,6 +134,11 @@ export default function AmbientSoundsPage() {
   )
   const serverName = serverData?.server?.name || "Server"
   const isPremium = apiData?.isPremium ?? false
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Heartbeat-based bot online/offline detection + refresh
+  const botStatus = apiData?.botStatus ?? {}
+  const [refreshing, setRefreshing] = useState(false)
+  // --- END AI-MODIFIED ---
 
   const [slots, setSlots] = useState<LocalSlot[]>([])
   const [original, setOriginal] = useState<LocalSlot[]>([])
@@ -177,6 +193,16 @@ export default function AmbientSoundsPage() {
     setSaving(false)
   }, [slots, original, guildId, apiUrl])
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Refresh button handler to re-fetch status
+  const handleRefresh = useCallback(async () => {
+    if (!apiUrl) return
+    setRefreshing(true)
+    invalidate(apiUrl)
+    setTimeout(() => setRefreshing(false), 1000)
+  }, [apiUrl])
+  // --- END AI-MODIFIED ---
+
   // ── Render ────────────────────────────────────────────
 
   return (
@@ -187,10 +213,25 @@ export default function AmbientSoundsPage() {
             <div className="max-w-5xl mx-auto flex gap-8">
               <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
               <div className="flex-1 min-w-0">
-                <PageHeader
-                  title="Ambient Sounds"
-                  description="Add relaxing background audio to your voice channels. Each bot can play one sound in one channel — invite multiple for more channels."
-                />
+                {/* --- AI-MODIFIED (2026-03-22) --- */}
+                {/* Purpose: Added refresh button next to page header */}
+                <div className="flex items-start justify-between gap-4">
+                  <PageHeader
+                    title="Ambient Sounds"
+                    description="Add relaxing background audio to your voice channels. Each bot can play one sound in one channel — invite multiple for more channels."
+                  />
+                  {isPremium && (
+                    <button
+                      onClick={handleRefresh}
+                      disabled={refreshing}
+                      className="mt-1 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-gray-800 transition-colors"
+                      title="Refresh status"
+                    >
+                      <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+                    </button>
+                  )}
+                </div>
+                {/* --- END AI-MODIFIED --- */}
 
                 {isLoading ? (
                   <div className="space-y-4 mt-6">
@@ -219,40 +260,71 @@ export default function AmbientSoundsPage() {
                       Users can adjust each bot's volume individually by right-clicking it in Discord.
                     </p>
 
+                    {/* --- AI-MODIFIED (2026-03-22) --- */}
+                    {/* Purpose: Dynamic guild_id in invite URLs, bot online/offline detection,
+                        bot username display, dimmed cards when offline */}
                     {slots.map((slot) => {
                       const isAdded = slot.status !== "bot_not_in_guild"
-                      const inviteUrl = BOT_INVITE_URLS[slot.bot_number]
+                      const baseInviteUrl = BOT_INVITE_URLS[slot.bot_number]
+                      const inviteUrl = baseInviteUrl
+                        ? `${baseInviteUrl}&guild_id=${guildId}&disable_guild_select=true`
+                        : null
                       const soundLabel = SOUNDS.find((s) => s.id === slot.sound_type)?.name
+                      const hb = botStatus[slot.bot_number]
+                      const botOnline = hb?.online ?? undefined
+                      const botUsername = hb?.username ?? null
+                      const isOffline = botOnline === false && isAdded
 
                       return (
-                        <SectionCard key={slot.bot_number}>
-                          {/* Card header */}
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                                <Volume2 size={16} className="text-primary" />
-                              </div>
-                              <div>
-                                <h3 className="text-sm font-semibold text-foreground">
-                                  Sound Bot #{slot.bot_number}
-                                  {soundLabel && isAdded && (
-                                    <span className="ml-2 text-xs font-normal text-muted-foreground">
-                                      — {soundLabel}
-                                    </span>
+                        <SectionCard key={slot.bot_number} title="">
+
+                          <div className={cn(isOffline && "opacity-50 pointer-events-none")}>
+                            {/* Card header */}
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className={cn(
+                                  "w-8 h-8 rounded-lg flex items-center justify-center",
+                                  isOffline ? "bg-red-500/10" : "bg-primary/10",
+                                )}>
+                                  <Volume2 size={16} className={isOffline ? "text-red-400" : "text-primary"} />
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-semibold text-foreground">
+                                    {botUsername || `Sound Bot #${slot.bot_number}`}
+                                    {soundLabel && isAdded && (
+                                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                                        — {soundLabel}
+                                      </span>
+                                    )}
+                                  </h3>
+                                  {botUsername && (
+                                    <p className="text-[10px] text-muted-foreground">
+                                      Slot #{slot.bot_number}
+                                    </p>
                                   )}
-                                </h3>
+                                </div>
                               </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              {statusBadge(slot.status, slot.error_msg)}
-                              {isAdded && (
-                                <Toggle
-                                  checked={slot.enabled}
-                                  onChange={(v) => updateSlot(slot.bot_number, { enabled: v })}
-                                />
-                              )}
+                              <div className="flex items-center gap-3">
+                                {statusBadge(slot.status, slot.error_msg, botOnline)}
+                                {isAdded && !isOffline && (
+                                  <Toggle
+                                    checked={slot.enabled}
+                                    onChange={(v) => updateSlot(slot.bot_number, { enabled: v })}
+                                  />
+                                )}
+                              </div>
                             </div>
                           </div>
+
+                          {/* Offline banner */}
+                          {isOffline && (
+                            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-red-500/10 border border-red-500/20 mb-4">
+                              <WifiOff size={14} className="text-red-400 shrink-0" />
+                              <p className="text-xs text-red-300">
+                                This bot&apos;s process is not running. Configuration is saved but the bot cannot connect to voice channels until it&apos;s back online.
+                              </p>
+                            </div>
+                          )}
 
                           {/* Not added — show invite button */}
                           {!isAdded && inviteUrl && (
@@ -263,7 +335,7 @@ export default function AmbientSoundsPage() {
                               className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
                             >
                               <ExternalLink size={14} />
-                              Add Sound Bot #{slot.bot_number} to Server
+                              Add {botUsername || `Sound Bot #${slot.bot_number}`} to Server
                             </a>
                           )}
                           {!isAdded && !inviteUrl && (
@@ -273,7 +345,7 @@ export default function AmbientSoundsPage() {
                           )}
 
                           {/* Added — show configuration */}
-                          {isAdded && (
+                          {isAdded && !isOffline && (
                             <div className="space-y-4">
                               {/* Sound picker */}
                               <div>
@@ -337,6 +409,7 @@ export default function AmbientSoundsPage() {
                         </SectionCard>
                       )
                     })}
+                    {/* --- END AI-MODIFIED --- */}
                   </div>
                 )}
 

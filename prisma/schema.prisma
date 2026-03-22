@@ -1892,6 +1892,16 @@ model ambient_sounds_config {
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Heartbeat table for sound bot process online/offline detection
+model sounds_bot_heartbeat {
+  bot_number  Int      @id @db.SmallInt
+  last_seen   DateTime @default(now()) @db.Timestamptz(6)
+  bot_username String? @db.VarChar(50)
+  guild_count Int      @default(0)
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Sticky messages premium feature -- persistent channel announcements
 model sticky_messages {
   stickyid         Int      @id @default(autoincrement())
