@@ -134,7 +134,7 @@ export default function GemsPage() {
             <div className="flex-1 min-w-0">
               <PageHeader
                 title="LionGems"
-                description="LionGems are LionBot's premium currency. Use them to unlock custom profile skins, contribute to server premium, and access exclusive features."
+                description="LionGems are LionBot's premium currency. Use them to unlock custom profile skins and access exclusive cosmetic features."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "LionGems" },
@@ -210,7 +210,7 @@ export default function GemsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <Star size={16} className="text-amber-500 flex-shrink-0" />
-                        Contribute gems to servers for premium features
+                        Gift gems to friends and community members
                       </li>
                       <li className="flex items-center gap-2">
                         <Gem size={16} className="text-amber-500 flex-shrink-0" />

@@ -190,7 +190,9 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
           </div>
           <p className="text-sm font-semibold text-foreground truncate">{serverName}</p>
         </div>
-        {subData?.isPremium && (
+        {/* --- AI-MODIFIED (2026-03-22) --- */}
+        {/* Purpose: Show premium badge when active, or "Get Premium" hint when not */}
+        {subData?.isPremium ? (
           <div className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
             <Crown size={11} className="text-amber-400" />
             <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide">Premium</span>
@@ -198,7 +200,15 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
               <span className="text-[9px] text-amber-400/60 ml-auto">ends {subData.premiumUntil ? new Date(subData.premiumUntil).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span>
             )}
           </div>
-        )}
+        ) : subData && !subData.isPremium ? (
+          <Link href={`/dashboard/servers/${serverId}/settings`}>
+            <a className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border hover:border-amber-500/30 transition-colors cursor-pointer">
+              <Crown size={11} className="text-muted-foreground" />
+              <span className="text-[10px] font-medium text-muted-foreground hover:text-amber-400 transition-colors">Get Premium</span>
+            </a>
+          </Link>
+        ) : null}
+        {/* --- END AI-MODIFIED --- */}
       </div>
       <div className="px-3 pb-1">
         <div className="relative">

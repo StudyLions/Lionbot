@@ -556,12 +556,15 @@ export default function ServerDetail() {
                                 </ul>
                               </div>
                             </div>
-                            <Link href={`/dashboard/servers/${id}/branding`}>
+                            {/* --- AI-MODIFIED (2026-03-22) --- */}
+                            {/* Purpose: Changed upgrade link from branding to settings (where subscription management lives) */}
+                            <Link href={`/dashboard/servers/${id}/settings`}>
                               <span className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm hover:from-amber-400 hover:to-orange-400 transition-all shadow-lg shadow-amber-500/20 whitespace-nowrap">
                                 <Crown size={16} />
                                 Upgrade Now
                               </span>
                             </Link>
+                            {/* --- END AI-MODIFIED --- */}
                           </div>
                         </div>
                       )}

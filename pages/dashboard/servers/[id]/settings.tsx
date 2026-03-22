@@ -26,7 +26,7 @@ import {
   BookOpen, Coins, CheckSquare, Lock, Users, Trophy,
   Shield, Globe, MessageSquare, Dumbbell, Hash, UserCog, Calendar,
   Download, Upload, Wand2, AlertTriangle, Eye, EyeOff, Volume2, Type,
-  Bot, BarChart3, ChevronRight,
+  Bot, BarChart3, ChevronRight, Crown,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -208,6 +208,147 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], listKeys: ["unrankedRoles"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle, settings: [], searchTerms: ["reset", "danger", "delete", "clear"] },
 ]
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Server Premium subscription management card for settings page
+function ServerPremiumCard({ guildId }: { guildId: string }) {
+  const { data: session } = useSession()
+  const { data: subData, isLoading } = useDashboard<{
+    hasSubscription: boolean
+    isPremium: boolean
+    premiumUntil: string | null
+    subscription: {
+      plan: string
+      status: string
+      current_period_end: string | null
+    } | null
+  }>(
+    guildId && session ? `/api/dashboard/servers/${guildId}/subscription` : null
+  )
+  const [checkingOut, setCheckingOut] = useState(false)
+
+  const handleCheckout = async (plan: string) => {
+    setCheckingOut(true)
+    try {
+      const res = await fetch("/api/subscription/server-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId, plan }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to start checkout")
+      if (data.url) window.location.href = data.url
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || "Failed to start checkout")
+    } finally {
+      setCheckingOut(false)
+    }
+  }
+
+  const handleManage = async () => {
+    try {
+      const res = await fetch("/api/subscription/server-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to open billing portal")
+      if (data.url) window.location.href = data.url
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || "Failed to open billing portal")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mb-6 bg-card border border-border rounded-xl p-6">
+        <div className="animate-pulse flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-muted" />
+          <div className="space-y-2 flex-1">
+            <div className="h-4 w-40 bg-muted rounded" />
+            <div className="h-3 w-64 bg-muted rounded" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const isActive = subData?.isPremium
+  const isCancelling = subData?.subscription?.status === "CANCELLING"
+  const periodEnd = subData?.subscription?.current_period_end
+    ? new Date(subData.subscription.current_period_end).toLocaleDateString()
+    : null
+
+  return (
+    <div className={`mb-6 rounded-xl border p-6 ${isActive ? "bg-amber-500/5 border-amber-500/30" : "bg-card border-border"}`}>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-3">
+          <div className={`flex items-center justify-center h-10 w-10 rounded-lg ${isActive ? "bg-amber-500/20" : "bg-muted"}`}>
+            <Crown size={20} className={isActive ? "text-amber-400" : "text-muted-foreground"} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              Server Premium
+              {isActive && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium uppercase">
+                  {isCancelling ? "Cancelling" : "Active"}
+                </span>
+              )}
+            </h3>
+            {isActive ? (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {subData?.subscription?.plan === "YEARLY" ? "Yearly" : "Monthly"} plan
+                {isCancelling && periodEnd
+                  ? ` \u2014 expires ${periodEnd}`
+                  : periodEnd
+                    ? ` \u2014 renews ${periodEnd}`
+                    : ""}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Unlock custom branding, pomodoro themes, ambient sounds, and more.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {isActive ? (
+          <button
+            onClick={handleManage}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-card border border-border hover:border-primary/40 text-foreground transition-colors"
+          >
+            Manage Subscription
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleCheckout("MONTHLY")}
+              disabled={checkingOut}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-card border border-border hover:border-amber-500/40 text-foreground transition-colors disabled:opacity-50"
+            >
+              {checkingOut ? "..." : "\u20AC9.99/mo"}
+            </button>
+            <button
+              onClick={() => handleCheckout("YEARLY")}
+              disabled={checkingOut}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50"
+            >
+              {checkingOut ? "..." : "\u20AC99.99/yr \u2014 Save 17%"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!isActive && subData?.premiumUntil && new Date(subData.premiumUntil) > new Date() && (
+        <p className="text-xs text-muted-foreground mt-3 border-t border-border pt-3">
+          Your existing premium is active until {new Date(subData.premiumUntil).toLocaleDateString()}. Subscribe to extend it further.
+        </p>
+      )}
+    </div>
+  )
+}
 // --- END AI-MODIFIED ---
 
 // ── Component ──────────────────────────────────────────────────────
@@ -696,6 +837,11 @@ export default function ServerSettings() {
                 title="Server Settings"
                 description="Configure how LionBot works in your server. Changes are saved when you click Save. Hover over question mark icons for details."
               />
+
+              {/* --- AI-MODIFIED (2026-03-22) --- */}
+              {/* Purpose: Server Premium subscription management card */}
+              <ServerPremiumCard guildId={guildId} />
+              {/* --- END AI-MODIFIED --- */}
 
               {/* Action bar: presets, import, export */}
               {!loading && config && (
