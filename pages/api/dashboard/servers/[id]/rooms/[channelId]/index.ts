@@ -106,6 +106,18 @@ export default apiHandler({
       }
     })
 
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Fetch timer data for admin room detail
+    const timerRow = await prisma.timers.findUnique({
+      where: { channelid: channelId },
+      select: {
+        channelid: true, focus_length: true, break_length: true,
+        auto_restart: true, last_started: true, inactivity_threshold: true,
+        channel_name: true, pretty_name: true, voice_alerts: true, ownerid: true,
+      },
+    })
+    // --- END AI-MODIFIED ---
+
     const daysRemaining = rentPrice > 0 ? Math.floor(room.coin_balance / rentPrice) : 999
 
     res.status(200).json({
@@ -124,6 +136,19 @@ export default apiHandler({
       frozenBy: room.frozen_by?.toString() ?? null,
       members,
       activityFeed,
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Include timer data for admin timer controls
+      timer: timerRow ? {
+        focusMinutes: Math.round(timerRow.focus_length / 60),
+        breakMinutes: Math.round(timerRow.break_length / 60),
+        autoRestart: timerRow.auto_restart ?? false,
+        isRunning: !!timerRow.last_started,
+        lastStarted: timerRow.last_started?.toISOString() ?? null,
+        inactivityThreshold: timerRow.inactivity_threshold,
+        voiceAlerts: timerRow.voice_alerts ?? true,
+        ownerId: timerRow.ownerid?.toString() ?? null,
+      } : null,
+      // --- END AI-MODIFIED ---
     })
   },
 
@@ -153,7 +178,10 @@ export default apiHandler({
         await prisma.room_admin_log.create({
           data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "rename", details: { oldName: room.name, newName: name.trim() } },
         })
-        return res.status(200).json({ success: true, name: name.trim() })
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Include sync timing message
+        return res.status(200).json({ success: true, name: name.trim(), message: "Name saved. Will sync to Discord within a few minutes." })
+        // --- END AI-MODIFIED ---
       }
 
       case "adjust_balance": {
@@ -211,6 +239,57 @@ export default apiHandler({
         })
         return res.status(200).json({ success: true, newBalance: room.coin_balance + Math.floor(amount) })
       }
+
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Admin actions for room timer management
+      case "edit_timer": {
+        const timer = await prisma.timers.findUnique({ where: { channelid: channelId } })
+        if (!timer) return res.status(404).json({ error: "No timer exists for this room" })
+
+        const updates: Record<string, any> = {}
+        const { focusMinutes, breakMinutes, autoRestart, inactivityThreshold, voiceAlerts } = req.body
+        if (focusMinutes !== undefined) {
+          const f = Number(focusMinutes)
+          if (isNaN(f) || f < 1 || f > 1440) return res.status(400).json({ error: "Focus must be 1-1440 minutes" })
+          updates.focus_length = Math.round(f * 60)
+        }
+        if (breakMinutes !== undefined) {
+          const b = Number(breakMinutes)
+          if (isNaN(b) || b < 1 || b > 1440) return res.status(400).json({ error: "Break must be 1-1440 minutes" })
+          updates.break_length = Math.round(b * 60)
+        }
+        if (autoRestart !== undefined) updates.auto_restart = !!autoRestart
+        if (inactivityThreshold !== undefined) updates.inactivity_threshold = inactivityThreshold === null ? null : Number(inactivityThreshold)
+        if (voiceAlerts !== undefined) updates.voice_alerts = !!voiceAlerts
+
+        if (Object.keys(updates).length === 0) return res.status(400).json({ error: "No fields to update" })
+
+        const updated = await prisma.timers.update({ where: { channelid: channelId }, data: updates })
+        await prisma.room_admin_log.create({
+          data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "edit_timer", details: updates },
+        })
+        return res.status(200).json({
+          success: true,
+          timer: {
+            focusMinutes: Math.round(updated.focus_length / 60),
+            breakMinutes: Math.round(updated.break_length / 60),
+            autoRestart: updated.auto_restart ?? false,
+            isRunning: !!updated.last_started,
+            voiceAlerts: updated.voice_alerts ?? true,
+          },
+        })
+      }
+
+      case "delete_timer": {
+        const timer = await prisma.timers.findUnique({ where: { channelid: channelId } })
+        if (!timer) return res.status(404).json({ error: "No timer exists for this room" })
+        await prisma.timers.delete({ where: { channelid: channelId } })
+        await prisma.room_admin_log.create({
+          data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "delete_timer", details: { focusLength: timer.focus_length, breakLength: timer.break_length } },
+        })
+        return res.status(200).json({ success: true })
+      }
+      // --- END AI-MODIFIED ---
 
       default:
         return res.status(400).json({ error: `Unknown action: ${action}` })

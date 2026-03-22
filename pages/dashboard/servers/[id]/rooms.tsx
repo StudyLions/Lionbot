@@ -17,12 +17,15 @@ import { cn } from "@/lib/utils"
 import Link from "next/link"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added Timer, Play, Square icons for timer controls
 import {
   DoorOpen, Coins, Users, Clock, TrendingUp, Activity, ChevronDown, ChevronUp,
   Search, Download, Snowflake, Trash2, PencilLine, ArrowRightLeft, Plus, Minus,
   Shield, ExternalLink, Settings, BarChart3, Crown, AlertTriangle, Eye,
-  ChevronLeft, ChevronRight, X, UserMinus, RefreshCw, History,
+  ChevronLeft, ChevronRight, X, UserMinus, RefreshCw, History, Timer, Play, Square, Pencil,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip,
   ResponsiveContainer, BarChart, Bar,
@@ -38,13 +41,17 @@ interface RoomMember extends RoomUser {
   isOwner: boolean; totalStudySeconds: number; contribution: number
   coinBalance: number; isLive?: boolean
 }
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added hasTimer and timerRunning fields for timer badges
 interface RoomCard {
   channelId: string; name: string | null; coinBalance: number; daysRemaining: number
   rentPrice: number; memberCount: number; totalContribution: number
   createdAt: string | null; deletedAt: string | null
   frozenAt: string | null; frozenBy: string | null
   owner: RoomUser; liveUsers: RoomUser[]; isLive: boolean
+  hasTimer?: boolean; timerRunning?: boolean
 }
+// --- END AI-MODIFIED ---
 interface RoomListResponse {
   rooms: RoomCard[]; pagination: { page: number; pageSize: number; total: number; totalPages: number }
   rentPrice: number
@@ -60,6 +67,14 @@ interface StatsResponse {
   topRooms: Array<{ channelId: string; name: string; ownerName: string; ownerAvatar: string | null; totalStudyHours: number }>
   efficiency: number
 }
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added timer field to RoomDetailResponse for admin timer controls
+interface AdminRoomTimer {
+  focusMinutes: number; breakMinutes: number; autoRestart: boolean
+  isRunning: boolean; lastStarted: string | null
+  inactivityThreshold: number | null; voiceAlerts: boolean; ownerId: string | null
+}
+
 interface RoomDetailResponse {
   channelId: string; name: string | null; coinBalance: number; rentPrice: number
   daysRemaining: number; memberCap: number; ownerId: string
@@ -67,7 +82,9 @@ interface RoomDetailResponse {
   frozenAt: string | null; frozenBy: string | null
   members: RoomMember[]
   activityFeed: Array<{ type: string; userId: string; displayName: string; timestamp: string; durationSeconds: number; tag: string | null }>
+  timer: AdminRoomTimer | null
 }
+// --- END AI-MODIFIED ---
 interface LogEntry {
   logId: number; action: string; details: any; adminId: string; adminName: string; createdAt: string
 }
@@ -101,12 +118,16 @@ function relativeTime(iso: string): string {
   const d = Math.floor(h / 24)
   return `${d}d ago`
 }
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added edit_timer and delete_timer action labels
 const ACTION_LABELS: Record<string, string> = {
   force_close: "Force Closed", adjust_balance: "Balance Adjusted",
   rename: "Renamed", kick_member: "Kicked Member",
   transfer_ownership: "Transferred Ownership", freeze: "Frozen",
   unfreeze: "Unfrozen", extend_free: "Extended Free",
+  edit_timer: "Timer Edited", delete_timer: "Timer Deleted",
 }
+// --- END AI-MODIFIED ---
 
 // ---- Stat Card ----
 
@@ -177,7 +198,10 @@ function UsageHeatmap({ data }: { data: Array<{ dow: number; hour: number; count
 function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
   room: RoomCard; serverId: string; isAdmin: boolean; onMutate: () => void
 }) {
-  const [tab, setTab] = useState<"members" | "activity" | "log" | "actions">("members")
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Added "timer" tab option for admin timer management
+  const [tab, setTab] = useState<"members" | "activity" | "log" | "actions" | "timer">("members")
+  // --- END AI-MODIFIED ---
   const { data: detail } = useDashboard<RoomDetailResponse>(
     `/api/dashboard/servers/${serverId}/rooms/${room.channelId}`
   )
@@ -236,12 +260,36 @@ function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
     finally { setActionLoading(false); setConfirmKick(null) }
   }, [serverId, room.channelId, onMutate])
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Added Timer tab alongside existing tabs
+  const [timerFocus, setTimerFocus] = useState(detail?.timer?.focusMinutes ?? 25)
+  const [timerBreak, setTimerBreak] = useState(detail?.timer?.breakMinutes ?? 5)
+  const [timerAutoRestart, setTimerAutoRestart] = useState(detail?.timer?.autoRestart ?? false)
+  const [timerLoading, setTimerLoading] = useState(false)
+
+  const doTimerAction = useCallback(async (action: string, body: Record<string, any> = {}) => {
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${serverId}/rooms/${room.channelId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, ...body }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed")
+      toast.success(`Action "${ACTION_LABELS[action] || action}" completed`)
+      onMutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [serverId, room.channelId, onMutate])
+
   const tabs = [
     { id: "members" as const, label: "Members" },
     { id: "activity" as const, label: "Activity" },
+    { id: "timer" as const, label: "Timer" },
     { id: "log" as const, label: "Admin Log" },
     ...(isAdmin && !room.deletedAt ? [{ id: "actions" as const, label: "Actions" }] : []),
   ]
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="border-t border-border bg-muted/20 px-4 py-4 space-y-4">
@@ -316,6 +364,86 @@ function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
           ))}
         </div>
       )}
+
+      {/* --- AI-MODIFIED (2026-03-22) --- */}
+      {/* Purpose: Timer management tab for admin room detail panel */}
+      {tab === "timer" && (
+        <div className="space-y-4">
+          {!detail ? (
+            <Skeleton className="h-24" />
+          ) : !detail.timer ? (
+            <div className="text-center py-6">
+              <Timer size={24} className="mx-auto text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">No timer configured for this room</p>
+              <p className="text-[10px] text-muted-foreground/60 mt-1">The room owner can add a timer from their dashboard</p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Timer size={14} className="text-purple-400" />
+                  <span className="text-sm font-medium text-foreground">Pomodoro Timer</span>
+                  <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-semibold",
+                    detail.timer.isRunning ? "bg-emerald-500/15 text-emerald-400" : "bg-gray-700 text-gray-400"
+                  )}>{detail.timer.isRunning ? "Running" : "Stopped"}</span>
+                </div>
+                {isAdmin && (
+                  <button onClick={() => doTimerAction("delete_timer")} disabled={timerLoading}
+                    className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50">
+                    <Trash2 size={10} /> Delete
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Focus</span>
+                  <p className="text-foreground font-medium">{detail.timer.focusMinutes} min</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Break</span>
+                  <p className="text-foreground font-medium">{detail.timer.breakMinutes} min</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Auto-restart</span>
+                  <p className="text-foreground font-medium">{detail.timer.autoRestart ? "Yes" : "No"}</p>
+                </div>
+                <div>
+                  <span className="text-[10px] text-muted-foreground uppercase">Voice Alerts</span>
+                  <p className="text-foreground font-medium">{detail.timer.voiceAlerts ? "On" : "Off"}</p>
+                </div>
+              </div>
+              {isAdmin && (
+                <div className="space-y-3 pt-2 border-t border-border">
+                  <p className="text-xs font-medium text-muted-foreground">Edit Timer Settings</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">Focus (min)</label>
+                      <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
+                        className="w-full px-3 py-1.5 text-sm rounded-lg bg-background border border-border text-foreground" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] text-muted-foreground block mb-0.5">Break (min)</label>
+                      <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
+                        className="w-full px-3 py-1.5 text-sm rounded-lg bg-background border border-border text-foreground" />
+                    </div>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+                    <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
+                      className="rounded border-border bg-background text-purple-500" />
+                    Auto-restart after break
+                  </label>
+                  <button onClick={() => doTimerAction("edit_timer", { focusMinutes: timerFocus, breakMinutes: timerBreak, autoRestart: timerAutoRestart })}
+                    disabled={timerLoading}
+                    className="px-4 py-1.5 text-xs font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">
+                    Save Timer Settings
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {/* --- END AI-MODIFIED --- */}
 
       {tab === "actions" && isAdmin && !room.deletedAt && (
         <div className="space-y-4">
@@ -690,6 +818,14 @@ export default function AdminRoomsPage() {
                                 <span className="text-sm font-medium text-foreground truncate">{room.name || "Private Room"}</span>
                                 {room.frozenAt && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-blue-500/15 text-blue-400 font-medium"><Snowflake size={8} />Frozen</span>}
                                 {room.deletedAt && <Badge variant="error" size="sm">Expired</Badge>}
+                                {/* --- AI-MODIFIED (2026-03-22) --- */}
+                                {/* Purpose: Timer status badge */}
+                                {room.hasTimer && (
+                                  <span className={cn("inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-medium",
+                                    room.timerRunning ? "bg-purple-500/15 text-purple-400" : "bg-gray-500/15 text-gray-400"
+                                  )}><Timer size={8} />{room.timerRunning ? "Timer" : "Timer (off)"}</span>
+                                )}
+                                {/* --- END AI-MODIFIED --- */}
                               </div>
                               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                                 <span>Owner: {room.owner.displayName}</span>

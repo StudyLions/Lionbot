@@ -24,6 +24,7 @@ import {
   Maximize2, ArrowLeft, Video, MonitorPlay, Trash2, X, Pencil,
   Bell, BellOff, Trophy, Timer, Coins, DoorOpen,
   Crown, UserMinus, ChevronDown, ChevronUp, ExternalLink, PencilLine, Settings,
+  Play, Square,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
@@ -43,18 +44,28 @@ interface LiveSessionData {
     isStream: boolean
     activity: string | null
   }
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Extended pomodoro type with room timer ownership flags and stopped state
   pomodoro?: {
-    stage: "focus" | "break"
+    stage: "focus" | "break" | "stopped"
     focusLength: number
     breakLength: number
-    stageStartedAt: string
-    stageEndsAt: string
+    stageStartedAt: string | null
+    stageEndsAt: string | null
     remainingSeconds: number
     stageDurationSeconds: number
     channelName: string
     cycleNumber: number
-    lastStarted: string
+    lastStarted: string | null
+    isRoomTimer?: boolean
+    timerOwnerMatch?: boolean
   } | null
+  roomTimerFlags?: {
+    isRoomChannel: boolean
+    isRoomOwner: boolean
+    hasTimer: boolean
+  }
+  // --- END AI-MODIFIED ---
   privateRoom?: {
     channelId: string
     name: string | null
@@ -225,9 +236,88 @@ export default function SessionPage() {
   }, [roomChannelId, roomNameInput, mutateRoom, mutate])
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Timer controls state and handlers for room owner panel
+  const canManageTimer = data?.roomTimerFlags?.isRoomOwner ?? data?.pomodoro?.timerOwnerMatch ?? false
+  const hasRoomTimer = data?.roomTimerFlags?.hasTimer ?? !!data?.pomodoro
+  const [timerCreating, setTimerCreating] = useState(false)
+  const [timerEditing, setTimerEditing] = useState(false)
+  const [timerFocus, setTimerFocus] = useState(25)
+  const [timerBreak, setTimerBreak] = useState(5)
+  const [timerAutoRestart, setTimerAutoRestart] = useState(false)
+  const [timerLoading, setTimerLoading] = useState(false)
+
+  const handleTimerCreate = useCallback(async () => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ focusMinutes: timerFocus, breakMinutes: timerBreak, autoRestart: timerAutoRestart }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to create timer")
+      toast.success("Timer created!")
+      setTimerCreating(false)
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, timerFocus, timerBreak, timerAutoRestart, mutate])
+
+  const handleTimerEdit = useCallback(async () => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ focusMinutes: timerFocus, breakMinutes: timerBreak, autoRestart: timerAutoRestart }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to update timer")
+      toast.success("Timer updated!")
+      setTimerEditing(false)
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, timerFocus, timerBreak, timerAutoRestart, mutate])
+
+  const handleTimerStartStop = useCallback(async (action: "start" | "stop") => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || `Failed to ${action} timer`)
+      toast.success(action === "start" ? "Timer started!" : "Timer stopped!")
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, mutate])
+
+  const handleTimerDelete = useCallback(async () => {
+    if (!roomChannelId || !confirm("Delete this timer?")) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, { method: "DELETE" })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to delete timer")
+      toast.success("Timer deleted")
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, mutate])
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: stage change notifications + session summary tracking
-  const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Filter out "stopped" stage since notifications only apply to focus/break
+  const pomodoroStageForNotifications = data?.pomodoro?.stage === "focus" || data?.pomodoro?.stage === "break" ? data.pomodoro.stage : null
+  const notifications = useStageNotifications(pomodoroStageForNotifications)
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: cycle completion celebration glow on session page
@@ -672,6 +762,113 @@ export default function SessionPage() {
                             </div>
                           )}
 
+                          {/* --- AI-MODIFIED (2026-03-22) --- */}
+                          {/* Purpose: Timer controls for room owners in session panel */}
+                          {canManageTimer && (
+                            <div className="space-y-2">
+                              <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold flex items-center gap-1">
+                                <Timer size={9} /> Room Timer
+                              </label>
+                              {!hasRoomTimer && !timerCreating ? (
+                                <button onClick={() => setTimerCreating(true)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/20 transition-colors">
+                                  <Plus size={10} /> Add Timer
+                                </button>
+                              ) : timerCreating ? (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                      <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
+                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                      <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
+                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                    </div>
+                                  </div>
+                                  <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                    <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
+                                      className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                    Auto-restart
+                                  </label>
+                                  <div className="flex gap-2">
+                                    <button onClick={handleTimerCreate} disabled={timerLoading}
+                                      className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Create</button>
+                                    <button onClick={() => setTimerCreating(false)}
+                                      className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                  </div>
+                                </div>
+                              ) : data.pomodoro ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                      <span>{Math.floor(data.pomodoro.focusLength / 60)}m / {Math.floor(data.pomodoro.breakLength / 60)}m</span>
+                                      <span className={cn("px-1 py-0.5 rounded text-[9px] font-semibold",
+                                        data.pomodoro.stage === "stopped"
+                                          ? "bg-gray-700 text-gray-400"
+                                          : "bg-emerald-500/15 text-emerald-400"
+                                      )}>{data.pomodoro.stage === "stopped" ? "Stopped" : "Running"}</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      {data.pomodoro.stage === "stopped" ? (
+                                        <button onClick={() => handleTimerStartStop("start")} disabled={timerLoading}
+                                          className="p-1 rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 disabled:opacity-50" title="Start">
+                                          <Play size={10} />
+                                        </button>
+                                      ) : (
+                                        <button onClick={() => handleTimerStartStop("stop")} disabled={timerLoading}
+                                          className="p-1 rounded bg-red-500/15 text-red-400 hover:bg-red-500/25 disabled:opacity-50" title="Stop">
+                                          <Square size={10} />
+                                        </button>
+                                      )}
+                                      <button onClick={() => {
+                                        setTimerFocus(Math.floor(data.pomodoro!.focusLength / 60))
+                                        setTimerBreak(Math.floor(data.pomodoro!.breakLength / 60))
+                                        setTimerEditing(!timerEditing)
+                                      }} className="p-1 rounded bg-gray-700 text-gray-300 hover:bg-gray-600" title="Edit">
+                                        <Pencil size={10} />
+                                      </button>
+                                      <button onClick={handleTimerDelete} disabled={timerLoading}
+                                        className="p-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50" title="Delete">
+                                        <Trash2 size={10} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {timerEditing && (
+                                    <div className="space-y-2 pt-1">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                          <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
+                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                          <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
+                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        </div>
+                                      </div>
+                                      <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                        <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
+                                          className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                        Auto-restart
+                                      </label>
+                                      <div className="flex gap-2">
+                                        <button onClick={handleTimerEdit} disabled={timerLoading}
+                                          className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Save</button>
+                                        <button onClick={() => setTimerEditing(false)}
+                                          className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                          {/* --- END AI-MODIFIED --- */}
+
                           {/* Quick Links */}
                           <div className="flex gap-3 pt-1">
                             <Link href="/dashboard/rooms">
@@ -738,7 +935,7 @@ export default function SessionPage() {
                   </div>
 
                   {/* Pomodoro Timer */}
-                  {data.pomodoro && (
+                  {data.pomodoro && data.pomodoro.stage !== "stopped" && (
                     <div className={cn(
                       "relative rounded-2xl border p-6 flex flex-col items-center gap-4 transition-all duration-700",
                       data.pomodoro.stage === "focus"

@@ -72,7 +72,9 @@ export default apiHandler({
 
     const roomChannelIds = rooms.map((r) => r.channelid)
 
-    const [userConfigs, memberRows, ongoingSessions] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Also fetch timer data per room for timer badges
+    const [userConfigs, memberRows, ongoingSessions, roomTimers] = await Promise.all([
       prisma.user_config.findMany({
         where: { userid: { in: userIdBigints } },
         select: { userid: true, name: true, avatar_hash: true },
@@ -85,7 +87,14 @@ export default apiHandler({
         where: { guildid: guildId, channelid: { in: roomChannelIds } },
         select: { channelid: true, userid: true },
       }),
+      prisma.timers.findMany({
+        where: { channelid: { in: roomChannelIds } },
+        select: { channelid: true, last_started: true, focus_length: true, break_length: true },
+      }),
     ])
+
+    const timerMap = new Map(roomTimers.map((t) => [t.channelid.toString(), t]))
+    // --- END AI-MODIFIED ---
 
     const ucMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
     const memMap = new Map(memberRows.map((m) => [m.userid.toString(), m]))
@@ -121,6 +130,11 @@ export default apiHandler({
         }
       })
 
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Include timer status per room for timer badges
+      const timer = timerMap.get(chId)
+      // --- END AI-MODIFIED ---
+
       return {
         channelId: chId,
         name: r.name || null,
@@ -136,6 +150,11 @@ export default apiHandler({
         owner,
         liveUsers,
         isLive: liveUsers.length > 0,
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Timer badge data
+        hasTimer: !!timer,
+        timerRunning: !!timer?.last_started,
+        // --- END AI-MODIFIED ---
       }
     })
 

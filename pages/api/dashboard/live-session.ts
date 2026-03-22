@@ -86,6 +86,12 @@ export default apiHandler({
     ])
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Compute room timer ownership flags used by both running and non-running timer states
+    const isRoomChannel = !!rentedRoom && !rentedRoom.deleted_at
+    const isRoomOwner = isRoomChannel && rentedRoom.ownerid === auth.userId
+    // --- END AI-MODIFIED ---
+
     let pomodoro = null
     if (timer && timer.last_started) {
       const now = Date.now()
@@ -116,6 +122,29 @@ export default apiHandler({
         channelName: timer.pretty_name || timer.channel_name || "Pomodoro",
         cycleNumber,
         lastStarted: timer.last_started!.toISOString(),
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Flags so session page shows timer edit controls for room owners
+        isRoomTimer: isRoomChannel,
+        timerOwnerMatch: isRoomOwner,
+        // --- END AI-MODIFIED ---
+      }
+      // --- END AI-MODIFIED ---
+    } else if (timer && !timer.last_started) {
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Return timer info even when stopped, so room owners see edit/start controls
+      pomodoro = {
+        stage: "stopped" as const,
+        focusLength: timer.focus_length,
+        breakLength: timer.break_length,
+        stageStartedAt: null,
+        stageEndsAt: null,
+        remainingSeconds: 0,
+        stageDurationSeconds: 0,
+        channelName: timer.pretty_name || timer.channel_name || "Pomodoro",
+        cycleNumber: 0,
+        lastStarted: null,
+        isRoomTimer: isRoomChannel,
+        timerOwnerMatch: isRoomOwner,
       }
       // --- END AI-MODIFIED ---
     }
@@ -230,6 +259,14 @@ export default apiHandler({
         parentId: t.parentid,
         rewarded: t.rewarded,
       })),
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Flags for timer creation when no timer exists yet
+      roomTimerFlags: {
+        isRoomChannel,
+        isRoomOwner,
+        hasTimer: !!timer,
+      },
+      // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-03-22) ---
       // Purpose: Include private room data when user's voice channel is a rented room
       privateRoom: rentedRoom && !rentedRoom.deleted_at ? (() => {

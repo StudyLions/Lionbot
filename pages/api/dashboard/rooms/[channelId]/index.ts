@@ -54,6 +54,18 @@ export default apiHandler({
         ? new Date(new Date(room.created_at).getTime() + 24 * 60 * 60 * 1000)
         : null
 
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Fetch timer data for the room
+    const timerRow = await prisma.timers.findUnique({
+      where: { channelid: channelId },
+      select: {
+        channelid: true, focus_length: true, break_length: true,
+        auto_restart: true, last_started: true, inactivity_threshold: true,
+        channel_name: true, pretty_name: true, voice_alerts: true,
+      },
+    })
+    // --- END AI-MODIFIED ---
+
     const [userConfigs, memberRows, studyStats, recentSessions] = await Promise.all([
       prisma.user_config.findMany({
         where: { userid: { in: allMemberIds } },
@@ -136,6 +148,20 @@ export default apiHandler({
       nextTick: nextTick?.toISOString() ?? null,
       members,
       activityFeed,
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Include timer data for room timer controls
+      timer: timerRow ? {
+        focusMinutes: Math.round(timerRow.focus_length / 60),
+        breakMinutes: Math.round(timerRow.break_length / 60),
+        autoRestart: timerRow.auto_restart ?? false,
+        isRunning: !!timerRow.last_started,
+        lastStarted: timerRow.last_started?.toISOString() ?? null,
+        inactivityThreshold: timerRow.inactivity_threshold,
+        channelName: timerRow.channel_name,
+        prettyName: timerRow.pretty_name,
+        voiceAlerts: timerRow.voice_alerts ?? true,
+      } : null,
+      // --- END AI-MODIFIED ---
     })
   },
 
@@ -171,6 +197,9 @@ export default apiHandler({
       select: { name: true },
     })
 
-    res.status(200).json({ name: updated.name })
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Include sync timing message so users know when the name will appear on Discord
+    res.status(200).json({ name: updated.name, message: "Name saved. Will sync to Discord within a few minutes." })
+    // --- END AI-MODIFIED ---
   },
 })
