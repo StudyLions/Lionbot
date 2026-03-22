@@ -114,3 +114,8 @@ dist
 package-lock.json
 /generated/prisma
 .env*.local
+
+# OG image generation (temp output + binary assets)
+temp-og-images/
+scripts/fonts/
+scripts/assets/

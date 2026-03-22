@@ -21,15 +21,18 @@ const defaultSEO: DefaultSeoProps = {
     title: "LionBot - The Best Discord Productivity Bot",
     description:
       "Leo is the best, open-source, all-in-one solution that every Discord community needs.",
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Point default OG image to Vercel Blob instead of non-existent local file
     images: [
       {
-        url: `${SITE_URL}/og-image.png`,
+        url: "https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com/og-images/homepage.png",
         width: 1200,
         height: 630,
         alt: "LionBot - Discord Productivity Bot",
         type: "image/png",
       },
     ],
+    // --- END AI-MODIFIED ---
   },
   twitter: {
     cardType: "summary_large_image",

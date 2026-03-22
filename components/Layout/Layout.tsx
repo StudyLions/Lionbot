@@ -1,8 +1,10 @@
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Use NextSeo, add top.gg-inspired gradient mesh background for visual depth
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Use NextSeo with auto-injected OG images based on route, gradient mesh background
 import Header from "@/components/Layout/Header/Header";
 import Footer from "@/components/Layout/Footer/Footer";
 import { NextSeo } from "next-seo";
+import { useRouter } from "next/router";
+import { getOgImageMeta } from "@/constants/OgImages";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -15,13 +17,21 @@ interface LayoutProps {
 }
 
 export default function Layout({ children, SEO }: LayoutProps) {
+  const { pathname } = useRouter();
+  const ogImages = getOgImageMeta(pathname);
+
+  const openGraph = {
+    ...SEO.openGraph,
+    images: ogImages,
+  };
+
   return (
     <>
       <NextSeo
         title={SEO.title}
         description={SEO.description}
         canonical={SEO.canonical}
-        openGraph={SEO.openGraph}
+        openGraph={openGraph}
       />
       {/* Gradient mesh background orbs (top.gg-inspired) */}
       <div className="fixed inset-0 pointer-events-none z-0" aria-hidden="true">

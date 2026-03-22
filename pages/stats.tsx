@@ -126,6 +126,15 @@ export default function StatsPage() {
           name="description"
           content="Live statistics from StudyLion's mainframe. 500M+ database rows, 32 shards, 69K+ servers, 1.3M users. Real-time data, beautifully visualized."
         />
+        {/* --- AI-MODIFIED (2026-03-22) --- */}
+        {/* Purpose: Add OG image meta tags for social sharing */}
+        <meta property="og:image" content="https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com/og-images/stats.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:type" content="image/png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com/og-images/stats.png" />
+        {/* --- END AI-MODIFIED --- */}
         <link
           href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap"
           rel="stylesheet"

@@ -381,7 +381,16 @@ export default function FocusModePage() {
   if (!data?.active) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <Head><title>Focus Mode - LionBot</title></Head>
+        <Head>
+          <title>Focus Mode - LionBot</title>
+          {/* --- AI-MODIFIED (2026-03-22) --- */}
+          {/* Purpose: Add OG image meta tags for social sharing */}
+          <meta property="og:image" content="https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com/og-images/dashboard-focus.png" />
+          <meta property="og:image:width" content="1200" />
+          <meta property="og:image:height" content="630" />
+          <meta name="twitter:card" content="summary_large_image" />
+          {/* --- END AI-MODIFIED --- */}
+        </Head>
         <div className="text-center space-y-4">
           <p className="text-lg text-gray-400">No active session</p>
           <Link href="/dashboard/session">
@@ -448,6 +457,13 @@ export default function FocusModePage() {
     <>
       <Head>
         <title>{formatted} - {c.label} | LionBot</title>
+        {/* --- AI-MODIFIED (2026-03-22) --- */}
+        {/* Purpose: Add OG image meta tags for social sharing */}
+        <meta property="og:image" content="https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com/og-images/dashboard-focus.png" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta name="twitter:card" content="summary_large_image" />
+        {/* --- END AI-MODIFIED --- */}
         {theme.fontImport && (
           <link rel="stylesheet" href={theme.fontImport} />
         )}
