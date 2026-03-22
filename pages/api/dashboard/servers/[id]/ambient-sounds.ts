@@ -43,27 +43,30 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-22) ---
     // Purpose: Also fetch heartbeat data for bot online/offline detection
-    const [configs, isPremium, heartbeats] = await Promise.all([
+    // Heartbeat query is non-fatal so a failure doesn't block the premium check
+    const [configs, isPremium] = await Promise.all([
       prisma.ambient_sounds_config.findMany({
         where: { guildid: guildId },
         orderBy: { bot_number: "asc" },
       }),
       isPremiumGuild(guildId),
-      (prisma as any).sounds_bot_heartbeat.findMany({
-        orderBy: { bot_number: "asc" },
-      }),
     ])
 
     const STALE_THRESHOLD_MS = 30_000
     const now = Date.now()
     const botStatus: Record<number, { online: boolean; username: string | null }> = {}
-    for (const hb of heartbeats) {
-      const age = now - hb.last_seen.getTime()
-      botStatus[hb.bot_number] = {
-        online: age < STALE_THRESHOLD_MS,
-        username: hb.bot_username,
+    try {
+      const heartbeats = await (prisma as any).sounds_bot_heartbeat.findMany({
+        orderBy: { bot_number: "asc" },
+      })
+      for (const hb of heartbeats) {
+        const age = now - hb.last_seen.getTime()
+        botStatus[hb.bot_number] = {
+          online: age < STALE_THRESHOLD_MS,
+          username: hb.bot_username,
+        }
       }
-    }
+    } catch (_) {}
 
     return res.status(200).json({
       isPremium,

@@ -84,6 +84,11 @@ export default function FarmPage() {
   const [harvestResult, setHarvestResult] = useState<HarvestResult | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Auto-scroll to PlotDetail when user selects a farm plot (fixes UX bug where users
+  // couldn't find the planting controls below the Gameboy frame)
+  const plotDetailRef = useRef<HTMLDivElement>(null)
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: Rarity reveal flash state for planting animation
   const [rarityReveal, setRarityReveal] = useState<{ rarity: string; name: string } | null>(null)
@@ -107,10 +112,22 @@ export default function FarmPage() {
     setTimeout(() => setMessage(null), 4000)
   }, [])
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Auto-scroll to plot detail panel after selecting a plot so users can see
+  // the Plant Seed / Water / Harvest controls without manual scrolling
   const handleSelectPlot = useCallback((plotId: number) => {
-    setSelectedPlot((prev) => prev === plotId ? null : plotId)
+    setSelectedPlot((prev) => {
+      const newVal = prev === plotId ? null : plotId
+      if (newVal !== null) {
+        setTimeout(() => {
+          plotDetailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+        }, 80)
+      }
+      return newVal
+    })
     setShowSeedSelector(false)
   }, [])
+  // --- END AI-MODIFIED ---
 
   const handleAction = useCallback(async (plotId: number, action: string) => {
     try {
@@ -381,6 +398,9 @@ export default function FarmPage() {
 
                   <ArtistAttribution />
 
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Wrap PlotDetail/SeedSelector in a div with ref for auto-scroll */}
+                  <div ref={plotDetailRef}>
                   {selectedPlotData && !showSeedSelector && (
                     <PlotDetail
                       plot={selectedPlotData}
@@ -399,6 +419,9 @@ export default function FarmPage() {
                       onCancel={() => setShowSeedSelector(false)}
                     />
                   )}
+
+                  </div>
+                  {/* --- END AI-MODIFIED --- */}
 
                   {selectedPlot === null && !hasPlanted && (
                     <div className="text-center py-3">

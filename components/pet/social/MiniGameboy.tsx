@@ -26,6 +26,7 @@ interface MiniGameboyProps {
 
 export default function MiniGameboy({ petData, width = 140, className }: MiniGameboyProps) {
   const layout = mergeLayout(petData.roomLayout as any)
+  const screenSize = Math.round(width * (200 / 260))
 
   return (
     <div className={className} style={{ width, maxWidth: "100%" }}>
@@ -40,6 +41,7 @@ export default function MiniGameboy({ petData, width = 140, className }: MiniGam
           layout={layout}
           equipment={petData.equipment}
           expression={petData.expression}
+          size={screenSize}
           animated
         />
       </GameboyFrame>

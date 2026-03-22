@@ -337,23 +337,28 @@ export default function FriendProfilePage() {
                           </span>
                         </div>
                         <div className="flex justify-center overflow-x-auto">
-                          <GameboyFrame
-                            isFullscreen={false}
-                            skinAssetPath={data.petVisual.skinPath ?? undefined}
-                            width={typeof window !== "undefined" && window.innerWidth < 500
+                          {(() => {
+                            const gbWidth = typeof window !== "undefined" && window.innerWidth < 500
                               ? Math.min(340, window.innerWidth - 80)
                               : 400
-                            }
-                          >
-                            <RoomCanvas
-                              roomPrefix={data.petVisual.roomPrefix}
-                              furniture={data.petVisual.furniture}
-                              layout={mergeLayout(data.petVisual.roomLayout as any)}
-                              equipment={data.petVisual.equipment}
-                              expression={pet.expression}
-                              animated
-                            />
-                          </GameboyFrame>
+                            return (
+                              <GameboyFrame
+                                isFullscreen={false}
+                                skinAssetPath={data.petVisual.skinPath ?? undefined}
+                                width={gbWidth}
+                              >
+                                <RoomCanvas
+                                  roomPrefix={data.petVisual.roomPrefix}
+                                  furniture={data.petVisual.furniture}
+                                  layout={mergeLayout(data.petVisual.roomLayout as any)}
+                                  equipment={data.petVisual.equipment}
+                                  expression={pet.expression}
+                                  size={Math.round(gbWidth * (200 / 260))}
+                                  animated
+                                />
+                              </GameboyFrame>
+                            )
+                          })()}
                         </div>
                       </PixelCard>
 

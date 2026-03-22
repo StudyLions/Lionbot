@@ -7,11 +7,14 @@ import { prisma } from "@/utils/prisma"
 import { requireAdmin, getAuthContext } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Raised test limit to 50/day so admins don't get locked out while configuring
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
-  test: { max: 3, windowMs: 3600000 },
+  test: { max: 50, windowMs: 86400000 },
   run_now: { max: 1, windowMs: 3600000 },
   simulate: { max: 999, windowMs: 60000 },
 }
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async POST(req, res) {
@@ -48,7 +51,7 @@ export default apiHandler({
       })
       if (recentCount >= limit.max) {
         throw new ValidationError(
-          `Rate limited: max ${limit.max} ${action} action(s) per hour`
+          `Rate limited: max ${limit.max} ${action} action(s) per ${limit.windowMs >= 86400000 ? 'day' : 'hour'}`
         )
       }
 
