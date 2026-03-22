@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Link component for Private Rooms cross-link
+import Link from "next/link"
+// --- END AI-MODIFIED ---
 import { PageHeader, Badge, toast, ConfirmModal } from "@/components/dashboard/ui"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"

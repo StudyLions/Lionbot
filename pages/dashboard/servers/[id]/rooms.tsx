@@ -280,8 +280,8 @@ function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
             </div>
           ))}
           {confirmKick && (
-            <ConfirmModal title="Kick Member?" description="Remove this member from the room? The bot will sync permissions on next tick."
-              onConfirm={() => doKick(confirmKick)} onCancel={() => setConfirmKick(null)} loading={actionLoading} variant="destructive" />
+            <ConfirmModal open={true} title="Kick Member?" message="Remove this member from the room? The bot will sync permissions on next tick."
+              onConfirm={() => doKick(confirmKick)} onCancel={() => setConfirmKick(null)} loading={actionLoading} variant="danger" />
           )}
         </div>
       )}
@@ -295,7 +295,7 @@ function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
               <Activity size={10} className="text-muted-foreground flex-shrink-0" />
               <span className="text-foreground">{e.displayName}</span>
               <span className="text-muted-foreground">studied {formatStudyHours(e.durationSeconds)}</span>
-              {e.tag && <Badge variant="default" className="text-[9px]">{e.tag}</Badge>}
+              {e.tag && <Badge variant="default" size="sm">{e.tag}</Badge>}
               <span className="text-muted-foreground/60 ml-auto">{relativeTime(e.timestamp)}</span>
             </div>
           ))}
@@ -408,8 +408,8 @@ function RoomDetailPanel({ room, serverId, isAdmin, onMutate }: {
             </button>
           </div>
           {showConfirmClose && (
-            <ConfirmModal title="Force Close Room?" description={`This will mark "${room.name || 'this room'}" as deleted. The bot will destroy the Discord channel on next tick. This cannot be undone.`}
-              onConfirm={doDelete} onCancel={() => setShowConfirmClose(false)} loading={actionLoading} variant="destructive" />
+            <ConfirmModal open={true} title="Force Close Room?" message={`This will mark "${room.name || 'this room'}" as deleted. The bot will destroy the Discord channel on next tick. This cannot be undone.`}
+              onConfirm={doDelete} onCancel={() => setShowConfirmClose(false)} loading={actionLoading} variant="danger" />
           )}
         </div>
       )}
@@ -500,12 +500,12 @@ export default function AdminRoomsPage() {
   return (
     <Layout SEO={{ title: `Private Rooms - ${serverName}`, description: "Manage private rooms" }}>
       <AdminGuard>
-        <ServerGuard serverId={serverId} requiredLevel="moderator">
+        <ServerGuard requiredLevel="moderator">
           <div className="min-h-screen bg-background pt-6 pb-20 px-4">
             <div className="max-w-6xl mx-auto flex gap-8">
               <ServerNav serverId={serverId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
               <div className="flex-1 min-w-0 space-y-8">
-                <PageHeader title="Private Rooms" description="Analytics, management, and configuration for private study rooms" icon={<DoorOpen size={20} />} />
+                <PageHeader title="Private Rooms" description="Analytics, management, and configuration for private study rooms" />
 
                 {/* ======== SECTION A: ANALYTICS ======== */}
                 {!stats ? (
@@ -688,8 +688,8 @@ export default function AdminRoomsPage() {
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium text-foreground truncate">{room.name || "Private Room"}</span>
-                                {room.frozenAt && <Badge variant="info" className="text-[9px]"><Snowflake size={8} className="mr-0.5" />Frozen</Badge>}
-                                {room.deletedAt && <Badge variant="error" className="text-[9px]">Expired</Badge>}
+                                {room.frozenAt && <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] bg-blue-500/15 text-blue-400 font-medium"><Snowflake size={8} />Frozen</span>}
+                                {room.deletedAt && <Badge variant="error" size="sm">Expired</Badge>}
                               </div>
                               <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
                                 <span>Owner: {room.owner.displayName}</span>
@@ -751,8 +751,8 @@ export default function AdminRoomsPage() {
                     </div>
                   )}
                   {showBulkConfirm === "close" && (
-                    <ConfirmModal title={`Close ${selectedRooms.size} Rooms?`} description="This will force-close all selected rooms. The bot will destroy the Discord channels on next tick."
-                      onConfirm={() => doBulk("close")} onCancel={() => setShowBulkConfirm(null)} loading={bulkLoading} variant="destructive" />
+                    <ConfirmModal open={true} title={`Close ${selectedRooms.size} Rooms?`} message="This will force-close all selected rooms. The bot will destroy the Discord channels on next tick."
+                      onConfirm={() => doBulk("close")} onCancel={() => setShowBulkConfirm(null)} loading={bulkLoading} variant="danger" />
                   )}
                   {showBulkConfirm === "adjust" && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">

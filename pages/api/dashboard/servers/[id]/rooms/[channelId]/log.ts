@@ -30,7 +30,7 @@ export default apiHandler({
       take: 50,
     })
 
-    const adminIds = [...new Set(logs.map((l) => l.adminid))]
+    const adminIds = Array.from(new Set(logs.map((l) => l.adminid)))
     const [adminConfigs, adminMembers] = await Promise.all([
       prisma.user_config.findMany({
         where: { userid: { in: adminIds } },

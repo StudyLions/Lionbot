@@ -235,7 +235,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                       <Home size={14} className="text-indigo-400 flex-shrink-0" />
                       <span className="text-foreground font-medium truncate">{data.room.name || "Private Room"}</span>
                       <span className="text-warning font-mono text-xs">{data.room.coinBalance} coins</span>
-                      <Link href={`/dashboard/servers/${serverId}/rooms?search=${data.userId}`}>
+                      <Link href={`/dashboard/servers/${serverId}/rooms?search=${data.member.userId}`}>
                         <a className="ml-auto text-[10px] text-primary hover:text-primary/80 whitespace-nowrap">Room History →</a>
                       </Link>
                     </div>
