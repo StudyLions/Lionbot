@@ -32,12 +32,25 @@ export interface TierConfig {
   // --- END AI-MODIFIED ---
 }
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Change all subscription currencies from USD to EUR
+
+export const SERVER_PREMIUM_PLANS = {
+  MONTHLY: { price: 9.99, currency: "eur" as const, period: "month" as const },
+  YEARLY: { price: 99.99, currency: "eur" as const, period: "year" as const },
+}
+
+// --- END AI-MODIFIED ---
+
 export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
   LIONHEART: {
     id: "LIONHEART",
     name: "LionHeart",
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Change currency from USD to EUR
     price: 4.99,
-    currency: "usd",
+    currency: "eur",
+    // --- END AI-MODIFIED ---
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART || "price_1TBgSYAJ9zOg7wY9L8C9IEt5",
     color: "#5B8DEF",
     monthlyGems: 500,
@@ -57,8 +70,11 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
   LIONHEART_PLUS: {
     id: "LIONHEART_PLUS",
     name: "LionHeart+",
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Change currency from USD to EUR
     price: 9.99,
-    currency: "usd",
+    currency: "eur",
+    // --- END AI-MODIFIED ---
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS || "price_1TBgSZAJ9zOg7wY9Z55T26ae",
     color: "#FF69B4",
     monthlyGems: 1200,
@@ -78,8 +94,11 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
   LIONHEART_PLUS_PLUS: {
     id: "LIONHEART_PLUS_PLUS",
     name: "LionHeart++",
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Change currency from USD to EUR
     price: 19.99,
-    currency: "usd",
+    currency: "eur",
+    // --- END AI-MODIFIED ---
     stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS_PLUS || "price_1TBgSbAJ9zOg7wY9wmMbpVd3",
     color: "#FFD700",
     monthlyGems: 3000,

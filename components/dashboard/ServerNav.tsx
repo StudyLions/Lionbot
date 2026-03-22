@@ -137,7 +137,19 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
 }
 
 // --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Added isAdmin/isMod props, sidebar search input, and inline search results
+// Purpose: Added isAdmin/isMod props, sidebar search input, inline search results, and premium badge
+import { useDashboard } from "@/hooks/useDashboard"
+
+interface SubStatusData {
+  hasSubscription: boolean
+  isPremium: boolean
+  premiumUntil: string | null
+  subscription: {
+    plan: string
+    status: string
+  } | null
+}
+
 function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate, onOpenPalette }: {
   serverId: string
   serverName: string
@@ -153,6 +165,10 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
   const { soundEnabled, setSoundEnabled, playSound } = useUISound()
   // --- END AI-MODIFIED ---
   const [sidebarQuery, setSidebarQuery] = useState("")
+  const { data: subData } = useDashboard<SubStatusData>(
+    serverId ? `/api/dashboard/servers/${serverId}/subscription` : null,
+    { revalidateOnFocus: false }
+  )
 
   const searchItems = getSearchItems(isAdmin, isMod)
   const grouped = useSearch(sidebarQuery, searchItems)
@@ -174,6 +190,15 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
           </div>
           <p className="text-sm font-semibold text-foreground truncate">{serverName}</p>
         </div>
+        {subData?.isPremium && (
+          <div className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">
+            <Crown size={11} className="text-amber-400" />
+            <span className="text-[10px] font-semibold text-amber-400 uppercase tracking-wide">Premium</span>
+            {subData.subscription?.status === "CANCELLING" && (
+              <span className="text-[9px] text-amber-400/60 ml-auto">ends {subData.premiumUntil ? new Date(subData.premiumUntil).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : ""}</span>
+            )}
+          </div>
+        )}
       </div>
       <div className="px-3 pb-1">
         <div className="relative">

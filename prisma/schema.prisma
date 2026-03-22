@@ -291,6 +291,10 @@ model guild_config {
   // Purpose: Sticky messages relation
   sticky_messages              sticky_messages[]
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Server premium Stripe subscription relation
+  server_premium_subscriptions server_premium_subscriptions?
+  // --- END AI-MODIFIED ---
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1674,6 +1678,29 @@ model lg_marketplace_sales {
 }
 
 // --- END AI-MODIFIED ---
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Server premium Stripe subscriptions (replaces gem-based premium purchase)
+
+model server_premium_subscriptions {
+  guildid                BigInt    @id
+  userid                 BigInt
+  stripe_customer_id     String
+  stripe_subscription_id String?
+  plan                   String    @default("MONTHLY")
+  status                 String    @default("INACTIVE")
+  current_period_start   DateTime? @db.Timestamptz(6)
+  current_period_end     DateTime? @db.Timestamptz(6)
+  created_at             DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+
+  guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([stripe_customer_id], map: "server_premium_subs_stripe_customer")
+  @@index([userid], map: "server_premium_subs_user")
+}
 
 // --- END AI-MODIFIED ---
 

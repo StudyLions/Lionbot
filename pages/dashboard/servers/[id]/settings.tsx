@@ -271,6 +271,19 @@ export default function ServerSettings() {
   }, [router.query.section, loading, config])
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Show toast on premium subscription success/cancel redirect from Stripe
+  useEffect(() => {
+    if (router.query.premium === "success") {
+      toast.success("Server premium activated! Premium features are now available.")
+      router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
+    } else if (router.query.premium === "cancelled") {
+      toast.info("Premium checkout was cancelled.")
+      router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
+    }
+  }, [router.query.premium])
+  // --- END AI-MODIFIED ---
+
   // Sync config data
   useEffect(() => {
     if (configData) {

@@ -312,7 +312,10 @@ function SubscriptionManagementBanner({
                 </span>
               </h3>
               <p className="text-sm text-gray-400 mt-0.5">
-                ${subStatus.tierPrice}/month
+                {/* --- AI-MODIFIED (2026-03-22) --- */}
+                {/* Purpose: Display EUR instead of USD */}
+                &euro;{subStatus.tierPrice}/month
+                {/* --- END AI-MODIFIED --- */}
                 {periodEnd && (
                   <>
                     {" · "}Next billing:{" "}
@@ -503,8 +506,11 @@ function SubscriptionCard({
         <span className="text-3xl">{tierIcons[tierId]}</span>
         <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
         <div className="mt-3">
-          <span className="text-4xl font-black text-white">${tier.price}</span>
+          {/* --- AI-MODIFIED (2026-03-22) --- */}
+          {/* Purpose: Display EUR instead of USD for subscription pricing */}
+          <span className="text-4xl font-black text-white">&euro;{tier.price}</span>
           <span className="text-gray-400 text-sm ml-0.5">/month</span>
+          {/* --- END AI-MODIFIED --- */}
         </div>
       </div>
 
