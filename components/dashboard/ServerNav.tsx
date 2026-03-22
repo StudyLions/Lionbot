@@ -5,7 +5,7 @@
 // ============================================================
 import Link from "next/link"
 import { useRouter } from "next/router"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -16,16 +16,23 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: add Pin icon for sticky messages nav link
 // --- AI-MODIFIED (2026-03-22) ---
-// Purpose: add DoorOpen icon for Private Rooms nav link
+// Purpose: add DoorOpen icon for Private Rooms nav link + Search/X for sidebar search
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
+  Search, X,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
+// --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: global search command palette and sidebar search
+import CommandPalette from "@/components/dashboard/search/CommandPalette"
+import { getSearchItems } from "@/components/dashboard/search/searchRegistry"
+import { useSearch, flatResults, hasResults } from "@/components/dashboard/search/useSearch"
 // --- END AI-MODIFIED ---
 
 interface ServerNavProps {
@@ -129,17 +136,28 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
   return sections
 }
 
-function NavContent({ serverId, serverName, sections, onNavigate }: {
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added isAdmin/isMod props, sidebar search input, and inline search results
+function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate, onOpenPalette }: {
   serverId: string
   serverName: string
   sections: NavSection[]
+  isAdmin: boolean
+  isMod: boolean
   onNavigate?: () => void
+  onOpenPalette?: () => void
 }) {
   const router = useRouter()
   const basePath = `/dashboard/servers/${serverId}`
   // --- AI-MODIFIED (2026-03-20) ---
   const { soundEnabled, setSoundEnabled, playSound } = useUISound()
   // --- END AI-MODIFIED ---
+  const [sidebarQuery, setSidebarQuery] = useState("")
+
+  const searchItems = getSearchItems(isAdmin, isMod)
+  const grouped = useSearch(sidebarQuery, searchItems)
+  const flat = flatResults(grouped)
+  const isSearching = sidebarQuery.trim().length > 0
 
   return (
     <div className="flex flex-col h-full">
@@ -157,9 +175,66 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
           <p className="text-sm font-semibold text-foreground truncate">{serverName}</p>
         </div>
       </div>
+      <div className="px-3 pb-1">
+        <div className="relative">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+          <input
+            type="text"
+            value={sidebarQuery}
+            onChange={(e) => setSidebarQuery(e.target.value)}
+            placeholder="Find settings..."
+            className="w-full bg-accent/30 border border-border/40 text-foreground text-xs rounded-md pl-8 pr-16 py-1.5 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/50 focus:bg-accent/50 transition-colors"
+          />
+          {isSearching ? (
+            <button
+              type="button"
+              onClick={() => setSidebarQuery("")}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
+            >
+              <X size={12} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenPalette}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-mono text-muted-foreground/35 bg-accent/50 border border-border/30 rounded px-1 py-0.5 hover:text-muted-foreground/60 hover:bg-accent/80 transition-colors"
+              title="Open command palette"
+            >
+              Ctrl+K
+            </button>
+          )}
+        </div>
+      </div>
       <Separator />
       <ScrollArea className="flex-1 px-3 py-3">
-        {sections.map((section) => (
+        {isSearching ? (
+          hasResults(grouped) ? (
+            <div className="space-y-1">
+              {flat.map((item) => {
+                const fullPath = basePath + item.route + (item.section ? `?section=${item.section}` : "")
+                return (
+                  <Link key={item.id} href={fullPath} onClick={onNavigate}>
+                    <span className="flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent transition-colors">
+                      <span className="flex-shrink-0 opacity-60">
+                        <Search size={13} />
+                      </span>
+                      <span className="flex-1 min-w-0">
+                        <span className="block text-xs font-medium truncate">{item.title}</span>
+                        <span className="block text-[10px] text-muted-foreground/50 truncate">{item.page}{item.section ? ` \u203A ${item.title}` : ""}</span>
+                      </span>
+                      {item.premium && <Sparkles size={10} className="text-amber-400/50 flex-shrink-0" />}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground/40 text-center py-6">
+              No results for &ldquo;{sidebarQuery}&rdquo;
+            </p>
+          )
+        ) : (
+        sections.map((section) => (
           <div key={section.title} className="mb-4">
             {/* --- AI-MODIFIED (2026-03-22) --- */}
             {/* Purpose: Amber/gold styling for premium section headers */}
@@ -208,7 +283,8 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
               })}
             </div>
           </div>
-        ))}
+        ))
+        )}
       </ScrollArea>
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Sound toggle at bottom of server nav */}
@@ -238,15 +314,29 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
   )
 }
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added command palette state, Ctrl+K listener, and pass isAdmin/isMod to NavContent
 export default function ServerNav({ serverId, serverName, isAdmin = false, isMod = false }: ServerNavProps) {
   const [open, setOpen] = useState(false)
+  const [paletteOpen, setPaletteOpen] = useState(false)
   const sections = buildSections(isAdmin, isMod)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault()
+        setPaletteOpen(true)
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   return (
     <>
       {/* Desktop sidebar */}
       <nav className="hidden lg:flex flex-col w-56 flex-shrink-0 sticky top-6 self-start border-r border-border/40 h-[calc(100vh-3rem)]" aria-label="Server navigation">
-        <NavContent serverId={serverId} serverName={serverName} sections={sections} />
+        <NavContent serverId={serverId} serverName={serverName} sections={sections} isAdmin={isAdmin} isMod={isMod} onOpenPalette={() => setPaletteOpen(true)} />
       </nav>
 
       {/* Mobile trigger */}
@@ -265,11 +355,23 @@ export default function ServerNav({ serverId, serverName, isAdmin = false, isMod
               serverId={serverId}
               serverName={serverName}
               sections={sections}
+              isAdmin={isAdmin}
+              isMod={isMod}
               onNavigate={() => setOpen(false)}
+              onOpenPalette={() => { setOpen(false); setPaletteOpen(true) }}
             />
           </SheetContent>
         </Sheet>
       </div>
+
+      <CommandPalette
+        serverId={serverId}
+        isAdmin={isAdmin}
+        isMod={isMod}
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+      />
     </>
   )
 }
+// --- END AI-MODIFIED ---

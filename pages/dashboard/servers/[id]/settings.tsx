@@ -254,6 +254,23 @@ export default function ServerSettings() {
     } catch { /* ignore */ }
   }, [])
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Deep-link from command palette search -- scroll to section and briefly highlight
+  useEffect(() => {
+    const section = router.query.section as string
+    if (section && !loading && config) {
+      setTimeout(() => {
+        const el = document.getElementById(section)
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" })
+          el.classList.add("ring-2", "ring-primary/50", "rounded-xl")
+          setTimeout(() => el.classList.remove("ring-2", "ring-primary/50", "rounded-xl"), 2000)
+        }
+      }, 400)
+    }
+  }, [router.query.section, loading, config])
+  // --- END AI-MODIFIED ---
+
   // Sync config data
   useEffect(() => {
     if (configData) {
