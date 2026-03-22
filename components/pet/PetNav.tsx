@@ -18,10 +18,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: Added Volume2/VolumeX for sound toggle
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Added Lock icon for no-pet nav items
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added Trophy, Users, Shield icons for Social nav section
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
   Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX, Lock,
+  Trophy, Users, Shield,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -71,6 +75,17 @@ const sections: NavSection[] = [
       { href: "/pet/marketplace", label: "Marketplace", icon: <Store size={14} /> },
     ],
   },
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Social features nav section (Leaderboard, Friends, Family)
+  {
+    title: "SOCIAL",
+    items: [
+      { href: "/pet/leaderboard", label: "Leaderboard", icon: <Trophy size={14} /> },
+      { href: "/pet/friends", label: "Friends", icon: <Users size={14} />, requiresPet: true },
+      { href: "/pet/family", label: "Family", icon: <Shield size={14} />, requiresPet: true },
+    ],
+  },
+  // --- END AI-MODIFIED ---
 ]
 // --- END AI-MODIFIED ---
 

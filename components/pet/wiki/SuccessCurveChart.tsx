@@ -5,6 +5,10 @@
 //          dynamic import since Recharts requires browser DOM)
 // ============================================================
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty; fix formula from linear subtraction to diminishing-returns curve
+import { calcLevelPenalty } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 
 interface Props {
   scrollProps: { success_rate: number; destroy_rate: number }
@@ -12,13 +16,25 @@ interface Props {
 }
 
 export default function SuccessCurveChart({ scrollProps, gameConstants }: Props) {
-  const penalty = gameConstants?.LEVEL_PENALTY_FACTOR ?? 0.08
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Old formula used wrong linear subtraction and didn't match actual enhancement logic
+  // What the new code does better: Uses same diminishing-returns calcLevelPenalty as the actual API
+  // --- Original code (commented out for rollback) ---
+  // const penalty = gameConstants?.LEVEL_PENALTY_FACTOR ?? 0.08
+  // const maxLvl = 20
+  // const data = []
+  // for (let lvl = 0; lvl <= maxLvl; lvl++) {
+  //   const success = Math.max(0, scrollProps.success_rate * 100 - lvl * penalty * 100)
+  //   data.push({ level: lvl, success: Math.round(success * 10) / 10 })
+  // }
+  // --- End original code ---
   const maxLvl = 20
   const data = []
   for (let lvl = 0; lvl <= maxLvl; lvl++) {
-    const success = Math.max(0, scrollProps.success_rate * 100 - lvl * penalty * 100)
+    const success = scrollProps.success_rate * calcLevelPenalty(lvl) * 100
     data.push({ level: lvl, success: Math.round(success * 10) / 10 })
   }
+  // --- END AI-REPLACED ---
 
   return (
     <ResponsiveContainer width="100%" height={180}>

@@ -16,7 +16,10 @@ import { cn } from "@/lib/utils"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/router"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
-import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty for new diminishing-returns formula
+import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier, calcLevelPenalty } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
@@ -68,7 +71,12 @@ const GLOW_BORDER: Record<GlowTier, string> = {
   celestial: "#c864ff",
 }
 
-const LEVEL_PENALTY_FACTOR = GAME_CONSTANTS.LEVEL_PENALTY_FACTOR
+// --- AI-REPLACED (2026-03-22) ---
+// Reason: Old constant replaced with calcLevelPenalty() helper
+// --- Original code (commented out for rollback) ---
+// const LEVEL_PENALTY_FACTOR = GAME_CONSTANTS.LEVEL_PENALTY_FACTOR
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 export default function EnhancementPage() {
   const { data: session } = useSession()
@@ -101,13 +109,24 @@ export default function EnhancementPage() {
   const equip = data?.equipment.find((e) => e.inventoryId === selectedEquip)
   const scroll = data?.scrolls.find((s) => s.inventoryId === selectedScroll)
 
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Old linear penalty replaced with diminishing-returns curve
+  // --- Original code (commented out for rollback) ---
+  // let effectiveSuccess = 0
+  // let effectiveDestroy = 0
+  // if (equip && scroll?.properties) {
+  //   const penalty = Math.max(0.1, 1 - LEVEL_PENALTY_FACTOR * equip.enhancementLevel)
+  //   effectiveSuccess = Math.round(scroll.properties.successRate * penalty * 100)
+  //   effectiveDestroy = Math.round(scroll.properties.destroyRate * 100)
+  // }
+  // --- End original code ---
   let effectiveSuccess = 0
   let effectiveDestroy = 0
   if (equip && scroll?.properties) {
-    const penalty = Math.max(0.1, 1 - LEVEL_PENALTY_FACTOR * equip.enhancementLevel)
-    effectiveSuccess = Math.round(scroll.properties.successRate * penalty * 100)
+    effectiveSuccess = Math.round(scroll.properties.successRate * calcLevelPenalty(equip.enhancementLevel) * 100)
     effectiveDestroy = Math.round(scroll.properties.destroyRate * 100)
   }
+  // --- END AI-REPLACED ---
 
   async function handleEnhance() {
     if (!selectedEquip || !selectedScroll) return

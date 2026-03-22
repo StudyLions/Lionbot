@@ -5,13 +5,16 @@
 // ============================================================
 import { useState, useMemo } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from "recharts"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty for new diminishing-returns formula
+import { calcLevelPenalty } from "@/utils/gameConstants"
 
 interface GameConstants {
-  LEVEL_PENALTY_FACTOR: number
   MAX_ENHANCEMENT_BY_RARITY: Record<string, number>
   ENHANCEMENT_GOLD_BONUS: number
   ENHANCEMENT_XP_BONUS: number
 }
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-17) ---
 // Purpose: Add bonusValue to scroll data for bonus power display
@@ -38,15 +41,28 @@ const TOOLTIP_STYLE = {
   fontFamily: "var(--font-pixel, monospace)",
 }
 
-function calcRates(baseSuccess: number, baseDestroy: number, level: number, penalty: number) {
-  const basePct = baseSuccess * 100
-  const destroyPct = baseDestroy * 100
-  const effectiveSuccess = Math.max(0, basePct - level * penalty * 100)
+// --- AI-REPLACED (2026-03-22) ---
+// Reason: Old formula used wrong linear subtraction and unconditional destroy; didn't match bot
+// What the new code does better: Uses diminishing-returns calcLevelPenalty + conditional destroy (matches bot)
+// --- Original code (commented out for rollback) ---
+// function calcRates(baseSuccess: number, baseDestroy: number, level: number, penalty: number) {
+//   const basePct = baseSuccess * 100
+//   const destroyPct = baseDestroy * 100
+//   const effectiveSuccess = Math.max(0, basePct - level * penalty * 100)
+//   const failRate = 100 - effectiveSuccess
+//   const effectiveDestroy = Math.min(failRate, destroyPct)
+//   const failNoDestroy = failRate - effectiveDestroy
+//   return { success: effectiveSuccess, fail: failNoDestroy, destroy: effectiveDestroy }
+// }
+// --- End original code ---
+function calcRates(baseSuccess: number, baseDestroy: number, level: number) {
+  const effectiveSuccess = baseSuccess * calcLevelPenalty(level) * 100
   const failRate = 100 - effectiveSuccess
-  const effectiveDestroy = Math.min(failRate, destroyPct)
+  const effectiveDestroy = failRate * baseDestroy
   const failNoDestroy = failRate - effectiveDestroy
   return { success: effectiveSuccess, fail: failNoDestroy, destroy: effectiveDestroy }
 }
+// --- END AI-REPLACED ---
 
 export default function EnhancementCalculator({ gameConstants, scrolls }: Props) {
   const [selectedRarity, setSelectedRarity] = useState("RARE")
@@ -59,7 +75,7 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
     for (let lvl = 0; lvl <= maxLevel; lvl++) {
       const point: Record<string, number | string> = { level: lvl }
       for (const scroll of scrolls) {
-        const rates = calcRates(scroll.successRate, scroll.destroyRate, lvl, gameConstants.LEVEL_PENALTY_FACTOR)
+        const rates = calcRates(scroll.successRate, scroll.destroyRate, lvl)
         point[`${scroll.name}`] = Math.round(rates.success * 10) / 10
       }
       points.push(point)
@@ -94,7 +110,7 @@ export default function EnhancementCalculator({ gameConstants, scrolls }: Props)
 
       <div className="space-y-2">
         {scrolls.map((scroll) => {
-          const rates = calcRates(scroll.successRate, scroll.destroyRate, currentLevel, gameConstants.LEVEL_PENALTY_FACTOR)
+          const rates = calcRates(scroll.successRate, scroll.destroyRate, currentLevel)
           const total = rates.success + rates.fail + rates.destroy
           const successW = total > 0 ? (rates.success / total) * 100 : 0
           const failW = total > 0 ? (rates.fail / total) * 100 : 0

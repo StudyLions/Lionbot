@@ -26,10 +26,13 @@ import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import calcLevelPenalty for new diminishing-returns formula
 import {
   GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, GLOW_COLORS,
-  calcGlowTier, calcGlowIntensity,
+  calcGlowTier, calcGlowIntensity, calcLevelPenalty,
 } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
 import type { ScrollSlot } from "@/components/pet/marketplace/ListingTooltip"
 
@@ -58,7 +61,13 @@ function calcCumulativeProb(slots: ScrollSlot[]): number {
   let p = 1
   for (const s of slots) {
     if (s.successRate == null) continue
-    p *= s.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (s.slotNumber - 1))
+    // --- AI-REPLACED (2026-03-22) ---
+    // Reason: Old linear penalty replaced with diminishing-returns curve
+    // --- Original code (commented out for rollback) ---
+    // p *= s.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (s.slotNumber - 1))
+    // --- End original code ---
+    p *= s.successRate * calcLevelPenalty(s.slotNumber - 1)
+    // --- END AI-REPLACED ---
   }
   return p
 }
@@ -281,9 +290,17 @@ export default function ListingDetailPage() {
                             </div>
                             <div className="space-y-0.5">
                               {scrollData.map((slot) => {
+                                // --- AI-REPLACED (2026-03-22) ---
+                                // Reason: Old linear penalty replaced with diminishing-returns curve
+                                // --- Original code (commented out for rollback) ---
+                                // const effRate = slot.successRate != null
+                                //   ? slot.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (slot.slotNumber - 1))
+                                //   : null
+                                // --- End original code ---
                                 const effRate = slot.successRate != null
-                                  ? slot.successRate * Math.max(0.1, 1 - GAME_CONSTANTS.LEVEL_PENALTY_FACTOR * (slot.slotNumber - 1))
+                                  ? slot.successRate * calcLevelPenalty(slot.slotNumber - 1)
                                   : null
+                                // --- END AI-REPLACED ---
                                 return (
                                   <div key={slot.slotNumber} className="flex items-center gap-2 py-1 px-2 border border-[#1a2a3c]/50 bg-[#080c18]/50">
                                     <span className="font-pixel text-[10px] text-[#4a5a70] w-5 text-right flex-shrink-0">+{slot.slotNumber}</span>

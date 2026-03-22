@@ -687,19 +687,19 @@ interface ShowcaseItem {
   gemPrice: number | null;
 }
 
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Use real item asset_paths so actual PNGs render instead of emoji placeholders
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Diverse fallback items — one per category, spread across rarities
 const FALLBACK_ITEMS: ShowcaseItem[] = [
   { id: 114, name: "Sparkle Tiara", category: "HAT", rarity: "COMMON", assetPath: "hats/crown.png", goldPrice: 150, gemPrice: null },
-  { id: 953, name: "Rose Petal", category: "MATERIAL", rarity: "UNCOMMON", assetPath: "materials/rose_petal.png", goldPrice: 350, gemPrice: null },
-  { id: 1153, name: "Lucky Scroll", category: "SCROLL", rarity: "UNCOMMON", assetPath: "scrolls/lucky_scroll.png", goldPrice: 500, gemPrice: null },
-  { id: 1156, name: "Arcane Scroll", category: "SCROLL", rarity: "RARE", assetPath: "scrolls/arcane_scroll.png", goldPrice: 1200, gemPrice: null },
   { id: 303, name: "Phantom Visage", category: "GLASSES", rarity: "EPIC", assetPath: "glasses/anonymous_mask_epic.png", goldPrice: 3500, gemPrice: null },
-  { id: 1021, name: "Griffin Feather", category: "MATERIAL", rarity: "EPIC", assetPath: "materials/griffin_feather.png", goldPrice: 2800, gemPrice: null },
-  { id: 454, name: "Titan Slayer Jacket", category: "SHIRT", rarity: "EPIC", assetPath: "shirts/aot_shirt_aot_shirt_epic.png", goldPrice: 4100, gemPrice: null },
   { id: 804, name: "Bouncy Kicks", category: "BOOTS", rarity: "LEGENDARY", assetPath: "boots/boots_boots_legendary_.png", goldPrice: 6500, gemPrice: null },
-  { id: 1159, name: "Divine Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: "scrolls/divine_scroll.png", goldPrice: null, gemPrice: 80 },
-  { id: 1028, name: "Ethereal Orchid", category: "MATERIAL", rarity: "LEGENDARY", assetPath: "materials/ethereal_orchid.png", goldPrice: 8500, gemPrice: null },
+  { id: 454, name: "Titan Jacket", category: "SHIRT", rarity: "RARE", assetPath: "shirts/aot_shirt_aot_shirt_epic.png", goldPrice: 2100, gemPrice: null },
+  { id: 1153, name: "Lucky Scroll", category: "SCROLL", rarity: "UNCOMMON", assetPath: "scrolls/lucky_scroll.png", goldPrice: 500, gemPrice: null },
+  { id: 1021, name: "Griffin Feather", category: "MATERIAL", rarity: "EPIC", assetPath: "materials/griffin_feather.png", goldPrice: 2800, gemPrice: null },
+  { id: 600, name: "Angel Wings", category: "WINGS", rarity: "LEGENDARY", assetPath: "wings/angel_wings_legendary.png", goldPrice: null, gemPrice: 80 },
+  { id: 500, name: "Ninja Outfit", category: "COSTUME", rarity: "RARE", assetPath: "costumes/ninja_costume_rare.png", goldPrice: 1800, gemPrice: null },
+  { id: 953, name: "Rose Petal", category: "MATERIAL", rarity: "UNCOMMON", assetPath: "materials/rose_petal.png", goldPrice: 350, gemPrice: null },
+  { id: 1159, name: "Divine Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: "scrolls/divine_scroll.png", goldPrice: null, gemPrice: 60 },
 ];
 // --- END AI-MODIFIED ---
 
@@ -709,6 +709,9 @@ const itemsFetcher = (url: string) =>
     return r.json();
   });
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Enforce uniform card height with h-full + min-h so all cards
+//          in the carousel are identical size regardless of content
 function MockItemCard({ item }: { item: ShowcaseItem }) {
   const borderColor = RARITY_BORDER[item.rarity] || RARITY_BORDER.COMMON;
   const textColor = RARITY_TEXT[item.rarity] || RARITY_TEXT.COMMON;
@@ -719,9 +722,9 @@ function MockItemCard({ item }: { item: ShowcaseItem }) {
   const isGem = item.goldPrice == null && item.gemPrice != null;
 
   return (
-    <div className="flex-shrink-0 w-44">
+    <div className="flex-shrink-0 w-44 h-full">
       <div
-        className="bg-[#0f1628] border-2 p-3 flex flex-col gap-2 hover:brightness-110 transition-all shadow-[2px_2px_0_#060810]"
+        className="bg-[#0f1628] border-2 p-3 flex flex-col gap-2 hover:brightness-110 transition-all shadow-[2px_2px_0_#060810] h-full"
         style={{ borderColor, boxShadow: shadow ? `2px 2px 0 #060810, ${shadow}` : "2px 2px 0 #060810" }}
       >
         <div className="relative w-full aspect-square flex items-center justify-center bg-[#0a0e1a] border border-[#1a2a3c]">
@@ -743,7 +746,7 @@ function MockItemCard({ item }: { item: ShowcaseItem }) {
           </span>
         </div>
 
-        <p className="text-[13px] text-center truncate w-full font-medium" style={{ color: textColor }}>
+        <p className="text-[13px] text-center truncate w-full font-medium mt-auto" style={{ color: textColor }}>
           {item.name}
         </p>
 
@@ -763,6 +766,7 @@ function MockItemCard({ item }: { item: ShowcaseItem }) {
     </div>
   );
 }
+// --- END AI-MODIFIED ---
 
 const MARKETPLACE_HIGHLIGHTS = [
   { Icon: ShoppingBag, label: "highlight1", color: "text-amber-400", bg: "bg-amber-500/10" },
@@ -801,7 +805,7 @@ function MarketplaceCarousel({ items }: { items: ShowcaseItem[] }) {
   return (
     <div
       ref={scrollRef}
-      className="flex gap-4 overflow-x-hidden py-4 px-2"
+      className="flex items-stretch gap-4 overflow-x-hidden py-4 px-2"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >

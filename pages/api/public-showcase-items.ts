@@ -43,15 +43,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderBy: { itemid: "asc" },
     })
 
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Select items with category diversity — at most 1 per category
+    //          per rarity round, so the carousel shows varied gear types
     const selected: typeof items = []
+    const ids = new Set<number>()
+    const categoryCounts = new Map<string, number>()
+
     for (const rarity of RARITIES) {
-      const matching = items.filter((it) => it.rarity === rarity)
-      const picked = matching.slice(0, 3)
-      selected.push(...picked)
+      const matching = items.filter((it) => it.rarity === rarity && !ids.has(it.itemid))
+      matching.sort((a, b) => (categoryCounts.get(a.category) || 0) - (categoryCounts.get(b.category) || 0))
+
+      let pickedThisRound = 0
+      const seenCatsThisRound = new Set<string>()
+      for (const item of matching) {
+        if (selected.length >= 12 || pickedThisRound >= 2) break
+        if (seenCatsThisRound.has(item.category)) continue
+        if ((categoryCounts.get(item.category) || 0) >= 2) continue
+
+        selected.push(item)
+        ids.add(item.itemid)
+        seenCatsThisRound.add(item.category)
+        categoryCounts.set(item.category, (categoryCounts.get(item.category) || 0) + 1)
+        pickedThisRound++
+      }
     }
 
     if (selected.length < 8) {
-      const ids = new Set(selected.map((s) => s.itemid))
       for (const item of items) {
         if (selected.length >= 12) break
         if (!ids.has(item.itemid)) {
@@ -60,6 +78,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }
       }
     }
+    // --- END AI-MODIFIED ---
 
     const result = selected.slice(0, 12).map((item) => ({
       id: item.itemid,

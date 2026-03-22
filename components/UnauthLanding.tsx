@@ -5,7 +5,11 @@
 //          user visits /dashboard or /pet. Variant-aware hero, feature
 //          grid, social proof strip, and bottom CTA.
 // ============================================================
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added useRouter for callbackUrl so login redirects back to the current page
 import { signIn } from "next-auth/react"
+import { useRouter } from "next/router"
+// --- END AI-MODIFIED ---
 import { motion, type Variants } from "framer-motion"
 import useSWR from "swr"
 // --- AI-MODIFIED (2026-03-20) ---
@@ -171,6 +175,7 @@ export default function UnauthLanding({
 }: {
   variant?: "dashboard" | "pet"
 }) {
+  const router = useRouter()
   const config = variantConfig[variant]
   // --- AI-MODIFIED (2026-03-17) ---
   // Purpose: SWR v1.x doesn't have isLoading; derive from !data && !error
@@ -235,7 +240,7 @@ export default function UnauthLanding({
               className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3"
             >
               <button
-                onClick={() => signIn("discord")}
+                onClick={() => signIn("discord", { callbackUrl: router.asPath })}
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 active:scale-[0.98]"
               >
                 <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
@@ -360,7 +365,7 @@ export default function UnauthLanding({
           </motion.p>
           <motion.div variants={fadeUp} custom={2} className="mt-8">
             <button
-              onClick={() => signIn("discord")}
+              onClick={() => signIn("discord", { callbackUrl: router.asPath })}
               className="inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200 active:scale-[0.98]"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
