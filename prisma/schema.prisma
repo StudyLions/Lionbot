@@ -1755,9 +1755,8 @@ model leaderboard_autopost_config {
   post_hour             Int       @default(20)
   post_minute           Int       @default(0)
 
-  top1_role             BigInt?
-  topn_role             BigInt?
-  top1_also_gets_topn_role Boolean @default(true)
+  top1_roles            Json      @default("[]")
+  topn_roles            Json      @default("[]")
   auto_remove_roles     Boolean   @default(true)
 
   reward_tiers          Json      @default("[]")

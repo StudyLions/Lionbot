@@ -59,9 +59,8 @@ function serializeConfig(c: any) {
     post_day: c.post_day,
     post_hour: c.post_hour,
     post_minute: c.post_minute,
-    top1_role: c.top1_role?.toString() ?? null,
-    topn_role: c.topn_role?.toString() ?? null,
-    top1_also_gets_topn_role: c.top1_also_gets_topn_role,
+    top1_roles: c.top1_roles ?? [],
+    topn_roles: c.topn_roles ?? [],
     auto_remove_roles: c.auto_remove_roles,
     reward_tiers: c.reward_tiers,
     announce_content: c.announce_content,
@@ -196,9 +195,8 @@ export default apiHandler({
         post_day: body.post_day ?? 0,
         post_hour: Math.min(Math.max(body.post_hour ?? 20, 0), 23),
         post_minute: Math.min(Math.max(body.post_minute ?? 0, 0), 59),
-        top1_role: body.top1_role ? parseBigInt(body.top1_role, "top1_role") : null,
-        topn_role: body.topn_role ? parseBigInt(body.topn_role, "topn_role") : null,
-        top1_also_gets_topn_role: body.top1_also_gets_topn_role ?? true,
+        top1_roles: body.top1_roles ?? [],
+        topn_roles: body.topn_roles ?? [],
         auto_remove_roles: body.auto_remove_roles ?? true,
         reward_tiers: body.reward_tiers ?? [],
         announce_content: body.announce_content || null,
@@ -292,7 +290,7 @@ export default apiHandler({
     }
 
     const boolFields = [
-      "enabled", "top1_also_gets_topn_role", "auto_remove_roles",
+      "enabled", "auto_remove_roles",
       "include_image", "mention_winners", "pin_post", "delete_previous",
       "notify_public_post", "notify_dm_winners", "notify_mod_log",
       "skip_if_empty", "skip_if_same_as_last", "continue_on_partial",
@@ -309,7 +307,10 @@ export default apiHandler({
       if (updates[f] !== undefined) data[f] = updates[f]
     }
 
-    const bigintFields = ["post_channel", "top1_role", "topn_role", "mod_log_channel"]
+    if (updates.top1_roles !== undefined) data.top1_roles = updates.top1_roles
+    if (updates.topn_roles !== undefined) data.topn_roles = updates.topn_roles
+
+    const bigintFields = ["post_channel", "mod_log_channel"]
     for (const f of bigintFields) {
       if (updates[f] !== undefined) {
         data[f] = updates[f] ? parseBigInt(updates[f], f) : null

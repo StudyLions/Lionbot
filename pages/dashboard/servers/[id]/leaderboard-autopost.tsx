@@ -52,9 +52,8 @@ interface AutopostConfig {
   post_day: number | null
   post_hour: number
   post_minute: number
-  top1_role: string | null
-  topn_role: string | null
-  top1_also_gets_topn_role: boolean
+  top1_roles: string[]
+  topn_roles: string[]
   auto_remove_roles: boolean
   reward_tiers: RewardTier[]
   announce_content: string | null
@@ -241,9 +240,8 @@ function makeDefaultConfig(): Partial<AutopostConfig> {
     post_day: 0,
     post_hour: 20,
     post_minute: 0,
-    top1_role: null,
-    topn_role: null,
-    top1_also_gets_topn_role: true,
+    top1_roles: [],
+    topn_roles: [],
     auto_remove_roles: true,
     reward_tiers: [],
     announce_content: null,
@@ -827,27 +825,20 @@ function ConfigEditor({
 
       {/* Roles */}
       <SectionCard title="Roles" icon={<Trophy size={16} />} defaultOpen={false}>
-        <SettingRow label="Top 1 Role" description="Assigned to the #1 winner">
+        <SettingRow label="Top 1 Roles" description="All roles assigned to the #1 winner (can select multiple)">
           <RoleSelect
             guildId={serverId}
-            value={form.top1_role || ""}
-            onChange={(v) => update("top1_role", v || null)}
+            value={form.top1_roles ?? []}
+            onChange={(v) => update("top1_roles", v || [])}
+            multiple
           />
         </SettingRow>
-        <SettingRow label="Top N Role" description="Assigned to all winners">
+        <SettingRow label="Top N Roles" description="Roles assigned to all winners (can select multiple)">
           <RoleSelect
             guildId={serverId}
-            value={form.topn_role || ""}
-            onChange={(v) => update("topn_role", v || null)}
-          />
-        </SettingRow>
-        <SettingRow
-          label="#1 Also Receives Top N Role"
-          description="When on, rank 1 gets both roles"
-        >
-          <Toggle
-            checked={form.top1_also_gets_topn_role ?? true}
-            onChange={(v) => update("top1_also_gets_topn_role", v)}
+            value={form.topn_roles ?? []}
+            onChange={(v) => update("topn_roles", v || [])}
+            multiple
           />
         </SettingRow>
         <SettingRow
