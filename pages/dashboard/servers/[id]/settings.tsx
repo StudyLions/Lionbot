@@ -278,7 +278,7 @@ export default function ServerSettings() {
       toast.success("Server premium activated! Premium features are now available.")
       router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
     } else if (router.query.premium === "cancelled") {
-      toast.info("Premium checkout was cancelled.")
+      toast("Premium checkout was cancelled.")
       router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
     }
   }, [router.query.premium])
