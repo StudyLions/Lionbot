@@ -7,6 +7,10 @@
 
 import { useState, useCallback, useRef, useMemo, useEffect } from "react"
 import { useRouter } from "next/router"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Import getRoomVariants for room-specific color cycling
+import { getRoomVariants } from "@/utils/roomDefaults"
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import PetNav from "@/components/pet/PetNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
@@ -76,17 +80,24 @@ interface RoomData {
   }>
 }
 
-const DEFAULT_VARIANTS: Record<string, string[]> = {
-  wall: ['wall_checker_blue', 'wall_checker_green', 'wall_checker_grey', 'wall_checker_pink', 'wall_checker_yellow', 'walldots_blue', 'walldots_green', 'walldots_grey', 'walldots_pink', 'walldots_yellow', 'wall_stripe_green', 'wall_stripe_grey', 'wall_stripe_light_blue', 'wall_stripe_pink', 'wall_stripe_yellow'],
-  floor: ['floor_blue', 'floor_brown', 'floor_green', 'floor_orange', 'floor_purple'],
-  mat: ['mat_blue', 'mat_green', 'mat_red', 'mat_silver', 'mat_yellow'],
-  table: ['table_blue', 'table_brown', 'table_green', 'table_pink', 'table_white'],
-  chair: ['chair_blue', 'chair_brown', 'chair_green', 'chair_pink', 'chair_white'],
-  bed: ['bed_blueyellow', 'bed_orange', 'bed_pinkpurple', 'bed_red', 'bed_redgreen'],
-  lamp: ['lamp_blue', 'lamp_green', 'lamp_purple', 'lamp_red', 'lamp_yellow'],
-  picture: ['picture_blue', 'picture_brown', 'picture_grey', 'picture_orange', 'picture_red'],
-  window: ['window_blue', 'window_green', 'window_purple_pink', 'window_red_blue', 'window_yellow'],
-}
+// --- AI-REPLACED (2026-03-22) ---
+// Reason: Hardcoded variants were for default room only; themed rooms use numbered
+//         variants (_1 through _5) and cycling wrote invalid paths like castle/chair_blue.png
+// What the new code does better: Variants are looked up per-room via getRoomVariants
+// --- Original code (commented out for rollback) ---
+// const DEFAULT_VARIANTS: Record<string, string[]> = {
+//   wall: ['wall_checker_blue', ...],
+//   floor: ['floor_blue', ...],
+//   mat: ['mat_blue', ...],
+//   table: ['table_blue', ...],
+//   chair: ['chair_blue', ...],
+//   bed: ['bed_blueyellow', ...],
+//   lamp: ['lamp_blue', ...],
+//   picture: ['picture_blue', ...],
+//   window: ['window_blue', ...],
+// }
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 export default function RoomEditorPage() {
   const { data: session } = useSession()
@@ -392,16 +403,25 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     playSound('flip')
   }, [selectedLayer, flipLayer, playSound])
 
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Used hardcoded DEFAULT_VARIANTS for default room only; wrote invalid
+  //         paths like rooms/castle/chair_blue.png for themed rooms
+  // What the new code does better: Looks up room-specific variants via getRoomVariants
+  // --- Original code (commented out for rollback) ---
+  // const handleColorCycle = useCallback(() => {
+  //   ...used DEFAULT_VARIANTS[selectedLayer] with wrong room prefix...
+  // }, [...])
+  // --- End original code ---
   const handleColorCycle = useCallback(() => {
     if (!selectedLayer || selectedLayer === 'lion') return
     const currentPath = mergedFurniture[selectedLayer]
     if (!currentPath) return
+    const roomPrefix = data.activeRoom?.assetPrefix ?? 'rooms/default'
+    const variants = getRoomVariants(roomPrefix, selectedLayer)
+    if (!variants.length) return
     const fileName = currentPath.split('/').pop()?.replace('.png', '') ?? ''
-    const variants = DEFAULT_VARIANTS[selectedLayer]
-    if (!variants) return
     const currentIdx = variants.indexOf(fileName)
     const nextIdx = (currentIdx + 1) % variants.length
-    const roomPrefix = data.activeRoom?.assetPrefix ?? 'rooms/default'
     const nextPath = `${roomPrefix}/${variants[nextIdx]}.png`
     setFurnitureOverrides(prev => ({ ...prev, [selectedLayer]: nextPath }))
     fetch('/api/pet/room/furniture', {
@@ -411,6 +431,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     })
     playSound('colorCycle')
   }, [selectedLayer, mergedFurniture, data.activeRoom, playSound])
+  // --- END AI-REPLACED ---
 
   const handleRemove = useCallback(() => {
     if (!selectedLayer || selectedLayer === 'lion') return
@@ -531,9 +552,12 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
       : (layout.furnitureScales[selectedLayer] ?? 1)
     : 1
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Check room-specific variants instead of hardcoded DEFAULT_VARIANTS
   const hasColorVariants = selectedLayer
-    ? selectedLayer !== 'lion' && !!DEFAULT_VARIANTS[selectedLayer]
+    ? selectedLayer !== 'lion' && getRoomVariants(data.activeRoom?.assetPrefix ?? 'rooms/default', selectedLayer).length > 0
     : false
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-20) ---
   // Purpose: Redesigned layout — canvas-first with unified tabbed sidebar
@@ -818,8 +842,23 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                       return next
                     })
                   }}
+                  // --- AI-MODIFIED (2026-03-22) ---
+                  // Purpose: Restore layer to layerOrder when equipping (may have been removed)
                   onEquipItem={(slot, assetPath) => {
                     setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                    if (!editor.layout.layerOrder.includes(slot)) {
+                      const defaultIdx = ROOM_LAYERS.indexOf(slot as any)
+                      editor.updateLayout(prev => {
+                        const newOrder = [...prev.layerOrder]
+                        let insertAt = newOrder.length
+                        for (let i = defaultIdx + 1; i < ROOM_LAYERS.length; i++) {
+                          const pos = newOrder.indexOf(ROOM_LAYERS[i])
+                          if (pos !== -1) { insertAt = pos; break }
+                        }
+                        newOrder.splice(insertAt, 0, slot)
+                        return { ...prev, layerOrder: newOrder }
+                      })
+                    }
                     fetch('/api/pet/room/furniture', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
@@ -828,6 +867,9 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                     setSelectedLayer(slot)
                     playSound('place')
                   }}
+                  // --- END AI-MODIFIED ---
+                  // --- AI-MODIFIED (2026-03-22) ---
+                  // Purpose: Also restore layer to layerOrder on purchase+equip
                   onPurchaseItem={async (itemId, slot, assetPath, price, currency) => {
                     const res = await fetch('/api/pet/room/cart', {
                       method: 'POST',
@@ -836,6 +878,19 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                     })
                     if (res.ok) {
                       setFurnitureOverrides(prev => ({ ...prev, [slot]: assetPath }))
+                      if (!editor.layout.layerOrder.includes(slot)) {
+                        const defaultIdx = ROOM_LAYERS.indexOf(slot as any)
+                        editor.updateLayout(prev => {
+                          const newOrder = [...prev.layerOrder]
+                          let insertAt = newOrder.length
+                          for (let i = defaultIdx + 1; i < ROOM_LAYERS.length; i++) {
+                            const pos = newOrder.indexOf(ROOM_LAYERS[i])
+                            if (pos !== -1) { insertAt = pos; break }
+                          }
+                          newOrder.splice(insertAt, 0, slot)
+                          return { ...prev, layerOrder: newOrder }
+                        })
+                      }
                       playSound('purchase')
                       toast.success('Item purchased!')
                       mutate()
@@ -844,6 +899,7 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
                       toast.error('Purchase failed')
                     }
                   }}
+                  // --- END AI-MODIFIED ---
                   onPurchaseRoom={async (roomId) => {
                     const res = await fetch('/api/pet/room/purchase-room', {
                       method: 'POST',

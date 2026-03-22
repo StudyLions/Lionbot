@@ -109,8 +109,25 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
   }, [updateLayout])
   // --- END AI-MODIFIED ---
 
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Remove a furniture layer's layout data (offsets, flips, scales)
+  // --- AI-REPLACED (2026-03-22) ---
+  // Reason: Only removed offsets/flips/scales but left layer in layerOrder,
+  //         so the bot still rendered the room theme default on Discord
+  // What the new code does better: Also removes from layerOrder so both
+  //         website and Discord stop rendering the layer
+  // --- Original code (commented out for rollback) ---
+  // const removeLayer = useCallback((layer: string) => {
+  //   if (layer === 'lion') return
+  //   updateLayout(prev => {
+  //     const newOffsets = { ...prev.furnitureOffsets }
+  //     const newFlips = { ...prev.furnitureFlips }
+  //     const newScales = { ...prev.furnitureScales }
+  //     delete newOffsets[layer]
+  //     delete newFlips[layer]
+  //     delete newScales[layer]
+  //     return { ...prev, furnitureOffsets: newOffsets, furnitureFlips: newFlips, furnitureScales: newScales }
+  //   })
+  // }, [updateLayout])
+  // --- End original code ---
   const removeLayer = useCallback((layer: string) => {
     if (layer === 'lion') return
     updateLayout(prev => {
@@ -125,10 +142,11 @@ export function useRoomEditor(initialLayout?: Partial<RoomLayout>) {
         furnitureOffsets: newOffsets,
         furnitureFlips: newFlips,
         furnitureScales: newScales,
+        layerOrder: prev.layerOrder.filter(l => l !== layer),
       }
     })
   }, [updateLayout])
-  // --- END AI-MODIFIED ---
+  // --- END AI-REPLACED ---
 
   const undo = useCallback(() => {
     if (undoStack.length === 0) return

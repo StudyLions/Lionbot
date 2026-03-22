@@ -9,26 +9,30 @@ import { apiHandler } from "@/utils/apiHandler"
 
 const ROOM_LAYERS = ["wall", "floor", "mat", "table", "chair", "bed", "lamp", "picture", "window"]
 
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Reduced defaults to wall/floor/mat only -- new pets start with mostly empty rooms
-const DEFAULT_ROOM_FURNITURE: Record<string, Record<string, string>> = {
-  "rooms/default": {
-    wall: "rooms/default/wall_checker_blue.png",
-    floor: "rooms/default/floor_blue.png",
-    mat: "rooms/default/mat_blue.png",
-  },
-  "rooms/castle": {
-    wall: "rooms/castle/wall_1.png",
-    floor: "rooms/castle/floor_1.png",
-    mat: "rooms/castle/carpet_1.png",
-  },
-}
-// --- END AI-MODIFIED ---
-
-function getDefaultFurniture(roomPrefix: string): Record<string, string> {
-  return DEFAULT_ROOM_FURNITURE[roomPrefix] ?? {}
-}
-// --- END AI-MODIFIED ---
+// --- AI-REPLACED (2026-03-22) ---
+// Reason: Hardcoded defaults only had wall/floor/mat, missing chair/bed/lamp
+//         that the bot auto-discovers from room theme assets
+// What the new code does better: Uses centralized roomDefaults with all layers
+//         the bot would render, keeping website and Discord in sync
+// --- Original code (commented out for rollback) ---
+// const DEFAULT_ROOM_FURNITURE: Record<string, Record<string, string>> = {
+//   "rooms/default": {
+//     wall: "rooms/default/wall_checker_blue.png",
+//     floor: "rooms/default/floor_blue.png",
+//     mat: "rooms/default/mat_blue.png",
+//   },
+//   "rooms/castle": {
+//     wall: "rooms/castle/wall_1.png",
+//     floor: "rooms/castle/floor_1.png",
+//     mat: "rooms/castle/carpet_1.png",
+//   },
+// }
+// function getDefaultFurniture(roomPrefix: string): Record<string, string> {
+//   return DEFAULT_ROOM_FURNITURE[roomPrefix] ?? {}
+// }
+// --- End original code ---
+import { getRoomDefaults } from "@/utils/roomDefaults"
+// --- END AI-REPLACED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -103,12 +107,10 @@ export default apiHandler({
       `SELECT slot, asset_path FROM lg_user_furniture WHERE userid = $1`,
       userId
     )
-    // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Merge user furniture with room defaults so every slot is populated.
-    //          Normalize legacy paths missing the rooms/furniture/ prefix.
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Merge user furniture with full room theme defaults (all layers the bot renders)
     const roomPrefix = activeRoom?.assetPrefix ?? "rooms/default"
-    const defaults = getDefaultFurniture(roomPrefix)
-    const furniture: Record<string, string> = { ...defaults }
+    const furniture: Record<string, string> = getRoomDefaults(roomPrefix)
     for (const row of furnitureRows) {
       let path = row.asset_path
       // --- AI-MODIFIED (2026-03-16) ---

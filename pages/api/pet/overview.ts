@@ -6,6 +6,10 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Use centralized room defaults instead of hardcoded 3-layer map
+import { getRoomDefaults } from "@/utils/roomDefaults"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -120,23 +124,27 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
-    // --- AI-MODIFIED (2026-03-16) ---
-    // Purpose: Build furniture map with room defaults merged, extract layout
-    // Reduced defaults to wall/floor/mat only -- new pets start with mostly empty rooms
+    // --- AI-REPLACED (2026-03-22) ---
+    // Reason: Hardcoded defaults only had wall/floor/mat, missing layers the bot renders
+    // What the new code does better: Uses centralized getRoomDefaults with all layers
+    // --- Original code (commented out for rollback) ---
+    // const roomDefaults: Record<string, Record<string, string>> = {
+    //   "rooms/default": {
+    //     wall: "rooms/default/wall_checker_blue.png",
+    //     floor: "rooms/default/floor_blue.png",
+    //     mat: "rooms/default/mat_blue.png",
+    //   },
+    //   "rooms/castle": {
+    //     wall: "rooms/castle/wall_1.png",
+    //     floor: "rooms/castle/floor_1.png",
+    //     mat: "rooms/castle/carpet_1.png",
+    //   },
+    // }
+    // const furnitureMap: Record<string, string> = { ...(roomDefaults[roomPrefixStr] ?? {}) }
+    // --- End original code ---
     const roomPrefixStr = room?.asset_prefix ?? 'rooms/default'
-    const roomDefaults: Record<string, Record<string, string>> = {
-      "rooms/default": {
-        wall: "rooms/default/wall_checker_blue.png",
-        floor: "rooms/default/floor_blue.png",
-        mat: "rooms/default/mat_blue.png",
-      },
-      "rooms/castle": {
-        wall: "rooms/castle/wall_1.png",
-        floor: "rooms/castle/floor_1.png",
-        mat: "rooms/castle/carpet_1.png",
-      },
-    }
-    const furnitureMap: Record<string, string> = { ...(roomDefaults[roomPrefixStr] ?? {}) }
+    const furnitureMap: Record<string, string> = getRoomDefaults(roomPrefixStr)
+    // --- END AI-REPLACED ---
     for (const f of furnitureRows) {
       let path = f.asset_path
       // --- AI-MODIFIED (2026-03-16) ---
