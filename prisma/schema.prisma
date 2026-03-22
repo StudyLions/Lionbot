@@ -503,16 +503,31 @@ model reminders {
   @@index([userid], map: "reminder_users")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add composite PK so Prisma Client can query rented_members natively
+// (was @@ignore due to missing PK; DB table gets ALTER TABLE ADD PRIMARY KEY)
+// --- Original code (commented out for rollback) ---
+// /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+// model rented_members {
+//   channelid    BigInt
+//   userid       BigInt
+//   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
+//
+//   @@index([channelid], map: "rented_members_channels")
+//   @@index([userid], map: "rented_members_users")
+//   @@ignore
+// }
+// --- End original code ---
 model rented_members {
   channelid    BigInt
   userid       BigInt
   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
 
+  @@id([channelid, userid])
   @@index([channelid], map: "rented_members_channels")
   @@index([userid], map: "rented_members_users")
-  @@ignore
 }
+// --- END AI-MODIFIED ---
 
 model rented_rooms {
   channelid      BigInt           @id
@@ -524,7 +539,13 @@ model rented_rooms {
   name           String?
   last_tick      DateTime?        @db.Timestamptz(6)
   contribution   Int              @default(0)
-  rented_members rented_members[] @ignore
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Remove @ignore now that rented_members has a composite PK
+  // --- Original code (commented out for rollback) ---
+  // rented_members rented_members[] @ignore
+  // --- End original code ---
+  rented_members rented_members[]
+  // --- END AI-MODIFIED ---
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([guildid, ownerid], map: "rented_owners")

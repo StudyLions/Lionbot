@@ -13,12 +13,12 @@ import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useDashboard } from "@/hooks/useDashboard"
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Added PawPrint icon + Volume2/VolumeX for sound toggle
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Added DoorOpen icon for Rooms nav item; Coins for room balance badge
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
-  Volume2, VolumeX,
+  Volume2, VolumeX, DoorOpen, Coins,
 } from "lucide-react"
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -44,6 +44,8 @@ const sections: NavSection[] = [
     ],
   },
 // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Add Rooms nav item to Activity section
   {
     title: "Activity",
     items: [
@@ -51,8 +53,10 @@ const sections: NavSection[] = [
       { href: "/dashboard/history", label: "History", icon: <History size={16} /> },
       { href: "/dashboard/goals", label: "Goals", icon: <Target size={16} /> },
       { href: "/dashboard/reminders", label: "Reminders", icon: <Bell size={16} /> },
+      { href: "/dashboard/rooms", label: "Rooms", icon: <DoorOpen size={16} /> },
     ],
   },
+  // --- END AI-MODIFIED ---
   {
     title: "Collection",
     items: [
@@ -110,18 +114,31 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
     session ? "/api/dashboard/gems" : null
   )
   // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: live session indicator in sidebar nav with duration and timer info
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: live session + private room data for room-aware VIP card and expiry badge
   const { data: liveData } = useDashboard<{
     active: boolean
     session?: { startTime: string; guildName: string }
     pomodoro?: { stage: "focus" | "break"; remainingSeconds: number; stageDurationSeconds: number } | null
+    privateRoom?: {
+      channelId: string; name: string | null; coinBalance: number
+      rentPrice: number; daysRemaining: number; isOwner: boolean
+    } | null
   }>(
     session ? "/api/dashboard/live-session" : null,
     { refreshInterval: 30000 }
   )
+
+  const { data: roomsData } = useDashboard<{ hasExpiringRooms: boolean; totalActiveRooms: number }>(
+    session ? "/api/dashboard/rooms" : null,
+    { refreshInterval: 60000 }
+  )
+
   const hasLiveSession = liveData?.active === true
+  const isInPrivateRoom = hasLiveSession && !!liveData?.privateRoom
   const isSessionActive = router.pathname.startsWith("/dashboard/session")
+  const hasExpiringRooms = roomsData?.hasExpiringRooms === true
+  // --- END AI-MODIFIED ---
 
   const [navElapsed, setNavElapsed] = useState("")
   const [navRemaining, setNavRemaining] = useState<number | null>(null)
@@ -185,36 +202,61 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         </Link>
       )}
       {/* --- END AI-MODIFIED --- */}
-      {/* --- AI-MODIFIED (2026-03-16) --- */}
-      {/* Purpose: live session nav item with duration, timer info, and pulsing indicator */}
+      {/* --- AI-MODIFIED (2026-03-22) --- */}
+      {/* Purpose: Room-aware live session card -- shows room name and balance when in a private room */}
       {hasLiveSession && (
         <div className="px-3 pb-1">
           <Link href="/dashboard/session" onClick={onNavigate}>
             <span
               className={cn(
                 "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm transition-all cursor-pointer",
-                isSessionActive
-                  ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/25"
-                  : "bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/25"
+                isInPrivateRoom
+                  ? isSessionActive
+                    ? "bg-blue-600 text-white shadow-sm shadow-blue-500/25"
+                    : "bg-blue-600/15 text-blue-400 hover:bg-blue-600/25"
+                  : isSessionActive
+                    ? "bg-emerald-600 text-white shadow-sm shadow-emerald-500/25"
+                    : "bg-emerald-600/15 text-emerald-400 hover:bg-emerald-600/25"
               )}
             >
               <span className="relative flex-shrink-0">
-                <Radio size={16} />
+                {isInPrivateRoom ? <DoorOpen size={16} /> : <Radio size={16} />}
                 <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                  <span className={cn(
+                    "absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping",
+                    isInPrivateRoom ? "bg-blue-400" : "bg-emerald-400"
+                  )} />
+                  <span className={cn(
+                    "relative inline-flex h-2 w-2 rounded-full",
+                    isInPrivateRoom ? "bg-blue-400" : "bg-emerald-400"
+                  )} />
                 </span>
               </span>
               <div className="min-w-0 flex-1">
-                <span className="block font-medium leading-tight">Live Session</span>
+                <span className="block font-medium leading-tight">
+                  {isInPrivateRoom
+                    ? (liveData!.privateRoom!.name || "Private Room")
+                    : "Live Session"
+                  }
+                </span>
                 <span className={cn(
                   "block text-[10px] leading-tight font-normal tabular-nums",
-                  isSessionActive ? "text-emerald-200/70" : "text-emerald-400/60"
+                  isInPrivateRoom
+                    ? isSessionActive ? "text-blue-200/70" : "text-blue-400/60"
+                    : isSessionActive ? "text-emerald-200/70" : "text-emerald-400/60"
                 )}>
                   {navElapsed && <>{navElapsed}</>}
-                  {navStage && navRemaining !== null && (
+                  {isInPrivateRoom && liveData!.privateRoom && (
                     <>
                       {navElapsed && " · "}
+                      <Coins size={9} className="inline mb-px" />{" "}
+                      {liveData!.privateRoom!.coinBalance.toLocaleString()}
+                      <span className="opacity-60"> ({liveData!.privateRoom!.daysRemaining}d)</span>
+                    </>
+                  )}
+                  {navStage && navRemaining !== null && (
+                    <>
+                      {(navElapsed || isInPrivateRoom) && " · "}
                       {navStage === "focus" ? "Focus" : "Break"}{" "}
                       {Math.floor(navRemaining / 60)}:{String(navRemaining % 60).padStart(2, "0")}
                     </>
@@ -305,6 +347,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         </div>
         {/* --- END AI-MODIFIED --- */}
+        {/* --- AI-MODIFIED (2026-03-22) --- */}
+        {/* Purpose: Add expiry warning badge to Rooms nav item */}
         {sections.map((section) => (
           <div key={section.title} className="mb-4">
             <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
@@ -315,18 +359,27 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                 const isActive = item.href === "/dashboard"
                   ? router.pathname === "/dashboard"
                   : router.pathname.startsWith(item.href)
+                const showRoomBadge = item.href === "/dashboard/rooms" && hasExpiringRooms
                 return (
-                  <NavItemLink
-                    key={item.href}
-                    item={item}
-                    isActive={isActive}
-                    onClick={onNavigate}
-                  />
+                  <div key={item.href} className="relative">
+                    <NavItemLink
+                      item={item}
+                      isActive={isActive}
+                      onClick={onNavigate}
+                    />
+                    {showRoomBadge && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-2 w-2">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
+                      </span>
+                    )}
+                  </div>
                 )
               })}
             </div>
           </div>
         ))}
+        {/* --- END AI-MODIFIED --- */}
       </ScrollArea>
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Sound toggle at bottom of nav for enabling/disabling 8-bit UI sounds */}

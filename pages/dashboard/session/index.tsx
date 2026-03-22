@@ -17,14 +17,19 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add Coins and DoorOpen icons for inline room controls
 import {
   Radio, Clock, Users, CheckSquare, Plus, Check, Circle,
   Maximize2, ArrowLeft, Video, MonitorPlay, Trash2, X, Pencil,
-  Bell, BellOff, Trophy, Timer,
+  Bell, BellOff, Trophy, Timer, Coins, DoorOpen,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add privateRoom type to LiveSessionData for inline room controls
 interface LiveSessionData {
   active: boolean
   session?: {
@@ -49,6 +54,18 @@ interface LiveSessionData {
     cycleNumber: number
     lastStarted: string
   } | null
+  privateRoom?: {
+    channelId: string
+    name: string | null
+    coinBalance: number
+    rentPrice: number
+    daysRemaining: number
+    isOwner: boolean
+    ownerId: string
+    nextTick: string | null
+    createdAt: string | null
+    memberCount: number
+  } | null
   roomMembers?: Array<{
     userId: string
     displayName: string
@@ -70,6 +87,7 @@ interface LiveSessionData {
     rewarded: boolean | null
   }>
 }
+// --- END AI-MODIFIED ---
 
 function formatDuration(startTime: string): string {
   const elapsed = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000)
@@ -110,6 +128,58 @@ export default function SessionPage() {
   const addInputRef = useRef<HTMLInputElement>(null)
   const editInputRef = useRef<HTMLInputElement>(null)
   const activityInputRef = useRef<HTMLInputElement>(null)
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: State and handler for inline room deposit from session page
+  const [showRoomDeposit, setShowRoomDeposit] = useState(false)
+  const [depositAmount, setDepositAmount] = useState("")
+  const [depositing, setDepositing] = useState(false)
+
+  const handleQuickDeposit = useCallback(async (days: number) => {
+    if (!data?.privateRoom) return
+    setDepositing(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${data.privateRoom.channelId}/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || "Deposit failed")
+      toast.success(`Deposited ${result.deposited} coins! (${result.newDaysRemaining} days remaining)`)
+      mutate()
+      setShowRoomDeposit(false)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDepositing(false)
+    }
+  }, [data?.privateRoom, mutate])
+
+  const handleCustomDeposit = useCallback(async () => {
+    if (!data?.privateRoom || !depositAmount) return
+    const amt = Number(depositAmount)
+    if (amt <= 0 || !Number.isFinite(amt)) return
+    setDepositing(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${data.privateRoom.channelId}/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Math.floor(amt) }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || "Deposit failed")
+      toast.success(`Deposited ${result.deposited} coins! (${result.newDaysRemaining} days remaining)`)
+      mutate()
+      setShowRoomDeposit(false)
+      setDepositAmount("")
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDepositing(false)
+    }
+  }, [data?.privateRoom, depositAmount, mutate])
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: stage change notifications + session summary tracking
@@ -353,6 +423,8 @@ export default function SessionPage() {
               /* --- END AI-MODIFIED --- */
                 <>
                   {/* Session Header */}
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Add private room name, balance badge, and deposit inline */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -364,6 +436,14 @@ export default function SessionPage() {
                       </div>
                       <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
                         <span>{data.session!.guildName}</span>
+                        {data.privateRoom && (
+                          <>
+                            <span className="text-border">|</span>
+                            <span className="flex items-center gap-1 text-blue-400">
+                              <DoorOpen size={12} /> {data.privateRoom.name || "Private Room"}
+                            </span>
+                          </>
+                        )}
                         {data.pomodoro && (
                           <>
                             <span className="text-border">|</span>
@@ -384,13 +464,96 @@ export default function SessionPage() {
                         )}
                       </div>
                     </div>
-                    <Link href="/dashboard">
-                      <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-                        onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
-                        <ArrowLeft size={14} /> Overview
-                      </a>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      {data.privateRoom && (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border",
+                            data.privateRoom.daysRemaining > 7
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : data.privateRoom.daysRemaining > 3
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                : "bg-red-500/10 text-red-400 border-red-500/20"
+                          )}>
+                            <Coins size={12} /> {data.privateRoom.coinBalance.toLocaleString()}
+                            <span className="text-[10px] opacity-70 ml-0.5">
+                              ({data.privateRoom.daysRemaining}d)
+                            </span>
+                          </span>
+                          <button
+                            onClick={() => setShowRoomDeposit(!showRoomDeposit)}
+                            className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-600/80 text-white hover:bg-amber-500 transition-colors"
+                          >
+                            Deposit
+                          </button>
+                        </div>
+                      )}
+                      <Link href="/dashboard">
+                        <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                          onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
+                          <ArrowLeft size={14} /> Overview
+                        </a>
+                      </Link>
+                    </div>
                   </div>
+                  {/* Room Deposit Panel (inline) */}
+                  {data.privateRoom && showRoomDeposit && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-amber-300 flex items-center gap-1.5">
+                          <Coins size={14} /> Quick Deposit
+                        </span>
+                        <button onClick={() => setShowRoomDeposit(false)} className="text-gray-400 hover:text-gray-200">
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[7, 14, 30].map((d) => (
+                          <button
+                            key={d}
+                            disabled={depositing}
+                            onClick={() => handleQuickDeposit(d)}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/20 transition-colors disabled:opacity-50"
+                          >
+                            +{d} days
+                            <span className="ml-1 text-gray-500">= {d * data.privateRoom!.rentPrice}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="number" min="1" placeholder="Custom amount"
+                          value={depositAmount}
+                          onChange={(e) => setDepositAmount(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleCustomDeposit()}
+                          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+                        />
+                        <button
+                          disabled={depositing || !depositAmount || Number(depositAmount) <= 0}
+                          onClick={handleCustomDeposit}
+                          className="px-4 py-1.5 text-sm font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-50 transition-colors"
+                        >
+                          Deposit
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Room expiry warning */}
+                  {data.privateRoom && data.privateRoom.daysRemaining <= 3 && (
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-xs",
+                      data.privateRoom.daysRemaining <= 1
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    )}>
+                      <Clock size={12} />
+                      {data.privateRoom.daysRemaining <= 0
+                        ? "Your room will expire on the next rent tick! Deposit coins now."
+                        : `Your room expires in ${data.privateRoom.daysRemaining} day${data.privateRoom.daysRemaining !== 1 ? "s" : ""}. Consider depositing more coins.`
+                      }
+                    </div>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Activity Tag */}
                   <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">

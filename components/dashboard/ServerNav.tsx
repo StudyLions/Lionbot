@@ -77,6 +77,7 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/ranks", label: "Ranks", icon: <Trophy size={16} /> },
         { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
         { href: "/rolemenus", label: "Role Menus", icon: <ListChecks size={16} /> },
+        { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
       ],
     })
     sections.push({
@@ -104,15 +105,18 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
       ],
     })
     // --- END AI-MODIFIED ---
-    // --- AI-MODIFIED (2026-03-20) ---
-    // Purpose: LionGotchi admin settings section
-    sections.push({
-      title: "LionGotchi",
-      links: [
-        { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
-      ],
-    })
-    // --- END AI-MODIFIED ---
+    // --- AI-REPLACED (2026-03-22) ---
+    // Reason: Pet Settings moved into Configuration section above
+    // What the new code does better: reduces sidebar clutter by grouping under Configuration
+    // --- Original code (commented out for rollback) ---
+    // sections.push({
+    //   title: "LionGotchi",
+    //   links: [
+    //     { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
+    //   ],
+    // })
+    // --- End original code ---
+    // --- END AI-REPLACED ---
   }
 
   return sections
