@@ -13,12 +13,15 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: add Sparkles icon for supporter perk highlight + Volume2/VolumeX for sound toggle
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: add Pin icon for sticky messages nav link
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
-  Volume2, VolumeX, PawPrint, Crown,
+  Volume2, VolumeX, PawPrint, Crown, Pin,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 
@@ -94,6 +97,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/leaderboard-autopost", label: "Leaderboard Auto-Post", icon: <Trophy size={16} />, supporterPerk: true },
         { href: "/ambient-sounds", label: "Ambient Sounds", icon: <Volume2 size={16} />, supporterPerk: true },
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Sticky messages premium feature nav link
+        { href: "/sticky-messages", label: "Sticky Messages", icon: <Pin size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
       ],
     })
     // --- END AI-MODIFIED ---
