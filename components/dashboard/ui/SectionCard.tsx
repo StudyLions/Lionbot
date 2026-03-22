@@ -38,7 +38,7 @@ export default function SectionCard({
   const [open, setOpen] = useState(defaultOpen)
 
   return (
-    <div className="bg-card/50 border border-border rounded-xl overflow-hidden">
+    <div className="bg-card/50 border border-border rounded-xl">
       <button
         type="button"
         onClick={() => setOpen(!open)}
