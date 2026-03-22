@@ -755,6 +755,7 @@ function ConfigEditor({
             guildId={serverId}
             value={form.post_channel || ""}
             onChange={(v) => update("post_channel", v)}
+            channelTypes={[0, 5]}
           />
         </SettingRow>
         <SettingRow label="Top N Count" description="Number of entries (1-25)">
@@ -947,6 +948,7 @@ function ConfigEditor({
               guildId={serverId}
               value={form.mod_log_channel || ""}
               onChange={(v) => update("mod_log_channel", v || null)}
+              channelTypes={[0, 5]}
             />
           </SettingRow>
         )}
