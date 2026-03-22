@@ -42,7 +42,7 @@ export default function SectionCard({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-accent/30 transition-colors"
+        className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-accent/30 transition-colors rounded-t-xl"
       >
         {icon && <span className="text-muted-foreground flex-shrink-0">{icon}</span>}
         <div className="flex-1 min-w-0">
