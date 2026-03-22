@@ -45,7 +45,11 @@ export default apiHandler({
     }
 
     const allRooms = [...ownedRooms, ...memberRooms]
-    const guildIds = [...new Set(allRooms.map((r) => r.guildid))]
+    const guildIdSet = new Set<string>()
+    allRooms.forEach((r) => guildIdSet.add(r.guildid.toString()))
+    const guildIds = allRooms
+      .map((r) => r.guildid)
+      .filter((gid, i, arr) => arr.findIndex((g) => g === gid) === i)
 
     const guildConfigs = await prisma.guild_config.findMany({
       where: { guildid: { in: guildIds } },
