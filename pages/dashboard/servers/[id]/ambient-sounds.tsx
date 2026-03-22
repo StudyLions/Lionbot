@@ -40,13 +40,12 @@ const VOLUME_OPTIONS = [
   { value: 100, label: "High" },
 ] as const
 
-// TODO: fill in after creating bot applications
 const BOT_INVITE_URLS: Record<number, string> = {
-  1: "",
-  2: "",
-  3: "",
-  4: "",
-  5: "",
+  1: "https://discord.com/oauth2/authorize?client_id=838178898764103741&scope=bot&permissions=67174400",
+  2: "https://discord.com/oauth2/authorize?client_id=838309890858287125&scope=bot&permissions=67174400",
+  3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&scope=bot&permissions=67174400",
+  4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&scope=bot&permissions=67174400",
+  5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&scope=bot&permissions=67174400",
 }
 
 // ── Types ─────────────────────────────────────────────────
