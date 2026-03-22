@@ -457,14 +457,7 @@ export default function StickyMessagesPage() {
           icon={<Pin size={32} />}
           title="No Sticky Messages Yet"
           description="Create your first sticky message to keep important information always visible at the bottom of a channel."
-          action={
-            <button
-              onClick={startNew}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
-            >
-              <Plus size={14} /> Create Sticky
-            </button>
-          }
+          action={{ label: "Create Sticky", onClick: startNew }}
         />
       ) : (
         <div className="space-y-4">
