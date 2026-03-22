@@ -806,10 +806,13 @@ function ServerPremiumShowcase() {
             <Server className="h-7 w-7 text-blue-400" />
             <h2 className="text-3xl font-bold text-white">Server Premium</h2>
           </div>
+          {/* --- AI-MODIFIED (2026-03-22) --- */}
+          {/* Purpose: Updated subtitle to mention auto-post and feature requests */}
           <p className="text-gray-400 mt-2 max-w-xl mx-auto">
-            Upgrade your entire server &mdash; custom branding, remove prompts,
-            and boost LionGotchi rewards for all members
+            Upgrade your entire server &mdash; custom branding, automated
+            leaderboards, remove prompts, and get to request new features
           </p>
+          {/* --- END AI-MODIFIED --- */}
         </div>
         {/* --- END AI-MODIFIED --- */}
 
@@ -1004,6 +1007,27 @@ function ServerPremiumShowcase() {
                       for all members
                     </span>
                   </div>
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Add leaderboard auto-post and feature request perk */}
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      <span className="text-white font-medium">
+                        Automated leaderboard posting
+                      </span>{" "}
+                      with role rewards, coin prizes &amp; winner DMs
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2.5 text-sm">
+                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      <span className="text-white font-medium">
+                        Request new features
+                      </span>{" "}
+                      &mdash; propose &amp; vote on what gets built next
+                    </span>
+                  </div>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               </div>
 

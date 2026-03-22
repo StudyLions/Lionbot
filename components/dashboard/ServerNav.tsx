@@ -17,7 +17,7 @@ import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
-  Volume2, VolumeX, PawPrint,
+  Volume2, VolumeX, PawPrint, Crown,
 } from "lucide-react"
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -39,10 +39,14 @@ interface NavLink {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: add premium flag so entire sections can have distinct amber/gold styling
 interface NavSection {
   title: string
   links: NavLink[]
+  premium?: boolean
 }
+// --- END AI-MODIFIED ---
 
 function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
   const sections: NavSection[] = [
@@ -78,14 +82,20 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/schedule", label: "Schedule", icon: <Calendar size={16} /> },
         { href: "/pomodoro", label: "Pomodoro", icon: <Timer size={16} /> },
         { href: "/videochannels", label: "Video Channels", icon: <Video size={16} /> },
-        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
-        // --- AI-MODIFIED (2026-03-21) ---
-        // Purpose: Leaderboard auto-post config page link
-        { href: "/leaderboard-autopost", label: "Leaderboard", icon: <Trophy size={16} /> },
-        // --- END AI-MODIFIED ---
       ],
     })
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Dedicated premium section with amber styling for paid features
+    sections.push({
+      title: "Premium Features",
+      premium: true,
+      links: [
+        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
+        { href: "/leaderboard-autopost", label: "Leaderboard Auto-Post", icon: <Trophy size={16} />, supporterPerk: true },
+      ],
+    })
+    // --- END AI-MODIFIED ---
     // --- AI-MODIFIED (2026-03-20) ---
     // Purpose: LionGotchi admin settings section
     sections.push({
@@ -132,9 +142,18 @@ function NavContent({ serverId, serverName, sections, onNavigate }: {
       <ScrollArea className="flex-1 px-3 py-3">
         {sections.map((section) => (
           <div key={section.title} className="mb-4">
-            <p className="px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+            {/* --- AI-MODIFIED (2026-03-22) --- */}
+            {/* Purpose: Amber/gold styling for premium section headers */}
+            <p className={cn(
+              "px-3 mb-1 text-[11px] font-semibold uppercase tracking-wider",
+              section.premium
+                ? "text-amber-400/70 flex items-center gap-1.5"
+                : "text-muted-foreground/60"
+            )}>
+              {section.premium && <Crown size={10} className="text-amber-400/50" />}
               {section.title}
             </p>
+            {/* --- END AI-MODIFIED --- */}
             <div className="space-y-0.5">
               {section.links.map((link) => {
                 const fullPath = basePath + link.href

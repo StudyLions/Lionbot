@@ -19,7 +19,12 @@ import {
   Trophy, Plus, Trash2, Play, Eye, Zap,
   Clock, Hash, Send, Bell, Shield,
   BarChart3, CheckCircle, XCircle, Loader2,
+  Coins, Settings2, Medal,
 } from "lucide-react"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Premium gate component for non-premium servers
+import PremiumGate from "@/components/dashboard/PremiumGate"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -1273,23 +1278,85 @@ export default function LeaderboardAutopostPage() {
             <div key={i} className="h-20 bg-gray-800/50 rounded-lg animate-pulse" />
           ))}
         </div>
+      {/* --- AI-MODIFIED (2026-03-22) --- */}
+      {/* Purpose: Rich premium gate with feature demo, mock Discord embed, and community callout */}
       ) : !isPremium ? (
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/10 flex items-center justify-center">
-            <Trophy size={28} className="text-amber-400" />
+        <PremiumGate
+          title="Leaderboard Auto-Post"
+          subtitle="Automate your server's competitive edge. Schedule leaderboard posts with role rewards, coin prizes, and winner notifications — all hands-free."
+        >
+          {/* Feature cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+            {[
+              { icon: <Clock size={18} />, label: "Scheduled Posting", desc: "Daily, weekly, monthly, or seasonal — pick any schedule" },
+              { icon: <Shield size={18} />, label: "Role Rewards", desc: "Auto-assign roles to your top performers each cycle" },
+              { icon: <Coins size={18} />, label: "Coin Prizes", desc: "Award LionCoins to winners with tiered prize pools" },
+              { icon: <Bell size={18} />, label: "Winner DMs", desc: "Winners get a personal DM with their rank and rewards" },
+              { icon: <Settings2 size={18} />, label: "Up to 10 Configs", desc: "Run multiple leaderboards with different types and schedules" },
+              { icon: <Zap size={18} />, label: "Custom Embeds", desc: "Personalized messages, colors, and embed fields" },
+            ].map((f) => (
+              <div
+                key={f.label}
+                className="p-4 rounded-xl bg-gray-800/60 border border-gray-700/50 hover:border-amber-500/20 transition-colors"
+              >
+                <div className="text-amber-400/80 mb-2">{f.icon}</div>
+                <p className="text-sm font-semibold text-gray-200">{f.label}</p>
+                <p className="text-xs text-gray-500 mt-1 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
           </div>
-          <h3 className="text-lg font-semibold text-foreground mb-2">Premium Feature</h3>
-          <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-            Automated leaderboard posting with role rewards, coin prizes, and winner DMs
-            is available for premium servers. Upgrade to unlock this feature.
-          </p>
-          <a
-            href="/premium"
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-          >
-            <Trophy size={14} /> Upgrade to Premium
-          </a>
-        </div>
+
+          {/* Mock Discord embed preview */}
+          <div className="rounded-xl bg-gray-800/40 border border-gray-700/40 p-4 sm:p-5">
+            <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
+              Preview — What it looks like in Discord
+            </p>
+            <div className="flex gap-3">
+              {/* Bot avatar */}
+              <div className="w-10 h-10 rounded-full bg-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <Trophy size={16} className="text-amber-400" />
+              </div>
+              <div className="flex-1 min-w-0">
+                {/* Bot name + timestamp */}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-sm font-semibold text-amber-400">StudyLion</span>
+                  <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-medium">BOT</span>
+                  <span className="text-[10px] text-gray-600">Today at 12:00 AM</span>
+                </div>
+                {/* Discord embed */}
+                <div className="rounded bg-[#2b2d31] border-l-4 border-amber-500 p-3 sm:p-4 max-w-md">
+                  <p className="text-xs font-bold text-white mb-0.5">Weekly Study Leaderboard</p>
+                  <p className="text-[11px] text-gray-400 mb-3">Top performers this week</p>
+                  <div className="space-y-1.5">
+                    {[
+                      { medal: "🥇", name: "StudyQueen", hours: "42h 15m", role: true },
+                      { medal: "🥈", name: "FocusMaster", hours: "38h 02m", role: true },
+                      { medal: "🥉", name: "NightOwl99", hours: "35h 48m", role: true },
+                      { medal: " 4.", name: "DeepWorkFan", hours: "31h 20m", role: false },
+                      { medal: " 5.", name: "CalmCoder", hours: "28h 55m", role: false },
+                    ].map((row) => (
+                      <div key={row.name} className="flex items-center gap-2 text-[12px]">
+                        <span className="w-6 text-center flex-shrink-0">{row.medal}</span>
+                        <span className="text-white font-medium flex-1 truncate">{row.name}</span>
+                        <span className="text-gray-400 flex-shrink-0">{row.hours}</span>
+                        {row.role && (
+                          <span className="flex items-center gap-1 text-[10px] bg-amber-500/15 text-amber-400 px-1.5 py-0.5 rounded-full flex-shrink-0">
+                            <Medal size={8} /> Role
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-3 pt-2 border-t border-gray-700/50 flex items-center justify-between">
+                    <span className="text-[10px] text-gray-500">+1,500 LionCoins awarded</span>
+                    <span className="text-[10px] text-gray-600">Next: in 7 days</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </PremiumGate>
+      {/* --- END AI-MODIFIED --- */}
       ) : configs.length === 0 ? (
         <div className="space-y-6">
           <EmptyState
