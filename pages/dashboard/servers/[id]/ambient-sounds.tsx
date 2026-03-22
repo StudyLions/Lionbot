@@ -41,13 +41,17 @@ const VOLUME_OPTIONS = [
   { value: 100, label: "High" },
 ] as const
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Fixed permissions - was 67174400 (only nickname+history), now includes
+// VIEW_CHANNEL(1024) + SEND_MESSAGES(2048) + CONNECT(1048576) + SPEAK(2097152) + CHANGE_NICKNAME(67108864) = 70257664
 const BOT_INVITE_URLS: Record<number, string> = {
-  1: "https://discord.com/oauth2/authorize?client_id=838178898764103741&scope=bot&permissions=67174400",
-  2: "https://discord.com/oauth2/authorize?client_id=838309890858287125&scope=bot&permissions=67174400",
-  3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&scope=bot&permissions=67174400",
-  4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&scope=bot&permissions=67174400",
-  5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&scope=bot&permissions=67174400",
+  1: "https://discord.com/oauth2/authorize?client_id=838178898764103741&scope=bot&permissions=70257664",
+  2: "https://discord.com/oauth2/authorize?client_id=838309890858287125&scope=bot&permissions=70257664",
+  3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&scope=bot&permissions=70257664",
+  4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&scope=bot&permissions=70257664",
+  5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&scope=bot&permissions=70257664",
 }
+// --- END AI-MODIFIED ---
 
 // ── Types ─────────────────────────────────────────────────
 
