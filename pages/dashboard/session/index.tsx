@@ -18,11 +18,12 @@ import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
 // --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Add Coins and DoorOpen icons for inline room controls
+// Purpose: Add icons for inline room controls + owner panel
 import {
   Radio, Clock, Users, CheckSquare, Plus, Check, Circle,
   Maximize2, ArrowLeft, Video, MonitorPlay, Trash2, X, Pencil,
   Bell, BellOff, Trophy, Timer, Coins, DoorOpen,
+  Crown, UserMinus, ChevronDown, ChevronUp, ExternalLink, PencilLine, Settings,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
@@ -85,6 +86,19 @@ interface LiveSessionData {
     updatedAt: string | null
     parentId: number | null
     rewarded: boolean | null
+  }>
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Room detail type for owner control panel
+interface RoomDetailData {
+  channelId: string; name: string | null; coinBalance: number; rentPrice: number
+  daysRemaining: number; memberCap: number; ownerId: string
+  createdAt: string | null; nextTick: string | null
+  members: Array<{
+    userId: string; displayName: string; avatarUrl: string | null
+    isOwner: boolean; totalStudySeconds: number; contribution: number; coinBalance: number
   }>
 }
 // --- END AI-MODIFIED ---
@@ -179,6 +193,36 @@ export default function SessionPage() {
       setDepositing(false)
     }
   }, [data?.privateRoom, depositAmount, mutate])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Owner panel state -- fetch room detail when in own room
+  const isRoomOwner = data?.privateRoom?.isOwner ?? false
+  const roomChannelId = data?.privateRoom?.channelId
+  const { data: roomDetail, mutate: mutateRoom } = useDashboard<RoomDetailData>(
+    isRoomOwner && roomChannelId ? `/api/dashboard/rooms/${roomChannelId}` : null
+  )
+  const [showOwnerPanel, setShowOwnerPanel] = useState(true)
+  const [editingRoomName, setEditingRoomName] = useState(false)
+  const [roomNameInput, setRoomNameInput] = useState("")
+  const [savingRoomName, setSavingRoomName] = useState(false)
+
+  const handleRoomRename = useCallback(async () => {
+    if (!roomChannelId || !roomNameInput.trim()) return
+    setSavingRoomName(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: roomNameInput.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Rename failed")
+      toast.success("Room renamed! Bot will sync on next tick.")
+      setEditingRoomName(false)
+      mutateRoom(); mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setSavingRoomName(false) }
+  }, [roomChannelId, roomNameInput, mutateRoom, mutate])
   // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-16) ---
@@ -551,6 +595,93 @@ export default function SessionPage() {
                         ? "Your room will expire on the next rent tick! Deposit coins now."
                         : `Your room expires in ${data.privateRoom.daysRemaining} day${data.privateRoom.daysRemaining !== 1 ? "s" : ""}. Consider depositing more coins.`
                       }
+                    </div>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
+
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Room owner control panel with rename, members, info */}
+                  {isRoomOwner && data.privateRoom && (
+                    <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 overflow-hidden">
+                      <button onClick={() => setShowOwnerPanel(!showOwnerPanel)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500/10 transition-colors">
+                        <span className="flex items-center gap-2 text-sm font-medium text-blue-300">
+                          <Settings size={14} /> Room Controls
+                        </span>
+                        {showOwnerPanel ? <ChevronUp size={14} className="text-blue-400" /> : <ChevronDown size={14} className="text-blue-400" />}
+                      </button>
+                      {showOwnerPanel && (
+                        <div className="px-4 pb-4 space-y-4 border-t border-blue-500/10">
+                          {/* Room Name (editable) */}
+                          <div className="pt-3 space-y-2">
+                            <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold">Room Name</label>
+                            {editingRoomName ? (
+                              <div className="flex gap-2">
+                                <input type="text" value={roomNameInput} onChange={(e) => setRoomNameInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && handleRoomRename()}
+                                  maxLength={100} autoFocus
+                                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-blue-500/30 text-gray-200 focus:border-blue-500/50 focus:outline-none" />
+                                <button disabled={savingRoomName || !roomNameInput.trim()} onClick={handleRoomRename}
+                                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white disabled:opacity-50">Save</button>
+                                <button onClick={() => setEditingRoomName(false)} className="text-gray-400 hover:text-gray-200"><X size={14} /></button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-foreground font-medium">{data.privateRoom.name || "Private Room"}</span>
+                                <button onClick={() => { setRoomNameInput(data.privateRoom!.name || ""); setEditingRoomName(true) }}
+                                  className="text-blue-400/60 hover:text-blue-400"><PencilLine size={12} /></button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Room Info Badges */}
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                              <Coins size={9} className="inline mr-1" />{data.privateRoom.rentPrice}/day rent
+                            </span>
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                              <Users size={9} className="inline mr-1" />{data.privateRoom.memberCount}{roomDetail ? `/${roomDetail.memberCap}` : ""} members
+                            </span>
+                            {data.privateRoom.createdAt && (
+                              <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                                <Clock size={9} className="inline mr-1" />Created {Math.floor((Date.now() - new Date(data.privateRoom.createdAt).getTime()) / 86400000)}d ago
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Member List */}
+                          {roomDetail && (
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold">Members ({roomDetail.members.length})</label>
+                              <div className="space-y-1 max-h-40 overflow-y-auto">
+                                {roomDetail.members.slice(0, 10).map((m) => (
+                                  <div key={m.userId} className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-blue-500/5">
+                                    {m.avatarUrl ? <img src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-muted" />}
+                                    <span className="text-xs text-foreground flex-1 truncate">{m.displayName}</span>
+                                    {m.isOwner && <Crown size={9} className="text-amber-400" />}
+                                    <span className="text-[10px] text-muted-foreground tabular-nums">{Math.floor(m.totalStudySeconds / 3600)}h</span>
+                                    {!m.isOwner && m.contribution > 0 && (
+                                      <span className="text-[10px] text-amber-400/60 tabular-nums">{m.contribution}<Coins size={7} className="inline ml-0.5" /></span>
+                                    )}
+                                  </div>
+                                ))}
+                                {roomDetail.members.length > 10 && (
+                                  <p className="text-[10px] text-muted-foreground text-center">+{roomDetail.members.length - 10} more</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Quick Links */}
+                          <div className="flex gap-3 pt-1">
+                            <Link href="/dashboard/rooms">
+                              <a className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                <ExternalLink size={9} /> Manage All Rooms
+                              </a>
+                            </Link>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {/* --- END AI-MODIFIED --- */}

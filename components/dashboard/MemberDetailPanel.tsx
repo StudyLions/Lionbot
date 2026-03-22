@@ -16,6 +16,11 @@ import {
   ShieldAlert, Copy, Home, Save, RotateCcw, Info,
 } from "lucide-react"
 import { useState } from "react"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add Link and useRouter for room history cross-link
+import Link from "next/link"
+import { useRouter } from "next/router"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 interface MemberDetail {
@@ -123,6 +128,11 @@ function SectionInfo({ text }: { text: string }) {
 
 export default function MemberDetailPanel({ open, onClose, data, loading, onWarn, onNote, onRestrict, onResolve, onAdjustCoins, onRefund }: Props) {
   const [copiedId, setCopiedId] = useState(false)
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Get serverId from router for room history cross-link
+  const router = useRouter()
+  const serverId = router.query.id as string
+  // --- END AI-MODIFIED ---
 
   const handleCopyId = () => {
     if (data?.member.userId) {
@@ -218,13 +228,19 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                     </div>
                   </div>
 
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Add "View Room History" link to room info row */}
                   {data.room && (
                     <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/30 rounded-xl text-sm">
                       <Home size={14} className="text-indigo-400 flex-shrink-0" />
                       <span className="text-foreground font-medium truncate">{data.room.name || "Private Room"}</span>
-                      <span className="ml-auto text-warning font-mono text-xs">{data.room.coinBalance} coins</span>
+                      <span className="text-warning font-mono text-xs">{data.room.coinBalance} coins</span>
+                      <Link href={`/dashboard/servers/${serverId}/rooms?search=${data.userId}`}>
+                        <a className="ml-auto text-[10px] text-primary hover:text-primary/80 whitespace-nowrap">Room History →</a>
+                      </Link>
                     </div>
                   )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {data.savedRolesCount > 0 && (
                     <div className="flex items-center gap-3 px-3 py-2.5 bg-muted/30 rounded-xl text-sm">

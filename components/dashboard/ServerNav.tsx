@@ -15,12 +15,15 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: add Sparkles icon for supporter perk highlight + Volume2/VolumeX for sound toggle
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: add Pin icon for sticky messages nav link
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: add DoorOpen icon for Private Rooms nav link
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
-  Volume2, VolumeX, PawPrint, Crown, Pin,
+  Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -65,6 +68,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/members", label: "Members", icon: <Users size={16} /> },
         { href: "/moderation", label: "Moderation", icon: <Shield size={16} /> },
         { href: "/economy", label: "Economy", icon: <Coins size={16} /> },
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Private Rooms admin panel in Management section
+        { href: "/rooms", label: "Private Rooms", icon: <DoorOpen size={16} /> },
+        // --- END AI-MODIFIED ---
       ],
     })
   }

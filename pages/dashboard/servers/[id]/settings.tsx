@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Link component for rooms admin panel cross-link
+import Link from "next/link"
+// --- END AI-MODIFIED ---
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
   SearchSelect, ChannelSelect, RoleSelect, SaveBar, PageHeader, toast,
@@ -187,7 +191,10 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "study-rewards", label: "Study Rewards", icon: BookOpen, settings: ["study_hourly_reward", "study_hourly_live_bonus", "daily_study_cap"], searchTerms: ["voice", "camera", "hourly", "study", "reward", "cap"] },
   { id: "economy", label: "Economy", icon: Coins, settings: ["starting_funds", "allow_transfers", "coins_per_centixp"], searchTerms: ["coins", "transfer", "xp", "starting"] },
   { id: "tasks", label: "Tasks", icon: CheckSquare, settings: ["max_tasks", "task_reward", "task_reward_limit"], searchTerms: ["task", "todo", "reward", "limit"] },
-  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms"], searchTerms: ["room", "rent", "private", "visible"] },
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Add new room settings to the Private Rooms section
+  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit"] },
+  // --- END AI-MODIFIED ---
   { id: "schedule", label: "Accountability", icon: Users, settings: ["accountability_price", "accountability_reward", "accountability_bonus"], searchTerms: ["schedule", "session", "booking", "accountability", "attendance"] },
   { id: "ranks", label: "Ranks", icon: Trophy, settings: ["rank_type", "dm_ranks", "xp_per_period"], searchTerms: ["rank", "level", "xp", "leaderboard"] },
   { id: "moderation", label: "Moderation", icon: Shield, settings: ["video_studyban", "video_grace_period", "persist_roles"], searchTerms: ["video", "ban", "moderate", "roles", "grace"] },
@@ -879,6 +886,31 @@ export default function ServerSettings() {
                         <SettingRow label="Sync Permissions" description="Sync room permissions with the category" isModified={isModified("renting_sync_perms")} onReset={() => resetField("renting_sync_perms")}>
                           <Toggle checked={config.renting_sync_perms ?? false} onChange={(v) => set("renting_sync_perms", v)} />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-03-22) --- */}
+                        {/* Purpose: New advanced room settings + link to admin rooms panel */}
+                        <SettingRow label="Max Rooms Per User" description="Limit how many rooms one user can own (empty = unlimited)" isModified={isModified("renting_max_per_user")} onReset={() => resetField("renting_max_per_user")}>
+                          <NumberInput value={config.renting_max_per_user} onChange={(v) => set("renting_max_per_user", v)} min={1} allowNull placeholder="No limit" />
+                        </SettingRow>
+                        <SettingRow label="Name Character Limit" description="Max characters for room names (empty = no limit)" isModified={isModified("renting_name_limit")} onReset={() => resetField("renting_name_limit")}>
+                          <NumberInput value={config.renting_name_limit} onChange={(v) => set("renting_name_limit", v)} min={1} allowNull placeholder="No limit" />
+                        </SettingRow>
+                        <SettingRow label="Minimum Initial Deposit" description="Coins required upfront when renting a room" isModified={isModified("renting_min_deposit")} onReset={() => resetField("renting_min_deposit")}>
+                          <NumberInput value={config.renting_min_deposit} onChange={(v) => set("renting_min_deposit", v)} min={0} allowNull placeholder="0" />
+                        </SettingRow>
+                        <SettingRow label="Auto-Extend" description="Automatically deduct from owner balance when room runs out" isModified={isModified("renting_auto_extend")} onReset={() => resetField("renting_auto_extend")}>
+                          <Toggle checked={config.renting_auto_extend ?? false} onChange={(v) => set("renting_auto_extend", v)} />
+                        </SettingRow>
+                        <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)" isModified={isModified("renting_cooldown")} onReset={() => resetField("renting_cooldown")}>
+                          <NumberInput value={config.renting_cooldown} onChange={(v) => set("renting_cooldown", v)} min={0} allowNull placeholder="No cooldown" unit="seconds" />
+                        </SettingRow>
+                        <div className="flex items-center justify-center gap-2 py-3 border-t border-border">
+                          <Link href={`/dashboard/servers/${guildId}/rooms`}>
+                            <a className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5">
+                              Manage rooms and view analytics →
+                            </a>
+                          </Link>
+                        </div>
+                        {/* --- END AI-MODIFIED --- */}
                       </SectionCard>
                     </div>
                   )}
