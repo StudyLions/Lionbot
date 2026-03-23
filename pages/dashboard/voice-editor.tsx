@@ -3,13 +3,13 @@
 // Created: 2026-03-23
 // Purpose: Voice Time Editor member page — week timeline, sheet editor, dnd-kit drag/resize
 // --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Visual week timeline + SessionEditSheet + date-range API
+// Purpose: Pending edits model (save/reset) + visual week timeline + SessionEditSheet
 // --- END AI-MODIFIED ---
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, toast } from "@/components/dashboard/ui"
+import { EmptyState, SaveBar, toast } from "@/components/dashboard/ui"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
@@ -17,13 +17,13 @@ import { cn } from "@/lib/utils"
 import {
   Clock, Plus, ChevronDown, Crown, Lock,
   CheckCircle2, Info, Server, Shield,
+  Headphones, Camera, Radio,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import {
   DndContext,
   type DragEndEvent,
-  type DragMoveEvent,
   PointerSensor,
   useSensor,
   useSensors,
@@ -32,6 +32,7 @@ import VoiceEditorWeekNav from "@/components/dashboard/voice-editor/VoiceEditorW
 import DayTimelineRow from "@/components/dashboard/voice-editor/DayTimelineRow"
 import SessionEditSheet from "@/components/dashboard/voice-editor/SessionEditSheet"
 import type { VoiceEditorSession } from "@/lib/voiceEditorTimeline"
+import type { PendingEdit } from "@/lib/voiceEditorTimeline"
 import {
   startOfWeekMonday,
   weekDaysFromMonday,
@@ -42,7 +43,7 @@ import {
   minutesFromMidnightToDate,
   startMinutesFromMidnight,
   overlapsOtherSession,
-  overlapPreviewIdsForMove,
+  applyPendingEdits,
 } from "@/lib/voiceEditorTimeline"
 
 interface ServerInfo {
@@ -94,6 +95,12 @@ export default function VoiceEditorPage() {
   const [editingSession, setEditingSession] = useState<VoiceEditorSession | null>(null)
   const [deletingId, setDeletingId] = useState<number | null>(null)
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Pending edits — drag/resize writes here, not to the server
+  const [pendingEdits, setPendingEdits] = useState<Map<number, PendingEdit>>(() => new Map())
+  const [saving, setSaving] = useState(false)
+  // --- END AI-MODIFIED ---
+
   const timelineStart = useMemo(() => startOfWeekMonday(weekMonday), [weekMonday])
   const timelineEnd = useMemo(() => endOfWeekSunday(timelineStart), [timelineStart])
   const weekDays = useMemo(() => weekDaysFromMonday(timelineStart), [timelineStart])
@@ -118,6 +125,16 @@ export default function VoiceEditorPage() {
   const selectedServer = servers.find((s) => s.guildId === selectedGuild)
   const usageBlocked = !!(usage && usage.used >= usage.limit)
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Effective sessions = server state + local pending edits applied
+  const effectiveSessions = useMemo(
+    () => applyPendingEdits(sessions, pendingEdits),
+    [sessions, pendingEdits]
+  )
+  const pendingIds = useMemo(() => new Set(pendingEdits.keys()), [pendingEdits])
+  const hasChanges = pendingEdits.size > 0
+  // --- END AI-MODIFIED ---
+
   const [allowFinePointer, setAllowFinePointer] = useState(true)
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return
@@ -134,8 +151,6 @@ export default function VoiceEditorPage() {
     })
   )
 
-  const [overlapPreviewIds, setOverlapPreviewIds] = useState(() => new Set<number>())
-
   useEffect(() => {
     if (servers.length > 0 && !selectedGuild) {
       const first = servers.find((s) => s.isEnabled) || servers[0]
@@ -143,17 +158,76 @@ export default function VoiceEditorPage() {
     }
   }, [servers, selectedGuild])
 
-  const handleRefresh = useCallback(() => {
-    mutate()
-  }, [mutate])
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Ctrl+S to save pending edits
+  const handleSaveAll = useCallback(async () => {
+    if (pendingEdits.size === 0) return
+    setSaving(true)
 
-  /** Shared math for drag move preview + drag end commit */
+    const entries = Array.from(pendingEdits.entries())
+    const results = await Promise.allSettled(
+      entries.map(([sessionId, edit]) => {
+        const body: Record<string, any> = {}
+        if (edit.newStartTime) body.startTime = edit.newStartTime
+        if (edit.newDuration != null) body.duration = edit.newDuration
+        return dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${sessionId}`, body)
+      })
+    )
+
+    const succeeded = results.filter((r) => r.status === "fulfilled").length
+    const failed = results.filter((r) => r.status === "rejected").length
+
+    if (failed > 0) toast.error(`${failed} edit(s) failed`)
+    if (succeeded > 0) toast.success(`${succeeded} edit(s) saved`)
+
+    const successIndices = entries
+      .map(([id], i) => (results[i].status === "fulfilled" ? id : null))
+      .filter((id): id is number => id !== null)
+    setPendingEdits((prev) => {
+      const next = new Map(prev)
+      successIndices.forEach((id) => next.delete(id))
+      return next
+    })
+
+    mutate()
+    setSaving(false)
+  }, [pendingEdits, mutate])
+
+  const handleResetAll = useCallback(() => {
+    setPendingEdits(new Map())
+  }, [])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault()
+        if (pendingEdits.size > 0) handleSaveAll()
+      }
+    }
+    document.addEventListener("keydown", handler)
+    return () => document.removeEventListener("keydown", handler)
+  }, [pendingEdits.size, handleSaveAll])
+
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (pendingEdits.size > 0) {
+        e.preventDefault()
+        e.returnValue = ""
+      }
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [pendingEdits.size])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Drag/resize write to pendingEdits instead of calling PATCH immediately
   const resolveSessionDrag = useCallback(
     (event: Pick<DragEndEvent, "active" | "delta">) => {
       const idStr = String(event.active.id)
       if (!idStr.startsWith("session-")) return null
       const id = parseInt(idStr.replace("session-", ""), 10)
-      const s = sessions.find((x) => x.id === id)
+      const s = effectiveSessions.find((x) => x.id === id)
       if (!s || usageBlocked) return null
 
       const dayKey = localDayKey(new Date(s.startTime))
@@ -169,29 +243,11 @@ export default function VoiceEditorPage() {
       const newStart = minutesFromMidnightToDate(day, newMin)
       return { id, s, newStart, newStartMs: newStart.getTime() }
     },
-    [sessions, usageBlocked]
-  )
-
-  const handleDragMove = useCallback(
-    (event: DragMoveEvent) => {
-      const resolved = resolveSessionDrag(event)
-      if (!resolved) {
-        setOverlapPreviewIds(new Set())
-        return
-      }
-      const { id, s, newStartMs } = resolved
-      if (newStartMs + s.duration * 1000 > Date.now()) {
-        setOverlapPreviewIds(new Set([id]))
-        return
-      }
-      setOverlapPreviewIds(overlapPreviewIdsForMove(sessions, id, newStartMs, s.duration))
-    },
-    [resolveSessionDrag, sessions]
+    [effectiveSessions, usageBlocked]
   )
 
   const handleDragEnd = useCallback(
-    async (event: DragEndEvent) => {
-      setOverlapPreviewIds(new Set())
+    (event: DragEndEvent) => {
       const resolved = resolveSessionDrag(event)
       if (!resolved) return
       const { id, s, newStart } = resolved
@@ -201,29 +257,24 @@ export default function VoiceEditorPage() {
         toast.error("Session cannot end in the future")
         return
       }
-
-      if (overlapsOtherSession(sessions, id, newStart.getTime(), s.duration)) {
-        toast.error("Overlaps another session in this server")
+      if (overlapsOtherSession(effectiveSessions, id, newStart.getTime(), s.duration)) {
+        toast.error("Overlaps another session")
         return
       }
 
-      try {
-        await dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${id}`, {
-          startTime: newStart.toISOString(),
-          duration: s.duration,
-        })
-        toast.success("Session moved")
-        mutate()
-      } catch (err: any) {
-        toast.error(err?.message || "Could not move session")
-      }
+      setPendingEdits((prev) => {
+        const next = new Map(prev)
+        const existing = next.get(id) || {}
+        next.set(id, { ...existing, newStartTime: newStart.toISOString() })
+        return next
+      })
     },
-    [sessions, resolveSessionDrag, mutate]
+    [effectiveSessions, resolveSessionDrag]
   )
 
   const handleResizeCommit = useCallback(
-    async (sessionId: number, newDurationSec: number) => {
-      const s = sessions.find((x) => x.id === sessionId)
+    (sessionId: number, newDurationSec: number) => {
+      const s = effectiveSessions.find((x) => x.id === sessionId)
       if (!s || usageBlocked) return
       const start = new Date(s.startTime)
       const newEndMs = start.getTime() + newDurationSec * 1000
@@ -231,22 +282,21 @@ export default function VoiceEditorPage() {
         toast.error("Session cannot end in the future")
         return
       }
-      if (overlapsOtherSession(sessions, sessionId, start.getTime(), newDurationSec)) {
+      if (overlapsOtherSession(effectiveSessions, sessionId, start.getTime(), newDurationSec)) {
         toast.error("Overlaps another session")
         return
       }
-      try {
-        await dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${sessionId}`, {
-          duration: newDurationSec,
-        })
-        toast.success("Duration updated")
-        mutate()
-      } catch (err: any) {
-        toast.error(err?.message || "Could not resize")
-      }
+
+      setPendingEdits((prev) => {
+        const next = new Map(prev)
+        const existing = next.get(sessionId) || {}
+        next.set(sessionId, { ...existing, newDuration: newDurationSec })
+        return next
+      })
     },
-    [sessions, usageBlocked, mutate]
+    [effectiveSessions, usageBlocked]
   )
+  // --- END AI-MODIFIED ---
 
   const openAdd = (day: Date) => {
     setPendingAddTime(null)
@@ -285,11 +335,57 @@ export default function VoiceEditorPage() {
       toast.success("Session deleted")
       setDeletingId(null)
       setSheetOpen(false)
+      // Clear any pending edit for the deleted session
+      setPendingEdits((prev) => {
+        if (!prev.has(sessionId)) return prev
+        const next = new Map(prev)
+        next.delete(sessionId)
+        return next
+      })
       mutate()
     } catch (err: any) {
       toast.error(err?.message || "Failed to delete")
     }
   }
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: After sheet save, clear that session's pending edit (sheet already committed it)
+  const handleSheetSuccess = useCallback(() => {
+    if (editingSession) {
+      setPendingEdits((prev) => {
+        if (!prev.has(editingSession.id)) return prev
+        const next = new Map(prev)
+        next.delete(editingSession.id)
+        return next
+      })
+    }
+    mutate()
+  }, [editingSession, mutate])
+  // --- END AI-MODIFIED ---
+
+  // Discard pending edits when switching week or server
+  const changeWeek = useCallback(
+    (d: Date) => {
+      if (pendingEdits.size > 0) {
+        setPendingEdits(new Map())
+        toast("Unsaved changes discarded")
+      }
+      setWeekMonday(d)
+    },
+    [pendingEdits.size]
+  )
+
+  const changeServer = useCallback(
+    (guildId: string) => {
+      if (pendingEdits.size > 0) {
+        setPendingEdits(new Map())
+        toast("Unsaved changes discarded")
+      }
+      setSelectedGuild(guildId)
+      setShowServerDropdown(false)
+    },
+    [pendingEdits.size]
+  )
 
   const renderServerStatus = () => {
     if (!selectedServer) return null
@@ -328,6 +424,8 @@ export default function VoiceEditorPage() {
     return null
   }
 
+  const saveLabel = `${pendingEdits.size} unsaved edit${pendingEdits.size !== 1 ? "s" : ""} — press Save to apply`
+
   return (
     <Layout SEO={{ title: "Voice Time Editor - LionBot Dashboard", description: "Add and edit your study sessions" }}>
       <AdminGuard>
@@ -338,7 +436,7 @@ export default function VoiceEditorPage() {
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Voice Time Editor</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Week view: drag blocks to shift time, drag the right edge to change length. Click a block to edit, or click empty space to add.
+                  Drag blocks to shift time, drag the right edge to resize. Changes are staged locally until you save.
                 </p>
               </div>
 
@@ -346,7 +444,7 @@ export default function VoiceEditorPage() {
                 <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-300/80 leading-relaxed">
                   Changes affect stats only (not coins, XP, or LionGotchi).{" "}
-                  {!allowFinePointer && "On touch devices, use the form — drag is best with a mouse."}
+                  {!allowFinePointer && "On touch devices, use the form — drag works best with a mouse."}
                 </p>
               </div>
 
@@ -392,10 +490,7 @@ export default function VoiceEditorPage() {
                         <button
                           key={s.guildId}
                           type="button"
-                          onClick={() => {
-                            setSelectedGuild(s.guildId)
-                            setShowServerDropdown(false)
-                          }}
+                          onClick={() => changeServer(s.guildId)}
                           className={cn(
                             "w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center justify-between gap-2",
                             selectedGuild === s.guildId && "bg-primary/10"
@@ -456,7 +551,17 @@ export default function VoiceEditorPage() {
                     </button>
                   </div>
 
-                  <VoiceEditorWeekNav weekMonday={timelineStart} onWeekMondayChange={setWeekMonday} />
+                  <VoiceEditorWeekNav weekMonday={timelineStart} onWeekMondayChange={changeWeek} />
+
+                  {/* Color legend */}
+                  <div className="flex items-center gap-4 text-[10px] text-muted-foreground flex-wrap">
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500/70" /><Headphones size={10} /> Voice</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-emerald-500/70" /><Camera size={10} /> Camera</span>
+                    <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm bg-purple-500/70" /><Radio size={10} /> Stream</span>
+                    {hasChanges && (
+                      <span className="flex items-center gap-1.5"><span className="inline-block w-2.5 h-2.5 rounded-sm border border-dashed border-amber-400/70 bg-amber-400/10" /> Unsaved</span>
+                    )}
+                  </div>
 
                   {data?.timelineRange?.capped && (
                     <p className="text-[10px] text-amber-400/90">Showing up to 200 sessions this week — some may be hidden.</p>
@@ -465,20 +570,21 @@ export default function VoiceEditorPage() {
                   {isLoading ? (
                     <div className="space-y-3 mt-4">
                       {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                        <div key={i} className="h-14 bg-card/50 rounded-lg animate-pulse" />
+                        <div key={i} className="h-20 bg-card/50 rounded-lg animate-pulse" />
                       ))}
                     </div>
                   ) : (
-                    <DndContext sensors={sensors} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={() => setOverlapPreviewIds(new Set())}>
-                      <div className="mt-4 space-y-3 rounded-xl border border-border bg-card/30 p-3 sm:p-4">
+                    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+                      <div className="mt-2 space-y-2 rounded-xl border border-border bg-card/30 p-3 sm:p-4">
                         {weekDays.map((day) => (
                           <DayTimelineRow
                             key={localDayKey(day)}
                             day={day}
-                            allSessions={sessions}
+                            allSessions={effectiveSessions}
+                            originalSessions={sessions}
+                            pendingIds={pendingIds}
                             usageBlocked={usageBlocked}
                             allowDragResize={allowFinePointer && !usageBlocked}
-                            overlapIds={overlapPreviewIds}
                             onTrackClick={onTrackClick}
                             onSessionClick={openEdit}
                             onResizeCommit={handleResizeCommit}
@@ -488,7 +594,7 @@ export default function VoiceEditorPage() {
                     </DndContext>
                   )}
 
-                  {sessions.length === 0 && !isLoading && (
+                  {effectiveSessions.length === 0 && !isLoading && (
                     <EmptyState
                       icon={<Clock size={24} />}
                       title="No sessions this week"
@@ -536,13 +642,21 @@ export default function VoiceEditorPage() {
                   usage={usage}
                   initialDay={sheetInitialDay}
                   initialTimeHint={pendingAddTime}
-                  weekSessions={sessions}
+                  weekSessions={effectiveSessions}
                   editingSession={editingSession}
                   emphasizeId={editingSession?.id}
-                  onSuccess={handleRefresh}
+                  onSuccess={handleSheetSuccess}
                   onDeleteRequest={(id) => setDeletingId(id)}
                 />
               )}
+
+              <SaveBar
+                show={hasChanges}
+                onSave={handleSaveAll}
+                onReset={handleResetAll}
+                saving={saving}
+                label={saveLabel}
+              />
             </div>
           </div>
         </div>

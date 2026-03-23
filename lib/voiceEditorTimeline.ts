@@ -184,3 +184,47 @@ export function deltaPixelsToMinutes(deltaXPx: number, trackWidthPx: number): nu
 export function deltaPixelsToDurationChange(deltaXPx: number, trackWidthPx: number): number {
   return Math.round(deltaPixelsToMinutes(deltaXPx, trackWidthPx) * 60)
 }
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Pending edits model — store drag/resize changes locally before committing
+
+export interface PendingEdit {
+  newStartTime?: string
+  newDuration?: number
+}
+
+/** Merge pending edits into the session list so the timeline shows the draft state. */
+export function applyPendingEdits(
+  sessions: VoiceEditorSession[],
+  pendingEdits: Map<number, PendingEdit>
+): VoiceEditorSession[] {
+  if (pendingEdits.size === 0) return sessions
+  return sessions.map((s) => {
+    const edit = pendingEdits.get(s.id)
+    if (!edit) return s
+    return {
+      ...s,
+      startTime: edit.newStartTime ?? s.startTime,
+      duration: edit.newDuration ?? s.duration,
+      durationMinutes: Math.round((edit.newDuration ?? s.duration) / 60),
+    }
+  })
+}
+
+export function formatTimeShort(iso: string): string {
+  const d = new Date(iso)
+  return `${d.getHours()}:${String(d.getMinutes()).padStart(2, "0")}`
+}
+
+export function formatDuration(seconds: number): string {
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0 && m > 0) return `${h}h ${m}m`
+  if (h > 0) return `${h}h`
+  return `${m}m`
+}
+
+export function sessionEndISO(s: VoiceEditorSession): string {
+  return new Date(new Date(s.startTime).getTime() + s.duration * 1000).toISOString()
+}
+// --- END AI-MODIFIED ---
