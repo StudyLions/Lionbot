@@ -194,7 +194,7 @@ const SkinModal = (props) => {
             </p>
             <div className="flex flex-wrap justify-evenly items-center ex_sm:flex-col">
               <a
-                href={NavigationPaths.donate + "#premiumPlans"}
+                href={NavigationPaths.donate + "#gems"}
                 className="flex flex-wrap justify-evenly items-center w-6/12 p-2 border-solid border-b border-l border-r border-t rounded-3xl border-[#fff] text-[#fff] font-medium text-sm uppercase"
               >
                 <Image

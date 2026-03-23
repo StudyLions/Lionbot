@@ -307,7 +307,7 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">LionGems</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Purchase gem packs to unlock custom skins, premium features, and support continued development.
+                Purchase gem packs to unlock custom skins, cosmetics, and support continued development.
               </p>
             </div>
             <div className="bg-card/50 border border-border rounded-2xl p-6 text-left">

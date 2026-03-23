@@ -257,7 +257,7 @@ export default function PrivacyPolicy() {
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Payment Data</h3>
               <ul className="list-disc pl-6 space-y-2">
                 <li><strong className="text-foreground">Stripe Session IDs</strong> — When you purchase LionGems, we store the Stripe checkout session ID to prevent duplicate processing. We do <strong className="text-foreground">not</strong> store credit card numbers, billing addresses, or other financial details — that data stays with Stripe.</li>
-                <li><strong className="text-foreground">Premium Contributions</strong> — Records of gem contributions to premium server status.</li>
+                <li><strong className="text-foreground">Premium Contributions</strong> — Records of gem purchases for skins and cosmetics.</li>
               </ul>
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Voting Data</h3>
@@ -292,7 +292,7 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Providing core services</strong> — Tracking study time, managing tasks, calculating XP/coins, maintaining leaderboards, and powering the LionGotchi pet system.</li>
                 <li><strong className="text-foreground">Authentication</strong> — Verifying your identity on the web dashboard via Discord OAuth.</li>
                 <li><strong className="text-foreground">Server moderation</strong> — Enabling server moderators to issue warnings, study bans, and enforce server rules.</li>
-                <li><strong className="text-foreground">Premium features</strong> — Processing gem purchases and tracking premium server status.</li>
+                <li><strong className="text-foreground">Premium features</strong> — Processing gem purchases and managing subscription billing.</li>
                 <li><strong className="text-foreground">Statistics &amp; leaderboards</strong> — Displaying your study stats, rankings, and progress within servers you are a member of.</li>
                 <li><strong className="text-foreground">Notifications</strong> — Sending reminders and vote reminders you opt into.</li>
               </ul>

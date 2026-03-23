@@ -584,7 +584,7 @@ export const memberTutorials: Tutorial[] = [
         title: "LionGems",
         paragraphs: [
           "LionGems are the premium currency. Unlike LionCoins (which are per-server), LionGems are tied to your Discord account and work everywhere.",
-          "You can purchase LionGems from the Donate page on this website. They unlock exclusive profile skins, premium features, and LionGotchi items.",
+          "You can purchase LionGems from the Donate page on this website. They unlock exclusive profile skins, cosmetics, and LionGotchi items.",
         ],
       },
       {

@@ -62,7 +62,7 @@ const PAGES = [
   { slug: 'dashboard-history', title: 'Study History', subtitle: 'Detailed breakdown of your past study sessions and patterns', category: 'dashboard' },
   { slug: 'dashboard-inventory', title: 'Inventory', subtitle: 'View your collected skins, items, and customizations', category: 'dashboard' },
   { slug: 'dashboard-profile', title: 'Profile', subtitle: 'Customize your LionBot profile card and display settings', category: 'dashboard' },
-  { slug: 'dashboard-gems', title: 'LionGems', subtitle: 'Your gem balance, transaction history, and premium shop', category: 'dashboard' },
+  { slug: 'dashboard-gems', title: 'LionGems', subtitle: 'Your gem balance, transaction history, and cosmetics shop', category: 'dashboard' },
 
   // --- Dashboard (Server) ---
   { slug: 'server-overview', title: 'Server Overview', subtitle: 'Activity stats, top members, and server health at a glance', category: 'server' },
