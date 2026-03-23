@@ -6,6 +6,7 @@
 //          and DB-backed dismiss tracking
 // ============================================================
 import { useRouter } from "next/router"
+import React from "react"
 import { useEffect, useState, useCallback } from "react"
 import { AnimatePresence } from "framer-motion"
 import { GetServerSideProps } from "next"
@@ -416,13 +417,50 @@ function SetupWizardInner() {
   )
 }
 
+class WizardErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: Error | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 p-8">
+          <div className="max-w-2xl w-full bg-red-900/30 border border-red-500/50 rounded-xl p-6 space-y-4">
+            <h2 className="text-xl font-bold text-red-400">Setup Wizard Error</h2>
+            <p className="text-sm text-red-300 font-mono break-all">{this.state.error.message}</p>
+            <pre className="text-xs text-red-200/60 overflow-auto max-h-64 bg-black/30 rounded p-3">
+              {this.state.error.stack}
+            </pre>
+            <button
+              onClick={() => this.setState({ error: null })}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default function SetupPage() {
   return (
-    <AdminGuard>
-      <ServerGuard requiredLevel="admin">
-        <SetupWizardInner />
-      </ServerGuard>
-    </AdminGuard>
+    <WizardErrorBoundary>
+      <AdminGuard>
+        <ServerGuard requiredLevel="admin">
+          <SetupWizardInner />
+        </ServerGuard>
+      </AdminGuard>
+    </WizardErrorBoundary>
   )
 }
 

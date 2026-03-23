@@ -169,20 +169,25 @@ export default apiHandler({
     }
 
     switch (action) {
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Set name_changed_at so the bot knows to sync this rename to Discord.
+      // Only renames with name_changed_at set will be pushed; user-initiated Discord
+      // renames (which don't touch this column) are never overwritten.
       case "rename": {
         const { name } = req.body
         if (typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
           return res.status(400).json({ error: "Name must be 1-100 characters" })
         }
-        await prisma.rented_rooms.update({ where: { channelid: channelId }, data: { name: name.trim() } })
+        await prisma.rented_rooms.update({
+          where: { channelid: channelId },
+          data: { name: name.trim(), name_changed_at: new Date() },
+        })
         await prisma.room_admin_log.create({
           data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "rename", details: { oldName: room.name, newName: name.trim() } },
         })
-        // --- AI-MODIFIED (2026-03-22) ---
-        // Purpose: Include sync timing message
         return res.status(200).json({ success: true, name: name.trim(), message: "Name saved. Will sync to Discord within a few minutes." })
-        // --- END AI-MODIFIED ---
       }
+      // --- END AI-MODIFIED ---
 
       case "adjust_balance": {
         const { amount } = req.body
