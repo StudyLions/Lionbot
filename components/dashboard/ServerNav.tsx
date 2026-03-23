@@ -62,11 +62,15 @@ interface NavSection {
 // --- END AI-MODIFIED ---
 
 function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add Shop link visible to all members in the Overview section
   const sections: NavSection[] = [
     { title: "Overview", links: [
       { href: "", label: "Dashboard", icon: <BarChart3 size={16} /> },
+      { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
     ]},
   ]
+  // --- END AI-MODIFIED ---
 
   if (isMod || isAdmin) {
     sections.push({
@@ -89,7 +93,12 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
       links: [
         { href: "/settings", label: "Settings", icon: <Settings size={16} /> },
         { href: "/ranks", label: "Ranks", icon: <Trophy size={16} /> },
-        { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Shop link moved to Overview section (visible to all members), removed from admin-only Configuration
+        // --- Original code (commented out for rollback) ---
+        // { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
+        // --- End original code ---
+        // --- END AI-MODIFIED ---
         { href: "/rolemenus", label: "Role Menus", icon: <ListChecks size={16} /> },
         { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
       ],

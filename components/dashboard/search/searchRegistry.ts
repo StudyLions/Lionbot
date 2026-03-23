@@ -107,13 +107,16 @@ const PAGE_ITEMS: SearchItem[] = [
   {
     id: "page-shop",
     title: "Shop",
-    description: "Manage shop items and prices",
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Shop is now accessible to all members, not just admins
+    description: "Browse and manage shop items",
     category: "page",
-    page: "Configuration",
+    page: "Overview",
     route: "/shop",
-    keywords: ["shop", "store", "items", "buy", "purchase", "price"],
+    keywords: ["shop", "store", "items", "buy", "purchase", "price", "colour", "room", "rental"],
     iconName: "ShoppingBag",
-    requiredLevel: "admin",
+    requiredLevel: "member",
+    // --- END AI-MODIFIED ---
   },
   {
     id: "page-rolemenus",

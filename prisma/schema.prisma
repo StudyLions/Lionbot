@@ -738,9 +738,13 @@ model shop_items {
   purchasable             Boolean?                 @default(true)
   deleted                 Boolean?                 @default(false)
   created_at              DateTime?                @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
-  coin_transactions_shop  coin_transactions_shop[]
-  member_inventory        member_inventory[]
-  shop_items_colour_roles shop_items_colour_roles?
+  coin_transactions_shop   coin_transactions_shop[]
+  member_inventory         member_inventory[]
+  shop_items_colour_roles  shop_items_colour_roles?
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add relation to room rental extension table
+  shop_items_room_rentals  shop_items_room_rentals?
+  // --- END AI-MODIFIED ---
 
   @@index([guildid], map: "guild_shop_items")
 }
@@ -750,6 +754,15 @@ model shop_items_colour_roles {
   roleid     BigInt
   shop_items shop_items @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
 }
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Room rental extension table for shop items
+model shop_items_room_rentals {
+  itemid     Int        @id
+  duration   Int
+  shop_items shop_items @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
+}
+// --- END AI-MODIFIED ---
 
 model sponsor_guild_whitelist {
   appid   String
@@ -1223,6 +1236,10 @@ enum sessionchanneltype {
 
 enum shopitemtype {
   COLOUR_ROLE
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add room rental shop item type
+  ROOM_RENTAL
+  // --- END AI-MODIFIED ---
 }
 
 enum statistictype {
