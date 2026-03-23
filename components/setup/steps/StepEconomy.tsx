@@ -55,7 +55,7 @@ function Slider({ label, value, min, max, step, onChange, suffix = "", descripti
 export default function StepEconomy({
   config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepEconomyProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
   const hourly = config.study_hourly_reward ?? 100
   const camera = config.study_hourly_live_bonus ?? 25
   const cap = config.daily_study_cap

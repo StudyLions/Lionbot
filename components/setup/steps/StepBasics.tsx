@@ -35,7 +35,7 @@ interface StepBasicsProps {
 export default function StepBasics({
   config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepBasicsProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
   const [detectedTz, setDetectedTz] = useState("UTC")
 
   useEffect(() => {
@@ -143,56 +143,74 @@ export default function StepBasics({
             animate={{ height: "auto", opacity: 1 }}
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
-            <ChannelSelect
-              guildId={guildId}
-              value={config.greeting_channel ?? null}
-              onChange={(v) => onUpdate("greeting_channel", (v as string) || null)}
-              channelTypes={[0, 5]}
-              label="Greeting Channel"
-              placeholder="Select a channel"
-            />
-            <RoleSelect
-              guildId={guildId}
-              value={config.admin_role ?? null}
-              onChange={(v) => onUpdate("admin_role", (v as string) || null)}
-              excludeManaged
-              excludeEveryone
-              label="Admin Role"
-              placeholder="Select admin role"
-            />
-            <RoleSelect
-              guildId={guildId}
-              value={config.mod_role ?? null}
-              onChange={(v) => onUpdate("mod_role", (v as string) || null)}
-              excludeManaged
-              excludeEveryone
-              label="Moderator Role"
-              placeholder="Select moderator role"
-            />
-            <ChannelSelect
-              guildId={guildId}
-              value={config.event_log_channel ?? null}
-              onChange={(v) => onUpdate("event_log_channel", (v as string) || null)}
-              channelTypes={[0, 5]}
-              label="Event Log Channel"
-              placeholder="Select a channel"
-            />
-            <ChannelSelect
-              guildId={guildId}
-              value={config.mod_log_channel ?? null}
-              onChange={(v) => onUpdate("mod_log_channel", (v as string) || null)}
-              channelTypes={[0, 5]}
-              label="Mod Log Channel"
-              placeholder="Select a channel"
-            />
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={config.force_locale || false}
-                onChange={(e) => onUpdate("force_locale", e.target.checked)}
-                className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
+            <div className="space-y-1">
+              <ChannelSelect
+                guildId={guildId}
+                value={config.greeting_channel ?? null}
+                onChange={(v) => onUpdate("greeting_channel", (v as string) || null)}
+                channelTypes={[0, 5]}
+                label="Greeting Channel"
+                placeholder="Select a channel"
               />
-              <label className="text-xs text-gray-400">Force locale (override member preferences)</label>
+              <p className="text-[11px] text-gray-500">Where welcome and returning member messages are posted</p>
+            </div>
+            <div className="space-y-1">
+              <RoleSelect
+                guildId={guildId}
+                value={config.admin_role ?? null}
+                onChange={(v) => onUpdate("admin_role", (v as string) || null)}
+                excludeManaged
+                excludeEveryone
+                label="Admin Role"
+                placeholder="Select admin role"
+              />
+              <p className="text-[11px] text-gray-500">Full access to all bot commands and dashboard settings</p>
+            </div>
+            <div className="space-y-1">
+              <RoleSelect
+                guildId={guildId}
+                value={config.mod_role ?? null}
+                onChange={(v) => onUpdate("mod_role", (v as string) || null)}
+                excludeManaged
+                excludeEveryone
+                label="Moderator Role"
+                placeholder="Select moderator role"
+              />
+              <p className="text-[11px] text-gray-500">Can use moderation commands and view mod-level dashboard pages</p>
+            </div>
+            <div className="space-y-1">
+              <ChannelSelect
+                guildId={guildId}
+                value={config.event_log_channel ?? null}
+                onChange={(v) => onUpdate("event_log_channel", (v as string) || null)}
+                channelTypes={[0, 5]}
+                label="Event Log Channel"
+                placeholder="Select a channel"
+              />
+              <p className="text-[11px] text-gray-500">Logs rank-ups, task completions, and other member milestones</p>
+            </div>
+            <div className="space-y-1">
+              <ChannelSelect
+                guildId={guildId}
+                value={config.mod_log_channel ?? null}
+                onChange={(v) => onUpdate("mod_log_channel", (v as string) || null)}
+                channelTypes={[0, 5]}
+                label="Mod Log Channel"
+                placeholder="Select a channel"
+              />
+              <p className="text-[11px] text-gray-500">Logs moderation actions like warnings, mutes, and bans</p>
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={config.force_locale || false}
+                  onChange={(e) => onUpdate("force_locale", e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
+                />
+                <label className="text-xs text-gray-400">Force locale (override member preferences)</label>
+              </div>
+              <p className="text-[11px] text-gray-500 ml-7">Makes the bot use your server&apos;s language for everyone, ignoring individual settings</p>
             </div>
           </motion.div>
         )}

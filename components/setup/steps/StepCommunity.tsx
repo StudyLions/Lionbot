@@ -57,7 +57,7 @@ export default function StepCommunity({
   config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepCommunityProps) {
   const [tab, setTab] = useState("rolemenus")
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
 
   return (
     <StepLayout
@@ -198,7 +198,7 @@ export default function StepCommunity({
                 animate={{ height: "auto", opacity: 1 }}
                 className="px-5 py-4 space-y-4 bg-gray-800/30"
               >
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <label className="text-xs text-gray-400">Room Category</label>
                   <ChannelSelect
                     guildId={guildId}
@@ -207,6 +207,7 @@ export default function StepCommunity({
                     channelTypes={[4]}
                     placeholder="Select the category where rooms are created"
                   />
+                  <p className="text-[11px] text-gray-500">Rented voice channels are created inside this category</p>
                 </div>
                 <Slider
                   label="Max rooms per user"
@@ -215,6 +216,7 @@ export default function StepCommunity({
                   max={5}
                   step={1}
                   onChange={(v) => onUpdate("renting_max_per_user", v)}
+                  description="How many rooms a single member can rent at once"
                 />
                 <Slider
                   label="Room name limit"
@@ -224,6 +226,7 @@ export default function StepCommunity({
                   step={1}
                   onChange={(v) => onUpdate("renting_name_limit", v)}
                   suffix=" chars"
+                  description="Max characters allowed in custom room names"
                 />
                 <Slider
                   label="Min deposit"
@@ -233,6 +236,7 @@ export default function StepCommunity({
                   step={10}
                   onChange={(v) => onUpdate("renting_min_deposit", v)}
                   suffix=" coins"
+                  description="Minimum coins required upfront to create a room -- prevents spam"
                 />
                 <Slider
                   label="Cooldown"
@@ -242,24 +246,31 @@ export default function StepCommunity({
                   step={5}
                   onChange={(v) => onUpdate("renting_cooldown", v)}
                   suffix=" min"
+                  description="Wait time between room creations for the same user"
                 />
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={config.renting_sync_perms ?? false}
-                    onChange={(e) => onUpdate("renting_sync_perms", e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
-                  />
-                  <label className="text-xs text-gray-400">Sync permissions with category</label>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={config.renting_sync_perms ?? false}
+                      onChange={(e) => onUpdate("renting_sync_perms", e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
+                    />
+                    <label className="text-xs text-gray-400">Sync permissions with category</label>
+                  </div>
+                  <p className="text-[11px] text-gray-500 ml-7">Copies the category&apos;s permission overrides to each rented room</p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    checked={config.renting_auto_extend ?? false}
-                    onChange={(e) => onUpdate("renting_auto_extend", e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
-                  />
-                  <label className="text-xs text-gray-400">Auto-extend rooms when occupied</label>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      checked={config.renting_auto_extend ?? false}
+                      onChange={(e) => onUpdate("renting_auto_extend", e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
+                    />
+                    <label className="text-xs text-gray-400">Auto-extend rooms when occupied</label>
+                  </div>
+                  <p className="text-[11px] text-gray-500 ml-7">Rooms won&apos;t expire while someone is still inside</p>
                 </div>
               </motion.div>
             )}

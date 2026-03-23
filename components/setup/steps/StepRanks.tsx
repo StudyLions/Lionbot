@@ -68,7 +68,7 @@ function Slider({ label, value, min, max, step, onChange, description }: {
 export default function StepRanks({
   config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepRanksProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
   const [selectedSkin, setSelectedSkin] = useState(0)
   const [showAnnotations, setShowAnnotations] = useState(true)
 
@@ -250,7 +250,7 @@ export default function StepRanks({
               onChange={(v) => onUpdate("xp_per_centiword", v)}
               description="XP earned from text messages (per 100 words)"
             />
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label className="text-xs text-gray-400">Rank-up Announcement Channel</label>
               <ChannelSelect
                 guildId={guildId}
@@ -259,6 +259,7 @@ export default function StepRanks({
                 channelTypes={[0, 5]}
                 placeholder="Select a channel (leave blank for DMs only)"
               />
+              <p className="text-[11px] text-gray-500">Public rank-up celebrations go here. Leave empty to DM members privately instead</p>
             </div>
           </motion.div>
         )}

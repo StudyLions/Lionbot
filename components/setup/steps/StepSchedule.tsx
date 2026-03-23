@@ -51,7 +51,7 @@ const DEMO_SESSIONS = [
 export default function StepSchedule({
   config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepScheduleProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
   const price = config.accountability_price ?? 50
   const reward = config.accountability_reward ?? 100
   const bonus = config.accountability_bonus ?? 25
@@ -171,7 +171,7 @@ export default function StepSchedule({
             animate={{ height: "auto", opacity: 1 }}
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label className="text-xs text-gray-400">Schedule Category</label>
               <ChannelSelect
                 guildId={guildId}
@@ -180,8 +180,9 @@ export default function StepSchedule({
                 channelTypes={[4]}
                 placeholder="Select a category for schedule channels"
               />
+              <p className="text-[11px] text-gray-500">The bot creates temporary voice channels here for each scheduled session</p>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               <label className="text-xs text-gray-400">Schedule Lobby Channel</label>
               <ChannelSelect
                 guildId={guildId}
@@ -190,6 +191,7 @@ export default function StepSchedule({
                 channelTypes={[2]}
                 placeholder="Select a voice channel for the lobby"
               />
+              <p className="text-[11px] text-gray-500">Members wait here before sessions start, then get moved automatically</p>
             </div>
           </motion.div>
         )}

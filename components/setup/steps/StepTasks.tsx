@@ -50,7 +50,7 @@ const DEMO_TASKS = [
 export default function StepTasks({
   config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepTasksProps) {
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(true)
 
   return (
     <StepLayout
