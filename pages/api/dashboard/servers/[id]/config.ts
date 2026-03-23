@@ -50,6 +50,14 @@ const BIGINT_FIELDS = new Set([
 ])
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Bot stores daily_study_cap in seconds, dashboard displays in hours.
+// Convert on read (seconds→hours) and write (hours→seconds) so the API
+// is the single conversion boundary.
+const HOURS_TO_SECONDS_FIELDS: Record<string, number> = {
+  daily_study_cap: 3600,
+}
+
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
@@ -88,6 +96,11 @@ export default apiHandler({
         safeConfig[field] = val.toString()
       } else if (val instanceof Date) {
         safeConfig[field] = val.toISOString()
+      } else if (field in HOURS_TO_SECONDS_FIELDS && val != null) {
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Convert DB seconds to display hours for duration fields
+        safeConfig[field] = Math.round(val / HOURS_TO_SECONDS_FIELDS[field])
+        // --- END AI-MODIFIED ---
       } else {
         safeConfig[field] = val
       }
@@ -148,6 +161,11 @@ export default apiHandler({
           updates[field] = val ? parseBigInt(val, field) : null
         } else if (field === 'season_start' || field === 'setup_wizard_dismissed_at') {
           updates[field] = val ? new Date(val) : null
+        } else if (field in HOURS_TO_SECONDS_FIELDS) {
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: Convert display hours to DB seconds for duration fields
+          updates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
+          // --- END AI-MODIFIED ---
         } else {
           updates[field] = val
         }
@@ -187,6 +205,11 @@ export default apiHandler({
           configUpdates[field] = val ? parseBigInt(val, field) : null
         } else if (field === "season_start" || field === "setup_wizard_dismissed_at") {
           configUpdates[field] = val ? new Date(val) : null
+        } else if (field in HOURS_TO_SECONDS_FIELDS) {
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: Convert display hours to DB seconds for duration fields on import
+          configUpdates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
+          // --- END AI-MODIFIED ---
         } else {
           configUpdates[field] = val
         }

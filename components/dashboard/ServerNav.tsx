@@ -22,7 +22,7 @@ import {
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
-  Search, X,
+  Search, X, Clock,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -128,6 +128,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // --- AI-MODIFIED (2026-03-22) ---
         // Purpose: Sticky messages premium feature nav link
         { href: "/sticky-messages", label: "Sticky Messages", icon: <Pin size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Voice Time Editor premium feature nav link
+        { href: "/voice-time-editor", label: "Voice Time Editor", icon: <Clock size={16} />, supporterPerk: true },
         // --- END AI-MODIFIED ---
       ],
     })

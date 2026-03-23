@@ -202,111 +202,93 @@ model global_user_blacklist {
 }
 
 model guild_config {
-  guildid                      BigInt                        @id
-  admin_role                   BigInt?
-  mod_role                     BigInt?
-  event_log_channel            BigInt?
-  mod_log_channel              BigInt?
-  alert_channel                BigInt?
-  studyban_role                BigInt?
-  min_workout_length           Int?
-  workout_reward               Int?
-  max_tasks                    Int?
-  task_reward                  Int?
-  task_reward_limit            Int?
-  study_hourly_reward          Int?
-  study_hourly_live_bonus      Int?
-  renting_price                Int?
-  renting_category             BigInt?
-  renting_cap                  Int?
-  renting_role                 BigInt?
-  renting_sync_perms           Boolean?
-  accountability_category      BigInt?
-  accountability_lobby         BigInt?
-  accountability_bonus         Int?
-  accountability_reward        Int?
-  accountability_price         Int?
-  video_studyban               Boolean?
-  video_grace_period           Int?
-  greeting_channel             BigInt?
-  greeting_message             String?
-  returning_message            String?
-  starting_funds               Int?
-  persist_roles                Boolean?
-  daily_study_cap              Int?
-  pomodoro_channel             BigInt?
-  name                         String?
-  locale                       String?
-  force_locale                 Boolean?
-  allow_transfers              Boolean?
-  season_start                 DateTime?                     @db.Timestamptz(6)
-  xp_per_period                Int?
-  xp_per_centiword             Int?
-  coins_per_centixp            Int?
-  timezone                     String?
-  rank_type                    ranktype?
-  rank_channel                 BigInt?
-  dm_ranks                     Boolean?
-  renting_visible              Boolean?
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: New admin-configurable room settings for the Private Rooms admin panel
-  renting_max_per_user         Int?
-  renting_name_limit           Int?
-  renting_min_deposit          Int?
-  renting_auto_extend          Boolean?
-  renting_cooldown             Int?
-  // --- END AI-MODIFIED ---
-  first_joined_at              DateTime?                     @default(now()) @db.Timestamptz(6)
-  left_at                      DateTime?                     @db.Timestamptz(6)
-  // --- AI-MODIFIED (2026-03-20) ---
-  // Purpose: LionGotchi guild-level settings for admin dashboard
-  lg_drop_channel              BigInt?
-  lg_enabled                   Boolean?                      @default(true)
-  lg_guild_display_name        String?                       @db.VarChar(12)
-  lg_teaser_enabled            Boolean?                      @default(true)
-  lg_activity_role             BigInt?
-  lg_drop_delete_after         Int?
-  // --- END AI-MODIFIED ---
+  guildid                         BigInt                         @id
+  admin_role                      BigInt?
+  mod_role                        BigInt?
+  event_log_channel               BigInt?
+  mod_log_channel                 BigInt?
+  alert_channel                   BigInt?
+  studyban_role                   BigInt?
+  min_workout_length              Int?
+  workout_reward                  Int?
+  max_tasks                       Int?
+  task_reward                     Int?
+  task_reward_limit               Int?
+  study_hourly_reward             Int?
+  study_hourly_live_bonus         Int?
+  renting_price                   Int?
+  renting_category                BigInt?
+  renting_cap                     Int?
+  renting_role                    BigInt?
+  renting_sync_perms              Boolean?
+  accountability_category         BigInt?
+  accountability_lobby            BigInt?
+  accountability_bonus            Int?
+  accountability_reward           Int?
+  accountability_price            Int?
+  video_studyban                  Boolean?
+  video_grace_period              Int?
+  greeting_channel                BigInt?
+  greeting_message                String?
+  returning_message               String?
+  starting_funds                  Int?
+  persist_roles                   Boolean?
+  daily_study_cap                 Int?
+  pomodoro_channel                BigInt?
+  name                            String?
+  locale                          String?
+  force_locale                    Boolean?
+  allow_transfers                 Boolean?
+  season_start                    DateTime?                      @db.Timestamptz(6)
+  xp_per_period                   Int?
+  xp_per_centiword                Int?
+  coins_per_centixp               Int?
+  timezone                        String?
+  rank_type                       ranktype?
+  rank_channel                    BigInt?
+  dm_ranks                        Boolean?
+  renting_visible                 Boolean?
+  first_joined_at                 DateTime?                      @default(now()) @db.Timestamptz(6)
+  left_at                         DateTime?                      @db.Timestamptz(6)
+  lg_drop_channel                 BigInt?
+  lg_enabled                      Boolean?                       @default(true)
+  lg_guild_display_name           String?                        @db.VarChar(12)
+  lg_teaser_enabled               Boolean?                       @default(true)
+  lg_activity_role                BigInt?
+  lg_drop_delete_after            Int?
+  renting_max_per_user            Int?
+  renting_name_limit              Int?
+  renting_min_deposit             Int?
+  renting_auto_extend             Boolean?
+  renting_cooldown                Int?
+  setup_wizard_dismissed_at       DateTime?                      @db.Timestamptz(6)
+  leaderboard_role_filter_enabled Boolean?                       @default(false)
   // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Track whether admin has completed or skipped the setup wizard
-  setup_wizard_dismissed_at    DateTime?                     @db.Timestamptz(6)
+  // Purpose: Voice Time Editor admin config fields (premium feature)
+  manual_sessions_enabled         Boolean?                       @default(false)
+  manual_sessions_limit           Int?                           @default(5)
+  manual_sessions_until           DateTime?                      @db.Timestamptz(6)
   // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Leaderboard role filter toggle (disabled by default)
-  leaderboard_role_filter_enabled Boolean?                   @default(false)
-  // --- END AI-MODIFIED ---
-  coin_transactions            coin_transactions[]
-  members                      members[]
-  msg_ranks                    msg_ranks[]
-  premium_guilds               premium_guilds?
-  premium_pomodoro_config      premium_pomodoro_config?
-  pomodoro_milestones          pomodoro_milestones[]
-  role_menus                   role_menus[]
-  schedule_guild_config        schedule_guild_config?
-  tasklist_channels            tasklist_channels[]           @ignore
-  timers                       timers[]
-  tracked_channels             tracked_channels[]
-  untracked_text_channels      untracked_text_channels[]
-  video_exempt_roles           video_exempt_roles[]
-  visible_statistics           visible_statistics[]          @ignore
-  voice_ranks                  voice_ranks[]
-  xp_ranks                     xp_ranks[]
-  // --- AI-MODIFIED (2026-03-21) ---
-  // Purpose: Leaderboard auto-post relation
-  leaderboard_autopost_configs leaderboard_autopost_config[]
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Sticky messages relation
-  sticky_messages              sticky_messages[]
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Server premium subscriptions relation (one-to-many for transfers)
-  server_premium_subscriptions server_premium_subscriptions[]
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Leaderboard filter roles relation
-  leaderboard_filter_roles     leaderboard_filter_roles[]
-  // --- END AI-MODIFIED ---
+  coin_transactions               coin_transactions[]
+  leaderboard_autopost_configs    leaderboard_autopost_config[]
+  leaderboard_filter_roles        leaderboard_filter_roles[]
+  members                         members[]
+  msg_ranks                       msg_ranks[]
+  pomodoro_milestones             pomodoro_milestones[]
+  premium_guilds                  premium_guilds?
+  premium_pomodoro_config         premium_pomodoro_config?
+  role_menus                      role_menus[]
+  schedule_guild_config           schedule_guild_config?
+  server_premium_subscriptions    server_premium_subscriptions[]
+  sticky_messages                 sticky_messages[]
+  tasklist_channels               tasklist_channels[]           @ignore
+  timers                          timers[]
+  tracked_channels                tracked_channels[]
+  untracked_text_channels         untracked_text_channels[]
+  video_exempt_roles              video_exempt_roles[]
+  visible_statistics              visible_statistics[]          @ignore
+  voice_ranks                     voice_ranks[]
+  xp_ranks                        xp_ranks[]
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -527,35 +509,15 @@ model reminders {
   @@index([userid], map: "reminder_users")
 }
 
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Add composite PK so Prisma Client can query rented_members natively
-// (was @@ignore due to missing PK; DB table gets ALTER TABLE ADD PRIMARY KEY)
-// --- Original code (commented out for rollback) ---
-// /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-// model rented_members {
-//   channelid    BigInt
-//   userid       BigInt
-//   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
-//
-//   @@index([channelid], map: "rented_members_channels")
-//   @@index([userid], map: "rented_members_users")
-//   @@ignore
-// }
-// --- End original code ---
 model rented_members {
   channelid    BigInt
   userid       BigInt
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Expose contribution column (already in DB) for admin panel member stats
-  contribution Int          @default(0)
-  // --- END AI-MODIFIED ---
   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
 
   @@id([channelid, userid])
   @@index([channelid], map: "rented_members_channels")
   @@index([userid], map: "rented_members_users")
 }
-// --- END AI-MODIFIED ---
 
 model rented_rooms {
   channelid      BigInt           @id
@@ -567,31 +529,15 @@ model rented_rooms {
   name           String?
   last_tick      DateTime?        @db.Timestamptz(6)
   contribution   Int              @default(0)
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Freeze support for admin panel
   frozen_at      DateTime?        @db.Timestamptz(6)
   frozen_by      BigInt?
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Dashboard rename support -- set to NOW() when dashboard renames,
-  // bot clears after syncing to Discord. NULL means no pending rename.
-  name_changed_at DateTime?       @db.Timestamptz(6)
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Remove @ignore now that rented_members has a composite PK
-  // --- Original code (commented out for rollback) ---
-  // rented_members rented_members[] @ignore
-  // --- End original code ---
   rented_members rented_members[]
-  // --- END AI-MODIFIED ---
-  room_admin_log room_admin_log[]
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
+  room_admin_log room_admin_log[]
 
   @@index([guildid, ownerid], map: "rented_owners")
 }
 
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Audit log for admin actions on private rooms
 model room_admin_log {
   logid        Int          @id @default(autoincrement())
   channelid    BigInt
@@ -605,7 +551,6 @@ model room_admin_log {
   @@index([channelid], map: "room_admin_log_channel")
   @@index([guildid], map: "room_admin_log_guild")
 }
-// --- END AI-MODIFIED ---
 
 model role_menu_history {
   equipid           Int                @id @default(autoincrement())
@@ -755,13 +700,10 @@ model shop_items {
   purchasable             Boolean?                 @default(true)
   deleted                 Boolean?                 @default(false)
   created_at              DateTime?                @default(dbgenerated("(now() AT TIME ZONE 'utc'::text)")) @db.Timestamp(6)
-  coin_transactions_shop   coin_transactions_shop[]
-  member_inventory         member_inventory[]
-  shop_items_colour_roles  shop_items_colour_roles?
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Add relation to room rental extension table
-  shop_items_room_rentals  shop_items_room_rentals?
-  // --- END AI-MODIFIED ---
+  coin_transactions_shop  coin_transactions_shop[]
+  member_inventory        member_inventory[]
+  shop_items_colour_roles shop_items_colour_roles?
+  shop_items_room_rentals shop_items_room_rentals?
 
   @@index([guildid], map: "guild_shop_items")
 }
@@ -772,14 +714,11 @@ model shop_items_colour_roles {
   shop_items shop_items @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
 }
 
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Room rental extension table for shop items
 model shop_items_room_rentals {
   itemid     Int        @id
   duration   Int
   shop_items shop_items @relation(fields: [itemid], references: [itemid], onDelete: Cascade, onUpdate: NoAction)
 }
-// --- END AI-MODIFIED ---
 
 model sponsor_guild_whitelist {
   appid   String
@@ -965,37 +904,50 @@ model untracked_text_channels {
 }
 
 model user_config {
-  userid                      BigInt                        @id
-  timezone                    String?
-  name                        String?
-  topgg_vote_reminder         Boolean?
-  avatar_hash                 String?
-  api_timestamp               BigInt?
-  gems                        Int?                          @default(0)
-  gold                        BigInt                        @default(0)
-  first_seen                  DateTime?                     @default(now()) @db.Timestamptz(6)
-  last_seen                   DateTime?                     @db.Timestamptz(6)
-  locale_hint                 String?
-  locale                      String?
-  show_global_stats           Boolean?
-  members                     members[]
-  premium_guild_contributions premium_guild_contributions[]
-  reminders                   reminders[]
-  tasklist                    tasklist[]
-  timers                      timers[]
-  user_experience             user_experience[]
-  user_monthly_goals          user_monthly_goals[]
-  user_skin_inventory         user_skin_inventory[]
-  user_weekly_goals           user_weekly_goals[]
-  lg_pets                     lg_pets?
-  lg_user_inventory           lg_user_inventory[]
-  // --- AI-MODIFIED (2026-03-17) ---
-  lg_user_gameboy_skins       lg_user_gameboy_skins[]
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-18) ---
-  pomodoro_streaks            pomodoro_streaks?
-  pomodoro_milestones         pomodoro_milestones[]
-  // --- END AI-MODIFIED ---
+  userid                                                                   BigInt                        @id
+  timezone                                                                 String?
+  name                                                                     String?
+  topgg_vote_reminder                                                      Boolean?
+  avatar_hash                                                              String?
+  api_timestamp                                                            BigInt?
+  gems                                                                     Int?                          @default(0)
+  first_seen                                                               DateTime?                     @default(now()) @db.Timestamptz(6)
+  last_seen                                                                DateTime?                     @db.Timestamptz(6)
+  locale_hint                                                              String?
+  locale                                                                   String?
+  show_global_stats                                                        Boolean?
+  gold                                                                     BigInt                        @default(0)
+  lg_blocks_lg_blocks_blocked_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocked_useridTouser_config")
+  lg_blocks_lg_blocks_blocker_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocker_useridTouser_config")
+  lg_families                                                              lg_families[]
+  lg_family_bank                                                           lg_family_bank[]
+  lg_family_farm_plots                                                     lg_family_farm_plots[]
+  lg_family_gold_log                                                       lg_family_gold_log[]
+  lg_family_gold_withdrawals                                               lg_family_gold_withdrawals[]
+  lg_family_invites_lg_family_invites_from_useridTouser_config             lg_family_invites[]           @relation("lg_family_invites_from_useridTouser_config")
+  lg_family_invites_lg_family_invites_to_useridTouser_config               lg_family_invites[]           @relation("lg_family_invites_to_useridTouser_config")
+  lg_family_members                                                        lg_family_members[]
+  lg_friend_interactions_lg_friend_interactions_actor_useridTouser_config  lg_friend_interactions[]      @relation("lg_friend_interactions_actor_useridTouser_config")
+  lg_friend_interactions_lg_friend_interactions_target_useridTouser_config lg_friend_interactions[]      @relation("lg_friend_interactions_target_useridTouser_config")
+  lg_friend_requests_lg_friend_requests_from_useridTouser_config           lg_friend_requests[]          @relation("lg_friend_requests_from_useridTouser_config")
+  lg_friend_requests_lg_friend_requests_to_useridTouser_config             lg_friend_requests[]          @relation("lg_friend_requests_to_useridTouser_config")
+  lg_friends_lg_friends_userid1Touser_config                               lg_friends[]                  @relation("lg_friends_userid1Touser_config")
+  lg_friends_lg_friends_userid2Touser_config                               lg_friends[]                  @relation("lg_friends_userid2Touser_config")
+  lg_pets                                                                  lg_pets?
+  lg_user_furniture                                                        lg_user_furniture[]
+  lg_user_gameboy_skins                                                    lg_user_gameboy_skins[]
+  lg_user_inventory                                                        lg_user_inventory[]
+  members                                                                  members[]
+  pomodoro_milestones                                                      pomodoro_milestones[]
+  pomodoro_streaks                                                         pomodoro_streaks?
+  premium_guild_contributions                                              premium_guild_contributions[]
+  reminders                                                                reminders[]
+  tasklist                                                                 tasklist[]
+  timers                                                                   timers[]
+  user_experience                                                          user_experience[]
+  user_monthly_goals                                                       user_monthly_goals[]
+  user_skin_inventory                                                      user_skin_inventory[]
+  user_weekly_goals                                                        user_weekly_goals[]
 }
 
 model user_experience {
@@ -1080,8 +1032,6 @@ model video_exempt_roles {
   @@id([guildid, roleid])
 }
 
-// --- AI-GENERATED (2026-03-23) ---
-// Purpose: Roles that users can filter the /leaderboard command by
 model leaderboard_filter_roles {
   guildid      BigInt
   roleid       BigInt
@@ -1090,7 +1040,6 @@ model leaderboard_filter_roles {
 
   @@id([guildid, roleid])
 }
-// --- END AI-GENERATED ---
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model visible_statistics {
@@ -1128,6 +1077,10 @@ model voice_sessions {
   stream_duration   Int?               @default(0)
   video_duration    Int?               @default(0)
   transactionid     Int?
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Flag to distinguish manually-added sessions from bot-tracked ones
+  is_manual         Boolean?           @default(false)
+  // --- END AI-MODIFIED ---
   tracked_channels  tracked_channels?  @relation(fields: [channelid], references: [channelid], onDelete: NoAction, onUpdate: NoAction)
   members           members            @relation(fields: [guildid, userid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
   coin_transactions coin_transactions? @relation(fields: [transactionid], references: [transactionid], onDelete: Cascade)
@@ -1189,6 +1142,796 @@ model xp_ranks {
   guild_config guild_config   @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([guildid, required], map: "xp_ranks_guild_required")
+}
+
+model lg_pets {
+  userid                 BigInt             @id
+  pet_name               String             @default("Leo")
+  expression             lgexpression       @default(DEFAULT)
+  level                  Int                @default(1)
+  xp                     BigInt             @default(0)
+  food                   Int                @default(8)
+  bath                   Int                @default(8)
+  sleep                  Int                @default(8)
+  life                   Int                @default(8)
+  last_decay_at          DateTime           @default(now()) @db.Timestamptz(6)
+  active_room_id         Int?
+  active_gameboy_skin_id Int?
+  created_at             DateTime           @default(now()) @db.Timestamptz(6)
+  fullscreen_mode        Boolean            @default(false)
+  drop_notif             String             @default("ALL")
+  lg_pet_equipment       lg_pet_equipment[]
+  user_config            user_config        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_user_farm           lg_user_farm[]
+  lg_user_rooms          lg_user_rooms[]
+}
+
+model lg_gold_transactions {
+  transactionid    Int                   @id @default(autoincrement())
+  transaction_type lggoldtransactiontype
+  actorid          BigInt
+  from_account     BigInt?
+  to_account       BigInt?
+  amount           Int
+  description      String                @default("")
+  reference        String?
+  created_at       DateTime              @default(now()) @db.Timestamptz(6)
+
+  @@index([to_account], map: "lg_gold_transactions_to")
+  @@index([from_account], map: "lg_gold_transactions_from")
+}
+
+model lg_items {
+  itemid                  Int                       @id @default(autoincrement())
+  name                    String
+  category                lgitemcategory
+  slot                    lgequipmentslot?
+  rarity                  lgrarity                  @default(COMMON)
+  asset_path              String
+  gold_price              Int?
+  gem_price               Int?
+  tradeable               Boolean                   @default(true)
+  description             String                    @default("")
+  copyright_flag          Boolean                   @default(false)
+  set_id                  Int?
+  tag                     String?                   @db.VarChar(32)
+  drop_weight             Float?                    @default(1.0) @db.Real
+  lg_crafting_recipes     lg_crafting_recipes[]
+  lg_enhancement_slots    lg_enhancement_slots[]
+  lg_family_bank          lg_family_bank[]
+  item_set                lg_item_sets?             @relation(fields: [set_id], references: [set_id], onDelete: NoAction, onUpdate: NoAction)
+  lg_marketplace_listings lg_marketplace_listings[]
+  lg_marketplace_sales    lg_marketplace_sales[]
+  lg_pet_equipment        lg_pet_equipment[]
+  lg_recipe_ingredients   lg_recipe_ingredients[]
+  lg_scroll_properties    lg_scroll_properties?
+  lg_user_inventory       lg_user_inventory[]
+
+  @@index([category], map: "lg_items_category")
+  @@index([set_id], map: "lg_items_set_id")
+  @@index([tag], map: "lg_items_tag")
+}
+
+model lg_item_sets {
+  set_id      Int        @id @default(autoincrement())
+  name        String
+  description String?    @default("")
+  items       lg_items[]
+}
+
+model lg_user_inventory {
+  inventoryid          Int                    @id @default(autoincrement())
+  userid               BigInt
+  itemid               Int
+  acquired_at          DateTime               @default(now()) @db.Timestamptz(6)
+  source               lgitemsource           @default(SHOP)
+  quantity             Int                    @default(1)
+  enhancement_level    Int                    @default(0)
+  lg_enhancement_slots lg_enhancement_slots[]
+  lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  user_config          user_config            @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userid], map: "lg_user_inventory_user")
+}
+
+model lg_pet_equipment {
+  userid   BigInt
+  slot     lgequipmentslot
+  itemid   Int
+  lg_items lg_items        @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_pets  lg_pets         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, slot])
+}
+
+model lg_rooms {
+  room_id       Int             @id @default(autoincrement())
+  name          String
+  asset_prefix  String
+  has_furniture Boolean         @default(false)
+  gold_price    Int?
+  gem_price     Int?
+  lg_user_rooms lg_user_rooms[]
+}
+
+model lg_user_rooms {
+  userid      BigInt
+  room_id     Int
+  unlocked_at DateTime @default(now()) @db.Timestamptz(6)
+  lg_rooms    lg_rooms @relation(fields: [room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
+  lg_pets     lg_pets  @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, room_id])
+}
+
+model lg_user_furniture {
+  userid      BigInt
+  slot        String
+  asset_path  String
+  user_config user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, slot])
+}
+
+model lg_gameboy_skins {
+  skin_id               Int                     @id @default(autoincrement())
+  theme                 String
+  color                 String
+  asset_path            String
+  unlock_type           lgunlocktype            @default(GOLD)
+  unlock_level          Int?
+  gold_price            Int?
+  gem_price             Int?
+  lg_user_gameboy_skins lg_user_gameboy_skins[]
+}
+
+model lg_user_gameboy_skins {
+  userid           BigInt
+  skin_id          Int
+  acquired_at      DateTime         @default(now()) @db.Timestamptz(6)
+  lg_gameboy_skins lg_gameboy_skins @relation(fields: [skin_id], references: [skin_id], onDelete: NoAction, onUpdate: NoAction)
+  user_config      user_config      @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, skin_id])
+}
+
+model lg_farm_seeds {
+  seed_id              Int                    @id @default(autoincrement())
+  name                 String
+  plant_type           String
+  grow_time_hours      Int                    @default(24)
+  water_interval_hours Int                    @default(6)
+  harvest_gold         Int                    @default(10)
+  asset_prefix         String
+  plant_cost           Int                    @default(10)
+  growth_points_needed Int                    @default(100)
+  lg_family_farm_plots lg_family_farm_plots[]
+  lg_user_farm         lg_user_farm[]
+}
+
+model lg_user_farm {
+  userid               BigInt
+  plot_id              Int
+  seed_id              Int?
+  planted_at           DateTime?      @db.Timestamptz(6)
+  last_watered         DateTime?      @db.Timestamptz(6)
+  growth_stage         Int            @default(0)
+  dead                 Boolean        @default(false)
+  growth_points        Float          @default(0) @db.Real
+  gold_invested        Int            @default(0)
+  voice_minutes_earned Float          @default(0) @db.Real
+  messages_earned      Int            @default(0)
+  rarity               String         @default("COMMON")
+  lg_farm_seeds        lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
+  lg_pets              lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid, plot_id])
+}
+
+model lg_crafting_recipes {
+  recipeid              Int                     @id @default(autoincrement())
+  result_itemid         Int
+  result_quantity       Int                     @default(1)
+  gold_cost             Int                     @default(0)
+  description           String                  @default("")
+  lg_items              lg_items                @relation(fields: [result_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_recipe_ingredients lg_recipe_ingredients[]
+}
+
+model lg_recipe_ingredients {
+  recipeid            Int
+  itemid              Int
+  quantity            Int                 @default(1)
+  lg_items            lg_items            @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_crafting_recipes lg_crafting_recipes @relation(fields: [recipeid], references: [recipeid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([recipeid, itemid])
+}
+
+model lg_scroll_properties {
+  itemid       Int      @id
+  target_slot  String?
+  success_rate Float    @default(0.7) @db.Real
+  destroy_rate Float    @default(0.1) @db.Real
+  bonus_value  Float    @default(1.0) @db.Real
+  lg_items     lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model lg_enhancement_slots {
+  slotid            Int               @id @default(autoincrement())
+  inventoryid       Int
+  slot_number       Int
+  scroll_itemid     Int
+  scroll_name       String            @db.VarChar(64)
+  bonus_value       Float             @default(1.0) @db.Real
+  enhanced_at       DateTime          @default(now()) @db.Timestamptz(6)
+  lg_user_inventory lg_user_inventory @relation(fields: [inventoryid], references: [inventoryid], onDelete: Cascade, onUpdate: NoAction)
+  lg_items          lg_items          @relation(fields: [scroll_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([inventoryid, slot_number])
+  @@index([inventoryid], map: "idx_enhancement_slots_inv")
+}
+
+model lg_marketplace_listings {
+  listingid            Int                    @id @default(autoincrement())
+  seller_userid        BigInt
+  itemid               Int
+  enhancement_level    Int                    @default(0)
+  quantity_listed      Int
+  quantity_remaining   Int
+  price_per_unit       Int
+  currency             String                 @default("GOLD")
+  status               String                 @default("ACTIVE")
+  created_at           DateTime               @default(now()) @db.Timestamptz(6)
+  expires_at           DateTime               @db.Timestamptz(6)
+  scroll_data          Json?
+  total_bonus          Float                  @default(0) @db.Real
+  lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_marketplace_sales lg_marketplace_sales[]
+
+  @@index([status], map: "idx_mp_listings_status")
+  @@index([itemid], map: "idx_mp_listings_itemid")
+  @@index([seller_userid], map: "idx_mp_listings_seller")
+  @@index([expires_at], map: "idx_mp_listings_expires")
+}
+
+model lg_marketplace_sales {
+  saleid                  Int                     @id @default(autoincrement())
+  listingid               Int
+  buyer_userid            BigInt
+  seller_userid           BigInt
+  itemid                  Int
+  enhancement_level       Int                     @default(0)
+  quantity                Int
+  price_per_unit          Int
+  total_price             Int
+  currency                String
+  sold_at                 DateTime                @default(now()) @db.Timestamptz(6)
+  scroll_data             Json?
+  total_bonus             Float                   @default(0) @db.Real
+  lg_items                lg_items                @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_marketplace_listings lg_marketplace_listings @relation(fields: [listingid], references: [listingid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([itemid], map: "idx_mp_sales_itemid")
+  @@index([buyer_userid], map: "idx_mp_sales_buyer")
+  @@index([seller_userid], map: "idx_mp_sales_seller")
+  @@index([sold_at], map: "idx_mp_sales_sold_at")
+}
+
+model server_premium_subscriptions {
+  guildid                BigInt
+  userid                 BigInt
+  stripe_customer_id     String
+  stripe_subscription_id String?
+  plan                   String       @default("MONTHLY")
+  status                 String       @default("INACTIVE")
+  current_period_start   DateTime?    @db.Timestamptz(6)
+  current_period_end     DateTime?    @db.Timestamptz(6)
+  created_at             DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?    @default(now()) @db.Timestamptz(6)
+  id                     Int          @id @default(autoincrement())
+  transferred_at         DateTime?    @db.Timestamptz(6)
+  guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([stripe_customer_id], map: "server_premium_subs_stripe_customer")
+  @@index([userid], map: "server_premium_subs_user")
+}
+
+model user_subscriptions {
+  userid                 BigInt    @id
+  stripe_customer_id     String
+  stripe_subscription_id String?
+  tier                   String    @default("NONE")
+  status                 String    @default("INACTIVE")
+  current_period_start   DateTime? @db.Timestamptz(6)
+  current_period_end     DateTime? @db.Timestamptz(6)
+  created_at             DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([stripe_customer_id], map: "user_subscriptions_stripe_customer")
+}
+
+model user_timer_preferences {
+  userid              BigInt   @id
+  theme               String   @default("classic")
+  updated_at          DateTime @default(now()) @db.Timestamptz(6)
+  custom_accent_color String?
+  focus_label         String?  @db.VarChar(20)
+  break_label         String?  @db.VarChar(20)
+  session_label       String?  @db.VarChar(20)
+}
+
+model user_card_preferences {
+  userid            BigInt    @id
+  effects_enabled   Boolean   @default(true)
+  sparkle_color     String?
+  ring_color        String?
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  sparkles_enabled  Boolean   @default(true)
+  ring_enabled      Boolean   @default(true)
+  edge_glow_enabled Boolean   @default(true)
+  particles_enabled Boolean   @default(true)
+  effect_intensity  String    @default("normal") @db.VarChar(16)
+  edge_glow_color   String?
+  particle_color    String?
+  particle_style    String    @default("stars") @db.VarChar(16)
+  animation_speed   String    @default("normal") @db.VarChar(16)
+  username_color    String?
+  bio_text          String?   @db.VarChar(50)
+  border_style      String    @default("clean") @db.VarChar(16)
+  seasonal_effects  Boolean   @default(false)
+  embed_color       String?
+}
+
+model premium_pomodoro_config {
+  guildid           BigInt       @id
+  focus_roleid      BigInt?
+  session_summary   Boolean      @default(true)
+  animated_timer    Boolean      @default(true)
+  timer_theme       String?      @default("default") @db.VarChar(32)
+  group_goal_hours  Int?
+  coin_multiplier   Boolean      @default(true)
+  golden_hour_start DateTime?    @db.Time(6)
+  golden_hour_end   DateTime?    @db.Time(6)
+  guild_config      guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pomodoro_streaks {
+  userid                 BigInt      @id
+  current_daily_streak   Int         @default(0)
+  longest_daily_streak   Int         @default(0)
+  current_weekly_streak  Int         @default(0)
+  longest_weekly_streak  Int         @default(0)
+  last_pomodoro_date     DateTime?   @db.Date
+  total_cycles_completed Int         @default(0)
+  total_focus_minutes    Int         @default(0)
+  focus_power            Int         @default(0)
+  user_config            user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model pomodoro_milestones {
+  milestoneid     Int          @id @default(autoincrement())
+  userid          BigInt
+  guildid         BigInt
+  milestone_type  String       @db.VarChar(32)
+  milestone_value Int
+  achieved_at     DateTime     @default(now()) @db.Timestamptz(6)
+  guild_config    guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+  user_config     user_config  @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userid, guildid, milestone_type, milestone_value])
+  @@index([userid], map: "pomodoro_milestones_user")
+}
+
+model data_deletion_requests {
+  requestid    Int                   @id @default(autoincrement())
+  userid       BigInt
+  discord_tag  String?               @db.VarChar(100)
+  reason       String?               @db.VarChar(1000)
+  status       deletionrequeststatus @default(PENDING)
+  requested_at DateTime              @default(now()) @db.Timestamptz(6)
+  resolved_at  DateTime?             @db.Timestamptz(6)
+  resolved_by  String?               @db.VarChar(255)
+  notes        String?
+
+  @@index([userid], map: "data_deletion_requests_userid")
+  @@index([status], map: "data_deletion_requests_status")
+}
+
+model leaderboard_autopost_config {
+  configid             Int                                 @id @default(autoincrement())
+  guildid              BigInt
+  config_name          String                              @default("Leaderboard") @db.VarChar(64)
+  enabled              Boolean                             @default(true)
+  lb_type              String                              @default("study")
+  messages_metric      String                              @default("count")
+  frequency            String                              @default("weekly")
+  seasonal_mode        String?
+  week_starts_on       String                              @default("monday")
+  top_count            Int                                 @default(10)
+  post_channel         BigInt
+  post_day             Int?                                @default(0)
+  post_hour            Int                                 @default(20)
+  post_minute          Int                                 @default(0)
+  auto_remove_roles    Boolean                             @default(true)
+  reward_tiers         Json?                               @default("[]")
+  announce_content     String?
+  embed_title          String?
+  embed_description    String?
+  embed_footer         String?
+  embed_color          Int?                                @default(16766720)
+  embed_url            String?
+  embed_author_name    String?
+  embed_author_url     String?
+  embed_fields         Json?                               @default("[]")
+  include_image        Boolean                             @default(true)
+  mention_winners      Boolean                             @default(false)
+  pin_post             Boolean                             @default(false)
+  delete_previous      Boolean                             @default(false)
+  min_threshold        Int?                                @default(0)
+  notify_public_post   Boolean                             @default(true)
+  notify_dm_winners    Boolean                             @default(false)
+  dm_scope             String                              @default("top_n")
+  dm_template_title    String?
+  dm_template_body     String?
+  dm_stagger_seconds   Int                                 @default(2)
+  notify_mod_log       Boolean                             @default(false)
+  mod_log_channel      BigInt?
+  skip_if_empty        Boolean                             @default(true)
+  skip_if_same_as_last Boolean                             @default(false)
+  continue_on_partial  Boolean                             @default(true)
+  max_coins_per_user   Int?
+  last_posted_at       DateTime?                           @db.Timestamptz(6)
+  last_message_id      BigInt?
+  last_winner_ids      Json?
+  created_at           DateTime                            @default(now()) @db.Timestamptz(6)
+  top1_roles           Json                                @default("[]")
+  topn_roles           Json                                @default("[]")
+  action_queue         leaderboard_autopost_action_queue[]
+  guild_config         guild_config                        @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+  history              leaderboard_autopost_history[]
+
+  @@unique([guildid, config_name])
+  @@index([guildid], map: "idx_lb_autopost_config_guild")
+}
+
+model leaderboard_autopost_history {
+  historyid     Int                         @id @default(autoincrement())
+  configid      Int
+  guildid       BigInt
+  posted_at     DateTime                    @default(now()) @db.Timestamptz(6)
+  top_users     Json?
+  roles_added   Int?                        @default(0)
+  roles_removed Int?                        @default(0)
+  coins_awarded Int?                        @default(0)
+  dms_sent      Int?                        @default(0)
+  dms_failed    Int?                        @default(0)
+  status        String?                     @default("success")
+  error_message String?
+  config        leaderboard_autopost_config @relation(fields: [configid], references: [configid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([configid, posted_at(sort: Desc)], map: "idx_lb_autopost_history_config")
+}
+
+model leaderboard_autopost_test_log {
+  id          Int      @id @default(autoincrement())
+  guildid     BigInt
+  action_type String   @default("test")
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid, created_at(sort: Desc)], map: "idx_lb_autopost_test_guild_time")
+}
+
+model leaderboard_autopost_action_queue {
+  queueid      Int                          @id @default(autoincrement())
+  guildid      BigInt
+  configid     Int?
+  requested_by BigInt
+  action_type  String
+  payload      Json?
+  status       String                       @default("pending")
+  result       Json?
+  created_at   DateTime                     @default(now()) @db.Timestamptz(6)
+  processed_at DateTime?                    @db.Timestamptz(6)
+  config       leaderboard_autopost_config? @relation(fields: [configid], references: [configid], onUpdate: NoAction)
+
+  @@index([status, created_at], map: "idx_lb_autopost_action_pending")
+}
+
+model ambient_sounds_config {
+  guildid               BigInt
+  bot_number            Int      @db.SmallInt
+  sound_type            String?  @db.VarChar(20)
+  channelid             BigInt?
+  volume                Int      @default(50) @db.SmallInt
+  enabled               Boolean  @default(true)
+  status                String   @default("pending") @db.VarChar(20)
+  error_msg             String?
+  updated_at            DateTime @default(now()) @db.Timestamptz(6)
+  nickname_template     String?  @db.VarChar(100)
+  voting_enabled        Boolean? @default(false)
+  vote_cooldown_minutes Int?     @default(30)
+
+  @@id([guildid, bot_number])
+}
+
+model ambient_sounds_usage {
+  usage_id       Int       @id @default(autoincrement())
+  guildid        BigInt
+  bot_number     Int       @db.SmallInt
+  sound_type     String    @db.VarChar(20)
+  channelid      BigInt
+  started_at     DateTime  @default(now()) @db.Timestamptz(6)
+  ended_at       DateTime? @db.Timestamptz(6)
+  peak_listeners Int?      @default(0)
+
+  @@index([guildid, started_at], map: "idx_sounds_usage_guild")
+}
+
+model ambient_sounds_schedule {
+  schedule_id Int      @id @default(autoincrement())
+  guildid     BigInt
+  bot_number  Int      @db.SmallInt
+  sound_type  String   @db.VarChar(20)
+  start_time  DateTime @db.Time(6)
+  end_time    DateTime @db.Time(6)
+  days        Int[]    @default([0, 1, 2, 3, 4, 5, 6]) @db.SmallInt
+
+  @@unique([guildid, bot_number, start_time])
+}
+
+model ambient_sounds_rentals {
+  rental_id  Int       @id @default(autoincrement())
+  guildid    BigInt
+  channelid  BigInt
+  userid     BigInt
+  bot_number Int       @db.SmallInt
+  sound_type String    @db.VarChar(20)
+  volume     Int?      @default(50) @db.SmallInt
+  started_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  ended_at   DateTime? @db.Timestamptz(6)
+  total_cost Int       @default(0)
+}
+
+model ambient_sounds_guild_config {
+  guildid                 BigInt    @id
+  room_rental_enabled     Boolean?  @default(false)
+  room_rental_hourly_rate Int?      @default(10)
+  updated_at              DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model sounds_bot_heartbeat {
+  bot_number   Int       @id @db.SmallInt
+  last_seen    DateTime? @default(now()) @db.Timestamptz(6)
+  bot_username String?   @db.VarChar(50)
+  guild_count  Int?      @default(0)
+}
+
+model sticky_messages {
+  stickyid         Int          @id @default(autoincrement())
+  guildid          BigInt
+  channelid        BigInt
+  title            String?
+  content          String
+  color            Int?         @default(3447003)
+  image_url        String?
+  footer_text      String?
+  interval_seconds Int          @default(60)
+  last_posted_id   BigInt?
+  enabled          Boolean      @default(true)
+  created_by       BigInt?
+  created_at       DateTime?    @default(now()) @db.Timestamptz(6)
+  guild_config     guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([guildid, channelid])
+}
+
+model lg_friends {
+  userid1                                     BigInt
+  userid2                                     BigInt
+  created_at                                  DateTime?   @default(now()) @db.Timestamptz(6)
+  user_config_lg_friends_userid1Touser_config user_config @relation("lg_friends_userid1Touser_config", fields: [userid1], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  user_config_lg_friends_userid2Touser_config user_config @relation("lg_friends_userid2Touser_config", fields: [userid2], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([userid1, userid2])
+}
+
+model lg_friend_requests {
+  request_id                                              Int         @id @default(autoincrement())
+  from_userid                                             BigInt
+  to_userid                                               BigInt
+  status                                                  String?     @default("PENDING") @db.VarChar(16)
+  created_at                                              DateTime?   @default(now()) @db.Timestamptz(6)
+  user_config_lg_friend_requests_from_useridTouser_config user_config @relation("lg_friend_requests_from_useridTouser_config", fields: [from_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  user_config_lg_friend_requests_to_useridTouser_config   user_config @relation("lg_friend_requests_to_useridTouser_config", fields: [to_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([from_userid, to_userid])
+}
+
+model lg_friend_interactions {
+  interaction_id                                                Int         @id @default(autoincrement())
+  actor_userid                                                  BigInt
+  target_userid                                                 BigInt
+  interaction_type                                              String      @db.VarChar(16)
+  plot_id                                                       Int?
+  created_at                                                    DateTime?   @default(now()) @db.Timestamptz(6)
+  user_config_lg_friend_interactions_actor_useridTouser_config  user_config @relation("lg_friend_interactions_actor_useridTouser_config", fields: [actor_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  user_config_lg_friend_interactions_target_useridTouser_config user_config @relation("lg_friend_interactions_target_useridTouser_config", fields: [target_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([actor_userid, target_userid, interaction_type, created_at], map: "idx_friend_interactions_daily")
+}
+
+model lg_blocks {
+  blocker_userid                                    BigInt
+  blocked_userid                                    BigInt
+  created_at                                        DateTime?   @default(now()) @db.Timestamptz(6)
+  user_config_lg_blocks_blocked_useridTouser_config user_config @relation("lg_blocks_blocked_useridTouser_config", fields: [blocked_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  user_config_lg_blocks_blocker_useridTouser_config user_config @relation("lg_blocks_blocker_useridTouser_config", fields: [blocker_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([blocker_userid, blocked_userid])
+}
+
+model lg_families {
+  family_id                  Int                          @id @default(autoincrement())
+  name                       String                       @unique @db.VarChar(32)
+  description                String?                      @default("")
+  icon_url                   String?                      @db.VarChar(256)
+  level                      Int?                         @default(1)
+  xp                         BigInt?                      @default(0)
+  gold                       BigInt?                      @default(0)
+  leader_userid              BigInt
+  max_members                Int?                         @default(10)
+  max_farms                  Int?                         @default(1)
+  daily_gold_withdraw_cap    Int?                         @default(10000)
+  role_permissions           Json                         @default("{}")
+  created_at                 DateTime?                    @default(now()) @db.Timestamptz(6)
+  user_config                user_config                  @relation(fields: [leader_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_family_bank             lg_family_bank[]
+  lg_family_farms            lg_family_farms[]
+  lg_family_gold_log         lg_family_gold_log[]
+  lg_family_gold_withdrawals lg_family_gold_withdrawals[]
+  lg_family_invites          lg_family_invites[]
+  lg_family_members          lg_family_members[]
+}
+
+model lg_family_members {
+  family_id       Int
+  userid          BigInt
+  role            lg_family_role? @default(MEMBER)
+  joined_at       DateTime?       @default(now()) @db.Timestamptz(6)
+  contribution_xp BigInt?         @default(0)
+  left_at         DateTime?       @db.Timestamptz(6)
+  lg_families     lg_families     @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+  user_config     user_config     @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([family_id, userid])
+}
+
+model lg_family_invites {
+  invite_id                                              Int         @id @default(autoincrement())
+  family_id                                              Int
+  from_userid                                            BigInt
+  to_userid                                              BigInt
+  status                                                 String?     @default("PENDING") @db.VarChar(16)
+  created_at                                             DateTime?   @default(now()) @db.Timestamptz(6)
+  lg_families                                            lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+  user_config_lg_family_invites_from_useridTouser_config user_config @relation("lg_family_invites_from_useridTouser_config", fields: [from_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  user_config_lg_family_invites_to_useridTouser_config   user_config @relation("lg_family_invites_to_useridTouser_config", fields: [to_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([family_id, to_userid])
+}
+
+model lg_family_bank {
+  bank_entry_id     Int         @id @default(autoincrement())
+  family_id         Int
+  itemid            Int
+  enhancement_level Int?        @default(0)
+  quantity          Int?        @default(1)
+  scroll_data       Json?
+  total_bonus       Float?      @default(0)
+  deposited_by      BigInt
+  deposited_at      DateTime?   @default(now()) @db.Timestamptz(6)
+  user_config       user_config @relation(fields: [deposited_by], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_families       lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+  lg_items          lg_items    @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model lg_family_gold_log {
+  log_id      Int         @id @default(autoincrement())
+  family_id   Int
+  userid      BigInt
+  amount      Int
+  action      String      @db.VarChar(32)
+  description String?     @default("")
+  created_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+  user_config user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model lg_family_farms {
+  family_id            Int
+  farm_index           Int
+  unlocked_at          DateTime?              @default(now()) @db.Timestamptz(6)
+  lg_family_farm_plots lg_family_farm_plots[]
+  lg_families          lg_families            @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([family_id, farm_index])
+}
+
+model lg_family_farm_plots {
+  family_id       Int
+  farm_index      Int
+  plot_id         Int
+  seed_id         Int?
+  planted_at      DateTime?       @db.Timestamptz(6)
+  planted_by      BigInt?
+  last_watered    DateTime?       @db.Timestamptz(6)
+  growth_stage    Int?            @default(0)
+  growth_points   Float?          @default(0)
+  gold_invested   Int?            @default(0)
+  dead            Boolean?        @default(false)
+  rarity          String?         @default("COMMON") @db.VarChar(16)
+  lg_family_farms lg_family_farms @relation(fields: [family_id, farm_index], references: [family_id, farm_index], onDelete: Cascade, onUpdate: NoAction)
+  user_config     user_config?    @relation(fields: [planted_by], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+  lg_farm_seeds   lg_farm_seeds?  @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([family_id, farm_index, plot_id])
+}
+
+model lg_family_gold_withdrawals {
+  withdrawal_id Int         @id @default(autoincrement())
+  family_id     Int
+  userid        BigInt
+  amount        Int
+  withdrawn_at  DateTime?   @default(now()) @db.Timestamptz(6)
+  lg_families   lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade, onUpdate: NoAction)
+  user_config   user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([family_id, userid, withdrawn_at], map: "idx_family_gold_withdrawals_daily")
+}
+
+model lionheart_server_premium {
+  userid              BigInt    @id
+  guildid             BigInt?
+  last_transferred_at DateTime? @db.Timestamptz(6)
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid], map: "lionheart_sp_guild")
+}
+
+model lg_room_layout {
+  userid     BigInt   @id
+  layout     Json     @default("{}")
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
+}
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Audit log for Voice Time Editor manual session actions
+model manual_session_log {
+  id             Int       @id @default(autoincrement())
+  guildid        BigInt
+  userid         BigInt
+  sessionid      Int
+  action         String    @db.VarChar(10)
+  reason         String?
+  old_start_time DateTime? @db.Timestamptz(6)
+  new_start_time DateTime? @db.Timestamptz(6)
+  old_duration   Int?
+  new_duration   Int?
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid, userid, created_at], map: "idx_manual_session_log_guild_user_time")
+}
+// --- END AI-MODIFIED ---
+
+model shard_presence_stats {
+  shard_id    Int      @id
+  in_vc       Int      @default(0)
+  guild_count Int      @default(0)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
 }
 
 enum activitytype {
@@ -1265,10 +2008,7 @@ enum sessionchanneltype {
 
 enum shopitemtype {
   COLOUR_ROLE
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Add room rental shop item type
   ROOM_RENTAL
-  // --- END AI-MODIFIED ---
 }
 
 enum statistictype {
@@ -1291,9 +2031,6 @@ enum tickettype {
   INVITE_CENSOR
   WARNING
 }
-
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: LionGotchi enums and models for the pet dashboard
 
 enum lgexpression {
   DEFAULT
@@ -1321,15 +2058,12 @@ enum lgrarity {
   MYTHICAL
 }
 
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: Add BOOTS category (split from COSTUME for FEET-slot items)
 enum lgitemcategory {
   HAT
   GLASSES
   COSTUME
   SHIRT
   WINGS
-  BOOTS
   FURNITURE
   ROOM
   GAMEBOY_SKIN
@@ -1337,9 +2071,8 @@ enum lgitemcategory {
   CONSUMABLE
   MATERIAL
   SCROLL
+  BOOTS
 }
-
-// --- END AI-MODIFIED ---
 
 enum lgitemsource {
   SHOP
@@ -1375,10 +2108,7 @@ enum lggoldtransactiontype {
   FARM_UPROOT
   MARKETPLACE_SALE
   MARKETPLACE_PURCHASE
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Gift transaction type for friend gifting system
   GIFT
-  // --- END AI-MODIFIED ---
 }
 
 enum lgunlocktype {
@@ -1389,482 +2119,6 @@ enum lgunlocktype {
   EVENT
 }
 
-model lg_pets {
-  userid                 BigInt             @id
-  pet_name               String             @default("Leo")
-  expression             lgexpression       @default(DEFAULT)
-  level                  Int                @default(1)
-  xp                     BigInt             @default(0)
-  food                   Int                @default(8)
-  bath                   Int                @default(8)
-  sleep                  Int                @default(8)
-  life                   Int                @default(8)
-  last_decay_at          DateTime           @default(now()) @db.Timestamptz(6)
-  active_room_id         Int?
-  active_gameboy_skin_id Int?
-  fullscreen_mode        Boolean            @default(false)
-  created_at             DateTime           @default(now()) @db.Timestamptz(6)
-  user_config            user_config        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_pet_equipment       lg_pet_equipment[]
-  lg_user_rooms          lg_user_rooms[]
-  lg_user_farm           lg_user_farm[]
-}
-
-model lg_gold_transactions {
-  transactionid    Int                   @id @default(autoincrement())
-  transaction_type lggoldtransactiontype
-  actorid          BigInt
-  from_account     BigInt?
-  to_account       BigInt?
-  amount           Int
-  description      String                @default("")
-  reference        String?
-  created_at       DateTime              @default(now()) @db.Timestamptz(6)
-
-  @@index([to_account], map: "lg_gold_transactions_to")
-  @@index([from_account], map: "lg_gold_transactions_from")
-}
-
-model lg_items {
-  itemid                  Int                       @id @default(autoincrement())
-  name                    String
-  category                lgitemcategory
-  slot                    lgequipmentslot?
-  rarity                  lgrarity                  @default(COMMON)
-  asset_path              String
-  gold_price              Int?
-  gem_price               Int?
-  tradeable               Boolean                   @default(true)
-  description             String                    @default("")
-  copyright_flag          Boolean                   @default(false)
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Per-item drop weight for weighted random drops (lower = rarer within tier)
-  drop_weight             Float                     @default(1.0) @db.Real
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-15) ---
-  // Purpose: Link items to item sets
-  set_id                  Int?
-  item_set                lg_item_sets?             @relation(fields: [set_id], references: [set_id])
-  // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Thematic tag for grouping related items in wiki
-  tag                     String?                   @db.VarChar(32)
-  // --- END AI-MODIFIED ---
-  lg_user_inventory       lg_user_inventory[]
-  lg_pet_equipment        lg_pet_equipment[]
-  lg_user_furniture       lg_user_furniture[]
-  lg_crafting_recipes     lg_crafting_recipes[]
-  lg_recipe_ingredients   lg_recipe_ingredients[]
-  lg_scroll_properties    lg_scroll_properties?
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Reverse relation for scroll trace history
-  lg_enhancement_slots    lg_enhancement_slots[]
-  // --- END AI-MODIFIED ---
-  lg_marketplace_listings lg_marketplace_listings[]
-  lg_marketplace_sales    lg_marketplace_sales[]
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Reverse relation for family bank
-  lg_family_bank          lg_family_bank[]
-  // --- END AI-MODIFIED ---
-
-  @@index([category], map: "lg_items_category")
-  @@index([set_id])
-  @@index([tag])
-}
-
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: Item sets grouping related equipment pieces
-model lg_item_sets {
-  set_id      Int        @id @default(autoincrement())
-  name        String
-  description String     @default("")
-  items       lg_items[]
-}
-
-// --- END AI-MODIFIED ---
-
-model lg_user_inventory {
-  inventoryid          Int                    @id @default(autoincrement())
-  userid               BigInt
-  itemid               Int
-  acquired_at          DateTime               @default(now()) @db.Timestamptz(6)
-  source               lgitemsource           @default(SHOP)
-  quantity             Int                    @default(1)
-  enhancement_level    Int                    @default(0)
-  user_config          user_config            @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Scroll trace -- which scrolls were used at each enhancement slot
-  lg_enhancement_slots lg_enhancement_slots[]
-  // --- END AI-MODIFIED ---
-
-  @@index([userid], map: "lg_user_inventory_user")
-}
-
-model lg_pet_equipment {
-  userid   BigInt
-  slot     lgequipmentslot
-  itemid   Int
-  lg_pets  lg_pets         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_items lg_items        @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([userid, slot])
-}
-
-model lg_rooms {
-  room_id       Int             @id @default(autoincrement())
-  name          String
-  asset_prefix  String
-  has_furniture Boolean         @default(false)
-  gold_price    Int?
-  gem_price     Int?
-  lg_user_rooms lg_user_rooms[]
-}
-
-model lg_user_rooms {
-  userid            BigInt
-  room_id           Int
-  unlocked_at       DateTime            @default(now()) @db.Timestamptz(6)
-  lg_pets           lg_pets             @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_rooms          lg_rooms            @relation(fields: [room_id], references: [room_id], onDelete: NoAction, onUpdate: NoAction)
-  lg_user_furniture lg_user_furniture[]
-
-  @@id([userid, room_id])
-}
-
-model lg_user_furniture {
-  userid           BigInt
-  room_id          Int
-  slot             lgfurnitureslot
-  furniture_itemid Int
-  lg_user_rooms    lg_user_rooms   @relation(fields: [userid, room_id], references: [userid, room_id], onDelete: NoAction, onUpdate: NoAction)
-  lg_items         lg_items        @relation(fields: [furniture_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([userid, room_id, slot])
-}
-
-model lg_gameboy_skins {
-  skin_id               Int                     @id @default(autoincrement())
-  theme                 String
-  color                 String
-  asset_path            String
-  unlock_type           lgunlocktype            @default(GOLD)
-  unlock_level          Int?
-  gold_price            Int?
-  gem_price             Int?
-  // --- AI-MODIFIED (2026-03-17) ---
-  lg_user_gameboy_skins lg_user_gameboy_skins[]
-  // --- END AI-MODIFIED ---
-}
-
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Track user ownership of purchased gameboy skins (GOLD/GEMS types)
-model lg_user_gameboy_skins {
-  userid      BigInt
-  skin_id     Int
-  acquired_at DateTime @default(now()) @db.Timestamptz(6)
-
-  user_config      user_config      @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_gameboy_skins lg_gameboy_skins @relation(fields: [skin_id], references: [skin_id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([userid, skin_id])
-}
-
-// --- END AI-MODIFIED ---
-
-model lg_farm_seeds {
-  seed_id              Int                    @id @default(autoincrement())
-  name                 String
-  plant_type           String
-  grow_time_hours      Int                    @default(24)
-  water_interval_hours Int                    @default(6)
-  harvest_gold         Int                    @default(10)
-  asset_prefix         String
-  // --- AI-MODIFIED (2026-03-15) ---
-  // Purpose: Add plant_cost and growth_points_needed columns to match bot schema
-  plant_cost           Int                    @default(10)
-  growth_points_needed Int                    @default(100)
-  // --- END AI-MODIFIED ---
-  lg_user_farm         lg_user_farm[]
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Reverse relation for family farm plots
-  lg_family_farm_plots lg_family_farm_plots[]
-  // --- END AI-MODIFIED ---
-}
-
-model lg_user_farm {
-  userid               BigInt
-  plot_id              Int
-  seed_id              Int?
-  planted_at           DateTime?      @db.Timestamptz(6)
-  last_watered         DateTime?      @db.Timestamptz(6)
-  growth_stage         Int            @default(0)
-  dead                 Boolean        @default(false)
-  // --- AI-MODIFIED (2026-03-15) ---
-  // Purpose: Add growth_points, gold_invested, activity tracking, and rarity to match bot schema
-  growth_points        Float          @default(0)
-  gold_invested        Int            @default(0)
-  voice_minutes_earned Float          @default(0)
-  messages_earned      Int            @default(0)
-  rarity               String         @default("COMMON")
-  // --- END AI-MODIFIED ---
-  lg_pets              lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
-  lg_farm_seeds        lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([userid, plot_id])
-}
-
-model lg_crafting_recipes {
-  recipeid              Int                     @id @default(autoincrement())
-  result_itemid         Int
-  result_quantity       Int                     @default(1)
-  gold_cost             Int                     @default(0)
-  description           String                  @default("")
-  lg_items              lg_items                @relation(fields: [result_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-  lg_recipe_ingredients lg_recipe_ingredients[]
-}
-
-model lg_recipe_ingredients {
-  recipeid            Int
-  itemid              Int
-  quantity            Int                 @default(1)
-  lg_crafting_recipes lg_crafting_recipes @relation(fields: [recipeid], references: [recipeid], onDelete: Cascade, onUpdate: NoAction)
-  lg_items            lg_items            @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([recipeid, itemid])
-}
-
-model lg_scroll_properties {
-  itemid       Int      @id
-  target_slot  String?
-  success_rate Float    @default(0.7) @db.Real
-  destroy_rate Float    @default(0.1) @db.Real
-  // --- AI-MODIFIED (2026-03-17) ---
-  // Purpose: Scroll bonus multiplier for MapleStory-style enhancement quality
-  bonus_value  Float    @default(1.0) @db.Real
-  // --- END AI-MODIFIED ---
-  lg_items     lg_items @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-}
-
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Track which scroll was used at each enhancement level (scroll trace)
-model lg_enhancement_slots {
-  slotid        Int      @id @default(autoincrement())
-  inventoryid   Int
-  slot_number   Int
-  scroll_itemid Int
-  scroll_name   String   @db.VarChar(64)
-  bonus_value   Float    @default(1.0) @db.Real
-  enhanced_at   DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_user_inventory lg_user_inventory @relation(fields: [inventoryid], references: [inventoryid], onDelete: Cascade)
-  lg_items          lg_items          @relation(fields: [scroll_itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([inventoryid, slot_number])
-  @@index([inventoryid])
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-15) ---
-// Purpose: Added marketplace models for LionGotchi trading system
-
-// --- AI-MODIFIED (2026-03-21) ---
-// Purpose: Add scroll_data (JSONB) and total_bonus (REAL) to preserve scroll/enhancement
-// data when items are listed on the marketplace. scroll_data stores a JSON snapshot of
-// lg_enhancement_slots; total_bonus is precomputed for filtering/sorting.
-model lg_marketplace_listings {
-  listingid            Int                    @id @default(autoincrement())
-  seller_userid        BigInt
-  itemid               Int
-  enhancement_level    Int                    @default(0)
-  quantity_listed      Int
-  quantity_remaining   Int
-  price_per_unit       Int
-  currency             String                 @default("GOLD")
-  status               String                 @default("ACTIVE")
-  created_at           DateTime               @default(now()) @db.Timestamptz(6)
-  expires_at           DateTime               @db.Timestamptz(6)
-  scroll_data          Json?                  @db.JsonB
-  total_bonus          Float                  @default(0) @db.Real
-  lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-  lg_marketplace_sales lg_marketplace_sales[]
-
-  @@index([status], map: "idx_mp_listings_status")
-  @@index([itemid], map: "idx_mp_listings_itemid")
-  @@index([seller_userid], map: "idx_mp_listings_seller")
-  @@index([expires_at], map: "idx_mp_listings_expires")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-21) ---
-// Purpose: Add scroll_data and total_bonus for audit trail of what was actually sold
-model lg_marketplace_sales {
-  saleid                  Int                     @id @default(autoincrement())
-  listingid               Int
-  buyer_userid            BigInt
-  seller_userid           BigInt
-  itemid                  Int
-  enhancement_level       Int                     @default(0)
-  quantity                Int
-  price_per_unit          Int
-  total_price             Int
-  currency                String
-  sold_at                 DateTime                @default(now()) @db.Timestamptz(6)
-  scroll_data             Json?                   @db.JsonB
-  total_bonus             Float                   @default(0) @db.Real
-  lg_marketplace_listings lg_marketplace_listings @relation(fields: [listingid], references: [listingid], onDelete: NoAction, onUpdate: NoAction)
-  lg_items                lg_items                @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([itemid], map: "idx_mp_sales_itemid")
-  @@index([buyer_userid], map: "idx_mp_sales_buyer")
-  @@index([seller_userid], map: "idx_mp_sales_seller")
-  @@index([sold_at], map: "idx_mp_sales_sold_at")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Server premium Stripe subscriptions with auto-increment PK for transfer support
-
-model server_premium_subscriptions {
-  id                     Int       @id @default(autoincrement())
-  guildid                BigInt
-  userid                 BigInt
-  stripe_customer_id     String
-  stripe_subscription_id String?
-  plan                   String    @default("MONTHLY")
-  status                 String    @default("INACTIVE")
-  current_period_start   DateTime? @db.Timestamptz(6)
-  current_period_end     DateTime? @db.Timestamptz(6)
-  created_at             DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
-  transferred_at         DateTime? @db.Timestamptz(6)
-
-  guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@index([stripe_customer_id], map: "server_premium_subs_stripe_customer")
-  @@index([userid], map: "server_premium_subs_user")
-  @@index([guildid], map: "server_premium_subs_guild")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: LionHeart subscription tiers (user premium via Stripe recurring billing)
-
-model user_subscriptions {
-  userid                 BigInt    @id
-  stripe_customer_id     String
-  stripe_subscription_id String?
-  tier                   String    @default("NONE")
-  status                 String    @default("INACTIVE")
-  current_period_start   DateTime? @db.Timestamptz(6)
-  current_period_end     DateTime? @db.Timestamptz(6)
-  created_at             DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@index([stripe_customer_id], map: "user_subscriptions_stripe_customer")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: User focus timer theme preferences (LionHeart premium perk)
-
-model user_timer_preferences {
-  userid              BigInt   @id
-  theme               String   @default("classic")
-  custom_accent_color String?
-  focus_label         String?  @db.VarChar(20)
-  break_label         String?  @db.VarChar(20)
-  session_label       String?  @db.VarChar(20)
-  updated_at          DateTime @default(now()) @db.Timestamptz(6)
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Per-user animated card effect preferences -- expanded for full
-//          premium customization (Phase 1-3: per-effect toggles, intensity,
-//          particle styles, animation speed, bio, borders, seasonal effects)
-
-model user_card_preferences {
-  userid            BigInt    @id
-  effects_enabled   Boolean   @default(true)
-  sparkle_color     String?
-  ring_color        String?
-  sparkles_enabled  Boolean   @default(true)
-  ring_enabled      Boolean   @default(true)
-  edge_glow_enabled Boolean   @default(true)
-  particles_enabled Boolean   @default(true)
-  effect_intensity  String    @default("normal") @db.VarChar(16)
-  edge_glow_color   String?
-  particle_color    String?
-  particle_style    String    @default("stars") @db.VarChar(16)
-  animation_speed   String    @default("normal") @db.VarChar(16)
-  username_color    String?
-  bio_text          String?   @db.VarChar(50)
-  border_style      String    @default("clean") @db.VarChar(16)
-  seasonal_effects  Boolean   @default(false)
-  embed_color       String?
-  created_at        DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-18) ---
-// Purpose: Premium pomodoro feature tables (config, streaks, milestones)
-
-model premium_pomodoro_config {
-  guildid           BigInt       @id
-  focus_roleid      BigInt?
-  session_summary   Boolean      @default(true)
-  animated_timer    Boolean      @default(true)
-  timer_theme       String?      @default("default") @db.VarChar(32)
-  group_goal_hours  Int?
-  coin_multiplier   Boolean      @default(true)
-  golden_hour_start DateTime?    @db.Time(6)
-  golden_hour_end   DateTime?    @db.Time(6)
-  guild_config      guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model pomodoro_streaks {
-  userid                 BigInt      @id
-  current_daily_streak   Int         @default(0)
-  longest_daily_streak   Int         @default(0)
-  current_weekly_streak  Int         @default(0)
-  longest_weekly_streak  Int         @default(0)
-  last_pomodoro_date     DateTime?   @db.Date
-  total_cycles_completed Int         @default(0)
-  total_focus_minutes    Int         @default(0)
-  focus_power            Int         @default(0)
-  user_config            user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-}
-
-model pomodoro_milestones {
-  milestoneid     Int          @id @default(autoincrement())
-  userid          BigInt
-  guildid         BigInt
-  milestone_type  String       @db.VarChar(32)
-  milestone_value Int
-  achieved_at     DateTime     @default(now()) @db.Timestamptz(6)
-  user_config     user_config  @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
-  guild_config    guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
-
-  @@unique([userid, guildid, milestone_type, milestone_value])
-  @@index([userid], map: "pomodoro_milestones_user")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-16) ---
-// Purpose: Data deletion request tracking for GDPR/privacy compliance
-
 enum deletionrequeststatus {
   PENDING
   APPROVED
@@ -1872,429 +2126,9 @@ enum deletionrequeststatus {
   REJECTED
 }
 
-model data_deletion_requests {
-  requestid    Int                   @id @default(autoincrement())
-  userid       BigInt
-  discord_tag  String?
-  reason       String?
-  status       deletionrequeststatus @default(PENDING)
-  requested_at DateTime              @default(now()) @db.Timestamptz(6)
-  resolved_at  DateTime?             @db.Timestamptz(6)
-  resolved_by  String?
-  notes        String?
-
-  @@index([userid], map: "data_deletion_requests_userid")
-  @@index([status], map: "data_deletion_requests_status")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-21) ---
-// Purpose: Leaderboard auto-post module models
-
-model leaderboard_autopost_config {
-  configid    Int     @id @default(autoincrement())
-  guildid     BigInt
-  config_name String  @default("Leaderboard") @db.VarChar(64)
-  enabled     Boolean @default(true)
-
-  lb_type         String  @default("study")
-  messages_metric String  @default("count")
-  frequency       String  @default("weekly")
-  seasonal_mode   String?
-  week_starts_on  String  @default("monday")
-  top_count       Int     @default(10)
-
-  post_channel BigInt
-  post_day     Int?   @default(0)
-  post_hour    Int    @default(20)
-  post_minute  Int    @default(0)
-
-  top1_roles        Json    @default("[]")
-  topn_roles        Json    @default("[]")
-  auto_remove_roles Boolean @default(true)
-
-  reward_tiers Json @default("[]")
-
-  announce_content  String?
-  embed_title       String?
-  embed_description String?
-  embed_footer      String?
-  embed_color       Int?    @default(16766720)
-  embed_url         String?
-  embed_author_name String?
-  embed_author_url  String?
-  embed_fields      Json    @default("[]")
-  include_image     Boolean @default(true)
-  mention_winners   Boolean @default(false)
-  pin_post          Boolean @default(false)
-  delete_previous   Boolean @default(false)
-  min_threshold     Int?    @default(0)
-
-  notify_public_post Boolean @default(true)
-  notify_dm_winners  Boolean @default(false)
-  dm_scope           String  @default("top_n")
-  dm_template_title  String?
-  dm_template_body   String?
-  dm_stagger_seconds Int     @default(2)
-  notify_mod_log     Boolean @default(false)
-  mod_log_channel    BigInt?
-
-  skip_if_empty        Boolean @default(true)
-  skip_if_same_as_last Boolean @default(false)
-  continue_on_partial  Boolean @default(true)
-  max_coins_per_user   Int?
-
-  last_posted_at  DateTime? @db.Timestamptz(6)
-  last_message_id BigInt?
-  last_winner_ids Json?
-  created_at      DateTime  @default(now()) @db.Timestamptz(6)
-
-  guild_config guild_config                        @relation(fields: [guildid], references: [guildid], onDelete: Cascade)
-  history      leaderboard_autopost_history[]
-  action_queue leaderboard_autopost_action_queue[]
-
-  @@unique([guildid, config_name])
-  @@index([guildid])
-}
-
-model leaderboard_autopost_history {
-  historyid     Int      @id @default(autoincrement())
-  configid      Int
-  guildid       BigInt
-  posted_at     DateTime @default(now()) @db.Timestamptz(6)
-  top_users     Json?
-  roles_added   Int?     @default(0)
-  roles_removed Int?     @default(0)
-  coins_awarded Int?     @default(0)
-  dms_sent      Int?     @default(0)
-  dms_failed    Int?     @default(0)
-  status        String?  @default("success")
-  error_message String?
-
-  config leaderboard_autopost_config @relation(fields: [configid], references: [configid], onDelete: Cascade)
-
-  @@index([configid, posted_at(sort: Desc)])
-}
-
-model leaderboard_autopost_test_log {
-  id          Int      @id @default(autoincrement())
-  guildid     BigInt
-  action_type String   @default("test")
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([guildid, created_at(sort: Desc)])
-}
-
-model leaderboard_autopost_action_queue {
-  queueid      Int       @id @default(autoincrement())
-  guildid      BigInt
-  configid     Int?
-  requested_by BigInt
-  action_type  String
-  payload      Json?
-  status       String    @default("pending")
-  result       Json?
-  created_at   DateTime  @default(now()) @db.Timestamptz(6)
-  processed_at DateTime? @db.Timestamptz(6)
-
-  config leaderboard_autopost_config? @relation(fields: [configid], references: [configid], onDelete: SetNull)
-
-  @@index([status, created_at])
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Ambient Sounds Bot premium feature - config table for 5 generic sound bots
-model ambient_sounds_config {
-  guildid              BigInt
-  bot_number           Int      @db.SmallInt
-  sound_type           String?  @db.VarChar(20)
-  channelid            BigInt?
-  volume               Int      @default(50) @db.SmallInt
-  enabled              Boolean  @default(true)
-  status               String   @default("pending") @db.VarChar(20)
-  error_msg            String?
-  nickname_template    String?  @db.VarChar(100)
-  voting_enabled       Boolean  @default(false)
-  vote_cooldown_minutes Int     @default(30)
-  updated_at           DateTime @default(now()) @db.Timestamptz(6)
-
-  @@id([guildid, bot_number])
-}
-
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Track play sessions for analytics dashboard
-model ambient_sounds_usage {
-  usage_id       Int       @id @default(autoincrement())
-  guildid        BigInt
-  bot_number     Int       @db.SmallInt
-  sound_type     String    @db.VarChar(20)
-  channelid      BigInt
-  started_at     DateTime  @default(now()) @db.Timestamptz(6)
-  ended_at       DateTime? @db.Timestamptz(6)
-  peak_listeners Int       @default(0)
-
-  @@index([guildid, started_at])
-}
-
-// Purpose: Time-based sound scheduling per bot
-model ambient_sounds_schedule {
-  schedule_id Int      @id @default(autoincrement())
-  guildid     BigInt
-  bot_number  Int      @db.SmallInt
-  sound_type  String   @db.VarChar(20)
-  start_time  DateTime @db.Time(6)
-  end_time    DateTime @db.Time(6)
-  days        Int[]    @db.SmallInt
-
-  @@unique([guildid, bot_number, start_time])
-}
-
-// Purpose: Private room sound bot rental tracking
-model ambient_sounds_rentals {
-  rental_id  Int       @id @default(autoincrement())
-  guildid    BigInt
-  channelid  BigInt
-  userid     BigInt
-  bot_number Int       @db.SmallInt
-  sound_type String    @db.VarChar(20)
-  volume     Int       @default(50) @db.SmallInt
-  started_at DateTime  @default(now()) @db.Timestamptz(6)
-  expires_at DateTime  @db.Timestamptz(6)
-  ended_at   DateTime? @db.Timestamptz(6)
-  total_cost Int       @default(0)
-
-  @@index([guildid, ended_at])
-}
-
-// Purpose: Guild-level settings for room sound bot rentals
-model ambient_sounds_guild_config {
-  guildid                BigInt   @id
-  room_rental_enabled    Boolean  @default(false)
-  room_rental_hourly_rate Int     @default(10)
-  updated_at             DateTime @default(now()) @db.Timestamptz(6)
-}
-// --- END AI-MODIFIED ---
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Heartbeat table for sound bot process online/offline detection
-model sounds_bot_heartbeat {
-  bot_number  Int      @id @db.SmallInt
-  last_seen   DateTime @default(now()) @db.Timestamptz(6)
-  bot_username String? @db.VarChar(50)
-  guild_count Int      @default(0)
-}
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Sticky messages premium feature -- persistent channel announcements
-model sticky_messages {
-  stickyid         Int      @id @default(autoincrement())
-  guildid          BigInt
-  channelid        BigInt
-  title            String?
-  content          String
-  color            Int?     @default(3447003)
-  image_url        String?
-  footer_text      String?
-  interval_seconds Int      @default(60)
-  last_posted_id   BigInt?
-  enabled          Boolean  @default(true)
-  created_by       BigInt?
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-
-  guild_config guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade)
-
-  @@unique([guildid, channelid])
-  @@index([guildid])
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Social features -- Friends, Blocks, Families
-
 enum lg_family_role {
   LEADER
   ADMIN
   MODERATOR
   MEMBER
 }
-
-model lg_friends {
-  userid1    BigInt
-  userid2    BigInt
-  created_at DateTime @default(now()) @db.Timestamptz(6)
-
-  @@id([userid1, userid2])
-}
-
-model lg_friend_requests {
-  request_id  Int      @id @default(autoincrement())
-  from_userid BigInt
-  to_userid   BigInt
-  status      String   @default("PENDING") @db.VarChar(16)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  @@unique([from_userid, to_userid])
-}
-
-model lg_friend_interactions {
-  interaction_id   Int      @id @default(autoincrement())
-  actor_userid     BigInt
-  target_userid    BigInt
-  interaction_type String   @db.VarChar(16)
-  plot_id          Int?
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-
-  @@index([actor_userid, target_userid, interaction_type, created_at], map: "idx_friend_interactions_daily")
-}
-
-model lg_blocks {
-  blocker_userid BigInt
-  blocked_userid BigInt
-  created_at     DateTime @default(now()) @db.Timestamptz(6)
-
-  @@id([blocker_userid, blocked_userid])
-}
-
-model lg_families {
-  family_id               Int      @id @default(autoincrement())
-  name                    String   @unique @db.VarChar(32)
-  description             String   @default("")
-  icon_url                String?  @db.VarChar(256)
-  level                   Int      @default(1)
-  xp                      BigInt   @default(0)
-  gold                    BigInt   @default(0)
-  leader_userid           BigInt
-  max_members             Int      @default(10)
-  max_farms               Int      @default(1)
-  daily_gold_withdraw_cap Int      @default(10000)
-  role_permissions        Json     @default("{}") @db.JsonB
-  created_at              DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_family_members          lg_family_members[]
-  lg_family_invites          lg_family_invites[]
-  lg_family_bank             lg_family_bank[]
-  lg_family_gold_log         lg_family_gold_log[]
-  lg_family_farms            lg_family_farms[]
-  lg_family_gold_withdrawals lg_family_gold_withdrawals[]
-}
-
-model lg_family_members {
-  family_id       Int
-  userid          BigInt
-  role            lg_family_role @default(MEMBER)
-  joined_at       DateTime       @default(now()) @db.Timestamptz(6)
-  contribution_xp BigInt         @default(0)
-  left_at         DateTime?      @db.Timestamptz(6)
-
-  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-
-  @@id([family_id, userid])
-  @@unique([userid], map: "idx_family_one_per_user")
-}
-
-model lg_family_invites {
-  invite_id   Int      @id @default(autoincrement())
-  family_id   Int
-  from_userid BigInt
-  to_userid   BigInt
-  status      String   @default("PENDING") @db.VarChar(16)
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-
-  @@unique([family_id, to_userid])
-}
-
-model lg_family_bank {
-  bank_entry_id     Int      @id @default(autoincrement())
-  family_id         Int
-  itemid            Int
-  enhancement_level Int      @default(0)
-  quantity          Int      @default(1)
-  scroll_data       Json?    @db.JsonB
-  total_bonus       Float    @default(0) @db.Real
-  deposited_by      BigInt
-  deposited_at      DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-  lg_items    lg_items    @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
-}
-
-model lg_family_gold_log {
-  log_id      Int      @id @default(autoincrement())
-  family_id   Int
-  userid      BigInt
-  amount      Int
-  action      String   @db.VarChar(32)
-  description String   @default("")
-  created_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-}
-
-model lg_family_farms {
-  family_id   Int
-  farm_index  Int
-  unlocked_at DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_families          lg_families            @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-  lg_family_farm_plots lg_family_farm_plots[]
-
-  @@id([family_id, farm_index])
-}
-
-model lg_family_farm_plots {
-  family_id     Int
-  farm_index    Int
-  plot_id       Int
-  seed_id       Int?
-  planted_at    DateTime? @db.Timestamptz(6)
-  planted_by    BigInt?
-  last_watered  DateTime? @db.Timestamptz(6)
-  growth_stage  Int       @default(0)
-  growth_points Float     @default(0)
-  gold_invested Int       @default(0)
-  dead          Boolean   @default(false)
-  rarity        String    @default("COMMON") @db.VarChar(16)
-
-  lg_family_farms lg_family_farms @relation(fields: [family_id, farm_index], references: [family_id, farm_index], onDelete: Cascade)
-  lg_farm_seeds   lg_farm_seeds?  @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
-
-  @@id([family_id, farm_index, plot_id])
-}
-
-model lg_family_gold_withdrawals {
-  withdrawal_id Int      @id @default(autoincrement())
-  family_id     Int
-  userid        BigInt
-  amount        Int
-  withdrawn_at  DateTime @default(now()) @db.Timestamptz(6)
-
-  lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
-
-  @@index([family_id, userid, withdrawn_at], map: "idx_family_gold_withdrawals_daily")
-}
-
-// --- END AI-MODIFIED ---
-
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: LionHeart++ included server premium tracking
-
-model lionheart_server_premium {
-  userid              BigInt    @id
-  guildid             BigInt?
-  last_transferred_at DateTime? @db.Timestamptz(6)
-  created_at          DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
-
-  @@index([guildid], map: "lionheart_sp_guild")
-}
-
-// --- END AI-MODIFIED ---

@@ -38,6 +38,10 @@ interface Session {
   liveDurationMinutes: number
   tag: string | null
   rating: number | null
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Voice Time Editor manual session badge
+  isManual?: boolean
+  // --- END AI-MODIFIED ---
 }
 
 interface SessionStats {
@@ -576,6 +580,12 @@ export default function HistoryPage() {
                                         {s.tag && (
                                           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/15 text-purple-300">{s.tag}</span>
                                         )}
+                                        {/* --- AI-MODIFIED (2026-03-23) --- */}
+                                        {/* Purpose: Voice Time Editor manual session badge */}
+                                        {s.isManual && (
+                                          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400">Manual</span>
+                                        )}
+                                        {/* --- END AI-MODIFIED --- */}
                                       </div>
                                       <span className="text-xs text-muted-foreground">{timeStr(s.startTime)}</span>
                                     </div>
