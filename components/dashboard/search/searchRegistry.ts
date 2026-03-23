@@ -115,7 +115,6 @@ const PAGE_ITEMS: SearchItem[] = [
     route: "/shop",
     keywords: ["shop", "store", "items", "buy", "purchase", "price", "colour", "room", "rental"],
     iconName: "ShoppingBag",
-    requiredLevel: "member",
     // --- END AI-MODIFIED ---
   },
   {
