@@ -26,14 +26,14 @@ export default apiHandler({
 
     const { guildId: guildIdStr, startTime: startTimeStr, duration: durationSec, reason } = req.body
 
-    if (!guildIdStr || !startTimeStr || !durationSec) {
+    if (!guildIdStr || !startTimeStr || durationSec === undefined || durationSec === null) {
       throw new ValidationError("Missing required fields: guildId, startTime, duration")
     }
 
     const guildId = parseBigInt(guildIdStr, "guildId")
     const userId = auth.userId
     const startTime = new Date(startTimeStr)
-    const duration = parseInt(durationSec)
+    const duration = typeof durationSec === "number" ? durationSec : parseInt(durationSec)
     const now = new Date()
 
     if (isNaN(startTime.getTime())) {
@@ -124,30 +124,41 @@ export default apiHandler({
       throw new ValidationError("This session overlaps with your current ongoing session")
     }
 
-    const session = await prisma.voice_sessions.create({
-      data: {
-        guildid: guildId,
-        userid: userId,
-        start_time: startTime,
-        duration,
-        is_manual: true,
-        live_duration: 0,
-        stream_duration: 0,
-        video_duration: 0,
-      },
-    })
+    let session
+    try {
+      session = await prisma.voice_sessions.create({
+        data: {
+          members: {
+            connect: { guildid_userid: { guildid: guildId, userid: userId } },
+          },
+          start_time: startTime,
+          duration,
+          is_manual: true,
+          live_duration: 0,
+          stream_duration: 0,
+          video_duration: 0,
+        },
+      })
+    } catch (dbErr: any) {
+      console.error("voice_sessions.create failed:", dbErr?.message || dbErr)
+      throw new ValidationError("Failed to create session. Please try again.")
+    }
 
-    await prisma.manual_session_log.create({
-      data: {
-        guildid: guildId,
-        userid: userId,
-        sessionid: session.sessionid,
-        action: "ADD",
-        reason: reason ? String(reason).slice(0, 500) : null,
-        new_start_time: startTime,
-        new_duration: duration,
-      },
-    })
+    try {
+      await prisma.manual_session_log.create({
+        data: {
+          guildid: guildId,
+          userid: userId,
+          sessionid: session.sessionid,
+          action: "ADD",
+          reason: reason ? String(reason).slice(0, 500) : null,
+          new_start_time: startTime,
+          new_duration: duration,
+        },
+      })
+    } catch (logErr: any) {
+      console.error("manual_session_log.create failed:", logErr?.message || logErr)
+    }
 
     return res.status(201).json({
       id: session.sessionid,
