@@ -155,20 +155,19 @@ export default function StepCelebration({
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 + i * 0.1 }}
             >
-              <Link
-                href={action.href(guildId)}
-                className="flex items-start gap-3 p-4 bg-gray-800/60 border border-gray-700/50 rounded-xl hover:border-gray-600 transition-all group"
-              >
-                <div className="p-2 rounded-lg" style={{ backgroundColor: `${action.color}15` }}>
-                  <div style={{ color: action.color }}>{action.icon}</div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white group-hover:text-[#DDB21D] transition-colors">
-                    {action.title}
-                  </p>
-                  <p className="text-[10px] text-gray-500">{action.desc}</p>
-                </div>
-                <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors mt-1" />
+              <Link href={action.href(guildId)}>
+                <a className="flex items-start gap-3 p-4 bg-gray-800/60 border border-gray-700/50 rounded-xl hover:border-gray-600 transition-all group">
+                  <div className="p-2 rounded-lg" style={{ backgroundColor: `${action.color}15` }}>
+                    <div style={{ color: action.color }}>{action.icon}</div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-white group-hover:text-[#DDB21D] transition-colors">
+                      {action.title}
+                    </p>
+                    <p className="text-[10px] text-gray-500">{action.desc}</p>
+                  </div>
+                  <ArrowRight className="w-4 h-4 text-gray-600 group-hover:text-gray-400 transition-colors mt-1" />
+                </a>
               </Link>
             </motion.div>
           ))}

@@ -158,11 +158,10 @@ export default function StepEconomy({
             <p className="text-xs text-gray-400">
               Create a shop where members spend their coins on roles, perks, and custom items. You can set this up after the wizard.
             </p>
-            <Link
-              href={`/dashboard/servers/${guildId}/shop`}
-              className="inline-flex items-center gap-1 text-xs text-[#DDB21D] hover:text-[#f57c00] transition-colors"
-            >
-              Set up shop later <ArrowRight className="w-3 h-3" />
+            <Link href={`/dashboard/servers/${guildId}/shop`}>
+              <a className="inline-flex items-center gap-1 text-xs text-[#DDB21D] hover:text-[#f57c00] transition-colors">
+                Set up shop later <ArrowRight className="w-3 h-3" />
+              </a>
             </Link>
           </div>
         </div>

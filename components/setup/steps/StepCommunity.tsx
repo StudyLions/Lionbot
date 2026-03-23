@@ -121,11 +121,10 @@ export default function StepCommunity({
               </div>
             </div>
 
-            <Link
-              href={`/dashboard/servers/${guildId}/rolemenus`}
-              className="inline-flex items-center gap-1.5 text-xs text-[#DDB21D] hover:text-[#f57c00] transition-colors"
-            >
-              Open Role Menu Editor <ArrowRight className="w-3 h-3" />
+            <Link href={`/dashboard/servers/${guildId}/rolemenus`}>
+              <a className="inline-flex items-center gap-1.5 text-xs text-[#DDB21D] hover:text-[#f57c00] transition-colors">
+                Open Role Menu Editor <ArrowRight className="w-3 h-3" />
+              </a>
             </Link>
           </div>
         </motion.div>
