@@ -4,7 +4,8 @@
 // Purpose: Searchable dropdown select used as base for ChannelSelect and RoleSelect
 // ============================================================
 import { Search, X, ChevronDown } from "lucide-react"
-import { useState, useRef, useEffect, ReactNode } from "react"
+import { useState, useRef, useEffect, useCallback, ReactNode } from "react"
+import { createPortal } from "react-dom"
 
 export interface SelectOption {
   value: string
@@ -29,6 +30,9 @@ interface SearchSelectProps {
   emptyMessage?: string
 }
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Render dropdown via portal to escape overflow-hidden/overflow-y-auto ancestors
+// that were clipping the dropdown in the setup wizard and other scrollable containers.
 export default function SearchSelect({
   options,
   value,
@@ -44,7 +48,9 @@ export default function SearchSelect({
 }: SearchSelectProps) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [portalStyle, setPortalStyle] = useState<React.CSSProperties>({})
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const selectedValues = multiple
@@ -52,9 +58,32 @@ export default function SearchSelect({
     : []
   const singleValue = !multiple ? (value as string | null) : null
 
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return
+    const rect = containerRef.current.getBoundingClientRect()
+    const spaceBelow = window.innerHeight - rect.bottom
+    const estimatedHeight = 290
+    const goUp = spaceBelow < estimatedHeight && rect.top > estimatedHeight
+
+    setPortalStyle({
+      position: "fixed",
+      left: rect.left,
+      width: rect.width,
+      zIndex: 9999,
+      ...(goUp
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }),
+    })
+  }, [])
+
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const target = e.target as Node
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(target) &&
+        (!dropdownRef.current || !dropdownRef.current.contains(target))
+      ) {
         setOpen(false)
         setSearch("")
       }
@@ -64,8 +93,29 @@ export default function SearchSelect({
   }, [])
 
   useEffect(() => {
-    if (open && inputRef.current) inputRef.current.focus()
+    if (!open) return
+    updatePosition()
+
+    function handleScroll(e: Event) {
+      if (dropdownRef.current?.contains(e.target as Node)) return
+      setOpen(false)
+      setSearch("")
+    }
+
+    window.addEventListener("scroll", handleScroll, true)
+    window.addEventListener("resize", updatePosition)
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true)
+      window.removeEventListener("resize", updatePosition)
+    }
+  }, [open, updatePosition])
+
+  useEffect(() => {
+    if (open && inputRef.current) {
+      requestAnimationFrame(() => inputRef.current?.focus())
+    }
   }, [open])
+  // --- END AI-MODIFIED ---
 
   const filtered = options.filter((opt) =>
     opt.label.toLowerCase().includes(search.toLowerCase())
@@ -144,6 +194,50 @@ export default function SearchSelect({
     })
   }
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Portal dropdown to document.body so it escapes overflow-hidden ancestors
+  const dropdownContent = open ? (
+    <div
+      ref={dropdownRef}
+      style={portalStyle}
+      className="bg-card border border-input rounded-lg shadow-xl overflow-hidden"
+    >
+      {options.length > 5 && (
+        <div className="p-2 border-b border-border">
+          <div className="relative">
+            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border-0 rounded text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
+      <div className="max-h-60 overflow-y-auto">
+        {filtered.length === 0 ? (
+          <div className="px-3 py-4 text-center text-sm text-muted-foreground">{emptyMessage}</div>
+        ) : (
+          <>
+            {ungrouped.length > 0 && renderOptions(ungrouped)}
+            {groups.map((group) => (
+              <div key={group}>
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-card/50">
+                  {group}
+                </div>
+                {renderOptions(filtered.filter((o) => o.group === group))}
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </div>
+  ) : null
+  // --- END AI-MODIFIED ---
+
   return (
     <div ref={containerRef} className="relative">
       {label && (
@@ -174,42 +268,7 @@ export default function SearchSelect({
         </div>
       </button>
 
-      {open && (
-        <div className="absolute z-50 mt-1 w-full bg-card border border-input rounded-lg shadow-xl overflow-hidden">
-          {options.length > 5 && (
-            <div className="p-2 border-b border-border">
-              <div className="relative">
-                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search..."
-                  className="w-full pl-8 pr-3 py-1.5 bg-muted/50 border-0 rounded text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-                />
-              </div>
-            </div>
-          )}
-          <div className="max-h-60 overflow-y-auto">
-            {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-center text-sm text-muted-foreground">{emptyMessage}</div>
-            ) : (
-              <>
-                {ungrouped.length > 0 && renderOptions(ungrouped)}
-                {groups.map((group) => (
-                  <div key={group}>
-                    <div className="px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider bg-card/50">
-                      {group}
-                    </div>
-                    {renderOptions(filtered.filter((o) => o.group === group))}
-                  </div>
-                ))}
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {dropdownContent && typeof document !== "undefined" && createPortal(dropdownContent, document.body)}
     </div>
   )
 }
