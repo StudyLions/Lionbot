@@ -40,9 +40,15 @@ export default async function handler(
     const auth = await requireAdmin(req, res, guildIdBig)
     if (!auth) return
 
-    const sub = await prisma.server_premium_subscriptions.findUnique({
-      where: { guildid: guildIdBig },
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Use findFirst with status filter (PK changed from guildid to auto-increment id)
+    const sub = await prisma.server_premium_subscriptions.findFirst({
+      where: {
+        guildid: guildIdBig,
+        status: { in: ["ACTIVE", "CANCELLING", "PAST_DUE"] },
+      },
     })
+    // --- END AI-MODIFIED ---
 
     if (!sub?.stripe_customer_id) {
       return res.status(404).json({

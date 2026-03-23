@@ -401,6 +401,8 @@ function SubscriptionCard({
   ];
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add "1 Server Premium included" perk for LionHeart++
   const perks = [
     { label: `${tier.lionCoinBoost}x vote bonus`, icon: TrendingUp, highlight: false },
     { label: `+${tier.dropRateBonus * 100}% drop rates`, icon: Sparkles, highlight: false },
@@ -409,7 +411,11 @@ function SubscriptionCard({
       ? [{ label: "Plants never die!", icon: Shield, highlight: true }]
       : [{ label: `${tier.deathTimerHours}h death timer`, icon: Shield, highlight: false }]),
     { label: `${tier.uprootRefund * 100}% uproot refund`, icon: Zap, highlight: false },
+    ...(tier.includesServerPremium
+      ? [{ label: "1 Server Premium included", icon: Server, highlight: true }]
+      : []),
   ];
+  // --- END AI-MODIFIED ---
 
   const renderButton = () => {
     if (isCurrentTier) {
@@ -594,6 +600,44 @@ function SubscriptionCard({
         </div>
       </div>
 
+      {/* --- AI-MODIFIED (2026-03-23) --- */}
+      {/* Purpose: Highlighted Server Premium block for LionHeart++ */}
+      {tier.includesServerPremium && (
+        <div
+          className="relative rounded-xl p-3.5 mb-6 overflow-hidden"
+          style={{
+            background: `linear-gradient(135deg, #3B82F620, #3B82F610)`,
+            border: `1px solid #3B82F640`,
+            boxShadow: `0 0 20px #3B82F615, inset 0 0 20px #3B82F608`,
+          }}
+        >
+          <div
+            className="absolute inset-0 shimmer-sweep"
+            style={{
+              background: `linear-gradient(90deg, transparent 0%, #3B82F625 50%, transparent 100%)`,
+            }}
+          />
+          <div className="relative flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{
+                background: `linear-gradient(135deg, #3B82F640, #3B82F620)`,
+                boxShadow: `0 0 12px #3B82F630`,
+              }}
+            >
+              <Server className="h-4 w-4 text-blue-400" />
+            </div>
+            <div>
+              <div className="text-sm font-semibold text-white">Server Premium included</div>
+              <div className="text-xs font-bold mt-0.5 text-blue-400">
+                Apply to any server
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --- END AI-MODIFIED --- */}
+
       {renderButton()}
     </div>
   );
@@ -672,6 +716,15 @@ function ComparisonTable() {
       free: "\u2014",
       values: () => "\u2713",
     },
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Server Premium row in comparison table
+    {
+      label: "Server Premium",
+      free: "\u2014",
+      values: (t: typeof SUBSCRIPTION_TIERS.LIONHEART) =>
+        t.includesServerPremium ? "1 server" : "\u2014",
+    },
+    // --- END AI-MODIFIED ---
   ];
 
   return (
@@ -792,9 +845,31 @@ function ServerPremiumShowcase() {
   const errorCount = useRef(0);
 
   const [adminServers, setAdminServers] = useState<AdminServer[]>([]);
+  const [allServers, setAllServers] = useState<AdminServer[]>([]);
   const [serversLoading, setServersLoading] = useState(false);
   const [selectedServer, setSelectedServer] = useState<string>("");
   const [checkingOut, setCheckingOut] = useState(false);
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: State for "My Server Premiums" overview panel
+  interface ServerPremiumInfo {
+    id: number;
+    guildId: string;
+    plan: string;
+    status: string;
+    currentPeriodEnd: string | null;
+    transferCooldownEnds: string | null;
+  }
+  interface LionheartPremiumInfo {
+    guildId: string | null;
+    isApplied: boolean;
+    premiumUntil: string | null;
+    transferCooldownEnds: string | null;
+  }
+  const [myPaidSubs, setMyPaidSubs] = useState<ServerPremiumInfo[]>([]);
+  const [myLhPremium, setMyLhPremium] = useState<LionheartPremiumInfo | null>(null);
+  const [premiumsLoading, setPremiumsLoading] = useState(false);
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!session) return;
@@ -804,11 +879,25 @@ function ServerPremiumShowcase() {
       .then((data: { servers: Array<{ guildId: string; guildName: string; iconUrl: string | null; role: string; botPresent: boolean }> }) => {
         const servers = data.servers || [];
         const admins = servers.filter((s) => s.role === "admin" && s.botPresent);
+        setAllServers(servers.filter((s) => s.botPresent));
         setAdminServers(admins);
         if (admins.length > 0) setSelectedServer(admins[0].guildId);
       })
       .catch(() => setAdminServers([]))
       .finally(() => setServersLoading(false));
+
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Fetch user's server premiums for overview panel
+    setPremiumsLoading(true);
+    fetch("/api/subscription/my-server-premiums")
+      .then((r) => r.ok ? r.json() : { paidSubscriptions: [], lionheartServerPremium: null })
+      .then((data: { paidSubscriptions: ServerPremiumInfo[]; lionheartServerPremium: LionheartPremiumInfo | null }) => {
+        setMyPaidSubs(data.paidSubscriptions || []);
+        setMyLhPremium(data.lionheartServerPremium || null);
+      })
+      .catch(() => {})
+      .finally(() => setPremiumsLoading(false));
+    // --- END AI-MODIFIED ---
   }, [session]);
 
   const handleServerCheckout = async (plan: string) => {
@@ -1143,6 +1232,95 @@ function ServerPremiumShowcase() {
           </div>
         </div>
       </div>
+
+      {/* --- AI-MODIFIED (2026-03-23) --- */}
+      {/* Purpose: My Server Premiums overview panel */}
+      {session && !premiumsLoading && (myPaidSubs.filter(s => s.status === "ACTIVE" || s.status === "CANCELLING").length > 0 || myLhPremium) && (
+        <div className="max-w-5xl mx-auto px-4 lg:px-6 mt-10">
+          <div className="rounded-xl border border-gray-700 bg-gray-800/60 p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                <Crown className="h-5 w-5 text-yellow-400" />
+                My Server Premiums
+              </h3>
+              <a
+                href="/dashboard/subscriptions"
+                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
+              >
+                Manage <ArrowRight className="h-3.5 w-3.5" />
+              </a>
+            </div>
+            <div className="space-y-2.5">
+              {myPaidSubs
+                .filter((s) => s.status === "ACTIVE" || s.status === "CANCELLING" || s.status === "PAST_DUE")
+                .map((s) => {
+                  const serverName = allServers.find((sv) => sv.guildId === s.guildId)?.guildName || `Server ${s.guildId}`;
+                  return (
+                    <div
+                      key={s.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-gray-700/50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Server className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                        <div>
+                          <div className="text-sm font-medium text-white">{serverName}</div>
+                          <div className="text-xs text-gray-500">
+                            {s.plan === "YEARLY" ? "Yearly" : "Monthly"} &middot;{" "}
+                            {s.currentPeriodEnd
+                              ? `Renews ${new Date(s.currentPeriodEnd).toLocaleDateString()}`
+                              : ""}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                          s.status === "ACTIVE"
+                            ? "bg-green-500/20 text-green-400"
+                            : s.status === "CANCELLING"
+                            ? "bg-yellow-500/20 text-yellow-400"
+                            : "bg-red-500/20 text-red-400"
+                        }`}
+                      >
+                        {s.status === "ACTIVE" ? "Active" : s.status === "CANCELLING" ? "Cancelling" : "Past Due"}
+                      </span>
+                    </div>
+                  );
+                })}
+              {myLhPremium && (
+                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-blue-500/30">
+                  <div className="flex items-center gap-3">
+                    <Crown className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+                    <div>
+                      <div className="text-sm font-medium text-white">
+                        {myLhPremium.isApplied
+                          ? allServers.find((sv) => sv.guildId === myLhPremium.guildId)?.guildName || `Server ${myLhPremium.guildId}`
+                          : "Not applied yet"}
+                      </div>
+                      <div className="text-xs text-blue-400 font-medium">
+                        LionHeart++ included
+                      </div>
+                    </div>
+                  </div>
+                  {myLhPremium.isApplied ? (
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
+                      Active
+                    </span>
+                  ) : (
+                    <a
+                      href="/dashboard/subscriptions"
+                      className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                    >
+                      Apply Now
+                    </a>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {/* --- END AI-MODIFIED --- */}
+
     </section>
   );
 }

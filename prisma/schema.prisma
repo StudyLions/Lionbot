@@ -291,9 +291,9 @@ model guild_config {
   // Purpose: Sticky messages relation
   sticky_messages              sticky_messages[]
   // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Server premium Stripe subscription relation
-  server_premium_subscriptions server_premium_subscriptions?
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Server premium subscriptions relation (one-to-many for transfers)
+  server_premium_subscriptions server_premium_subscriptions[]
   // --- END AI-MODIFIED ---
 }
 
@@ -1681,11 +1681,12 @@ model lg_marketplace_sales {
 
 // --- END AI-MODIFIED ---
 
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Server premium Stripe subscriptions (replaces gem-based premium purchase)
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Server premium Stripe subscriptions with auto-increment PK for transfer support
 
 model server_premium_subscriptions {
-  guildid                BigInt    @id
+  id                     Int       @id @default(autoincrement())
+  guildid                BigInt
   userid                 BigInt
   stripe_customer_id     String
   stripe_subscription_id String?
@@ -1695,11 +1696,13 @@ model server_premium_subscriptions {
   current_period_end     DateTime? @db.Timestamptz(6)
   created_at             DateTime? @default(now()) @db.Timestamptz(6)
   updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+  transferred_at         DateTime? @db.Timestamptz(6)
 
   guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([stripe_customer_id], map: "server_premium_subs_stripe_customer")
   @@index([userid], map: "server_premium_subs_user")
+  @@index([guildid], map: "server_premium_subs_guild")
 }
 
 // --- END AI-MODIFIED ---
@@ -1959,19 +1962,75 @@ model leaderboard_autopost_action_queue {
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Ambient Sounds Bot premium feature - config table for 5 generic sound bots
 model ambient_sounds_config {
-  guildid            BigInt
-  bot_number         Int      @db.SmallInt
-  sound_type         String?  @db.VarChar(20)
-  channelid          BigInt?
-  volume             Int      @default(50) @db.SmallInt
-  enabled            Boolean  @default(true)
-  status             String   @default("pending") @db.VarChar(20)
-  error_msg          String?
-  nickname_template  String?  @db.VarChar(100)
-  updated_at         DateTime @default(now()) @db.Timestamptz(6)
+  guildid              BigInt
+  bot_number           Int      @db.SmallInt
+  sound_type           String?  @db.VarChar(20)
+  channelid            BigInt?
+  volume               Int      @default(50) @db.SmallInt
+  enabled              Boolean  @default(true)
+  status               String   @default("pending") @db.VarChar(20)
+  error_msg            String?
+  nickname_template    String?  @db.VarChar(100)
+  voting_enabled       Boolean  @default(false)
+  vote_cooldown_minutes Int     @default(30)
+  updated_at           DateTime @default(now()) @db.Timestamptz(6)
 
   @@id([guildid, bot_number])
 }
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Track play sessions for analytics dashboard
+model ambient_sounds_usage {
+  usage_id       Int       @id @default(autoincrement())
+  guildid        BigInt
+  bot_number     Int       @db.SmallInt
+  sound_type     String    @db.VarChar(20)
+  channelid      BigInt
+  started_at     DateTime  @default(now()) @db.Timestamptz(6)
+  ended_at       DateTime? @db.Timestamptz(6)
+  peak_listeners Int       @default(0)
+
+  @@index([guildid, started_at])
+}
+
+// Purpose: Time-based sound scheduling per bot
+model ambient_sounds_schedule {
+  schedule_id Int      @id @default(autoincrement())
+  guildid     BigInt
+  bot_number  Int      @db.SmallInt
+  sound_type  String   @db.VarChar(20)
+  start_time  DateTime @db.Time(6)
+  end_time    DateTime @db.Time(6)
+  days        Int[]    @db.SmallInt
+
+  @@unique([guildid, bot_number, start_time])
+}
+
+// Purpose: Private room sound bot rental tracking
+model ambient_sounds_rentals {
+  rental_id  Int       @id @default(autoincrement())
+  guildid    BigInt
+  channelid  BigInt
+  userid     BigInt
+  bot_number Int       @db.SmallInt
+  sound_type String    @db.VarChar(20)
+  volume     Int       @default(50) @db.SmallInt
+  started_at DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at DateTime  @db.Timestamptz(6)
+  ended_at   DateTime? @db.Timestamptz(6)
+  total_cost Int       @default(0)
+
+  @@index([guildid, ended_at])
+}
+
+// Purpose: Guild-level settings for room sound bot rentals
+model ambient_sounds_guild_config {
+  guildid                BigInt   @id
+  room_rental_enabled    Boolean  @default(false)
+  room_rental_hourly_rate Int     @default(10)
+  updated_at             DateTime @default(now()) @db.Timestamptz(6)
+}
+// --- END AI-MODIFIED ---
 
 // --- END AI-MODIFIED ---
 
@@ -2175,6 +2234,21 @@ model lg_family_gold_withdrawals {
   lg_families lg_families @relation(fields: [family_id], references: [family_id], onDelete: Cascade)
 
   @@index([family_id, userid, withdrawn_at], map: "idx_family_gold_withdrawals_daily")
+}
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: LionHeart++ included server premium tracking
+
+model lionheart_server_premium {
+  userid              BigInt    @id
+  guildid             BigInt?
+  last_transferred_at DateTime? @db.Timestamptz(6)
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid], map: "lionheart_sp_guild")
 }
 
 // --- END AI-MODIFIED ---

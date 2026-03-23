@@ -69,6 +69,10 @@ const sections: NavSection[] = [
     title: "Account",
     items: [
       { href: "/dashboard/profile", label: "Profile", icon: <User size={16} /> },
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Subscriptions management page link
+      { href: "/dashboard/subscriptions", label: "Subscriptions", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
     ],
   },
   // --- AI-MODIFIED (2026-03-14) ---
