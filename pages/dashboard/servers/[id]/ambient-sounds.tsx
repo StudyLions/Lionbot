@@ -11,7 +11,7 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
-  PageHeader, SectionCard, ChannelSelect, SaveBar, toast,
+  PageHeader, SectionCard, ChannelSelect, toast,
 } from "@/components/dashboard/ui"
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
@@ -144,7 +144,6 @@ export default function AmbientSoundsPage() {
 
   const [slots, setSlots] = useState<LocalSlot[]>([])
   const [original, setOriginal] = useState<LocalSlot[]>([])
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     if (!apiData) return
@@ -171,29 +170,42 @@ export default function AmbientSoundsPage() {
     )
   }, [])
 
-  const hasChanges = JSON.stringify(slots) !== JSON.stringify(original)
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Immediate save for a single slot — called by Start/Stop and live setting changes
+  const [savingSlot, setSavingSlot] = useState<number | null>(null)
 
-  const handleSave = useCallback(async () => {
-    setSaving(true)
+  const saveSlot = useCallback(async (slot: LocalSlot) => {
+    setSavingSlot(slot.bot_number)
     try {
-      const changed = slots.filter((s, i) => JSON.stringify(s) !== JSON.stringify(original[i]))
-      for (const slot of changed) {
-        await dashboardMutate("PATCH", `/api/dashboard/servers/${guildId}/ambient-sounds`, {
-          bot_number: slot.bot_number,
-          sound_type: slot.sound_type,
-          channelid: slot.channelid,
-          volume: slot.volume,
-          enabled: slot.enabled,
-        })
-      }
+      await dashboardMutate("PATCH", `/api/dashboard/servers/${guildId}/ambient-sounds`, {
+        bot_number: slot.bot_number,
+        sound_type: slot.sound_type,
+        channelid: slot.channelid,
+        volume: slot.volume,
+        enabled: slot.enabled,
+      })
       invalidate(apiUrl!)
-      setOriginal(JSON.parse(JSON.stringify(slots)))
-      toast.success(`Saved ${changed.length} sound bot configuration${changed.length > 1 ? "s" : ""}`)
+      setOriginal((prev) =>
+        prev.map((s) => (s.bot_number === slot.bot_number ? { ...slot } : s)),
+      )
+      toast.success(slot.enabled ? "Bot started — it will connect shortly" : "Bot stopped")
     } catch (err: any) {
       toast.error(err?.message || "Failed to save")
     }
-    setSaving(false)
-  }, [slots, original, guildId, apiUrl])
+    setSavingSlot(null)
+  }, [guildId, apiUrl])
+
+  const updateAndSave = useCallback((botNum: number, patch: Partial<LocalSlot>) => {
+    setSlots((prev) => {
+      const updated = prev.map((s) => (s.bot_number === botNum ? { ...s, ...patch } : s))
+      const slot = updated.find((s) => s.bot_number === botNum)
+      if (slot && slot.enabled) {
+        saveSlot(slot)
+      }
+      return updated
+    })
+  }, [saveSlot])
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Refresh button handler to re-fetch status
@@ -350,7 +362,7 @@ export default function AmbientSoundsPage() {
                                   {SOUNDS.map(({ id: sid, name, Icon }) => (
                                     <button
                                       key={sid}
-                                      onClick={() => updateSlot(slot.bot_number, { sound_type: sid })}
+                                      onClick={() => updateAndSave(slot.bot_number, { sound_type: sid })}
                                       className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                                         slot.sound_type === sid
@@ -373,7 +385,7 @@ export default function AmbientSoundsPage() {
                                   value={slot.channelid ? [slot.channelid] : []}
                                   onChange={(v) => {
                                     const val = Array.isArray(v) ? v[0] ?? null : v
-                                    updateSlot(slot.bot_number, { channelid: val })
+                                    updateAndSave(slot.bot_number, { channelid: val })
                                   }}
                                   placeholder="Select a voice channel"
                                   channelTypes={[2]}
@@ -387,7 +399,7 @@ export default function AmbientSoundsPage() {
                                   {VOLUME_OPTIONS.map(({ value, label }) => (
                                     <button
                                       key={value}
-                                      onClick={() => updateSlot(slot.bot_number, { volume: value })}
+                                      onClick={() => updateAndSave(slot.bot_number, { volume: value })}
                                       className={cn(
                                         "px-4 py-1.5 rounded-lg text-xs font-medium transition-all border",
                                         slot.volume === value
@@ -401,23 +413,30 @@ export default function AmbientSoundsPage() {
                                 </div>
                               </div>
 
-                              {/* --- AI-MODIFIED (2026-03-22) --- */}
-                              {/* Purpose: Prominent Start/Stop button replacing the hidden toggle */}
+                              {/* --- AI-MODIFIED (2026-03-23) --- */}
+                              {/* Purpose: Start/Stop button that immediately saves to API */}
                               {slot.enabled ? (
                                 <button
-                                  onClick={() => updateSlot(slot.bot_number, { enabled: false })}
+                                  onClick={() => {
+                                    const updated = { ...slot, enabled: false }
+                                    updateSlot(slot.bot_number, { enabled: false })
+                                    saveSlot(updated)
+                                  }}
+                                  disabled={savingSlot === slot.bot_number}
                                   className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-red-600/15 hover:bg-red-600/25 text-red-400 text-sm font-medium transition-colors border border-red-500/20"
                                 >
                                   <Square size={14} />
-                                  Stop Playing
+                                  {savingSlot === slot.bot_number ? "Saving..." : "Stop Playing"}
                                 </button>
                               ) : (
                                 <button
                                   onClick={() => {
                                     if (!slot.sound_type || !slot.channelid) return
+                                    const updated = { ...slot, enabled: true }
                                     updateSlot(slot.bot_number, { enabled: true })
+                                    saveSlot(updated)
                                   }}
-                                  disabled={!slot.sound_type || !slot.channelid}
+                                  disabled={!slot.sound_type || !slot.channelid || savingSlot === slot.bot_number}
                                   className={cn(
                                     "flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-medium transition-colors",
                                     slot.sound_type && slot.channelid
@@ -426,13 +445,15 @@ export default function AmbientSoundsPage() {
                                   )}
                                 >
                                   <Play size={14} />
-                                  {!slot.sound_type && !slot.channelid
-                                    ? "Select a sound and channel to start"
-                                    : !slot.sound_type
-                                      ? "Select a sound to start"
-                                      : !slot.channelid
-                                        ? "Select a channel to start"
-                                        : "Start Playing"}
+                                  {savingSlot === slot.bot_number
+                                    ? "Saving..."
+                                    : !slot.sound_type && !slot.channelid
+                                      ? "Select a sound and channel to start"
+                                      : !slot.sound_type
+                                        ? "Select a sound to start"
+                                        : !slot.channelid
+                                          ? "Select a channel to start"
+                                          : "Start Playing"}
                                 </button>
                               )}
                               {/* --- END AI-MODIFIED --- */}
@@ -445,13 +466,7 @@ export default function AmbientSoundsPage() {
                   </div>
                 )}
 
-                {hasChanges && isPremium && (
-                  <SaveBar
-                    onSave={handleSave}
-                    onDiscard={() => setSlots(JSON.parse(JSON.stringify(original)))}
-                    saving={saving}
-                  />
-                )}
+                {/* SaveBar removed — Start/Stop button and setting changes auto-save */}
               </div>
             </div>
           </div>
