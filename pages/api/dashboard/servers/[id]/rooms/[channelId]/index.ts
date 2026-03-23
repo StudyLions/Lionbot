@@ -26,7 +26,10 @@ export default apiHandler({
     const room = await prisma.rented_rooms.findUnique({
       where: { channelid: channelId },
       include: {
-        rented_members: { select: { userid: true, contribution: true } },
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: contribution column does not exist in rented_members schema
+        rented_members: { select: { userid: true } },
+        // --- END AI-MODIFIED ---
       },
     })
 
@@ -72,7 +75,10 @@ export default apiHandler({
     const ucMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
     const memMap = new Map(memberRows.map((m) => [m.userid.toString(), m]))
     const studyMap = new Map(studyStats.map((s) => [s.userid.toString(), s._sum.duration ?? 0]))
-    const contribMap = new Map(room.rented_members.map((m) => [m.userid.toString(), m.contribution]))
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: contribution column removed from rented_members schema
+    const contribMap = new Map(room.rented_members.map((m) => [m.userid.toString(), 0]))
+    // --- END AI-MODIFIED ---
     const liveSet = new Set(ongoingSessions.map((s) => s.userid.toString()))
 
     const members = allMemberIds.map((uid) => {
