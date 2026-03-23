@@ -94,6 +94,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/settings", label: "Settings", icon: <Settings size={16} /> },
         { href: "/ranks", label: "Ranks", icon: <Trophy size={16} /> },
         // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Leaderboard configuration page in Configuration section
+        { href: "/leaderboard", label: "Leaderboard", icon: <BarChart3 size={16} /> },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-03-23) ---
         // Purpose: Shop link moved to Overview section (visible to all members), removed from admin-only Configuration
         // --- Original code (commented out for rollback) ---
         // { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },

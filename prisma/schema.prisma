@@ -271,6 +271,10 @@ model guild_config {
   // Purpose: Track whether admin has completed or skipped the setup wizard
   setup_wizard_dismissed_at    DateTime?                     @db.Timestamptz(6)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Leaderboard role filter toggle (disabled by default)
+  leaderboard_role_filter_enabled Boolean?                   @default(false)
+  // --- END AI-MODIFIED ---
   coin_transactions            coin_transactions[]
   members                      members[]
   msg_ranks                    msg_ranks[]
@@ -298,6 +302,10 @@ model guild_config {
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Server premium subscriptions relation (one-to-many for transfers)
   server_premium_subscriptions server_premium_subscriptions[]
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Leaderboard filter roles relation
+  leaderboard_filter_roles     leaderboard_filter_roles[]
   // --- END AI-MODIFIED ---
 }
 
@@ -563,6 +571,11 @@ model rented_rooms {
   // Purpose: Freeze support for admin panel
   frozen_at      DateTime?        @db.Timestamptz(6)
   frozen_by      BigInt?
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Dashboard rename support -- set to NOW() when dashboard renames,
+  // bot clears after syncing to Discord. NULL means no pending rename.
+  name_changed_at DateTime?       @db.Timestamptz(6)
   // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Remove @ignore now that rented_members has a composite PK
@@ -1066,6 +1079,18 @@ model video_exempt_roles {
 
   @@id([guildid, roleid])
 }
+
+// --- AI-GENERATED (2026-03-23) ---
+// Purpose: Roles that users can filter the /leaderboard command by
+model leaderboard_filter_roles {
+  guildid      BigInt
+  roleid       BigInt
+  timestamp    DateTime     @default(now()) @map("_timestamp") @db.Timestamptz(6)
+  guild_config guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade)
+
+  @@id([guildid, roleid])
+}
+// --- END AI-GENERATED ---
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model visible_statistics {

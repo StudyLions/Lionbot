@@ -117,6 +117,20 @@ const PAGE_ITEMS: SearchItem[] = [
     iconName: "ShoppingBag",
     // --- END AI-MODIFIED ---
   },
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Leaderboard config page in search registry
+  {
+    id: "page-leaderboard-config",
+    title: "Leaderboard",
+    description: "Season, unranked roles, and role filtering",
+    category: "page",
+    page: "Configuration",
+    route: "/leaderboard",
+    keywords: ["leaderboard", "season", "unranked", "filter", "role", "ranking"],
+    iconName: "BarChart3",
+    requiredLevel: "admin",
+  },
+  // --- END AI-MODIFIED ---
   {
     id: "page-rolemenus",
     title: "Role Menus",
@@ -402,18 +416,31 @@ const SETTINGS_SECTION_ITEMS: SearchItem[] = [
     iconName: "Bot",
     requiredLevel: "admin",
   },
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Moved leaderboard settings from Settings to dedicated Leaderboard page
   {
     id: "setting-statistics",
-    title: "Season & Statistics",
-    description: "Season start, XP per word, unranked roles",
+    title: "Season & Leaderboard",
+    description: "Season start, unranked roles, role filtering",
     category: "setting",
-    page: "Settings",
-    route: "/settings",
-    section: "statistics",
-    keywords: ["season", "stats", "leaderboard", "unranked", "xp", "word", "reset"],
-    iconName: "Calendar",
+    page: "Leaderboard",
+    route: "/leaderboard",
+    keywords: ["season", "stats", "leaderboard", "unranked", "filter", "role", "ranking"],
+    iconName: "BarChart3",
     requiredLevel: "admin",
   },
+  {
+    id: "setting-role-filter",
+    title: "Leaderboard Role Filter",
+    description: "Let users filter /leaderboard by role",
+    category: "setting",
+    page: "Leaderboard",
+    route: "/leaderboard",
+    keywords: ["filter", "role", "leaderboard", "dropdown"],
+    iconName: "Filter",
+    requiredLevel: "admin",
+  },
+  // --- END AI-MODIFIED ---
   {
     id: "setting-danger",
     title: "Danger Zone",
