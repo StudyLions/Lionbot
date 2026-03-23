@@ -31,6 +31,10 @@ const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), { s
 const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), { ssr: false })
 
 import { mergeLayout } from "@/utils/roomConstraints"
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Import xpForLevel to compute XP progress bar max value
+import { xpForLevel } from "@/utils/gameConstants"
+// --- END AI-MODIFIED ---
 
 interface FriendProfileData {
   discordId: string
@@ -376,7 +380,10 @@ export default function FriendProfilePage() {
                             <span className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">Level</span>
                             <span className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">{pet.level}</span>
                           </div>
-                          <PixelBar value={pet.xp} max={pet.xpToNext} label="XP" color="gold" />
+                          {/* --- AI-MODIFIED (2026-03-23) --- */}
+                          {/* Purpose: Compute xpToNext from polynomial curve instead of missing API field */}
+                          <PixelBar value={pet.xp} max={xpForLevel(pet.level)} label="XP" color="gold" />
+                          {/* --- END AI-MODIFIED --- */}
                         </div>
 
                         <div className="flex items-center gap-4 pt-1">
