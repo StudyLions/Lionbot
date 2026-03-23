@@ -48,7 +48,10 @@ export default apiHandler({
       prisma.rented_rooms.findMany({
         where,
         include: {
-          rented_members: { select: { userid: true, contribution: true } },
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: contribution column does not exist in rented_members schema
+          rented_members: { select: { userid: true } },
+          // --- END AI-MODIFIED ---
         },
         orderBy,
         skip: (page - 1) * pageSize,
