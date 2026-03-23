@@ -93,6 +93,89 @@ export default apiHandler({
     }
 
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    const timelineStartStr = req.query.timelineStart as string | undefined
+    const timelineEndStr = req.query.timelineEnd as string | undefined
+
+    const mapSession = (s: {
+      sessionid: number
+      start_time: Date
+      duration: number
+      live_duration: number | null
+      stream_duration: number | null
+      video_duration: number | null
+      tag: string | null
+      rating: number | null
+      is_manual: boolean | null
+    }) => ({
+      id: s.sessionid,
+      startTime: s.start_time.toISOString(),
+      duration: s.duration,
+      durationMinutes: Math.round(s.duration / 60),
+      liveDurationMinutes: Math.round((s.live_duration || 0) / 60),
+      streamDurationMinutes: Math.round((s.stream_duration || 0) / 60),
+      videoDurationMinutes: Math.round((s.video_duration || 0) / 60),
+      tag: s.tag,
+      rating: s.rating,
+      isManual: !!s.is_manual,
+    })
+
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Week timeline — load sessions in [timelineStart, timelineEnd] (ISO from client local week bounds), cap 200
+    if (timelineStartStr && timelineEndStr) {
+      const t0 = new Date(timelineStartStr)
+      const t1 = new Date(timelineEndStr)
+      if (isNaN(t0.getTime()) || isNaN(t1.getTime())) {
+        return res.status(400).json({ error: "Invalid timelineStart or timelineEnd" })
+      }
+
+      const TIMELINE_CAP = 200
+      const [timelineSessions, usageCount] = await Promise.all([
+        prisma.voice_sessions.findMany({
+          where: {
+            guildid: guildId,
+            userid: userId,
+            start_time: { gte: t0, lte: t1 },
+          },
+          orderBy: { start_time: "asc" },
+          take: TIMELINE_CAP,
+          select: {
+            sessionid: true,
+            start_time: true,
+            duration: true,
+            live_duration: true,
+            stream_duration: true,
+            video_duration: true,
+            tag: true,
+            rating: true,
+            is_manual: true,
+          },
+        }),
+        prisma.manual_session_log.count({
+          where: {
+            guildid: guildId,
+            userid: userId,
+            created_at: { gte: monthStart },
+            action: { in: ["ADD", "EDIT"] },
+          },
+        }),
+      ])
+
+      return res.status(200).json({
+        servers,
+        sessions: timelineSessions.map(mapSession),
+        pagination: null,
+        usage: {
+          used: usageCount,
+          limit: serverInfo.monthlyLimit,
+        },
+        timelineRange: {
+          start: t0.toISOString(),
+          end: t1.toISOString(),
+          capped: timelineSessions.length >= TIMELINE_CAP,
+        },
+      })
+    }
+    // --- END AI-MODIFIED ---
 
     const [sessions, total, usageCount] = await Promise.all([
       prisma.voice_sessions.findMany({
@@ -127,18 +210,7 @@ export default apiHandler({
 
     return res.status(200).json({
       servers,
-      sessions: sessions.map((s) => ({
-        id: s.sessionid,
-        startTime: s.start_time.toISOString(),
-        duration: s.duration,
-        durationMinutes: Math.round(s.duration / 60),
-        liveDurationMinutes: Math.round((s.live_duration || 0) / 60),
-        streamDurationMinutes: Math.round((s.stream_duration || 0) / 60),
-        videoDurationMinutes: Math.round((s.video_duration || 0) / 60),
-        tag: s.tag,
-        rating: s.rating,
-        isManual: !!s.is_manual,
-      })),
+      sessions: sessions.map(mapSession),
       pagination: {
         page,
         pageSize,

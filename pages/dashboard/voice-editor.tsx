@@ -1,7 +1,10 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-23
-// Purpose: Voice Time Editor member page - browse servers, add/edit/delete sessions
+// Purpose: Voice Time Editor member page — week timeline, sheet editor, dnd-kit drag/resize
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Visual week timeline + SessionEditSheet + date-range API
+// --- END AI-MODIFIED ---
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
@@ -12,12 +15,35 @@ import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import {
-  Clock, Pencil, Trash2, Plus, ChevronDown, Crown, Lock,
-  AlertTriangle, Calendar, CheckCircle2, Info, X, Server,
-  Headphones, Camera, Radio, Shield,
+  Clock, Plus, ChevronDown, Crown, Lock,
+  CheckCircle2, Info, Server, Shield,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragMoveEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import VoiceEditorWeekNav from "@/components/dashboard/voice-editor/VoiceEditorWeekNav"
+import DayTimelineRow from "@/components/dashboard/voice-editor/DayTimelineRow"
+import SessionEditSheet from "@/components/dashboard/voice-editor/SessionEditSheet"
+import type { VoiceEditorSession } from "@/lib/voiceEditorTimeline"
+import {
+  startOfWeekMonday,
+  weekDaysFromMonday,
+  endOfWeekSunday,
+  localDayKey,
+  deltaPixelsToMinutes,
+  snapMinutesToGrid,
+  minutesFromMidnightToDate,
+  startMinutesFromMidnight,
+  overlapsOtherSession,
+  overlapPreviewIdsForMove,
+} from "@/lib/voiceEditorTimeline"
 
 interface ServerInfo {
   guildId: string
@@ -29,19 +55,6 @@ interface ServerInfo {
   autoDisableDate: string | null
 }
 
-interface SessionItem {
-  id: number
-  startTime: string
-  duration: number
-  durationMinutes: number
-  liveDurationMinutes: number
-  streamDurationMinutes: number
-  videoDurationMinutes: number
-  tag: string | null
-  rating: number | null
-  isManual: boolean
-}
-
 interface UsageInfo {
   used: number
   limit: number
@@ -49,415 +62,237 @@ interface UsageInfo {
 
 interface VoiceEditorResponse {
   servers: ServerInfo[]
-  sessions: SessionItem[] | null
+  sessions: VoiceEditorSession[] | null
   pagination: { page: number; pageSize: number; total: number; totalPages: number } | null
   usage: UsageInfo | null
+  timelineRange?: { start: string; end: string; capped: boolean }
 }
 
-function formatDuration(minutes: number): string {
-  if (minutes < 1) return "<1m"
-  const h = Math.floor(minutes / 60)
-  const m = minutes % 60
-  if (h === 0) return `${m}m`
-  if (m === 0) return `${h}h`
-  return `${h}h ${m}m`
-}
-
-function formatDate(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" })
-}
-
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-}
-
-function getSessionType(s: SessionItem): "camera" | "stream" | "voice" {
-  if (s.videoDurationMinutes > 0) return "camera"
-  if (s.streamDurationMinutes > 0) return "stream"
-  return "voice"
-}
-
-const TYPE_ICONS = {
-  voice: { icon: Headphones, label: "Voice", color: "text-blue-400" },
-  camera: { icon: Camera, label: "Camera", color: "text-emerald-400" },
-  stream: { icon: Radio, label: "Stream", color: "text-purple-400" },
-}
-
-function AddSessionModal({ guildId, guildName, usage, onClose, onSuccess }: {
-  guildId: string
-  guildName: string
-  usage: UsageInfo
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [date, setDate] = useState("")
-  const [time, setTime] = useState("")
-  const [hours, setHours] = useState(0)
-  const [minutes, setMinutes] = useState(30)
-  const [reason, setReason] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState("")
-
-  const today = new Date().toISOString().slice(0, 10)
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
-
-  const totalMinutes = hours * 60 + minutes
-  const isValid = date && time && totalMinutes >= 5 && totalMinutes <= 720
-
-  const handleSubmit = async () => {
-    if (!isValid || submitting) return
-    setError("")
-    setSubmitting(true)
-
-    const startTime = new Date(`${date}T${time}:00`).toISOString()
-    const duration = totalMinutes * 60
-
-    try {
-      const resp = await dashboardMutate("POST", "/api/dashboard/voice-editor/sessions", {
-        guildId,
-        startTime,
-        duration,
-        reason: reason.trim() || undefined,
-      })
-      if (resp.error) {
-        setError(resp.error)
-      } else {
-        toast.success("Session added successfully")
-        onSuccess()
-        onClose()
-      }
-    } catch (err: any) {
-      setError(err?.message || "Failed to add session")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl w-full max-w-md p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-foreground">Add Study Session</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
-        </div>
-
-        <div className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
-          <Server size={12} />
-          <span>{guildName}</span>
-          <span className="ml-auto text-primary font-medium">{usage.used}/{usage.limit} edits used</span>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                min={thirtyDaysAgo}
-                max={today}
-                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Start Time</label>
-              <input
-                type="time"
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">Duration</label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={12}
-                  value={hours}
-                  onChange={e => setHours(Math.max(0, Math.min(12, parseInt(e.target.value) || 0)))}
-                  className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">hours</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={minutes}
-                  onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                  className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">min</span>
-              </div>
-            </div>
-            {totalMinutes > 0 && totalMinutes < 5 && (
-              <p className="text-[10px] text-destructive mt-1">Minimum 5 minutes</p>
-            )}
-            {totalMinutes > 720 && (
-              <p className="text-[10px] text-destructive mt-1">Maximum 12 hours</p>
-            )}
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">Reason (optional)</label>
-            <input
-              type="text"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              placeholder="e.g. Bot was offline, studied at library..."
-              maxLength={500}
-              className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-              <AlertTriangle size={12} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || submitting}
-            className={cn(
-              "w-full py-2.5 rounded-lg text-sm font-medium transition-colors",
-              isValid && !submitting
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            {submitting ? "Adding..." : "Add Session"}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function EditSessionModal({ session, guildId, guildName, usage, onClose, onSuccess }: {
-  session: SessionItem
-  guildId: string
-  guildName: string
-  usage: UsageInfo
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const startDate = new Date(session.startTime)
-  const [date, setDate] = useState(startDate.toISOString().slice(0, 10))
-  const [time, setTime] = useState(startDate.toTimeString().slice(0, 5))
-  const [hours, setHours] = useState(Math.floor(session.duration / 3600))
-  const [minutes, setMinutes] = useState(Math.floor((session.duration % 3600) / 60))
-  const [reason, setReason] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState("")
-
-  const today = new Date().toISOString().slice(0, 10)
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10)
-
-  const totalMinutes = hours * 60 + minutes
-  const isValid = date && time && totalMinutes >= 5 && totalMinutes <= 720
-
-  const handleSubmit = async () => {
-    if (!isValid || submitting) return
-    setError("")
-    setSubmitting(true)
-
-    const startTime = new Date(`${date}T${time}:00`).toISOString()
-    const duration = totalMinutes * 60
-
-    try {
-      const resp = await dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${session.id}`, {
-        startTime,
-        duration,
-        reason: reason.trim() || undefined,
-      })
-      if (resp.error) {
-        setError(resp.error)
-      } else {
-        toast.success("Session updated")
-        onSuccess()
-        onClose()
-      }
-    } catch (err: any) {
-      setError(err?.message || "Failed to update session")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={onClose}>
-      <div className="bg-card border border-border rounded-xl w-full max-w-md p-6 shadow-xl" onClick={e => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-semibold text-foreground">Edit Session</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground"><X size={18} /></button>
-        </div>
-
-        <div className="text-xs text-muted-foreground mb-4 flex items-center gap-1.5">
-          <Server size={12} />
-          <span>{guildName}</span>
-          {session.isManual && (
-            <span className="ml-1 px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-medium">Manual</span>
-          )}
-          <span className="ml-auto text-primary font-medium">{usage.used}/{usage.limit} edits used</span>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Date</label>
-              <input
-                type="date"
-                value={date}
-                onChange={e => setDate(e.target.value)}
-                min={thirtyDaysAgo}
-                max={today}
-                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground block mb-1">Start Time</label>
-              <input
-                type="time"
-                value={time}
-                onChange={e => setTime(e.target.value)}
-                className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">Duration</label>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={12}
-                  value={hours}
-                  onChange={e => setHours(Math.max(0, Math.min(12, parseInt(e.target.value) || 0)))}
-                  className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">hours</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  min={0}
-                  max={59}
-                  value={minutes}
-                  onChange={e => setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)))}
-                  className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-                />
-                <span className="text-xs text-muted-foreground whitespace-nowrap">min</span>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-medium text-muted-foreground block mb-1">Reason (optional)</label>
-            <input
-              type="text"
-              value={reason}
-              onChange={e => setReason(e.target.value)}
-              placeholder="Why are you editing this session?"
-              maxLength={500}
-              className="w-full bg-muted/30 border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-1 focus:ring-primary"
-            />
-          </div>
-
-          {error && (
-            <div className="flex items-center gap-2 text-xs text-destructive bg-destructive/10 rounded-lg px-3 py-2">
-              <AlertTriangle size={12} />
-              <span>{error}</span>
-            </div>
-          )}
-
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || submitting}
-            className={cn(
-              "w-full py-2.5 rounded-lg text-sm font-medium transition-colors",
-              isValid && !submitting
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "bg-muted text-muted-foreground cursor-not-allowed"
-            )}
-          >
-            {submitting ? "Saving..." : "Save Changes"}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
+function trackClickToTime(day: Date, clientX: number, track: HTMLElement): string {
+  const rect = track.getBoundingClientRect()
+  const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width))
+  const minutesFromMidnight = x * 24 * 60
+  const snapped = Math.round(minutesFromMidnight / 15) * 15
+  const capped = Math.min(snapped, 24 * 60 - 15)
+  const d = new Date(day)
+  d.setHours(0, 0, 0, 0)
+  d.setMinutes(capped)
+  const hh = String(d.getHours()).padStart(2, "0")
+  const mm = String(d.getMinutes()).padStart(2, "0")
+  return `${hh}:${mm}`
 }
 
 export default function VoiceEditorPage() {
   const { data: session } = useSession()
   const [selectedGuild, setSelectedGuild] = useState<string>("")
-  const [page, setPage] = useState(1)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [editingSession, setEditingSession] = useState<SessionItem | null>(null)
-  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [weekMonday, setWeekMonday] = useState(() => startOfWeekMonday(new Date()))
   const [showServerDropdown, setShowServerDropdown] = useState(false)
+
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetMode, setSheetMode] = useState<"add" | "edit">("add")
+  const [sheetInitialDay, setSheetInitialDay] = useState<Date | null>(null)
+  const [editingSession, setEditingSession] = useState<VoiceEditorSession | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+
+  const timelineStart = useMemo(() => startOfWeekMonday(weekMonday), [weekMonday])
+  const timelineEnd = useMemo(() => endOfWeekSunday(timelineStart), [timelineStart])
+  const weekDays = useMemo(() => weekDaysFromMonday(timelineStart), [timelineStart])
 
   const queryParams = useMemo(() => {
     const p = new URLSearchParams()
     if (selectedGuild) {
       p.set("guild", selectedGuild)
-      p.set("page", String(page))
-      p.set("pageSize", "20")
+      p.set("timelineStart", timelineStart.toISOString())
+      p.set("timelineEnd", timelineEnd.toISOString())
     }
     return p.toString()
-  }, [selectedGuild, page])
+  }, [selectedGuild, timelineStart, timelineEnd])
 
   const { data, isLoading, mutate } = useDashboard<VoiceEditorResponse>(
     session ? `/api/dashboard/voice-editor${queryParams ? `?${queryParams}` : ""}` : null
   )
 
   const servers = data?.servers ?? []
-  const sessions = data?.sessions ?? null
-  const pagination = data?.pagination ?? null
+  const sessions = data?.sessions ?? []
   const usage = data?.usage ?? null
-  const selectedServer = servers.find(s => s.guildId === selectedGuild)
+  const selectedServer = servers.find((s) => s.guildId === selectedGuild)
+  const usageBlocked = !!(usage && usage.used >= usage.limit)
+
+  const [allowFinePointer, setAllowFinePointer] = useState(true)
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return
+    const mq = window.matchMedia("(pointer: fine)")
+    setAllowFinePointer(mq.matches)
+    const fn = () => setAllowFinePointer(mq.matches)
+    mq.addEventListener?.("change", fn)
+    return () => mq.removeEventListener?.("change", fn)
+  }, [])
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 10 },
+    })
+  )
+
+  const [overlapPreviewIds, setOverlapPreviewIds] = useState(() => new Set<number>())
 
   useEffect(() => {
     if (servers.length > 0 && !selectedGuild) {
-      const first = servers.find(s => s.isEnabled) || servers[0]
+      const first = servers.find((s) => s.isEnabled) || servers[0]
       setSelectedGuild(first.guildId)
     }
   }, [servers, selectedGuild])
 
-  useEffect(() => { setPage(1) }, [selectedGuild])
+  const handleRefresh = useCallback(() => {
+    mutate()
+  }, [mutate])
 
-  const handleRefresh = useCallback(() => { mutate() }, [mutate])
+  /** Shared math for drag move preview + drag end commit */
+  const resolveSessionDrag = useCallback(
+    (event: Pick<DragEndEvent, "active" | "delta">) => {
+      const idStr = String(event.active.id)
+      if (!idStr.startsWith("session-")) return null
+      const id = parseInt(idStr.replace("session-", ""), 10)
+      const s = sessions.find((x) => x.id === id)
+      if (!s || usageBlocked) return null
+
+      const dayKey = localDayKey(new Date(s.startTime))
+      const track = document.getElementById(`voice-track-${dayKey}`)
+      const w = track?.offsetWidth ?? 1
+      const deltaMin = deltaPixelsToMinutes(event.delta.x, w)
+      let newMin = startMinutesFromMidnight(s.startTime) + deltaMin
+      newMin = snapMinutesToGrid(newMin)
+      const maxStartMin = 24 * 60 - s.duration / 60
+      newMin = Math.max(0, Math.min(maxStartMin, newMin))
+
+      const day = new Date(s.startTime)
+      const newStart = minutesFromMidnightToDate(day, newMin)
+      return { id, s, newStart, newStartMs: newStart.getTime() }
+    },
+    [sessions, usageBlocked]
+  )
+
+  const handleDragMove = useCallback(
+    (event: DragMoveEvent) => {
+      const resolved = resolveSessionDrag(event)
+      if (!resolved) {
+        setOverlapPreviewIds(new Set())
+        return
+      }
+      const { id, s, newStartMs } = resolved
+      if (newStartMs + s.duration * 1000 > Date.now()) {
+        setOverlapPreviewIds(new Set([id]))
+        return
+      }
+      setOverlapPreviewIds(overlapPreviewIdsForMove(sessions, id, newStartMs, s.duration))
+    },
+    [resolveSessionDrag, sessions]
+  )
+
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      setOverlapPreviewIds(new Set())
+      const resolved = resolveSessionDrag(event)
+      if (!resolved) return
+      const { id, s, newStart } = resolved
+      const newEndMs = newStart.getTime() + s.duration * 1000
+
+      if (newEndMs > Date.now()) {
+        toast.error("Session cannot end in the future")
+        return
+      }
+
+      if (overlapsOtherSession(sessions, id, newStart.getTime(), s.duration)) {
+        toast.error("Overlaps another session in this server")
+        return
+      }
+
+      try {
+        await dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${id}`, {
+          startTime: newStart.toISOString(),
+          duration: s.duration,
+        })
+        toast.success("Session moved")
+        mutate()
+      } catch (err: any) {
+        toast.error(err?.message || "Could not move session")
+      }
+    },
+    [sessions, resolveSessionDrag, mutate]
+  )
+
+  const handleResizeCommit = useCallback(
+    async (sessionId: number, newDurationSec: number) => {
+      const s = sessions.find((x) => x.id === sessionId)
+      if (!s || usageBlocked) return
+      const start = new Date(s.startTime)
+      const newEndMs = start.getTime() + newDurationSec * 1000
+      if (newEndMs > Date.now()) {
+        toast.error("Session cannot end in the future")
+        return
+      }
+      if (overlapsOtherSession(sessions, sessionId, start.getTime(), newDurationSec)) {
+        toast.error("Overlaps another session")
+        return
+      }
+      try {
+        await dashboardMutate("PATCH", `/api/dashboard/voice-editor/sessions/${sessionId}`, {
+          duration: newDurationSec,
+        })
+        toast.success("Duration updated")
+        mutate()
+      } catch (err: any) {
+        toast.error(err?.message || "Could not resize")
+      }
+    },
+    [sessions, usageBlocked, mutate]
+  )
+
+  const openAdd = (day: Date) => {
+    setPendingAddTime(null)
+    setSheetMode("add")
+    setSheetInitialDay(day)
+    setEditingSession(null)
+    setSheetOpen(true)
+  }
+
+  const openEdit = (s: VoiceEditorSession) => {
+    setPendingAddTime(null)
+    setSheetMode("edit")
+    setEditingSession(s)
+    setSheetInitialDay(null)
+    setSheetOpen(true)
+  }
+
+  const [pendingAddTime, setPendingAddTime] = useState<string | null>(null)
+
+  const onTrackClick = (day: Date, clientX: number, track: HTMLElement) => {
+    if (usageBlocked) {
+      toast.error("Monthly edit limit reached")
+      return
+    }
+    const t = trackClickToTime(day, clientX, track)
+    setSheetMode("add")
+    setSheetInitialDay(day)
+    setEditingSession(null)
+    setPendingAddTime(t)
+    setSheetOpen(true)
+  }
 
   const handleDelete = async (sessionId: number) => {
     try {
-      const resp = await dashboardMutate("DELETE", `/api/dashboard/voice-editor/sessions/${sessionId}`)
-      if (resp.error) {
-        toast.error(resp.error)
-      } else {
-        toast.success("Session deleted")
-        setDeletingId(null)
-        mutate()
-      }
+      await dashboardMutate("DELETE", `/api/dashboard/voice-editor/sessions/${sessionId}`)
+      toast.success("Session deleted")
+      setDeletingId(null)
+      setSheetOpen(false)
+      mutate()
     } catch (err: any) {
-      toast.error(err?.message || "Failed to delete session")
+      toast.error(err?.message || "Failed to delete")
     }
   }
 
   const renderServerStatus = () => {
     if (!selectedServer) return null
-
     if (!selectedServer.isPremium) {
       return (
         <div className="bg-card/50 border border-border rounded-xl p-8 text-center">
@@ -474,7 +309,6 @@ export default function VoiceEditorPage() {
         </div>
       )
     }
-
     if (!selectedServer.isEnabled) {
       return (
         <div className="bg-card/50 border border-border rounded-xl p-8 text-center">
@@ -491,7 +325,6 @@ export default function VoiceEditorPage() {
         </div>
       )
     }
-
     return null
   }
 
@@ -502,25 +335,22 @@ export default function VoiceEditorPage() {
           <div className="max-w-6xl mx-auto flex gap-8">
             <DashboardNav />
             <div className="flex-1 min-w-0 max-w-4xl space-y-5">
-
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Voice Time Editor</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Add missed study sessions or edit existing ones. Changes affect stats only &mdash; not coins, XP, or LionGotchi.
+                  Week view: drag blocks to shift time, drag the right edge to change length. Click a block to edit, or click empty space to add.
                 </p>
               </div>
 
-              {/* Info callout */}
               <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-500/5 border border-blue-500/15">
                 <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                 <p className="text-xs text-blue-300/80 leading-relaxed">
-                  Sessions you add or edit here count toward your study stats, leaderboard position, and streaks.
-                  They do <strong>not</strong> earn coins, XP, or affect your LionGotchi.
+                  Changes affect stats only (not coins, XP, or LionGotchi).{" "}
+                  {!allowFinePointer && "On touch devices, use the form — drag is best with a mouse."}
                 </p>
               </div>
 
-              {/* Server Selector */}
-              {isLoading ? (
+              {isLoading && !servers.length ? (
                 <div className="h-12 bg-card/50 rounded-lg animate-pulse" />
               ) : servers.length === 0 ? (
                 <EmptyState
@@ -531,6 +361,7 @@ export default function VoiceEditorPage() {
               ) : (
                 <div className="relative">
                   <button
+                    type="button"
                     onClick={() => setShowServerDropdown(!showServerDropdown)}
                     className="w-full flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3 hover:border-border/80 transition-colors"
                   >
@@ -555,13 +386,16 @@ export default function VoiceEditorPage() {
                     </div>
                     <ChevronDown size={14} className={cn("text-muted-foreground transition-transform", showServerDropdown && "rotate-180")} />
                   </button>
-
                   {showServerDropdown && (
                     <div className="absolute z-30 mt-1 w-full bg-card border border-border rounded-xl shadow-lg py-1 max-h-64 overflow-y-auto">
-                      {servers.map(s => (
+                      {servers.map((s) => (
                         <button
                           key={s.guildId}
-                          onClick={() => { setSelectedGuild(s.guildId); setShowServerDropdown(false) }}
+                          type="button"
+                          onClick={() => {
+                            setSelectedGuild(s.guildId)
+                            setShowServerDropdown(false)
+                          }}
                           className={cn(
                             "w-full text-left px-4 py-2.5 text-sm hover:bg-muted/50 transition-colors flex items-center justify-between gap-2",
                             selectedGuild === s.guildId && "bg-primary/10"
@@ -584,160 +418,102 @@ export default function VoiceEditorPage() {
                 </div>
               )}
 
-              {/* Server status messages (not premium / not enabled) */}
               {selectedServer && !selectedServer.isEnabled && renderServerStatus()}
 
-              {/* Session editor (when enabled) */}
-              {selectedServer?.isEnabled && (
+              {selectedServer?.isEnabled && usage && (
                 <>
-                  {/* Usage bar + Add button */}
                   <div className="flex items-center justify-between gap-3 flex-wrap">
-                    {usage && (
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                          <Shield size={12} />
-                          <span>
-                            <span className={cn("font-medium", usage.used >= usage.limit ? "text-destructive" : "text-foreground")}>
-                              {usage.used}
-                            </span>
-                            /{usage.limit} edits this month
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Shield size={12} />
+                        <span>
+                          <span className={cn("font-medium", usage.used >= usage.limit ? "text-destructive" : "text-foreground")}>
+                            {usage.used}
                           </span>
-                        </div>
-                        <div className="h-1.5 w-20 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className={cn(
-                              "h-full rounded-full transition-all",
-                              usage.used >= usage.limit ? "bg-destructive" : "bg-primary"
-                            )}
-                            style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
-                          />
-                        </div>
+                          /{usage.limit} edits this month
+                        </span>
                       </div>
-                    )}
+                      <div className="h-1.5 w-20 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={cn("h-full rounded-full transition-all", usage.used >= usage.limit ? "bg-destructive" : "bg-primary")}
+                          style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
                     <button
-                      onClick={() => setShowAddModal(true)}
-                      disabled={usage ? usage.used >= usage.limit : false}
+                      type="button"
+                      onClick={() => openAdd(new Date())}
+                      disabled={usage.used >= usage.limit}
                       className={cn(
                         "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                        usage && usage.used >= usage.limit
+                        usage.used >= usage.limit
                           ? "bg-muted text-muted-foreground cursor-not-allowed"
                           : "bg-primary text-primary-foreground hover:bg-primary/90"
                       )}
                     >
                       <Plus size={14} />
-                      Add Session
+                      Add session
                     </button>
                   </div>
 
-                  {/* Session List */}
+                  <VoiceEditorWeekNav weekMonday={timelineStart} onWeekMondayChange={setWeekMonday} />
+
+                  {data?.timelineRange?.capped && (
+                    <p className="text-[10px] text-amber-400/90">Showing up to 200 sessions this week — some may be hidden.</p>
+                  )}
+
                   {isLoading ? (
-                    <div className="space-y-2">
-                      {[1, 2, 3, 4, 5].map(i => (
-                        <div key={i} className="h-16 bg-card/50 rounded-lg animate-pulse" />
+                    <div className="space-y-3 mt-4">
+                      {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+                        <div key={i} className="h-14 bg-card/50 rounded-lg animate-pulse" />
                       ))}
                     </div>
-                  ) : sessions && sessions.length > 0 ? (
-                    <div className="space-y-1.5">
-                      {sessions.map(s => {
-                        const sType = getSessionType(s)
-                        const TypeIcon = TYPE_ICONS[sType].icon
-                        return (
-                          <div
-                            key={s.id}
-                            className="group flex items-center gap-3 bg-card/50 border border-border rounded-lg px-4 py-3 hover:border-border/80 transition-colors"
-                          >
-                            <div className={cn("flex-shrink-0", TYPE_ICONS[sType].color)}>
-                              <TypeIcon size={16} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm font-medium text-foreground">
-                                  {formatDuration(s.durationMinutes)}
-                                </span>
-                                {s.isManual && (
-                                  <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[10px] font-medium">
-                                    Manual
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground mt-0.5">
-                                {formatDate(s.startTime)} at {formatTime(s.startTime)}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => setEditingSession(s)}
-                                disabled={usage ? usage.used >= usage.limit : false}
-                                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-30"
-                                title="Edit session"
-                              >
-                                <Pencil size={14} />
-                              </button>
-                              {s.isManual && (
-                                <button
-                                  onClick={() => setDeletingId(s.id)}
-                                  className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                  title="Delete session"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        )
-                      })}
+                  ) : (
+                    <DndContext sensors={sensors} onDragMove={handleDragMove} onDragEnd={handleDragEnd} onDragCancel={() => setOverlapPreviewIds(new Set())}>
+                      <div className="mt-4 space-y-3 rounded-xl border border-border bg-card/30 p-3 sm:p-4">
+                        {weekDays.map((day) => (
+                          <DayTimelineRow
+                            key={localDayKey(day)}
+                            day={day}
+                            allSessions={sessions}
+                            usageBlocked={usageBlocked}
+                            allowDragResize={allowFinePointer && !usageBlocked}
+                            overlapIds={overlapPreviewIds}
+                            onTrackClick={onTrackClick}
+                            onSessionClick={openEdit}
+                            onResizeCommit={handleResizeCommit}
+                          />
+                        ))}
+                      </div>
+                    </DndContext>
+                  )}
 
-                      {/* Pagination */}
-                      {pagination && pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 pt-3">
-                          <button
-                            onClick={() => setPage(p => Math.max(1, p - 1))}
-                            disabled={page <= 1}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/30 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-                          >
-                            Previous
-                          </button>
-                          <span className="text-xs text-muted-foreground">
-                            Page {page} of {pagination.totalPages}
-                          </span>
-                          <button
-                            onClick={() => setPage(p => Math.min(pagination.totalPages, p + 1))}
-                            disabled={page >= pagination.totalPages}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium bg-muted/30 text-muted-foreground hover:text-foreground disabled:opacity-30 transition-colors"
-                          >
-                            Next
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : sessions && sessions.length === 0 ? (
+                  {sessions.length === 0 && !isLoading && (
                     <EmptyState
                       icon={<Clock size={24} />}
-                      title="No sessions yet"
-                      description="You don't have any study sessions in this server. Add one above!"
+                      title="No sessions this week"
+                      description="Click empty space on a day or use Add session."
                     />
-                  ) : null}
+                  )}
                 </>
               )}
 
-              {/* Delete confirmation */}
               {deletingId !== null && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={() => setDeletingId(null)}>
-                  <div className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-sm w-full" onClick={e => e.stopPropagation()}>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Delete Session?</h3>
-                    <p className="text-sm text-muted-foreground mb-5">
-                      This will permanently remove this manually-added session from your stats.
-                    </p>
+                <div
+                  className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50"
+                  onClick={() => setDeletingId(null)}
+                >
+                  <div className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
+                    <h3 className="text-lg font-semibold text-foreground mb-2">Delete session?</h3>
+                    <p className="text-sm text-muted-foreground mb-5">This removes this manual session from your stats.</p>
                     <div className="flex gap-2 justify-end">
-                      <button
-                        onClick={() => setDeletingId(null)}
-                        className="px-4 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground transition-colors"
-                      >
+                      <button type="button" onClick={() => setDeletingId(null)} className="px-4 py-2 rounded-lg text-sm text-muted-foreground">
                         Cancel
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(deletingId)}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
+                        className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive text-destructive-foreground"
                       >
                         Delete
                       </button>
@@ -746,24 +522,25 @@ export default function VoiceEditorPage() {
                 </div>
               )}
 
-              {/* Add/Edit modals */}
-              {showAddModal && selectedServer && usage && (
-                <AddSessionModal
+              {selectedServer && usage && sheetOpen && (
+                <SessionEditSheet
+                  key={`${sheetMode}-${editingSession?.id ?? "new"}-${pendingAddTime ?? ""}`}
+                  open={sheetOpen}
+                  mode={sheetMode}
+                  onClose={() => {
+                    setSheetOpen(false)
+                    setPendingAddTime(null)
+                  }}
                   guildId={selectedGuild}
                   guildName={selectedServer.guildName}
                   usage={usage}
-                  onClose={() => setShowAddModal(false)}
+                  initialDay={sheetInitialDay}
+                  initialTimeHint={pendingAddTime}
+                  weekSessions={sessions}
+                  editingSession={editingSession}
+                  emphasizeId={editingSession?.id}
                   onSuccess={handleRefresh}
-                />
-              )}
-              {editingSession && selectedServer && usage && (
-                <EditSessionModal
-                  session={editingSession}
-                  guildId={selectedGuild}
-                  guildName={selectedServer.guildName}
-                  usage={usage}
-                  onClose={() => setEditingSession(null)}
-                  onSuccess={handleRefresh}
+                  onDeleteRequest={(id) => setDeletingId(id)}
                 />
               )}
             </div>
