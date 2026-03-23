@@ -20,7 +20,7 @@ import { useState, useCallback, useEffect } from "react"
 import {
   Volume2, CloudRain, Flame, Waves, Wind, Radio,
   ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
-  Play, Square,
+  Play, Square, Type,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -61,6 +61,7 @@ interface BotSlotConfig {
   enabled: boolean
   status: string
   error_msg: string | null
+  nickname_template: string | null
   updated_at: string | null
 }
 
@@ -73,6 +74,23 @@ interface ApiResponse {
 type LocalSlot = Omit<BotSlotConfig, "guildid" | "updated_at" | "status" | "error_msg"> & {
   status: string
   error_msg: string | null
+}
+
+const SOUND_EMOJIS: Record<string, string> = {
+  rain: "\u{1F327}\u{FE0F}",
+  campfire: "\u{1F525}",
+  ocean: "\u{1F30A}",
+  brown_noise: "\u{1F7E4}",
+  white_noise: "\u26AA",
+}
+
+const DEFAULT_NICK_TEMPLATE = "{emoji} {sound}"
+
+function previewNickname(template: string | null, soundId: string | null, botNumber: number): string {
+  const t = template || DEFAULT_NICK_TEMPLATE
+  const label = SOUNDS.find((s) => s.id === soundId)?.name ?? "Sound"
+  const emoji = (soundId && SOUND_EMOJIS[soundId]) || "\u{1F3B5}"
+  return t.replace("{emoji}", emoji).replace("{sound}", label).replace("{bot}", String(botNumber)).slice(0, 32)
 }
 
 // ── Helpers ───────────────────────────────────────────────
@@ -158,6 +176,7 @@ export default function AmbientSoundsPage() {
         enabled: existing?.enabled ?? false,
         status: existing?.status ?? "bot_not_in_guild",
         error_msg: existing?.error_msg ?? null,
+        nickname_template: existing?.nickname_template ?? null,
       })
     }
     setSlots(allSlots)
@@ -183,6 +202,7 @@ export default function AmbientSoundsPage() {
         channelid: slot.channelid,
         volume: slot.volume,
         enabled: slot.enabled,
+        nickname_template: slot.nickname_template,
       })
       invalidate(apiUrl!)
       setOriginal((prev) =>
@@ -412,6 +432,34 @@ export default function AmbientSoundsPage() {
                                   ))}
                                 </div>
                               </div>
+
+                              {/* --- AI-MODIFIED (2026-03-23) --- */}
+                              {/* Purpose: Customizable bot nickname template with live preview */}
+                              <div>
+                                <label className="text-xs font-medium text-muted-foreground mb-2 block">
+                                  Bot Nickname
+                                </label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    value={slot.nickname_template ?? ""}
+                                    onChange={(e) => {
+                                      const val = e.target.value || null
+                                      updateAndSave(slot.bot_number, { nickname_template: val })
+                                    }}
+                                    placeholder={DEFAULT_NICK_TEMPLATE}
+                                    maxLength={100}
+                                    className="flex-1 bg-gray-800/50 border border-white/10 rounded-lg px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/40"
+                                  />
+                                </div>
+                                <p className="mt-1.5 text-[11px] text-muted-foreground">
+                                  Preview: <span className="text-foreground font-medium">{previewNickname(slot.nickname_template, slot.sound_type, slot.bot_number)}</span>
+                                  <span className="ml-2 text-muted-foreground/60">
+                                    — Use {"{emoji}"} {"{sound}"} {"{bot}"} as placeholders
+                                  </span>
+                                </p>
+                              </div>
+                              {/* --- END AI-MODIFIED --- */}
 
                               {/* --- AI-MODIFIED (2026-03-23) --- */}
                               {/* Purpose: Start/Stop button that immediately saves to API */}
