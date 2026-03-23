@@ -863,11 +863,11 @@ function ServerPremiumShowcase() {
             <Server className="h-7 w-7 text-blue-400" />
             <h2 className="text-3xl font-bold text-white">Server Premium</h2>
           </div>
-          {/* --- AI-MODIFIED (2026-03-22) --- */}
-          {/* Purpose: Updated subtitle to mention auto-post and feature requests */}
+          {/* --- AI-MODIFIED (2026-03-23) --- */}
+          {/* Purpose: Updated subtitle to cover all premium features */}
           <p className="text-gray-400 mt-2 max-w-xl mx-auto">
-            Upgrade your entire server &mdash; custom branding, automated
-            leaderboards, remove prompts, and get to request new features
+            Unlock the full experience for your server &mdash; custom branding, premium pomodoro,
+            ambient sounds, auto-post leaderboards, sticky messages, and more
           </p>
           {/* --- END AI-MODIFIED --- */}
         </div>
@@ -1015,85 +1015,73 @@ function ServerPremiumShowcase() {
                 </div>
               </div>
 
-              {/* --- AI-MODIFIED (2026-03-20) --- */}
-              {/* Purpose: Full server premium feature list and pricing tiers */}
+              {/* --- AI-MODIFIED (2026-03-23) ---  */}
+              {/* Purpose: Complete server premium feature list with all current features + better pricing */}
               <div className="border-t border-gray-700 pt-5">
                 <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Included with Server Premium
+                  Everything included
                 </p>
-                <div className="space-y-2.5">
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2 text-[13px]">
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      Custom skins & colors for{" "}
-                      <span className="text-white font-medium">
-                        all 7 card types
-                      </span>
+                      <span className="text-white font-medium">Custom server branding</span> &mdash; skins &amp; colors for all 7 card types, applies to every member
                     </span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      Applies to{" "}
-                      <span className="text-white font-medium">
-                        every member
-                      </span>{" "}
-                      in your server
+                      <span className="text-white font-medium">Automated leaderboard posting</span> &mdash; scheduled posts with role rewards, coin prizes &amp; winner DMs
                     </span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      <span className="text-white font-medium">
-                        Remove vote &amp; sponsor prompt
-                      </span>{" "}
-                      from all bot messages
+                      <span className="text-white font-medium">Premium Pomodoro</span> &mdash; focus roles, streak tracking, themed timer cards, session summaries &amp; milestone rewards
                     </span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      LionGotchi bonuses:{" "}
-                      <span className="text-blue-400 font-semibold">
-                        +15% Gold
-                      </span>{" "}
-                      &amp;{" "}
-                      <span className="text-blue-400 font-semibold">
-                        +15% Drop Rate
-                      </span>{" "}
-                      for all members
+                      <span className="text-white font-medium">Ambient sound bots</span> &mdash; rain, campfire, ocean &amp; more playing in voice channels
                     </span>
                   </div>
-                  {/* --- AI-MODIFIED (2026-03-22) --- */}
-                  {/* Purpose: Add leaderboard auto-post and feature request perk */}
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      <span className="text-white font-medium">
-                        Automated leaderboard posting
-                      </span>{" "}
-                      with role rewards, coin prizes &amp; winner DMs
+                      <span className="text-white font-medium">Sticky messages</span> &mdash; persistent announcements that stay at the bottom of any channel
                     </span>
                   </div>
-                  <div className="flex items-start gap-2.5 text-sm">
-                    <Check className="h-4 w-4 text-blue-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      <span className="text-white font-medium">
-                        Request new features
-                      </span>{" "}
-                      &mdash; propose &amp; vote on what gets built next
+                      LionGotchi bonuses for all members: <span className="text-blue-400 font-semibold">+15% Gold</span> &amp; <span className="text-blue-400 font-semibold">+15% Drop Rate</span>
                     </span>
                   </div>
-                  {/* --- END AI-MODIFIED --- */}
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      <span className="text-white font-medium">No ads</span> &mdash; vote &amp; sponsor prompts removed from all bot messages
+                    </span>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
+                    <span className="text-gray-300">
+                      <span className="text-white font-medium">Priority feature requests</span> &mdash; propose &amp; vote on what gets built next
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* --- AI-MODIFIED (2026-03-23) --- */}
-              {/* Purpose: Interactive server selector + Stripe checkout replacing static pricing */}
               <div className="border-t border-gray-700 pt-5 mt-5">
-                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Subscribe &mdash; &euro;9.99/mo or &euro;99.99/yr
-                </p>
+                <div className="flex items-baseline gap-3 mb-1">
+                  <span className="text-3xl font-black text-white">&euro;9.99</span>
+                  <span className="text-sm text-gray-500">/month</span>
+                  <span className="text-gray-600 mx-1">or</span>
+                  <span className="text-3xl font-black text-white">&euro;99.99</span>
+                  <span className="text-sm text-gray-500">/year</span>
+                </div>
+                <p className="text-xs text-green-400/80 mb-4">Yearly saves 17% &mdash; 2 months free</p>
 
                 {!session ? (
                   <button
@@ -1136,9 +1124,10 @@ function ServerPremiumShowcase() {
                       <button
                         onClick={() => handleServerCheckout("YEARLY")}
                         disabled={checkingOut}
-                        className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                        className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 relative overflow-hidden"
                       >
-                        {checkingOut ? "..." : "€99.99/yr — Save 17%"}
+                        {checkingOut ? "..." : "€99.99/yr"}
+                        <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
                       </button>
                     </div>
                     <p className="text-[11px] text-gray-600 text-center">
@@ -1148,7 +1137,6 @@ function ServerPremiumShowcase() {
                   </div>
                 )}
               </div>
-              {/* --- END AI-MODIFIED --- */}
               {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
