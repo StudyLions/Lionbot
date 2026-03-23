@@ -222,6 +222,7 @@ function SetupWizardInner() {
             key="step-1"
             config={config!}
             serverName={serverName}
+            guildId={guildId}
             onUpdate={set}
             onNext={() => markCompleteAndNext(STEP_FIELDS[1])}
             onBack={goBack}
@@ -251,6 +252,7 @@ function SetupWizardInner() {
             key="step-3"
             config={config!}
             serverName={serverName}
+            guildId={guildId}
             onUpdate={set}
             onNext={() => markCompleteAndNext(STEP_FIELDS[3])}
             onBack={goBack}
@@ -279,6 +281,7 @@ function SetupWizardInner() {
             key="step-5"
             config={config!}
             serverName={serverName}
+            guildId={guildId}
             onUpdate={set}
             onNext={() => markCompleteAndNext(STEP_FIELDS[5])}
             onBack={goBack}
@@ -293,6 +296,7 @@ function SetupWizardInner() {
             key="step-6"
             config={config!}
             serverName={serverName}
+            guildId={guildId}
             onUpdate={set}
             onNext={() => markCompleteAndNext(STEP_FIELDS[6])}
             onBack={goBack}
@@ -322,6 +326,7 @@ function SetupWizardInner() {
             key="step-8"
             lgConfig={lgConfig}
             serverName={serverName}
+            guildId={guildId}
             onLgUpdate={setLg}
             onNext={async () => {
               const ok = await saveLgFields()

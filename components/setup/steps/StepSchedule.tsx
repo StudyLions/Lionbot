@@ -8,10 +8,12 @@ import { motion } from "framer-motion"
 import { Calendar, Coins, ChevronDown, ChevronUp } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect } from "@/components/dashboard/ui"
 
 interface StepScheduleProps {
   config: Record<string, any>
   serverName: string
+  guildId: string
   onUpdate: (key: string, value: any) => void
   onNext: () => void
   onBack: () => void
@@ -47,7 +49,7 @@ const DEMO_SESSIONS = [
 ]
 
 export default function StepSchedule({
-  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepScheduleProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const price = config.accountability_price ?? 50
@@ -170,23 +172,23 @@ export default function StepSchedule({
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">Schedule Category ID</label>
-              <input
-                type="text"
-                value={config.accountability_category || ""}
-                onChange={(e) => onUpdate("accountability_category", e.target.value || null)}
-                placeholder="Category for schedule voice channels"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+              <label className="text-xs text-gray-400">Schedule Category</label>
+              <ChannelSelect
+                guildId={guildId}
+                value={config.accountability_category ?? null}
+                onChange={(v) => onUpdate("accountability_category", (v as string) || null)}
+                channelTypes={[4]}
+                placeholder="Select a category for schedule channels"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">Schedule Lobby Channel ID</label>
-              <input
-                type="text"
-                value={config.accountability_lobby || ""}
-                onChange={(e) => onUpdate("accountability_lobby", e.target.value || null)}
-                placeholder="Lobby channel for scheduled sessions"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+              <label className="text-xs text-gray-400">Schedule Lobby Channel</label>
+              <ChannelSelect
+                guildId={guildId}
+                value={config.accountability_lobby ?? null}
+                onChange={(v) => onUpdate("accountability_lobby", (v as string) || null)}
+                channelTypes={[2]}
+                placeholder="Select a voice channel for the lobby"
               />
             </div>
           </motion.div>

@@ -12,10 +12,12 @@ import {
 } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect, RoleSelect } from "@/components/dashboard/ui"
 
 interface StepLionGotchiProps {
   lgConfig: Record<string, any>
   serverName: string
+  guildId: string
   onLgUpdate: (key: string, value: any) => void
   onNext: () => void
   onBack: () => void
@@ -84,7 +86,7 @@ function Slider({ label, value, min, max, step, onChange, suffix = "", descripti
 }
 
 export default function StepLionGotchi({
-  lgConfig, serverName, onLgUpdate, onNext, onBack, onSkip, saving, direction,
+  lgConfig, serverName, guildId, onLgUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepLionGotchiProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
@@ -154,12 +156,12 @@ export default function StepLionGotchi({
           Random items drop in a designated channel. Members race to grab them.
           Think of it as Black Friday but every few hours. Set a channel for drops:
         </p>
-        <input
-          type="text"
-          value={lgConfig.lg_drop_channel || ""}
-          onChange={(e) => onLgUpdate("lg_drop_channel", e.target.value || null)}
-          placeholder="Channel ID for item drops"
-          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+        <ChannelSelect
+          guildId={guildId}
+          value={lgConfig.lg_drop_channel ?? null}
+          onChange={(v) => onLgUpdate("lg_drop_channel", (v as string) || null)}
+          channelTypes={[0, 5]}
+          placeholder="Select a channel for item drops"
         />
       </div>
 
@@ -206,13 +208,14 @@ export default function StepLionGotchi({
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">Activity Role ID</label>
-              <input
-                type="text"
-                value={lgConfig.lg_activity_role || ""}
-                onChange={(e) => onLgUpdate("lg_activity_role", e.target.value || null)}
-                placeholder="Role granted to active pet owners"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+              <label className="text-xs text-gray-400">Activity Role</label>
+              <RoleSelect
+                guildId={guildId}
+                value={lgConfig.lg_activity_role ?? null}
+                onChange={(v) => onLgUpdate("lg_activity_role", (v as string) || null)}
+                excludeManaged
+                excludeEveryone
+                placeholder="Select a role for active pet owners"
               />
             </div>
             <Slider

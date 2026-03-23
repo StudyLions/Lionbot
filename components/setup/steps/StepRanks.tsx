@@ -11,6 +11,7 @@ import Image from "next/image"
 import StepLayout from "../StepLayout"
 import { RankUpPreview } from "../DiscordPreview"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect } from "@/components/dashboard/ui"
 
 const RANK_TYPES = [
   { value: "XP", label: "Combined XP", description: "Voice + text combined. Best all-around.", icon: <Sparkles size={20} /> },
@@ -35,6 +36,7 @@ const CARD_ANNOTATIONS = [
 interface StepRanksProps {
   config: Record<string, any>
   serverName: string
+  guildId: string
   onUpdate: (key: string, value: any) => void
   onNext: () => void
   onBack: () => void
@@ -64,7 +66,7 @@ function Slider({ label, value, min, max, step, onChange, description }: {
 }
 
 export default function StepRanks({
-  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepRanksProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [selectedSkin, setSelectedSkin] = useState(0)
@@ -249,13 +251,13 @@ export default function StepRanks({
               description="XP earned from text messages (per 100 words)"
             />
             <div className="space-y-2">
-              <label className="text-xs text-gray-400">Rank-up Channel ID</label>
-              <input
-                type="text"
-                value={config.rank_channel || ""}
-                onChange={(e) => onUpdate("rank_channel", e.target.value || null)}
-                placeholder="Channel for rank-up announcements (leave blank for DMs only)"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+              <label className="text-xs text-gray-400">Rank-up Announcement Channel</label>
+              <ChannelSelect
+                guildId={guildId}
+                value={config.rank_channel ?? null}
+                onChange={(v) => onUpdate("rank_channel", (v as string) || null)}
+                channelTypes={[0, 5]}
+                placeholder="Select a channel (leave blank for DMs only)"
               />
             </div>
           </motion.div>

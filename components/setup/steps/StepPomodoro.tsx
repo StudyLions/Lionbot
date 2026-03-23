@@ -8,10 +8,12 @@ import { motion } from "framer-motion"
 import { Timer, Play, Pause } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect } from "@/components/dashboard/ui"
 
 interface StepPomodoroProps {
   config: Record<string, any>
   serverName: string
+  guildId: string
   onUpdate: (key: string, value: any) => void
   onNext: () => void
   onBack: () => void
@@ -82,7 +84,7 @@ function PomodoroDemo() {
 }
 
 export default function StepPomodoro({
-  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepPomodoroProps) {
   return (
     <StepLayout
@@ -107,12 +109,12 @@ export default function StepPomodoro({
           Set a dedicated channel where timer notifications appear.
           The Pomodoro technique alternates 25-minute focus blocks with 5-minute breaks.
         </p>
-        <input
-          type="text"
-          value={config.pomodoro_channel || ""}
-          onChange={(e) => onUpdate("pomodoro_channel", e.target.value || null)}
-          placeholder="Channel ID for Pomodoro notifications"
-          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2.5 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+        <ChannelSelect
+          guildId={guildId}
+          value={config.pomodoro_channel ?? null}
+          onChange={(v) => onUpdate("pomodoro_channel", (v as string) || null)}
+          channelTypes={[0, 5]}
+          placeholder="Select a channel for Pomodoro notifications"
         />
       </div>
 

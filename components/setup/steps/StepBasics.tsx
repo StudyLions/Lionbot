@@ -10,6 +10,7 @@ import { ChevronDown, ChevronUp, Globe, MessageSquare } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { GreetingPreview } from "../DiscordPreview"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect, RoleSelect } from "@/components/dashboard/ui"
 
 const TIMEZONE_OPTIONS = [
   "US/Eastern", "US/Central", "US/Mountain", "US/Pacific",
@@ -22,6 +23,7 @@ const TIMEZONE_OPTIONS = [
 interface StepBasicsProps {
   config: Record<string, any>
   serverName: string
+  guildId: string
   onUpdate: (key: string, value: any) => void
   onNext: () => void
   onBack: () => void
@@ -31,7 +33,7 @@ interface StepBasicsProps {
 }
 
 export default function StepBasics({
-  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
 }: StepBasicsProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [detectedTz, setDetectedTz] = useState("UTC")
@@ -141,56 +143,48 @@ export default function StepBasics({
             animate={{ height: "auto", opacity: 1 }}
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Greeting Channel ID</label>
-              <input
-                type="text"
-                value={config.greeting_channel || ""}
-                onChange={(e) => onUpdate("greeting_channel", e.target.value || null)}
-                placeholder="Channel ID (leave blank for default)"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Admin Role ID</label>
-              <input
-                type="text"
-                value={config.admin_role || ""}
-                onChange={(e) => onUpdate("admin_role", e.target.value || null)}
-                placeholder="Role ID for bot admins"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Moderator Role ID</label>
-              <input
-                type="text"
-                value={config.mod_role || ""}
-                onChange={(e) => onUpdate("mod_role", e.target.value || null)}
-                placeholder="Role ID for bot moderators"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Event Log Channel ID</label>
-              <input
-                type="text"
-                value={config.event_log_channel || ""}
-                onChange={(e) => onUpdate("event_log_channel", e.target.value || null)}
-                placeholder="Channel for bot events"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Mod Log Channel ID</label>
-              <input
-                type="text"
-                value={config.mod_log_channel || ""}
-                onChange={(e) => onUpdate("mod_log_channel", e.target.value || null)}
-                placeholder="Channel for moderation logs"
-                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
-              />
-            </div>
+            <ChannelSelect
+              guildId={guildId}
+              value={config.greeting_channel ?? null}
+              onChange={(v) => onUpdate("greeting_channel", (v as string) || null)}
+              channelTypes={[0, 5]}
+              label="Greeting Channel"
+              placeholder="Select a channel"
+            />
+            <RoleSelect
+              guildId={guildId}
+              value={config.admin_role ?? null}
+              onChange={(v) => onUpdate("admin_role", (v as string) || null)}
+              excludeManaged
+              excludeEveryone
+              label="Admin Role"
+              placeholder="Select admin role"
+            />
+            <RoleSelect
+              guildId={guildId}
+              value={config.mod_role ?? null}
+              onChange={(v) => onUpdate("mod_role", (v as string) || null)}
+              excludeManaged
+              excludeEveryone
+              label="Moderator Role"
+              placeholder="Select moderator role"
+            />
+            <ChannelSelect
+              guildId={guildId}
+              value={config.event_log_channel ?? null}
+              onChange={(v) => onUpdate("event_log_channel", (v as string) || null)}
+              channelTypes={[0, 5]}
+              label="Event Log Channel"
+              placeholder="Select a channel"
+            />
+            <ChannelSelect
+              guildId={guildId}
+              value={config.mod_log_channel ?? null}
+              onChange={(v) => onUpdate("mod_log_channel", (v as string) || null)}
+              channelTypes={[0, 5]}
+              label="Mod Log Channel"
+              placeholder="Select a channel"
+            />
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"

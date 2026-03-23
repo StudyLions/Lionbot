@@ -13,6 +13,7 @@ import {
 import Link from "next/link"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect } from "@/components/dashboard/ui"
 
 interface StepCommunityProps {
   config: Record<string, any>
@@ -198,13 +199,13 @@ export default function StepCommunity({
                 className="px-5 py-4 space-y-4 bg-gray-800/30"
               >
                 <div className="space-y-2">
-                  <label className="text-xs text-gray-400">Room Category ID</label>
-                  <input
-                    type="text"
-                    value={config.renting_category || ""}
-                    onChange={(e) => onUpdate("renting_category", e.target.value || null)}
-                    placeholder="Category where rooms are created"
-                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
+                  <label className="text-xs text-gray-400">Room Category</label>
+                  <ChannelSelect
+                    guildId={guildId}
+                    value={config.renting_category ?? null}
+                    onChange={(v) => onUpdate("renting_category", (v as string) || null)}
+                    channelTypes={[4]}
+                    placeholder="Select the category where rooms are created"
                   />
                 </div>
                 <Slider
