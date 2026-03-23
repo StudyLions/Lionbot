@@ -127,8 +127,8 @@ function AddSessionModal({ guildId, guildName, usage, onClose, onSuccess }: {
         onSuccess()
         onClose()
       }
-    } catch {
-      setError("Failed to add session")
+    } catch (err: any) {
+      setError(err?.message || "Failed to add session")
     } finally {
       setSubmitting(false)
     }
@@ -287,8 +287,8 @@ function EditSessionModal({ session, guildId, guildName, usage, onClose, onSucce
         onSuccess()
         onClose()
       }
-    } catch {
-      setError("Failed to update session")
+    } catch (err: any) {
+      setError(err?.message || "Failed to update session")
     } finally {
       setSubmitting(false)
     }
@@ -450,8 +450,8 @@ export default function VoiceEditorPage() {
         setDeletingId(null)
         mutate()
       }
-    } catch {
-      toast.error("Failed to delete session")
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete session")
     }
   }
 
