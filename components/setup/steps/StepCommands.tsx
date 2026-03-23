@@ -83,6 +83,10 @@ export default function StepCommands({ serverName, onNext, onBack, direction }: 
       subtitle="Type / in any Discord channel to see available commands -- Discord shows you options as you type"
       leoPose="pointing"
       leoMessage={getLeoMessage("commands", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass commands-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("commands", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       nextLabel="Finish Setup"

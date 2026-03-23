@@ -20,6 +20,9 @@ const TIMEZONE_OPTIONS = [
   "America/Mexico_City", "Africa/Cairo", "Asia/Jerusalem", "UTC",
 ]
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepBasicsProps {
   config: Record<string, any>
   serverName: string
@@ -30,10 +33,11 @@ interface StepBasicsProps {
   onSkip: () => void
   saving: boolean
   direction: number
+  hasExistingConfig?: boolean
 }
 
 export default function StepBasics({
-  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepBasicsProps) {
   const [showAdvanced, setShowAdvanced] = useState(true)
   const [detectedTz, setDetectedTz] = useState("UTC")
@@ -59,11 +63,16 @@ export default function StepBasics({
       subtitle="Essential settings to get your server going"
       leoPose="pointing"
       leoMessage={getLeoMessage("basics", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass basics-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("basics", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Timezone */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-3">

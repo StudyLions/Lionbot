@@ -13,7 +13,11 @@ import {
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect, RoleSelect } from "@/components/dashboard/ui"
+import Slider from "../Slider"
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepLionGotchiProps {
   lgConfig: Record<string, any>
   serverName: string
@@ -24,6 +28,7 @@ interface StepLionGotchiProps {
   onSkip: () => void
   saving: boolean
   direction: number
+  hasExistingConfig?: boolean
 }
 
 const FEATURES = [
@@ -65,28 +70,8 @@ const FEATURES = [
   },
 ]
 
-function Slider({ label, value, min, max, step, onChange, suffix = "", description }: {
-  label: string; value: number; min: number; max: number; step: number
-  onChange: (v: number) => void; suffix?: string; description?: string
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-300">{label}</label>
-        <span className="text-sm font-mono font-semibold text-[#DDB21D]">{value}{suffix}</span>
-      </div>
-      {description && <p className="text-xs text-gray-500">{description}</p>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#DDB21D] bg-gray-700"
-      />
-    </div>
-  )
-}
-
 export default function StepLionGotchi({
-  lgConfig, serverName, guildId, onLgUpdate, onNext, onBack, onSkip, saving, direction,
+  lgConfig, serverName, guildId, onLgUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepLionGotchiProps) {
   const [showAdvanced, setShowAdvanced] = useState(true)
 
@@ -96,11 +81,16 @@ export default function StepLionGotchi({
       subtitle="A virtual pet game with farming, crafting, and trading -- right inside Discord"
       leoPose="starEyed"
       leoMessage={getLeoMessage("liongotchi", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass liongotchi-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("liongotchi", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Enable toggle */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-3">

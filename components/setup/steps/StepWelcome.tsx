@@ -68,7 +68,14 @@ export default function StepWelcome({ serverName, onNext, onSkipWizard }: StepWe
         </p>
       </motion.div>
 
-      <LeoMascot pose="waving" message={getLeoMessage("welcome", "intro", serverName)} />
+      <LeoMascot
+        pose="waving"
+        message={getLeoMessage("welcome", "intro", serverName)}
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Pass welcome-step hint for LeoMascot post-intro cycling
+        hintMessage={getLeoMessage("welcome", "hint", serverName)}
+        // --- END AI-MODIFIED ---
+      />
 
       <motion.div
         initial={{ opacity: 0, y: 20 }}

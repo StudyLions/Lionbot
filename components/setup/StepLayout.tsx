@@ -6,7 +6,8 @@
 //          back/next/skip navigation buttons
 // ============================================================
 import { motion } from "framer-motion"
-import { ChevronLeft, ChevronRight, SkipForward, Loader2 } from "lucide-react"
+import { useEffect, useRef } from "react"
+import { ChevronLeft, ChevronRight, SkipForward, Loader2, Wrench } from "lucide-react"
 import LeoMascot from "./LeoMascot"
 
 type LeoPose = "waving" | "pointing" | "thumbsUp" | "starEyed" | "mindBlown" | "celebrating"
@@ -16,6 +17,7 @@ interface StepLayoutProps {
   subtitle?: string
   leoPose: LeoPose
   leoMessage: string
+  leoHintMessage?: string
   children: React.ReactNode
   onBack?: () => void
   onNext?: () => void
@@ -25,6 +27,7 @@ interface StepLayoutProps {
   showBack?: boolean
   showSkip?: boolean
   direction?: number
+  hasExistingConfig?: boolean
 }
 
 const slideVariants = {
@@ -47,6 +50,7 @@ export default function StepLayout({
   subtitle,
   leoPose,
   leoMessage,
+  leoHintMessage,
   children,
   onBack,
   onNext,
@@ -56,7 +60,16 @@ export default function StepLayout({
   showBack = true,
   showSkip = true,
   direction = 1,
+  hasExistingConfig = false,
 }: StepLayoutProps) {
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Scroll the content container to top when a new step mounts
+  const scrollRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    scrollRef.current?.scrollTo(0, 0)
+  }, [])
+  // --- END AI-MODIFIED ---
+
   return (
     <motion.div
       custom={direction}
@@ -67,7 +80,7 @@ export default function StepLayout({
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="flex flex-col h-full"
     >
-      <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-1">
             <h2 className="text-2xl sm:text-3xl font-bold text-white">{title}</h2>
@@ -76,7 +89,16 @@ export default function StepLayout({
             )}
           </div>
 
-          <LeoMascot pose={leoPose} message={leoMessage} compact />
+          {hasExistingConfig && (
+            <div className="flex items-center gap-2 px-4 py-2.5 bg-[#DDB21D]/10 border border-[#DDB21D]/20 rounded-lg">
+              <Wrench className="w-4 h-4 text-[#DDB21D] flex-shrink-0" />
+              <p className="text-xs text-gray-300">
+                These settings were already configured. Review or adjust below.
+              </p>
+            </div>
+          )}
+
+          <LeoMascot pose={leoPose} message={leoMessage} hintMessage={leoHintMessage} compact />
 
           <div className="space-y-6">
             {children}

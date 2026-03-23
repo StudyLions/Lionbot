@@ -10,6 +10,9 @@ import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect } from "@/components/dashboard/ui"
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepPomodoroProps {
   config: Record<string, any>
   serverName: string
@@ -20,6 +23,7 @@ interface StepPomodoroProps {
   onSkip: () => void
   saving: boolean
   direction: number
+  hasExistingConfig?: boolean
 }
 
 function PomodoroDemo() {
@@ -84,7 +88,7 @@ function PomodoroDemo() {
 }
 
 export default function StepPomodoro({
-  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepPomodoroProps) {
   return (
     <StepLayout
@@ -92,11 +96,16 @@ export default function StepPomodoro({
       subtitle="Timed focus sessions -- 25 minutes of work, then a 5-minute break"
       leoPose="thumbsUp"
       leoMessage={getLeoMessage("pomodoro", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass pomodoro-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("pomodoro", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Config */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-3">

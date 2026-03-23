@@ -33,6 +33,30 @@ import StepCelebration from "@/components/setup/steps/StepCelebration"
 
 const TOTAL_STEPS = WIZARD_STEPS.length
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Default values per step to detect which steps have pre-existing config
+const STEP_DEFAULTS: Record<number, Record<string, any>> = {
+  1: { rank_type: "XP", dm_ranks: true, xp_per_period: 5, xp_per_centiword: 1, rank_channel: null },
+  3: { study_hourly_reward: 100, study_hourly_live_bonus: 25, daily_study_cap: null, starting_funds: 0, allow_transfers: true, coins_per_centixp: 50 },
+  4: { max_tasks: 5, task_reward: 50, task_reward_limit: 5, min_workout_length: 15, workout_reward: 100 },
+  5: { pomodoro_channel: null },
+  6: { accountability_price: 50, accountability_reward: 100, accountability_bonus: 25, accountability_category: null, accountability_lobby: null },
+  7: { greeting_message: null, returning_message: null, greeting_channel: null, admin_role: null, mod_role: null, event_log_channel: null, mod_log_channel: null, force_locale: false },
+  8: { renting_price: 100, renting_cap: 10, renting_visible: true, renting_category: null, renting_max_per_user: 1, renting_name_limit: 32, renting_min_deposit: 0, renting_auto_extend: false, renting_cooldown: 0, renting_sync_perms: false, video_studyban: false, persist_roles: false },
+}
+
+function hasNonDefaultValues(config: Record<string, any> | null, stepIndex: number): boolean {
+  if (!config) return false
+  const defaults = STEP_DEFAULTS[stepIndex]
+  if (!defaults) return false
+  return Object.entries(defaults).some(([key, defaultVal]) => {
+    const actual = config[key]
+    if (actual === undefined || actual === null) return defaultVal !== null && defaultVal !== undefined
+    return actual !== defaultVal
+  })
+}
+// --- END AI-MODIFIED ---
+
 function SetupWizardInner() {
   const router = useRouter()
   const { id } = router.query
@@ -91,6 +115,15 @@ function SetupWizardInner() {
   }, [completedSteps, guildId])
 
   const serverName = config?.name || "Your Server"
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Detect which steps already have non-default config values
+  const configuredSteps = new Set<number>(
+    Object.keys(STEP_DEFAULTS)
+      .map(Number)
+      .filter((idx) => hasNonDefaultValues(config, idx))
+  )
+  // --- END AI-MODIFIED ---
 
   const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -182,6 +215,26 @@ function SetupWizardInner() {
     goTo(Math.max(step - 1, 0))
   }
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Keyboard navigation -- arrow keys to move between steps, only when no input is focused
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+      if ((e.target as HTMLElement)?.isContentEditable) return
+      if (e.key === "ArrowRight") {
+        e.preventDefault()
+        goTo(Math.min(step + 1, TOTAL_STEPS - 1))
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        goTo(Math.max(step - 1, 0))
+      }
+    }
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [step])
+  // --- END AI-MODIFIED ---
+
   const handleSkipWizard = async () => {
     if (confirm("Skip the setup wizard? You can always access it from your server's navigation menu.")) {
       await dismissWizard()
@@ -231,6 +284,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(1)}
           />
         )
       case 2:
@@ -252,6 +306,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(2)}
           />
         )
       case 3:
@@ -267,6 +322,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(3)}
           />
         )
       case 4:
@@ -281,6 +337,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(4)}
           />
         )
       case 5:
@@ -296,6 +353,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(5)}
           />
         )
       case 6:
@@ -311,6 +369,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(6)}
           />
         )
       case 7:
@@ -326,6 +385,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(7)}
           />
         )
       case 8:
@@ -341,6 +401,7 @@ function SetupWizardInner() {
             onSkip={skipAndNext}
             saving={saving}
             direction={direction}
+            hasExistingConfig={configuredSteps.has(8)}
           />
         )
       case 9:
@@ -405,6 +466,7 @@ function SetupWizardInner() {
         <WizardNavDesktop
           currentStep={step}
           completedSteps={completedSteps}
+          configuredSteps={configuredSteps}
           onStepClick={goTo}
         />
 
@@ -417,6 +479,7 @@ function SetupWizardInner() {
         <WizardNavMobile
           currentStep={step}
           completedSteps={completedSteps}
+          configuredSteps={configuredSteps}
           onStepClick={goTo}
         />
       </div>

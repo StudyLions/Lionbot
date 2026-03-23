@@ -10,7 +10,7 @@ import { useState } from "react"
 import {
   Sparkles, Settings, Coins, Trophy, ListChecks, Timer,
   Calendar, Users, Heart, Crown, Terminal, PartyPopper,
-  ChevronUp, ChevronDown, X,
+  ChevronUp, ChevronDown, X, Wrench,
 } from "lucide-react"
 
 export interface WizardStep {
@@ -41,6 +41,7 @@ export const WIZARD_STEPS: WizardStep[] = [
 interface WizardNavProps {
   currentStep: number
   completedSteps: Set<number>
+  configuredSteps?: Set<number>
   onStepClick: (index: number) => void
 }
 
@@ -58,7 +59,7 @@ function StepDot({ completed, active }: { completed: boolean; active: boolean })
   )
 }
 
-export function WizardNavDesktop({ currentStep, completedSteps, onStepClick }: WizardNavProps) {
+export function WizardNavDesktop({ currentStep, completedSteps, configuredSteps, onStepClick }: WizardNavProps) {
   return (
     <nav className="hidden lg:flex flex-col w-64 bg-gray-800/50 border-r border-gray-700/50 p-4 gap-1 overflow-y-auto">
       <div className="px-3 py-2 mb-2">
@@ -79,21 +80,18 @@ export function WizardNavDesktop({ currentStep, completedSteps, onStepClick }: W
       {WIZARD_STEPS.map((step, i) => {
         const isActive = i === currentStep
         const isCompleted = completedSteps.has(i)
-        const isAccessible = i <= currentStep || completedSteps.has(i) || i === currentStep + 1
+        const isConfigured = configuredSteps?.has(i) && !isCompleted
 
         return (
           <button
             key={step.id}
-            onClick={() => isAccessible && onStepClick(i)}
-            disabled={!isAccessible}
+            onClick={() => onStepClick(i)}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 text-left group ${
               isActive
                 ? "bg-[#DDB21D]/15 text-[#DDB21D] font-medium"
                 : isCompleted
                 ? "text-[#43b581] hover:bg-gray-700/50 cursor-pointer"
-                : isAccessible
-                ? "text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 cursor-pointer"
-                : "text-gray-600 cursor-not-allowed"
+                : "text-gray-400 hover:bg-gray-700/50 hover:text-gray-300 cursor-pointer"
             }`}
           >
             <StepDot completed={isCompleted} active={isActive} />
@@ -101,6 +99,9 @@ export function WizardNavDesktop({ currentStep, completedSteps, onStepClick }: W
               {step.icon}
               <span className="truncate">{step.label}</span>
             </span>
+            {isConfigured && (
+              <Wrench className="w-3 h-3 text-[#DDB21D]/60 ml-auto flex-shrink-0" />
+            )}
           </button>
         )
       })}
@@ -108,7 +109,7 @@ export function WizardNavDesktop({ currentStep, completedSteps, onStepClick }: W
   )
 }
 
-export function WizardNavMobile({ currentStep, completedSteps, onStepClick }: WizardNavProps) {
+export function WizardNavMobile({ currentStep, completedSteps, configuredSteps, onStepClick }: WizardNavProps) {
   const [expanded, setExpanded] = useState(false)
   const step = WIZARD_STEPS[currentStep]
 
@@ -163,26 +164,21 @@ export function WizardNavMobile({ currentStep, completedSteps, onStepClick }: Wi
                 {WIZARD_STEPS.map((s, i) => {
                   const isActive = i === currentStep
                   const isCompleted = completedSteps.has(i)
-                  const isAccessible = i <= currentStep || completedSteps.has(i) || i === currentStep + 1
+                  const isConfigured = configuredSteps?.has(i) && !isCompleted
 
                   return (
                     <button
                       key={s.id}
                       onClick={() => {
-                        if (isAccessible) {
-                          onStepClick(i)
-                          setExpanded(false)
-                        }
+                        onStepClick(i)
+                        setExpanded(false)
                       }}
-                      disabled={!isAccessible}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm transition-all ${
                         isActive
                           ? "bg-[#DDB21D]/15 text-[#DDB21D] font-medium"
                           : isCompleted
                           ? "text-[#43b581]"
-                          : isAccessible
-                          ? "text-gray-400 active:bg-gray-700/50"
-                          : "text-gray-600"
+                          : "text-gray-400 active:bg-gray-700/50"
                       }`}
                     >
                       <StepDot completed={isCompleted} active={isActive} />
@@ -190,6 +186,9 @@ export function WizardNavMobile({ currentStep, completedSteps, onStepClick }: Wi
                         {s.icon}
                         {s.label}
                       </span>
+                      {isConfigured && (
+                        <Wrench className="w-3 h-3 text-[#DDB21D]/60 ml-auto flex-shrink-0" />
+                      )}
                     </button>
                   )
                 })}

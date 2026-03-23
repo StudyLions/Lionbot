@@ -12,6 +12,7 @@ import StepLayout from "../StepLayout"
 import { RankUpPreview } from "../DiscordPreview"
 import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect } from "@/components/dashboard/ui"
+import Slider from "../Slider"
 
 const RANK_TYPES = [
   { value: "XP", label: "Combined XP", description: "Counts both voice time and messages. Best for most servers.", icon: <Sparkles size={20} /> },
@@ -33,6 +34,9 @@ const CARD_ANNOTATIONS = [
   { label: "Equipped Skin", top: "70%", right: "5%", width: "40%", color: "#ff6b6b" },
 ]
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepRanksProps {
   config: Record<string, any>
   serverName: string
@@ -43,30 +47,11 @@ interface StepRanksProps {
   onSkip: () => void
   saving: boolean
   direction: number
-}
-
-function Slider({ label, value, min, max, step, onChange, description }: {
-  label: string; value: number; min: number; max: number; step: number
-  onChange: (v: number) => void; description?: string
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-300">{label}</label>
-        <span className="text-sm font-mono font-semibold text-[#DDB21D]">{value}</span>
-      </div>
-      {description && <p className="text-xs text-gray-500">{description}</p>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#DDB21D] bg-gray-700"
-      />
-    </div>
-  )
+  hasExistingConfig?: boolean
 }
 
 export default function StepRanks({
-  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepRanksProps) {
   const [showAdvanced, setShowAdvanced] = useState(true)
   const [selectedSkin, setSelectedSkin] = useState(0)
@@ -78,11 +63,16 @@ export default function StepRanks({
       subtitle="How members level up and show off their stats"
       leoPose="starEyed"
       leoMessage={getLeoMessage("ranks", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass ranks-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("ranks", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Rank Type */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-3">

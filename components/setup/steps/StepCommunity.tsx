@@ -14,7 +14,11 @@ import Link from "next/link"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect } from "@/components/dashboard/ui"
+import Slider from "../Slider"
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepCommunityProps {
   config: Record<string, any>
   serverName: string
@@ -25,26 +29,7 @@ interface StepCommunityProps {
   onSkip: () => void
   saving: boolean
   direction: number
-}
-
-function Slider({ label, value, min, max, step, onChange, suffix = "", description }: {
-  label: string; value: number; min: number; max: number; step: number
-  onChange: (v: number) => void; suffix?: string; description?: string
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-300">{label}</label>
-        <span className="text-sm font-mono font-semibold text-[#DDB21D]">{value}{suffix}</span>
-      </div>
-      {description && <p className="text-xs text-gray-500">{description}</p>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#DDB21D] bg-gray-700"
-      />
-    </div>
-  )
+  hasExistingConfig?: boolean
 }
 
 const TABS = [
@@ -54,7 +39,7 @@ const TABS = [
 ]
 
 export default function StepCommunity({
-  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepCommunityProps) {
   const [tab, setTab] = useState("rolemenus")
   const [showAdvanced, setShowAdvanced] = useState(true)
@@ -65,11 +50,16 @@ export default function StepCommunity({
       subtitle="Role menus, private rooms, video channels, and moderation"
       leoPose="mindBlown"
       leoMessage={getLeoMessage("community", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass community-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("community", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Tabs */}
       <div className="flex gap-1 bg-gray-800/60 rounded-xl p-1 border border-gray-700/50">

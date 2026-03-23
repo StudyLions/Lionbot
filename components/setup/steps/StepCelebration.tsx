@@ -123,7 +123,14 @@ export default function StepCelebration({
         </p>
       </div>
 
-      <LeoMascot pose="celebrating" message={getLeoMessage("celebration", "intro", serverName)} />
+      <LeoMascot
+        pose="celebrating"
+        message={getLeoMessage("celebration", "intro", serverName)}
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Pass celebration-step hint for LeoMascot post-intro cycling
+        hintMessage={getLeoMessage("celebration", "hint", serverName)}
+        // --- END AI-MODIFIED ---
+      />
 
       {/* Config Summary */}
       <div className="w-full max-w-lg">

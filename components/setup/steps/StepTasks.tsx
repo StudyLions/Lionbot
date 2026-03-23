@@ -8,7 +8,11 @@ import { motion } from "framer-motion"
 import { ChevronDown, ChevronUp, ListChecks, Dumbbell, Check, Circle } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+import Slider from "../Slider"
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
 interface StepTasksProps {
   config: Record<string, any>
   serverName: string
@@ -18,26 +22,7 @@ interface StepTasksProps {
   onSkip: () => void
   saving: boolean
   direction: number
-}
-
-function Slider({ label, value, min, max, step, onChange, suffix = "", description }: {
-  label: string; value: number; min: number; max: number; step: number
-  onChange: (v: number) => void; suffix?: string; description?: string
-}) {
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <label className="text-sm text-gray-300">{label}</label>
-        <span className="text-sm font-mono font-semibold text-[#DDB21D]">{value}{suffix}</span>
-      </div>
-      {description && <p className="text-xs text-gray-500">{description}</p>}
-      <input
-        type="range" min={min} max={max} step={step} value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-2 rounded-full appearance-none cursor-pointer accent-[#DDB21D] bg-gray-700"
-      />
-    </div>
-  )
+  hasExistingConfig?: boolean
 }
 
 const DEMO_TASKS = [
@@ -48,7 +33,7 @@ const DEMO_TASKS = [
 ]
 
 export default function StepTasks({
-  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction,
+  config, serverName, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
 }: StepTasksProps) {
   const [showAdvanced, setShowAdvanced] = useState(true)
 
@@ -58,11 +43,16 @@ export default function StepTasks({
       subtitle="Personal to-do lists and timed exercise sessions"
       leoPose="pointing"
       leoMessage={getLeoMessage("tasks", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass tasks-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("tasks", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       onSkip={onSkip}
       saving={saving}
       direction={direction}
+      hasExistingConfig={hasExistingConfig}
     >
       {/* Task Config */}
       <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-4">

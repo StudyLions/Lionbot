@@ -69,6 +69,10 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
       subtitle="Help us keep LionBot alive and thriving"
       leoPose="thumbsUp"
       leoMessage={getLeoMessage("premium", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass premium-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("premium", "hint", serverName)}
+      // --- END AI-MODIFIED ---
       onBack={onBack}
       onNext={onNext}
       nextLabel="Almost Done"

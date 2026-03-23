@@ -26,6 +26,7 @@ type LeoPose = "waving" | "pointing" | "thumbsUp" | "starEyed" | "mindBlown" | "
 interface LeoMascotProps {
   pose: LeoPose
   message: string
+  hintMessage?: string
   className?: string
   compact?: boolean
 }
@@ -187,7 +188,7 @@ function LionGotchiSprite({ expression, outfit }: { expression: string; outfit: 
   )
 }
 
-function TypewriterText({ text, key }: { text: string; key: string }) {
+function TypewriterText({ text, id, onComplete }: { text: string; id: string; onComplete?: () => void }) {
   const [displayed, setDisplayed] = useState("")
   useEffect(() => {
     setDisplayed("")
@@ -195,23 +196,44 @@ function TypewriterText({ text, key }: { text: string; key: string }) {
     const interval = setInterval(() => {
       i++
       setDisplayed(text.slice(0, i))
-      if (i >= text.length) clearInterval(interval)
+      if (i >= text.length) {
+        clearInterval(interval)
+        onComplete?.()
+      }
     }, 18)
     return () => clearInterval(interval)
-  }, [text, key])
+  }, [text, id])
   return (
     <span>
       {displayed}
       {displayed.length < text.length && (
-        <span className="inline-block w-0.5 h-4 bg-foreground/60 ml-0.5 animate-pulse align-middle" />
+        <span className="inline-block w-0.5 h-4 bg-gray-400 ml-0.5 animate-pulse align-middle" />
       )}
     </span>
   )
 }
 
-export default function LeoMascot({ pose, message, className = "", compact = false }: LeoMascotProps) {
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added hintMessage cycling -- after intro typewriter finishes, waits 8s then swaps to hint
+export default function LeoMascot({ pose, message, hintMessage, className = "", compact = false }: LeoMascotProps) {
   const outfit = useRandomOutfit()
   const expression = EXPRESSION_MAP[pose]
+  const [showHint, setShowHint] = useState(false)
+  const [introComplete, setIntroComplete] = useState(false)
+
+  useEffect(() => {
+    setShowHint(false)
+    setIntroComplete(false)
+  }, [message])
+
+  useEffect(() => {
+    if (!introComplete || !hintMessage) return
+    const timer = setTimeout(() => setShowHint(true), 8000)
+    return () => clearTimeout(timer)
+  }, [introComplete, hintMessage])
+
+  const displayMessage = showHint && hintMessage ? hintMessage : message
+  const messageKey = `${pose}-${showHint ? "hint" : "intro"}-${message.slice(0, 20)}`
 
   return (
     <div className={`flex flex-col items-center gap-3 ${className}`}>
@@ -238,14 +260,19 @@ export default function LeoMascot({ pose, message, className = "", compact = fal
         initial={{ opacity: 0, y: 8, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ delay: 0.2, duration: 0.4 }}
-        className={`relative ${compact ? "max-w-xs" : "max-w-sm"} bg-card border border-border rounded-xl px-4 py-3 shadow-lg`}
+        className={`relative ${compact ? "max-w-xs" : "max-w-sm"} bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 shadow-lg`}
       >
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-card border-l border-t border-border rotate-45" />
-        <p className={`relative ${compact ? "text-xs" : "text-sm"} text-foreground/90 leading-relaxed`}>
-          <TypewriterText text={message} key={`${pose}-${message.slice(0, 20)}`} />
+        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-gray-800 border-l border-t border-gray-700 rotate-45" />
+        <p className={`relative ${compact ? "text-xs" : "text-sm"} text-gray-200 leading-relaxed`}>
+          <TypewriterText
+            text={displayMessage}
+            id={messageKey}
+            onComplete={() => { if (!showHint) setIntroComplete(true) }}
+          />
         </p>
       </motion.div>
     </div>
   )
 }
+// --- END AI-MODIFIED ---
 // --- END AI-REPLACED ---
