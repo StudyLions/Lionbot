@@ -49,6 +49,10 @@ export default function VoiceTimeEditorAdminPage() {
   const { data, isLoading, mutate } = useDashboard<ConfigData>(
     serverId ? `/api/dashboard/servers/${serverId}/voice-time-editor` : null
   )
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    serverId ? `/api/dashboard/servers/${serverId}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
 
   const isPremium = data?.isPremium ?? false
 
@@ -90,14 +94,13 @@ export default function VoiceTimeEditorAdminPage() {
   }
 
   return (
-    <Layout SEO={{ title: "Voice Time Editor - Server Settings", description: "Configure Voice Time Editor" }}>
+    <Layout SEO={{ title: `Voice Time Editor - ${serverName} - LionBot`, description: "Configure Voice Time Editor" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-          {({ serverName, isAdmin, isMod }) => (
-            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-              <div className="max-w-6xl mx-auto flex gap-8">
-                <ServerNav serverId={serverId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
-                <div className="flex-1 min-w-0 max-w-4xl space-y-6">
+          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+            <div className="max-w-6xl mx-auto flex gap-8">
+              <ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />
+              <div className="flex-1 min-w-0 max-w-4xl space-y-6">
 
                   <PageHeader
                     title="Voice Time Editor"
@@ -216,7 +219,7 @@ export default function VoiceTimeEditorAdminPage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
         </ServerGuard>
       </AdminGuard>
     </Layout>
