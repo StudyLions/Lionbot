@@ -27,19 +27,15 @@ function PomodoroDemo() {
   useEffect(() => {
     const interval = setInterval(() => {
       setSeconds((s) => {
-        if (s <= 0) {
-          setPhase((p) => {
-            const next = p === "focus" ? "break" : "focus"
-            setSeconds(next === "focus" ? 25 * 60 : 5 * 60)
-            return next
-          })
-          return s
+        if (s - 60 <= 0) {
+          setPhase((p) => (p === "focus" ? "break" : "focus"))
+          return phase === "focus" ? 5 * 60 : 25 * 60
         }
         return s - 60
       })
     }, 1500)
     return () => clearInterval(interval)
-  }, [])
+  }, [phase])
 
   const mins = Math.floor(seconds / 60)
   const secs = seconds % 60

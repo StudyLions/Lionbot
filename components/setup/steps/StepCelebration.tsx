@@ -95,6 +95,7 @@ export default function StepCelebration({
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="flex flex-col items-center justify-center min-h-full px-4 py-8 space-y-8"
     >
       {/* Big checkmark */}

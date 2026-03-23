@@ -205,6 +205,179 @@ function SetupWizardInner() {
     7: ["renting_price", "renting_cap", "renting_visible", "renting_category", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown", "video_studyban", "video_grace_period", "persist_roles"],
   }
 
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <StepWelcome
+            key="step-0"
+            serverName={serverName}
+            onNext={() => goTo(1)}
+            onSkipWizard={handleSkipWizard}
+          />
+        )
+      case 1:
+        return (
+          <StepBasics
+            key="step-1"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[1])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 2:
+        return (
+          <StepEconomy
+            key="step-2"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[2])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 3:
+        return (
+          <StepRanks
+            key="step-3"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[3])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 4:
+        return (
+          <StepTasks
+            key="step-4"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[4])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 5:
+        return (
+          <StepPomodoro
+            key="step-5"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[5])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 6:
+        return (
+          <StepSchedule
+            key="step-6"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[6])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 7:
+        return (
+          <StepCommunity
+            key="step-7"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[7])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 8:
+        return (
+          <StepLionGotchi
+            key="step-8"
+            lgConfig={lgConfig}
+            serverName={serverName}
+            onLgUpdate={setLg}
+            onNext={async () => {
+              const ok = await saveLgFields()
+              if (ok) {
+                setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+                goTo(9)
+              }
+            }}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+          />
+        )
+      case 9:
+        return (
+          <StepPremium
+            key="step-9"
+            serverName={serverName}
+            onNext={() => {
+              setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+              goTo(10)
+            }}
+            onBack={goBack}
+            direction={direction}
+          />
+        )
+      case 10:
+        return (
+          <StepCommands
+            key="step-10"
+            serverName={serverName}
+            onNext={() => {
+              setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+              goTo(11)
+            }}
+            onBack={goBack}
+            direction={direction}
+          />
+        )
+      case 11:
+        return (
+          <StepCelebration
+            key="step-11"
+            serverName={serverName}
+            guildId={guildId}
+            completedSteps={completedSteps}
+            onFinish={handleFinish}
+            direction={direction}
+          />
+        )
+      default:
+        return null
+    }
+  }
+
   if (!config) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-900">
@@ -229,160 +402,7 @@ function SetupWizardInner() {
 
         <div className="flex-1 flex flex-col overflow-hidden">
           <AnimatePresence mode="wait" custom={direction}>
-            {step === 0 && (
-              <StepWelcome
-                key="welcome"
-                serverName={serverName}
-                onNext={() => goTo(1)}
-                onSkipWizard={handleSkipWizard}
-              />
-            )}
-            {step === 1 && (
-              <StepBasics
-                key="basics"
-                config={config}
-                serverName={serverName}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[1])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 2 && (
-              <StepEconomy
-                key="economy"
-                config={config}
-                serverName={serverName}
-                guildId={guildId}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[2])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 3 && (
-              <StepRanks
-                key="ranks"
-                config={config}
-                serverName={serverName}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[3])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 4 && (
-              <StepTasks
-                key="tasks"
-                config={config}
-                serverName={serverName}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[4])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 5 && (
-              <StepPomodoro
-                key="pomodoro"
-                config={config}
-                serverName={serverName}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[5])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 6 && (
-              <StepSchedule
-                key="schedule"
-                config={config}
-                serverName={serverName}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[6])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 7 && (
-              <StepCommunity
-                key="community"
-                config={config}
-                serverName={serverName}
-                guildId={guildId}
-                onUpdate={set}
-                onNext={() => markCompleteAndNext(STEP_FIELDS[7])}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 8 && (
-              <StepLionGotchi
-                key="liongotchi"
-                lgConfig={lgConfig}
-                serverName={serverName}
-                onLgUpdate={setLg}
-                onNext={async () => {
-                  const ok = await saveLgFields()
-                  if (ok) {
-                    setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
-                    goTo(9)
-                  }
-                }}
-                onBack={goBack}
-                onSkip={skipAndNext}
-                saving={saving}
-                direction={direction}
-              />
-            )}
-            {step === 9 && (
-              <StepPremium
-                key="premium"
-                serverName={serverName}
-                onNext={() => {
-                  setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
-                  goTo(10)
-                }}
-                onBack={goBack}
-                direction={direction}
-              />
-            )}
-            {step === 10 && (
-              <StepCommands
-                key="commands"
-                serverName={serverName}
-                onNext={() => {
-                  setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
-                  goTo(11)
-                }}
-                onBack={goBack}
-                direction={direction}
-              />
-            )}
-            {step === 11 && (
-              <StepCelebration
-                key="celebration"
-                serverName={serverName}
-                guildId={guildId}
-                completedSteps={completedSteps}
-                onFinish={handleFinish}
-                direction={direction}
-              />
-            )}
+            {renderStep()}
           </AnimatePresence>
         </div>
 

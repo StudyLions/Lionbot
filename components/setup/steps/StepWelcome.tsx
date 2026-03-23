@@ -43,7 +43,13 @@ const STATS = [
 
 export default function StepWelcome({ serverName, onNext, onSkipWizard }: StepWelcomeProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-full px-4 py-8 space-y-8">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="flex flex-col items-center justify-center min-h-full px-4 py-8 space-y-8"
+    >
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -104,6 +110,6 @@ export default function StepWelcome({ serverName, onNext, onSkipWizard }: StepWe
           Skip setup wizard &mdash; I&apos;ll configure manually
         </button>
       </motion.div>
-    </div>
+    </motion.div>
   )
 }
