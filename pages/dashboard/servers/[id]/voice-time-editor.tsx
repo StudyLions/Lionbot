@@ -204,7 +204,7 @@ export default function VoiceTimeEditorAdminPage() {
                       <SaveBar
                         show={hasChanges}
                         onSave={handleSave}
-                        onDiscard={() => {
+                        onReset={() => {
                           if (data?.config) {
                             setEnabled(data.config.manual_sessions_enabled)
                             setLimit(data.config.manual_sessions_limit)
