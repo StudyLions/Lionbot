@@ -219,7 +219,6 @@ export default function VoiceTimeEditorAdminPage() {
                 </div>
               </div>
             </div>
-          </div>
         </ServerGuard>
       </AdminGuard>
     </Layout>
