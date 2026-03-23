@@ -133,6 +133,10 @@ import {
 } from "@/utils/marketplace"
 // --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Gem audit log for marketplace gem transactions
+import { sendGemAuditLog } from "@/utils/discordAudit"
+// --- END AI-MODIFIED ---
 
 class HttpError extends Error {
   status: number
@@ -305,6 +309,28 @@ export default apiHandler({
         currency: result.currency,
         remaining: result.newRemaining,
       }).catch(() => {})
+
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Gem audit log for marketplace gem transactions (buyer debit + seller credit)
+      if (result.currency === "GEMS") {
+        sendGemAuditLog({
+          transactionType: "PURCHASE",
+          amount: result.totalPrice,
+          actorId: auth.discordId,
+          fromAccount: auth.discordId,
+          toAccount: result.sellerUserId,
+          description: `Marketplace: Bought ${quantity}x ${result.itemName}`,
+        })
+        sendGemAuditLog({
+          transactionType: "PURCHASE",
+          amount: result.sellerReceives,
+          actorId: result.sellerUserId,
+          fromAccount: auth.discordId,
+          toAccount: result.sellerUserId,
+          description: `Marketplace: Sold ${quantity}x ${result.itemName}${result.fee > 0 ? ` (fee: ${result.fee})` : ""}`,
+        })
+      }
+      // --- END AI-MODIFIED ---
 
       return res.status(200).json({
         success: true,

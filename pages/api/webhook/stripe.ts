@@ -8,6 +8,10 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { prisma } from "@/utils/prisma";
 import { getTierByPriceId } from "@/constants/SubscriptionData";
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Discord audit log notifications for gem transactions and Stripe payments
+import { sendGemAuditLog, sendStripeAuditLog } from "@/utils/discordAudit";
+// --- END AI-MODIFIED ---
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
@@ -144,6 +148,22 @@ async function handleServerPremiumCheckout(session: Stripe.Checkout.Session) {
   console.log(
     `Stripe webhook: server premium activated for guild ${metadata.guildId} by user ${metadata.discordId} (${plan})`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for server premium checkout
+  const spAmount = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : "unknown";
+  sendStripeAuditLog({
+    eventType: "checkout.session.completed",
+    title: "Server Premium Checkout",
+    description: `<@${metadata.discordId}> activated **${plan}** server premium for guild \`${metadata.guildId}\``,
+    fields: [
+      { name: "Amount", value: spAmount, inline: true },
+      { name: "Plan", value: plan, inline: true },
+      { name: "Guild", value: metadata.guildId, inline: true },
+      { name: "Subscription", value: subscriptionId, inline: false },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 async function handleServerPremiumSubscriptionUpdate(subscription: Stripe.Subscription) {
@@ -191,6 +211,20 @@ async function handleServerPremiumSubscriptionUpdate(subscription: Stripe.Subscr
   console.log(
     `Stripe webhook: server premium subscription ${subscription.id} -> guild ${sub.guildid}, status=${status}`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for server premium subscription updates
+  sendStripeAuditLog({
+    eventType: "customer.subscription.updated",
+    title: "Server Premium Update",
+    description: `Guild \`${sub.guildid}\` server premium status changed to **${status}**`,
+    fields: [
+      { name: "Status", value: status, inline: true },
+      { name: "Subscription", value: subscription.id, inline: true },
+    ],
+  });
+  // --- END AI-MODIFIED ---
+
   return true;
 }
 
@@ -209,6 +243,19 @@ async function handleServerPremiumSubscriptionDeleted(subscription: Stripe.Subsc
   });
 
   console.log(`Stripe webhook: server premium subscription deleted for guild ${sub.guildid}`);
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for server premium cancellation
+  sendStripeAuditLog({
+    eventType: "customer.subscription.deleted",
+    title: "Server Premium Cancelled",
+    description: `Guild \`${sub.guildid}\` server premium subscription has been cancelled`,
+    fields: [
+      { name: "Subscription", value: subscription.id, inline: true },
+    ],
+  });
+  // --- END AI-MODIFIED ---
+
   return true;
 }
 
@@ -267,6 +314,21 @@ async function handleServerPremiumInvoice(invoice: Stripe.Invoice) {
   console.log(
     `Stripe webhook: server premium renewed for guild ${sub.guildid} (invoice ${invoice.id})`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for server premium invoice renewal
+  const spInvAmount = invoice.amount_paid != null ? `$${(invoice.amount_paid / 100).toFixed(2)}` : "unknown";
+  sendStripeAuditLog({
+    eventType: "invoice.payment_succeeded",
+    title: "Invoice Paid (Server Premium)",
+    description: `Server premium renewed for guild \`${sub.guildid}\``,
+    fields: [
+      { name: "Amount", value: spInvAmount, inline: true },
+      { name: "Invoice", value: invoice.id, inline: true },
+    ],
+  });
+  // --- END AI-MODIFIED ---
+
   return true;
 }
 
@@ -339,6 +401,30 @@ async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
   console.log(
     `Stripe webhook: credited ${totalGems} gems to Discord user ${metadata.discordId} (session ${session.id})`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Gem audit + Stripe money audit for one-time gem purchase
+  sendGemAuditLog({
+    transactionType: "AUTOMATIC",
+    amount: totalGems,
+    actorId: metadata.discordId,
+    fromAccount: null,
+    toAccount: metadata.discordId,
+    description: `Stripe purchase: ${totalGems} LionGems (${amountPaid})`,
+    note: metadata.discordName ? `Discord user: ${metadata.discordName}` : null,
+    reference: session.id,
+  });
+  sendStripeAuditLog({
+    eventType: "checkout.session.completed",
+    title: "Gem Purchase",
+    description: `<@${metadata.discordId}> bought **${totalGems} LionGems** for **${amountPaid}**`,
+    fields: [
+      { name: "Gems", value: String(totalGems), inline: true },
+      { name: "Paid", value: amountPaid, inline: true },
+      { name: "Session", value: session.id, inline: false },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 // --- AI-MODIFIED (2026-03-16) ---
@@ -399,6 +485,20 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
   console.log(
     `Stripe webhook: subscription ${subscription.id} -> user ${discordId}, tier=${tier}, status=${status}`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for LionHeart subscription create/update
+  sendStripeAuditLog({
+    eventType: "customer.subscription.updated",
+    title: "LionHeart Subscription Update",
+    description: `<@${discordId}> subscription changed to **${tier}** (${status})`,
+    fields: [
+      { name: "Tier", value: tier, inline: true },
+      { name: "Status", value: status, inline: true },
+      { name: "Subscription", value: subscription.id, inline: false },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
@@ -429,6 +529,18 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   });
 
   console.log(`Stripe webhook: subscription deleted for user ${discordId}`);
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for LionHeart subscription cancellation
+  sendStripeAuditLog({
+    eventType: "customer.subscription.deleted",
+    title: "LionHeart Subscription Cancelled",
+    description: `<@${discordId}> subscription has been cancelled`,
+    fields: [
+      { name: "Subscription", value: subscription.id, inline: true },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
@@ -495,6 +607,32 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   console.log(
     `Stripe webhook: credited ${gemAmount} monthly gems to user ${discordId} (${sub.tier})`
   );
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Gem audit + Stripe money audit for LionHeart monthly gem allowance
+  sendGemAuditLog({
+    transactionType: "AUTOMATIC",
+    amount: gemAmount,
+    actorId: discordId,
+    fromAccount: null,
+    toAccount: discordId,
+    description: `LionHeart monthly gem allowance: ${gemAmount} LionGems (${sub.tier})`,
+    note: `Subscription: ${subscriptionId}`,
+    reference,
+  });
+  const invAmount = invoice.amount_paid != null ? `$${(invoice.amount_paid / 100).toFixed(2)}` : "unknown";
+  sendStripeAuditLog({
+    eventType: "invoice.payment_succeeded",
+    title: "Invoice Paid (LionHeart)",
+    description: `<@${discordId}> renewed **${sub.tier}** — credited **${gemAmount} gems**`,
+    fields: [
+      { name: "Amount", value: invAmount, inline: true },
+      { name: "Tier", value: sub.tier, inline: true },
+      { name: "Gems Credited", value: String(gemAmount), inline: true },
+      { name: "Invoice", value: invoice.id, inline: false },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
@@ -514,6 +652,18 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   });
 
   console.log(`Stripe webhook: payment failed for user ${discordId}, set PAST_DUE`);
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Stripe audit log for LionHeart payment failure
+  sendStripeAuditLog({
+    eventType: "invoice.payment_failed",
+    title: "Payment Failed (LionHeart)",
+    description: `<@${discordId}> payment failed — subscription set to **PAST_DUE**`,
+    fields: [
+      { name: "Invoice", value: invoice.id, inline: true },
+    ],
+  });
+  // --- END AI-MODIFIED ---
 }
 
 // --- END AI-MODIFIED ---
@@ -557,6 +707,23 @@ export default async function handler(
           await handleServerPremiumCheckout(session);
         } else if (session.mode === "subscription") {
           console.log(`Stripe webhook: LionHeart subscription checkout completed, session ${session.id}`);
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: Stripe audit log for LionHeart subscription checkout
+          const lhTier = session.metadata?.tier || "unknown";
+          const lhAmount = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : "unknown";
+          sendStripeAuditLog({
+            eventType: "checkout.session.completed",
+            title: "LionHeart Subscription Checkout",
+            description: session.metadata?.discordId
+              ? `<@${session.metadata.discordId}> subscribed to **${lhTier}** for **${lhAmount}/mo**`
+              : `New LionHeart subscription: **${lhTier}** for **${lhAmount}/mo**`,
+            fields: [
+              { name: "Tier", value: lhTier, inline: true },
+              { name: "Amount", value: lhAmount, inline: true },
+              { name: "Session", value: session.id, inline: false },
+            ],
+          });
+          // --- END AI-MODIFIED ---
         } else {
           await handleOneTimeGemPurchase(session);
         }
@@ -618,6 +785,17 @@ export default async function handler(
               data: { status: "PAST_DUE", updated_at: new Date() },
             });
             console.log(`Stripe webhook: server premium payment failed for guild ${sub.guildid}`);
+            // --- AI-MODIFIED (2026-03-23) ---
+            // Purpose: Stripe audit log for server premium payment failure
+            sendStripeAuditLog({
+              eventType: "invoice.payment_failed",
+              title: "Payment Failed (Server Premium)",
+              description: `Server premium payment failed for guild \`${sub.guildid}\``,
+              fields: [
+                { name: "Invoice", value: invoice.id, inline: true },
+              ],
+            });
+            // --- END AI-MODIFIED ---
           }
         } else {
           await handleInvoicePaymentFailed(invoice);
