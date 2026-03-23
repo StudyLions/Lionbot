@@ -45,13 +45,17 @@ const VOLUME_OPTIONS = [
   { value: 100, label: "High" },
 ] as const
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added permissions=70323200 (View Channel, Send Messages, Read History,
+// Connect, Speak, Change Nickname) + scope=bot so bots get the right perms on invite
 const BOT_INVITE_URLS: Record<number, string> = {
-  1: "https://discord.com/oauth2/authorize?client_id=838178898764103741",
-  2: "https://discord.com/oauth2/authorize?client_id=838309890858287125",
-  3: "https://discord.com/oauth2/authorize?client_id=838309965055655946",
-  4: "https://discord.com/oauth2/authorize?client_id=838310064904470588",
-  5: "https://discord.com/oauth2/authorize?client_id=838310176845987870",
+  1: "https://discord.com/oauth2/authorize?client_id=838178898764103741&permissions=70323200&scope=bot",
+  2: "https://discord.com/oauth2/authorize?client_id=838309890858287125&permissions=70323200&scope=bot",
+  3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&permissions=70323200&scope=bot",
+  4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&permissions=70323200&scope=bot",
+  5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&permissions=70323200&scope=bot",
 }
+// --- END AI-MODIFIED ---
 
 // ── Types ─────────────────────────────────────────────────
 
