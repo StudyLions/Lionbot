@@ -186,7 +186,10 @@ export default apiHandler({
         }
         await prisma.rented_rooms.update({
           where: { channelid: channelId },
-          data: { name: name.trim(), name_changed_at: new Date() },
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: name_changed_at column does not exist in rented_rooms schema
+          data: { name: name.trim() },
+          // --- END AI-MODIFIED ---
         })
         await prisma.room_admin_log.create({
           data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "rename", details: { oldName: room.name, newName: name.trim() } },
