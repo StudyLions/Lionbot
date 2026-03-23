@@ -248,6 +248,14 @@ model guild_config {
   rank_channel                 BigInt?
   dm_ranks                     Boolean?
   renting_visible              Boolean?
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: New admin-configurable room settings for the Private Rooms admin panel
+  renting_max_per_user         Int?
+  renting_name_limit           Int?
+  renting_min_deposit          Int?
+  renting_auto_extend          Boolean?
+  renting_cooldown             Int?
+  // --- END AI-MODIFIED ---
   first_joined_at              DateTime?                     @default(now()) @db.Timestamptz(6)
   left_at                      DateTime?                     @db.Timestamptz(6)
   // --- AI-MODIFIED (2026-03-20) ---
@@ -282,6 +290,10 @@ model guild_config {
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Sticky messages relation
   sticky_messages              sticky_messages[]
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Server premium Stripe subscription relation
+  server_premium_subscriptions server_premium_subscriptions?
   // --- END AI-MODIFIED ---
 }
 
@@ -503,16 +515,35 @@ model reminders {
   @@index([userid], map: "reminder_users")
 }
 
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add composite PK so Prisma Client can query rented_members natively
+// (was @@ignore due to missing PK; DB table gets ALTER TABLE ADD PRIMARY KEY)
+// --- Original code (commented out for rollback) ---
+// /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+// model rented_members {
+//   channelid    BigInt
+//   userid       BigInt
+//   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
+//
+//   @@index([channelid], map: "rented_members_channels")
+//   @@index([userid], map: "rented_members_users")
+//   @@ignore
+// }
+// --- End original code ---
 model rented_members {
   channelid    BigInt
   userid       BigInt
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Expose contribution column (already in DB) for admin panel member stats
+  contribution Int          @default(0)
+  // --- END AI-MODIFIED ---
   rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
 
+  @@id([channelid, userid])
   @@index([channelid], map: "rented_members_channels")
   @@index([userid], map: "rented_members_users")
-  @@ignore
 }
+// --- END AI-MODIFIED ---
 
 model rented_rooms {
   channelid      BigInt           @id
@@ -524,11 +555,40 @@ model rented_rooms {
   name           String?
   last_tick      DateTime?        @db.Timestamptz(6)
   contribution   Int              @default(0)
-  rented_members rented_members[] @ignore
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Freeze support for admin panel
+  frozen_at      DateTime?        @db.Timestamptz(6)
+  frozen_by      BigInt?
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Remove @ignore now that rented_members has a composite PK
+  // --- Original code (commented out for rollback) ---
+  // rented_members rented_members[] @ignore
+  // --- End original code ---
+  rented_members rented_members[]
+  // --- END AI-MODIFIED ---
+  room_admin_log room_admin_log[]
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([guildid, ownerid], map: "rented_owners")
 }
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Audit log for admin actions on private rooms
+model room_admin_log {
+  logid        Int          @id @default(autoincrement())
+  channelid    BigInt
+  guildid      BigInt
+  adminid      BigInt
+  action       String
+  details      Json?
+  created_at   DateTime     @default(now()) @db.Timestamptz(6)
+  rented_rooms rented_rooms @relation(fields: [channelid], references: [channelid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([channelid], map: "room_admin_log_channel")
+  @@index([guildid], map: "room_admin_log_guild")
+}
+// --- END AI-MODIFIED ---
 
 model role_menu_history {
   equipid           Int                @id @default(autoincrement())
@@ -1618,6 +1678,29 @@ model lg_marketplace_sales {
 }
 
 // --- END AI-MODIFIED ---
+
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Server premium Stripe subscriptions (replaces gem-based premium purchase)
+
+model server_premium_subscriptions {
+  guildid                BigInt    @id
+  userid                 BigInt
+  stripe_customer_id     String
+  stripe_subscription_id String?
+  plan                   String    @default("MONTHLY")
+  status                 String    @default("INACTIVE")
+  current_period_start   DateTime? @db.Timestamptz(6)
+  current_period_end     DateTime? @db.Timestamptz(6)
+  created_at             DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime? @default(now()) @db.Timestamptz(6)
+
+  guild_config           guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([stripe_customer_id], map: "server_premium_subs_stripe_customer")
+  @@index([userid], map: "server_premium_subs_user")
+}
 
 // --- END AI-MODIFIED ---
 

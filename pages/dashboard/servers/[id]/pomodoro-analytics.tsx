@@ -178,7 +178,7 @@ export default function PomodoroAnalyticsPage() {
                   </div>
                   <h3 className="text-lg font-semibold text-foreground mb-2">Premium Analytics Unavailable</h3>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    Upgrade to Premium to unlock advanced pomodoro analytics including streaks, focus power rankings, and milestone tracking.
+                    Subscribe to Server Premium from the server settings page to unlock advanced pomodoro analytics including streaks, focus power rankings, and milestone tracking.
                   </p>
                 </div>
               )}

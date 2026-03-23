@@ -406,17 +406,24 @@ export default function TermsAndConditions() {
                   your current billing period. No refund will be issued for the remaining time.
                 </p>
 
+                {/* --- AI-MODIFIED (2026-03-22) --- */}
+                {/* Purpose: Updated Server Premium legal text from gems to Stripe subscriptions */}
                 <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
                   Server Premium
                 </h3>
                 <p>
-                  Server Premium is purchased using LionGems and provides cosmetic and gameplay
-                  bonuses for an entire Discord server. Server Premium purchases are{" "}
-                  <strong className="text-foreground">non-refundable</strong>. The LionGems spent on
-                  Server Premium will not be returned under any circumstances, including if the
-                  server is deleted, the bot is removed from the server, or the purchaser leaves
-                  the server.
+                  Server Premium is a recurring subscription (&euro;9.99/month or &euro;99.99/year)
+                  that unlocks cosmetic and gameplay bonuses for an entire Discord server.
+                  Server Premium subscriptions are managed through Stripe and can be cancelled
+                  at any time via the Stripe Customer Portal or the server dashboard.
                 </p>
+                <p className="mt-2">
+                  Upon cancellation, the server retains premium features until the end of the
+                  current billing period. No refund will be issued for the remaining time.
+                  Existing premium time purchased with LionGems before the transition to
+                  subscriptions will be honored until its natural expiry date.
+                </p>
+                {/* --- END AI-MODIFIED --- */}
 
                 <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
                   LionGotchi Items, Equipment &amp; In-Game Purchases

@@ -961,11 +961,14 @@ export default function PomodoroPage() {
                       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
                         Unlock custom timer themes, focus roles, session summaries, economy bonuses, streaks, and advanced analytics for your server.
                       </p>
-                      <Link href="/premium">
+                      {/* --- AI-MODIFIED (2026-03-22) --- */}
+                      {/* Purpose: Fixed broken /premium link to point to server settings */}
+                      <Link href={`/dashboard/servers/${id}/settings`}>
                         <a className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors">
                           <Sparkles size={14} /> Upgrade to Premium
                         </a>
                       </Link>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   ) : premConfig ? (
                     <>

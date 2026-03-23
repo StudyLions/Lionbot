@@ -13,7 +13,7 @@
     "coloredSkins": "Colored Skins",
     "coloredSkinsDesc": "Customize your profile with unique colored skins.",
     "premium": "Premium Subscription",
-    "premiumDesc": "Unlock premium features for your server.",
+    "premiumDesc": "Subscribe to Server Premium from the dashboard.",
     "gifting": "Gift LionGems",
     "giftingDesc": "Send LionGems to friends and other members.",
     "bonuses": "XP Bonuses",
@@ -21,13 +21,13 @@
   },
   "premium": {
     "title": "Premium Plans",
-    "subtitle": "Use LionGems to purchase a Premium subscription for your server!",
+    "subtitle": "Subscribe to Server Premium directly from your server dashboard.",
     "monthly": "Monthly",
     "threeMonths": "3 Months",
     "oneYear": "1 Year",
     "subscription": "Subscription",
     "mostPopular": "Most Popular",
-    "managePremium": "To purchase and manage your subscription, use the /premium command and access the interface.",
+    "managePremium": "Subscribe and manage your Server Premium from the server dashboard settings page.",
     "getLionGems": "Get LionGems"
   },
   "gems": {
@@ -36,7 +36,7 @@
     "buyNow": "Buy Now"
   },
   "gifting": {
-    "text": "Remember, LionGems can be used to purchase skins for yourself and get premium subscription for your own server, but you can also gift them to other members!",
+    "text": "Remember, LionGems can be used to purchase skins for yourself, and you can also gift them to other members!",
     "giftCommand": "To gift LionGems, use the /gift command",
     "browseSkins": "Browse Skins"
   },

@@ -31,10 +31,21 @@ export default apiHandler({
     const activeSession = ongoingSessions[0]
     const channelId = activeSession.channelid!
 
-    const [guildConfig, timer, roomSessions, myTasks] = await Promise.all([
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Also query rented_rooms to detect if user is in a private room
+    // --- Original code (commented out for rollback) ---
+    // const [guildConfig, timer, roomSessions, myTasks] = await Promise.all([
+    //   prisma.guild_config.findUnique({
+    //     where: { guildid: activeSession.guildid },
+    //     select: { name: true },
+    //   }),
+    //   ... (same 4 queries without rentedRoom)
+    // ])
+    // --- End original code ---
+    const [guildConfig, timer, roomSessions, myTasks, rentedRoom] = await Promise.all([
       prisma.guild_config.findUnique({
         where: { guildid: activeSession.guildid },
-        select: { name: true },
+        select: { name: true, renting_price: true },
       }),
       prisma.timers.findUnique({
         where: { channelid: channelId },
@@ -63,7 +74,23 @@ export default apiHandler({
           rewarded: true,
         },
       }),
+      prisma.rented_rooms.findUnique({
+        where: { channelid: channelId },
+        select: {
+          channelid: true, guildid: true, ownerid: true,
+          coin_balance: true, name: true, last_tick: true,
+          created_at: true, deleted_at: true,
+          rented_members: { select: { userid: true } },
+        },
+      }),
     ])
+    // --- END AI-MODIFIED ---
+
+    // --- AI-MODIFIED (2026-03-22) ---
+    // Purpose: Compute room timer ownership flags used by both running and non-running timer states
+    const isRoomChannel = !!rentedRoom && !rentedRoom.deleted_at
+    const isRoomOwner = isRoomChannel && rentedRoom.ownerid === auth.userId
+    // --- END AI-MODIFIED ---
 
     let pomodoro = null
     if (timer && timer.last_started) {
@@ -95,6 +122,29 @@ export default apiHandler({
         channelName: timer.pretty_name || timer.channel_name || "Pomodoro",
         cycleNumber,
         lastStarted: timer.last_started!.toISOString(),
+        // --- AI-MODIFIED (2026-03-22) ---
+        // Purpose: Flags so session page shows timer edit controls for room owners
+        isRoomTimer: isRoomChannel,
+        timerOwnerMatch: isRoomOwner,
+        // --- END AI-MODIFIED ---
+      }
+      // --- END AI-MODIFIED ---
+    } else if (timer && !timer.last_started) {
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Return timer info even when stopped, so room owners see edit/start controls
+      pomodoro = {
+        stage: "stopped" as const,
+        focusLength: timer.focus_length,
+        breakLength: timer.break_length,
+        stageStartedAt: null,
+        stageEndsAt: null,
+        remainingSeconds: 0,
+        stageDurationSeconds: 0,
+        channelName: timer.pretty_name || timer.channel_name || "Pomodoro",
+        cycleNumber: 0,
+        lastStarted: null,
+        isRoomTimer: isRoomChannel,
+        timerOwnerMatch: isRoomOwner,
       }
       // --- END AI-MODIFIED ---
     }
@@ -209,6 +259,38 @@ export default apiHandler({
         parentId: t.parentid,
         rewarded: t.rewarded,
       })),
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Flags for timer creation when no timer exists yet
+      roomTimerFlags: {
+        isRoomChannel,
+        isRoomOwner,
+        hasTimer: !!timer,
+      },
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Include private room data when user's voice channel is a rented room
+      privateRoom: rentedRoom && !rentedRoom.deleted_at ? (() => {
+        const rentPrice = guildConfig?.renting_price ?? 1000
+        const daysRemaining = rentPrice > 0 ? Math.floor(rentedRoom.coin_balance / rentPrice) : 999
+        const nextTick = rentedRoom.last_tick
+          ? new Date(new Date(rentedRoom.last_tick).getTime() + 24 * 60 * 60 * 1000).toISOString()
+          : rentedRoom.created_at
+            ? new Date(new Date(rentedRoom.created_at).getTime() + 24 * 60 * 60 * 1000).toISOString()
+            : null
+        return {
+          channelId: rentedRoom.channelid.toString(),
+          name: rentedRoom.name || null,
+          coinBalance: rentedRoom.coin_balance,
+          rentPrice,
+          daysRemaining,
+          isOwner: rentedRoom.ownerid === auth.userId,
+          ownerId: rentedRoom.ownerid.toString(),
+          nextTick,
+          createdAt: rentedRoom.created_at?.toISOString() ?? null,
+          memberCount: (rentedRoom.rented_members?.length ?? 0) + 1,
+        }
+      })() : null,
+      // --- END AI-MODIFIED ---
     })
   },
 

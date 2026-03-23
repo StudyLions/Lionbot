@@ -60,6 +60,226 @@ function getTierFromSubscription(subscription: Stripe.Subscription): string {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Server premium subscription handlers -- create/renew/cancel server premium via Stripe
+
+async function handleServerPremiumCheckout(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata;
+  if (!metadata?.discordId || !metadata?.guildId) {
+    console.error("Stripe webhook: missing server premium metadata on session", session.id);
+    return;
+  }
+
+  const guildIdBig = BigInt(metadata.guildId);
+  const userIdBig = BigInt(metadata.discordId);
+  const plan = metadata.plan || "MONTHLY";
+
+  const subscriptionId = typeof session.subscription === "string"
+    ? session.subscription
+    : (session.subscription as any)?.id ?? null;
+
+  const customerId = typeof session.customer === "string"
+    ? session.customer
+    : (session.customer as any)?.id ?? null;
+
+  if (!subscriptionId || !customerId) {
+    console.error("Stripe webhook: server premium checkout missing subscription/customer ID");
+    return;
+  }
+
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000)
+    : new Date(Date.now() + (plan === "YEARLY" ? 365 : 30) * 86400000);
+  const periodStart = sub.current_period_start
+    ? new Date(sub.current_period_start * 1000)
+    : new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.server_premium_subscriptions.upsert({
+      where: { guildid: guildIdBig },
+      create: {
+        guildid: guildIdBig,
+        userid: userIdBig,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        plan,
+        status: "ACTIVE",
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+      },
+      update: {
+        userid: userIdBig,
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        plan,
+        status: "ACTIVE",
+        current_period_start: periodStart,
+        current_period_end: periodEnd,
+        updated_at: new Date(),
+      },
+    });
+
+    const existing = await tx.premium_guilds.findUnique({
+      where: { guildid: guildIdBig },
+    });
+
+    if (existing) {
+      const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+      await tx.premium_guilds.update({
+        where: { guildid: guildIdBig },
+        data: { premium_until: newUntil },
+      });
+    } else {
+      await tx.premium_guilds.create({
+        data: {
+          guildid: guildIdBig,
+          premium_since: periodStart,
+          premium_until: periodEnd,
+        },
+      });
+    }
+  });
+
+  console.log(
+    `Stripe webhook: server premium activated for guild ${metadata.guildId} by user ${metadata.discordId} (${plan})`
+  );
+}
+
+async function handleServerPremiumSubscriptionUpdate(subscription: Stripe.Subscription) {
+  const sub = await prisma.server_premium_subscriptions.findFirst({
+    where: { stripe_subscription_id: subscription.id },
+  });
+  if (!sub) return false;
+
+  const status = subscription.cancel_at_period_end ? "CANCELLING"
+    : subscription.status === "active" ? "ACTIVE"
+    : subscription.status === "past_due" ? "PAST_DUE"
+    : subscription.status === "canceled" ? "CANCELLED"
+    : "INACTIVE";
+
+  const periodStart = subscription.current_period_start
+    ? new Date(subscription.current_period_start * 1000)
+    : null;
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000)
+    : null;
+
+  await prisma.server_premium_subscriptions.update({
+    where: { guildid: sub.guildid },
+    data: {
+      status,
+      current_period_start: periodStart,
+      current_period_end: periodEnd,
+      updated_at: new Date(),
+    },
+  });
+
+  if (periodEnd && (status === "ACTIVE" || status === "CANCELLING")) {
+    const existing = await prisma.premium_guilds.findUnique({
+      where: { guildid: sub.guildid },
+    });
+    if (existing) {
+      const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+      await prisma.premium_guilds.update({
+        where: { guildid: sub.guildid },
+        data: { premium_until: newUntil },
+      });
+    }
+  }
+
+  console.log(
+    `Stripe webhook: server premium subscription ${subscription.id} -> guild ${sub.guildid}, status=${status}`
+  );
+  return true;
+}
+
+async function handleServerPremiumSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const sub = await prisma.server_premium_subscriptions.findFirst({
+    where: { stripe_subscription_id: subscription.id },
+  });
+  if (!sub) return false;
+
+  await prisma.server_premium_subscriptions.update({
+    where: { guildid: sub.guildid },
+    data: {
+      status: "CANCELLED",
+      updated_at: new Date(),
+    },
+  });
+
+  console.log(`Stripe webhook: server premium subscription deleted for guild ${sub.guildid}`);
+  return true;
+}
+
+async function handleServerPremiumInvoice(invoice: Stripe.Invoice) {
+  if (!invoice.subscription) return false;
+
+  const subscriptionId = typeof invoice.subscription === "string"
+    ? invoice.subscription
+    : invoice.subscription.id;
+
+  const sub = await prisma.server_premium_subscriptions.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+  });
+  if (!sub) return false;
+
+  const reference = `server_premium_${invoice.id}`;
+  const existing = await prisma.premium_guilds.findUnique({
+    where: { guildid: sub.guildid },
+  });
+
+  const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+  const periodEnd = stripeSub.current_period_end
+    ? new Date(stripeSub.current_period_end * 1000)
+    : null;
+
+  if (periodEnd && existing) {
+    const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+    await prisma.premium_guilds.update({
+      where: { guildid: sub.guildid },
+      data: { premium_until: newUntil },
+    });
+  } else if (periodEnd && !existing) {
+    await prisma.premium_guilds.create({
+      data: {
+        guildid: sub.guildid,
+        premium_since: new Date(),
+        premium_until: periodEnd,
+      },
+    });
+  }
+
+  if (periodEnd) {
+    await prisma.server_premium_subscriptions.update({
+      where: { guildid: sub.guildid },
+      data: {
+        current_period_end: periodEnd,
+        current_period_start: stripeSub.current_period_start
+          ? new Date(stripeSub.current_period_start * 1000)
+          : undefined,
+        status: "ACTIVE",
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  console.log(
+    `Stripe webhook: server premium renewed for guild ${sub.guildid} (invoice ${invoice.id})`
+  );
+  return true;
+}
+
+async function isServerPremiumSubscription(subscriptionId: string): Promise<boolean> {
+  const sub = await prisma.server_premium_subscriptions.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+    select: { guildid: true },
+  });
+  return !!sub;
+}
+
+// --- END AI-MODIFIED ---
+
 async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
   const metadata = session.metadata;
   if (!metadata?.discordId || !metadata?.totalGems) {
@@ -329,12 +549,14 @@ export default async function handler(
 
   try {
     switch (event.type) {
-      // --- AI-MODIFIED (2026-03-16) ---
-      // Purpose: Handle both one-time payments and subscription events
+      // --- AI-MODIFIED (2026-03-22) ---
+      // Purpose: Handle one-time payments, LionHeart subscriptions, AND server premium subscriptions
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription") {
-          console.log(`Stripe webhook: subscription checkout completed, session ${session.id}`);
+        if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM") {
+          await handleServerPremiumCheckout(session);
+        } else if (session.mode === "subscription") {
+          console.log(`Stripe webhook: LionHeart subscription checkout completed, session ${session.id}`);
         } else {
           await handleOneTimeGemPurchase(session);
         }
@@ -344,25 +566,62 @@ export default async function handler(
       case "customer.subscription.created":
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionCreatedOrUpdated(subscription);
+        const subId = subscription.id;
+        const isServerPremium = await isServerPremiumSubscription(subId);
+        if (isServerPremium) {
+          await handleServerPremiumSubscriptionUpdate(subscription);
+        } else {
+          await handleSubscriptionCreatedOrUpdated(subscription);
+        }
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        await handleSubscriptionDeleted(subscription);
+        const subId = subscription.id;
+        const isServerPremium = await isServerPremiumSubscription(subId);
+        if (isServerPremium) {
+          await handleServerPremiumSubscriptionDeleted(subscription);
+        } else {
+          await handleSubscriptionDeleted(subscription);
+        }
         break;
       }
 
       case "invoice.payment_succeeded": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaymentSucceeded(invoice);
+        const invoiceSubId = typeof invoice.subscription === "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+        let handledByServerPremium = false;
+        if (invoiceSubId) {
+          handledByServerPremium = await handleServerPremiumInvoice(invoice);
+        }
+        if (!handledByServerPremium) {
+          await handleInvoicePaymentSucceeded(invoice);
+        }
         break;
       }
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        await handleInvoicePaymentFailed(invoice);
+        const failedSubId = typeof invoice.subscription === "string"
+          ? invoice.subscription
+          : invoice.subscription?.id;
+        if (failedSubId && await isServerPremiumSubscription(failedSubId)) {
+          const sub = await prisma.server_premium_subscriptions.findFirst({
+            where: { stripe_subscription_id: failedSubId },
+          });
+          if (sub) {
+            await prisma.server_premium_subscriptions.update({
+              where: { guildid: sub.guildid },
+              data: { status: "PAST_DUE", updated_at: new Date() },
+            });
+            console.log(`Stripe webhook: server premium payment failed for guild ${sub.guildid}`);
+          }
+        } else {
+          await handleInvoicePaymentFailed(invoice);
+        }
         break;
       }
       // --- END AI-MODIFIED ---

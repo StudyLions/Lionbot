@@ -22,10 +22,9 @@ import {
 } from "@/components/dashboard/ui"
 import type { Column } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
-import { useDashboard, invalidate } from "@/hooks/useDashboard"
+import { useDashboard } from "@/hooks/useDashboard"
 import Link from "next/link"
-import { useState } from "react"
-import { Gem, Star, CreditCard, Gift, Server } from "lucide-react"
+import { Gem, Star, CreditCard, Gift } from "lucide-react"
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: add i18n imports for serverSideTranslations
 import { GetServerSideProps } from "next"
@@ -36,12 +35,6 @@ const QUICK_BUY_PACKS = [
   { gems: 300, label: "300 gems" },
   { gems: 1550, label: "1,550 gems" },
   { gems: 5100, label: "5,100 gems" },
-]
-
-const PREMIUM_PLANS = [
-  { gems: 1500, period: "Monthly", plan: "monthly", description: "Premium features for one server" },
-  { gems: 4000, period: "3 Months", plan: "quarterly", description: "Best value – save 11%" },
-  { gems: 12000, period: "1 Year", plan: "yearly", description: "Best savings – 33% off" },
 ]
 
 interface GemTransaction {
@@ -71,44 +64,9 @@ const txTypeConfig: Record<string, { label: string; variant: "success" | "warnin
 
 export default function GemsPage() {
   const { data: session } = useSession()
-  // --- AI-MODIFIED (2026-03-13) ---
-  // Purpose: migrated from useEffect+fetch to SWR for proper caching and error handling
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Removed gem-based server premium purchase (now uses Stripe subscriptions)
   const { data, error, isLoading: loading } = useDashboard<GemsData>(session ? "/api/dashboard/gems" : null)
-  const { data: serversData } = useDashboard<{ servers: { guildId: string; guildName: string }[] }>(
-    session ? "/api/dashboard/servers" : null
-  )
-  const [selectedServer, setSelectedServer] = useState<string>("")
-  const [purchasing, setPurchasing] = useState(false)
-
-  const buyPremium = async (plan: string) => {
-    if (!selectedServer) {
-      toast.error("Select a server first")
-      return
-    }
-    setPurchasing(true)
-    try {
-      const res = await fetch(`/api/dashboard/servers/${selectedServer}/premium`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      })
-      const result = await res.json()
-      if (!res.ok) {
-        if (result.needed) {
-          toast.error(`Need ${result.needed - result.balance} more gems`)
-        } else {
-          toast.error(result.error || "Purchase failed")
-        }
-        return
-      }
-      toast.success(`Premium activated until ${new Date(result.premiumUntil).toLocaleDateString()}!`)
-      invalidate("/api/dashboard/gems")
-    } catch {
-      toast.error("Purchase failed")
-    } finally {
-      setPurchasing(false)
-    }
-  }
   // --- END AI-MODIFIED ---
 
   const transactionColumns: Column<GemTransaction>[] = [
@@ -176,7 +134,7 @@ export default function GemsPage() {
             <div className="flex-1 min-w-0">
               <PageHeader
                 title="LionGems"
-                description="LionGems are LionBot's premium currency. Use them to unlock custom profile skins, contribute to server premium, and access exclusive features."
+                description="LionGems are LionBot's premium currency. Use them to unlock custom profile skins and access exclusive cosmetic features."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "LionGems" },
@@ -238,56 +196,6 @@ export default function GemsPage() {
                     </div>
                   </div>
 
-                  {/* Premium for Your Server */}
-                  <SectionCard
-                    title="Premium for Your Server"
-                    description="Contribute gems to unlock premium features for a Discord server"
-                    icon={<Server size={18} />}
-                    defaultOpen={true}
-                  >
-                    {/* --- AI-MODIFIED (2026-03-13) --- */}
-                    {/* Purpose: server selector and working buy buttons for premium plans */}
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-foreground mb-2">
-                        Select server
-                      </label>
-                      <select
-                        value={selectedServer}
-                        onChange={(e) => setSelectedServer(e.target.value)}
-                        className="w-full max-w-xs px-4 py-2 rounded-lg bg-muted border border-border text-foreground text-sm"
-                      >
-                        <option value="">Choose a server...</option>
-                        {serversData?.servers?.map((s) => (
-                          <option key={s.guildId} value={s.guildId}>
-                            {s.guildName}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {PREMIUM_PLANS.map((plan) => (
-                        <div
-                          key={plan.period}
-                          className="p-4 rounded-xl bg-muted/50 border border-border"
-                        >
-                          <p className="font-semibold text-foreground">{plan.period}</p>
-                          <p className="text-2xl font-bold text-amber-500 mt-1">
-                            {plan.gems.toLocaleString()} gems
-                          </p>
-                          <p className="text-sm text-muted-foreground mt-2">{plan.description}</p>
-                          <button
-                            onClick={() => buyPremium(plan.plan)}
-                            disabled={!selectedServer || purchasing}
-                            className="mt-3 w-full px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-foreground text-sm font-medium transition-colors"
-                          >
-                            {purchasing ? "Processing..." : "Buy"}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    {/* --- END AI-MODIFIED --- */}
-                  </SectionCard>
-
                   {/* Premium Benefits */}
                   <SectionCard
                     title="Premium Benefits"
@@ -302,7 +210,7 @@ export default function GemsPage() {
                       </li>
                       <li className="flex items-center gap-2">
                         <Star size={16} className="text-amber-500 flex-shrink-0" />
-                        Contribute gems to servers for premium features
+                        Gift gems to friends and community members
                       </li>
                       <li className="flex items-center gap-2">
                         <Gem size={16} className="text-amber-500 flex-shrink-0" />

@@ -17,14 +17,21 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import Link from "next/link"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add icons for inline room controls + owner panel
 import {
   Radio, Clock, Users, CheckSquare, Plus, Check, Circle,
   Maximize2, ArrowLeft, Video, MonitorPlay, Trash2, X, Pencil,
-  Bell, BellOff, Trophy, Timer,
+  Bell, BellOff, Trophy, Timer, Coins, DoorOpen,
+  Crown, UserMinus, ChevronDown, ChevronUp, ExternalLink, PencilLine, Settings,
+  Play, Square,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add privateRoom type to LiveSessionData for inline room controls
 interface LiveSessionData {
   active: boolean
   session?: {
@@ -37,17 +44,39 @@ interface LiveSessionData {
     isStream: boolean
     activity: string | null
   }
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Extended pomodoro type with room timer ownership flags and stopped state
   pomodoro?: {
-    stage: "focus" | "break"
+    stage: "focus" | "break" | "stopped"
     focusLength: number
     breakLength: number
-    stageStartedAt: string
-    stageEndsAt: string
+    stageStartedAt: string | null
+    stageEndsAt: string | null
     remainingSeconds: number
     stageDurationSeconds: number
     channelName: string
     cycleNumber: number
-    lastStarted: string
+    lastStarted: string | null
+    isRoomTimer?: boolean
+    timerOwnerMatch?: boolean
+  } | null
+  roomTimerFlags?: {
+    isRoomChannel: boolean
+    isRoomOwner: boolean
+    hasTimer: boolean
+  }
+  // --- END AI-MODIFIED ---
+  privateRoom?: {
+    channelId: string
+    name: string | null
+    coinBalance: number
+    rentPrice: number
+    daysRemaining: number
+    isOwner: boolean
+    ownerId: string
+    nextTick: string | null
+    createdAt: string | null
+    memberCount: number
   } | null
   roomMembers?: Array<{
     userId: string
@@ -70,6 +99,20 @@ interface LiveSessionData {
     rewarded: boolean | null
   }>
 }
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Room detail type for owner control panel
+interface RoomDetailData {
+  channelId: string; name: string | null; coinBalance: number; rentPrice: number
+  daysRemaining: number; memberCap: number; ownerId: string
+  createdAt: string | null; nextTick: string | null
+  members: Array<{
+    userId: string; displayName: string; avatarUrl: string | null
+    isOwner: boolean; totalStudySeconds: number; contribution: number; coinBalance: number
+  }>
+}
+// --- END AI-MODIFIED ---
 
 function formatDuration(startTime: string): string {
   const elapsed = Math.floor((Date.now() - new Date(startTime).getTime()) / 1000)
@@ -111,9 +154,170 @@ export default function SessionPage() {
   const editInputRef = useRef<HTMLInputElement>(null)
   const activityInputRef = useRef<HTMLInputElement>(null)
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: State and handler for inline room deposit from session page
+  const [showRoomDeposit, setShowRoomDeposit] = useState(false)
+  const [depositAmount, setDepositAmount] = useState("")
+  const [depositing, setDepositing] = useState(false)
+
+  const handleQuickDeposit = useCallback(async (days: number) => {
+    if (!data?.privateRoom) return
+    setDepositing(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${data.privateRoom.channelId}/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ days }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || "Deposit failed")
+      toast.success(`Deposited ${result.deposited} coins! (${result.newDaysRemaining} days remaining)`)
+      mutate()
+      setShowRoomDeposit(false)
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDepositing(false)
+    }
+  }, [data?.privateRoom, mutate])
+
+  const handleCustomDeposit = useCallback(async () => {
+    if (!data?.privateRoom || !depositAmount) return
+    const amt = Number(depositAmount)
+    if (amt <= 0 || !Number.isFinite(amt)) return
+    setDepositing(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${data.privateRoom.channelId}/deposit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ amount: Math.floor(amt) }),
+      })
+      const result = await res.json()
+      if (!res.ok) throw new Error(result.error || "Deposit failed")
+      toast.success(`Deposited ${result.deposited} coins! (${result.newDaysRemaining} days remaining)`)
+      mutate()
+      setShowRoomDeposit(false)
+      setDepositAmount("")
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDepositing(false)
+    }
+  }, [data?.privateRoom, depositAmount, mutate])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Owner panel state -- fetch room detail when in own room
+  const isRoomOwner = data?.privateRoom?.isOwner ?? false
+  const roomChannelId = data?.privateRoom?.channelId
+  const { data: roomDetail, mutate: mutateRoom } = useDashboard<RoomDetailData>(
+    isRoomOwner && roomChannelId ? `/api/dashboard/rooms/${roomChannelId}` : null
+  )
+  const [showOwnerPanel, setShowOwnerPanel] = useState(true)
+  const [editingRoomName, setEditingRoomName] = useState(false)
+  const [roomNameInput, setRoomNameInput] = useState("")
+  const [savingRoomName, setSavingRoomName] = useState(false)
+
+  const handleRoomRename = useCallback(async () => {
+    if (!roomChannelId || !roomNameInput.trim()) return
+    setSavingRoomName(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: roomNameInput.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Rename failed")
+      toast.success("Room renamed! Bot will sync on next tick.")
+      setEditingRoomName(false)
+      mutateRoom(); mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setSavingRoomName(false) }
+  }, [roomChannelId, roomNameInput, mutateRoom, mutate])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Timer controls state and handlers for room owner panel
+  const canManageTimer = data?.roomTimerFlags?.isRoomOwner ?? data?.pomodoro?.timerOwnerMatch ?? false
+  const hasRoomTimer = data?.roomTimerFlags?.hasTimer ?? !!data?.pomodoro
+  const [timerCreating, setTimerCreating] = useState(false)
+  const [timerEditing, setTimerEditing] = useState(false)
+  const [timerFocus, setTimerFocus] = useState(25)
+  const [timerBreak, setTimerBreak] = useState(5)
+  const [timerAutoRestart, setTimerAutoRestart] = useState(false)
+  const [timerLoading, setTimerLoading] = useState(false)
+
+  const handleTimerCreate = useCallback(async () => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ focusMinutes: timerFocus, breakMinutes: timerBreak, autoRestart: timerAutoRestart }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to create timer")
+      toast.success("Timer created!")
+      setTimerCreating(false)
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, timerFocus, timerBreak, timerAutoRestart, mutate])
+
+  const handleTimerEdit = useCallback(async () => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ focusMinutes: timerFocus, breakMinutes: timerBreak, autoRestart: timerAutoRestart }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to update timer")
+      toast.success("Timer updated!")
+      setTimerEditing(false)
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, timerFocus, timerBreak, timerAutoRestart, mutate])
+
+  const handleTimerStartStop = useCallback(async (action: "start" | "stop") => {
+    if (!roomChannelId) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || `Failed to ${action} timer`)
+      toast.success(action === "start" ? "Timer started!" : "Timer stopped!")
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, mutate])
+
+  const handleTimerDelete = useCallback(async () => {
+    if (!roomChannelId || !confirm("Delete this timer?")) return
+    setTimerLoading(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${roomChannelId}/timer`, { method: "DELETE" })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error || "Failed to delete timer")
+      toast.success("Timer deleted")
+      mutate()
+    } catch (err: any) { toast.error(err.message) }
+    finally { setTimerLoading(false) }
+  }, [roomChannelId, mutate])
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: stage change notifications + session summary tracking
-  const notifications = useStageNotifications(data?.pomodoro?.stage ?? null)
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Filter out "stopped" stage since notifications only apply to focus/break
+  const pomodoroStageForNotifications = data?.pomodoro?.stage === "focus" || data?.pomodoro?.stage === "break" ? data.pomodoro.stage : null
+  const notifications = useStageNotifications(pomodoroStageForNotifications)
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: cycle completion celebration glow on session page
@@ -353,6 +557,8 @@ export default function SessionPage() {
               /* --- END AI-MODIFIED --- */
                 <>
                   {/* Session Header */}
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Add private room name, balance badge, and deposit inline */}
                   <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
@@ -364,6 +570,14 @@ export default function SessionPage() {
                       </div>
                       <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
                         <span>{data.session!.guildName}</span>
+                        {data.privateRoom && (
+                          <>
+                            <span className="text-border">|</span>
+                            <span className="flex items-center gap-1 text-blue-400">
+                              <DoorOpen size={12} /> {data.privateRoom.name || "Private Room"}
+                            </span>
+                          </>
+                        )}
                         {data.pomodoro && (
                           <>
                             <span className="text-border">|</span>
@@ -384,13 +598,290 @@ export default function SessionPage() {
                         )}
                       </div>
                     </div>
-                    <Link href="/dashboard">
-                      <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-                        onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
-                        <ArrowLeft size={14} /> Overview
-                      </a>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      {data.privateRoom && (
+                        <div className="flex items-center gap-2">
+                          <span className={cn(
+                            "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border",
+                            data.privateRoom.daysRemaining > 7
+                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                              : data.privateRoom.daysRemaining > 3
+                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                : "bg-red-500/10 text-red-400 border-red-500/20"
+                          )}>
+                            <Coins size={12} /> {data.privateRoom.coinBalance.toLocaleString()}
+                            <span className="text-[10px] opacity-70 ml-0.5">
+                              ({data.privateRoom.daysRemaining}d)
+                            </span>
+                          </span>
+                          <button
+                            onClick={() => setShowRoomDeposit(!showRoomDeposit)}
+                            className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-600/80 text-white hover:bg-amber-500 transition-colors"
+                          >
+                            Deposit
+                          </button>
+                        </div>
+                      )}
+                      <Link href="/dashboard">
+                        <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                          onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
+                          <ArrowLeft size={14} /> Overview
+                        </a>
+                      </Link>
+                    </div>
                   </div>
+                  {/* Room Deposit Panel (inline) */}
+                  {data.privateRoom && showRoomDeposit && (
+                    <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-amber-300 flex items-center gap-1.5">
+                          <Coins size={14} /> Quick Deposit
+                        </span>
+                        <button onClick={() => setShowRoomDeposit(false)} className="text-gray-400 hover:text-gray-200">
+                          <X size={14} />
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {[7, 14, 30].map((d) => (
+                          <button
+                            key={d}
+                            disabled={depositing}
+                            onClick={() => handleQuickDeposit(d)}
+                            className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/20 transition-colors disabled:opacity-50"
+                          >
+                            +{d} days
+                            <span className="ml-1 text-gray-500">= {d * data.privateRoom!.rentPrice}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="number" min="1" placeholder="Custom amount"
+                          value={depositAmount}
+                          onChange={(e) => setDepositAmount(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleCustomDeposit()}
+                          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+                        />
+                        <button
+                          disabled={depositing || !depositAmount || Number(depositAmount) <= 0}
+                          onClick={handleCustomDeposit}
+                          className="px-4 py-1.5 text-sm font-medium rounded-lg bg-amber-600 text-white hover:bg-amber-500 disabled:opacity-50 transition-colors"
+                        >
+                          Deposit
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {/* Room expiry warning */}
+                  {data.privateRoom && data.privateRoom.daysRemaining <= 3 && (
+                    <div className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-lg text-xs",
+                      data.privateRoom.daysRemaining <= 1
+                        ? "bg-red-500/10 text-red-400 border border-red-500/20"
+                        : "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    )}>
+                      <Clock size={12} />
+                      {data.privateRoom.daysRemaining <= 0
+                        ? "Your room will expire on the next rent tick! Deposit coins now."
+                        : `Your room expires in ${data.privateRoom.daysRemaining} day${data.privateRoom.daysRemaining !== 1 ? "s" : ""}. Consider depositing more coins.`
+                      }
+                    </div>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
+
+                  {/* --- AI-MODIFIED (2026-03-22) --- */}
+                  {/* Purpose: Room owner control panel with rename, members, info */}
+                  {isRoomOwner && data.privateRoom && (
+                    <div className="rounded-xl border border-blue-500/20 bg-blue-500/5 overflow-hidden">
+                      <button onClick={() => setShowOwnerPanel(!showOwnerPanel)}
+                        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-blue-500/10 transition-colors">
+                        <span className="flex items-center gap-2 text-sm font-medium text-blue-300">
+                          <Settings size={14} /> Room Controls
+                        </span>
+                        {showOwnerPanel ? <ChevronUp size={14} className="text-blue-400" /> : <ChevronDown size={14} className="text-blue-400" />}
+                      </button>
+                      {showOwnerPanel && (
+                        <div className="px-4 pb-4 space-y-4 border-t border-blue-500/10">
+                          {/* Room Name (editable) */}
+                          <div className="pt-3 space-y-2">
+                            <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold">Room Name</label>
+                            {editingRoomName ? (
+                              <div className="flex gap-2">
+                                <input type="text" value={roomNameInput} onChange={(e) => setRoomNameInput(e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && handleRoomRename()}
+                                  maxLength={100} autoFocus
+                                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-blue-500/30 text-gray-200 focus:border-blue-500/50 focus:outline-none" />
+                                <button disabled={savingRoomName || !roomNameInput.trim()} onClick={handleRoomRename}
+                                  className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white disabled:opacity-50">Save</button>
+                                <button onClick={() => setEditingRoomName(false)} className="text-gray-400 hover:text-gray-200"><X size={14} /></button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-foreground font-medium">{data.privateRoom.name || "Private Room"}</span>
+                                <button onClick={() => { setRoomNameInput(data.privateRoom!.name || ""); setEditingRoomName(true) }}
+                                  className="text-blue-400/60 hover:text-blue-400"><PencilLine size={12} /></button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Room Info Badges */}
+                          <div className="flex flex-wrap gap-2">
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                              <Coins size={9} className="inline mr-1" />{data.privateRoom.rentPrice}/day rent
+                            </span>
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                              <Users size={9} className="inline mr-1" />{data.privateRoom.memberCount}{roomDetail ? `/${roomDetail.memberCap}` : ""} members
+                            </span>
+                            {data.privateRoom.createdAt && (
+                              <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                                <Clock size={9} className="inline mr-1" />Created {Math.floor((Date.now() - new Date(data.privateRoom.createdAt).getTime()) / 86400000)}d ago
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Member List */}
+                          {roomDetail && (
+                            <div className="space-y-1.5">
+                              <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold">Members ({roomDetail.members.length})</label>
+                              <div className="space-y-1 max-h-40 overflow-y-auto">
+                                {roomDetail.members.slice(0, 10).map((m) => (
+                                  <div key={m.userId} className="flex items-center gap-2 py-1 px-1.5 rounded hover:bg-blue-500/5">
+                                    {m.avatarUrl ? <img src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full" /> : <div className="w-5 h-5 rounded-full bg-muted" />}
+                                    <span className="text-xs text-foreground flex-1 truncate">{m.displayName}</span>
+                                    {m.isOwner && <Crown size={9} className="text-amber-400" />}
+                                    <span className="text-[10px] text-muted-foreground tabular-nums">{Math.floor(m.totalStudySeconds / 3600)}h</span>
+                                    {!m.isOwner && m.contribution > 0 && (
+                                      <span className="text-[10px] text-amber-400/60 tabular-nums">{m.contribution}<Coins size={7} className="inline ml-0.5" /></span>
+                                    )}
+                                  </div>
+                                ))}
+                                {roomDetail.members.length > 10 && (
+                                  <p className="text-[10px] text-muted-foreground text-center">+{roomDetail.members.length - 10} more</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* --- AI-MODIFIED (2026-03-22) --- */}
+                          {/* Purpose: Timer controls for room owners in session panel */}
+                          {canManageTimer && (
+                            <div className="space-y-2">
+                              <label className="text-[10px] uppercase tracking-wider text-blue-400/60 font-semibold flex items-center gap-1">
+                                <Timer size={9} /> Room Timer
+                              </label>
+                              {!hasRoomTimer && !timerCreating ? (
+                                <button onClick={() => setTimerCreating(true)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border border-purple-500/20 transition-colors">
+                                  <Plus size={10} /> Add Timer
+                                </button>
+                              ) : timerCreating ? (
+                                <div className="space-y-2">
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                      <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
+                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                    </div>
+                                    <div>
+                                      <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                      <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
+                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                    </div>
+                                  </div>
+                                  <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                    <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
+                                      className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                    Auto-restart
+                                  </label>
+                                  <div className="flex gap-2">
+                                    <button onClick={handleTimerCreate} disabled={timerLoading}
+                                      className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Create</button>
+                                    <button onClick={() => setTimerCreating(false)}
+                                      className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                  </div>
+                                </div>
+                              ) : data.pomodoro ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                      <span>{Math.floor(data.pomodoro.focusLength / 60)}m / {Math.floor(data.pomodoro.breakLength / 60)}m</span>
+                                      <span className={cn("px-1 py-0.5 rounded text-[9px] font-semibold",
+                                        data.pomodoro.stage === "stopped"
+                                          ? "bg-gray-700 text-gray-400"
+                                          : "bg-emerald-500/15 text-emerald-400"
+                                      )}>{data.pomodoro.stage === "stopped" ? "Stopped" : "Running"}</span>
+                                    </div>
+                                    <div className="flex gap-1">
+                                      {data.pomodoro.stage === "stopped" ? (
+                                        <button onClick={() => handleTimerStartStop("start")} disabled={timerLoading}
+                                          className="p-1 rounded bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25 disabled:opacity-50" title="Start">
+                                          <Play size={10} />
+                                        </button>
+                                      ) : (
+                                        <button onClick={() => handleTimerStartStop("stop")} disabled={timerLoading}
+                                          className="p-1 rounded bg-red-500/15 text-red-400 hover:bg-red-500/25 disabled:opacity-50" title="Stop">
+                                          <Square size={10} />
+                                        </button>
+                                      )}
+                                      <button onClick={() => {
+                                        setTimerFocus(Math.floor(data.pomodoro!.focusLength / 60))
+                                        setTimerBreak(Math.floor(data.pomodoro!.breakLength / 60))
+                                        setTimerEditing(!timerEditing)
+                                      }} className="p-1 rounded bg-gray-700 text-gray-300 hover:bg-gray-600" title="Edit">
+                                        <Pencil size={10} />
+                                      </button>
+                                      <button onClick={handleTimerDelete} disabled={timerLoading}
+                                        className="p-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 disabled:opacity-50" title="Delete">
+                                        <Trash2 size={10} />
+                                      </button>
+                                    </div>
+                                  </div>
+                                  {timerEditing && (
+                                    <div className="space-y-2 pt-1">
+                                      <div className="grid grid-cols-2 gap-2">
+                                        <div>
+                                          <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                          <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
+                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        </div>
+                                        <div>
+                                          <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                          <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
+                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        </div>
+                                      </div>
+                                      <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                        <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
+                                          className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                        Auto-restart
+                                      </label>
+                                      <div className="flex gap-2">
+                                        <button onClick={handleTimerEdit} disabled={timerLoading}
+                                          className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Save</button>
+                                        <button onClick={() => setTimerEditing(false)}
+                                          className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              ) : null}
+                            </div>
+                          )}
+                          {/* --- END AI-MODIFIED --- */}
+
+                          {/* Quick Links */}
+                          <div className="flex gap-3 pt-1">
+                            <Link href="/dashboard/rooms">
+                              <a className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1">
+                                <ExternalLink size={9} /> Manage All Rooms
+                              </a>
+                            </Link>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Activity Tag */}
                   <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
@@ -444,7 +935,7 @@ export default function SessionPage() {
                   </div>
 
                   {/* Pomodoro Timer */}
-                  {data.pomodoro && (
+                  {data.pomodoro && data.pomodoro.stage !== "stopped" && (
                     <div className={cn(
                       "relative rounded-2xl border p-6 flex flex-col items-center gap-4 transition-all duration-700",
                       data.pomodoro.stage === "focus"

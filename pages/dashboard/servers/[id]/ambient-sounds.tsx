@@ -11,7 +11,7 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
 import {
-  PageHeader, SectionCard, ChannelSelect, Toggle, SaveBar, toast,
+  PageHeader, SectionCard, ChannelSelect, SaveBar, toast,
 } from "@/components/dashboard/ui"
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
@@ -20,6 +20,7 @@ import { useState, useCallback, useEffect } from "react"
 import {
   Volume2, CloudRain, Flame, Waves, Wind, Radio,
   ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
+  Play, Square,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -257,7 +258,7 @@ export default function AmbientSoundsPage() {
                 ) : (
                   <div className="space-y-4 mt-6">
                     <p className="text-sm text-muted-foreground">
-                      Bots connect automatically when someone joins the configured voice channel and leave after 60 seconds of the channel being empty.
+                      Bots sit in the voice channel so members can see them waiting. Audio plays automatically when someone joins and pauses when the channel is empty.
                       Users can adjust each bot's volume individually by right-clicking it in Discord.
                     </p>
 
@@ -307,12 +308,6 @@ export default function AmbientSoundsPage() {
                               </div>
                               <div className="flex items-center gap-3">
                                 {statusBadge(slot.status, slot.error_msg, botOnline)}
-                                {isAdded && !isOffline && (
-                                  <Toggle
-                                    checked={slot.enabled}
-                                    onChange={(v) => updateSlot(slot.bot_number, { enabled: v })}
-                                  />
-                                )}
                               </div>
                             </div>
                           </div>
@@ -405,6 +400,42 @@ export default function AmbientSoundsPage() {
                                   ))}
                                 </div>
                               </div>
+
+                              {/* --- AI-MODIFIED (2026-03-22) --- */}
+                              {/* Purpose: Prominent Start/Stop button replacing the hidden toggle */}
+                              {slot.enabled ? (
+                                <button
+                                  onClick={() => updateSlot(slot.bot_number, { enabled: false })}
+                                  className="flex items-center justify-center gap-2 w-full py-2.5 rounded-lg bg-red-600/15 hover:bg-red-600/25 text-red-400 text-sm font-medium transition-colors border border-red-500/20"
+                                >
+                                  <Square size={14} />
+                                  Stop Playing
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    if (!slot.sound_type || !slot.channelid) return
+                                    updateSlot(slot.bot_number, { enabled: true })
+                                  }}
+                                  disabled={!slot.sound_type || !slot.channelid}
+                                  className={cn(
+                                    "flex items-center justify-center gap-2 w-full py-2.5 rounded-lg text-sm font-medium transition-colors",
+                                    slot.sound_type && slot.channelid
+                                      ? "bg-emerald-600 hover:bg-emerald-500 text-white"
+                                      : "bg-gray-800/50 text-muted-foreground cursor-not-allowed",
+                                  )}
+                                >
+                                  <Play size={14} />
+                                  {!slot.sound_type && !slot.channelid
+                                    ? "Select a sound and channel to start"
+                                    : !slot.sound_type
+                                      ? "Select a sound to start"
+                                      : !slot.channelid
+                                        ? "Select a channel to start"
+                                        : "Start Playing"}
+                                </button>
+                              )}
+                              {/* --- END AI-MODIFIED --- */}
                             </div>
                           )}
                         </SectionCard>

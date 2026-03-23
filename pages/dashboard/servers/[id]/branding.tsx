@@ -384,11 +384,13 @@ interface HistoryEntry {
   properties: Record<string, Record<string, string>>
 }
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Replaced gem-based premium plans with Stripe subscription plans (EUR)
 const PREMIUM_PLANS = [
-  { id: "monthly", name: "Monthly", gems: 1500, duration: "30 days" },
-  { id: "quarterly", name: "Quarterly", gems: 4000, duration: "90 days", popular: true },
-  { id: "yearly", name: "Yearly", gems: 12000, duration: "365 days", save: "17%" },
+  { id: "MONTHLY", name: "Monthly", price: "€9.99", period: "/mo" },
+  { id: "YEARLY", name: "Yearly", price: "€99.99", period: "/yr", save: "17%" },
 ]
+// --- END AI-MODIFIED ---
 
 function generatePalette(accent: string): Record<string, string> {
   const hex = accent.replace("#", "")
@@ -768,27 +770,28 @@ export default function BrandingPage() {
     toast.success("Palette applied!")
   }
 
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Replaced gem deduction with Stripe subscription checkout redirect
   const handlePurchase = async (plan: string) => {
     setPurchasing(true)
     try {
-      const res = await fetch(`/api/dashboard/servers/${id}/premium`, {
+      const res = await fetch("/api/subscription/server-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ guildId: id, plan }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Purchase failed")
-      setUpsellOpen(false)
-      mutate()
-      invalidate(`/api/dashboard/servers/${id}/branding`)
-      invalidate("/api/dashboard/gems")
-      toast.success(`Thank you for supporting LionBot! Premium active until ${new Date(data.premiumUntil).toLocaleDateString()}`)
+      if (!res.ok) throw new Error(data.error || "Failed to start checkout")
+      if (data.url) {
+        window.location.href = data.url
+      }
     } catch (err: unknown) {
-      toast.error((err as { message?: string })?.message || "Purchase failed")
+      toast.error((err as { message?: string })?.message || "Failed to start checkout")
     } finally {
       setPurchasing(false)
     }
   }
+  // --- END AI-MODIFIED ---
 
   const toggleGroup = (groupId: string) => {
     setCollapsedGroups((prev) => {
@@ -1233,53 +1236,45 @@ export default function BrandingPage() {
                 Your support helps keep all bot features free for everyone.
               </DialogDescription>
             </DialogHeader>
+            {/* --- AI-MODIFIED (2026-03-22) --- */}
+            {/* Purpose: Replaced gem purchase UI with Stripe subscription checkout */}
             <div className="space-y-3 py-4">
               {PREMIUM_PLANS.map((plan) => (
                 <div
                   key={plan.id}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-xl border transition-all",
-                    plan.popular ? "border-amber-500/40 bg-amber-500/5" : "border-border"
+                    plan.save ? "border-amber-500/40 bg-amber-500/5" : "border-border"
                   )}
                 >
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">{plan.name}</span>
-                      {plan.popular && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium">Popular</span>
-                      )}
                       {plan.save && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">Save {plan.save}</span>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">{plan.duration}</p>
+                    <p className="text-sm text-muted-foreground">Auto-renews, cancel anytime</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-amber-400">{plan.gems.toLocaleString()} gems</span>
+                    <span className="font-semibold text-amber-400">{plan.price}<span className="text-xs text-muted-foreground">{plan.period}</span></span>
                     <Button
                       size="sm"
                       onClick={() => handlePurchase(plan.id)}
                       disabled={purchasing}
                     >
-                      Support
+                      {purchasing ? "..." : "Subscribe"}
                     </Button>
                   </div>
                 </div>
               ))}
             </div>
             <DialogFooter className="flex-col gap-2 sm:flex-col">
-              <Link href="/dashboard/gems">
-                <a className="w-full block">
-                  <Button variant="outline" className="w-full border-amber-500/30 text-amber-400 hover:bg-amber-500/10">
-                    <Sparkles size={14} className="mr-1.5" />
-                    Get LionGems
-                  </Button>
-                </a>
-              </Link>
               <Button variant="ghost" onClick={() => setUpsellOpen(false)} className="w-full">
                 Maybe later
               </Button>
             </DialogFooter>
+            {/* --- END AI-MODIFIED --- */}
           </DialogContent>
         </Dialog>
         </ServerGuard>

@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Link component for rooms admin panel cross-link
+import Link from "next/link"
+// --- END AI-MODIFIED ---
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
   SearchSelect, ChannelSelect, RoleSelect, SaveBar, PageHeader, toast,
@@ -22,7 +26,7 @@ import {
   BookOpen, Coins, CheckSquare, Lock, Users, Trophy,
   Shield, Globe, MessageSquare, Dumbbell, Hash, UserCog, Calendar,
   Download, Upload, Wand2, AlertTriangle, Eye, EyeOff, Volume2, Type,
-  Bot, BarChart3, ChevronRight,
+  Bot, BarChart3, ChevronRight, Crown,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -187,7 +191,10 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "study-rewards", label: "Study Rewards", icon: BookOpen, settings: ["study_hourly_reward", "study_hourly_live_bonus", "daily_study_cap"], searchTerms: ["voice", "camera", "hourly", "study", "reward", "cap"] },
   { id: "economy", label: "Economy", icon: Coins, settings: ["starting_funds", "allow_transfers", "coins_per_centixp"], searchTerms: ["coins", "transfer", "xp", "starting"] },
   { id: "tasks", label: "Tasks", icon: CheckSquare, settings: ["max_tasks", "task_reward", "task_reward_limit"], searchTerms: ["task", "todo", "reward", "limit"] },
-  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms"], searchTerms: ["room", "rent", "private", "visible"] },
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Add new room settings to the Private Rooms section
+  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit"] },
+  // --- END AI-MODIFIED ---
   { id: "schedule", label: "Accountability", icon: Users, settings: ["accountability_price", "accountability_reward", "accountability_bonus"], searchTerms: ["schedule", "session", "booking", "accountability", "attendance"] },
   { id: "ranks", label: "Ranks", icon: Trophy, settings: ["rank_type", "dm_ranks", "xp_per_period"], searchTerms: ["rank", "level", "xp", "leaderboard"] },
   { id: "moderation", label: "Moderation", icon: Shield, settings: ["video_studyban", "video_grace_period", "persist_roles"], searchTerms: ["video", "ban", "moderate", "roles", "grace"] },
@@ -201,6 +208,147 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], listKeys: ["unrankedRoles"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
   { id: "danger", label: "Danger Zone", icon: AlertTriangle, settings: [], searchTerms: ["reset", "danger", "delete", "clear"] },
 ]
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Server Premium subscription management card for settings page
+function ServerPremiumCard({ guildId }: { guildId: string }) {
+  const { data: session } = useSession()
+  const { data: subData, isLoading } = useDashboard<{
+    hasSubscription: boolean
+    isPremium: boolean
+    premiumUntil: string | null
+    subscription: {
+      plan: string
+      status: string
+      current_period_end: string | null
+    } | null
+  }>(
+    guildId && session ? `/api/dashboard/servers/${guildId}/subscription` : null
+  )
+  const [checkingOut, setCheckingOut] = useState(false)
+
+  const handleCheckout = async (plan: string) => {
+    setCheckingOut(true)
+    try {
+      const res = await fetch("/api/subscription/server-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId, plan }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to start checkout")
+      if (data.url) window.location.href = data.url
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || "Failed to start checkout")
+    } finally {
+      setCheckingOut(false)
+    }
+  }
+
+  const handleManage = async () => {
+    try {
+      const res = await fetch("/api/subscription/server-portal", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "Failed to open billing portal")
+      if (data.url) window.location.href = data.url
+    } catch (err: unknown) {
+      toast.error((err as { message?: string })?.message || "Failed to open billing portal")
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="mb-6 bg-card border border-border rounded-xl p-6">
+        <div className="animate-pulse flex items-center gap-3">
+          <div className="h-10 w-10 rounded-lg bg-muted" />
+          <div className="space-y-2 flex-1">
+            <div className="h-4 w-40 bg-muted rounded" />
+            <div className="h-3 w-64 bg-muted rounded" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const isActive = subData?.isPremium
+  const isCancelling = subData?.subscription?.status === "CANCELLING"
+  const periodEnd = subData?.subscription?.current_period_end
+    ? new Date(subData.subscription.current_period_end).toLocaleDateString()
+    : null
+
+  return (
+    <div className={`mb-6 rounded-xl border p-6 ${isActive ? "bg-amber-500/5 border-amber-500/30" : "bg-card border-border"}`}>
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="flex items-start gap-3">
+          <div className={`flex items-center justify-center h-10 w-10 rounded-lg ${isActive ? "bg-amber-500/20" : "bg-muted"}`}>
+            <Crown size={20} className={isActive ? "text-amber-400" : "text-muted-foreground"} />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              Server Premium
+              {isActive && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-400 font-medium uppercase">
+                  {isCancelling ? "Cancelling" : "Active"}
+                </span>
+              )}
+            </h3>
+            {isActive ? (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {subData?.subscription?.plan === "YEARLY" ? "Yearly" : "Monthly"} plan
+                {isCancelling && periodEnd
+                  ? ` \u2014 expires ${periodEnd}`
+                  : periodEnd
+                    ? ` \u2014 renews ${periodEnd}`
+                    : ""}
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Unlock custom branding, pomodoro themes, ambient sounds, and more.
+              </p>
+            )}
+          </div>
+        </div>
+
+        {isActive ? (
+          <button
+            onClick={handleManage}
+            className="px-4 py-2 text-sm font-medium rounded-lg bg-card border border-border hover:border-primary/40 text-foreground transition-colors"
+          >
+            Manage Subscription
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleCheckout("MONTHLY")}
+              disabled={checkingOut}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-card border border-border hover:border-amber-500/40 text-foreground transition-colors disabled:opacity-50"
+            >
+              {checkingOut ? "..." : "\u20AC9.99/mo"}
+            </button>
+            <button
+              onClick={() => handleCheckout("YEARLY")}
+              disabled={checkingOut}
+              className="px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50"
+            >
+              {checkingOut ? "..." : "\u20AC99.99/yr \u2014 Save 17%"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {!isActive && subData?.premiumUntil && new Date(subData.premiumUntil) > new Date() && (
+        <p className="text-xs text-muted-foreground mt-3 border-t border-border pt-3">
+          Your existing premium is active until {new Date(subData.premiumUntil).toLocaleDateString()}. Subscribe to extend it further.
+        </p>
+      )}
+    </div>
+  )
+}
 // --- END AI-MODIFIED ---
 
 // ── Component ──────────────────────────────────────────────────────
@@ -246,6 +394,36 @@ export default function ServerSettings() {
       if (tz) setDetectedTimezone(tz)
     } catch { /* ignore */ }
   }, [])
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Deep-link from command palette search -- scroll to section and briefly highlight
+  useEffect(() => {
+    const section = router.query.section as string
+    if (section && !loading && config) {
+      setTimeout(() => {
+        const el = document.getElementById(section)
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" })
+          el.classList.add("ring-2", "ring-primary/50", "rounded-xl")
+          setTimeout(() => el.classList.remove("ring-2", "ring-primary/50", "rounded-xl"), 2000)
+        }
+      }, 400)
+    }
+  }, [router.query.section, loading, config])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: Show toast on premium subscription success/cancel redirect from Stripe
+  useEffect(() => {
+    if (router.query.premium === "success") {
+      toast.success("Server premium activated! Premium features are now available.")
+      router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
+    } else if (router.query.premium === "cancelled") {
+      toast("Premium checkout was cancelled.")
+      router.replace({ pathname: router.pathname, query: { id: router.query.id } }, undefined, { shallow: true })
+    }
+  }, [router.query.premium])
+  // --- END AI-MODIFIED ---
 
   // Sync config data
   useEffect(() => {
@@ -660,6 +838,11 @@ export default function ServerSettings() {
                 description="Configure how LionBot works in your server. Changes are saved when you click Save. Hover over question mark icons for details."
               />
 
+              {/* --- AI-MODIFIED (2026-03-22) --- */}
+              {/* Purpose: Server Premium subscription management card */}
+              <ServerPremiumCard guildId={guildId} />
+              {/* --- END AI-MODIFIED --- */}
+
               {/* Action bar: presets, import, export */}
               {!loading && config && (
                 <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -879,6 +1062,31 @@ export default function ServerSettings() {
                         <SettingRow label="Sync Permissions" description="Sync room permissions with the category" isModified={isModified("renting_sync_perms")} onReset={() => resetField("renting_sync_perms")}>
                           <Toggle checked={config.renting_sync_perms ?? false} onChange={(v) => set("renting_sync_perms", v)} />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-03-22) --- */}
+                        {/* Purpose: New advanced room settings + link to admin rooms panel */}
+                        <SettingRow label="Max Rooms Per User" description="Limit how many rooms one user can own (empty = unlimited)" isModified={isModified("renting_max_per_user")} onReset={() => resetField("renting_max_per_user")}>
+                          <NumberInput value={config.renting_max_per_user} onChange={(v) => set("renting_max_per_user", v)} min={1} allowNull placeholder="No limit" />
+                        </SettingRow>
+                        <SettingRow label="Name Character Limit" description="Max characters for room names (empty = no limit)" isModified={isModified("renting_name_limit")} onReset={() => resetField("renting_name_limit")}>
+                          <NumberInput value={config.renting_name_limit} onChange={(v) => set("renting_name_limit", v)} min={1} allowNull placeholder="No limit" />
+                        </SettingRow>
+                        <SettingRow label="Minimum Initial Deposit" description="Coins required upfront when renting a room" isModified={isModified("renting_min_deposit")} onReset={() => resetField("renting_min_deposit")}>
+                          <NumberInput value={config.renting_min_deposit} onChange={(v) => set("renting_min_deposit", v)} min={0} allowNull placeholder="0" />
+                        </SettingRow>
+                        <SettingRow label="Auto-Extend" description="Automatically deduct from owner balance when room runs out" isModified={isModified("renting_auto_extend")} onReset={() => resetField("renting_auto_extend")}>
+                          <Toggle checked={config.renting_auto_extend ?? false} onChange={(v) => set("renting_auto_extend", v)} />
+                        </SettingRow>
+                        <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)" isModified={isModified("renting_cooldown")} onReset={() => resetField("renting_cooldown")}>
+                          <NumberInput value={config.renting_cooldown} onChange={(v) => set("renting_cooldown", v)} min={0} allowNull placeholder="No cooldown" unit="seconds" />
+                        </SettingRow>
+                        <div className="flex items-center justify-center gap-2 py-3 border-t border-border">
+                          <Link href={`/dashboard/servers/${guildId}/rooms`}>
+                            <a className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5">
+                              Manage rooms and view analytics →
+                            </a>
+                          </Link>
+                        </div>
+                        {/* --- END AI-MODIFIED --- */}
                       </SectionCard>
                     </div>
                   )}

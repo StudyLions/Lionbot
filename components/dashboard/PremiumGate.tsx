@@ -3,14 +3,18 @@
 // Created: 2026-03-22
 // Purpose: Reusable premium feature gate with shiny/luxurious aesthetic
 // ============================================================
-import Link from "next/link"
-import { Crown, Sparkles, MessageSquarePlus } from "lucide-react"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Add server premium Stripe checkout buttons (replaces gem-based CTA)
+import { useRouter } from "next/router"
+import { useState } from "react"
+import { Crown, MessageSquarePlus } from "lucide-react"
 
 interface PremiumGateProps {
   title: string
   subtitle: string
   children: React.ReactNode
 }
+// --- END AI-MODIFIED ---
 
 const SPARKLES = [
   { top: "10%", left: "6%",  delay: "0s",   dur: "3s"   },
@@ -23,7 +27,43 @@ const SPARKLES = [
   { top: "75%", right: "20%", delay: "1.8s", dur: "2.9s" },
 ]
 
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Replace /donate link with direct Stripe checkout for server premium
+const PLANS = [
+  { id: "MONTHLY", label: "Monthly", price: "€9.99", period: "/mo" },
+  { id: "YEARLY", label: "Yearly", price: "€99.99", period: "/yr", badge: "Save 17%" },
+]
+
 export default function PremiumGate({ title, subtitle, children }: PremiumGateProps) {
+  const router = useRouter()
+  const serverId = router.query.id as string | undefined
+  const [loading, setLoading] = useState<string | null>(null)
+
+  const handleCheckout = async (plan: string) => {
+    if (!serverId) return
+    setLoading(plan)
+    try {
+      const res = await fetch("/api/subscription/server-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId: serverId, plan }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert(data.error || "Failed to start checkout")
+        return
+      }
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch {
+      alert("Something went wrong. Please try again.")
+    } finally {
+      setLoading(null)
+    }
+  }
+// --- END AI-MODIFIED ---
+
   return (
     <>
       <style>{`
@@ -162,22 +202,32 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
               </div>
             </div>
 
-            {/* CTA */}
-            <div className="text-center mt-8">
-              <Link href="/donate">
-                <span className="pg-btn-shimmer inline-flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white rounded-xl text-sm font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40">
-                  <Crown size={16} />
-                  Upgrade to Premium
-                </span>
-              </Link>
-              <p className="text-xs text-gray-500 mt-3">
-                Use{" "}
-                <code className="bg-gray-800 px-1.5 py-0.5 rounded text-gray-400">
-                  /premium
-                </code>{" "}
-                in Discord or visit the donate page
+            {/* --- AI-MODIFIED (2026-03-22) --- */}
+            {/* Purpose: Stripe subscription checkout buttons replacing gem/donate CTA */}
+            <div className="mt-8">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {PLANS.map((plan) => (
+                  <button
+                    key={plan.id}
+                    onClick={() => handleCheckout(plan.id)}
+                    disabled={!serverId || loading !== null}
+                    className="pg-btn-shimmer relative inline-flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white rounded-xl text-sm font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Crown size={16} />
+                    {loading === plan.id ? "Redirecting..." : `${plan.price}${plan.period}`}
+                    {plan.badge && (
+                      <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wide">
+                        {plan.badge}
+                      </span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-center text-xs text-gray-500 mt-3">
+                Subscription auto-renews. Cancel anytime from your server settings.
               </p>
             </div>
+            {/* --- END AI-MODIFIED --- */}
           </div>
         </div>
       </div>

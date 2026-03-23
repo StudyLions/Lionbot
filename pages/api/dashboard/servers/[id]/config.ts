@@ -21,6 +21,11 @@ const EDITABLE_FIELDS = [
   'max_tasks', 'task_reward', 'task_reward_limit',
   'renting_price', 'renting_cap', 'renting_visible',
   'renting_category', 'renting_sync_perms',
+  // --- AI-MODIFIED (2026-03-22) ---
+  // Purpose: New admin-configurable room settings for Private Rooms panel
+  'renting_max_per_user', 'renting_name_limit', 'renting_min_deposit',
+  'renting_auto_extend', 'renting_cooldown',
+  // --- END AI-MODIFIED ---
   'accountability_bonus', 'accountability_reward', 'accountability_price',
   'rank_type', 'dm_ranks', 'xp_per_period', 'xp_per_centiword',
   'rank_channel', 'pomodoro_channel', // AI-MODIFIED (2026-03-13): guild default pomodoro notification channel

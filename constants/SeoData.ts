@@ -20,7 +20,7 @@ export const DonationSEO = {
   canonical: `${SITE_URL}/donate`,
   openGraph: {
     title: "Support LionBot - Get LionGems",
-    description: "Purchase LionGems to unlock premium features, colored skins, and more.",
+    description: "Purchase LionGems to unlock colored skins, cosmetics, and more.",
     url: `${SITE_URL}/donate`,
   },
 };

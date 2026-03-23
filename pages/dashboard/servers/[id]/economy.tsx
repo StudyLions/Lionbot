@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-22) ---
+// Purpose: Link component for Private Rooms cross-link
+import Link from "next/link"
+// --- END AI-MODIFIED ---
 import { PageHeader, Badge, toast, ConfirmModal } from "@/components/dashboard/ui"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
@@ -391,15 +395,21 @@ export default function EconomyPage() {
                       </div>
 
                       {/* Rooms Snapshot */}
+                      {/* --- AI-MODIFIED (2026-03-22) --- */}
+                      {/* Purpose: Add cross-link to Private Rooms admin panel */}
                       {(s.activeRooms > 0 || s.coinsInRoomBanks > 0) && (
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-card/30 border border-border rounded-lg text-sm text-muted-foreground">
                           <Home size={14} />
-                          <span>
+                          <span className="flex-1">
                             <strong className="text-foreground">{s.activeRooms}</strong> active room{s.activeRooms !== 1 ? "s" : ""} with{" "}
                             <strong className="text-amber-400">{s.coinsInRoomBanks.toLocaleString()}</strong> coins in room banks
                           </span>
+                          <Link href={`/dashboard/servers/${router.query.id}/rooms`}>
+                            <a className="text-xs text-primary hover:text-primary/80 font-medium whitespace-nowrap">View Rooms →</a>
+                          </Link>
                         </div>
                       )}
+                      {/* --- END AI-MODIFIED --- */}
 
                       {/* Health Tips */}
                       {stats.healthTips.length > 0 && (

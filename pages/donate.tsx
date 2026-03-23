@@ -312,7 +312,10 @@ function SubscriptionManagementBanner({
                 </span>
               </h3>
               <p className="text-sm text-gray-400 mt-0.5">
-                ${subStatus.tierPrice}/month
+                {/* --- AI-MODIFIED (2026-03-22) --- */}
+                {/* Purpose: Display EUR instead of USD */}
+                &euro;{subStatus.tierPrice}/month
+                {/* --- END AI-MODIFIED --- */}
                 {periodEnd && (
                   <>
                     {" · "}Next billing:{" "}
@@ -503,8 +506,11 @@ function SubscriptionCard({
         <span className="text-3xl">{tierIcons[tierId]}</span>
         <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
         <div className="mt-3">
-          <span className="text-4xl font-black text-white">${tier.price}</span>
+          {/* --- AI-MODIFIED (2026-03-22) --- */}
+          {/* Purpose: Display EUR instead of USD for subscription pricing */}
+          <span className="text-4xl font-black text-white">&euro;{tier.price}</span>
           <span className="text-gray-400 text-sm ml-0.5">/month</span>
+          {/* --- END AI-MODIFIED --- */}
         </div>
       </div>
 
@@ -1031,16 +1037,16 @@ function ServerPremiumShowcase() {
                 </div>
               </div>
 
-              {/* Pricing tiers */}
+              {/* --- AI-MODIFIED (2026-03-22) --- */}
+              {/* Purpose: Replaced gem-based pricing tiers with EUR Stripe subscription pricing */}
               <div className="border-t border-gray-700 pt-5 mt-5">
                 <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Plans &mdash; pay with LionGems
+                  Subscription Plans
                 </p>
                 <div className="space-y-2">
                   {[
-                    { period: "Monthly", gems: 1500 },
-                    { period: "3 Months", gems: 4000, tag: "Save 11%" },
-                    { period: "1 Year", gems: 12000, tag: "Save 33%" },
+                    { period: "Monthly", price: "€9.99", suffix: "/mo" },
+                    { period: "Yearly", price: "€99.99", suffix: "/yr", tag: "Save 17%" },
                   ].map((plan) => (
                     <div
                       key={plan.period}
@@ -1056,23 +1062,21 @@ function ServerPremiumShowcase() {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <GemIcon className="h-4 w-4" />
-                        <span className="text-sm font-bold text-blue-400">
-                          {numberWithCommas(plan.gems)}
-                        </span>
-                      </div>
+                      <span className="text-sm font-bold text-blue-400">
+                        {plan.price}<span className="text-xs text-gray-500">{plan.suffix}</span>
+                      </span>
                     </div>
                   ))}
                 </div>
-                <p className="text-[11px] text-gray-600 mt-3 text-center">
-                  Use{" "}
-                  <code className="text-[11px] bg-gray-700/60 px-1.5 py-0.5 rounded text-gray-400">
-                    /premium
-                  </code>{" "}
-                  in Discord to purchase
+                <p className="text-[11px] text-gray-500 mt-3 text-center">
+                  Subscribe from your{" "}
+                  <a href="/dashboard" className="text-blue-400 hover:underline">
+                    server dashboard
+                  </a>{" "}
+                  &mdash; cancel anytime
                 </p>
               </div>
+              {/* --- END AI-MODIFIED --- */}
               {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
@@ -1347,7 +1351,7 @@ export default function Donate() {
                 </h2>
               </div>
               <p className="text-gray-400 mt-2">
-                One-time purchases &mdash; use gems for skins, server premium, and
+                One-time purchases &mdash; use gems for profile skins, gifts, and
                 more
               </p>
             </div>
