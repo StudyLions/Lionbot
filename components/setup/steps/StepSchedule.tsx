@@ -1,0 +1,191 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-03-23
+// Purpose: Step 7 -- Schedule & Accountability sessions config
+// ============================================================
+import { useState } from "react"
+import { motion } from "framer-motion"
+import { Calendar, Coins, ChevronDown, ChevronUp } from "lucide-react"
+import StepLayout from "../StepLayout"
+import { getLeoMessage } from "../leoMessages"
+import { ChannelSelect } from "@/components/dashboard/ui"
+import Slider from "../Slider"
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: optional hasExistingConfig forwarded to StepLayout
+// --- END AI-MODIFIED ---
+interface StepScheduleProps {
+  config: Record<string, any>
+  serverName: string
+  guildId: string
+  onUpdate: (key: string, value: any) => void
+  onNext: () => void
+  onBack: () => void
+  onSkip: () => void
+  saving: boolean
+  direction: number
+  hasExistingConfig?: boolean
+}
+
+const DEMO_SESSIONS = [
+  { time: "Mon 09:00", label: "Morning Study", slots: 4, filled: 3, price: 50 },
+  { time: "Wed 14:00", label: "Afternoon Grind", slots: 6, filled: 6, price: 50 },
+  { time: "Fri 20:00", label: "Night Owls", slots: 8, filled: 5, price: 50 },
+]
+
+export default function StepSchedule({
+  config, serverName, guildId, onUpdate, onNext, onBack, onSkip, saving, direction, hasExistingConfig,
+}: StepScheduleProps) {
+  const [showAdvanced, setShowAdvanced] = useState(true)
+  const price = config.accountability_price ?? 50
+  const reward = config.accountability_reward ?? 100
+  const bonus = config.accountability_bonus ?? 25
+
+  return (
+    <StepLayout
+      title="Schedule"
+      subtitle="Scheduled group sessions where members put coins on the line to show up"
+      leoPose="pointing"
+      leoMessage={getLeoMessage("schedule", "intro", serverName)}
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Pass schedule-step hint to StepLayout for Leo hint cycling
+      leoHintMessage={getLeoMessage("schedule", "hint", serverName)}
+      // --- END AI-MODIFIED ---
+      onBack={onBack}
+      onNext={onNext}
+      onSkip={onSkip}
+      saving={saving}
+      direction={direction}
+      hasExistingConfig={hasExistingConfig}
+    >
+      <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2 text-sm font-medium text-white">
+          <Calendar className="w-4 h-4 text-[#DDB21D]" />
+          Accountability Sessions
+        </div>
+        <p className="text-xs text-gray-400">
+          Admins create scheduled study sessions. Members pay a small entry fee in LionCoins to reserve a spot.
+          Show up? They get their coins back plus a reward. Don&apos;t show up? They lose the entry fee. It&apos;s the ultimate motivation.
+        </p>
+
+        <Slider
+          label="Entry fee"
+          value={price}
+          min={0}
+          max={500}
+          step={10}
+          onChange={(v) => onUpdate("accountability_price", v)}
+          suffix=" coins"
+          description="How many LionCoins members pay to join a session. They get this back if they show up."
+        />
+
+        <Slider
+          label="Attendance reward"
+          value={reward}
+          min={0}
+          max={500}
+          step={10}
+          onChange={(v) => onUpdate("accountability_reward", v)}
+          suffix=" coins"
+          description="LionCoins earned on top of getting the entry fee back -- the reward for showing up"
+        />
+
+        <Slider
+          label="Bonus reward"
+          value={bonus}
+          min={0}
+          max={200}
+          step={5}
+          onChange={(v) => onUpdate("accountability_bonus", v)}
+          suffix=" coins"
+          description="Extra LionCoins for staying until the session ends (on top of the attendance reward)"
+        />
+      </div>
+
+      {/* Demo Schedule */}
+      <div className="space-y-2">
+        <p className="text-xs text-gray-500 font-medium">How scheduled sessions look:</p>
+        <div className="bg-[#36393f] rounded-lg p-4 space-y-3 max-w-md w-full">
+          {DEMO_SESSIONS.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="flex items-center justify-between bg-[#2f3136] rounded-lg px-3 py-2.5"
+            >
+              <div className="space-y-0.5">
+                <p className="text-xs font-medium text-white">{s.label}</p>
+                <p className="text-[10px] text-gray-500">{s.time}</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <Coins className="w-3 h-3 text-[#DDB21D]" />
+                  <span className="text-[10px] text-[#DDB21D]">{price}</span>
+                </div>
+                <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                  s.filled >= s.slots
+                    ? "bg-red-500/20 text-red-400"
+                    : "bg-[#43b581]/20 text-[#43b581]"
+                }`}>
+                  {s.filled}/{s.slots}
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Profit breakdown */}
+      <div className="bg-gradient-to-r from-[#43b581]/10 to-[#DDB21D]/10 border border-[#43b581]/20 rounded-xl p-4">
+        <p className="text-xs text-gray-300">
+          <span className="font-medium text-white">Example:</span> A member pays <span className="text-[#DDB21D] font-bold">{price}</span> coins to join.
+          If they show up: they get their <span className="text-[#DDB21D] font-bold">{price}</span> coins back + <span className="text-[#43b581] font-bold">{reward}</span> attendance reward + <span className="text-[#DDB21D] font-bold">{bonus}</span> completion bonus =
+          <span className="text-white font-bold"> {reward + bonus} coins profit!</span>
+          {price > 0 && <> If they don&apos;t show up: they lose the <span className="text-red-400 font-bold">{price} coin</span> entry fee.</>}
+        </p>
+      </div>
+
+      {/* Advanced */}
+      <div className="border border-gray-700/50 rounded-xl overflow-hidden">
+        <button
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="w-full flex items-center justify-between px-5 py-3 bg-gray-800/40 hover:bg-gray-800/60 transition-colors"
+        >
+          <span className="text-sm font-medium text-gray-400">Advanced Schedule Settings</span>
+          {showAdvanced ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
+        </button>
+        {showAdvanced && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            className="px-5 py-4 space-y-4 bg-gray-800/30"
+          >
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Category for Session Channels</label>
+              <ChannelSelect
+                guildId={guildId}
+                value={config.accountability_category ?? null}
+                onChange={(v) => onUpdate("accountability_category", (v as string) || null)}
+                channelTypes={[4]}
+                placeholder="Select a channel group (category)"
+              />
+              <p className="text-[11px] text-gray-500">The bot creates temporary voice channels inside this Discord category for each scheduled session</p>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-gray-400">Waiting Room Channel</label>
+              <ChannelSelect
+                guildId={guildId}
+                value={config.accountability_lobby ?? null}
+                onChange={(v) => onUpdate("accountability_lobby", (v as string) || null)}
+                channelTypes={[2]}
+                placeholder="Select a voice channel"
+              />
+              <p className="text-[11px] text-gray-500">Members join this voice channel before a session starts. The bot moves them into the session channel automatically when it begins.</p>
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </StepLayout>
+  )
+}

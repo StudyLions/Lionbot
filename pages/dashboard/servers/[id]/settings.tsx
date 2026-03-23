@@ -205,7 +205,13 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "roles", label: "Roles", icon: UserCog, settings: [], searchTerms: ["role", "admin", "moderator", "permission"] },
   { id: "tracking", label: "Tracking", icon: EyeOff, settings: [], listKeys: ["untrackedVoiceChannels", "untrackedTextChannels"], searchTerms: ["untracked", "tracking", "exclude", "ignore"] },
   { id: "autoroles", label: "Auto-Roles", icon: Bot, settings: [], listKeys: ["autoroles", "botAutoroles"], searchTerms: ["autorole", "auto", "join", "new member", "bot"] },
-  { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], listKeys: ["unrankedRoles"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Removed "Season & Stats" section -- moved to dedicated Leaderboard config page.
+  // xp_per_centiword kept in economy section; season_start and unrankedRoles now on /leaderboard page.
+  // --- Original code (commented out for rollback) ---
+  // { id: "statistics", label: "Season & Stats", icon: Calendar, settings: ["season_start", "xp_per_centiword"], listKeys: ["unrankedRoles"], searchTerms: ["season", "stats", "leaderboard", "unranked", "xp", "word"] },
+  // --- End original code ---
+  // --- END AI-MODIFIED ---
   { id: "danger", label: "Danger Zone", icon: AlertTriangle, settings: [], searchTerms: ["reset", "danger", "delete", "clear"] },
 ]
 // --- END AI-MODIFIED ---
@@ -1306,8 +1312,10 @@ export default function ServerSettings() {
                     </div>
                   )}
 
-                  {/* Season & Stats (extended) */}
-                  {filteredSections.includes("statistics") && (
+                  {/* --- AI-MODIFIED (2026-03-23) --- */}
+                  {/* Purpose: Season & Stats section removed -- moved to dedicated /leaderboard config page */}
+                  {/* --- Original code (commented out for rollback) --- */}
+                  {/* {filteredSections.includes("statistics") && (
                     <div id="statistics">
                       <SectionCard title="Season & Statistics" description="Season tracking, text XP, and leaderboard settings" icon={<BarChart3 size={18} />} {...badgeProps("statistics", modifiedCounts["statistics"])}>
                         <SettingRow label="Season Start Date" description="When the current ranking season started" tooltip="Leaderboards and rank progress are reset at the start of each season. Set a date to begin a new season, or leave empty for all-time tracking." isModified={isModified("season_start")} onReset={() => resetField("season_start")}>
@@ -1331,7 +1339,9 @@ export default function ServerSettings() {
                         </SettingRow>
                       </SectionCard>
                     </div>
-                  )}
+                  )} */}
+                  {/* --- End original code --- */}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Danger Zone */}
                   {filteredSections.includes("danger") && (

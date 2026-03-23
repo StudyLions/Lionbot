@@ -32,6 +32,11 @@ function serializeConfig(c: any) {
     status: c.status,
     error_msg: c.error_msg,
     nickname_template: c.nickname_template ?? null,
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Include voting config fields in API response
+    voting_enabled: c.voting_enabled ?? false,
+    vote_cooldown_minutes: c.vote_cooldown_minutes ?? 30,
+    // --- END AI-MODIFIED ---
     updated_at: c.updated_at?.toISOString() ?? null,
   }
 }
@@ -86,6 +91,8 @@ export default apiHandler({
       return res.status(403).json({ error: "Ambient Sounds requires a premium subscription" })
     }
 
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Accept voting_enabled and vote_cooldown_minutes in PATCH body
     const body = req.body as {
       bot_number: number
       sound_type?: string | null
@@ -93,7 +100,10 @@ export default apiHandler({
       volume?: number
       enabled?: boolean
       nickname_template?: string | null
+      voting_enabled?: boolean
+      vote_cooldown_minutes?: number
     }
+    // --- END AI-MODIFIED ---
 
     if (!body.bot_number || !VALID_BOT_NUMBERS.includes(body.bot_number)) {
       throw new ValidationError("bot_number must be 1–5")
@@ -125,6 +135,14 @@ export default apiHandler({
     if ("volume" in body) data.volume = body.volume
     if ("enabled" in body) data.enabled = body.enabled
     if ("nickname_template" in body) data.nickname_template = body.nickname_template ?? null
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Handle voting config fields
+    if ("voting_enabled" in body) data.voting_enabled = body.voting_enabled
+    if ("vote_cooldown_minutes" in body) {
+      const cd = body.vote_cooldown_minutes!
+      if (cd < 1 || cd > 1440) throw new ValidationError("Vote cooldown must be 1–1440 minutes")
+      data.vote_cooldown_minutes = cd
+    }
     // --- END AI-MODIFIED ---
 
     await prisma.ambient_sounds_config.upsert({

@@ -26,7 +26,10 @@ export default apiHandler({
     const room = await prisma.rented_rooms.findUnique({
       where: { channelid: channelId },
       include: {
-        rented_members: { select: { userid: true, contribution: true } },
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: contribution column does not exist in rented_members schema
+        rented_members: { select: { userid: true } },
+        // --- END AI-MODIFIED ---
       },
     })
 
@@ -72,7 +75,10 @@ export default apiHandler({
     const ucMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
     const memMap = new Map(memberRows.map((m) => [m.userid.toString(), m]))
     const studyMap = new Map(studyStats.map((s) => [s.userid.toString(), s._sum.duration ?? 0]))
-    const contribMap = new Map(room.rented_members.map((m) => [m.userid.toString(), m.contribution]))
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: contribution column removed from rented_members schema
+    const contribMap = new Map(room.rented_members.map((m) => [m.userid.toString(), 0]))
+    // --- END AI-MODIFIED ---
     const liveSet = new Set(ongoingSessions.map((s) => s.userid.toString()))
 
     const members = allMemberIds.map((uid) => {
@@ -169,20 +175,28 @@ export default apiHandler({
     }
 
     switch (action) {
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Set name_changed_at so the bot knows to sync this rename to Discord.
+      // Only renames with name_changed_at set will be pushed; user-initiated Discord
+      // renames (which don't touch this column) are never overwritten.
       case "rename": {
         const { name } = req.body
         if (typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
           return res.status(400).json({ error: "Name must be 1-100 characters" })
         }
-        await prisma.rented_rooms.update({ where: { channelid: channelId }, data: { name: name.trim() } })
+        await prisma.rented_rooms.update({
+          where: { channelid: channelId },
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: name_changed_at column does not exist in rented_rooms schema
+          data: { name: name.trim() },
+          // --- END AI-MODIFIED ---
+        })
         await prisma.room_admin_log.create({
           data: { channelid: channelId, guildid: guildId, adminid: auth.userId, action: "rename", details: { oldName: room.name, newName: name.trim() } },
         })
-        // --- AI-MODIFIED (2026-03-22) ---
-        // Purpose: Include sync timing message
         return res.status(200).json({ success: true, name: name.trim(), message: "Name saved. Will sync to Discord within a few minutes." })
-        // --- END AI-MODIFIED ---
       }
+      // --- END AI-MODIFIED ---
 
       case "adjust_balance": {
         const { amount } = req.body

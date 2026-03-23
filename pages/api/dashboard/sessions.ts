@@ -88,9 +88,12 @@ export default apiHandler({
         skip: (page - 1) * pageSize,
         take: pageSize,
         select: {
+          // --- AI-MODIFIED (2026-03-23) ---
+          // Purpose: Include is_manual flag for Voice Time Editor badge in history UI
           sessionid: true, guildid: true, start_time: true, duration: true,
           live_duration: true, stream_duration: true, video_duration: true,
-          tag: true, rating: true,
+          tag: true, rating: true, is_manual: true,
+          // --- END AI-MODIFIED ---
         },
       }),
       prisma.voice_sessions.count({ where }),
@@ -171,6 +174,10 @@ export default apiHandler({
         liveDurationMinutes: Math.round((s.live_duration || 0) / 60),
         tag: s.tag,
         rating: s.rating,
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Voice Time Editor manual session badge
+        isManual: !!s.is_manual,
+        // --- END AI-MODIFIED ---
       })),
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
       stats: {

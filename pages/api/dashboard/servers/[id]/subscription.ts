@@ -14,10 +14,13 @@ export default apiHandler({
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Use findFirst with status filter (PK changed from guildid to auto-increment id)
     const [sub, premiumGuild] = await Promise.all([
-      prisma.server_premium_subscriptions.findUnique({
-        where: { guildid: guildId },
+      prisma.server_premium_subscriptions.findFirst({
+        where: { guildid: guildId, status: { in: ["ACTIVE", "CANCELLING", "PAST_DUE"] } },
       }),
+    // --- END AI-MODIFIED ---
       prisma.premium_guilds.findUnique({
         where: { guildid: guildId },
         select: { premium_since: true, premium_until: true },

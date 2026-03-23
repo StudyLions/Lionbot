@@ -30,6 +30,10 @@ export interface TierConfig {
   // Purpose: focus timer theme count per tier
   timerThemes: number;
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: whether the tier includes a free server premium slot
+  includesServerPremium: boolean;
+  // --- END AI-MODIFIED ---
 }
 
 // --- AI-MODIFIED (2026-03-22) ---
@@ -66,6 +70,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     harvestGoldBonus: 0.15,
     uprootRefund: 0.75,
     timerThemes: 5,
+    includesServerPremium: false,
   },
   LIONHEART_PLUS: {
     id: "LIONHEART_PLUS",
@@ -90,6 +95,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     harvestGoldBonus: 0.25,
     uprootRefund: 1.0,
     timerThemes: 8,
+    includesServerPremium: false,
   },
   LIONHEART_PLUS_PLUS: {
     id: "LIONHEART_PLUS_PLUS",
@@ -114,6 +120,7 @@ export const SUBSCRIPTION_TIERS: Record<SubscriptionTier, TierConfig> = {
     harvestGoldBonus: 0.50,
     uprootRefund: 1.0,
     timerThemes: 10,
+    includesServerPremium: true,
   },
 };
 

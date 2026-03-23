@@ -1,145 +1,79 @@
 // ============================================================
 // AI-GENERATED FILE (rewritten)
-// Created: 2026-03-13 | Rewritten: 2026-03-22
-// Purpose: "Leo's Welcome Tour" -- full-screen animated setup
-//          wizard with Leo mascot, live Discord previews, and
-//          confetti celebration
+// Created: 2026-03-13 | Rewritten: 2026-03-23
+// Purpose: 12-step interactive setup wizard orchestrator with
+//          Leo mascot, config persistence, localStorage resume,
+//          and DB-backed dismiss tracking
 // ============================================================
-import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback, useRef } from "react"
-import Link from "next/link"
-import { motion, AnimatePresence } from "framer-motion"
-import {
-  Wand2, Globe, BookOpen, Trophy, Coins, ChevronLeft, ChevronRight,
-  Check, ShoppingBag, ListChecks, Video, Sparkles,
-  Gamepad2, Users, Briefcase, ArrowRight, X,
-} from "lucide-react"
+import { useEffect, useState, useCallback } from "react"
+import { AnimatePresence } from "framer-motion"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import confetti from "canvas-confetti"
+import { NextSeo } from "next-seo"
 
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import { useDashboard } from "@/hooks/useDashboard"
 import { toast } from "@/components/dashboard/ui"
-import LeoMascot from "@/components/setup/LeoMascot"
-import {
-  GreetingPreview,
-  RewardPreview,
-  RankUpPreview,
-  FeatureMiniCard,
-  FEATURE_CARDS,
-} from "@/components/setup/DiscordPreview"
-import { NextSeo } from "next-seo"
+import { WizardNavDesktop, WizardNavMobile, WIZARD_STEPS } from "@/components/setup/WizardNav"
 
-// ── Constants ─────────────────────────────────────────────────
+import StepWelcome from "@/components/setup/steps/StepWelcome"
+import StepBasics from "@/components/setup/steps/StepBasics"
+import StepEconomy from "@/components/setup/steps/StepEconomy"
+import StepRanks from "@/components/setup/steps/StepRanks"
+import StepTasks from "@/components/setup/steps/StepTasks"
+import StepPomodoro from "@/components/setup/steps/StepPomodoro"
+import StepSchedule from "@/components/setup/steps/StepSchedule"
+import StepCommunity from "@/components/setup/steps/StepCommunity"
+import StepLionGotchi from "@/components/setup/steps/StepLionGotchi"
+import StepPremium from "@/components/setup/steps/StepPremium"
+import StepCommands from "@/components/setup/steps/StepCommands"
+import StepCelebration from "@/components/setup/steps/StepCelebration"
 
-const TOTAL_SCENES = 6
+const TOTAL_STEPS = WIZARD_STEPS.length
 
-const TIMEZONE_OPTIONS = [
-  "US/Eastern", "US/Central", "US/Mountain", "US/Pacific",
-  "Europe/London", "Europe/Paris", "Europe/Berlin", "Europe/Istanbul",
-  "Asia/Tokyo", "Asia/Shanghai", "Asia/Kolkata", "Asia/Dubai",
-  "Australia/Sydney", "Pacific/Auckland", "America/Sao_Paulo",
-  "America/Mexico_City", "Africa/Cairo", "Asia/Jerusalem", "UTC",
-]
-
-const LOCALE_OPTIONS = [
-  { value: "en_GB", label: "English" },
-  { value: "pt_BR", label: "Português" },
-  { value: "he_IL", label: "עברית" },
-  { value: "tr", label: "Türkçe" },
-]
-
-const RANK_TYPES = [
-  { value: "XP", label: "Combined XP", description: "Voice time + text activity combined. Best overall.", icon: <Sparkles size={20} /> },
-  { value: "VOICE", label: "Voice Time", description: "Only voice study hours count. Ideal for study servers.", icon: <BookOpen size={20} /> },
-  { value: "MESSAGE", label: "Messages", description: "Based on message count. Great for chatty communities.", icon: <Users size={20} /> },
-]
-
-const TEMPLATES: Record<string, {
-  title: string; icon: React.ReactNode; description: string
-  bullets: string[]; config: Record<string, any>
-}> = {
-  study: {
-    title: "Study Community",
-    icon: <BookOpen size={28} />,
-    description: "Optimized for study groups and academic communities",
-    bullets: ["Higher voice rewards (150/hr)", "Voice-based ranks", "Camera bonus enabled"],
-    config: { study_hourly_reward: 150, study_hourly_live_bonus: 50, daily_study_cap: null, rank_type: "VOICE", dm_ranks: true, xp_per_period: 5, starting_funds: 0, allow_transfers: true, coins_per_centixp: 50 },
-  },
-  gaming: {
-    title: "Gaming Server",
-    icon: <Gamepad2 size={28} />,
-    description: "Economy-focused with shop and message progression",
-    bullets: ["Message-based ranks", "Members start with 100 coins", "Shop emphasis"],
-    config: { study_hourly_reward: 50, study_hourly_live_bonus: 10, daily_study_cap: null, rank_type: "MESSAGE", dm_ranks: true, xp_per_period: 3, starting_funds: 100, allow_transfers: true, coins_per_centixp: 100 },
-  },
-  general: {
-    title: "General / Social",
-    icon: <Users size={28} />,
-    description: "Balanced defaults for any type of community",
-    bullets: ["Combined XP ranking", "Moderate rewards (100/hr)", "Easy to customize later"],
-    config: { study_hourly_reward: 100, study_hourly_live_bonus: 25, daily_study_cap: null, rank_type: "XP", dm_ranks: true, xp_per_period: 5, starting_funds: 0, allow_transfers: true, coins_per_centixp: 50 },
-  },
-  work: {
-    title: "Work / Professional",
-    icon: <Briefcase size={28} />,
-    description: "Task management and accountability for teams",
-    bullets: ["Task & schedule focus", "Minimal economy", "Transfers disabled"],
-    config: { study_hourly_reward: 75, study_hourly_live_bonus: 20, daily_study_cap: null, rank_type: "XP", dm_ranks: false, xp_per_period: 5, starting_funds: 0, allow_transfers: false, coins_per_centixp: 25 },
-  },
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Default values per step to detect which steps have pre-existing config
+const STEP_DEFAULTS: Record<number, Record<string, any>> = {
+  1: { rank_type: "XP", dm_ranks: true, xp_per_period: 5, xp_per_centiword: 1, rank_channel: null },
+  3: { study_hourly_reward: 100, study_hourly_live_bonus: 25, daily_study_cap: null, starting_funds: 0, allow_transfers: true, coins_per_centixp: 50 },
+  4: { max_tasks: 5, task_reward: 50, task_reward_limit: 5, min_workout_length: 15, workout_reward: 100 },
+  5: { pomodoro_channel: null },
+  6: { accountability_price: 50, accountability_reward: 100, accountability_bonus: 25, accountability_category: null, accountability_lobby: null },
+  7: { greeting_message: null, returning_message: null, greeting_channel: null, admin_role: null, mod_role: null, event_log_channel: null, mod_log_channel: null, force_locale: false },
+  8: { renting_price: 100, renting_cap: 10, renting_visible: true, renting_category: null, renting_max_per_user: 1, renting_name_limit: 32, renting_min_deposit: 0, renting_auto_extend: false, renting_cooldown: 0, renting_sync_perms: false, video_studyban: false, persist_roles: false },
 }
 
-const DEFAULTS: Record<string, any> = {
-  timezone: "UTC", locale: "en_GB", greeting_message: null,
-  study_hourly_reward: 100, study_hourly_live_bonus: 25, daily_study_cap: null,
-  rank_type: "XP", dm_ranks: true, xp_per_period: 5,
-  starting_funds: 0, allow_transfers: true, coins_per_centixp: 50,
+function hasNonDefaultValues(config: Record<string, any> | null, stepIndex: number): boolean {
+  if (!config) return false
+  const defaults = STEP_DEFAULTS[stepIndex]
+  if (!defaults) return false
+  return Object.entries(defaults).some(([key, defaultVal]) => {
+    const actual = config[key]
+    if (actual === undefined || actual === null) return defaultVal !== null && defaultVal !== undefined
+    return actual !== defaultVal
+  })
 }
-
-const LEO_MESSAGES: Record<number, string> = {
-  0: "Hey there! I just joined your server and I'm SO excited! Let me show you everything I can do — it only takes 2 minutes!",
-  1: "Pick the one that matches your vibe! I'll set everything up with the best defaults for you.",
-  2: "I auto-detected your timezone! Tweak these numbers to control how your members earn coins.",
-  3: "Nothing motivates people like seeing themselves level up! Choose how your rank system works.",
-  4: "I have WAY more features! You can configure all of these from your dashboard anytime.",
-  5: "Your server is ready to go! Your members can start earning rewards right now!",
-}
-
-type LeoPose = "waving" | "pointing" | "thumbsUp" | "starEyed" | "mindBlown" | "celebrating"
-const LEO_POSES: Record<number, LeoPose> = {
-  0: "waving", 1: "pointing", 2: "thumbsUp", 3: "starEyed", 4: "mindBlown", 5: "celebrating",
-}
-
-// ── Scene transition variants ──────────────────────────────
-
-const sceneVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
-}
-
-// ── Main Component ─────────────────────────────────────────
+// --- END AI-MODIFIED ---
 
 function SetupWizardInner() {
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
 
-  const [scene, setScene] = useState(0)
+  const [step, setStep] = useState(0)
   const [direction, setDirection] = useState(1)
   const [config, setConfig] = useState<Record<string, any> | null>(null)
+  const [lgConfig, setLgConfig] = useState<Record<string, any>>({})
   const [saving, setSaving] = useState(false)
-  const [detectedTz, setDetectedTz] = useState("UTC")
-  const [tzConfirmed, setTzConfirmed] = useState(false)
-  const [showTzPicker, setShowTzPicker] = useState(false)
-  const [celebrationDone, setCelebrationDone] = useState(false)
-  const carouselRef = useRef<HTMLDivElement>(null)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
 
-  const { data: configData, isLoading, mutate } = useDashboard<Record<string, any>>(
+  const { data: configData, mutate } = useDashboard<Record<string, any>>(
     id ? `/api/dashboard/servers/${id}/config` : null
+  )
+  const { data: lgData, mutate: lgMutate } = useDashboard<Record<string, any>>(
+    id ? `/api/dashboard/servers/${id}/liongotchi-config` : null
   )
 
   useEffect(() => {
@@ -147,18 +81,68 @@ function SetupWizardInner() {
   }, [configData])
 
   useEffect(() => {
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone
-      if (tz) setDetectedTz(tz)
-    } catch { /* keep UTC */ }
-  }, [])
+    if (lgData) setLgConfig(lgData)
+  }, [lgData])
+
+  // Resume from localStorage
+  useEffect(() => {
+    if (!guildId) return
+    const saved = localStorage.getItem(`wizard-step-${guildId}`)
+    if (saved) {
+      const parsed = parseInt(saved, 10)
+      if (parsed > 0 && parsed < TOTAL_STEPS) setStep(parsed)
+    }
+    const savedCompleted = localStorage.getItem(`wizard-completed-${guildId}`)
+    if (savedCompleted) {
+      try {
+        setCompletedSteps(new Set(JSON.parse(savedCompleted)))
+      } catch { /* ignore */ }
+    }
+  }, [guildId])
+
+  // Persist step to localStorage
+  useEffect(() => {
+    if (guildId && step > 0) {
+      localStorage.setItem(`wizard-step-${guildId}`, String(step))
+    }
+  }, [step, guildId])
+
+  // Persist completed steps
+  useEffect(() => {
+    if (guildId && completedSteps.size > 0) {
+      localStorage.setItem(`wizard-completed-${guildId}`, JSON.stringify(Array.from(completedSteps)))
+    }
+  }, [completedSteps, guildId])
+
+  const serverName = config?.name || "Your Server"
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Detect which steps already have non-default config values
+  const configuredSteps = new Set<number>(
+    Object.keys(STEP_DEFAULTS)
+      .map(Number)
+      .filter((idx) => hasNonDefaultValues(config, idx))
+  )
+  // --- END AI-MODIFIED ---
 
   const set = useCallback((key: string, value: any) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
   }, [])
 
-  const saveFields = async (updates: Record<string, any>) => {
-    if (!id || Object.keys(updates).length === 0) return true
+  const setLg = useCallback((key: string, value: any) => {
+    setLgConfig((prev) => ({ ...prev, [key]: value }))
+  }, [])
+
+  const saveConfigFields = async (fields?: string[]): Promise<boolean> => {
+    if (!id || !config) return true
+    const updates: Record<string, any> = {}
+    const allFields = fields || Object.keys(config)
+    for (const f of allFields) {
+      if (f in config && f !== "name" && f !== "guildid") {
+        updates[f] = config[f]
+      }
+    }
+    if (Object.keys(updates).length === 0) return true
     setSaving(true)
     try {
       const res = await fetch(`/api/dashboard/servers/${id}/config`, {
@@ -170,111 +154,306 @@ function SetupWizardInner() {
       mutate()
       return true
     } catch {
-      toast.error("Failed to save. Check your admin permissions.")
+      toast.error("Failed to save settings. Check your admin permissions.")
       return false
     } finally {
       setSaving(false)
     }
   }
 
-  const goTo = (target: number) => {
-    setDirection(target > scene ? 1 : -1)
-    setScene(target)
-  }
-
-  const handleNext = async () => {
-    if (!config) return
-
-    if (scene === 2) {
-      const ok = await saveFields({
-        timezone: config.timezone || detectedTz,
-        locale: config.locale || "en_GB",
-        greeting_message: config.greeting_message ?? null,
-        study_hourly_reward: config.study_hourly_reward ?? DEFAULTS.study_hourly_reward,
-        study_hourly_live_bonus: config.study_hourly_live_bonus ?? DEFAULTS.study_hourly_live_bonus,
-        daily_study_cap: config.daily_study_cap ?? null,
-      })
-      if (!ok) return
-      toast.success("Settings saved!")
-    }
-
-    if (scene === 3) {
-      const ok = await saveFields({
-        rank_type: config.rank_type || "XP",
-        dm_ranks: config.dm_ranks ?? true,
-        xp_per_period: config.xp_per_period ?? 5,
-      })
-      if (!ok) return
-      toast.success("Rank settings saved!")
-    }
-
-    if (scene < TOTAL_SCENES - 1) goTo(scene + 1)
-  }
-
-  const handleBack = () => {
-    if (scene > 0) goTo(scene - 1)
-  }
-
-  const handleTemplate = async (templateId: string) => {
-    const template = TEMPLATES[templateId]
-    if (!template || !id) return
-    const updates = { ...template.config, timezone: detectedTz, locale: "en_GB" }
-    setConfig((prev) => (prev ? { ...prev, ...updates } : prev))
+  const saveLgFields = async (): Promise<boolean> => {
+    if (!id) return true
     setSaving(true)
     try {
-      const res = await fetch(`/api/dashboard/servers/${id}/config`, {
+      const res = await fetch(`/api/dashboard/servers/${id}/liongotchi-config`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(lgConfig),
       })
       if (!res.ok) throw new Error()
-      mutate()
-      toast.success(`${template.title} template applied!`)
-      goTo(TOTAL_SCENES - 1)
+      lgMutate()
+      return true
     } catch {
-      toast.error("Failed to apply template.")
+      toast.error("Failed to save LionGotchi settings.")
+      return false
     } finally {
       setSaving(false)
     }
   }
 
-  const handleQuickSetup = () => handleTemplate("general")
+  const dismissWizard = async () => {
+    if (!id) return
+    try {
+      await fetch(`/api/dashboard/servers/${id}/config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ setup_wizard_dismissed_at: new Date().toISOString() }),
+      })
+      mutate()
+      localStorage.removeItem(`wizard-step-${guildId}`)
+      localStorage.removeItem(`wizard-completed-${guildId}`)
+    } catch { /* ignore */ }
+  }
 
+  const goTo = (target: number) => {
+    setDirection(target > step ? 1 : -1)
+    setStep(target)
+  }
+
+  const markCompleteAndNext = async (saveFields?: string[]) => {
+    const ok = saveFields ? await saveConfigFields(saveFields) : true
+    if (!ok) return
+    setCompletedSteps((prev) => { const next = new Set(Array.from(prev)); next.add(step); return next })
+    goTo(Math.min(step + 1, TOTAL_STEPS - 1))
+  }
+
+  const skipAndNext = () => {
+    goTo(Math.min(step + 1, TOTAL_STEPS - 1))
+  }
+
+  const goBack = () => {
+    goTo(Math.max(step - 1, 0))
+  }
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Keyboard navigation -- arrow keys to move between steps, only when no input is focused
   useEffect(() => {
-    if (scene === TOTAL_SCENES - 1 && !celebrationDone) {
-      setCelebrationDone(true)
-      const end = Date.now() + 2500
-      const colors = ["#DDB21D", "#f57c00", "#5865F2", "#43b581"]
-      const frame = () => {
-        confetti({
-          particleCount: 3,
-          angle: 60 + Math.random() * 60,
-          spread: 60,
-          origin: { x: Math.random(), y: Math.random() * 0.4 },
-          colors,
-          disableForReducedMotion: true,
-        })
-        if (Date.now() < end) requestAnimationFrame(frame)
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
+      if ((e.target as HTMLElement)?.isContentEditable) return
+      if (e.key === "ArrowRight") {
+        e.preventDefault()
+        goTo(Math.min(step + 1, TOTAL_STEPS - 1))
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault()
+        goTo(Math.max(step - 1, 0))
       }
-      frame()
     }
-  }, [scene, celebrationDone])
+    window.addEventListener("keydown", handler)
+    return () => window.removeEventListener("keydown", handler)
+  }, [step])
+  // --- END AI-MODIFIED ---
 
-  const serverName = config?.name || "Your Server"
-  const progress = ((scene + 1) / TOTAL_SCENES) * 100
+  const handleSkipWizard = async () => {
+    if (confirm("Skip the setup wizard? You can always access it from your server's navigation menu.")) {
+      await dismissWizard()
+      router.push(`/dashboard/servers/${guildId}`)
+    }
+  }
 
-  if (isLoading || !config) {
+  const handleFinish = async () => {
+    await dismissWizard()
+    router.push(`/dashboard/servers/${guildId}`)
+  }
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Reorder steps -- show "wow" features first, push admin plumbing later
+  // New order: Welcome, Ranks, LionGotchi, Economy, Tasks, Pomodoro, Schedule, Basics, Community, Premium, Commands, Celebration
+  const STEP_FIELDS: Record<number, string[]> = {
+    1: ["rank_type", "dm_ranks", "xp_per_period", "xp_per_centiword", "rank_channel", "season_start"],
+    3: ["study_hourly_reward", "study_hourly_live_bonus", "daily_study_cap", "starting_funds", "allow_transfers", "coins_per_centixp"],
+    4: ["max_tasks", "task_reward", "task_reward_limit", "min_workout_length", "workout_reward"],
+    5: ["pomodoro_channel"],
+    6: ["accountability_price", "accountability_reward", "accountability_bonus", "accountability_category", "accountability_lobby"],
+    7: ["timezone", "locale", "force_locale", "greeting_message", "returning_message", "greeting_channel", "admin_role", "mod_role", "event_log_channel", "mod_log_channel", "alert_channel"],
+    8: ["renting_price", "renting_cap", "renting_visible", "renting_category", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown", "video_studyban", "video_grace_period", "persist_roles"],
+  }
+
+  const renderStep = () => {
+    switch (step) {
+      case 0:
+        return (
+          <StepWelcome
+            key="step-0"
+            serverName={serverName}
+            onNext={() => goTo(1)}
+            onSkipWizard={handleSkipWizard}
+          />
+        )
+      case 1:
+        return (
+          <StepRanks
+            key="step-1"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[1])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(1)}
+          />
+        )
+      case 2:
+        return (
+          <StepLionGotchi
+            key="step-2"
+            lgConfig={lgConfig}
+            serverName={serverName}
+            guildId={guildId}
+            onLgUpdate={setLg}
+            onNext={async () => {
+              const ok = await saveLgFields()
+              if (ok) {
+                setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+                goTo(3)
+              }
+            }}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(2)}
+          />
+        )
+      case 3:
+        return (
+          <StepEconomy
+            key="step-3"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[3])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(3)}
+          />
+        )
+      case 4:
+        return (
+          <StepTasks
+            key="step-4"
+            config={config!}
+            serverName={serverName}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[4])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(4)}
+          />
+        )
+      case 5:
+        return (
+          <StepPomodoro
+            key="step-5"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[5])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(5)}
+          />
+        )
+      case 6:
+        return (
+          <StepSchedule
+            key="step-6"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[6])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(6)}
+          />
+        )
+      case 7:
+        return (
+          <StepBasics
+            key="step-7"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[7])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(7)}
+          />
+        )
+      case 8:
+        return (
+          <StepCommunity
+            key="step-8"
+            config={config!}
+            serverName={serverName}
+            guildId={guildId}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[8])}
+            onBack={goBack}
+            onSkip={skipAndNext}
+            saving={saving}
+            direction={direction}
+            hasExistingConfig={configuredSteps.has(8)}
+          />
+        )
+      case 9:
+        return (
+          <StepPremium
+            key="step-9"
+            serverName={serverName}
+            onNext={() => {
+              setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+              goTo(10)
+            }}
+            onBack={goBack}
+            direction={direction}
+          />
+        )
+      case 10:
+        return (
+          <StepCommands
+            key="step-10"
+            serverName={serverName}
+            onNext={() => {
+              setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+              goTo(11)
+            }}
+            onBack={goBack}
+            direction={direction}
+          />
+        )
+      case 11:
+        return (
+          <StepCelebration
+            key="step-11"
+            serverName={serverName}
+            guildId={guildId}
+            completedSteps={completedSteps}
+            onFinish={handleFinish}
+            direction={direction}
+          />
+        )
+      default:
+        return null
+    }
+  }
+  // --- END AI-MODIFIED ---
+
+  if (!config) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <motion.div
-            className="w-20 h-20 mx-auto"
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          >
-            <Sparkles size={48} className="text-primary mx-auto" />
-          </motion.div>
-          <p className="text-muted-foreground">Loading your server...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="space-y-4 w-64">
+          <div className="h-4 bg-gray-800 rounded animate-pulse" />
+          <div className="h-4 bg-gray-800 rounded animate-pulse w-3/4" />
+          <div className="h-4 bg-gray-800 rounded animate-pulse w-1/2" />
         </div>
       </div>
     )
@@ -282,553 +461,33 @@ function SetupWizardInner() {
 
   return (
     <>
-      <NextSeo title={`Setup - ${serverName} - LionBot`} description="Set up LionBot for your server" />
+      <NextSeo title={`Setup Wizard — ${serverName}`} noindex />
+      <div className="flex h-screen bg-gray-900 overflow-hidden">
+        <WizardNavDesktop
+          currentStep={step}
+          completedSteps={completedSteps}
+          configuredSteps={configuredSteps}
+          onStepClick={goTo}
+        />
 
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* ── Top bar ── */}
-        <div className="flex-shrink-0 border-b border-border/40 bg-background/80 backdrop-blur-sm sticky top-0 z-30">
-          <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Wand2 size={16} className="text-primary" />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Setting up</p>
-                <p className="text-sm font-semibold text-foreground truncate max-w-[200px]">{serverName}</p>
-              </div>
-            </div>
-            <Link href={`/dashboard/servers/${guildId}`}>
-              <a className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors">
-                <X size={14} />
-                <span className="hidden sm:inline">Skip to dashboard</span>
-              </a>
-            </Link>
-          </div>
-          {/* Progress bar */}
-          <div className="h-[3px] bg-muted/30">
-            <motion.div
-              className="h-full bg-gradient-to-r from-amber-400 to-orange-500 rounded-r-full"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-            />
-          </div>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            {renderStep()}
+          </AnimatePresence>
         </div>
 
-        {/* ── Main content ── */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-6 lg:py-10 flex flex-col lg:flex-row gap-6 lg:gap-10">
-            {/* Leo column */}
-            <div className="lg:w-56 flex-shrink-0 flex lg:flex-col items-center lg:items-start lg:sticky lg:top-24 lg:self-start">
-              <LeoMascot
-                pose={LEO_POSES[scene]}
-                message={LEO_MESSAGES[scene].replace("[Server Name]", serverName).replace("your server", serverName)}
-                compact={false}
-              />
-            </div>
-
-            {/* Scene content */}
-            <div className="flex-1 min-w-0 relative">
-              <AnimatePresence mode="wait" custom={direction}>
-                <motion.div
-                  key={scene}
-                  custom={direction}
-                  variants={sceneVariants}
-                  initial="enter"
-                  animate="center"
-                  exit="exit"
-                  transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                  className="w-full"
-                >
-                  {/* ── Scene 0: Welcome ── */}
-                  {scene === 0 && (
-                    <div className="text-center lg:text-left space-y-8 py-4">
-                      <div>
-                        <motion.h1
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="text-3xl lg:text-4xl font-bold text-foreground"
-                        >
-                          Let&apos;s set up{" "}
-                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                            {serverName}
-                          </span>
-                        </motion.h1>
-                        <motion.p
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.1 }}
-                          className="mt-3 text-muted-foreground"
-                        >
-                          Configure LionBot for your server in under 2 minutes, or apply a template with one click.
-                        </motion.p>
-                      </div>
-                      <motion.div
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="flex flex-col sm:flex-row gap-3 justify-center lg:justify-start"
-                      >
-                        <button
-                          onClick={handleQuickSetup}
-                          disabled={saving}
-                          className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg hover:from-amber-400 hover:to-orange-400 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-amber-500/20"
-                        >
-                          <Wand2 size={20} />
-                          Quick Setup
-                        </button>
-                        <button
-                          onClick={() => goTo(1)}
-                          className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl border border-border text-foreground font-medium hover:bg-card transition-all"
-                        >
-                          Let&apos;s customize!
-                          <ArrowRight size={18} />
-                        </button>
-                      </motion.div>
-                      <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="text-xs text-muted-foreground/60"
-                      >
-                        Quick Setup applies balanced defaults. You can always change everything later.
-                      </motion.p>
-                    </div>
-                  )}
-
-                  {/* ── Scene 1: Template selection ── */}
-                  {scene === 1 && (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">What kind of community is this?</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Choose a template for the best defaults, or skip to customize manually.</p>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {Object.entries(TEMPLATES).map(([key, t], i) => (
-                          <motion.button
-                            key={key}
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: i * 0.08 }}
-                            onClick={() => handleTemplate(key)}
-                            disabled={saving}
-                            className="flex flex-col items-start gap-3 p-5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:shadow-lg hover:shadow-amber-500/5 transition-all text-left group disabled:opacity-50"
-                          >
-                            <div className="flex items-center gap-3 w-full">
-                              <span className="text-primary/70 group-hover:text-amber-400 transition-colors flex-shrink-0">
-                                {t.icon}
-                              </span>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold text-foreground">{t.title}</div>
-                                <p className="text-xs text-muted-foreground mt-0.5">{t.description}</p>
-                              </div>
-                            </div>
-                            <ul className="space-y-1 w-full">
-                              {t.bullets.map((b, bi) => (
-                                <li key={bi} className="flex items-start gap-2 text-xs text-muted-foreground">
-                                  <Check size={12} className="text-amber-500/60 flex-shrink-0 mt-0.5" />
-                                  {b}
-                                </li>
-                              ))}
-                            </ul>
-                          </motion.button>
-                        ))}
-                      </div>
-                      <p className="text-xs text-muted-foreground text-center">
-                        Or click <strong>Next</strong> below to customize everything yourself.
-                      </p>
-                    </div>
-                  )}
-
-                  {/* ── Scene 2: Basics + Rewards ── */}
-                  {scene === 2 && (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">Basics &amp; Study Rewards</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Set your timezone and configure how members earn coins.</p>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Settings column */}
-                        <div className="space-y-5">
-                          {/* Timezone */}
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">Timezone</label>
-                            {!showTzPicker ? (
-                              <div className="flex items-center gap-2">
-                                <span className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground">
-                                  <Globe size={14} className="text-muted-foreground" />
-                                  {config.timezone || detectedTz}
-                                  {!tzConfirmed && <span className="text-[10px] text-amber-400 font-medium">auto-detected</span>}
-                                </span>
-                                <button
-                                  onClick={() => setShowTzPicker(true)}
-                                  className="text-xs text-primary hover:underline"
-                                >
-                                  Change
-                                </button>
-                                {!tzConfirmed && (
-                                  <button
-                                    onClick={() => { set("timezone", detectedTz); setTzConfirmed(true) }}
-                                    className="text-xs text-amber-400 hover:underline"
-                                  >
-                                    Confirm
-                                  </button>
-                                )}
-                              </div>
-                            ) : (
-                              <select
-                                value={config.timezone || detectedTz}
-                                onChange={(e) => { set("timezone", e.target.value); setShowTzPicker(false); setTzConfirmed(true) }}
-                                className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none"
-                              >
-                                {TIMEZONE_OPTIONS.map((tz) => (
-                                  <option key={tz} value={tz}>{tz.replace(/_/g, " ")}</option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
-
-                          {/* Language */}
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">Language</label>
-                            <div className="grid grid-cols-2 gap-2">
-                              {LOCALE_OPTIONS.map((loc) => (
-                                <button
-                                  key={loc.value}
-                                  onClick={() => set("locale", loc.value)}
-                                  className={`px-3 py-2.5 rounded-lg border text-sm font-medium transition-all ${
-                                    (config.locale || "en_GB") === loc.value
-                                      ? "border-amber-500 bg-amber-500/10 text-amber-400"
-                                      : "border-border bg-card text-foreground hover:border-border"
-                                  }`}
-                                >
-                                  {loc.label}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Hourly reward */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="text-sm font-medium text-foreground">Hourly Reward</label>
-                              <span className="text-sm font-bold text-amber-400">
-                                {config.study_hourly_reward ?? 100} coins/hr
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min={0}
-                              max={500}
-                              step={10}
-                              value={config.study_hourly_reward ?? 100}
-                              onChange={(e) => set("study_hourly_reward", Number(e.target.value))}
-                              className="w-full accent-amber-500 h-2 rounded-lg cursor-pointer"
-                            />
-                            <p className="text-xs text-muted-foreground">Coins earned per hour in voice channels</p>
-                          </div>
-
-                          {/* Camera bonus */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="text-sm font-medium text-foreground">Camera Bonus</label>
-                              <span className="text-sm font-bold text-emerald-400">
-                                +{config.study_hourly_live_bonus ?? 25} coins/hr
-                              </span>
-                            </div>
-                            <input
-                              type="range"
-                              min={0}
-                              max={200}
-                              step={5}
-                              value={config.study_hourly_live_bonus ?? 25}
-                              onChange={(e) => set("study_hourly_live_bonus", Number(e.target.value))}
-                              className="w-full accent-emerald-500 h-2 rounded-lg cursor-pointer"
-                            />
-                            <p className="text-xs text-muted-foreground">Extra coins for studying with camera on</p>
-                          </div>
-
-                          {/* Welcome message */}
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium text-foreground">Welcome Message <span className="text-muted-foreground font-normal">(optional)</span></label>
-                            <textarea
-                              value={config.greeting_message || ""}
-                              onChange={(e) => set("greeting_message", e.target.value || null)}
-                              placeholder="Welcome to {server_name}, {mention}!"
-                              maxLength={2000}
-                              rows={3}
-                              className="w-full px-3 py-2 rounded-lg bg-card border border-border text-sm text-foreground placeholder:text-muted-foreground/40 focus:border-primary focus:ring-1 focus:ring-primary outline-none resize-none"
-                            />
-                          </div>
-
-                          <p className="text-xs text-muted-foreground/60 italic">You can always change these later from Settings.</p>
-                        </div>
-
-                        {/* Preview column */}
-                        <div className="space-y-4">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Live Preview</p>
-                          <RewardPreview
-                            hourlyReward={config.study_hourly_reward ?? 100}
-                            cameraBonus={config.study_hourly_live_bonus ?? 25}
-                            dailyCap={config.daily_study_cap ?? null}
-                          />
-                          {config.greeting_message && (
-                            <GreetingPreview
-                              message={config.greeting_message}
-                              serverName={serverName}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Scene 3: Ranks ── */}
-                  {scene === 3 && (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">Ranks &amp; Progression</h2>
-                        <p className="text-sm text-muted-foreground mt-1">Give your members goals to chase. Choose how they rank up.</p>
-                      </div>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Settings */}
-                        <div className="space-y-5">
-                          <div className="space-y-3">
-                            <label className="text-sm font-medium text-foreground">Rank Type</label>
-                            <div className="space-y-2">
-                              {RANK_TYPES.map((rt) => (
-                                <button
-                                  key={rt.value}
-                                  onClick={() => set("rank_type", rt.value)}
-                                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
-                                    (config.rank_type || "XP") === rt.value
-                                      ? "border-amber-500 bg-amber-500/10 shadow-sm shadow-amber-500/10"
-                                      : "border-border bg-card hover:border-border"
-                                  }`}
-                                >
-                                  <span className={`flex-shrink-0 ${(config.rank_type || "XP") === rt.value ? "text-amber-400" : "text-muted-foreground"}`}>
-                                    {rt.icon}
-                                  </span>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-sm text-foreground">{rt.label}</div>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{rt.description}</p>
-                                  </div>
-                                  {(config.rank_type || "XP") === rt.value && (
-                                    <Check size={18} className="text-amber-400 flex-shrink-0" />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* DM toggle */}
-                          <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
-                            <div>
-                              <p className="text-sm font-medium text-foreground">DM Rank Notifications</p>
-                              <p className="text-xs text-muted-foreground mt-0.5">DM members when they reach a new rank</p>
-                            </div>
-                            <button
-                              onClick={() => set("dm_ranks", !(config.dm_ranks ?? true))}
-                              className={`relative w-11 h-6 rounded-full transition-colors ${
-                                config.dm_ranks ?? true ? "bg-amber-500" : "bg-muted"
-                              }`}
-                            >
-                              <motion.div
-                                className="absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-sm"
-                                animate={{ left: config.dm_ranks ?? true ? "calc(100% - 22px)" : "2px" }}
-                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              />
-                            </button>
-                          </div>
-
-                          <p className="text-xs text-muted-foreground/60 italic">You can always change these later from Settings.</p>
-                        </div>
-
-                        {/* Preview */}
-                        <div className="space-y-4">
-                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Live Preview</p>
-                          <RankUpPreview
-                            serverName={serverName}
-                            rankType={config.rank_type || "XP"}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Scene 4: Feature Showcase ── */}
-                  {scene === 4 && (
-                    <div className="space-y-6">
-                      <div>
-                        <h2 className="text-2xl font-bold text-foreground">Everything Else I Can Do</h2>
-                        <p className="text-sm text-muted-foreground mt-1">These features are already active. Configure them anytime from your dashboard.</p>
-                      </div>
-                      <div className="relative">
-                        <div
-                          ref={carouselRef}
-                          className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none"
-                          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                        >
-                          {FEATURE_CARDS.map((f, i) => (
-                            <FeatureMiniCard key={f.id} feature={f} index={i} />
-                          ))}
-                        </div>
-                        {/* Scroll hint */}
-                        <div className="mt-2 flex items-center justify-center gap-1 text-xs text-muted-foreground/50">
-                          <ChevronLeft size={12} />
-                          <span>Scroll to explore</span>
-                          <ChevronRight size={12} />
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── Scene 5: Celebration ── */}
-                  {scene === 5 && (
-                    <div className="text-center space-y-8 py-4">
-                      {/* Animated checkmark */}
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
-                        className="w-20 h-20 mx-auto rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/30"
-                      >
-                        <motion.div
-                          initial={{ pathLength: 0 }}
-                          animate={{ pathLength: 1 }}
-                          transition={{ delay: 0.5, duration: 0.5 }}
-                        >
-                          <Check size={40} className="text-white" strokeWidth={3} />
-                        </motion.div>
-                      </motion.div>
-
-                      <div>
-                        <motion.h1
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.3 }}
-                          className="text-3xl lg:text-4xl font-bold"
-                        >
-                          <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-500">
-                            {serverName}
-                          </span>{" "}
-                          is ready!
-                        </motion.h1>
-                        <motion.p
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: 0.5 }}
-                          className="mt-2 text-muted-foreground"
-                        >
-                          Your members can start earning rewards right now.
-                        </motion.p>
-                      </div>
-
-                      {/* Summary grid */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg mx-auto"
-                      >
-                        {[
-                          { label: "Timezone", value: config.timezone || detectedTz },
-                          { label: "Language", value: LOCALE_OPTIONS.find((l) => l.value === config.locale)?.label || "English" },
-                          { label: "Hourly Reward", value: `${config.study_hourly_reward ?? 100} coins` },
-                          { label: "Rank Type", value: config.rank_type || "XP" },
-                          { label: "Camera Bonus", value: `+${config.study_hourly_live_bonus ?? 25}` },
-                          { label: "DM Ranks", value: (config.dm_ranks ?? true) ? "On" : "Off" },
-                        ].map((item, i) => (
-                          <motion.div
-                            key={item.label}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.7 + i * 0.08 }}
-                            className="p-3 rounded-xl bg-card border border-border text-center"
-                          >
-                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{item.label}</p>
-                            <p className="text-sm font-semibold text-foreground mt-0.5">{item.value}</p>
-                          </motion.div>
-                        ))}
-                      </motion.div>
-
-                      {/* Next steps */}
-                      <motion.div
-                        initial={{ opacity: 0, y: 16 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 1 }}
-                        className="space-y-4"
-                      >
-                        <p className="text-sm font-medium text-foreground">What&apos;s next?</p>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-2xl mx-auto">
-                          {[
-                            { href: "ranks", icon: <Trophy size={18} />, label: "Set up Ranks" },
-                            { href: "shop", icon: <ShoppingBag size={18} />, label: "Add Shop Items" },
-                            { href: "rolemenus", icon: <ListChecks size={18} />, label: "Role Menus" },
-                            { href: "videochannels", icon: <Video size={18} />, label: "Video Channels" },
-                          ].map((link) => (
-                            <Link key={link.href} href={`/dashboard/servers/${guildId}/${link.href}`}>
-                              <a className="flex flex-col items-center gap-2 p-3 rounded-xl bg-card border border-border hover:border-amber-500/30 hover:bg-card transition-all text-center">
-                                <span className="text-primary">{link.icon}</span>
-                                <span className="text-xs text-foreground">{link.label}</span>
-                              </a>
-                            </Link>
-                          ))}
-                        </div>
-
-                        <Link href={`/dashboard/servers/${guildId}`}>
-                          <a className="inline-flex items-center justify-center gap-2 w-full max-w-md mx-auto py-4 px-8 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-lg hover:from-amber-400 hover:to-orange-400 transition-all active:scale-[0.98] shadow-lg shadow-amber-500/20">
-                            Go to Dashboard
-                            <ArrowRight size={20} />
-                          </a>
-                        </Link>
-                      </motion.div>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-          </div>
-
-          {/* ── Bottom nav bar ── */}
-          {scene < TOTAL_SCENES - 1 && (
-            <div className="flex-shrink-0 border-t border-border/40 bg-background/80 backdrop-blur-sm sticky bottom-0 z-30 safe-area-bottom">
-              <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-                <button
-                  onClick={handleBack}
-                  disabled={scene === 0}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-card disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  <ChevronLeft size={18} />
-                  Back
-                </button>
-                <div className="flex items-center gap-1.5">
-                  {Array.from({ length: TOTAL_SCENES }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={`h-1.5 rounded-full transition-all ${
-                        i === scene ? "w-6 bg-amber-500" : i < scene ? "w-1.5 bg-amber-500/50" : "w-1.5 bg-muted"
-                      }`}
-                    />
-                  ))}
-                </div>
-                <button
-                  onClick={handleNext}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-lg bg-primary hover:bg-primary/90 text-foreground font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {saving ? "Saving..." : "Next"}
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
+        <WizardNavMobile
+          currentStep={step}
+          completedSteps={completedSteps}
+          configuredSteps={configuredSteps}
+          onStepClick={goTo}
+        />
       </div>
     </>
   )
 }
 
-export default function SetupWizard() {
+export default function SetupPage() {
   return (
     <AdminGuard>
       <ServerGuard requiredLevel="admin">
@@ -840,6 +499,6 @@ export default function SetupWizard() {
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
-    ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard", "server"])),
+    ...(await serverSideTranslations(locale ?? "en", ["common"])),
   },
 })

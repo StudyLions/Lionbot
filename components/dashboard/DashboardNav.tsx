@@ -18,7 +18,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
-  Volume2, VolumeX, DoorOpen, Coins,
+  Volume2, VolumeX, DoorOpen, Coins, Clock,
 } from "lucide-react"
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
@@ -54,6 +54,10 @@ const sections: NavSection[] = [
       { href: "/dashboard/goals", label: "Goals", icon: <Target size={16} /> },
       { href: "/dashboard/reminders", label: "Reminders", icon: <Bell size={16} /> },
       { href: "/dashboard/rooms", label: "Rooms", icon: <DoorOpen size={16} /> },
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Voice Time Editor member page link
+      { href: "/dashboard/voice-editor", label: "Voice Time Editor", icon: <Clock size={16} /> },
+      // --- END AI-MODIFIED ---
     ],
   },
   // --- END AI-MODIFIED ---
@@ -69,6 +73,10 @@ const sections: NavSection[] = [
     title: "Account",
     items: [
       { href: "/dashboard/profile", label: "Profile", icon: <User size={16} /> },
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Subscriptions management page link
+      { href: "/dashboard/subscriptions", label: "Subscriptions", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
     ],
   },
   // --- AI-MODIFIED (2026-03-14) ---

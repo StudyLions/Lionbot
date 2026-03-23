@@ -22,7 +22,7 @@ import {
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
-  Search, X,
+  Search, X, Clock,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -62,11 +62,15 @@ interface NavSection {
 // --- END AI-MODIFIED ---
 
 function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add Shop link visible to all members in the Overview section
   const sections: NavSection[] = [
     { title: "Overview", links: [
       { href: "", label: "Dashboard", icon: <BarChart3 size={16} /> },
+      { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
     ]},
   ]
+  // --- END AI-MODIFIED ---
 
   if (isMod || isAdmin) {
     sections.push({
@@ -89,7 +93,16 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
       links: [
         { href: "/settings", label: "Settings", icon: <Settings size={16} /> },
         { href: "/ranks", label: "Ranks", icon: <Trophy size={16} /> },
-        { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Leaderboard configuration page in Configuration section
+        { href: "/leaderboard", label: "Leaderboard", icon: <BarChart3 size={16} /> },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Shop link moved to Overview section (visible to all members), removed from admin-only Configuration
+        // --- Original code (commented out for rollback) ---
+        // { href: "/shop", label: "Shop", icon: <ShoppingBag size={16} /> },
+        // --- End original code ---
+        // --- END AI-MODIFIED ---
         { href: "/rolemenus", label: "Role Menus", icon: <ListChecks size={16} /> },
         { href: "/liongotchi", label: "Pet Settings", icon: <PawPrint size={16} /> },
       ],
@@ -115,6 +128,10 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // --- AI-MODIFIED (2026-03-22) ---
         // Purpose: Sticky messages premium feature nav link
         { href: "/sticky-messages", label: "Sticky Messages", icon: <Pin size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Voice Time Editor premium feature nav link
+        { href: "/voice-time-editor", label: "Voice Time Editor", icon: <Clock size={16} />, supporterPerk: true },
         // --- END AI-MODIFIED ---
       ],
     })

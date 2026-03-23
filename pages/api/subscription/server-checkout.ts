@@ -84,15 +84,16 @@ export default async function handler(
       return res.status(500).json({ error: "Server premium price not configured." })
     }
 
-    const existingSub = await prisma.server_premium_subscriptions.findUnique({
-      where: { guildid: guildIdBig },
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Use findFirst with status filter instead of findUnique (PK changed from guildid to auto-increment id)
+    const existingSub = await prisma.server_premium_subscriptions.findFirst({
+      where: {
+        guildid: guildIdBig,
+        status: { in: ["ACTIVE", "CANCELLING", "PAST_DUE"] },
+      },
     })
 
-    if (
-      existingSub?.status === "ACTIVE" ||
-      existingSub?.status === "CANCELLING" ||
-      existingSub?.status === "PAST_DUE"
-    ) {
+    if (existingSub) {
       const payerId = existingSub.userid.toString()
       const isCurrentUser = payerId === auth.discordId
       return res.status(409).json({
@@ -102,6 +103,7 @@ export default async function handler(
         code: "ALREADY_SUBSCRIBED",
       })
     }
+    // --- END AI-MODIFIED ---
 
     const customerId = await findOrCreateStripeCustomer(auth.discordId)
 

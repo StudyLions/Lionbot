@@ -12,6 +12,10 @@ import { getTierByPriceId } from "@/constants/SubscriptionData";
 // Purpose: Discord audit log notifications for gem transactions and Stripe payments
 import { sendGemAuditLog, sendStripeAuditLog } from "@/utils/discordAudit";
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Shared premium recalculation for LionHeart++ server premium lifecycle
+import { recalculateGuildPremium } from "@/utils/premiumUtils";
+// --- END AI-MODIFIED ---
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
@@ -99,30 +103,41 @@ async function handleServerPremiumCheckout(session: Stripe.Checkout.Session) {
     ? new Date(sub.current_period_start * 1000)
     : new Date();
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Use findFirst + create/update instead of upsert (PK is now auto-increment id, not guildid)
   await prisma.$transaction(async (tx) => {
-    await tx.server_premium_subscriptions.upsert({
-      where: { guildid: guildIdBig },
-      create: {
-        guildid: guildIdBig,
-        userid: userIdBig,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        plan,
-        status: "ACTIVE",
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
-      },
-      update: {
-        userid: userIdBig,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        plan,
-        status: "ACTIVE",
-        current_period_start: periodStart,
-        current_period_end: periodEnd,
-        updated_at: new Date(),
-      },
+    const existingRow = await tx.server_premium_subscriptions.findFirst({
+      where: { stripe_subscription_id: subscriptionId },
     });
+
+    if (existingRow) {
+      await tx.server_premium_subscriptions.update({
+        where: { id: existingRow.id },
+        data: {
+          guildid: guildIdBig,
+          userid: userIdBig,
+          stripe_customer_id: customerId,
+          plan,
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          updated_at: new Date(),
+        },
+      });
+    } else {
+      await tx.server_premium_subscriptions.create({
+        data: {
+          guildid: guildIdBig,
+          userid: userIdBig,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          plan,
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+        },
+      });
+    }
 
     const existing = await tx.premium_guilds.findUnique({
       where: { guildid: guildIdBig },
@@ -144,6 +159,7 @@ async function handleServerPremiumCheckout(session: Stripe.Checkout.Session) {
       });
     }
   });
+  // --- END AI-MODIFIED ---
 
   console.log(
     `Stripe webhook: server premium activated for guild ${metadata.guildId} by user ${metadata.discordId} (${plan})`
@@ -185,8 +201,10 @@ async function handleServerPremiumSubscriptionUpdate(subscription: Stripe.Subscr
     ? new Date(subscription.current_period_end * 1000)
     : null;
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Update by id instead of guildid (PK changed to auto-increment)
   await prisma.server_premium_subscriptions.update({
-    where: { guildid: sub.guildid },
+    where: { id: sub.id },
     data: {
       status,
       current_period_start: periodStart,
@@ -207,6 +225,7 @@ async function handleServerPremiumSubscriptionUpdate(subscription: Stripe.Subscr
       });
     }
   }
+  // --- END AI-MODIFIED ---
 
   console.log(
     `Stripe webhook: server premium subscription ${subscription.id} -> guild ${sub.guildid}, status=${status}`
@@ -234,13 +253,16 @@ async function handleServerPremiumSubscriptionDeleted(subscription: Stripe.Subsc
   });
   if (!sub) return false;
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Update by id instead of guildid (PK changed to auto-increment)
   await prisma.server_premium_subscriptions.update({
-    where: { guildid: sub.guildid },
+    where: { id: sub.id },
     data: {
       status: "CANCELLED",
       updated_at: new Date(),
     },
   });
+  // --- END AI-MODIFIED ---
 
   console.log(`Stripe webhook: server premium subscription deleted for guild ${sub.guildid}`);
 
@@ -297,9 +319,11 @@ async function handleServerPremiumInvoice(invoice: Stripe.Invoice) {
     });
   }
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Update by id instead of guildid (PK changed to auto-increment)
   if (periodEnd) {
     await prisma.server_premium_subscriptions.update({
-      where: { guildid: sub.guildid },
+      where: { id: sub.id },
       data: {
         current_period_end: periodEnd,
         current_period_start: stripeSub.current_period_start
@@ -310,6 +334,7 @@ async function handleServerPremiumInvoice(invoice: Stripe.Invoice) {
       },
     });
   }
+  // --- END AI-MODIFIED ---
 
   console.log(
     `Stripe webhook: server premium renewed for guild ${sub.guildid} (invoice ${invoice.id})`
@@ -482,6 +507,53 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
     },
   });
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Manage LionHeart++ included server premium lifecycle on tier changes
+  const userIdBig = BigInt(discordId);
+  const previousSub = await prisma.user_subscriptions.findUnique({
+    where: { userid: userIdBig },
+    select: { tier: true },
+  });
+  const effectiveTier = status === "CANCELLED" ? "NONE" : tier;
+
+  if (effectiveTier === "LIONHEART_PLUS_PLUS") {
+    const existingGrant = await prisma.lionheart_server_premium.findUnique({
+      where: { userid: userIdBig },
+    });
+    if (!existingGrant) {
+      await prisma.lionheart_server_premium.create({
+        data: { userid: userIdBig, guildid: null },
+      });
+      console.log(`Stripe webhook: created lionheart_server_premium slot for user ${discordId}`);
+    } else if (existingGrant.guildid && periodEnd) {
+      const existing = await prisma.premium_guilds.findUnique({
+        where: { guildid: existingGrant.guildid },
+      });
+      if (existing) {
+        const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+        await prisma.premium_guilds.update({
+          where: { guildid: existingGrant.guildid },
+          data: { premium_until: newUntil },
+        });
+      }
+    }
+  } else if (effectiveTier !== "LIONHEART_PLUS_PLUS") {
+    const grant = await prisma.lionheart_server_premium.findUnique({
+      where: { userid: userIdBig },
+    });
+    if (grant) {
+      const revokedGuildId = grant.guildid;
+      await prisma.lionheart_server_premium.delete({
+        where: { userid: userIdBig },
+      });
+      if (revokedGuildId) {
+        await recalculateGuildPremium(revokedGuildId);
+        console.log(`Stripe webhook: revoked LH++ server premium from guild ${revokedGuildId} (user ${discordId} downgraded)`);
+      }
+    }
+  }
+  // --- END AI-MODIFIED ---
+
   console.log(
     `Stripe webhook: subscription ${subscription.id} -> user ${discordId}, tier=${tier}, status=${status}`
   );
@@ -527,6 +599,24 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       updated_at: new Date(),
     },
   });
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Revoke LionHeart++ server premium on subscription deletion
+  const deletedUserIdBig = BigInt(discordId);
+  const deletedGrant = await prisma.lionheart_server_premium.findUnique({
+    where: { userid: deletedUserIdBig },
+  });
+  if (deletedGrant) {
+    const revokedGuildId = deletedGrant.guildid;
+    await prisma.lionheart_server_premium.delete({
+      where: { userid: deletedUserIdBig },
+    });
+    if (revokedGuildId) {
+      await recalculateGuildPremium(revokedGuildId);
+      console.log(`Stripe webhook: revoked LH++ server premium from guild ${revokedGuildId} (user ${discordId} cancelled)`);
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   console.log(`Stripe webhook: subscription deleted for user ${discordId}`);
 
@@ -632,6 +722,46 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       { name: "Invoice", value: invoice.id, inline: false },
     ],
   });
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Extend LionHeart++ server premium guild on subscription renewal
+  if (sub.tier === "LIONHEART_PLUS_PLUS") {
+    const lhGrant = await prisma.lionheart_server_premium.findUnique({
+      where: { userid: discordIdBig },
+    });
+    if (lhGrant?.guildid) {
+      const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+      const newPeriodEnd = stripeSub.current_period_end
+        ? new Date(stripeSub.current_period_end * 1000)
+        : null;
+      if (newPeriodEnd) {
+        const guildPremium = await prisma.premium_guilds.findUnique({
+          where: { guildid: lhGrant.guildid },
+        });
+        if (guildPremium) {
+          const newUntil = guildPremium.premium_until > newPeriodEnd
+            ? guildPremium.premium_until
+            : newPeriodEnd;
+          await prisma.premium_guilds.update({
+            where: { guildid: lhGrant.guildid },
+            data: { premium_until: newUntil },
+          });
+        } else {
+          await prisma.premium_guilds.create({
+            data: {
+              guildid: lhGrant.guildid,
+              premium_since: new Date(),
+              premium_until: newPeriodEnd,
+            },
+          });
+        }
+        console.log(
+          `Stripe webhook: extended LH++ server premium for guild ${lhGrant.guildid} until ${newPeriodEnd.toISOString()}`
+        );
+      }
+    }
+  }
   // --- END AI-MODIFIED ---
 }
 
@@ -780,10 +910,13 @@ export default async function handler(
             where: { stripe_subscription_id: failedSubId },
           });
           if (sub) {
+            // --- AI-MODIFIED (2026-03-23) ---
+            // Purpose: Update by id instead of guildid (PK changed to auto-increment)
             await prisma.server_premium_subscriptions.update({
-              where: { guildid: sub.guildid },
+              where: { id: sub.id },
               data: { status: "PAST_DUE", updated_at: new Date() },
             });
+            // --- END AI-MODIFIED ---
             console.log(`Stripe webhook: server premium payment failed for guild ${sub.guildid}`);
             // --- AI-MODIFIED (2026-03-23) ---
             // Purpose: Stripe audit log for server premium payment failure
