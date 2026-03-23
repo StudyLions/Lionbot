@@ -1082,8 +1082,8 @@ export default function ServerSettings() {
                         <SettingRow label="Auto-Extend" description="Automatically deduct from owner balance when room runs out" isModified={isModified("renting_auto_extend")} onReset={() => resetField("renting_auto_extend")}>
                           <Toggle checked={config.renting_auto_extend ?? false} onChange={(v) => set("renting_auto_extend", v)} />
                         </SettingRow>
-                        <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)" isModified={isModified("renting_cooldown")} onReset={() => resetField("renting_cooldown")}>
-                          <NumberInput value={config.renting_cooldown} onChange={(v) => set("renting_cooldown", v)} min={0} allowNull placeholder="No cooldown" unit="seconds" />
+                        <SettingRow label="Creation Cooldown" description="Minutes between room creations per user (empty = no cooldown)" isModified={isModified("renting_cooldown")} onReset={() => resetField("renting_cooldown")}>
+                          <NumberInput value={config.renting_cooldown} onChange={(v) => set("renting_cooldown", v)} min={0} allowNull placeholder="No cooldown" unit="minutes" />
                         </SettingRow>
                         <div className="flex items-center justify-center gap-2 py-3 border-t border-border">
                           <Link href={`/dashboard/servers/${guildId}/rooms`}>

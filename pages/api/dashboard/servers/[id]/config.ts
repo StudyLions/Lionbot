@@ -57,6 +57,18 @@ const BIGINT_FIELDS = new Set([
 const HOURS_TO_SECONDS_FIELDS: Record<string, number> = {
   daily_study_cap: 3600,
 }
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Bot reads accountability settings from schedule_guild_config (not guild_config).
+// Map dashboard field names → schedule_guild_config column names so the API
+// reads/writes to the table the bot actually uses.
+const SCHEDULE_CONFIG_FIELDS: Record<string, string> = {
+  accountability_price: 'schedule_cost',
+  accountability_reward: 'reward',
+  accountability_bonus: 'bonus_reward',
+}
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
@@ -87,20 +99,32 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Read accountability fields from schedule_guild_config (the table the bot uses)
+    const scheduleConfig = await prisma.schedule_guild_config.findUnique({
+      where: { guildid: guildId },
+    })
+    // --- END AI-MODIFIED ---
+
     // --- AI-MODIFIED (2026-03-13) ---
     // Purpose: serialize BigInt fields to strings for JSON
     const safeConfig: Record<string, any> = {}
     for (const field of EDITABLE_FIELDS) {
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Read accountability fields from schedule_guild_config instead of guild_config
+      if (field in SCHEDULE_CONFIG_FIELDS) {
+        const schedCol = SCHEDULE_CONFIG_FIELDS[field]
+        safeConfig[field] = scheduleConfig ? (scheduleConfig as any)[schedCol] : null
+        continue
+      }
+      // --- END AI-MODIFIED ---
       const val = (config as any)[field]
       if (BIGINT_FIELDS.has(field) && val != null) {
         safeConfig[field] = val.toString()
       } else if (val instanceof Date) {
         safeConfig[field] = val.toISOString()
       } else if (field in HOURS_TO_SECONDS_FIELDS && val != null) {
-        // --- AI-MODIFIED (2026-03-23) ---
-        // Purpose: Convert DB seconds to display hours for duration fields
         safeConfig[field] = Math.round(val / HOURS_TO_SECONDS_FIELDS[field])
-        // --- END AI-MODIFIED ---
       } else {
         safeConfig[field] = val
       }
@@ -152,20 +176,24 @@ export default apiHandler({
     // --- AI-MODIFIED (2026-03-13) ---
     // Purpose: convert BigInt fields from strings and handle date fields
     const updates: Record<string, any> = {}
+    const scheduleUpdates: Record<string, any> = {}
     const body = req.body
 
     for (const field of EDITABLE_FIELDS) {
       if (field in body) {
         const val = body[field]
-        if (BIGINT_FIELDS.has(field)) {
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Write accountability fields to schedule_guild_config (the table the bot reads)
+        if (field in SCHEDULE_CONFIG_FIELDS) {
+          const schedCol = SCHEDULE_CONFIG_FIELDS[field]
+          scheduleUpdates[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+        // --- END AI-MODIFIED ---
+        } else if (BIGINT_FIELDS.has(field)) {
           updates[field] = val ? parseBigInt(val, field) : null
         } else if (field === 'season_start' || field === 'setup_wizard_dismissed_at') {
           updates[field] = val ? new Date(val) : null
         } else if (field in HOURS_TO_SECONDS_FIELDS) {
-          // --- AI-MODIFIED (2026-03-23) ---
-          // Purpose: Convert display hours to DB seconds for duration fields
           updates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
-          // --- END AI-MODIFIED ---
         } else {
           updates[field] = val
         }
@@ -173,16 +201,28 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(updates).length === 0 && Object.keys(scheduleUpdates).length === 0) {
       return res.status(400).json({ error: "No valid fields to update" })
     }
 
-    await prisma.guild_config.update({
-      where: { guildid: guildId },
-      data: updates,
-    })
+    if (Object.keys(updates).length > 0) {
+      await prisma.guild_config.update({
+        where: { guildid: guildId },
+        data: updates,
+      })
+    }
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Write accountability fields to schedule_guild_config via upsert
+    if (Object.keys(scheduleUpdates).length > 0) {
+      await prisma.schedule_guild_config.upsert({
+        where: { guildid: guildId },
+        create: { guildid: guildId, ...scheduleUpdates },
+        update: scheduleUpdates,
+      })
+    }
+    // --- END AI-MODIFIED ---
 
-    return res.status(200).json({ success: true, updated: Object.keys(updates) })
+    return res.status(200).json({ success: true, updated: [...Object.keys(updates), ...Object.keys(scheduleUpdates)] })
   },
 
   // --- AI-MODIFIED (2026-03-14) ---
@@ -198,18 +238,22 @@ export default apiHandler({
     }
 
     const configUpdates: Record<string, any> = {}
+    const scheduleImports: Record<string, any> = {}
     for (const field of EDITABLE_FIELDS) {
       if (field in body) {
         const val = body[field]
-        if (BIGINT_FIELDS.has(field)) {
+        // --- AI-MODIFIED (2026-03-23) ---
+        // Purpose: Write accountability fields to schedule_guild_config on import
+        if (field in SCHEDULE_CONFIG_FIELDS) {
+          const schedCol = SCHEDULE_CONFIG_FIELDS[field]
+          scheduleImports[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+        // --- END AI-MODIFIED ---
+        } else if (BIGINT_FIELDS.has(field)) {
           configUpdates[field] = val ? parseBigInt(val, field) : null
         } else if (field === "season_start" || field === "setup_wizard_dismissed_at") {
           configUpdates[field] = val ? new Date(val) : null
         } else if (field in HOURS_TO_SECONDS_FIELDS) {
-          // --- AI-MODIFIED (2026-03-23) ---
-          // Purpose: Convert display hours to DB seconds for duration fields on import
           configUpdates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
-          // --- END AI-MODIFIED ---
         } else {
           configUpdates[field] = val
         }
@@ -250,6 +294,16 @@ export default apiHandler({
     if (Object.keys(configUpdates).length > 0) {
       await prisma.guild_config.update({ where: { guildid: guildId }, data: configUpdates })
     }
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Write accountability fields to schedule_guild_config on import
+    if (Object.keys(scheduleImports).length > 0) {
+      await prisma.schedule_guild_config.upsert({
+        where: { guildid: guildId },
+        create: { guildid: guildId, ...scheduleImports },
+        update: scheduleImports,
+      })
+    }
+    // --- END AI-MODIFIED ---
     for (const op of listOps) {
       await op()
     }
