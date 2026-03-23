@@ -55,7 +55,7 @@ export default function StepTasks({
   return (
     <StepLayout
       title="Tasks & Workouts"
-      subtitle="Personal to-do lists and workout tracking"
+      subtitle="Personal to-do lists and timed exercise sessions"
       leoPose="pointing"
       leoMessage={getLeoMessage("tasks", "intro", serverName)}
       onBack={onBack}
@@ -71,7 +71,7 @@ export default function StepTasks({
           Task System
         </div>
         <p className="text-xs text-gray-400">
-          Members use <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/task add</code> to create tasks and <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/task done</code> to complete them. They earn coins for every completed task.
+          Members type <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/task add</code> in any Discord channel to create tasks and <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/task done</code> to check them off. They earn LionCoins for every completed task -- it&apos;s a built-in to-do list with rewards!
         </p>
 
         <Slider
@@ -154,8 +154,8 @@ export default function StepTasks({
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
             <p className="text-xs text-gray-400">
-              Members can log workout sessions in voice channels and earn coins. 
-              They use <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/workout start</code> to begin tracking.
+              Timed exercise sessions tracked through voice channels -- like study time, but for working out.
+              Members type <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/workout start</code> in Discord, then join a voice channel to track their workout. They earn LionCoins when the session meets the minimum length.
             </p>
             <Slider
               label="Minimum workout length"
@@ -165,7 +165,7 @@ export default function StepTasks({
               step={5}
               onChange={(v) => onUpdate("min_workout_length", v)}
               suffix=" min"
-              description="Minimum minutes for a workout to count"
+              description="A workout must last at least this long to earn a reward"
             />
             <Slider
               label="Workout reward"
@@ -174,7 +174,7 @@ export default function StepTasks({
               max={500}
               step={10}
               onChange={(v) => onUpdate("workout_reward", v)}
-              description="Coins per completed workout session"
+              description="LionCoins earned for completing a workout session"
             />
           </motion.div>
         )}

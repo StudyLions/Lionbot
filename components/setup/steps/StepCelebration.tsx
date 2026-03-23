@@ -114,7 +114,12 @@ export default function StepCelebration({
         </h2>
         <p className="text-sm text-gray-400 max-w-md mx-auto">
           You configured {configuredCount} of {totalConfigurable} available sections.
-          Everything else uses smart defaults that work great out of the box.
+          {configuredCount < totalConfigurable && (
+            <> Skipped steps use recommended starting values that work great out of the box -- you can configure them anytime from the dashboard.</>
+          )}
+          {configuredCount >= totalConfigurable && (
+            <> You went through everything -- impressive! You can always fine-tune settings from the dashboard.</>
+          )}
         </p>
       </div>
 

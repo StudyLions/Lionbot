@@ -38,7 +38,7 @@ const STATS = [
   { icon: <Globe className="w-5 h-5" />, value: 73803, label: "Servers", suffix: "" },
   { icon: <Users className="w-5 h-5" />, value: 10000, label: "Concurrent Voice Users", suffix: "+" },
   { icon: <Clock className="w-5 h-5" />, value: 7158, label: "Years of Study Tracked", suffix: "" },
-  { icon: <Zap className="w-5 h-5" />, value: 32, label: "Shards Running 24/7", suffix: "" },
+  { icon: <Zap className="w-5 h-5" />, value: 99, label: "Uptime Percentage", suffix: ".9%" },
 ]
 
 export default function StepWelcome({ serverName, onNext, onSkipWizard }: StepWelcomeProps) {
@@ -62,6 +62,9 @@ export default function StepWelcome({ serverName, onNext, onSkipWizard }: StepWe
         <p className="text-gray-400 text-sm sm:text-base max-w-lg mx-auto">
           The most comprehensive study & community bot on Discord.
           Let&apos;s set up <span className="text-white font-medium">{serverName}</span> together.
+        </p>
+        <p className="text-gray-500 text-xs max-w-lg mx-auto mt-1">
+          This wizard walks you through every feature. You can skip any step and change settings later from the dashboard.
         </p>
       </motion.div>
 

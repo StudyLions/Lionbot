@@ -58,8 +58,8 @@ export default function StepSchedule({
 
   return (
     <StepLayout
-      title="Schedule & Accountability"
-      subtitle="Members bet coins they'll show up -- or lose them"
+      title="Schedule"
+      subtitle="Scheduled group sessions where members put coins on the line to show up"
       leoPose="pointing"
       leoMessage={getLeoMessage("schedule", "intro", serverName)}
       onBack={onBack}
@@ -74,19 +74,19 @@ export default function StepSchedule({
           Accountability Sessions
         </div>
         <p className="text-xs text-gray-400">
-          Admins create scheduled study sessions. Members pay coins to reserve a spot.
-          Show up? Get rewarded. Ghost? You lose your deposit. It&apos;s beautiful.
+          Admins create scheduled study sessions. Members pay a small entry fee in LionCoins to reserve a spot.
+          Show up? They get their coins back plus a reward. Don&apos;t show up? They lose the entry fee. It&apos;s the ultimate motivation.
         </p>
 
         <Slider
-          label="Booking price"
+          label="Entry fee"
           value={price}
           min={0}
           max={500}
           step={10}
           onChange={(v) => onUpdate("accountability_price", v)}
           suffix=" coins"
-          description="How many coins members pay to book a session"
+          description="How many LionCoins members pay to join a session. They get this back if they show up."
         />
 
         <Slider
@@ -97,7 +97,7 @@ export default function StepSchedule({
           step={10}
           onChange={(v) => onUpdate("accountability_reward", v)}
           suffix=" coins"
-          description="Coins earned for actually showing up"
+          description="LionCoins earned on top of getting the entry fee back -- the reward for showing up"
         />
 
         <Slider
@@ -108,7 +108,7 @@ export default function StepSchedule({
           step={5}
           onChange={(v) => onUpdate("accountability_bonus", v)}
           suffix=" coins"
-          description="Extra bonus for completing the full session"
+          description="Extra LionCoins for staying until the session ends (on top of the attendance reward)"
         />
       </div>
 
@@ -149,10 +149,10 @@ export default function StepSchedule({
       {/* Profit breakdown */}
       <div className="bg-gradient-to-r from-[#43b581]/10 to-[#DDB21D]/10 border border-[#43b581]/20 rounded-xl p-4">
         <p className="text-xs text-gray-300">
-          <span className="font-medium text-white">How it works:</span> Member pays <span className="text-[#DDB21D] font-bold">{price}</span> coins to book →
-          Shows up → Gets deposit back + <span className="text-[#43b581] font-bold">{reward}</span> reward + <span className="text-[#DDB21D] font-bold">{bonus}</span> bonus =
+          <span className="font-medium text-white">Example:</span> A member pays <span className="text-[#DDB21D] font-bold">{price}</span> coins to join.
+          If they show up: they get their <span className="text-[#DDB21D] font-bold">{price}</span> coins back + <span className="text-[#43b581] font-bold">{reward}</span> attendance reward + <span className="text-[#DDB21D] font-bold">{bonus}</span> completion bonus =
           <span className="text-white font-bold"> {reward + bonus} coins profit!</span>
-          {price > 0 && <> If they ghost: <span className="text-red-400 font-bold">-{price} coins</span>.</>}
+          {price > 0 && <> If they don&apos;t show up: they lose the <span className="text-red-400 font-bold">{price} coin</span> entry fee.</>}
         </p>
       </div>
 
@@ -172,26 +172,26 @@ export default function StepSchedule({
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Schedule Category</label>
+              <label className="text-xs text-gray-400">Category for Session Channels</label>
               <ChannelSelect
                 guildId={guildId}
                 value={config.accountability_category ?? null}
                 onChange={(v) => onUpdate("accountability_category", (v as string) || null)}
                 channelTypes={[4]}
-                placeholder="Select a category for schedule channels"
+                placeholder="Select a channel group (category)"
               />
-              <p className="text-[11px] text-gray-500">The bot creates temporary voice channels here for each scheduled session</p>
+              <p className="text-[11px] text-gray-500">The bot creates temporary voice channels inside this Discord category for each scheduled session</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Schedule Lobby Channel</label>
+              <label className="text-xs text-gray-400">Waiting Room Channel</label>
               <ChannelSelect
                 guildId={guildId}
                 value={config.accountability_lobby ?? null}
                 onChange={(v) => onUpdate("accountability_lobby", (v as string) || null)}
                 channelTypes={[2]}
-                placeholder="Select a voice channel for the lobby"
+                placeholder="Select a voice channel"
               />
-              <p className="text-[11px] text-gray-500">Members wait here before sessions start, then get moved automatically</p>
+              <p className="text-[11px] text-gray-500">Members join this voice channel before a session starts. The bot moves them into the session channel automatically when it begins.</p>
             </div>
           </motion.div>
         )}

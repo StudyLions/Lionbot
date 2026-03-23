@@ -79,7 +79,8 @@ export default function StepEconomy({
           Study Rewards
         </div>
         <p className="text-xs text-gray-400">
-          Members earn LionCoins by spending time in voice channels. They can spend coins in your server shop, bet them in accountability sessions, or transfer to friends.
+          LionCoins are your server&apos;s virtual currency. Members earn them by spending time in voice channels.
+          They can spend coins in your server shop, use them to join scheduled study sessions (set up in a later step), or send them to friends.
         </p>
 
         <Slider
@@ -104,14 +105,14 @@ export default function StepEconomy({
         />
 
         <Slider
-          label="Daily cap"
+          label="Daily earning limit"
           value={cap ?? 0}
           min={0}
           max={24}
           step={1}
           onChange={(v) => onUpdate("daily_study_cap", v === 0 ? null : v)}
-          suffix="h"
-          description="Max hours counted per day (0 = unlimited)"
+          suffix=" hours"
+          description="Maximum hours of voice time that count toward coin rewards each day (0 = no limit)"
         />
       </div>
 
@@ -195,13 +196,13 @@ export default function StepEconomy({
               </div>
             </div>
             <Slider
-              label="XP to Coins ratio"
+              label="Bonus coins from ranking up"
               value={config.coins_per_centixp ?? 50}
               min={0}
               max={200}
               step={10}
               onChange={(v) => onUpdate("coins_per_centixp", v)}
-              description="Coins awarded per 100 XP earned"
+              description="Extra coins awarded for every 100 XP earned from the rank system (on top of hourly voice rewards)"
             />
           </motion.div>
         )}

@@ -92,7 +92,7 @@ export default function StepBasics({
           Welcome Message
         </div>
         <p className="text-xs text-gray-400">
-          Greet new members! Use <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{mention}"}</code>, <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{user_name}"}</code>, and <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{server_name}"}</code>.
+          This message is sent when a new member joins your server. You can use these placeholders: <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{mention}"}</code> (tags the new member), <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{user_name}"}</code> (their username), and <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">{"{server_name}"}</code> (your server name).
         </p>
         <textarea
           value={config.greeting_message || ""}
@@ -152,7 +152,7 @@ export default function StepBasics({
                 label="Greeting Channel"
                 placeholder="Select a channel"
               />
-              <p className="text-[11px] text-gray-500">Where welcome and returning member messages are posted</p>
+              <p className="text-[11px] text-gray-500">Where welcome and returning member messages are posted. If not set, messages go to your server&apos;s default channel.</p>
             </div>
             <div className="space-y-1">
               <RoleSelect
@@ -208,9 +208,9 @@ export default function StepBasics({
                   onChange={(e) => onUpdate("force_locale", e.target.checked)}
                   className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
                 />
-                <label className="text-xs text-gray-400">Force locale (override member preferences)</label>
+                <label className="text-xs text-gray-400">Use one language for everyone</label>
               </div>
-              <p className="text-[11px] text-gray-500 ml-7">Makes the bot use your server&apos;s language for everyone, ignoring individual settings</p>
+              <p className="text-[11px] text-gray-500 ml-7">When enabled, the bot always responds in your server&apos;s language. When disabled, each member can choose their own language.</p>
             </div>
           </motion.div>
         )}

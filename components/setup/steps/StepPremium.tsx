@@ -57,7 +57,7 @@ const TIERS = [
       "10 timer themes",
       "Pets NEVER die",
       "Includes Server Premium",
-      "Full uproot refund",
+      "Full refund when removing crops",
     ],
   },
 ]
@@ -65,7 +65,7 @@ const TIERS = [
 export default function StepPremium({ serverName, onNext, onBack, direction }: StepPremiumProps) {
   return (
     <StepLayout
-      title="Premium, Gems & Support"
+      title="Premium & Support"
       subtitle="Help us keep LionBot alive and thriving"
       leoPose="thumbsUp"
       leoMessage={getLeoMessage("premium", "intro", serverName)}
@@ -82,9 +82,9 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
           LionGems
         </div>
         <p className="text-xs text-gray-400 leading-relaxed">
-          LionGems are the premium currency. Members earn them by voting for LionBot on top.gg (free!) or
-          purchasing gem packs. Gems unlock exclusive card skins, pet accessories,
-          room themes, and more. Think of them as the &quot;V-Bucks&quot; of Discord bots.
+          LionGems are the premium currency. Members earn them for free by voting for LionBot on
+          Top.gg (the biggest Discord bot listing site) or by purchasing gem packs. Gems unlock
+          exclusive card skins, pet accessories, room themes, and more. Think of them as the &quot;V-Bucks&quot; of Discord bots.
         </p>
       </div>
 
@@ -100,13 +100,13 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
           <span className="text-xs text-gray-500">(or €99.99/year -- save 17%)</span>
         </div>
         <p className="text-xs text-gray-400">
-          Unlock premium features for your entire server:
+          Server-wide perks for every member in your server:
         </p>
         <ul className="space-y-1.5">
           {[
             "Custom server branding on all cards",
             "Premium Pomodoro themes",
-            "Ambient sounds bot access",
+            "Ambient sounds bot (plays rain, campfire, and other background sounds in voice)",
             "15% bonus LionGotchi gold & drops",
             "Priority support",
           ].map((perk) => (
@@ -122,7 +122,7 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
       <div className="space-y-3">
         <h4 className="text-sm font-medium text-white flex items-center gap-2">
           <Heart className="w-4 h-4 text-[#ff6b6b]" />
-          LionHeart Subscriptions (personal)
+          LionHeart Subscriptions (personal perks for individual members)
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {TIERS.map((tier, i) => (
@@ -166,7 +166,7 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
         <p className="text-xs text-gray-400 leading-relaxed">
           LionBot is a small family project, built by Ari because studying alone sucked.
           What started as a simple study tracker for one Discord server grew into a platform
-          serving 73,000+ communities. We&apos;re not a big company -- just a small team that
+          serving 73,000+ servers. We&apos;re not a big company -- just a small team that
           genuinely cares about helping people study and socialize more.
         </p>
         <p className="text-xs text-gray-400 leading-relaxed">

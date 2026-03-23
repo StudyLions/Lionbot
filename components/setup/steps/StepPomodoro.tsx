@@ -89,7 +89,7 @@ export default function StepPomodoro({
   return (
     <StepLayout
       title="Pomodoro Timer"
-      subtitle="Focused study sessions with timed breaks"
+      subtitle="Timed focus sessions -- 25 minutes of work, then a 5-minute break"
       leoPose="thumbsUp"
       leoMessage={getLeoMessage("pomodoro", "intro", serverName)}
       onBack={onBack}
@@ -105,9 +105,9 @@ export default function StepPomodoro({
           Pomodoro Channel
         </div>
         <p className="text-xs text-gray-400">
-          Members use <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/pomodoro</code> to start focus sessions.
-          Set a dedicated channel where timer notifications appear.
-          The Pomodoro technique alternates 25-minute focus blocks with 5-minute breaks.
+          Members type <code className="bg-gray-700 px-1 rounded text-[#DDB21D]">/pomodoro</code> in any Discord channel to start a focus session.
+          The bot runs a timer: 25 minutes of focused work, then a 5-minute break, repeating until they stop.
+          Pick a channel below where timer notifications (start, break, resume) will appear.
         </p>
         <ChannelSelect
           guildId={guildId}
@@ -129,9 +129,9 @@ export default function StepPomodoro({
         <h4 className="text-sm font-medium text-white">How it works</h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {[
-            { emoji: "1.", title: "Start", desc: "Member runs /pomodoro in your channel" },
-            { emoji: "2.", title: "Focus", desc: "25 min focus block -- bot tracks who's studying" },
-            { emoji: "3.", title: "Break", desc: "5 min break, then repeat. Coins earned each cycle!" },
+            { emoji: "1.", title: "Start", desc: "A member types /pomodoro in Discord to begin" },
+            { emoji: "2.", title: "Focus", desc: "25 min of focused work -- the bot tracks who's active" },
+            { emoji: "3.", title: "Break", desc: "5 min break, then repeat. LionCoins are earned each cycle!" },
           ].map((item) => (
             <div key={item.title} className="bg-gray-700/50 rounded-lg p-3 space-y-1">
               <p className="text-xs font-medium text-[#DDB21D]">{item.emoji} {item.title}</p>

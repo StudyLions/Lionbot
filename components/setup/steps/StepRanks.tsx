@@ -14,9 +14,9 @@ import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect } from "@/components/dashboard/ui"
 
 const RANK_TYPES = [
-  { value: "XP", label: "Combined XP", description: "Voice + text combined. Best all-around.", icon: <Sparkles size={20} /> },
-  { value: "VOICE", label: "Voice Time", description: "Only voice hours count. Ideal for study servers.", icon: <Mic size={20} /> },
-  { value: "MESSAGE", label: "Messages", description: "Message-based. Great for chatty communities.", icon: <MessageSquare size={20} /> },
+  { value: "XP", label: "Combined XP", description: "Counts both voice time and messages. Best for most servers.", icon: <Sparkles size={20} /> },
+  { value: "VOICE", label: "Voice Time Only", description: "Only time spent in voice channels counts. Great for study servers.", icon: <Mic size={20} /> },
+  { value: "MESSAGE", label: "Messages Only", description: "Only text messages count. Best for text-heavy communities.", icon: <MessageSquare size={20} /> },
 ]
 
 const SKINS = [
@@ -27,7 +27,7 @@ const SKINS = [
 
 const CARD_ANNOTATIONS = [
   { label: "User Avatar & Name", top: "5%", left: "5%", width: "40%", color: "#5865F2" },
-  { label: "Current Rank & Tier", top: "5%", right: "5%", width: "30%", color: "#43b581" },
+  { label: "Current Rank & Level", top: "5%", right: "5%", width: "30%", color: "#43b581" },
   { label: "Study Hours & Stats", top: "40%", left: "5%", width: "90%", color: "#DDB21D" },
   { label: "LionCoins Balance", top: "70%", left: "5%", width: "45%", color: "#f57c00" },
   { label: "Equipped Skin", top: "70%", right: "5%", width: "40%", color: "#ff6b6b" },
@@ -74,8 +74,8 @@ export default function StepRanks({
 
   return (
     <StepLayout
-      title="Ranks & Your Profile"
-      subtitle="How members level up and show off"
+      title="Ranks & Profile"
+      subtitle="How members level up and show off their stats"
       leoPose="starEyed"
       leoMessage={getLeoMessage("ranks", "intro", serverName)}
       onBack={onBack}
@@ -91,7 +91,8 @@ export default function StepRanks({
           Rank System
         </div>
         <p className="text-xs text-gray-400">
-          Choose how members earn XP and rank up. This determines what shows on their profile card and the leaderboard.
+          XP (experience points) are earned by being active in your server. As members earn XP, they rank up and unlock new levels.
+          Choose what counts toward their XP below. This affects their profile card and the server leaderboard.
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {RANK_TYPES.map((rt) => (
@@ -122,18 +123,18 @@ export default function StepRanks({
             className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
           />
           <div>
-            <label className="text-sm text-gray-300">DM rank-up notifications</label>
-            <p className="text-xs text-gray-500">Send members a DM when they rank up</p>
+            <label className="text-sm text-gray-300">Private rank-up notifications</label>
+            <p className="text-xs text-gray-500">Send members a private message (DM) when they reach a new rank</p>
           </div>
         </div>
         <Slider
-          label="XP per period"
+          label="XP per check-in"
           value={config.xp_per_period ?? 5}
           min={1}
           max={20}
           step={1}
           onChange={(v) => onUpdate("xp_per_period", v)}
-          description="XP awarded per tracking period (higher = faster ranking)"
+          description="The bot checks activity every few minutes and awards this much XP. Higher = faster ranking."
         />
       </div>
 
@@ -242,13 +243,13 @@ export default function StepRanks({
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
             <Slider
-              label="XP per 100 words (text)"
+              label="XP from messages"
               value={config.xp_per_centiword ?? 1}
               min={0}
               max={10}
               step={1}
               onChange={(v) => onUpdate("xp_per_centiword", v)}
-              description="XP earned from text messages (per 100 words)"
+              description="How much XP members earn from chatting (awarded per 100 words sent)"
             />
             <div className="space-y-1">
               <label className="text-xs text-gray-400">Rank-up Announcement Channel</label>
@@ -259,7 +260,7 @@ export default function StepRanks({
                 channelTypes={[0, 5]}
                 placeholder="Select a channel (leave blank for DMs only)"
               />
-              <p className="text-[11px] text-gray-500">Public rank-up celebrations go here. Leave empty to DM members privately instead</p>
+              <p className="text-[11px] text-gray-500">Public rank-up celebrations go here. Leave empty to send private messages instead</p>
             </div>
           </motion.div>
         )}

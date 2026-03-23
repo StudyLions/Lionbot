@@ -32,7 +32,7 @@ const ADMIN_COMMANDS: Command[] = [
   { name: "/rolemenu create", description: "Create a new role selection menu", example: "/rolemenu create #roles", category: "Community" },
   { name: "/schedule create", description: "Create an accountability session", example: "/schedule create \"Study Time\" 09:00", category: "Schedule" },
   { name: "/economy give", description: "Give coins to a member", example: "/economy give @user 500", category: "Economy" },
-  { name: "/moderation studyban", description: "Ban a member from voice channels", example: "/moderation studyban @user 1h", category: "Moderation" },
+  { name: "/moderation studyban", description: "Temporarily block a member from joining study voice channels", example: "/moderation studyban @user 1h", category: "Moderation" },
 ]
 
 const MEMBER_COMMANDS: Command[] = [
@@ -79,8 +79,8 @@ export default function StepCommands({ serverName, onNext, onBack, direction }: 
 
   return (
     <StepLayout
-      title="Commands Reference"
-      subtitle="Everything your admins and members need"
+      title="Commands"
+      subtitle="Type / in any Discord channel to see available commands -- Discord shows you options as you type"
       leoPose="pointing"
       leoMessage={getLeoMessage("commands", "intro", serverName)}
       onBack={onBack}
@@ -146,9 +146,14 @@ export default function StepCommands({ serverName, onNext, onBack, direction }: 
         )}
       </div>
 
-      <p className="text-[10px] text-gray-600 text-center">
-        This is a selection of the most-used commands. Members can type <code className="text-gray-400">/</code> in Discord to see all available commands.
-      </p>
+      <div className="space-y-1.5 text-center">
+        <p className="text-[10px] text-gray-600">
+          This is a selection of the most-used commands. Members can type <code className="text-gray-400">/</code> in Discord to see all available commands.
+        </p>
+        <p className="text-[10px] text-gray-600">
+          Admin commands require the Admin or Moderator role set in the &quot;The Basics&quot; step.
+        </p>
+      </div>
     </StepLayout>
   )
 }

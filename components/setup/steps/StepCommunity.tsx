@@ -156,7 +156,7 @@ export default function StepCommunity({
               step={50}
               onChange={(v) => onUpdate("renting_price", v)}
               suffix=" coins"
-              description="Cost to rent a private room"
+              description="LionCoins to create a private room (one-time fee, not recurring)"
             />
 
             <Slider
@@ -166,7 +166,7 @@ export default function StepCommunity({
               max={50}
               step={1}
               onChange={(v) => onUpdate("renting_cap", v)}
-              description="Maximum private rooms at once"
+              description="Maximum number of private rooms that can exist at the same time in your server"
             />
 
             <div className="flex items-center gap-3">
@@ -199,15 +199,15 @@ export default function StepCommunity({
                 className="px-5 py-4 space-y-4 bg-gray-800/30"
               >
                 <div className="space-y-1">
-                  <label className="text-xs text-gray-400">Room Category</label>
+                  <label className="text-xs text-gray-400">Category for Private Rooms</label>
                   <ChannelSelect
                     guildId={guildId}
                     value={config.renting_category ?? null}
                     onChange={(v) => onUpdate("renting_category", (v as string) || null)}
                     channelTypes={[4]}
-                    placeholder="Select the category where rooms are created"
+                    placeholder="Select a channel group (category)"
                   />
-                  <p className="text-[11px] text-gray-500">Rented voice channels are created inside this category</p>
+                  <p className="text-[11px] text-gray-500">Private voice channels are created inside this Discord category (channel group)</p>
                 </div>
                 <Slider
                   label="Max rooms per user"
@@ -229,14 +229,14 @@ export default function StepCommunity({
                   description="Max characters allowed in custom room names"
                 />
                 <Slider
-                  label="Min deposit"
+                  label="Minimum coins to open a room"
                   value={config.renting_min_deposit ?? 0}
                   min={0}
                   max={500}
                   step={10}
                   onChange={(v) => onUpdate("renting_min_deposit", v)}
                   suffix=" coins"
-                  description="Minimum coins required upfront to create a room -- prevents spam"
+                  description="Members must have at least this many coins in their balance to create a room. Prevents spam room creation."
                 />
                 <Slider
                   label="Cooldown"
@@ -256,9 +256,9 @@ export default function StepCommunity({
                       onChange={(e) => onUpdate("renting_sync_perms", e.target.checked)}
                       className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
                     />
-                    <label className="text-xs text-gray-400">Sync permissions with category</label>
+                    <label className="text-xs text-gray-400">Copy permissions from the category</label>
                   </div>
-                  <p className="text-[11px] text-gray-500 ml-7">Copies the category&apos;s permission overrides to each rented room</p>
+                  <p className="text-[11px] text-gray-500 ml-7">When enabled, each new room inherits the same permissions (who can see/join) as the category it&apos;s created in</p>
                 </div>
                 <div className="space-y-1">
                   <div className="flex items-center gap-3">
@@ -288,11 +288,11 @@ export default function StepCommunity({
           <div className="bg-gray-800/60 border border-gray-700/50 rounded-xl p-5 space-y-4">
             <div className="flex items-center gap-2 text-sm font-medium text-white">
               <Video className="w-4 h-4 text-[#DDB21D]" />
-              Video Channel Requirements
+              Camera-Required Voice Channels
             </div>
             <p className="text-xs text-gray-400">
-              Require cameras in specific voice channels. Members who don&apos;t turn on video get
-              a grace period, then get study-banned temporarily.
+              Require cameras to be turned on in specific voice channels. Members who don&apos;t enable their camera
+              get a grace period, then are temporarily blocked from joining those channels.
             </p>
 
             <div className="flex items-center gap-3">
@@ -303,8 +303,8 @@ export default function StepCommunity({
                 className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
               />
               <div>
-                <label className="text-sm text-gray-300">Enable video enforcement</label>
-                <p className="text-xs text-gray-500">Auto-ban members without camera in video channels</p>
+                <label className="text-sm text-gray-300">Require cameras in designated channels</label>
+                <p className="text-xs text-gray-500">Members without their camera on will be temporarily blocked from joining camera-required voice channels</p>
               </div>
             </div>
 
@@ -317,7 +317,7 @@ export default function StepCommunity({
                 step={10}
                 onChange={(v) => onUpdate("video_grace_period", v)}
                 suffix=" sec"
-                description="Seconds before a member without camera gets banned"
+                description="How many seconds a member has to turn on their camera before being removed from the channel"
               />
             )}
           </div>

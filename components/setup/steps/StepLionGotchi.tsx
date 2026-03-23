@@ -36,7 +36,7 @@ const FEATURES = [
   {
     icon: <Sprout className="w-5 h-5" />,
     title: "Farming",
-    desc: "Plant seeds, water crops, harvest gold. A full farming simulation inside Discord.",
+    desc: "Plant seeds, water crops, harvest LionGotchi gold. A full farming simulation inside Discord.",
     color: "#43b581",
   },
   {
@@ -54,7 +54,7 @@ const FEATURES = [
   {
     icon: <ShoppingBag className="w-5 h-5" />,
     title: "Marketplace",
-    desc: "Trade items with other members. Buy low, sell high. Discord stonks.",
+    desc: "Trade items with other members. Buy low, sell high -- a real economy inside Discord.",
     color: "#DDB21D",
   },
   {
@@ -93,7 +93,7 @@ export default function StepLionGotchi({
   return (
     <StepLayout
       title="LionGotchi"
-      subtitle="Virtual pet lions with farming, crafting, and a marketplace"
+      subtitle="A virtual pet game with farming, crafting, and trading -- right inside Discord"
       leoPose="starEyed"
       leoMessage={getLeoMessage("liongotchi", "intro", serverName)}
       onBack={onBack}
@@ -121,7 +121,8 @@ export default function StepLionGotchi({
         </div>
         <p className="text-xs text-gray-400">
           When enabled, members can adopt virtual pet lions, farm, craft, trade, and compete.
-          It&apos;s a full virtual economy living inside your Discord server.
+          It&apos;s a full virtual economy inside your Discord server. LionGotchi uses its own currency called
+          &quot;gold&quot; (separate from LionCoins) that members earn through farming and trading.
         </p>
       </div>
 
@@ -197,16 +198,16 @@ export default function StepLionGotchi({
             className="px-5 py-4 space-y-4 bg-gray-800/30"
           >
             <div className="space-y-1">
-              <label className="text-xs text-gray-400">Guild Display Name (max 12 chars)</label>
+              <label className="text-xs text-gray-400">Server Nickname in Pet Game (max 12 chars)</label>
               <input
                 type="text"
                 maxLength={12}
                 value={lgConfig.lg_guild_display_name || ""}
                 onChange={(e) => onLgUpdate("lg_guild_display_name", e.target.value || null)}
-                placeholder="Custom name shown in LionGotchi"
+                placeholder="e.g. StudyHub"
                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm text-gray-200 focus:ring-2 focus:ring-[#DDB21D]/50 outline-none"
               />
-              <p className="text-[11px] text-gray-500">A short nickname for your server shown in LionGotchi UIs (e.g. &quot;StudyHub&quot; instead of your full server name)</p>
+              <p className="text-[11px] text-gray-500">A short name shown inside the pet game instead of your full server name (e.g. &quot;StudyHub&quot;)</p>
             </div>
             <div className="space-y-1">
               <label className="text-xs text-gray-400">Activity Role</label>
@@ -228,7 +229,7 @@ export default function StepLionGotchi({
               step={10}
               onChange={(v) => onLgUpdate("lg_drop_delete_after", v === 0 ? null : v)}
               suffix="s"
-              description="Auto-delete drop messages after X seconds (0 = never)"
+              description="Automatically remove drop messages after this many seconds (0 = keep them forever)"
             />
           </motion.div>
         )}
