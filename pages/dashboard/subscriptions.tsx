@@ -329,13 +329,15 @@ export default function SubscriptionsPage() {
                         <p className="text-gray-400 mb-3">
                           You don&apos;t have an active LionHeart subscription.
                         </p>
-                        <Link
-                          href="/donate"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-700 transition-colors"
-                        >
-                          <Crown className="h-4 w-4" />
-                          View Plans
+                        {/* --- AI-MODIFIED (2026-03-23) --- */}
+                        {/* Purpose: Fix crash -- Next.js 12 Link requires child <a>, not className on Link */}
+                        <Link href="/donate">
+                          <a className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-yellow-600 text-white font-medium hover:bg-yellow-700 transition-colors">
+                            <Crown className="h-4 w-4" />
+                            View Plans
+                          </a>
                         </Link>
+                        {/* --- END AI-MODIFIED --- */}
                       </div>
                     )}
                   </SectionCard>
@@ -439,13 +441,15 @@ export default function SubscriptionsPage() {
                         <p className="text-gray-400 mb-3">
                           You don&apos;t have any active server premium subscriptions.
                         </p>
-                        <Link
-                          href="/donate#server-premium"
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors"
-                        >
-                          <Server className="h-4 w-4" />
-                          Get Server Premium
+                        {/* --- AI-MODIFIED (2026-03-23) --- */}
+                        {/* Purpose: Fix crash -- Next.js 12 Link requires child <a>, not className on Link */}
+                        <Link href="/donate#server-premium">
+                          <a className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors">
+                            <Server className="h-4 w-4" />
+                            Get Server Premium
+                          </a>
                         </Link>
+                        {/* --- END AI-MODIFIED --- */}
                       </div>
                     )}
                   </SectionCard>
@@ -532,13 +536,15 @@ export default function SubscriptionsPage() {
                   {/* Buy more server premiums CTA */}
                   {activePaidSubs.length > 0 && (
                     <div className="text-center">
-                      <Link
-                        href="/donate#server-premium"
-                        className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
-                      >
-                        Want premium for another server? Purchase on the{" "}
-                        <span className="text-blue-400 hover:underline">donate page</span>
+                      {/* --- AI-MODIFIED (2026-03-23) --- */}
+                      {/* Purpose: Fix crash -- Next.js 12 Link requires child <a>, not className on Link */}
+                      <Link href="/donate#server-premium">
+                        <a className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                          Want premium for another server? Purchase on the{" "}
+                          <span className="text-blue-400 hover:underline">donate page</span>
+                        </a>
                       </Link>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   )}
                 </div>
