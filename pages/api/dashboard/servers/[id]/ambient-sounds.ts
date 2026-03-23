@@ -31,6 +31,7 @@ function serializeConfig(c: any) {
     enabled: c.enabled,
     status: c.status,
     error_msg: c.error_msg,
+    nickname_template: c.nickname_template ?? null,
     updated_at: c.updated_at?.toISOString() ?? null,
   }
 }
@@ -91,6 +92,7 @@ export default apiHandler({
       channelid?: string | null
       volume?: number
       enabled?: boolean
+      nickname_template?: string | null
     }
 
     if (!body.bot_number || !VALID_BOT_NUMBERS.includes(body.bot_number)) {
@@ -109,11 +111,21 @@ export default apiHandler({
 
     const channelId = body.channelid ? parseBigInt(body.channelid, "channel ID") : null
 
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Support nickname_template field; validate length
+    if (body.nickname_template !== undefined && body.nickname_template !== null) {
+      if (body.nickname_template.length > 100) {
+        throw new ValidationError("Nickname template must be 100 characters or less")
+      }
+    }
+
     const data: Record<string, any> = { updated_at: new Date() }
     if ("sound_type" in body) data.sound_type = body.sound_type ?? null
     if ("channelid" in body) data.channelid = channelId
     if ("volume" in body) data.volume = body.volume
     if ("enabled" in body) data.enabled = body.enabled
+    if ("nickname_template" in body) data.nickname_template = body.nickname_template ?? null
+    // --- END AI-MODIFIED ---
 
     await prisma.ambient_sounds_config.upsert({
       where: {
