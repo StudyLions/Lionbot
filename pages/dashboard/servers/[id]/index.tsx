@@ -286,6 +286,25 @@ export default function ServerDetail() {
     status === "authenticated" && id ? `/api/dashboard/servers/${id}/overview-stats` : null
   )
 
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Auto-redirect to setup wizard for servers that haven't dismissed it
+  const { data: configForWizard } = useDashboard<{ setup_wizard_dismissed_at: string | null }>(
+    status === "authenticated" && id && permsData?.isAdmin
+      ? `/api/dashboard/servers/${id}/config`
+      : null
+  )
+  useEffect(() => {
+    if (
+      configForWizard &&
+      !configForWizard.setup_wizard_dismissed_at &&
+      permsData?.isAdmin &&
+      id
+    ) {
+      router.replace(`/dashboard/servers/${id}/setup`)
+    }
+  }, [configForWizard, permsData, id, router])
+  // --- END AI-MODIFIED ---
+
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
   const loading = isLoading
   const error = fetchError?.message ?? null

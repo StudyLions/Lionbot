@@ -267,6 +267,10 @@ model guild_config {
   lg_activity_role             BigInt?
   lg_drop_delete_after         Int?
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Track whether admin has completed or skipped the setup wizard
+  setup_wizard_dismissed_at    DateTime?                     @db.Timestamptz(6)
+  // --- END AI-MODIFIED ---
   coin_transactions            coin_transactions[]
   members                      members[]
   msg_ranks                    msg_ranks[]

@@ -27,6 +27,11 @@ const EDITABLE_FIELDS = [
   'renting_auto_extend', 'renting_cooldown',
   // --- END AI-MODIFIED ---
   'accountability_bonus', 'accountability_reward', 'accountability_price',
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Expose accountability channel fields + wizard dismiss tracking for setup wizard
+  'accountability_category', 'accountability_lobby',
+  'setup_wizard_dismissed_at',
+  // --- END AI-MODIFIED ---
   'rank_type', 'dm_ranks', 'xp_per_period', 'xp_per_centiword',
   'rank_channel', 'pomodoro_channel', // AI-MODIFIED (2026-03-13): guild default pomodoro notification channel
   'video_studyban', 'video_grace_period', 'persist_roles',
@@ -41,6 +46,7 @@ const BIGINT_FIELDS = new Set([
   'event_log_channel', 'mod_log_channel', 'alert_channel',
   'greeting_channel', 'rank_channel', 'pomodoro_channel', 'renting_category', // AI-MODIFIED: pomodoro_channel
   'admin_role', 'mod_role',
+  'accountability_category', 'accountability_lobby', // AI-MODIFIED (2026-03-23): setup wizard accountability channels
 ])
 // --- END AI-MODIFIED ---
 
@@ -140,7 +146,7 @@ export default apiHandler({
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
           updates[field] = val ? parseBigInt(val, field) : null
-        } else if (field === 'season_start') {
+        } else if (field === 'season_start' || field === 'setup_wizard_dismissed_at') {
           updates[field] = val ? new Date(val) : null
         } else {
           updates[field] = val
@@ -179,7 +185,7 @@ export default apiHandler({
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
           configUpdates[field] = val ? parseBigInt(val, field) : null
-        } else if (field === "season_start") {
+        } else if (field === "season_start" || field === "setup_wizard_dismissed_at") {
           configUpdates[field] = val ? new Date(val) : null
         } else {
           configUpdates[field] = val
