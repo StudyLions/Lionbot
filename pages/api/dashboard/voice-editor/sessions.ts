@@ -117,7 +117,7 @@ export default apiHandler({
     }
 
     const ongoingOverlap = await prisma.voice_sessions_ongoing.findUnique({
-      where: { voice_sessions_ongoing_members: { guildid: guildId, userid: userId } },
+      where: { guildid_userid: { guildid: guildId, userid: userId } },
       select: { start_time: true },
     })
     if (ongoingOverlap?.start_time && ongoingOverlap.start_time < endTime) {
