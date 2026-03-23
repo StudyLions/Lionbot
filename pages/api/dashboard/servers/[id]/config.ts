@@ -44,6 +44,15 @@ const BIGINT_FIELDS = new Set([
 ])
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Bot stores daily_study_cap in seconds, dashboard displays in hours.
+// Convert on read (seconds→hours) and write (hours→seconds) so the API
+// is the single conversion boundary.
+const HOURS_TO_SECONDS_FIELDS: Record<string, number> = {
+  daily_study_cap: 3600,
+}
+// --- END AI-MODIFIED ---
+
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
 export default apiHandler({
@@ -80,6 +89,8 @@ export default apiHandler({
       const val = (config as any)[field]
       if (BIGINT_FIELDS.has(field) && val != null) {
         safeConfig[field] = val.toString()
+      } else if (field in HOURS_TO_SECONDS_FIELDS && val != null) {
+        safeConfig[field] = Math.round(val / HOURS_TO_SECONDS_FIELDS[field])
       } else if (val instanceof Date) {
         safeConfig[field] = val.toISOString()
       } else {
@@ -140,6 +151,8 @@ export default apiHandler({
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
           updates[field] = val ? parseBigInt(val, field) : null
+        } else if (field in HOURS_TO_SECONDS_FIELDS) {
+          updates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
         } else if (field === 'season_start') {
           updates[field] = val ? new Date(val) : null
         } else {
@@ -179,6 +192,8 @@ export default apiHandler({
         const val = body[field]
         if (BIGINT_FIELDS.has(field)) {
           configUpdates[field] = val ? parseBigInt(val, field) : null
+        } else if (field in HOURS_TO_SECONDS_FIELDS) {
+          configUpdates[field] = val != null ? Math.round(val * HOURS_TO_SECONDS_FIELDS[field]) : null
         } else if (field === "season_start") {
           configUpdates[field] = val ? new Date(val) : null
         } else {
