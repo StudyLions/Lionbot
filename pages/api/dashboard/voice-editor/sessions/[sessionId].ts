@@ -85,49 +85,49 @@ export default apiHandler({
     }
 
     const { startTime: newStartTimeStr, duration: newDurationSec } = req.body
-    const updates: Record<string, any> = {}
-    const logData: Record<string, any> = {
-      guildid: session.guildid,
-      userid: auth.userId,
-      sessionid: sessionId,
-      action: "EDIT",
-      reason: req.body.reason ? String(req.body.reason).slice(0, 500) : null,
-    }
+    const sessionUpdates: { start_time?: Date; duration?: number } = {}
 
-    let newStartTime = session.start_time
-    let newDuration = session.duration
+    let oldStartTime: Date | undefined
+    let newStartTimeParsed: Date | undefined
+    let oldDuration: number | undefined
+    let newDurationParsed: number | undefined
+
+    let effectiveStartTime = session.start_time
+    let effectiveDuration = session.duration
 
     if (newStartTimeStr) {
-      newStartTime = new Date(newStartTimeStr)
-      if (isNaN(newStartTime.getTime())) throw new ValidationError("Invalid start time")
-      if (newStartTime > now) throw new ValidationError("Start time cannot be in the future")
+      const parsed = new Date(newStartTimeStr)
+      if (isNaN(parsed.getTime())) throw new ValidationError("Invalid start time")
+      if (parsed > now) throw new ValidationError("Start time cannot be in the future")
 
       const lookbackLimit = new Date(now)
       lookbackLimit.setDate(lookbackLimit.getDate() - MAX_LOOKBACK_DAYS)
-      if (newStartTime < lookbackLimit) {
+      if (parsed < lookbackLimit) {
         throw new ValidationError(`Sessions can only be within the last ${MAX_LOOKBACK_DAYS} days`)
       }
 
-      updates.start_time = newStartTime
-      logData.old_start_time = session.start_time
-      logData.new_start_time = newStartTime
+      sessionUpdates.start_time = parsed
+      oldStartTime = session.start_time
+      newStartTimeParsed = parsed
+      effectiveStartTime = parsed
     }
 
     if (newDurationSec !== undefined) {
-      newDuration = parseInt(newDurationSec)
-      if (isNaN(newDuration) || newDuration < MIN_DURATION || newDuration > MAX_DURATION) {
+      const dur = parseInt(newDurationSec)
+      if (isNaN(dur) || dur < MIN_DURATION || dur > MAX_DURATION) {
         throw new ValidationError(`Duration must be between ${MIN_DURATION / 60} minutes and ${MAX_DURATION / 3600} hours`)
       }
-      updates.duration = newDuration
-      logData.old_duration = session.duration
-      logData.new_duration = newDuration
+      sessionUpdates.duration = dur
+      oldDuration = session.duration
+      newDurationParsed = dur
+      effectiveDuration = dur
     }
 
-    if (Object.keys(updates).length === 0) {
+    if (Object.keys(sessionUpdates).length === 0) {
       return res.status(400).json({ error: "No changes provided" })
     }
 
-    const endTime = new Date(newStartTime.getTime() + newDuration * 1000)
+    const endTime = new Date(effectiveStartTime.getTime() + effectiveDuration * 1000)
     if (endTime > now) {
       throw new ValidationError("Session end time cannot be in the future")
     }
@@ -139,7 +139,7 @@ export default apiHandler({
         AND userid = ${auth.userId}
         AND sessionid != ${sessionId}
         AND start_time < ${endTime}
-        AND (start_time + duration * interval '1 second') > ${newStartTime}
+        AND (start_time + duration * interval '1 second') > ${effectiveStartTime}
     `
     if (Number(overlapping[0]?.count || 0) > 0) {
       throw new ValidationError("This change would overlap with another session in this server")
@@ -147,10 +147,22 @@ export default apiHandler({
 
     await prisma.voice_sessions.update({
       where: { sessionid: sessionId },
-      data: updates,
+      data: sessionUpdates,
     })
 
-    await prisma.manual_session_log.create({ data: logData })
+    await prisma.manual_session_log.create({
+      data: {
+        guildid: session.guildid,
+        userid: auth.userId,
+        sessionid: sessionId,
+        action: "EDIT",
+        reason: req.body.reason ? String(req.body.reason).slice(0, 500) : null,
+        old_start_time: oldStartTime ?? null,
+        new_start_time: newStartTimeParsed ?? null,
+        old_duration: oldDuration ?? null,
+        new_duration: newDurationParsed ?? null,
+      },
+    })
 
     return res.status(200).json({ success: true })
   },
