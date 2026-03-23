@@ -800,8 +800,9 @@ function ServerPremiumShowcase() {
     if (!session) return;
     setServersLoading(true);
     fetch("/api/dashboard/servers")
-      .then((r) => r.ok ? r.json() : [])
-      .then((servers: Array<{ guildId: string; guildName: string; iconUrl: string | null; role: string; botPresent: boolean }>) => {
+      .then((r) => r.ok ? r.json() : { servers: [] })
+      .then((data: { servers: Array<{ guildId: string; guildName: string; iconUrl: string | null; role: string; botPresent: boolean }> }) => {
+        const servers = data.servers || [];
         const admins = servers.filter((s) => s.role === "admin" && s.botPresent);
         setAdminServers(admins);
         if (admins.length > 0) setSelectedServer(admins[0].guildId);
