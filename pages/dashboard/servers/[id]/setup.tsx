@@ -194,15 +194,17 @@ function SetupWizardInner() {
     router.push(`/dashboard/servers/${guildId}`)
   }
 
-  // Step-specific save field mappings
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Reorder steps -- show "wow" features first, push admin plumbing later
+  // New order: Welcome, Ranks, LionGotchi, Economy, Tasks, Pomodoro, Schedule, Basics, Community, Premium, Commands, Celebration
   const STEP_FIELDS: Record<number, string[]> = {
-    1: ["timezone", "locale", "force_locale", "greeting_message", "returning_message", "greeting_channel", "admin_role", "mod_role", "event_log_channel", "mod_log_channel", "alert_channel"],
-    2: ["study_hourly_reward", "study_hourly_live_bonus", "daily_study_cap", "starting_funds", "allow_transfers", "coins_per_centixp"],
-    3: ["rank_type", "dm_ranks", "xp_per_period", "xp_per_centiword", "rank_channel", "season_start"],
+    1: ["rank_type", "dm_ranks", "xp_per_period", "xp_per_centiword", "rank_channel", "season_start"],
+    3: ["study_hourly_reward", "study_hourly_live_bonus", "daily_study_cap", "starting_funds", "allow_transfers", "coins_per_centixp"],
     4: ["max_tasks", "task_reward", "task_reward_limit", "min_workout_length", "workout_reward"],
     5: ["pomodoro_channel"],
     6: ["accountability_price", "accountability_reward", "accountability_bonus", "accountability_category", "accountability_lobby"],
-    7: ["renting_price", "renting_cap", "renting_visible", "renting_category", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown", "video_studyban", "video_grace_period", "persist_roles"],
+    7: ["timezone", "locale", "force_locale", "greeting_message", "returning_message", "greeting_channel", "admin_role", "mod_role", "event_log_channel", "mod_log_channel", "alert_channel"],
+    8: ["renting_price", "renting_cap", "renting_visible", "renting_category", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown", "video_studyban", "video_grace_period", "persist_roles"],
   }
 
   const renderStep = () => {
@@ -218,7 +220,7 @@ function SetupWizardInner() {
         )
       case 1:
         return (
-          <StepBasics
+          <StepRanks
             key="step-1"
             config={config!}
             serverName={serverName}
@@ -233,13 +235,19 @@ function SetupWizardInner() {
         )
       case 2:
         return (
-          <StepEconomy
+          <StepLionGotchi
             key="step-2"
-            config={config!}
+            lgConfig={lgConfig}
             serverName={serverName}
             guildId={guildId}
-            onUpdate={set}
-            onNext={() => markCompleteAndNext(STEP_FIELDS[2])}
+            onLgUpdate={setLg}
+            onNext={async () => {
+              const ok = await saveLgFields()
+              if (ok) {
+                setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
+                goTo(3)
+              }
+            }}
             onBack={goBack}
             onSkip={skipAndNext}
             saving={saving}
@@ -248,7 +256,7 @@ function SetupWizardInner() {
         )
       case 3:
         return (
-          <StepRanks
+          <StepEconomy
             key="step-3"
             config={config!}
             serverName={serverName}
@@ -307,7 +315,7 @@ function SetupWizardInner() {
         )
       case 7:
         return (
-          <StepCommunity
+          <StepBasics
             key="step-7"
             config={config!}
             serverName={serverName}
@@ -322,19 +330,13 @@ function SetupWizardInner() {
         )
       case 8:
         return (
-          <StepLionGotchi
+          <StepCommunity
             key="step-8"
-            lgConfig={lgConfig}
+            config={config!}
             serverName={serverName}
             guildId={guildId}
-            onLgUpdate={setLg}
-            onNext={async () => {
-              const ok = await saveLgFields()
-              if (ok) {
-                setCompletedSteps((prev) => { const n = new Set(Array.from(prev)); n.add(step); return n })
-                goTo(9)
-              }
-            }}
+            onUpdate={set}
+            onNext={() => markCompleteAndNext(STEP_FIELDS[8])}
             onBack={goBack}
             onSkip={skipAndNext}
             saving={saving}
@@ -382,6 +384,7 @@ function SetupWizardInner() {
         return null
     }
   }
+  // --- END AI-MODIFIED ---
 
   if (!config) {
     return (

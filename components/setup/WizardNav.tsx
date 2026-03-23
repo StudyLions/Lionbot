@@ -20,20 +20,23 @@ export interface WizardStep {
   type: "intro" | "config" | "showcase" | "celebration"
 }
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Reorder steps -- show "wow" features (Ranks, LionGotchi) first, push admin plumbing (Basics) later
 export const WIZARD_STEPS: WizardStep[] = [
   { id: "welcome", label: "Welcome", icon: <Sparkles className="w-4 h-4" />, type: "intro" },
-  { id: "basics", label: "The Basics", icon: <Settings className="w-4 h-4" />, type: "config" },
-  { id: "economy", label: "LionCoins & Economy", icon: <Coins className="w-4 h-4" />, type: "config" },
   { id: "ranks", label: "Ranks & Profile", icon: <Trophy className="w-4 h-4" />, type: "config" },
+  { id: "liongotchi", label: "LionGotchi", icon: <Heart className="w-4 h-4" />, type: "config" },
+  { id: "economy", label: "LionCoins & Economy", icon: <Coins className="w-4 h-4" />, type: "config" },
   { id: "tasks", label: "Tasks & Workouts", icon: <ListChecks className="w-4 h-4" />, type: "config" },
   { id: "pomodoro", label: "Pomodoro", icon: <Timer className="w-4 h-4" />, type: "config" },
   { id: "schedule", label: "Schedule", icon: <Calendar className="w-4 h-4" />, type: "config" },
+  { id: "basics", label: "The Basics", icon: <Settings className="w-4 h-4" />, type: "config" },
   { id: "community", label: "Community Tools", icon: <Users className="w-4 h-4" />, type: "config" },
-  { id: "liongotchi", label: "LionGotchi", icon: <Heart className="w-4 h-4" />, type: "config" },
   { id: "premium", label: "Premium & Support", icon: <Crown className="w-4 h-4" />, type: "showcase" },
   { id: "commands", label: "Commands", icon: <Terminal className="w-4 h-4" />, type: "showcase" },
   { id: "celebration", label: "All Set!", icon: <PartyPopper className="w-4 h-4" />, type: "celebration" },
 ]
+// --- END AI-MODIFIED ---
 
 interface WizardNavProps {
   currentStep: number
