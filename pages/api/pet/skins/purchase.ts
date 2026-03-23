@@ -7,6 +7,10 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Gem audit log for pet skin purchases
+import { sendGemAuditLog } from "@/utils/discordAudit"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async POST(req, res) {
@@ -164,6 +168,17 @@ export default apiHandler({
       })
 
       if ("error" in result) return res.status(400).json(result)
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Gem audit log for pet gameboy skin purchase
+      sendGemAuditLog({
+        transactionType: "PURCHASE",
+        amount: price,
+        actorId: auth.discordId,
+        fromAccount: auth.discordId,
+        toAccount: null,
+        description: `Purchased gameboy skin: ${skin.theme} ${skin.color}`,
+      })
+      // --- END AI-MODIFIED ---
       return res.status(200).json(result)
     }
 

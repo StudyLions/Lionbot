@@ -7,6 +7,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Gem audit log for skin purchases
+import { sendGemAuditLog } from "@/utils/discordAudit"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: use shared SkinCatalog as single source of truth for prices
 import { SKIN_PRICES, SKIN_MAP } from "@/constants/SkinCatalog"
@@ -137,6 +141,18 @@ export default apiHandler({
       return res.status(400).json({ error: purchaseError })
     }
     // --- END AI-REPLACED ---
+
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Gem audit log for dashboard skin purchase
+    sendGemAuditLog({
+      transactionType: "PURCHASE",
+      amount: price,
+      actorId: auth.discordId,
+      fromAccount: auth.discordId,
+      toAccount: null,
+      description: `Purchased skin: ${skinName}`,
+    })
+    // --- END AI-MODIFIED ---
 
     res.status(200).json({
       success: true,

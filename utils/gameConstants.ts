@@ -115,6 +115,13 @@ export const GLOW_TEXT_COLORS: Record<GlowTier, string> = {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Pet XP curve matching bot's gameplay.py polynomial formula
+export function xpForLevel(level: number): number {
+  return Math.floor(25 * Math.pow(level, 1.3))
+}
+// --- END AI-MODIFIED ---
+
 export function getOwnershipTier(count: number): string {
   if (count === 0) return "Undiscovered"
   if (count <= 2) return "Ultra Rare"

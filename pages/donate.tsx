@@ -774,13 +774,64 @@ const DEMO_SKINS = [
   },
 ];
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added server selector + Stripe checkout to ServerPremiumShowcase
+interface AdminServer {
+  guildId: string
+  guildName: string
+  iconUrl: string | null
+}
+
 function ServerPremiumShowcase() {
+  const { data: session } = useSession();
   const [activeSkin, setActiveSkin] = useState(0);
   const [imagesReady, setImagesReady] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [hasError, setHasError] = useState(false);
   const loadedCount = useRef(0);
   const errorCount = useRef(0);
+
+  const [adminServers, setAdminServers] = useState<AdminServer[]>([]);
+  const [serversLoading, setServersLoading] = useState(false);
+  const [selectedServer, setSelectedServer] = useState<string>("");
+  const [checkingOut, setCheckingOut] = useState(false);
+
+  useEffect(() => {
+    if (!session) return;
+    setServersLoading(true);
+    fetch("/api/dashboard/servers")
+      .then((r) => r.ok ? r.json() : [])
+      .then((servers: Array<{ guildId: string; guildName: string; iconUrl: string | null; role: string; botPresent: boolean }>) => {
+        const admins = servers.filter((s) => s.role === "admin" && s.botPresent);
+        setAdminServers(admins);
+        if (admins.length > 0) setSelectedServer(admins[0].guildId);
+      })
+      .catch(() => setAdminServers([]))
+      .finally(() => setServersLoading(false));
+  }, [session]);
+
+  const handleServerCheckout = async (plan: string) => {
+    if (!selectedServer) return;
+    setCheckingOut(true);
+    try {
+      const res = await fetch("/api/subscription/server-checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ guildId: selectedServer, plan }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to start checkout");
+        return;
+      }
+      if (data.url) window.location.href = data.url;
+    } catch {
+      alert("Something went wrong. Please try again.");
+    } finally {
+      setCheckingOut(false);
+    }
+  };
+// --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!imagesReady || isHovering) return;
@@ -1037,44 +1088,65 @@ function ServerPremiumShowcase() {
                 </div>
               </div>
 
-              {/* --- AI-MODIFIED (2026-03-22) --- */}
-              {/* Purpose: Replaced gem-based pricing tiers with EUR Stripe subscription pricing */}
+              {/* --- AI-MODIFIED (2026-03-23) --- */}
+              {/* Purpose: Interactive server selector + Stripe checkout replacing static pricing */}
               <div className="border-t border-gray-700 pt-5 mt-5">
                 <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Subscription Plans
+                  Subscribe &mdash; &euro;9.99/mo or &euro;99.99/yr
                 </p>
-                <div className="space-y-2">
-                  {[
-                    { period: "Monthly", price: "€9.99", suffix: "/mo" },
-                    { period: "Yearly", price: "€99.99", suffix: "/yr", tag: "Save 17%" },
-                  ].map((plan) => (
-                    <div
-                      key={plan.period}
-                      className="flex items-center justify-between rounded-lg bg-gray-900/60 border border-gray-700/60 px-3 py-2"
+
+                {!session ? (
+                  <button
+                    onClick={() => signIn("discord")}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
+                  >
+                    Sign in to Subscribe
+                  </button>
+                ) : serversLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-gray-500 text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading your servers...
+                  </div>
+                ) : adminServers.length === 0 ? (
+                  <p className="text-sm text-gray-500 text-center py-3">
+                    You need to be an admin of a server with LionBot to subscribe.{" "}
+                    <a href="/invite" className="text-blue-400 hover:underline">Add LionBot</a>
+                  </p>
+                ) : (
+                  <div className="space-y-3">
+                    <select
+                      value={selectedServer}
+                      onChange={(e) => setSelectedServer(e.target.value)}
+                      className="w-full rounded-lg bg-gray-900/80 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-white font-medium">
-                          {plan.period}
-                        </span>
-                        {plan.tag && (
-                          <span className="text-[10px] font-semibold bg-blue-500/15 text-blue-400 px-1.5 py-0.5 rounded-full">
-                            {plan.tag}
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-sm font-bold text-blue-400">
-                        {plan.price}<span className="text-xs text-gray-500">{plan.suffix}</span>
-                      </span>
+                      {adminServers.map((s) => (
+                        <option key={s.guildId} value={s.guildId}>
+                          {s.guildName}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleServerCheckout("MONTHLY")}
+                        disabled={checkingOut}
+                        className="flex-1 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700 hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                      >
+                        {checkingOut ? "..." : "€9.99/mo"}
+                      </button>
+                      <button
+                        onClick={() => handleServerCheckout("YEARLY")}
+                        disabled={checkingOut}
+                        className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                      >
+                        {checkingOut ? "..." : "€99.99/yr — Save 17%"}
+                      </button>
                     </div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-gray-500 mt-3 text-center">
-                  Subscribe from your{" "}
-                  <a href="/dashboard" className="text-blue-400 hover:underline">
-                    server dashboard
-                  </a>{" "}
-                  &mdash; cancel anytime
-                </p>
+                    <p className="text-[11px] text-gray-600 text-center">
+                      Auto-renews. Cancel anytime from your{" "}
+                      <a href="/dashboard" className="text-blue-400 hover:underline">dashboard</a>.
+                    </p>
+                  </div>
+                )}
               </div>
               {/* --- END AI-MODIFIED --- */}
               {/* --- END AI-MODIFIED --- */}
