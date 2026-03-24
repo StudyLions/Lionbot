@@ -74,19 +74,61 @@ export default apiHandler({
     })
     const petMap = new Map(pets.map((p) => [p.userid.toString(), p]))
 
-    const results = userResults
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: return discordName (not name) + isFriend/isPending flags to match frontend interface
+    const filtered = userResults
       .filter((u) => petMap.has(u.userid.toString()) && u.userid !== userId)
       .slice(0, 10)
-      .map((u) => {
-        const pet = petMap.get(u.userid.toString())!
-        return {
-          discordId: u.userid.toString(),
-          name: u.name,
-          avatarHash: u.avatar_hash,
-          petName: pet.pet_name,
-          petLevel: pet.level,
-        }
-      })
+
+    const filteredIds = filtered.map((u) => u.userid)
+
+    const [friendRows, pendingRows] = filteredIds.length > 0
+      ? await Promise.all([
+          prisma.lg_friends.findMany({
+            where: {
+              OR: filteredIds.flatMap((fid) => {
+                const [lo, hi] = userId < fid ? [userId, fid] : [fid, userId]
+                return [{ userid1: lo, userid2: hi }]
+              }),
+            },
+            select: { userid1: true, userid2: true },
+          }),
+          prisma.lg_friend_requests.findMany({
+            where: {
+              status: "PENDING",
+              OR: filteredIds.flatMap((fid) => [
+                { from_userid: userId, to_userid: fid },
+                { from_userid: fid, to_userid: userId },
+              ]),
+            },
+            select: { from_userid: true, to_userid: true },
+          }),
+        ])
+      : [[], []]
+
+    const friendSet = new Set<string>()
+    for (const f of friendRows) {
+      friendSet.add(f.userid1 === userId ? f.userid2.toString() : f.userid1.toString())
+    }
+    const pendingSet = new Set<string>()
+    for (const p of pendingRows) {
+      pendingSet.add(p.from_userid === userId ? p.to_userid.toString() : p.from_userid.toString())
+    }
+
+    const results = filtered.map((u) => {
+      const uid = u.userid.toString()
+      const pet = petMap.get(uid)!
+      return {
+        discordId: uid,
+        discordName: u.name,
+        avatarHash: u.avatar_hash,
+        petName: pet.pet_name,
+        petLevel: pet.level,
+        isFriend: friendSet.has(uid),
+        isPending: pendingSet.has(uid),
+      }
+    })
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ results })
   },

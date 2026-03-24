@@ -151,7 +151,10 @@ export default function FriendsPage() {
   const handleAddFriend = useCallback(async (targetUserId: string) => {
     setActionLoading(targetUserId)
     try {
-      await dashboardMutate("POST", "/api/pet/friends/request", { targetUserId })
+      // --- AI-MODIFIED (2026-03-24) ---
+      // Purpose: request API expects { query } not { targetUserId }
+      await dashboardMutate("POST", "/api/pet/friends/request", { query: targetUserId })
+      // --- END AI-MODIFIED ---
       toast.success("Friend request sent!")
       setSearchResults((prev) =>
         prev?.map((r) => r.discordId === targetUserId ? { ...r, isPending: true } : r) ?? null
