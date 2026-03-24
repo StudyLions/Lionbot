@@ -23,14 +23,27 @@ const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
 const VALID_TIERS = ["LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"] as const;
 type SubscriptionTier = (typeof VALID_TIERS)[number];
 
-// --- AI-MODIFIED (2026-03-21) ---
-// Purpose: .trim() env vars to strip \r\n that Windows/Vercel CLI can inject
-const PRICE_ENV_MAP: Record<SubscriptionTier, string> = {
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Add EUR price map alongside existing USD map for dual-currency checkout
+// What the new code does better: selects the correct Stripe Price ID based on user's currency choice
+// --- Original code (commented out for rollback) ---
+// const PRICE_ENV_MAP: Record<SubscriptionTier, string> = {
+//   LIONHEART: (process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5").trim(),
+//   LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "price_1TBgSZAJ9zOg7wY9Z55T26ae").trim(),
+//   LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "price_1TBgSbAJ9zOg7wY9wmMbpVd3").trim(),
+// };
+// --- End original code ---
+const PRICE_USD_MAP: Record<SubscriptionTier, string> = {
   LIONHEART: (process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5").trim(),
   LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "price_1TBgSZAJ9zOg7wY9Z55T26ae").trim(),
   LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "price_1TBgSbAJ9zOg7wY9wmMbpVd3").trim(),
 };
-// --- END AI-MODIFIED ---
+const PRICE_EUR_MAP: Record<SubscriptionTier, string> = {
+  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART_EUR ?? "").trim(),
+  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_EUR ?? "").trim(),
+  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_EUR ?? "").trim(),
+};
+// --- END AI-REPLACED ---
 
 const rateLimits = new Map<string, { count: number; resetAt: number }>();
 
@@ -75,17 +88,24 @@ export default async function handler(
     const discordName = "User";
     // --- END AI-MODIFIED ---
 
-    const { tier } = req.body ?? {};
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Accept currency parameter for dual-currency checkout
+    const { tier, currency: rawCurrency } = req.body ?? {};
+    const currency = rawCurrency === "usd" ? "usd" : "eur";
+    // --- END AI-MODIFIED ---
     if (!tier || !VALID_TIERS.includes(tier)) {
       return res.status(400).json({
         error: "Invalid tier. Must be one of: LIONHEART, LIONHEART_PLUS, LIONHEART_PLUS_PLUS",
       });
     }
 
-    const priceId = PRICE_ENV_MAP[tier];
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Select Price ID based on currency choice
+    const priceId = currency === "eur" ? PRICE_EUR_MAP[tier] : PRICE_USD_MAP[tier];
     if (!priceId) {
-      return res.status(500).json({ error: "Subscription price not configured." });
+      return res.status(500).json({ error: "Subscription price not configured for selected currency." });
     }
+    // --- END AI-MODIFIED ---
 
     const subscription = await prisma.user_subscriptions.findUnique({
       where: { userid: BigInt(discordId) },

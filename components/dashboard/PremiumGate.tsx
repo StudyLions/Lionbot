@@ -8,6 +8,11 @@
 import { useRouter } from "next/router"
 import { useState } from "react"
 import { Crown, MessageSquarePlus } from "lucide-react"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Import currency hook and helpers for dual-currency support
+import { useCurrency } from "@/hooks/useCurrency"
+import { getServerPremiumPrice } from "@/constants/SubscriptionData"
+// --- END AI-MODIFIED ---
 
 interface PremiumGateProps {
   title: string
@@ -27,17 +32,26 @@ const SPARKLES = [
   { top: "75%", right: "20%", delay: "1.8s", dur: "2.9s" },
 ]
 
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Replace /donate link with direct Stripe checkout for server premium
-const PLANS = [
-  { id: "MONTHLY", label: "Monthly", price: "€9.99", period: "/mo" },
-  { id: "YEARLY", label: "Yearly", price: "€99.99", period: "/yr", badge: "Save 17%" },
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Add dual-currency support to premium gate checkout
+// What the new code does better: uses useCurrency hook, shows correct prices per currency
+// --- Original code (commented out for rollback) ---
+// const PLANS = [
+//   { id: "MONTHLY", label: "Monthly", price: "€9.99", period: "/mo" },
+//   { id: "YEARLY", label: "Yearly", price: "€99.99", period: "/yr", badge: "Save 17%" },
+// ]
+// --- End original code ---
+
+const PLAN_IDS = [
+  { id: "MONTHLY" as const, label: "Monthly", period: "/mo" },
+  { id: "YEARLY" as const, label: "Yearly", period: "/yr", badge: "Save 17%" },
 ]
 
 export default function PremiumGate({ title, subtitle, children }: PremiumGateProps) {
   const router = useRouter()
   const serverId = router.query.id as string | undefined
   const [loading, setLoading] = useState<string | null>(null)
+  const { currency, setCurrency, symbol } = useCurrency()
 
   const handleCheckout = async (plan: string) => {
     if (!serverId) return
@@ -46,7 +60,7 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
       const res = await fetch("/api/subscription/server-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guildId: serverId, plan }),
+        body: JSON.stringify({ guildId: serverId, plan, currency }),
       })
       const data = await res.json()
       if (!res.ok) {
@@ -62,7 +76,7 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
       setLoading(null)
     }
   }
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
   return (
     <>
@@ -202,11 +216,35 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
               </div>
             </div>
 
-            {/* --- AI-MODIFIED (2026-03-22) --- */}
-            {/* Purpose: Stripe subscription checkout buttons replacing gem/donate CTA */}
+            {/* --- AI-MODIFIED (2026-03-24) --- */}
+            {/* Purpose: Currency toggle + dynamic pricing for dual-currency checkout */}
             <div className="mt-8">
+              <div className="flex items-center justify-center mb-4">
+                <div className="inline-flex rounded-full bg-gray-800 border border-gray-700 p-0.5">
+                  <button
+                    onClick={() => setCurrency("eur")}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      currency === "eur"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    &euro; EUR
+                  </button>
+                  <button
+                    onClick={() => setCurrency("usd")}
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                      currency === "usd"
+                        ? "bg-amber-500/20 text-amber-300"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    $ USD
+                  </button>
+                </div>
+              </div>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                {PLANS.map((plan) => (
+                {PLAN_IDS.map((plan) => (
                   <button
                     key={plan.id}
                     onClick={() => handleCheckout(plan.id)}
@@ -214,7 +252,7 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
                     className="pg-btn-shimmer relative inline-flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white rounded-xl text-sm font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Crown size={16} />
-                    {loading === plan.id ? "Redirecting..." : `${plan.price}${plan.period}`}
+                    {loading === plan.id ? "Redirecting..." : `${symbol}${getServerPremiumPrice(plan.id, currency)}${plan.period}`}
                     {plan.badge && (
                       <span className="ml-1 px-2 py-0.5 rounded-full bg-white/20 text-[10px] font-bold uppercase tracking-wide">
                         {plan.badge}

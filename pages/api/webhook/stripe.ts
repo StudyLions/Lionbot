@@ -23,6 +23,15 @@ const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Format money amounts with correct currency symbol
+function formatMoney(amountCents: number | null | undefined, currency?: string | null): string {
+  if (amountCents == null) return "unknown";
+  const sym = currency === "eur" ? "\u20ac" : "$";
+  return `${sym}${(amountCents / 100).toFixed(2)}`;
+}
+// --- END AI-MODIFIED ---
+
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Monthly gem allowance amounts per subscription tier
 const MONTHLY_GEM_ALLOWANCE: Record<string, number> = {
@@ -167,7 +176,7 @@ async function handleServerPremiumCheckout(session: Stripe.Checkout.Session) {
 
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Stripe audit log for server premium checkout
-  const spAmount = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : "unknown";
+  const spAmount = formatMoney(session.amount_total, session.currency);
   sendStripeAuditLog({
     eventType: "checkout.session.completed",
     title: "Server Premium Checkout",
@@ -342,7 +351,7 @@ async function handleServerPremiumInvoice(invoice: Stripe.Invoice) {
 
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Stripe audit log for server premium invoice renewal
-  const spInvAmount = invoice.amount_paid != null ? `$${(invoice.amount_paid / 100).toFixed(2)}` : "unknown";
+  const spInvAmount = formatMoney(invoice.amount_paid, invoice.currency);
   sendStripeAuditLog({
     eventType: "invoice.payment_succeeded",
     title: "Invoice Paid (Server Premium)",
@@ -390,9 +399,7 @@ async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
     return;
   }
 
-  const amountPaid = session.amount_total
-    ? `$${(session.amount_total / 100).toFixed(2)}`
-    : "unknown";
+  const amountPaid = formatMoney(session.amount_total, session.currency);
 
   await prisma.$transaction(async (tx) => {
     await tx.user_config.upsert({
@@ -710,7 +717,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     note: `Subscription: ${subscriptionId}`,
     reference,
   });
-  const invAmount = invoice.amount_paid != null ? `$${(invoice.amount_paid / 100).toFixed(2)}` : "unknown";
+  const invAmount = formatMoney(invoice.amount_paid, invoice.currency);
   sendStripeAuditLog({
     eventType: "invoice.payment_succeeded",
     title: "Invoice Paid (LionHeart)",
@@ -840,7 +847,7 @@ export default async function handler(
           // --- AI-MODIFIED (2026-03-23) ---
           // Purpose: Stripe audit log for LionHeart subscription checkout
           const lhTier = session.metadata?.tier || "unknown";
-          const lhAmount = session.amount_total ? `$${(session.amount_total / 100).toFixed(2)}` : "unknown";
+          const lhAmount = formatMoney(session.amount_total, session.currency);
           sendStripeAuditLog({
             eventType: "checkout.session.completed",
             title: "LionHeart Subscription Checkout",

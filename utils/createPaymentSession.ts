@@ -1,11 +1,20 @@
 import { loadStripe } from "@stripe/stripe-js";
 import { IBasket } from "@/models/donation";
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Import Currency type for dual-currency support
+import type { Currency } from "@/hooks/useCurrency";
+// --- END AI-MODIFIED ---
 
 const stripePromise = loadStripe(`${process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}`);
 
-// --- AI-MODIFIED (2026-03-13) ---
-// Purpose: added response validation and error handling before redirecting to Stripe
-const createPaymentSession = async (id: string, quantity: number) => {
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Add currency parameter to pass selected currency to checkout API
+// What the new code does better: supports EUR/USD currency selection
+// --- Original code (commented out for rollback) ---
+// const createPaymentSession = async (id: string, quantity: number) => {
+// --- End original code ---
+const createPaymentSession = async (id: string, quantity: number, currency: Currency = "eur") => {
+// --- END AI-REPLACED ---
   let basket: IBasket = {
     id: id,
     quantity: quantity,
@@ -17,7 +26,7 @@ const createPaymentSession = async (id: string, quantity: number) => {
     headers: {
       "content-type": "application/json",
     },
-    body: JSON.stringify({ donationID: basket.id, quantity: basket.quantity }),
+    body: JSON.stringify({ donationID: basket.id, quantity: basket.quantity, currency }),
   });
 
   if (!res.ok) {

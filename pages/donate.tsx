@@ -45,7 +45,14 @@ import {
   FREE_TIER,
   TIER_ORDER,
   SubscriptionTier,
+  SERVER_PREMIUM_PLANS,
+  getSubscriptionPrice,
+  getServerPremiumPrice,
 } from "@/constants/SubscriptionData";
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Import currency hook for EUR/USD toggle
+import { useCurrency, type Currency } from "@/hooks/useCurrency";
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: LionGems icon from blob storage, replacing generic lucide Diamond
@@ -74,25 +81,33 @@ interface SubscriptionStatus {
   stripeCustomerId: string | null;
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Accept currency/symbol props for dual-currency checkout
 function PurchaseModal({
   item,
   onClose,
+  currency,
+  symbol,
 }: {
   item: (typeof DonationsData)[0];
   onClose: () => void;
+  currency: Currency;
+  symbol: string;
 }) {
   const { data: session } = useSession();
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(false);
+  const unitPrice = currency === "usd" ? item.amount_usd : item.amount;
 
   const handlePurchase = async () => {
     setLoading(true);
     try {
-      await createPaymentSession(item.id, quantity);
+      await createPaymentSession(item.id, quantity, currency);
     } catch {
       setLoading(false);
     }
   };
+// --- END AI-MODIFIED ---
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -148,7 +163,7 @@ function PurchaseModal({
                 +
               </button>
               <span className="ml-auto text-2xl font-bold text-white">
-                &euro;{(item.amount * quantity).toFixed(2)}
+                {symbol}{(unitPrice * quantity).toFixed(2)}
               </span>
             </div>
           </div>
@@ -177,15 +192,20 @@ function PurchaseModal({
   );
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Accept symbol prop for currency display
 function SubscriptionManagementBanner({
   subStatus,
   onManage,
   portalLoading,
+  symbol,
 }: {
   subStatus: SubscriptionStatus;
   onManage: () => void;
   portalLoading: boolean;
-}) {
+  symbol: string;
+})
+// --- END AI-MODIFIED --- {
   const isActive =
     subStatus.status === "ACTIVE" || subStatus.status === "CANCELLING";
   const isCancelling = subStatus.status === "CANCELLING" || subStatus.cancelAtPeriodEnd;
@@ -312,10 +332,7 @@ function SubscriptionManagementBanner({
                 </span>
               </h3>
               <p className="text-sm text-gray-400 mt-0.5">
-                {/* --- AI-MODIFIED (2026-03-22) --- */}
-                {/* Purpose: Display EUR instead of USD */}
-                &euro;{subStatus.tierPrice}/month
-                {/* --- END AI-MODIFIED --- */}
+                {symbol}{subStatus.tierPrice}/month
                 {periodEnd && (
                   <>
                     {" · "}Next billing:{" "}
@@ -351,6 +368,8 @@ function SubscriptionManagementBanner({
   return null;
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Accept currency/symbol props for dual-currency pricing display
 function SubscriptionCard({
   tierId,
   subStatus,
@@ -359,6 +378,8 @@ function SubscriptionCard({
   featured,
   subscribing,
   portalLoading,
+  currency,
+  symbol,
 }: {
   tierId: SubscriptionTier;
   subStatus: SubscriptionStatus | null;
@@ -367,7 +388,10 @@ function SubscriptionCard({
   featured?: boolean;
   subscribing: boolean;
   portalLoading: boolean;
-}) {
+  currency: Currency;
+  symbol: string;
+})
+// --- END AI-MODIFIED --- {
   const tier = SUBSCRIPTION_TIERS[tierId];
   const { data: session } = useSession();
 
@@ -512,11 +536,8 @@ function SubscriptionCard({
         <span className="text-3xl">{tierIcons[tierId]}</span>
         <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
         <div className="mt-3">
-          {/* --- AI-MODIFIED (2026-03-22) --- */}
-          {/* Purpose: Display EUR instead of USD for subscription pricing */}
-          <span className="text-4xl font-black text-white">&euro;{tier.price}</span>
+          <span className="text-4xl font-black text-white">{symbol}{getSubscriptionPrice(tierId, currency)}</span>
           <span className="text-gray-400 text-sm ml-0.5">/month</span>
-          {/* --- END AI-MODIFIED --- */}
         </div>
       </div>
 
@@ -835,8 +856,11 @@ interface AdminServer {
   iconUrl: string | null
 }
 
-function ServerPremiumShowcase() {
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Accept currency/symbol props for dual-currency pricing
+function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbol: string }) {
   const { data: session } = useSession();
+// --- END AI-MODIFIED ---
   const [activeSkin, setActiveSkin] = useState(0);
   const [imagesReady, setImagesReady] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
@@ -900,6 +924,8 @@ function ServerPremiumShowcase() {
     // --- END AI-MODIFIED ---
   }, [session]);
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Pass currency to server premium checkout
   const handleServerCheckout = async (plan: string) => {
     if (!selectedServer) return;
     setCheckingOut(true);
@@ -907,8 +933,9 @@ function ServerPremiumShowcase() {
       const res = await fetch("/api/subscription/server-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guildId: selectedServer, plan }),
+        body: JSON.stringify({ guildId: selectedServer, plan, currency }),
       });
+  // --- END AI-MODIFIED ---
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "Failed to start checkout");
@@ -1165,10 +1192,10 @@ function ServerPremiumShowcase() {
 
               <div className="border-t border-gray-700 pt-5 mt-5">
                 <div className="flex items-baseline gap-3 mb-1">
-                  <span className="text-3xl font-black text-white">&euro;9.99</span>
+                  <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
                   <span className="text-sm text-gray-500">/month</span>
                   <span className="text-gray-600 mx-1">or</span>
-                  <span className="text-3xl font-black text-white">&euro;99.99</span>
+                  <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("YEARLY", currency)}</span>
                   <span className="text-sm text-gray-500">/year</span>
                 </div>
                 <p className="text-xs text-green-400/80 mb-4">Yearly saves 17% &mdash; 2 months free</p>
@@ -1329,6 +1356,10 @@ function ServerPremiumShowcase() {
 export default function Donate() {
   const { t } = useTranslation("donate");
   const { data: session } = useSession();
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Add currency hook for EUR/USD toggle
+  const { currency, setCurrency, symbol } = useCurrency();
+  // --- END AI-MODIFIED ---
   const [selectedItem, setSelectedItem] = useState<
     (typeof DonationsData)[0] | null
   >(null);
@@ -1379,6 +1410,8 @@ export default function Donate() {
     }
   }, [fetchSubscriptionStatus]);
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Pass currency to subscription checkout
   const handleSubscribe = useCallback(
     async (tier: SubscriptionTier) => {
       if (subscribing) return;
@@ -1388,8 +1421,9 @@ export default function Donate() {
         const res = await fetch("/api/subscription/checkout", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ tier }),
+          body: JSON.stringify({ tier, currency }),
         });
+  // --- END AI-MODIFIED ---
         const data = await res.json();
         if (data.url) {
           window.location.href = data.url;
@@ -1475,6 +1509,34 @@ export default function Donate() {
                   Buy LionGems
                 </a>
               </div>
+
+              {/* --- AI-MODIFIED (2026-03-24) --- */}
+              {/* Purpose: Currency toggle (EUR / USD) */}
+              <div className="flex items-center justify-center mt-6">
+                <div className="inline-flex rounded-full bg-gray-800 border border-gray-700 p-1">
+                  <button
+                    onClick={() => setCurrency("eur")}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      currency === "eur"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    &euro; EUR
+                  </button>
+                  <button
+                    onClick={() => setCurrency("usd")}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+                      currency === "usd"
+                        ? "bg-blue-600 text-white shadow-md"
+                        : "text-gray-400 hover:text-white"
+                    }`}
+                  >
+                    $ USD
+                  </button>
+                </div>
+              </div>
+              {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
         </section>
@@ -1532,6 +1594,7 @@ export default function Donate() {
                   subStatus={subStatus}
                   onManage={handleManageSubscription}
                   portalLoading={portalLoading}
+                  symbol={symbol}
                 />
               </div>
             )}
@@ -1547,6 +1610,8 @@ export default function Donate() {
                   featured={tierId === "LIONHEART_PLUS"}
                   subscribing={subscribing}
                   portalLoading={portalLoading}
+                  currency={currency}
+                  symbol={symbol}
                 />
               ))}
             </div>
@@ -1574,7 +1639,7 @@ export default function Donate() {
           </div>
         </section>
 
-        <ServerPremiumShowcase />
+        <ServerPremiumShowcase currency={currency} symbol={symbol} />
 
         {/* Gem Packages */}
         <section
@@ -1621,7 +1686,7 @@ export default function Donate() {
                       </div>
                     )}
                     <div className="mt-2 text-lg font-semibold text-white">
-                      &euro;{item.amount}
+                      {symbol}{currency === "usd" ? item.amount_usd : item.amount}
                     </div>
                   </div>
                 </button>
@@ -1656,6 +1721,8 @@ export default function Donate() {
         <PurchaseModal
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
+          currency={currency}
+          symbol={symbol}
         />
       )}
     </Layout>
