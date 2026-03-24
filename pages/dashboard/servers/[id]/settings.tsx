@@ -833,7 +833,9 @@ export default function ServerSettings() {
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
         {/* --- AI-REPLACED (2026-03-24) ---
-            Reason: Migrate to DashboardShell (3-column: ServerNav as nav, SettingsNav inside children)
+            Reason: Migrate to DashboardShell. Settings page uses 3-column layout
+            (ServerNav + SettingsNav + content), so SettingsNav and content are wrapped
+            in a flex row inside the shell's main area. Uses wide prop for extra space.
             --- Original code (commented out for rollback) ---
             <div className="min-h-screen bg-background pt-6 pb-20 px-4">
               <div className="max-w-6xl mx-auto flex gap-8">
@@ -841,12 +843,14 @@ export default function ServerSettings() {
                 <SettingsNav sections={navSections} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
                 <div className="flex-1 min-w-0">
             --- End original code --- */}
-        <DashboardShell nav={<ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />}>
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />} wide className="!max-w-none !space-y-0">
+            <div className="flex gap-6">
             <SettingsNav
               sections={navSections}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
+            <div className="flex-1 min-w-0 space-y-6">
         {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Server Settings"
@@ -1405,6 +1409,8 @@ export default function ServerSettings() {
                   : listsHaveChanges ? "List settings changed" : undefined}
               />
         {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+            </div>{/* end content column */}
+            </div>{/* end flex wrapper for SettingsNav + content */}
         </DashboardShell>
         {/* --- END AI-REPLACED --- */}
 
