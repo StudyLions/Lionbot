@@ -4,10 +4,12 @@
 // Purpose: Tutorial Step 5 -- Farm system with live FarmScene
 //          demo, growth stage timeline, and planting explanation
 // ============================================================
+import { useState } from "react"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { getFarmBackgroundUrl } from "@/utils/petAssets"
+import FarmScene from "@/components/pet/farm/FarmScene"
+import { MOCK_FARM_PLOTS } from "../tutorialMockData"
 import Link from "next/link"
 import { ArrowRight, Droplets, Sprout, Sun, Coins } from "lucide-react"
 
@@ -19,6 +21,8 @@ const GROWTH_STAGES = [
 ]
 
 export default function StepFarm() {
+  const [selectedPlot, setSelectedPlot] = useState<number | null>(null)
+
   return (
     <div className="space-y-6">
       <PixelCard className="p-5" corners>
@@ -32,18 +36,17 @@ export default function StepFarm() {
         <div className="flex justify-center">
           <div style={{ width: 340, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={340}>
-              <img
-                src={getFarmBackgroundUrl(false)}
-                alt="Farm scene"
-                className="w-full h-full object-cover"
-                style={{ imageRendering: "pixelated" }}
+              <FarmScene
+                plots={MOCK_FARM_PLOTS}
+                selectedPlot={selectedPlot}
+                onSelectPlot={setSelectedPlot}
               />
             </GameboyFrame>
           </div>
         </div>
 
         <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] text-center mt-2">
-          ↑ Your farm has 15 plots where you can plant seeds and grow crops.
+          ↑ Try clicking on the plots! Some have plants growing, one is ready to harvest, and one died from lack of water.
         </p>
       </PixelCard>
 
