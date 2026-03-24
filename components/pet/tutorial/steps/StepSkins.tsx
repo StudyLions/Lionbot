@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
 import { MOCK_SKINS } from "../tutorialMockData"
-import { getRoomPreviewUrl } from "@/utils/petAssets"
+import { getRoomLayerVariantUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
@@ -44,12 +44,20 @@ export default function StepSkins() {
               <div className="flex justify-center">
                 <div style={{ width: 200, maxWidth: "100%" }}>
                   <GameboyFrame isFullscreen={false} skinAssetPath={skin.assetPath} width={200}>
-                    <img
-                      src={getRoomPreviewUrl("rooms/castle")}
-                      alt="Room preview"
-                      className="w-full h-full object-cover"
-                      style={{ imageRendering: "pixelated" }}
-                    />
+                    <div className="relative w-full h-full">
+                      <img
+                        src={getRoomLayerVariantUrl("rooms/castle", "wall", 1)}
+                        alt="Room preview"
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                      <img
+                        src={getRoomLayerVariantUrl("rooms/castle", "floor", 1)}
+                        alt=""
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ imageRendering: "pixelated" }}
+                      />
+                    </div>
                   </GameboyFrame>
                 </div>
               </div>

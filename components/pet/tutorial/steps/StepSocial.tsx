@@ -7,7 +7,7 @@
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { getRoomPreviewUrl } from "@/utils/petAssets"
+import { getRoomLayerVariantUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Eye, Gift, Sprout, Search, UserPlus } from "lucide-react"
 
@@ -33,18 +33,26 @@ export default function StepSocial() {
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div style={{ width: 200, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={200}>
-              <img
-                src={getRoomPreviewUrl("rooms/garden")}
-                alt="Friend's room"
-                className="w-full h-full object-cover"
-                style={{ imageRendering: "pixelated" }}
-              />
+              <div className="relative w-full h-full">
+                <img
+                  src={getRoomLayerVariantUrl("rooms/beach", "wall", 1)}
+                  alt="Friend's room"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated" }}
+                />
+                <img
+                  src={getRoomLayerVariantUrl("rooms/beach", "floor", 1)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              </div>
             </GameboyFrame>
           </div>
           <div className="flex-1 space-y-2">
             <div className="bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] rounded p-2">
               <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">🦁 StudyBuddy&apos;s Room</p>
-              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Level 12 · Garden Theme</p>
+              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Level 12 · Beach Theme</p>
             </div>
             <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed">
               Visiting is free and doesn&apos;t change anything in their room. Just looking!

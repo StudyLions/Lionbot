@@ -87,9 +87,11 @@ export const MOCK_ROOM = {
 
 export const ROOM_THEMES = [
   { name: "Castle", prefix: "rooms/castle" },
-  { name: "Garden", prefix: "rooms/garden" },
-  { name: "Space", prefix: "rooms/space" },
-  { name: "Underwater", prefix: "rooms/underwater" },
+  { name: "Library", prefix: "rooms/library" },
+  { name: "Beach", prefix: "rooms/beach" },
+  { name: "Aquarium", prefix: "rooms/aquarium" },
+  { name: "Volcano", prefix: "rooms/volcano" },
+  { name: "Savannah", prefix: "rooms/savannah" },
 ]
 
 // --------------- Gameboy skins ---------------

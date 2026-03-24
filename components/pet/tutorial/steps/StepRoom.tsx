@@ -9,7 +9,7 @@ import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
 import { ROOM_THEMES } from "../tutorialMockData"
-import { getRoomPreviewUrl } from "@/utils/petAssets"
+import { getRoomLayerVariantUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Move, Layers, ShoppingBag } from "lucide-react"
 
@@ -27,12 +27,20 @@ export default function StepRoom() {
         <div className="flex justify-center">
           <div className="relative" style={{ width: 340, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={340}>
-              <img
-                src={getRoomPreviewUrl("rooms/castle")}
-                alt="Example room"
-                className="w-full h-full object-cover"
-                style={{ imageRendering: "pixelated" }}
-              />
+              <div className="relative w-full h-full">
+                <img
+                  src={getRoomLayerVariantUrl("rooms/castle", "wall", 1)}
+                  alt="Example room"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated" }}
+                />
+                <img
+                  src={getRoomLayerVariantUrl("rooms/castle", "floor", 1)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              </div>
             </GameboyFrame>
 
             <motion.div
@@ -101,14 +109,21 @@ export default function StepRoom() {
         <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed mb-3">
           There are multiple room themes to unlock. Each one completely changes how your room looks.
         </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-6 gap-3">
           {ROOM_THEMES.map((theme) => (
             <div key={theme.name} className="text-center">
-              <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] rounded overflow-hidden mb-1">
+              <div className="relative w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] rounded overflow-hidden mb-1">
                 <img
-                  src={getRoomPreviewUrl(theme.prefix)}
+                  src={getRoomLayerVariantUrl(theme.prefix, "wall", 1)}
                   alt={theme.name}
-                  className="w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated" }}
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
+                />
+                <img
+                  src={getRoomLayerVariantUrl(theme.prefix, "floor", 1)}
+                  alt=""
+                  className="absolute inset-0 w-full h-full object-cover"
                   style={{ imageRendering: "pixelated" }}
                   onError={(e) => { (e.target as HTMLImageElement).style.display = "none" }}
                 />
