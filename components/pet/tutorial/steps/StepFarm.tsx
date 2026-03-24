@@ -13,7 +13,10 @@ import { MOCK_FARM_PLOTS } from "../tutorialMockData"
 import Link from "next/link"
 import { ArrowRight, Droplets, Sprout, Sun, Coins } from "lucide-react"
 
-const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), { ssr: false })
+const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
+})
 
 const GROWTH_STAGES = [
   { label: "Plant", icon: <Sprout className="w-5 h-5 text-emerald-400" />, description: "Choose a seed and plant it in an empty plot" },

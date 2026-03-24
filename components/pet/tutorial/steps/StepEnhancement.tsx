@@ -18,11 +18,15 @@ import type { GlowTier } from "@/utils/gameConstants"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
-const AnvilScene = dynamic(() => import("@/components/pet/enhancement/AnvilScene"), { ssr: false })
+const AnvilScene = dynamic(() => import("@/components/pet/enhancement/AnvilScene"), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
+})
 
 export default function StepEnhancement() {
-  const beforeImg = getItemImageUrl(MOCK_ENHANCEMENT.before.assetPath, "SHIRT")
-  const afterImg = getItemImageUrl(MOCK_ENHANCEMENT.after.assetPath, "SHIRT")
+  const beforeImg = getItemImageUrl(MOCK_ENHANCEMENT.before.assetPath, MOCK_ENHANCEMENT.before.rarity === "SCROLL" ? "SCROLL" : "SHIRT")
+  const afterImg = getItemImageUrl(MOCK_ENHANCEMENT.after.assetPath, MOCK_ENHANCEMENT.after.rarity === "SCROLL" ? "SCROLL" : "SHIRT")
+  const scrollImg = getItemImageUrl(MOCK_ENHANCEMENT.scroll.assetPath, "SCROLL")
 
   return (
     <div className="space-y-6">
@@ -47,7 +51,7 @@ export default function StepEnhancement() {
               phase="charging"
               intensity="medium"
               equipImage={beforeImg ?? undefined}
-              scrollImage={getItemImageUrl(MOCK_ENHANCEMENT.scroll.assetPath, "SCROLL") ?? undefined}
+              scrollImage={scrollImg ?? undefined}
               equipName={MOCK_ENHANCEMENT.before.name}
             />
           </div>

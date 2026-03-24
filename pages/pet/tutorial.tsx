@@ -6,11 +6,13 @@
 //          persistence, keyboard nav, and dismiss logic
 // ============================================================
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback } from "react"
+import { Component, useEffect, useState, useCallback } from "react"
+import type { ReactNode, ErrorInfo } from "react"
 import { AnimatePresence } from "framer-motion"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { NextSeo } from "next-seo"
+import { RefreshCw } from "lucide-react"
 
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import {
@@ -33,6 +35,56 @@ import StepMarketplace from "@/components/pet/tutorial/steps/StepMarketplace"
 import StepSocial from "@/components/pet/tutorial/steps/StepSocial"
 import StepFamily from "@/components/pet/tutorial/steps/StepFamily"
 import StepComplete from "@/components/pet/tutorial/steps/StepComplete"
+
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Error boundary to catch and gracefully display step rendering crashes
+//          instead of crashing the entire tutorial page
+interface StepErrorBoundaryProps { children: ReactNode; stepName: string; onSkip?: () => void }
+interface StepErrorBoundaryState { hasError: boolean; error?: Error }
+class StepErrorBoundary extends Component<StepErrorBoundaryProps, StepErrorBoundaryState> {
+  constructor(props: StepErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
+  }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[Tutorial] Step "${this.props.stepName}" crashed:`, error, info.componentStack)
+  }
+  componentDidUpdate(prevProps: StepErrorBoundaryProps) {
+    if (prevProps.stepName !== this.props.stepName) {
+      this.setState({ hasError: false, error: undefined })
+    }
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 text-center">
+          <div className="text-4xl mb-4">😵</div>
+          <h3 className="font-pixel text-lg text-[var(--pet-text,#e2e8f0)] mb-2">
+            Oops! This step had an issue
+          </h3>
+          <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] mb-4 max-w-sm">
+            Something went wrong loading the &quot;{this.props.stepName}&quot; step.
+            You can skip it and continue the tutorial.
+          </p>
+          {this.props.onSkip && (
+            <button
+              onClick={this.props.onSkip}
+              className="flex items-center gap-2 px-5 py-2 font-pixel text-[12px] bg-[var(--pet-gold,#f0c040)] text-[var(--pet-bg,#0a0e1a)] rounded transition-colors hover:opacity-80"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Skip to Next Step
+            </button>
+          )}
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+// --- END AI-MODIFIED ---
 
 const TOTAL_STEPS = TUTORIAL_STEPS.length
 const LS_STEP_KEY = "pet-tutorial-step"
@@ -151,22 +203,28 @@ function PetTutorialInner() {
   const pose = STEP_POSES[step] || "pointing"
 
   const renderStep = () => {
+    const stepName = TUTORIAL_STEPS[step]?.label || "Unknown"
+
     switch (step) {
       case 0:
         return (
-          <StepWelcome
-            key="welcome"
-            onNext={() => goTo(1)}
-            onSkipAll={handleSkipAll}
-          />
+          <StepErrorBoundary key="eb-welcome" stepName={stepName} onSkip={() => goTo(1)}>
+            <StepWelcome
+              key="welcome"
+              onNext={() => goTo(1)}
+              onSkipAll={handleSkipAll}
+            />
+          </StepErrorBoundary>
         )
       case 11:
         return (
-          <StepComplete
-            key="complete"
-            onFinish={handleFinish}
-            onRetake={handleRetake}
-          />
+          <StepErrorBoundary key="eb-complete" stepName={stepName}>
+            <StepComplete
+              key="complete"
+              onFinish={handleFinish}
+              onRetake={handleRetake}
+            />
+          </StepErrorBoundary>
         )
       default: {
         const stepContent: Record<number, { title: string; subtitle?: string; children: React.ReactNode }> = {
@@ -186,22 +244,24 @@ function PetTutorialInner() {
         if (!s) return null
 
         return (
-          <PetStepLayout
-            key={stepId}
-            title={s.title}
-            subtitle={s.subtitle}
-            leoPose={pose}
-            leoMessage={getPetLeoMessage(stepId, "intro")}
-            leoHintMessage={getPetLeoMessage(stepId, "hint")}
-            onBack={step > 0 ? () => goTo(step - 1) : undefined}
-            onNext={markCompleteAndNext}
-            onSkip={skipAndNext}
-            showBack={step > 0}
-            showSkip
-            direction={direction}
-          >
-            {s.children}
-          </PetStepLayout>
+          <StepErrorBoundary key={`eb-${stepId}`} stepName={stepName} onSkip={skipAndNext}>
+            <PetStepLayout
+              key={stepId}
+              title={s.title}
+              subtitle={s.subtitle}
+              leoPose={pose}
+              leoMessage={getPetLeoMessage(stepId, "intro")}
+              leoHintMessage={getPetLeoMessage(stepId, "hint")}
+              onBack={step > 0 ? () => goTo(step - 1) : undefined}
+              onNext={markCompleteAndNext}
+              onSkip={skipAndNext}
+              showBack={step > 0}
+              showSkip
+              direction={direction}
+            >
+              {s.children}
+            </PetStepLayout>
+          </StepErrorBoundary>
         )
       }
     }

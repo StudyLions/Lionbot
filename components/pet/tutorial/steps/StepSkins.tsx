@@ -14,7 +14,10 @@ import { mergeLayout } from "@/utils/roomConstraints"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), { ssr: false })
+const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
+})
 
 export default function StepSkins() {
   const layout = mergeLayout(MOCK_ROOM.layout)

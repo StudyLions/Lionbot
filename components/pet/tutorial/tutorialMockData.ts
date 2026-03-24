@@ -72,13 +72,13 @@ export const MOCK_EQUIPMENT: Record<string, { name: string; assetPath: string; c
 export const MOCK_ROOM = {
   roomPrefix: "rooms/castle",
   furniture: {
-    wall: "wall_1",
-    floor: "floor_1",
-    bed: "bed_1",
-    chair: "chair_1",
-    table: "desk_1",
-    lamp: "lamp_1",
-    mat: "carpet_1",
+    wall: "rooms/castle/wall_1.png",
+    floor: "rooms/castle/floor_1.png",
+    bed: "rooms/castle/bed_1.png",
+    chair: "rooms/castle/chair_1.png",
+    table: "rooms/castle/desk_1.png",
+    lamp: "rooms/castle/lamp_1.png",
+    mat: "rooms/castle/carpet_1.png",
   } as Record<string, string>,
   layout: {
     ...DEFAULT_LAYOUT,

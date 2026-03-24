@@ -12,11 +12,14 @@ import { mergeLayout } from "@/utils/roomConstraints"
 import Link from "next/link"
 import { ArrowRight, Eye, Gift, Sprout, Search, UserPlus } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), { ssr: false })
+const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
+})
 
 const FRIEND_ROOM = {
   roomPrefix: "rooms/garden",
-  furniture: { wall: "wall_1", floor: "floor_1" },
+  furniture: { wall: "rooms/garden/wall_1.png", floor: "rooms/garden/floor_1.png" },
 }
 
 export default function StepSocial() {

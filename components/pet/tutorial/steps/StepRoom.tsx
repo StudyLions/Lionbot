@@ -15,7 +15,10 @@ import { getRoomPreviewUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Move, Layers, ShoppingBag } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), { ssr: false })
+const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
+  ssr: false,
+  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
+})
 
 export default function StepRoom() {
   const layout = mergeLayout(MOCK_ROOM.layout)
