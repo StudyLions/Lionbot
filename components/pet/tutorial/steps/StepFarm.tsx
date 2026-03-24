@@ -4,19 +4,12 @@
 // Purpose: Tutorial Step 5 -- Farm system with live FarmScene
 //          demo, growth stage timeline, and planting explanation
 // ============================================================
-import dynamic from "next/dynamic"
-import { useState } from "react"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { MOCK_FARM_PLOTS } from "../tutorialMockData"
+import { getFarmBackgroundUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Droplets, Sprout, Sun, Coins } from "lucide-react"
-
-const FarmScene = dynamic(() => import("@/components/pet/farm/FarmScene"), {
-  ssr: false,
-  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
-})
 
 const GROWTH_STAGES = [
   { label: "Plant", icon: <Sprout className="w-5 h-5 text-emerald-400" />, description: "Choose a seed and plant it in an empty plot" },
@@ -26,8 +19,6 @@ const GROWTH_STAGES = [
 ]
 
 export default function StepFarm() {
-  const [selectedPlot, setSelectedPlot] = useState<number | null>(null)
-
   return (
     <div className="space-y-6">
       <PixelCard className="p-5" corners>
@@ -41,17 +32,18 @@ export default function StepFarm() {
         <div className="flex justify-center">
           <div style={{ width: 340, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={340}>
-              <FarmScene
-                plots={MOCK_FARM_PLOTS}
-                selectedPlot={selectedPlot}
-                onSelectPlot={setSelectedPlot}
+              <img
+                src={getFarmBackgroundUrl(false)}
+                alt="Farm scene"
+                className="w-full h-full object-cover"
+                style={{ imageRendering: "pixelated" }}
               />
             </GameboyFrame>
           </div>
         </div>
 
         <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] text-center mt-2">
-          ↑ Try tapping the plots! Each one is at a different growth stage.
+          ↑ Your farm has 15 plots where you can plant seeds and grow crops.
         </p>
       </PixelCard>
 

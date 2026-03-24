@@ -45,6 +45,7 @@ const features = [
 
 function AnimatedPetDemo() {
   const [frame, setFrame] = useState(0)
+  const [loadError, setLoadError] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const imagesLoaded = useRef(false)
   const roomImgs = useRef<HTMLImageElement[]>([])
@@ -86,36 +87,51 @@ function AnimatedPetDemo() {
       expressionImgs.current = imgs.slice(idx, idx + 4)
       idx += 4
       gbFrame.current = imgs[idx]
-    })
+    }).catch(() => setLoadError(true))
   }, [])
 
   useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext("2d")
-    if (!ctx) return
-    ctx.imageSmoothingEnabled = false
-    ctx.clearRect(0, 0, GB_W, GB_H)
+    try {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return
+      ctx.imageSmoothingEnabled = false
+      ctx.clearRect(0, 0, GB_W, GB_H)
 
-    for (const img of roomImgs.current) {
-      if (img.complete && img.naturalWidth > 0)
-        ctx.drawImage(img, GB_SCREEN_L, GB_SCREEN_T, GB_SCREEN_S, GB_SCREEN_S)
+      for (const img of roomImgs.current) {
+        if (img.complete && img.naturalWidth > 0)
+          ctx.drawImage(img, GB_SCREEN_L, GB_SCREEN_T, GB_SCREEN_S, GB_SCREEN_S)
+      }
+
+      const petSize = 80
+      const petX = GB_SCREEN_L + (GB_SCREEN_S - petSize) / 2
+      const petY = GB_SCREEN_T + GB_SCREEN_S - petSize - 15
+      for (const part of LION_PARTS) {
+        const partImgs = lionImgs.current[part]
+        if (partImgs?.[frame]?.complete && partImgs[frame].naturalWidth > 0)
+          ctx.drawImage(partImgs[frame], petX, petY, petSize, petSize)
+      }
+      if (expressionImgs.current[frame]?.complete && expressionImgs.current[frame].naturalWidth > 0)
+        ctx.drawImage(expressionImgs.current[frame], petX, petY, petSize, petSize)
+
+      if (gbFrame.current?.complete && gbFrame.current.naturalWidth > 0)
+        ctx.drawImage(gbFrame.current, 0, 0, GB_W, GB_H)
+    } catch {
+      setLoadError(true)
     }
-
-    const petSize = 80
-    const petX = GB_SCREEN_L + (GB_SCREEN_S - petSize) / 2
-    const petY = GB_SCREEN_T + GB_SCREEN_S - petSize - 15
-    for (const part of LION_PARTS) {
-      const partImgs = lionImgs.current[part]
-      if (partImgs?.[frame]?.complete && partImgs[frame].naturalWidth > 0)
-        ctx.drawImage(partImgs[frame], petX, petY, petSize, petSize)
-    }
-    if (expressionImgs.current[frame]?.complete && expressionImgs.current[frame].naturalWidth > 0)
-      ctx.drawImage(expressionImgs.current[frame], petX, petY, petSize, petSize)
-
-    if (gbFrame.current?.complete && gbFrame.current.naturalWidth > 0)
-      ctx.drawImage(gbFrame.current, 0, 0, GB_W, GB_H)
   }, [frame])
+
+  if (loadError) {
+    return (
+      <div className="relative flex items-center justify-center bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] rounded" style={{ width: 280, maxWidth: "100%", aspectRatio: `${GB_W} / ${GB_H}` }}>
+        <div className="text-center p-4">
+          <div className="text-4xl mb-2">🦁</div>
+          <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">Your pet lives here!</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative" style={{ width: 280, maxWidth: "100%" }}>

@@ -5,7 +5,6 @@
 //          demo, before/after glow comparison, and success rate
 //          explanation
 // ============================================================
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBar from "@/components/pet/ui/PixelBar"
@@ -16,12 +15,7 @@ import { MOCK_ENHANCEMENT, GLOW_TIER_SHOWCASE } from "../tutorialMockData"
 import { GLOW_COLORS } from "@/utils/gameConstants"
 import type { GlowTier } from "@/utils/gameConstants"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
-
-const AnvilScene = dynamic(() => import("@/components/pet/enhancement/AnvilScene"), {
-  ssr: false,
-  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
-})
+import { ArrowRight, Hammer } from "lucide-react"
 
 export default function StepEnhancement() {
   const beforeImg = getItemImageUrl(MOCK_ENHANCEMENT.before.assetPath, MOCK_ENHANCEMENT.before.rarity === "SCROLL" ? "SCROLL" : "SHIRT")
@@ -46,14 +40,23 @@ export default function StepEnhancement() {
           This is where enhancement happens. Place your item and scroll on the anvil, then strike.
         </p>
         <div className="flex justify-center">
-          <div className="w-full max-w-xs aspect-square">
-            <AnvilScene
-              phase="charging"
-              intensity="medium"
-              equipImage={beforeImg ?? undefined}
-              scrollImage={scrollImg ?? undefined}
-              equipName={MOCK_ENHANCEMENT.before.name}
-            />
+          <div className="flex items-center gap-6 p-6 bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] rounded">
+            <div className="text-center">
+              <div className="w-16 h-16 flex items-center justify-center bg-[var(--pet-card,#0f1628)] border border-[var(--pet-border,#2a3a5c)] rounded mb-1 p-2">
+                {beforeImg && <CroppedItemImage src={beforeImg} alt="Equipment" className="w-full h-full object-contain" />}
+              </div>
+              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Equipment</p>
+            </div>
+            <div className="text-center">
+              <Hammer className="w-8 h-8 text-[var(--pet-gold,#f0c040)] mb-1" />
+              <p className="font-pixel text-[9px] text-[var(--pet-gold,#f0c040)]">+</p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 flex items-center justify-center bg-[var(--pet-card,#0f1628)] border border-[var(--pet-border,#2a3a5c)] rounded mb-1 p-2">
+                {scrollImg && <CroppedItemImage src={scrollImg} alt="Scroll" className="w-full h-full object-contain" />}
+              </div>
+              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Scroll</p>
+            </div>
           </div>
         </div>
       </PixelCard>

@@ -5,24 +5,15 @@
 //          demo inside GameboyFrame, furniture explanation,
 //          and room theme previews
 // ============================================================
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { MOCK_ROOM, MOCK_EQUIPMENT, ROOM_THEMES } from "../tutorialMockData"
-import { mergeLayout } from "@/utils/roomConstraints"
+import { ROOM_THEMES } from "../tutorialMockData"
 import { getRoomPreviewUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Move, Layers, ShoppingBag } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
-  ssr: false,
-  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
-})
-
 export default function StepRoom() {
-  const layout = mergeLayout(MOCK_ROOM.layout)
-
   return (
     <div className="space-y-6">
       <PixelCard className="p-5" corners>
@@ -36,15 +27,11 @@ export default function StepRoom() {
         <div className="flex justify-center">
           <div className="relative" style={{ width: 340, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={340}>
-              <RoomCanvas
-                roomPrefix={MOCK_ROOM.roomPrefix}
-                furniture={MOCK_ROOM.furniture}
-                layout={layout}
-                equipment={MOCK_EQUIPMENT}
-                expression="happy"
-                size={348}
-                animated
-                interactive={false}
+              <img
+                src={getRoomPreviewUrl("rooms/castle")}
+                alt="Example room"
+                className="w-full h-full object-cover"
+                style={{ imageRendering: "pixelated" }}
               />
             </GameboyFrame>
 

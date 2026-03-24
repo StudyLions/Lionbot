@@ -4,26 +4,14 @@
 // Purpose: Tutorial Step 9 -- Friends & social with MiniGameboy
 //          preview, friend actions explanation, and gifting info
 // ============================================================
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { mergeLayout } from "@/utils/roomConstraints"
+import { getRoomPreviewUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight, Eye, Gift, Sprout, Search, UserPlus } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
-  ssr: false,
-  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
-})
-
-const FRIEND_ROOM = {
-  roomPrefix: "rooms/garden",
-  furniture: { wall: "rooms/garden/wall_1.png", floor: "rooms/garden/floor_1.png" },
-}
-
 export default function StepSocial() {
-  const layout = mergeLayout({})
 
   return (
     <div className="space-y-6">
@@ -45,15 +33,11 @@ export default function StepSocial() {
         <div className="flex flex-col sm:flex-row items-center gap-4">
           <div style={{ width: 200, maxWidth: "100%" }}>
             <GameboyFrame isFullscreen={false} width={200}>
-              <RoomCanvas
-                roomPrefix={FRIEND_ROOM.roomPrefix}
-                furniture={FRIEND_ROOM.furniture}
-                layout={layout}
-                equipment={{}}
-                expression="happy"
-                size={200}
-                animated
-                interactive={false}
+              <img
+                src={getRoomPreviewUrl("rooms/garden")}
+                alt="Friend's room"
+                className="w-full h-full object-cover"
+                style={{ imageRendering: "pixelated" }}
               />
             </GameboyFrame>
           </div>

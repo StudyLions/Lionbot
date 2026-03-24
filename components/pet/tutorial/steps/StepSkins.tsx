@@ -5,23 +5,15 @@
 //          GameboyFrame comparisons showing the same room in
 //          different frames
 // ============================================================
-import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import GameboyFrame from "@/components/pet/GameboyFrame"
-import { MOCK_ROOM, MOCK_EQUIPMENT, MOCK_SKINS } from "../tutorialMockData"
-import { mergeLayout } from "@/utils/roomConstraints"
+import { MOCK_SKINS } from "../tutorialMockData"
+import { getRoomPreviewUrl } from "@/utils/petAssets"
 import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 
-const RoomCanvas = dynamic(() => import("@/components/pet/room/RoomCanvas"), {
-  ssr: false,
-  loading: () => <div className="w-full aspect-square bg-[var(--pet-bg,#0a0e1a)] animate-pulse" />,
-})
-
 export default function StepSkins() {
-  const layout = mergeLayout(MOCK_ROOM.layout)
-
   return (
     <div className="space-y-6">
       <PixelCard className="p-5" corners>
@@ -52,15 +44,11 @@ export default function StepSkins() {
               <div className="flex justify-center">
                 <div style={{ width: 200, maxWidth: "100%" }}>
                   <GameboyFrame isFullscreen={false} skinAssetPath={skin.assetPath} width={200}>
-                    <RoomCanvas
-                      roomPrefix={MOCK_ROOM.roomPrefix}
-                      furniture={MOCK_ROOM.furniture}
-                      layout={layout}
-                      equipment={MOCK_EQUIPMENT}
-                      expression="happy"
-                      size={200}
-                      animated
-                      interactive={false}
+                    <img
+                      src={getRoomPreviewUrl("rooms/castle")}
+                      alt="Room preview"
+                      className="w-full h-full object-cover"
+                      style={{ imageRendering: "pixelated" }}
                     />
                   </GameboyFrame>
                 </div>
