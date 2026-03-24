@@ -7,7 +7,7 @@
 //          rarity pills, category chips, sort, URL state sync
 // ============================================================
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
@@ -28,6 +28,7 @@ import ItemGrid from "@/components/pet/wiki/ItemGrid"
 import ItemListView from "@/components/pet/wiki/ItemRow"
 import EnhancementCalculator from "@/components/pet/wiki/EnhancementCalculator"
 import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Recipes tab removed (crafting system removed)
@@ -121,10 +122,16 @@ export default function WikiPage() {
   return (
     <Layout SEO={{ title: "Item Wiki - LionGotchi", description: "Browse all items and enhancement info" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
+        --- End original code --- */}
+        <PetShell className="space-y-5">
+        {/* --- END AI-REPLACED --- */}
 
               {/* Title */}
               <div>
@@ -143,22 +150,20 @@ export default function WikiPage() {
               {metaData && <WikiOverview data={metaData} />}
               <CollectionTracker progress={metaData?.collectionProgress ?? null} />
 
-              {/* Tabs */}
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated inline tab buttons to shared PixelTabBar component */}
+              {/* --- Original code (commented out for rollback) ---
               <div className="flex gap-2">
                 {TABS.map((t) => (
-                  <button
-                    key={t.key}
-                    onClick={() => { setTab(t.key); setPage(1) }}
+                  <button key={t.key} onClick={() => { setTab(t.key); setPage(1) }}
                     className={`font-pixel text-[13px] px-3 py-1.5 border-2 transition-all ${
-                      tab === t.key
-                        ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
+                      tab === t.key ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
                         : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]"
-                    }`}
-                  >
-                    {t.label}
-                  </button>
+                    }`}>{t.label}</button>
                 ))}
               </div>
+              --- End original code --- */}
+              <PixelTabBar tabs={TABS} active={tab} onChange={(k) => { setTab(k as WikiTab); setPage(1) }} />
 
               {/* ── Items Tab ── */}
               {tab === "items" && (
@@ -373,9 +378,10 @@ export default function WikiPage() {
                 </div>
               )}
 
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

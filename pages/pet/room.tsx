@@ -12,7 +12,7 @@ import { useRouter } from "next/router"
 import { getRoomVariants } from "@/utils/roomDefaults"
 // --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
@@ -126,10 +126,16 @@ export default function RoomEditorPage() {
             },
           }}
         />
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell wide for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-7xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0">
+        --- End original code --- */}
+        <PetShell wide>
+        {/* --- END AI-REPLACED --- */}
               {isLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-12" />
@@ -156,9 +162,10 @@ export default function RoomEditorPage() {
               ) : (
                 <RoomEditorContent data={data} mutate={mutate} />
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

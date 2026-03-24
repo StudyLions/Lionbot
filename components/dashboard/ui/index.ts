@@ -27,3 +27,10 @@ export { default as SettingsNav } from "./SettingsNav"
 export type { NavSection } from "./SettingsNav"
 export { default as DiscordEmbedPreview } from "./DiscordEmbedPreview"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: export DashboardShell layout wrapper
+export { default as DashboardShell } from "./DashboardShell"
+export { default as TabBar } from "./TabBar"
+export { default as Pagination } from "./Pagination"
+export { default as SearchInput } from "./SearchInput"
+// --- END AI-MODIFIED ---

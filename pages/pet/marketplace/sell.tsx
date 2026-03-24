@@ -11,7 +11,7 @@
 //   (detail + pricing + market intel), removed numbered steps
 // --- Original code: see git history for pre-redesign version ---
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
@@ -30,6 +30,7 @@ import { GetServerSideProps } from "next"
 const PriceChart = dynamic(() => import("@/components/pet/marketplace/PriceChart"), { ssr: false })
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -46,8 +47,20 @@ const RARITY_TEXT: Record<string, string> = {
   EPIC: "#ffe080", LEGENDARY: "#e0a0ff", MYTHICAL: "#ffa0c0",
 }
 
-const CATEGORY_TABS = ["All", "Equipment", "Scrolls", "Materials"] as const
-type CategoryTab = typeof CATEGORY_TABS[number]
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Restructured to match PixelTabBar key/label interface
+// --- Original code (commented out for rollback) ---
+// const CATEGORY_TABS = ["All", "Equipment", "Scrolls", "Materials"] as const
+// type CategoryTab = typeof CATEGORY_TABS[number]
+// --- End original code ---
+type CategoryTab = "All" | "Equipment" | "Scrolls" | "Materials"
+const CATEGORY_TABS: { key: CategoryTab; label: string }[] = [
+  { key: "All", label: "All" },
+  { key: "Equipment", label: "Equipment" },
+  { key: "Scrolls", label: "Scrolls" },
+  { key: "Materials", label: "Materials" },
+]
+// --- END AI-REPLACED ---
 
 function computeTrend(priceHistory: Array<{ avgPrice: number }>) {
   if (!priceHistory || priceHistory.length < 6) return "stable" as const
@@ -170,10 +183,16 @@ export default function SellPage() {
   return (
     <Layout SEO={{ title: "Sell Items - Marketplace", description: "List items for sale on the marketplace" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
 
               <Link href="/pet/marketplace">
                 <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
@@ -207,20 +226,18 @@ export default function SellPage() {
               <div className="border-2 border-[#2a3a5c] bg-[#0c1020] shadow-[2px_2px_0_#060810]">
                 {/* Tab bar + search */}
                 <div className="flex items-center gap-2 border-b-2 border-[#1a2a3c] px-3 py-2 flex-wrap">
+                  {/* --- AI-REPLACED (2026-03-24) --- */}
+                  {/* Reason: Migrated category tabs to shared PixelTabBar component */}
+                  {/* --- Original code (commented out for rollback) ---
                   {CATEGORY_TABS.map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setCategoryTab(tab)}
-                      className={cn(
-                        "font-pixel text-[11px] px-3 py-1.5 border-2 transition-all",
-                        categoryTab === tab
-                          ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff]"
+                    <button key={tab} onClick={() => setCategoryTab(tab)}
+                      className={cn("font-pixel text-[11px] px-3 py-1.5 border-2 transition-all",
+                        categoryTab === tab ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff]"
                           : "border-transparent text-[#4a5a6a] hover:text-[#8899aa]"
-                      )}
-                    >
-                      {tab}
-                    </button>
+                      )}>{tab}</button>
                   ))}
+                  --- End original code --- */}
+                  <PixelTabBar tabs={CATEGORY_TABS} active={categoryTab} onChange={(k) => setCategoryTab(k as CategoryTab)} />
                   <div className="ml-auto relative">
                     <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-[#4a5a6a]" />
                     <input
@@ -491,9 +508,10 @@ export default function SellPage() {
                 </PixelCard>
               )}
 
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

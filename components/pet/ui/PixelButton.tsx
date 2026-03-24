@@ -43,6 +43,10 @@ const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(
         "hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px",
         "active:shadow-none active:translate-x-0.5 active:translate-y-0.5",
         "disabled:opacity-40 disabled:pointer-events-none",
+        // --- AI-MODIFIED (2026-03-24) ---
+        // Purpose: Keyboard focus ring for accessibility
+        "focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]",
+        // --- END AI-MODIFIED ---
         variants[variant],
         sizes[size],
         className

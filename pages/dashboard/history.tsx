@@ -10,11 +10,13 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, toast } from "@/components/dashboard/ui"
+import { EmptyState, toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
 } from "recharts"
@@ -281,18 +283,31 @@ export default function HistoryPage() {
   return (
     <Layout SEO={{ title: "Study History - LionBot Dashboard", description: "Your study session history" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-4xl space-y-5">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 max-w-4xl space-y-5"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-5">
 
-              {/* Page Header */}
-              <div>
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div>
                 <h1 className="text-2xl font-bold text-foreground">Study History</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   View your study sessions, track patterns, and export your data.
                 </p>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="Study History"
+                description="View your study sessions, track patterns, and export your data."
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "Study History" },
+                ]}
+              />
+              {/* --- END AI-REPLACED --- */}
 
               {/* Ongoing Session Banner */}
               {ongoingSession && (
@@ -336,26 +351,26 @@ export default function HistoryPage() {
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                     <h3 className="text-sm font-semibold text-foreground">Study Activity</h3>
-                    <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
-                      {([
-                        { key: "30d" as const, label: "30d" },
-                        { key: "90d" as const, label: "90d" },
-                        { key: "year" as const, label: "Year" },
-                      ]).map(opt => (
-                        <button
-                          key={opt.key}
-                          onClick={() => setChartPeriod(opt.key)}
-                          className={cn(
-                            "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                            chartPeriod === opt.key
-                              ? "bg-background text-foreground shadow-sm"
-                              : "text-muted-foreground hover:text-foreground"
-                          )}
-                        >
-                          {opt.label}
-                        </button>
-                      ))}
-                    </div>
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: Migrated chart period segmented control to shared TabBar component
+                        --- Original code (commented out for rollback) ---
+                        <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
+                          {([{ key: "30d", label: "30d" }, { key: "90d", label: "90d" }, { key: "year", label: "Year" }]).map(opt => (
+                            <button key={opt.key} onClick={() => setChartPeriod(opt.key)} className={cn(...)}>{opt.label}</button>
+                          ))}
+                        </div>
+                        --- End original code --- */}
+                    <TabBar
+                      tabs={[
+                        { key: "30d", label: "30d" },
+                        { key: "90d", label: "90d" },
+                        { key: "year", label: "Year" },
+                      ]}
+                      active={chartPeriod}
+                      onChange={(k) => setChartPeriod(k as "30d" | "90d" | "year")}
+                      variant="pills"
+                    />
+                    {/* --- END AI-REPLACED --- */}
                   </div>
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -391,51 +406,46 @@ export default function HistoryPage() {
               {/* Filter Bar */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 <div className="flex items-center gap-2 flex-wrap flex-1">
+                  {/* --- AI-REPLACED (2026-03-24) ---
+                      Reason: Migrated date preset and type filter from custom segmented controls to shared TabBar components
+                      --- Original code (commented out for rollback) ---
+                      <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
+                        {([{ key: "week", label: "Week" }, ...]).map(p => (
+                          <button key={p.key} onClick={() => setDatePreset(p.key)} className={cn(...)}>{p.label}</button>
+                        ))}
+                      </div>
+                      <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
+                        {([{ key: "all", label: "All" }, ...]).map(t => (
+                          <button key={t.key} onClick={() => setTypeFilter(t.key)} className={cn(...)}>{t.label}</button>
+                        ))}
+                      </div>
+                      --- End original code --- */}
                   {/* Date presets */}
-                  <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
-                    {([
-                      { key: "week" as DatePreset, label: "Week" },
-                      { key: "month" as DatePreset, label: "Month" },
-                      { key: "3months" as DatePreset, label: "3 Mo" },
-                      { key: "all" as DatePreset, label: "All" },
-                    ]).map(p => (
-                      <button
-                        key={p.key}
-                        onClick={() => setDatePreset(p.key)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                          datePreset === p.key
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {p.label}
-                      </button>
-                    ))}
-                  </div>
+                  <TabBar
+                    tabs={[
+                      { key: "week", label: "Week" },
+                      { key: "month", label: "Month" },
+                      { key: "3months", label: "3 Mo" },
+                      { key: "all", label: "All" },
+                    ]}
+                    active={datePreset}
+                    onChange={(k) => setDatePreset(k as DatePreset)}
+                    variant="pills"
+                  />
 
                   {/* Type filter */}
-                  <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
-                    {([
-                      { key: "all" as SessionType, label: "All" },
-                      { key: "voice" as SessionType, label: "Voice" },
-                      { key: "camera" as SessionType, label: "Camera" },
-                      { key: "stream" as SessionType, label: "Stream" },
-                    ]).map(t => (
-                      <button
-                        key={t.key}
-                        onClick={() => setTypeFilter(t.key)}
-                        className={cn(
-                          "px-2.5 py-1 rounded-md text-xs font-medium transition-colors",
-                          typeFilter === t.key
-                            ? "bg-background text-foreground shadow-sm"
-                            : "text-muted-foreground hover:text-foreground"
-                        )}
-                      >
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
+                  <TabBar
+                    tabs={[
+                      { key: "all", label: "All" },
+                      { key: "voice", label: "Voice" },
+                      { key: "camera", label: "Camera" },
+                      { key: "stream", label: "Stream" },
+                    ]}
+                    active={typeFilter}
+                    onChange={(k) => setTypeFilter(k as SessionType)}
+                    variant="pills"
+                  />
+                  {/* --- END AI-REPLACED --- */}
 
                   {/* Server filter */}
                   {servers.length > 1 && (
@@ -505,7 +515,11 @@ export default function HistoryPage() {
               </div>
 
               {/* Session List */}
-              {loading && page === 1 ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+              {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading && page === 1 ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className="bg-card rounded-xl border border-border p-4 animate-pulse">
@@ -519,7 +533,24 @@ export default function HistoryPage() {
                       </div>
                     </div>
                   ))}
+                </div> */}
+              {/* --- End original code --- */}
+              {loading && page === 1 ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="bg-card rounded-xl border border-border p-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="w-10 h-10 rounded-lg" />
+                        <div className="flex-1 space-y-2">
+                          <Skeleton className="h-3 w-1/3" />
+                          <Skeleton className="h-2 w-1/2" />
+                        </div>
+                        <Skeleton className="h-4 w-16" />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              {/* --- END AI-REPLACED --- */}
               ) : allSessions.length === 0 ? (
                 <EmptyState
                   icon={<History size={48} strokeWidth={1} className="text-muted-foreground" />}
@@ -692,9 +723,8 @@ export default function HistoryPage() {
                   )}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

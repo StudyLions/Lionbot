@@ -59,7 +59,10 @@ export default function HarvestModal({ result, onClose }: HarvestModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/70" />
+      {/* --- AI-MODIFIED (2026-03-24) --- */}
+      {/* Purpose: Standardize pet modal overlay to bg-black/70 + blur */}
+      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      {/* --- END AI-MODIFIED --- */}
 
       {/* Modal */}
       <div

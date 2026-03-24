@@ -7,7 +7,7 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -85,16 +85,23 @@ export default function FamilySettingsPage() {
     return (
       <Layout SEO={{ title: "Family Settings - LionGotchi", description: "Manage your family" }}>
         <AdminGuard variant="pet">
+          {/* --- AI-REPLACED (2026-03-24) --- */}
+          {/* Reason: Migrated to PetShell for consistent layout */}
+          {/* --- Original code (commented out for rollback) ---
           <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
             <div className="max-w-6xl mx-auto flex gap-6">
               <PetNav />
               <div className="flex-1 min-w-0 space-y-4">
+          --- End original code --- */}
+          <PetShell>
+          {/* --- END AI-REPLACED --- */}
                 <Skeleton className="h-10 w-48" />
                 <Skeleton className="h-60" />
                 <Skeleton className="h-40" />
-              </div>
-            </div>
-          </div>
+          {/* --- AI-REPLACED (2026-03-24) --- */}
+          {/* Original closing: </div></div></div> */}
+          </PetShell>
+          {/* --- END AI-REPLACED --- */}
         </AdminGuard>
       </Layout>
     )
@@ -104,18 +111,25 @@ export default function FamilySettingsPage() {
     return (
       <Layout SEO={{ title: "Family Settings - LionGotchi", description: "Manage your family" }}>
         <AdminGuard variant="pet">
+          {/* --- AI-REPLACED (2026-03-24) --- */}
+          {/* Reason: Migrated to PetShell for consistent layout */}
+          {/* --- Original code (commented out for rollback) ---
           <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
             <div className="max-w-6xl mx-auto flex gap-6">
               <PetNav />
               <div className="flex-1 min-w-0">
+          --- End original code --- */}
+          <PetShell>
+          {/* --- END AI-REPLACED --- */}
                 <PixelCard className="p-12 text-center" corners>
                   <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)]">
                     You are not in a family.
                   </p>
                 </PixelCard>
-              </div>
-            </div>
-          </div>
+          {/* --- AI-REPLACED (2026-03-24) --- */}
+          {/* Original closing: </div></div></div> */}
+          </PetShell>
+          {/* --- END AI-REPLACED --- */}
         </AdminGuard>
       </Layout>
     )
@@ -124,11 +138,16 @@ export default function FamilySettingsPage() {
   return (
     <Layout SEO={{ title: "Family Settings - LionGotchi", description: "Manage your family" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Family Settings</h1>
                 <div className="mt-1.5 flex items-center gap-1">
@@ -142,13 +161,15 @@ export default function FamilySettingsPage() {
               </div>
 
               <FamilyInfoSection familyId={familyId} role={role} />
-              <FamilyIconSection familyId={familyId} />
+              {/* Icon upload disabled for now -- will be re-enabled later */}
+              {/* <FamilyIconSection familyId={familyId} /> */}
               {role === "LEADER" && <DailyCapSection familyId={familyId} />}
               <PermissionsSection familyId={familyId} role={role} />
               {role === "LEADER" && <DangerZoneSection familyId={familyId} />}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

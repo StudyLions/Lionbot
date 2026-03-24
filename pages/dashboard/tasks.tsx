@@ -10,11 +10,13 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { ConfirmModal, EmptyState, toast } from "@/components/dashboard/ui"
+import { ConfirmModal, EmptyState, toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useRef, useEffect, useMemo } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   CheckSquare, Plus, Trash2, Check, Circle, Coins, ChevronDown, ChevronRight,
   ListChecks, Flame, Trophy, Sparkles, X, SquareCheck,
@@ -322,16 +324,29 @@ export default function TasksPage() {
   return (
     <Layout SEO={{ title: "Tasks - LionBot Dashboard", description: "Manage your study tasks" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-3xl space-y-4">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 max-w-3xl space-y-4"> */}
+        <DashboardShell nav={<DashboardNav />} className="max-w-3xl space-y-4">
 
-              {/* Page Header */}
-              <div className="mb-2">
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div className="mb-2">
                 <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">Track your study tasks and mark them complete as you go.</p>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="Tasks"
+                description="Track your study tasks and mark them complete as you go."
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "Tasks" },
+                ]}
+              />
+              {/* --- END AI-REPLACED --- */}
 
               {/* Stats Header */}
               {stats && (
@@ -384,32 +399,30 @@ export default function TasksPage() {
 
               {/* Filter Tabs + Actions Bar */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
-                  {([
-                    { key: "all" as FilterTab, label: "All", count: tasks.length },
-                    { key: "active" as FilterTab, label: "Active", count: activeTasks.length },
-                    { key: "completed" as FilterTab, label: "Done", count: completedTasks.length },
-                  ]).map(tab => (
-                    <button
-                      key={tab.key}
-                      onClick={() => setFilter(tab.key)}
-                      className={cn(
-                        "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                        filter === tab.key
-                          ? "bg-background text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {tab.label}
-                      <span className={cn(
-                        "ml-1.5 text-[10px] px-1 py-0.5 rounded-full",
-                        filter === tab.key ? "bg-muted text-foreground" : "text-muted-foreground"
-                      )}>
-                        {tab.count}
-                      </span>
-                    </button>
-                  ))}
-                </div>
+                {/* --- AI-REPLACED (2026-03-24) ---
+                    Reason: Migrated from custom segmented control to shared TabBar component
+                    --- Original code (commented out for rollback) ---
+                    <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
+                      {([...]).map(tab => (
+                        <button key={tab.key} onClick={() => setFilter(tab.key)}
+                          className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-colors", ...)}>
+                          {tab.label}
+                          <span className={cn("ml-1.5 text-[10px] px-1 py-0.5 rounded-full", ...)}>{tab.count}</span>
+                        </button>
+                      ))}
+                    </div>
+                    --- End original code --- */}
+                <TabBar
+                  tabs={[
+                    { key: "all", label: "All", count: tasks.length },
+                    { key: "active", label: "Active", count: activeTasks.length },
+                    { key: "completed", label: "Done", count: completedTasks.length },
+                  ]}
+                  active={filter}
+                  onChange={(k) => setFilter(k as FilterTab)}
+                  variant="pills"
+                />
+                {/* --- END AI-REPLACED --- */}
 
                 <div className="flex items-center gap-1.5">
                   {completedTasks.length > 0 && (
@@ -531,7 +544,11 @@ export default function TasksPage() {
               </div>
 
               {/* Task List */}
-              {loading ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+              {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map(i => (
                     <div key={i} className="bg-card rounded-xl border border-border p-4 animate-pulse">
@@ -541,7 +558,20 @@ export default function TasksPage() {
                       </div>
                     </div>
                   ))}
+                </div> */}
+              {/* --- End original code --- */}
+              {loading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map(i => (
+                    <div key={i} className="bg-card rounded-xl border border-border p-4">
+                      <div className="flex items-center gap-3">
+                        <Skeleton className="w-5 h-5 rounded-md" />
+                        <Skeleton className="h-4 flex-1" style={{ width: `${50 + i * 8}%` }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              {/* --- END AI-REPLACED --- */}
               ) : tasks.length === 0 ? (
                 <EmptyState
                   icon={<CheckSquare size={48} strokeWidth={1} className="text-muted-foreground" />}
@@ -676,9 +706,8 @@ export default function TasksPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Delete Confirm */}
         <ConfirmModal

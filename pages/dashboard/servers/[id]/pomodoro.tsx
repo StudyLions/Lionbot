@@ -5,11 +5,19 @@
 //          per-timer usage stats, heatmap, leaderboard,
 //          and full timer CRUD with live status
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   PageHeader, SectionCard, SettingRow, RoleSelect, NumberInput,
   Toggle, EmptyState, FirstTimeBanner, ConfirmModal, ChannelSelect, toast,
@@ -131,7 +139,7 @@ function StatCard({ label, value, sub, icon, color = "text-primary" }: {
 }) {
   return (
     <div className="bg-card/50 border border-border rounded-xl p-4 flex items-start gap-3">
-      <div className={`p-2 rounded-lg bg-gray-800 ${color}`}>{icon}</div>
+      <div className={`p-2 rounded-lg bg-muted ${color}`}>{icon}</div>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
         <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
@@ -155,7 +163,7 @@ function UsageHeatmap({ data }: { data: Array<{ dayOfWeek: number; hour: number;
   }, [data])
 
   const getColor = (count: number) => {
-    if (count === 0) return "bg-gray-800/50"
+    if (count === 0) return "bg-card/50"
     const intensity = count / Math.max(grid.max, 1)
     if (intensity > 0.75) return "bg-amber-500"
     if (intensity > 0.5) return "bg-amber-500/70"
@@ -196,13 +204,13 @@ function UsageHeatmap({ data }: { data: Array<{ dayOfWeek: number; hour: number;
         </div>
       </div>
       {tooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-border rounded-lg px-3 py-1.5 text-xs text-foreground shadow-lg pointer-events-none whitespace-nowrap z-10">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-card border border-border rounded-lg px-3 py-1.5 text-xs text-foreground shadow-lg pointer-events-none whitespace-nowrap z-10">
           {DAY_LABELS[tooltip.day]} {tooltip.hour}:00 &mdash; <span className="font-bold">{tooltip.count}</span> sessions
         </div>
       )}
       <div className="flex items-center gap-2 mt-3 justify-end">
         <span className="text-[10px] text-muted-foreground">Less</span>
-        <div className="w-4 h-4 rounded-sm bg-gray-800/50" />
+        <div className="w-4 h-4 rounded-sm bg-card/50" />
         <div className="w-4 h-4 rounded-sm bg-amber-500/20" />
         <div className="w-4 h-4 rounded-sm bg-amber-500/40" />
         <div className="w-4 h-4 rounded-sm bg-amber-500/70" />
@@ -219,7 +227,7 @@ function MemberAvatar({ url, name, size = 28 }: { url: string; name: string; siz
   return (
     <img
       src={url} alt={name} width={size} height={size}
-      className="rounded-full bg-gray-700 flex-shrink-0"
+      className="rounded-full bg-muted flex-shrink-0"
       onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn.discordapp.com/embed/avatars/0.png" }}
     />
   )
@@ -497,10 +505,16 @@ export default function PomodoroPage() {
     <Layout SEO={{ title: `Pomodoro - ${serverName} - LionBot`, description: "Pomodoro command center" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Pomodoro Timers"
                 description="Manage study timers, view usage analytics, and configure focus/break cycles for your server."
@@ -514,21 +528,27 @@ export default function PomodoroPage() {
               />
 
               {/* Tabs */}
-              <div className="flex gap-1 mb-6 bg-card/30 border border-border rounded-xl p-1">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTab(t.id)}
-                    className={`flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                      tab === t.id
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-gray-800/50"
-                    }`}
-                  >
-                    {t.icon} <span className="truncate">{t.label}</span>
-                  </button>
-                ))}
+              {/* --- AI-REPLACED (2026-03-24) ---
+                  Reason: Migrated from custom tab row to shared TabBar component
+                  --- Original code (commented out for rollback) ---
+                  <div className="flex gap-1 mb-6 bg-card/30 border border-border rounded-xl p-1">
+                    {TABS.map((t) => (
+                      <button key={t.id} onClick={() => setTab(t.id)}
+                        className={`flex-1 ... ${tab === t.id ? "bg-primary ..." : "text-muted-foreground ..."}`}>
+                        {t.icon} <span className="truncate">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  --- End original code --- */}
+              <div className="mb-6">
+                <TabBar
+                  tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon }))}
+                  active={tab}
+                  onChange={(k) => setTab(k as TabId)}
+                  variant="pills"
+                />
               </div>
+              {/* --- END AI-REPLACED --- */}
 
               {/* ============= OVERVIEW TAB ============= */}
               {tab === "overview" && (
@@ -641,12 +661,12 @@ export default function PomodoroPage() {
                                 const maxHours = stats.perTimer.reduce((m, p) => Math.max(m, p.totalHours), 1)
                                 const pct = Math.round((pt.totalHours / maxHours) * 100)
                                 return (
-                                  <div key={pt.channelid} className="bg-gray-800/40 rounded-lg p-3">
+                                  <div key={pt.channelid} className="bg-card/50 rounded-lg p-3">
                                     <div className="flex items-center justify-between mb-1">
                                       <span className="text-sm font-medium text-foreground truncate">{pt.prettyName}</span>
                                       <span className="text-xs font-bold text-amber-400 ml-2 flex-shrink-0">{pt.totalHours}h</span>
                                     </div>
-                                    <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden mb-1.5">
+                                    <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-1.5">
                                       <div className="h-full bg-amber-500 rounded-full" style={{ width: `${pct}%` }} />
                                     </div>
                                     <div className="flex gap-3 text-[10px] text-muted-foreground">
@@ -672,7 +692,7 @@ export default function PomodoroPage() {
                               <button
                                 key={u.userId}
                                 onClick={() => setPanelUserId(u.userId)}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent transition-colors text-left"
                               >
                                 <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                                 <MemberAvatar url={u.avatarUrl} name={u.name} />
@@ -905,11 +925,11 @@ export default function PomodoroPage() {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-sm font-medium text-foreground/80 mb-1">Focus (min)</label>
-                            <input type="number" value={createForm.focus_length} onChange={(e) => setCreateForm((f) => ({ ...f, focus_length: parseInt(e.target.value, 10) || 25 }))} min={1} max={120} className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input type="number" value={createForm.focus_length} onChange={(e) => setCreateForm((f) => ({ ...f, focus_length: parseInt(e.target.value, 10) || 25 }))} min={1} max={120} className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                           </div>
                           <div>
                             <label className="block text-sm font-medium text-foreground/80 mb-1">Break (min)</label>
-                            <input type="number" value={createForm.break_length} onChange={(e) => setCreateForm((f) => ({ ...f, break_length: parseInt(e.target.value, 10) || 5 }))} min={1} max={60} className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                            <input type="number" value={createForm.break_length} onChange={(e) => setCreateForm((f) => ({ ...f, break_length: parseInt(e.target.value, 10) || 5 }))} min={1} max={60} className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                           </div>
                         </div>
                       </div>
@@ -1049,9 +1069,9 @@ export default function PomodoroPage() {
                 </div>
               )}
               {/* --- END AI-REPLACED --- */}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Delete Confirmation */}
         <ConfirmModal

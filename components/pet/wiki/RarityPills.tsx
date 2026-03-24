@@ -29,8 +29,10 @@ export default function RarityPills({ selected, onChange }: Props) {
     onChange(next)
   }
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Grid layout -- 6 cols desktop (one per rarity), 3 cols mobile
   return (
-    <div className="flex flex-wrap gap-1.5">
+    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
       {RARITIES.map((r) => {
         const c = RARITY_COLORS[r]
         const active = selected.has(r)
@@ -52,4 +54,5 @@ export default function RarityPills({ selected, onChange }: Props) {
       })}
     </div>
   )
+  // --- END AI-MODIFIED ---
 }

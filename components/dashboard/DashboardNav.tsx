@@ -16,7 +16,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Added DoorOpen icon for Rooms nav item; Coins for room balance badge
 import {
-  BarChart3, Server, CheckSquare, History, Target, Bell, Palette,
+  BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
   Volume2, VolumeX, DoorOpen, Coins, Clock,
 } from "lucide-react"
@@ -64,7 +64,6 @@ const sections: NavSection[] = [
   {
     title: "Collection",
     items: [
-      { href: "/dashboard/inventory", label: "Skins", icon: <Palette size={16} /> },
       { href: "/dashboard/gems", label: "LionGems", icon: <Gem size={16} /> },
       { href: "/dashboard/leaderboard", label: "Leaderboard", icon: <Trophy size={16} /> },
     ],
@@ -404,6 +403,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
               ? "text-muted-foreground hover:text-foreground hover:bg-accent"
               : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent"
           )}
+          aria-label={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
           title={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
         >
           <span className="flex-shrink-0 opacity-70">
@@ -427,8 +427,11 @@ export default function DashboardNav() {
         <NavContent />
       </nav>
 
+      {/* --- AI-MODIFIED (2026-03-24) --- */}
+      {/* Purpose: Standardize mobile trigger position to z-50 */}
       {/* Mobile trigger — positioned below the sticky Header (h-14 = 56px) */}
-      <div className="fixed top-16 left-4 z-40 lg:hidden">
+      <div className="fixed top-16 left-4 z-50 lg:hidden">
+      {/* --- END AI-MODIFIED --- */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="bg-card shadow-lg">

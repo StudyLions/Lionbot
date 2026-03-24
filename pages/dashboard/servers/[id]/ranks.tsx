@@ -9,6 +9,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader, ConfirmModal, RoleSelect, EmptyState, toast,
   clearRoleCache, SearchSelect, ChannelSelect, Toggle, NumberInput,
@@ -82,11 +86,9 @@ type TabKey = "XP" | "VOICE" | "MESSAGE"
 
 // ── Constants ──────────────────────────────────────────────
 
-const TAB_OPTIONS = [
-  { value: "XP", label: "XP Ranks" },
-  { value: "VOICE", label: "Voice Ranks" },
-  { value: "MESSAGE", label: "Message Ranks" },
-]
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Removed unused TAB_OPTIONS constant (dead code cleanup)
+// --- END AI-MODIFIED ---
 
 const RANK_TYPE_OPTIONS = [
   { value: "XP", label: "XP (combined activity)" },
@@ -465,10 +467,16 @@ export default function RanksPage() {
     <Layout SEO={{ title: `Ranks - ${serverName} - LionBot`, description: "Rank command center" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Ranks"
                 description="Ranks reward members as they study. When a member reaches the required threshold, they automatically receive the role and a coin reward."
@@ -765,24 +773,26 @@ export default function RanksPage() {
                                     {/* Purpose: Stack edit panel grids on mobile */}
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
                                     {/* --- END AI-MODIFIED --- */}
-                                      <div>
-                                        <label className="block text-xs font-medium text-muted-foreground mb-1">Required ({unitForType(currentTab)})</label>
-                                        <input
-                                          type="number"
-                                          value={editForm.required}
-                                          onChange={(e) => setEditForm((f) => ({ ...f, required: parseInt(e.target.value) || 0 }))}
-                                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="block text-xs font-medium text-muted-foreground mb-1">Coin Reward</label>
-                                        <input
-                                          type="number"
-                                          value={editForm.reward}
-                                          onChange={(e) => setEditForm((f) => ({ ...f, reward: parseInt(e.target.value) || 0 }))}
-                                          className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                                        />
-                                      </div>
+                                      {/* --- AI-REPLACED (2026-03-24) ---
+                                          Reason: Replace raw inputs with shared NumberInput component
+                                          What the new code does better: Consistent styling, focus:ring-ring, built-in label + validation
+                                          --- Original code (commented out for rollback) ---
+                                          <div><label>Required (...)</label><input type="number" value={editForm.required} ... /></div>
+                                          <div><label>Coin Reward</label><input type="number" value={editForm.reward} ... /></div>
+                                          --- End original code --- */}
+                                      <NumberInput
+                                        label={`Required (${unitForType(currentTab)})`}
+                                        value={editForm.required}
+                                        onChange={(v) => setEditForm((f) => ({ ...f, required: v ?? 0 }))}
+                                        min={0}
+                                      />
+                                      <NumberInput
+                                        label="Coin Reward"
+                                        value={editForm.reward}
+                                        onChange={(v) => setEditForm((f) => ({ ...f, reward: v ?? 0 }))}
+                                        min={0}
+                                      />
+                                      {/* --- END AI-REPLACED --- */}
                                     </div>
                                     <div className="mb-3">
                                       <label className="block text-xs font-medium text-muted-foreground mb-1">Rank-Up Message</label>
@@ -791,7 +801,7 @@ export default function RanksPage() {
                                         onChange={(e) => setEditForm((f) => ({ ...f, message: e.target.value }))}
                                         placeholder="Congratulations {user_mention}! You've reached {role_name}!"
                                         rows={2}
-                                        className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                                        className="w-full bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
                                       />
                                       <div className="flex flex-wrap gap-1 mt-1.5">
                                         {TEMPLATE_VARS.map((v) => (
@@ -861,7 +871,7 @@ export default function RanksPage() {
                             value={addForm.required}
                             onChange={(e) => setAddForm((f) => ({ ...f, required: e.target.value }))}
                             placeholder={currentTab === "VOICE" ? "e.g. 10" : currentTab === "MESSAGE" ? "e.g. 500" : "e.g. 1000"}
-                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
                       </div>
@@ -873,7 +883,7 @@ export default function RanksPage() {
                             value={addForm.reward}
                             onChange={(e) => setAddForm((f) => ({ ...f, reward: e.target.value }))}
                             placeholder="e.g. 500"
-                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
                         <div>
@@ -883,7 +893,7 @@ export default function RanksPage() {
                             value={addForm.message}
                             onChange={(e) => setAddForm((f) => ({ ...f, message: e.target.value }))}
                             placeholder="Optional -- use {user_mention}, {role_name}..."
-                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                         </div>
                       </div>
@@ -919,7 +929,7 @@ export default function RanksPage() {
                             type="number"
                             value={simPace}
                             onChange={(e) => setSimPace(parseInt(e.target.value) || 0)}
-                            className="w-24 bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                            className="w-24 bg-background border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                           />
                           <span className="text-xs text-muted-foreground">{unitForType(currentTab)}/day</span>
                         </div>
@@ -1015,9 +1025,9 @@ export default function RanksPage() {
                   )}
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* ── Modals ── */}
         <ConfirmModal

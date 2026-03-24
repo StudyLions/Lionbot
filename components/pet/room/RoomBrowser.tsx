@@ -63,7 +63,10 @@ export default function RoomBrowser({
     <div className="fixed inset-0 z-[100] flex items-start justify-center font-pixel">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+        // --- AI-MODIFIED (2026-03-24) ---
+        // Purpose: Standardize pet modal overlay to bg-black/70
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        // --- END AI-MODIFIED ---
         onClick={onClose}
       />
 

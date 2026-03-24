@@ -7,6 +7,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
   ChannelSelect, RoleSelect, SaveBar, PageHeader, toast,
@@ -15,9 +19,12 @@ import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback, useMemo } from "react"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Removed unused Hash import (dead code cleanup)
 import {
-  PawPrint, Bell, Hash, Shield, Power,
+  PawPrint, Bell, Shield, Power,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -50,6 +57,13 @@ export default function LionGotchiSettings() {
   const { data: configData, error, isLoading: loading, mutate } = useDashboard<LGConfig>(
     id && session ? `/api/dashboard/servers/${id}/liongotchi-config` : null
   )
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch server name so ServerNav shows actual name instead of "..."
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    id && session ? `/api/dashboard/servers/${id}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
+  // --- END AI-MODIFIED ---
 
   const [config, setConfig] = useState<LGConfig | null>(null)
   const [original, setOriginal] = useState<LGConfig | null>(null)
@@ -161,11 +175,18 @@ export default function LionGotchiSettings() {
     <Layout SEO={{ title: `LionGotchi Settings - LionBot`, description: "LionGotchi server settings" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName="..." isAdmin isMod />
-
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-6xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName="..." isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Use fetched serverName instead of hardcoded "..." --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
+        {/* --- END AI-MODIFIED --- */}
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="LionGotchi Settings"
                 description="Configure how LionGotchi works in your server. These settings control pet activity, drop notifications, and what your server looks like on users' Gameboy screens."
@@ -336,9 +357,9 @@ export default function LionGotchiSettings() {
                 saving={saving}
                 label={changeCount > 0 ? `${changeCount} unsaved change${changeCount !== 1 ? "s" : ""}` : undefined}
               />
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </ServerGuard>
       </AdminGuard>
     </Layout>

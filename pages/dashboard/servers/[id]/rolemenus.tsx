@@ -7,6 +7,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader, Badge, ConfirmModal, RoleSelect, EmptyState, SearchSelect, toast,
 } from "@/components/dashboard/ui"
@@ -136,10 +140,16 @@ export default function RoleMenusPage() {
     <Layout SEO={{ title: `Role Menus - ${serverName} - LionBot`, description: "Manage role menus" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
+        {/* --- END AI-REPLACED --- */}
             <PageHeader
               title="Role Menus"
               description="Role menus let members assign themselves roles. Create a menu, add roles to it, and members can pick the ones they want."
@@ -248,18 +258,18 @@ export default function RoleMenusPage() {
                                   />
                                   <input type="text" placeholder="Button label (required)" value={addRole.menuId === menu.menuId ? addRole.label : ""}
                                     onChange={(e) => setAddRole((f) => ({ ...f, menuId: menu.menuId, label: e.target.value }))}
-                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                                 </div>
                                 <div className="grid grid-cols-3 gap-3 sm:grid-cols-1 mb-3">
                                   <input type="text" placeholder="Emoji (optional)" value={addRole.menuId === menu.menuId ? addRole.emoji : ""}
                                     onChange={(e) => setAddRole((f) => ({ ...f, menuId: menu.menuId, emoji: e.target.value }))}
-                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                                   <input type="number" placeholder="Price (optional)" value={addRole.menuId === menu.menuId ? addRole.price : ""}
                                     onChange={(e) => setAddRole((f) => ({ ...f, menuId: menu.menuId, price: e.target.value }))}
-                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                                   <input type="number" placeholder="Duration in seconds (optional)" value={addRole.menuId === menu.menuId ? addRole.duration : ""}
                                     onChange={(e) => setAddRole((f) => ({ ...f, menuId: menu.menuId, duration: e.target.value }))}
-                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                    className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                                 </div>
                                 <button onClick={() => addRoleToMenu(menu.menuId)}
                                   disabled={saving || (addRole.menuId === menu.menuId ? !addRole.roleId || !addRole.label : true)}
@@ -284,7 +294,7 @@ export default function RoleMenusPage() {
                   <div className="flex gap-3 flex-wrap">
                     <input type="text" placeholder="Menu name" value={newMenu.name}
                       onChange={(e) => setNewMenu((f) => ({ ...f, name: e.target.value }))}
-                      className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary flex-1 min-w-0" />
+                      className="bg-card border border-border text-foreground rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring flex-1 min-w-0" />
                     <SearchSelect
                       options={[
                         { value: "BUTTON", label: "Button" },
@@ -304,9 +314,9 @@ export default function RoleMenusPage() {
                 </div>
               </>
             )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         <ConfirmModal
           open={!!deleteMenuTarget}

@@ -41,7 +41,7 @@ export default function Toggle({ checked, onChange, label, disabled = false, id,
         onClick={handleClick}
         className={`
           relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out
-          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-gray-900
+          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           ${checked ? "bg-primary" : "bg-muted"}
         `}

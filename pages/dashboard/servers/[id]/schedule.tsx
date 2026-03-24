@@ -5,14 +5,22 @@
 //          history, member leaderboards, booking heatmap,
 //          and configuration
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader, SectionCard, SettingRow, ChannelSelect,
   RoleSelect, NumberInput, SaveBar, toast,
 } from "@/components/dashboard/ui"
+import Pagination from "@/components/dashboard/ui/Pagination"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
@@ -20,9 +28,10 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useEffect, useMemo } from "react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   Calendar, Clock, Users, TrendingUp, TrendingDown, Coins,
-  ChevronDown, ChevronUp, ChevronLeft, ChevronRight,
+  ChevronDown, ChevronUp,
   CheckCircle, XCircle, Settings, BarChart3, Award,
   AlertTriangle, ArrowRight, Zap,
 } from "lucide-react"
@@ -112,7 +121,7 @@ function StatCard({ label, value, sub, icon, color = "text-primary" }: {
 }) {
   return (
     <div className="bg-card/50 border border-border rounded-xl p-4 flex items-start gap-3">
-      <div className={`p-2 rounded-lg bg-gray-800 ${color}`}>{icon}</div>
+      <div className={`p-2 rounded-lg bg-muted ${color}`}>{icon}</div>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
         <p className="text-xl font-bold text-foreground mt-0.5">{value}</p>
@@ -136,7 +145,7 @@ function BookingHeatmap({ data }: { data: Array<{ dayOfWeek: number; hour: numbe
   }, [data])
 
   const getColor = (count: number) => {
-    if (count === 0) return "bg-gray-800/50"
+    if (count === 0) return "bg-card/50"
     const intensity = count / Math.max(grid.max, 1)
     if (intensity > 0.75) return "bg-indigo-500"
     if (intensity > 0.5) return "bg-indigo-500/70"
@@ -179,13 +188,13 @@ function BookingHeatmap({ data }: { data: Array<{ dayOfWeek: number; hour: numbe
         </div>
       </div>
       {tooltip && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 border border-border rounded-lg px-3 py-1.5 text-xs text-foreground shadow-lg pointer-events-none whitespace-nowrap z-10">
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-card border border-border rounded-lg px-3 py-1.5 text-xs text-foreground shadow-lg pointer-events-none whitespace-nowrap z-10">
           {DAY_LABELS[tooltip.day]} {tooltip.hour}:00 &mdash; <span className="font-bold">{tooltip.count}</span> bookings
         </div>
       )}
       <div className="flex items-center gap-2 mt-3 justify-end">
         <span className="text-[10px] text-muted-foreground">Less</span>
-        <div className="w-4 h-4 rounded-sm bg-gray-800/50" />
+        <div className="w-4 h-4 rounded-sm bg-card/50" />
         <div className="w-4 h-4 rounded-sm bg-indigo-500/20" />
         <div className="w-4 h-4 rounded-sm bg-indigo-500/40" />
         <div className="w-4 h-4 rounded-sm bg-indigo-500/70" />
@@ -205,7 +214,7 @@ function MemberAvatar({ url, name, size = 28 }: { url: string; name: string; siz
       alt={name}
       width={size}
       height={size}
-      className="rounded-full bg-gray-700 flex-shrink-0"
+      className="rounded-full bg-muted flex-shrink-0"
       onError={(e) => { (e.target as HTMLImageElement).src = `https://cdn.discordapp.com/embed/avatars/0.png` }}
     />
   )
@@ -323,31 +332,43 @@ export default function SchedulePage() {
     <Layout SEO={{ title: `Schedule - ${serverName} - LionBot`, description: "Schedule command center" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Schedule"
                 description="Manage scheduled study sessions. Track attendance, view analytics, and configure session rules."
               />
 
               {/* Tabs */}
-              <div className="flex gap-1 mb-6 bg-card/30 border border-border rounded-xl p-1">
-                {TABS.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => setTab(t.id)}
-                    className={`flex-1 min-w-0 flex items-center justify-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all ${
-                      tab === t.id
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-gray-800/50"
-                    }`}
-                  >
-                    {t.icon} <span className="truncate">{t.label}</span>
-                  </button>
-                ))}
+              {/* --- AI-REPLACED (2026-03-24) ---
+                  Reason: Migrated from custom tab row to shared TabBar component
+                  --- Original code (commented out for rollback) ---
+                  <div className="flex gap-1 mb-6 bg-card/30 border border-border rounded-xl p-1">
+                    {TABS.map((t) => (
+                      <button key={t.id} onClick={() => setTab(t.id)}
+                        className={`flex-1 ... ${tab === t.id ? "bg-primary ..." : "text-muted-foreground ..."}`}>
+                        {t.icon} <span className="truncate">{t.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  --- End original code --- */}
+              <div className="mb-6">
+                <TabBar
+                  tabs={TABS.map((t) => ({ key: t.id, label: t.label, icon: t.icon }))}
+                  active={tab}
+                  onChange={(k) => setTab(k as TabId)}
+                  variant="pills"
+                />
               </div>
+              {/* --- END AI-REPLACED --- */}
 
               {/* Empty state */}
               {isEmpty && tab !== "settings" && (
@@ -463,7 +484,7 @@ export default function SchedulePage() {
                           {stats.upcoming.length > 0 ? (
                             <div className="space-y-3">
                               {stats.upcoming.map((s) => (
-                                <div key={s.slotid} className="bg-gray-800/40 rounded-lg p-3">
+                                <div key={s.slotid} className="bg-card/50 rounded-lg p-3">
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="text-sm font-medium text-foreground">{formatSlotTime(s.slotTime)}</span>
                                     <span className="text-xs text-muted-foreground">{s.memberCount} booked</span>
@@ -546,7 +567,7 @@ export default function SchedulePage() {
                           <div key={s.slotid} className="bg-card/50 border border-border rounded-xl overflow-hidden">
                             <button
                               onClick={() => toggleSession(s.slotid)}
-                              className="w-full p-4 flex items-center gap-4 hover:bg-gray-800/30 transition-colors text-left"
+                              className="w-full p-4 flex items-center gap-4 hover:bg-accent transition-colors text-left"
                             >
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
@@ -566,7 +587,7 @@ export default function SchedulePage() {
                                   <div className="flex items-center justify-between mb-1">
                                     <span className={`text-xs font-bold ${rateColor}`}>{s.attendanceRate}%</span>
                                   </div>
-                                  <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                                     <div className={`h-full rounded-full ${barColor}`} style={{ width: `${s.attendanceRate}%` }} />
                                   </div>
                                 </div>
@@ -574,7 +595,7 @@ export default function SchedulePage() {
                               </div>
                             </button>
                             {expanded && (
-                              <div className="border-t border-border px-4 py-3 bg-gray-800/20">
+                              <div className="border-t border-border px-4 py-3 bg-muted/20">
                                 {s.members.length > 0 ? (
                                   <div className="space-y-2">
                                     {s.members.map((m) => (
@@ -602,27 +623,23 @@ export default function SchedulePage() {
                       })}
 
                       {/* Pagination */}
-                      {totalHistoryPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                          <button
-                            onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
-                            disabled={historyPage <= 1}
-                            className="p-2 rounded-lg hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                          >
-                            <ChevronLeft size={16} />
-                          </button>
-                          <span className="text-sm text-muted-foreground">
-                            Page {historyPage} of {totalHistoryPages}
-                          </span>
-                          <button
-                            onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))}
-                            disabled={historyPage >= totalHistoryPages}
-                            className="p-2 rounded-lg hover:bg-gray-800 disabled:opacity-30 transition-colors"
-                          >
-                            <ChevronRight size={16} />
-                          </button>
-                        </div>
-                      )}
+                      {/* --- AI-REPLACED (2026-03-24) ---
+                          Reason: Replaced custom session history pagination with shared Pagination component
+                          --- Original code (commented out for rollback) ---
+                          {totalHistoryPages > 1 && (
+                            <div className="flex items-center justify-center gap-2 pt-2">
+                              <button onClick={() => setHistoryPage((p) => Math.max(1, p - 1))} disabled={historyPage <= 1} ...>
+                                <ChevronLeft size={16} />
+                              </button>
+                              <span>Page {historyPage} of {totalHistoryPages}</span>
+                              <button onClick={() => setHistoryPage((p) => Math.min(totalHistoryPages, p + 1))} disabled={historyPage >= totalHistoryPages} ...>
+                                <ChevronRight size={16} />
+                              </button>
+                            </div>
+                          )}
+                          --- End original code --- */}
+                      <Pagination page={historyPage} totalPages={totalHistoryPages} onChange={setHistoryPage} showLabel className="pt-2" />
+                      {/* --- END AI-REPLACED --- */}
                     </>
                   ) : (
                     <div className="text-center py-12">
@@ -657,7 +674,7 @@ export default function SchedulePage() {
                               <button
                                 key={m.userId}
                                 onClick={() => setPanelUserId(m.userId)}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent/40 transition-colors text-left"
                               >
                                 <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                                 <MemberAvatar url={m.avatarUrl} name={m.name} />
@@ -684,7 +701,7 @@ export default function SchedulePage() {
                               <button
                                 key={m.userId}
                                 onClick={() => setPanelUserId(m.userId)}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent/40 transition-colors text-left"
                               >
                                 <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                                 <MemberAvatar url={m.avatarUrl} name={m.name} />
@@ -706,7 +723,7 @@ export default function SchedulePage() {
                               <button
                                 key={m.userId}
                                 onClick={() => setPanelUserId(m.userId)}
-                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-800/40 transition-colors text-left"
+                                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-accent/40 transition-colors text-left"
                               >
                                 <span className="text-xs font-bold text-muted-foreground w-5">#{i + 1}</span>
                                 <MemberAvatar url={m.avatarUrl} name={m.name} />
@@ -907,9 +924,9 @@ export default function SchedulePage() {
                   />
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Member Detail Panel */}
         <MemberDetailPanel

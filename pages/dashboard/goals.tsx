@@ -10,11 +10,13 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, ConfirmModal, toast } from "@/components/dashboard/ui"
+import { EmptyState, ConfirmModal, toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useMemo } from "react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   Target, ChevronLeft, ChevronRight, Flame, Trophy, BookOpen,
   MessageSquare, CheckSquare, Plus, Trash2, Check, X, Pencil, Calendar,
@@ -231,18 +233,31 @@ export default function GoalsPage() {
   return (
     <Layout SEO={{ title: "Goals - LionBot Dashboard", description: "Track your study goals" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-3xl space-y-5">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 max-w-3xl space-y-5"> */}
+        <DashboardShell nav={<DashboardNav />} className="max-w-3xl space-y-5">
 
-              {/* Header */}
-              <div>
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div>
                 <h1 className="text-2xl font-bold text-foreground">Goals</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Set targets, track progress, and build consistent study habits.
                 </p>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="Goals"
+                description="Set targets, track progress, and build consistent study habits."
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "Goals" },
+                ]}
+              />
+              {/* --- END AI-REPLACED --- */}
 
               {/* Summary Card */}
               {summary && goals.length > 0 && tab === "weekly" && isCurrent && (
@@ -292,26 +307,24 @@ export default function GoalsPage() {
               {/* Period Navigation */}
               <div className="flex items-center justify-between gap-2 flex-wrap">
                 {/* Tab switcher */}
-                <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
-                  <button
-                    onClick={() => setTab("weekly")}
-                    className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                      tab === "weekly" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Weekly
-                  </button>
-                  <button
-                    onClick={() => setTab("monthly")}
-                    className={cn(
-                      "px-3 py-1.5 rounded-md text-xs font-medium transition-colors",
-                      tab === "monthly" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
-                    )}
-                  >
-                    Monthly
-                  </button>
-                </div>
+                {/* --- AI-REPLACED (2026-03-24) ---
+                    Reason: Migrated from custom segmented control to shared TabBar component
+                    --- Original code (commented out for rollback) ---
+                    <div className="flex items-center bg-muted/30 rounded-lg p-0.5 gap-0.5">
+                      <button onClick={() => setTab("weekly")} className={cn("px-3 py-1.5 rounded-md text-xs font-medium transition-colors", ...)}>Weekly</button>
+                      <button onClick={() => setTab("monthly")} className={cn(...)}>Monthly</button>
+                    </div>
+                    --- End original code --- */}
+                <TabBar
+                  tabs={[
+                    { key: "weekly", label: "Weekly" },
+                    { key: "monthly", label: "Monthly" },
+                  ]}
+                  active={tab}
+                  onChange={(k) => setTab(k as PeriodTab)}
+                  variant="pills"
+                />
+                {/* --- END AI-REPLACED --- */}
 
                 {/* Period arrows */}
                 <div className="flex items-center gap-1.5">
@@ -344,7 +357,11 @@ export default function GoalsPage() {
               </div>
 
               {/* Goal Cards */}
-              {loading ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+              {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading ? (
                 <div className="space-y-4">
                   {[1, 2].map(i => (
                     <div key={i} className="bg-card rounded-xl border border-border p-6 animate-pulse">
@@ -354,7 +371,20 @@ export default function GoalsPage() {
                       </div>
                     </div>
                   ))}
+                </div> */}
+              {/* --- End original code --- */}
+              {loading ? (
+                <div className="space-y-4">
+                  {[1, 2].map(i => (
+                    <div key={i} className="bg-card rounded-xl border border-border p-6">
+                      <Skeleton className="h-4 w-1/3 mb-4" />
+                      <div className="flex gap-6 justify-center">
+                        {[1, 2, 3].map(j => <Skeleton key={j} className="w-16 h-16 rounded-full" />)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
+              {/* --- END AI-REPLACED --- */}
               ) : goals.length === 0 ? (
                 <EmptyState
                   icon={<Target size={48} strokeWidth={1} className="text-muted-foreground" />}
@@ -578,9 +608,8 @@ export default function GoalsPage() {
                   })}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

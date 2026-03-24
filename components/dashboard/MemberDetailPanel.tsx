@@ -160,10 +160,13 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
               {/* Header */}
               <SheetHeader className="p-6 pb-4 border-b border-border">
                 <div className="flex items-start gap-3 pr-8">
+                  {/* --- AI-MODIFIED (2026-03-24) ---
+                      Purpose: Changed avatar from rounded-xl to rounded-full for consistency with other dashboard pages */}
                   {data.member.avatarUrl ? (
-                    <img src={data.member.avatarUrl} alt="" className="w-12 h-12 rounded-xl object-cover flex-shrink-0" loading="lazy" />
+                    <img src={data.member.avatarUrl} alt="" className="w-12 h-12 rounded-full object-cover flex-shrink-0" loading="lazy" />
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-border/50">
+                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 flex items-center justify-center flex-shrink-0 border border-border/50">
+                  {/* --- END AI-MODIFIED --- */}
                       <span className="text-lg font-bold text-foreground/80">{(data.member.displayName || "?").charAt(0).toUpperCase()}</span>
                     </div>
                   )}

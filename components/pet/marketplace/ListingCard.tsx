@@ -78,10 +78,13 @@ export default function ListingCard({ listing, onBuy }: Props) {
 
   return (
     <ListingTooltip listing={tooltipListing}>
+      {/* --- AI-MODIFIED (2026-03-24) --- */}
+      {/* Purpose: min-h for consistent card heights in browse grid */}
       <PixelCard
         borderColor={borderColor}
-        className="p-3 flex flex-col gap-2 group hover:brightness-110 active:brightness-110 transition-all h-full"
+        className="p-3 flex flex-col gap-2 group hover:brightness-110 active:brightness-110 transition-all h-full min-h-[240px]"
       >
+      {/* --- END AI-MODIFIED --- */}
         {/* Item image + link to detail page */}
         <Link href={`/pet/marketplace/${listing.listingId}`}>
           <a className="flex flex-col items-center gap-2">
@@ -138,22 +141,28 @@ export default function ListingCard({ listing, onBuy }: Props) {
         </div>
 
         {/* Quantity + Time */}
-        <div className="flex items-center justify-between font-pixel text-[10px] text-[#4a5a70]">
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: Improved contrast for quantity/time text */}
+        <div className="flex items-center justify-between font-pixel text-[10px] text-[var(--pet-text-dim,#7a8a9a)]">
           <span>x{listing.quantityRemaining}</span>
           <span className="flex items-center gap-0.5"><Clock size={10} /> {timeLeft(listing.expiresAt)}</span>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Seller */}
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: Improved contrast for seller/link text (was #3a4a60) */}
         <div className="flex items-center justify-between">
-          <span className="font-pixel text-[9px] text-[#3a4a60] flex items-center gap-0.5 truncate">
+          <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] flex items-center gap-0.5 truncate">
             <User size={9} /> {listing.sellerName}
           </span>
           <Link href={`/pet/wiki/${item.id}`}>
-            <a className="text-[#3a4a60] hover:text-[#80b0ff] transition-colors" onClick={(e) => e.stopPropagation()}>
+            <a className="text-[var(--pet-text-dim,#7a8a9a)] hover:text-[#80b0ff] transition-colors" onClick={(e) => e.stopPropagation()}>
               <ExternalLink size={9} />
             </a>
           </Link>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Buy button */}
         <button

@@ -102,7 +102,7 @@ export default function SettingsNav({ sections, searchQuery, onSearchChange }: S
             className="flex-1 bg-card border border-input text-foreground text-xs rounded-md px-3 py-1.5 placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
           {sections.map((s) => (
             <button
               key={s.id}

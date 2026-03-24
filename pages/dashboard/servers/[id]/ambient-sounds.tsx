@@ -12,6 +12,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader, SectionCard, ChannelSelect, toast,
 } from "@/components/dashboard/ui"
@@ -326,6 +330,15 @@ export default function AmbientSoundsPage() {
   }, [guildId, schedUrl])
 
   const [savingRental, setSavingRental] = useState(false)
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Controlled state for rental hourly rate input (replaces uncontrolled defaultValue)
+  const [rentalRate, setRentalRate] = useState(10)
+  useEffect(() => {
+    if (rentalData?.config?.room_rental_hourly_rate != null) {
+      setRentalRate(rentalData.config.room_rental_hourly_rate)
+    }
+  }, [rentalData?.config?.room_rental_hourly_rate])
+  // --- END AI-MODIFIED ---
   const saveRentalConfig = useCallback(async (patch: Partial<RentalConfig>) => {
     setSavingRental(true)
     try {
@@ -358,10 +371,16 @@ export default function AmbientSoundsPage() {
     <Layout SEO={{ title: `Ambient Sounds - ${serverName} - LionBot`, description: "Configure ambient sound bots for your voice channels" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-5xl mx-auto flex gap-8">
-              <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
-              <div className="flex-1 min-w-0">
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate to DashboardShell for consistent layout
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-5xl mx-auto flex gap-8">
+                  <ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />
+                  <div className="flex-1 min-w-0">
+              --- End original code --- */}
+          <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
+          {/* --- END AI-REPLACED --- */}
                 {/* --- AI-MODIFIED (2026-03-22) --- */}
                 {/* Purpose: Added refresh button next to page header */}
                 <div className="flex items-start justify-between gap-4">
@@ -888,17 +907,18 @@ export default function AmbientSoundsPage() {
                         <>
                           <div className="flex items-center gap-2 mb-3">
                             <span className="text-xs text-muted-foreground">Hourly rate:</span>
+                            {/* --- AI-MODIFIED (2026-03-24) --- */}
+                            {/* Purpose: Controlled value+onChange replaces uncontrolled defaultValue+onBlur */}
                             <input
                               type="number"
                               min={1}
                               max={10000}
-                              defaultValue={rentalData.config.room_rental_hourly_rate}
-                              onBlur={(e) => {
-                                const val = Math.max(1, Math.min(10000, parseInt(e.target.value) || 10))
-                                saveRentalConfig({ room_rental_hourly_rate: val })
-                              }}
+                              value={rentalRate}
+                              onChange={(e) => setRentalRate(Math.max(1, Math.min(10000, parseInt(e.target.value) || 1)))}
+                              onBlur={() => saveRentalConfig({ room_rental_hourly_rate: rentalRate })}
                               className="w-20 bg-gray-800/50 border border-white/10 rounded px-2 py-1 text-xs text-foreground"
                             />
+                            {/* --- END AI-MODIFIED --- */}
                             <span className="text-xs text-muted-foreground">LionCoins / hour</span>
                           </div>
 
@@ -932,9 +952,9 @@ export default function AmbientSoundsPage() {
                 )}
 
                 {/* SaveBar removed — Start/Stop button and setting changes auto-save */}
-              </div>
-            </div>
-          </div>
+          {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
         </ServerGuard>
       </AdminGuard>
     </Layout>

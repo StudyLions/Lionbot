@@ -6,12 +6,25 @@
 // ============================================================
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: full member hub redesign - rank progress, activity chart, goals, economy, sessions, attendance, messages, server info
+import { relativeTime } from "@/utils/relativeTime"
+import SearchInput from "@/components/dashboard/ui/SearchInput"
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import Pagination from "@/components/dashboard/ui/Pagination"
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Migrating from Radix Tabs to shared TabBar component
+// --- Original code (commented out for rollback) ---
+// import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+// --- End original code ---
+import TabBar from "@/components/dashboard/ui/TabBar"
+// --- END AI-REPLACED ---
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useEffect, useState, useMemo, useCallback } from "react"
@@ -19,7 +32,7 @@ import { useRouter } from "next/router"
 import Link from "next/link"
 import {
   Clock, Coins, Crown, Trophy, Dumbbell, Settings, Users, Shield,
-  Wallet, Wand2, CheckCircle2, XCircle, ChevronRight, ChevronLeft, Radio,
+  Wallet, Wand2, CheckCircle2, XCircle, ChevronRight, Radio,
   AlertTriangle, Ban, ArrowRightLeft, TrendingUp, UserPlus,
   Sparkles, Zap, Palette, HeadphonesIcon,
   MessageSquare, Target, Calendar, Camera, Monitor, Info,
@@ -170,17 +183,22 @@ function formatDuration(startTime: string | null): string {
   return m > 0 ? `${h}h ${m}m` : `${h}h`
 }
 
-function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime()
-  const mins = Math.floor(diff / 60_000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
-  const days = Math.floor(hrs / 24)
-  if (days < 7) return `${days}d ago`
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
-}
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Replaced local timeAgo with shared relativeTime from @/utils/relativeTime
+// --- Original code (commented out for rollback) ---
+// function relativeTime(iso: string): string {
+//   const diff = Date.now() - new Date(iso).getTime()
+//   const mins = Math.floor(diff / 60_000)
+//   if (mins < 1) return "just now"
+//   if (mins < 60) return `${mins}m ago`
+//   const hrs = Math.floor(mins / 60)
+//   if (hrs < 24) return `${hrs}h ago`
+//   const days = Math.floor(hrs / 24)
+//   if (days < 7) return `${days}d ago`
+//   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" })
+// }
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-muted/50 rounded-lg ${className}`} />
@@ -344,6 +362,14 @@ export default function ServerDetail() {
   const isMod = perms.isModerator || perms.isAdmin
   const userRank = memberData?.leaderboardPosition
 
+  // --- AI-REPLACED (2026-03-24) ---
+  // Reason: Radix Tabs replaced with TabBar + state-based tab switching
+  // --- Original code (commented out for rollback) ---
+  // (Tabs defaultValue="overview" was used below — now driven by this state)
+  // --- End original code ---
+  const [activeTab, setActiveTab] = useState("overview")
+  // --- END AI-REPLACED ---
+
   // --- AI-MODIFIED (2026-03-14) ---
   // Purpose: leaderboard tab state + API
   type SLBType = "study" | "messages" | "coins"
@@ -405,15 +431,22 @@ export default function ServerDetail() {
     >
       <AdminGuard>
         <ServerGuard requiredLevel="member">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <ServerNav
-              serverId={id as string}
-              serverName={data?.server.name || (loading ? "Loading..." : "Server")}
-              isAdmin={perms.isAdmin}
-              isMod={perms.isModerator}
-            />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-6xl mx-auto flex gap-8">
+                <ServerNav serverId={id as string} serverName={...} isAdmin={perms.isAdmin} isMod={perms.isModerator} />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={
+          <ServerNav
+            serverId={id as string}
+            serverName={data?.server.name || (loading ? "Loading..." : "Server")}
+            isAdmin={perms.isAdmin}
+            isMod={perms.isModerator}
+          />
+        }>
               {loading ? (
                 <div className="space-y-4">
                   <div className="rounded-2xl overflow-hidden border border-border">
@@ -462,7 +495,11 @@ export default function ServerDetail() {
                     {/* Purpose: Add flex-wrap so hero header doesn't overflow on mobile */}
                     <div className="relative px-4 sm:px-6 py-5 flex items-center justify-between gap-4 flex-wrap">
                     {/* --- END AI-MODIFIED --- */}
-                      <div className="flex items-center gap-4">
+                      {/* --- AI-REPLACED (2026-03-24) --- */}
+                      {/* Reason: Wired up the already-imported PageHeader component for consistency */}
+                      {/* What the new code does better: Uses shared breadcrumb component instead of hand-rolled breadcrumbs */}
+                      {/* --- Original code (commented out for rollback) --- */}
+                      {/* <div className="flex items-center gap-4">
                         <ServerIcon name={data.server.name} iconUrl={data.server.iconUrl} size="lg" />
                         <div>
                           <h1 className="text-2xl font-bold text-foreground">{data.server.name}</h1>
@@ -476,7 +513,22 @@ export default function ServerDetail() {
                             <span className="text-foreground/70">{data.server.name}</span>
                           </div>
                         </div>
+                      </div> */}
+                      {/* --- End original code --- */}
+                      <div className="flex items-center gap-4">
+                        <ServerIcon name={data.server.name} iconUrl={data.server.iconUrl} size="lg" />
+                        <div className="flex-1 [&>div]:mb-0">
+                          <PageHeader
+                            title={data.server.name}
+                            breadcrumbs={[
+                              { label: "Dashboard", href: "/dashboard" },
+                              { label: "Servers", href: "/dashboard/servers" },
+                              { label: data.server.name },
+                            ]}
+                          />
+                        </div>
                       </div>
+                      {/* --- END AI-REPLACED --- */}
                       {perms.isAdmin && (
                         <Link href={`/dashboard/servers/${id}/setup`}>
                           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors whitespace-nowrap">
@@ -489,15 +541,32 @@ export default function ServerDetail() {
                   </div>
 
                   {/* Tabs */}
-                  <Tabs defaultValue="overview" className="space-y-6">
-                    <TabsList className="bg-muted/50 border border-border">
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="activity">Activity</TabsTrigger>
-                      <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
-                    </TabsList>
+                  {/* --- AI-REPLACED (2026-03-24) ---
+                      Reason: Migrated from Radix Tabs to shared TabBar component with state-based content switching
+                      --- Original code (commented out for rollback) ---
+                      <Tabs defaultValue="overview" className="space-y-6">
+                        <TabsList className="bg-muted/50 border border-border">
+                          <TabsTrigger value="overview">Overview</TabsTrigger>
+                          <TabsTrigger value="activity">Activity</TabsTrigger>
+                          <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="overview" className="space-y-6">
+                      --- End original code --- */}
+                  <div className="space-y-6">
+                    <TabBar
+                      tabs={[
+                        { key: "overview", label: "Overview" },
+                        { key: "activity", label: "Activity" },
+                        { key: "leaderboard", label: "Leaderboard" },
+                      ]}
+                      active={activeTab}
+                      onChange={setActiveTab}
+                      variant="pills"
+                    />
 
                     {/* ====== OVERVIEW TAB ====== */}
-                    <TabsContent value="overview" className="space-y-6">
+                    {activeTab === "overview" && (<div className="space-y-6">
+                  {/* --- END AI-REPLACED --- */}
                       {/* Ongoing Session Banner */}
                       {memberData?.ongoingSession && (
                         <div className="rounded-xl border border-emerald-500/40 bg-gradient-to-r from-emerald-500/10 via-emerald-400/5 to-transparent p-5">
@@ -509,7 +578,7 @@ export default function ServerDetail() {
                             <div className="flex-1">
                               <p className="font-semibold text-foreground">You&apos;re studying right now!</p>
                               <p className="text-sm text-muted-foreground mt-0.5">
-                                Started {timeAgo(memberData.ongoingSession.startTime)} &middot; {formatMinutes(liveTimer)} so far
+                                Started {relativeTime(memberData.ongoingSession.startTime)} &middot; {formatMinutes(liveTimer)} so far
                               </p>
                             </div>
                             <div className="flex gap-2">
@@ -870,7 +939,7 @@ export default function ServerDetail() {
                                       )}
                                     </div>
                                   </div>
-                                  <span className="text-xs text-muted-foreground whitespace-nowrap">{timeAgo(s.startTime)}</span>
+                                  <span className="text-xs text-muted-foreground whitespace-nowrap">{relativeTime(s.startTime)}</span>
                                 </div>
                               ))}
                             </div>
@@ -915,7 +984,7 @@ export default function ServerDetail() {
                                       </span>
                                       {t.bonus > 0 && <span className="text-amber-400/70 font-mono">+{t.bonus}</span>}
                                       <span className="text-muted-foreground truncate flex-1">{txnLabels[t.type] || t.type}</span>
-                                      <span className="text-muted-foreground/50 whitespace-nowrap">{timeAgo(t.createdAt)}</span>
+                                      <span className="text-muted-foreground/50 whitespace-nowrap">{relativeTime(t.createdAt)}</span>
                                     </div>
                                   ))}
                                 </div>
@@ -1068,10 +1137,17 @@ export default function ServerDetail() {
                           </button>
                         </div>
                       )}
-                    </TabsContent>
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: TabsContent -> conditional rendering
+                        --- Original code (commented out for rollback) ---
+                        </TabsContent>
+                        <TabsContent value="activity" className="space-y-6">
+                        --- End original code --- */}
+                    </div>)}
 
                     {/* ====== ACTIVITY TAB ====== */}
-                    <TabsContent value="activity" className="space-y-6">
+                    {activeTab === "activity" && (<div className="space-y-6">
+                    {/* --- END AI-REPLACED --- */}
                       {/* Currently Studying (mod+) */}
                       {(isMod || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
@@ -1176,12 +1252,19 @@ export default function ServerDetail() {
                           )}
                         </div>
                       </div>
-                    </TabsContent>
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: TabsContent -> conditional rendering
+                        --- Original code (commented out for rollback) ---
+                        </TabsContent>
+                        <TabsContent value="leaderboard" className="space-y-4">
+                        --- End original code --- */}
+                    </div>)}
 
                     {/* ====== LEADERBOARD TAB ====== */}
                     {/* --- AI-MODIFIED (2026-03-14) --- */}
                     {/* Purpose: enhanced leaderboard with type tabs, period filter, podium, pagination */}
-                    <TabsContent value="leaderboard" className="space-y-4">
+                    {activeTab === "leaderboard" && (<div className="space-y-4">
+                    {/* --- END AI-REPLACED --- */}
                       {/* Controls */}
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/40 w-fit">
@@ -1221,12 +1304,18 @@ export default function ServerDetail() {
                               ))}
                             </div>
                           )}
-                          <div className="relative">
-                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                            <input type="text" value={lbSearch} onChange={(e) => setLbSearch(e.target.value)}
-                              placeholder="Search members..."
-                              className="pl-8 pr-3 py-1.5 text-sm rounded-lg bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-48 sm:w-40" />
-                          </div>
+                          {/* --- AI-REPLACED (2026-03-24) ---
+                              Reason: Replaced custom search input with shared SearchInput component
+                              --- Original code (commented out for rollback) ---
+                              <div className="relative">
+                                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                                <input type="text" value={lbSearch} onChange={(e) => setLbSearch(e.target.value)}
+                                  placeholder="Search members..."
+                                  className="pl-8 pr-3 py-1.5 text-sm rounded-lg bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 w-48 sm:w-40" />
+                              </div>
+                              --- End original code --- */}
+                          <SearchInput value={lbSearch} onChange={setLbSearch} placeholder="Search members..." className="w-48 sm:w-40" />
+                          {/* --- END AI-REPLACED --- */}
                         </div>
                       </div>
 
@@ -1385,30 +1474,40 @@ export default function ServerDetail() {
                             </div>
 
                             {/* Pagination */}
-                            {lbData.totalPages > 1 && (
-                              <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
-                                <button onClick={() => setLbPage(lbPage - 1)} disabled={lbPage <= 1}
-                                  className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                                  <ChevronLeft size={18} />
-                                </button>
-                                <span className="text-sm text-muted-foreground px-3">Page {lbPage} of {lbData.totalPages}</span>
-                                <button onClick={() => setLbPage(lbPage + 1)} disabled={lbPage >= lbData.totalPages}
-                                  className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                                  <ChevronRight size={18} />
-                                </button>
-                              </div>
-                            )}
+                            {/* --- AI-REPLACED (2026-03-24) ---
+                                Reason: Replaced custom leaderboard pagination with shared Pagination component
+                                --- Original code (commented out for rollback) ---
+                                {lbData.totalPages > 1 && (
+                                  <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
+                                    <button onClick={() => setLbPage(lbPage - 1)} disabled={lbPage <= 1} ...>
+                                      <ChevronLeft size={18} />
+                                    </button>
+                                    <span>Page {lbPage} of {lbData.totalPages}</span>
+                                    <button onClick={() => setLbPage(lbPage + 1)} disabled={lbPage >= lbData.totalPages} ...>
+                                      <ChevronRight size={18} />
+                                    </button>
+                                  </div>
+                                )}
+                                --- End original code --- */}
+                            <Pagination page={lbPage} totalPages={lbData.totalPages} onChange={setLbPage} showLabel className="py-4 border-t border-border" />
+                            {/* --- END AI-REPLACED --- */}
                           </>
                         )}
                       </div>
-                    </TabsContent>
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: TabsContent + Tabs closing -> conditional rendering
+                        --- Original code (commented out for rollback) ---
+                        </TabsContent>
+                        </Tabs>
+                        --- End original code --- */}
+                    </div>)}
                     {/* --- END AI-MODIFIED --- */}
-                  </Tabs>
+                  </div>
                 </>
               ) : null}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </ServerGuard>
       </AdminGuard>
     </Layout>

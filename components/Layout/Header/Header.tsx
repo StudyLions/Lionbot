@@ -199,7 +199,10 @@ export default function Header() {
               {session ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-primary/30 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+                    {/* --- AI-MODIFIED (2026-03-24) --- */}
+                    {/* Purpose: Added aria-label for screen reader accessibility */}
+                    <button aria-label="User menu" className="flex items-center gap-2 rounded-full hover:ring-2 hover:ring-primary/30 transition-all outline-none focus-visible:ring-2 focus-visible:ring-primary/30">
+                    {/* --- END AI-MODIFIED --- */}
                       {session.user?.image ? (
                         <img
                           src={session.user.image}

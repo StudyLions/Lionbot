@@ -198,7 +198,10 @@ export default function EnhancementCeremony({
           transition={{ duration: 0.2 }}
         >
           {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70" />
+          {/* --- AI-MODIFIED (2026-03-24) --- */}
+          {/* Purpose: Standardize pet modal overlay to bg-black/70 + blur */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+          {/* --- END AI-MODIFIED --- */}
 
           {/* Shake wrapper */}
           <div className={showShake

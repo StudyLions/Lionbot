@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
   ChannelSelect, SaveBar, PageHeader, toast,
@@ -278,6 +282,13 @@ export default function StickyMessagesPage() {
   const apiUrl = serverId ? `/api/dashboard/servers/${serverId}/sticky-messages` : null
 
   const { data, isLoading } = useDashboard<PageData>(apiUrl)
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch server name so ServerNav shows actual name instead of "..."
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    serverId ? `/api/dashboard/servers/${serverId}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
+  // --- END AI-MODIFIED ---
 
   const [editing, setEditing] = useState<{ form: StickyForm; stickyid: number | null; isNew: boolean } | null>(null)
   const [saving, setSaving] = useState(false)
@@ -359,7 +370,8 @@ export default function StickyMessagesPage() {
   }, [apiUrl])
 
   const pageContent = editing ? (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl">
+    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
+    <>
       <PageHeader
         title={editing.isNew ? "New Sticky Message" : "Edit Sticky Message"}
         description="Configure a persistent message that stays at the bottom of a channel"
@@ -381,9 +393,11 @@ export default function StickyMessagesPage() {
         isNew={editing.isNew}
         serverId={serverId}
       />
-    </main>
+    </>
+    {/* --- END AI-MODIFIED --- */}
   ) : (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl">
+    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
+    <>
       <PageHeader
         title="Sticky Messages"
         description="Keep important messages pinned to the bottom of channels. The bot automatically reposts them whenever someone sends a new message."
@@ -553,19 +567,30 @@ export default function StickyMessagesPage() {
           </div>
         </div>
       )}
-    </main>
+    </>
+    {/* --- END AI-MODIFIED --- */}
   )
 
   return (
     <Layout SEO={{ title: "Sticky Messages", description: "Configure persistent sticky messages for your channels" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-6xl mx-auto flex gap-8">
-              <ServerNav serverId={serverId} serverName="..." isAdmin isMod />
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate to DashboardShell for consistent layout
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-6xl mx-auto flex gap-8">
+                  <ServerNav serverId={serverId} serverName="..." isAdmin isMod />
+                  {pageContent}
+                </div>
+              </div>
+              --- End original code --- */}
+          {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Use fetched serverName instead of hardcoded "..." --- */}
+          <DashboardShell nav={<ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />}>
+          {/* --- END AI-MODIFIED --- */}
               {pageContent}
-            </div>
-          </div>
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
         </ServerGuard>
       </AdminGuard>
     </Layout>

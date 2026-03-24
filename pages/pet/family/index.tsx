@@ -6,8 +6,9 @@
 // ============================================================
 import { useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/router"
+import { relativeTime } from "@/utils/relativeTime"
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -270,7 +271,7 @@ function ActivityFeed({ activity }: {
       <div className="space-y-1.5 max-h-[200px] overflow-y-auto scrollbar-hide">
         {activity.map((entry, i) => {
           const time = new Date(entry.createdAt)
-          const relative = formatRelativeTime(time)
+          const relative = relativeTime(time)
           const isPositive = Number(entry.amount) >= 0
           return (
             <div key={i} className="flex items-center gap-2 px-2 py-1.5 bg-[#0a0e1a] border border-[#1a2a3c]">
@@ -452,16 +453,21 @@ function PendingInvites() {
   )
 }
 
-function formatRelativeTime(date: Date): string {
-  const diff = Date.now() - date.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Replaced local formatRelativeTime with shared relativeTime from @/utils/relativeTime (imported at top)
+// --- Original code (commented out for rollback) ---
+// function relativeTime(date: Date): string {
+//   const diff = Date.now() - date.getTime()
+//   const mins = Math.floor(diff / 60000)
+//   if (mins < 1) return "just now"
+//   if (mins < 60) return `${mins}m ago`
+//   const hours = Math.floor(mins / 60)
+//   if (hours < 24) return `${hours}h ago`
+//   const days = Math.floor(hours / 24)
+//   return `${days}d ago`
+// }
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 // --- AI-MODIFIED (2026-03-24) ---
 // Purpose: Add members fetch, leave family handler
@@ -534,10 +540,16 @@ export default function FamilyOverview() {
   return (
     <Layout SEO={{ title: "Family - LionGotchi", description: "LionGotchi family guild" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               {/* Header */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Family</h1>
@@ -597,9 +609,10 @@ export default function FamilyOverview() {
                   <PendingInvites />
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

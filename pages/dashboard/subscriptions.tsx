@@ -5,10 +5,14 @@
 //          paid server premiums (transfer between servers) and
 //          LionHeart++ included server premium (apply/transfer).
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { PageHeader, SectionCard, toast } from "@/components/dashboard/ui"
+import { PageHeader, SectionCard, toast, DashboardShell } from "@/components/dashboard/ui"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useCallback } from "react"
 import {
@@ -254,10 +258,10 @@ export default function SubscriptionsPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0"> */}
+        <DashboardShell nav={<DashboardNav />}>
               <PageHeader
                 title="Subscriptions"
                 description="Manage your LionHeart membership and server premium subscriptions."
@@ -267,10 +271,33 @@ export default function SubscriptionsPage() {
                 ]}
               />
 
-              {loading ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced Loader2 spinner with proper Skeleton layout matching page structure */}
+              {/* What the new code does better: Shows content shape while loading instead of a generic spinner */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading ? (
                 <div className="flex items-center justify-center py-20">
-                  <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div> */}
+              {/* --- End original code --- */}
+              {loading ? (
+                <div className="space-y-6 mt-6">
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="h-5 w-5 rounded" />
+                      <Skeleton className="h-5 w-48" />
+                    </div>
+                    <Skeleton className="h-20 rounded-lg" />
+                  </div>
+                  <div className="bg-card rounded-xl border border-border p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <Skeleton className="h-5 w-5 rounded" />
+                      <Skeleton className="h-5 w-56" />
+                    </div>
+                    <Skeleton className="h-20 rounded-lg" />
+                  </div>
                 </div>
+              {/* --- END AI-REPLACED --- */}
               ) : (
                 <div className="space-y-6 mt-6">
                   {/* LionHeart Subscription */}
@@ -280,12 +307,12 @@ export default function SubscriptionsPage() {
                   >
                     {userSub && userSub.tier !== "NONE" ? (
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between p-4 rounded-lg bg-gray-900/50 border border-gray-700">
+                        <div className="flex items-center justify-between p-4 rounded-lg bg-card border border-border">
                           <div>
-                            <div className="text-lg font-bold text-white">
+                            <div className="text-lg font-bold text-foreground">
                               {tierNames[userSub.tier] || userSub.tier}
                             </div>
-                            <div className="text-sm text-gray-400 mt-0.5">
+                            <div className="text-sm text-muted-foreground mt-0.5">
                               {userSub.status === "ACTIVE"
                                 ? `Renews ${formatDate(userSub.currentPeriodEnd)}`
                                 : userSub.status === "CANCELLING"
@@ -312,7 +339,7 @@ export default function SubscriptionsPage() {
                             <button
                               onClick={handleLhPortal}
                               disabled={portalLoading === "lh"}
-                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-700 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:text-white hover:bg-accent transition-colors disabled:opacity-50"
                             >
                               {portalLoading === "lh" ? (
                                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -326,7 +353,7 @@ export default function SubscriptionsPage() {
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <p className="text-gray-400 mb-3">
+                        <p className="text-muted-foreground mb-3">
                           You don&apos;t have an active LionHeart subscription.
                         </p>
                         {/* --- AI-MODIFIED (2026-03-23) --- */}
@@ -354,7 +381,7 @@ export default function SubscriptionsPage() {
                           return (
                             <div
                               key={sub.id}
-                              className="p-4 rounded-lg bg-gray-900/50 border border-gray-700"
+                              className="p-4 rounded-lg bg-card border border-border"
                             >
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
@@ -362,10 +389,10 @@ export default function SubscriptionsPage() {
                                     <Server className="h-5 w-5 text-blue-400" />
                                   </div>
                                   <div>
-                                    <div className="text-sm font-semibold text-white">
+                                    <div className="text-sm font-semibold text-foreground">
                                       {getServerName(sub.guildId)}
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-0.5">
+                                    <div className="text-xs text-muted-foreground mt-0.5">
                                       {sub.plan === "YEARLY" ? "Yearly" : "Monthly"} &middot;{" "}
                                       {sub.status === "ACTIVE"
                                         ? `Renews ${formatDate(sub.currentPeriodEnd)}`
@@ -398,7 +425,7 @@ export default function SubscriptionsPage() {
                                       setTransferModalSub(sub)
                                     }}
                                     disabled={cooldownActive || sub.status === "PAST_DUE"}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-700 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:text-white hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                     title={
                                       cooldownActive
                                         ? `Cooldown until ${formatDate(sub.transferCooldownEnds)}`
@@ -415,7 +442,7 @@ export default function SubscriptionsPage() {
                                   <button
                                     onClick={() => handleServerPortal(sub.guildId)}
                                     disabled={portalLoading === sub.guildId}
-                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-700 text-sm text-gray-300 hover:text-white hover:bg-gray-800 transition-colors disabled:opacity-50"
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border text-sm text-foreground hover:text-white hover:bg-accent transition-colors disabled:opacity-50"
                                   >
                                     {portalLoading === sub.guildId ? (
                                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -438,7 +465,7 @@ export default function SubscriptionsPage() {
                       </div>
                     ) : (
                       <div className="text-center py-6">
-                        <p className="text-gray-400 mb-3">
+                        <p className="text-muted-foreground mb-3">
                           You don&apos;t have any active server premium subscriptions.
                         </p>
                         {/* --- AI-MODIFIED (2026-03-23) --- */}
@@ -460,7 +487,7 @@ export default function SubscriptionsPage() {
                       title="LionHeart++ Server Premium"
                       icon={<Crown className="h-5 w-5 text-yellow-400" />}
                     >
-                      <div className="p-4 rounded-lg bg-gray-900/50 border border-blue-500/30">
+                      <div className="p-4 rounded-lg bg-card border border-blue-500/30">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center">
@@ -469,7 +496,7 @@ export default function SubscriptionsPage() {
                             <div>
                               {lhPremium.isApplied ? (
                                 <>
-                                  <div className="text-sm font-semibold text-white">
+                                  <div className="text-sm font-semibold text-foreground">
                                     {getServerName(lhPremium.guildId!)}
                                   </div>
                                   <div className="text-xs text-blue-400 font-medium mt-0.5">
@@ -480,10 +507,10 @@ export default function SubscriptionsPage() {
                                 </>
                               ) : (
                                 <>
-                                  <div className="text-sm font-semibold text-white">
+                                  <div className="text-sm font-semibold text-foreground">
                                     Not applied yet
                                   </div>
-                                  <div className="text-xs text-gray-400 mt-0.5">
+                                  <div className="text-xs text-muted-foreground mt-0.5">
                                     Your LionHeart++ includes a free server premium — apply it to any server!
                                   </div>
                                 </>
@@ -539,7 +566,7 @@ export default function SubscriptionsPage() {
                       {/* --- AI-MODIFIED (2026-03-23) --- */}
                       {/* Purpose: Fix crash -- Next.js 12 Link requires child <a>, not className on Link */}
                       <Link href="/donate#server-premium">
-                        <a className="text-sm text-gray-500 hover:text-gray-300 transition-colors">
+                        <a className="text-sm text-muted-foreground hover:text-foreground transition-colors">
                           Want premium for another server? Purchase on the{" "}
                           <span className="text-blue-400 hover:underline">donate page</span>
                         </a>
@@ -549,18 +576,17 @@ export default function SubscriptionsPage() {
                   )}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Transfer Modal */}
         {transferModalSub && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-lg font-bold text-white mb-1">
+            <div className="bg-muted border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-lg font-bold text-foreground mb-1">
                 Transfer Server Premium
               </h3>
-              <p className="text-sm text-gray-400 mb-5">
+              <p className="text-sm text-muted-foreground mb-5">
                 Move your premium subscription from{" "}
                 <span className="text-white font-medium">
                   {getServerName(transferModalSub.guildId)}
@@ -581,13 +607,13 @@ export default function SubscriptionsPage() {
                 }
                 return (
                   <div className="mb-5">
-                    <label className="text-sm text-gray-300 font-medium mb-1.5 block">
+                    <label className="text-sm text-foreground font-medium mb-1.5 block">
                       Transfer to:
                     </label>
                     <select
                       value={transferTarget}
                       onChange={(e) => setTransferTarget(e.target.value)}
-                      className="w-full rounded-lg bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg bg-card border border-border text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none"
                     >
                       {targets.map((s) => (
                         <option key={s.guildId} value={s.guildId}>
@@ -602,7 +628,7 @@ export default function SubscriptionsPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setTransferModalSub(null)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 text-sm font-medium hover:bg-gray-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
                 >
                   Cancel
                 </button>
@@ -624,7 +650,7 @@ export default function SubscriptionsPage() {
                 </button>
               </div>
 
-              <p className="text-[11px] text-gray-600 mt-3 text-center">
+              <p className="text-[11px] text-muted-foreground mt-3 text-center">
                 After transferring, a 7-day cooldown applies before you can transfer again.
               </p>
             </div>
@@ -634,11 +660,11 @@ export default function SubscriptionsPage() {
         {/* LH++ Apply/Transfer Modal */}
         {showLhApply && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-gray-800 border border-gray-700 rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-lg font-bold text-white mb-1">
+            <div className="bg-muted border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <h3 className="text-lg font-bold text-foreground mb-1">
                 {lhPremium?.isApplied ? "Transfer" : "Apply"} LionHeart++ Server Premium
               </h3>
-              <p className="text-sm text-gray-400 mb-5">
+              <p className="text-sm text-muted-foreground mb-5">
                 {lhPremium?.isApplied
                   ? "Move your included server premium to a different server. The old server will lose the LionHeart++ premium benefit immediately."
                   : "Choose a server to apply your included server premium to."}
@@ -658,13 +684,13 @@ export default function SubscriptionsPage() {
                 }
                 return (
                   <div className="mb-5">
-                    <label className="text-sm text-gray-300 font-medium mb-1.5 block">
+                    <label className="text-sm text-foreground font-medium mb-1.5 block">
                       {lhPremium?.isApplied ? "Transfer to:" : "Apply to:"}
                     </label>
                     <select
                       value={lhApplyTarget}
                       onChange={(e) => setLhApplyTarget(e.target.value)}
-                      className="w-full rounded-lg bg-gray-900 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg bg-card border border-border text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none"
                     >
                       {available.map((s) => (
                         <option key={s.guildId} value={s.guildId}>
@@ -679,7 +705,7 @@ export default function SubscriptionsPage() {
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowLhApply(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 text-sm font-medium hover:bg-gray-700 transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
                 >
                   Cancel
                 </button>
@@ -702,7 +728,7 @@ export default function SubscriptionsPage() {
               </div>
 
               {lhPremium?.isApplied && (
-                <p className="text-[11px] text-gray-600 mt-3 text-center">
+                <p className="text-[11px] text-muted-foreground mt-3 text-center">
                   After transferring, a 7-day cooldown applies before you can transfer again.
                 </p>
               )}

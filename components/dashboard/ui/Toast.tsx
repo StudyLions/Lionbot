@@ -37,20 +37,23 @@ export function ToastProvider() {
       position="bottom-right"
       toastOptions={{
         duration: 4000,
+        // --- AI-MODIFIED (2026-03-24) ---
+        // Purpose: Replace hex colors with CSS variable references for theming
         style: {
-          background: "#1f2937",
-          color: "#f3f4f6",
-          border: "1px solid #374151",
+          background: "hsl(var(--card))",
+          color: "hsl(var(--foreground))",
+          border: "1px solid hsl(var(--border))",
           borderRadius: "0.75rem",
           fontSize: "0.875rem",
         },
         success: {
-          iconTheme: { primary: "#10b981", secondary: "#1f2937" },
+          iconTheme: { primary: "#10b981", secondary: "hsl(var(--card))" },
         },
         error: {
-          iconTheme: { primary: "#ef4444", secondary: "#1f2937" },
+          iconTheme: { primary: "#ef4444", secondary: "hsl(var(--card))" },
           duration: 6000,
         },
+        // --- END AI-MODIFIED ---
       }}
     />
   )

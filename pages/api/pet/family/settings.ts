@@ -108,15 +108,12 @@ export default apiHandler({
       }
     }
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Disabled icon upload to prevent exploitation until feature is hardened
     if (iconUrl !== undefined) {
-      if (iconUrl !== null && typeof iconUrl === "string" && iconUrl.length > 256) {
-        return res.status(400).json({ error: "Icon URL too long (max 256 characters)" })
-      }
-      if (iconUrl !== membership.lg_families.icon_url) {
-        updates.icon_url = iconUrl || null
-        gemsNeeded += ICON_CHANGE_GEM_COST
-      }
+      return res.status(400).json({ error: "Icon upload is temporarily disabled" })
     }
+    // --- END AI-MODIFIED ---
 
     if (description !== undefined) {
       if (typeof description === "string" && description.length > 500) {

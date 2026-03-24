@@ -89,16 +89,26 @@ footer, header, hgroup, menu, nav, section {
   display: block;
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Align body background with --background CSS variable instead of SCSS $color-6,
+//          and remove explicit font-family so Tailwind's font-sans (Inter, Rubik) applies
+// --- Original code (commented out for rollback) ---
+// body {
+//   font-family: 'Rubik', sans-serif;
+//   background: globalVariables.$color-6;
+//   color: globalVariables.$color-0;
+// }
+// --- End original code ---
 body {
-  font-family: 'Rubik', sans-serif;
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   margin: 0;
   padding: 0;
-  background: globalVariables.$color-6;
+  background: hsl(var(--background));
   color: globalVariables.$color-0;
   line-height: 1;
 }
+// --- END AI-MODIFIED ---
 
 ol, ul {
   list-style: none;
@@ -572,4 +582,15 @@ p, a, b {
 .animate-enhance-lion-bless { animation: enhance-lion-bless 1s ease-in-out infinite; }
 .animate-enhance-skull-bob { animation: enhance-skull-bob 1.5s ease-in-out infinite; }
 .animate-enhance-streak-flame { animation: enhance-streak-flame 0.4s ease-in-out infinite; }
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Respect user preference for reduced motion
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 // --- END AI-MODIFIED ---

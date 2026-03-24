@@ -40,7 +40,7 @@ export default function TextInput({
     placeholder:text-muted-foreground
     focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent
     disabled:opacity-50 disabled:cursor-not-allowed
-    ${isDefault ? "border-input" : value ? "border-indigo-500/50" : "border-input"}
+    ${isDefault ? "border-input" : value ? "border-primary/50" : "border-input"}
   `
 
   return (
