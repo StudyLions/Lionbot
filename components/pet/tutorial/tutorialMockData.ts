@@ -27,18 +27,18 @@ export interface MockItem {
 }
 
 export const MOCK_ITEMS: MockItem[] = [
-  { id: 1, name: "Leather Cap", category: "HAT", rarity: "COMMON", assetPath: "hats/hat_01_common.png", description: "A simple leather cap." },
-  { id: 2, name: "Frost Goggles", category: "GLASSES", rarity: "UNCOMMON", assetPath: "glasses/glasses_01_uncommon.png", description: "Cool shades with a frosty tint." },
-  { id: 3, name: "Battle Tunic", category: "SHIRT", rarity: "RARE", assetPath: "shirts/shirt_01_rare.png", description: "A sturdy shirt worn by warriors." },
-  { id: 4, name: "Golden Wings", category: "WINGS", rarity: "EPIC", assetPath: "wings/angel_wings_gold.png", description: "Gleaming wings of pure gold." },
-  { id: 5, name: "Legendary Boots", category: "BOOTS", rarity: "LEGENDARY", assetPath: "boots/boots_boots_legendary_.png", description: "Boots forged in ancient fire." },
-  { id: 6, name: "Mythical Crown", category: "HAT", rarity: "MYTHICAL", assetPath: "hats/crown.png", description: "A crown of unimaginable power." },
+  { id: 87, name: "Cloudshine Halo", category: "HAT", rarity: "COMMON", assetPath: "hats/angel_halo.png", description: "A gentle halo of light." },
+  { id: 306, name: "Phantom Visage", category: "GLASSES", rarity: "UNCOMMON", assetPath: "glasses/anonymous_mask_uncommon_.png", description: "A mask of mystery." },
+  { id: 456, name: "Titan Slayer Jacket", category: "SHIRT", rarity: "RARE", assetPath: "shirts/aot_shirt_aot_shirt_rare.png", description: "A jacket worn by titan slayers." },
+  { id: 2067, name: "Golden Wings", category: "WINGS", rarity: "EPIC", assetPath: "wings/angel_wings_gold.png", description: "Gleaming wings of pure gold." },
+  { id: 804, name: "Bouncy Kicks", category: "BOOTS", rarity: "LEGENDARY", assetPath: "boots/boots_boots_legendary_.png", description: "Boots with legendary bounce." },
+  { id: 1171, name: "Cloudshine Halo", category: "HAT", rarity: "MYTHICAL", assetPath: "hats/angel_halo.png", description: "A divine halo of power." },
 ]
 
 export const MOCK_SCROLL_ITEMS: MockItem[] = [
-  { id: 101, name: "Common Scroll", category: "SCROLL", rarity: "COMMON", assetPath: "scrolls/scroll_common.png", description: "70% success rate." },
-  { id: 102, name: "Rare Scroll", category: "SCROLL", rarity: "RARE", assetPath: "scrolls/scroll_rare.png", description: "50% success rate, stronger bonus." },
-  { id: 103, name: "Legendary Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: "scrolls/scroll_legendary.png", description: "30% success rate, massive bonus." },
+  { id: 1151, name: "Dusty Scroll", category: "SCROLL", rarity: "COMMON", assetPath: "scrolls/dusty_scroll.png", description: "70% success rate." },
+  { id: 1155, name: "Festive Scroll", category: "SCROLL", rarity: "RARE", assetPath: "scrolls/festive_scroll.png", description: "50% success rate, stronger bonus." },
+  { id: 1159, name: "Divine Scroll", category: "SCROLL", rarity: "LEGENDARY", assetPath: "scrolls/divine_scroll.png", description: "30% success rate, massive bonus." },
 ]
 
 export const RARITY_TIERS = [
@@ -99,7 +99,7 @@ export const ROOM_THEMES = [
 export const MOCK_SKINS = [
   { name: "Classic", assetPath: "gameboy/frames/gameboy-basic-01.png" },
   { name: "Candy", assetPath: "gameboy/frames/gameboy-candy-01.png" },
-  { name: "Midnight", assetPath: "gameboy/frames/gameboy-midnight-01.png" },
+  { name: "Fire", assetPath: "gameboy/frames/gameboy-fire-01.png" },
 ]
 
 // --------------- Farm ---------------
@@ -186,35 +186,35 @@ export interface MockListing {
 }
 
 export const MOCK_MARKETPLACE_LISTINGS: MockListing[] = [
-  { id: 1, itemName: "Battle Tunic", itemCategory: "SHIRT", itemRarity: "RARE", itemAssetPath: "shirts/shirt_01_rare.png", price: 2500, sellerName: "StudyKing", listedAt: "2h ago" },
+  { id: 1, itemName: "Titan Slayer Jacket", itemCategory: "SHIRT", itemRarity: "RARE", itemAssetPath: "shirts/aot_shirt_aot_shirt_rare.png", price: 2500, sellerName: "StudyKing", listedAt: "2h ago" },
   { id: 2, itemName: "Golden Wings", itemCategory: "WINGS", itemRarity: "EPIC", itemAssetPath: "wings/angel_wings_gold.png", price: 12000, sellerName: "NightOwl", listedAt: "5h ago" },
-  { id: 3, itemName: "Frost Goggles", itemCategory: "GLASSES", itemRarity: "UNCOMMON", itemAssetPath: "glasses/glasses_01_uncommon.png", price: 800, sellerName: "CramQueen", listedAt: "1d ago" },
-  { id: 4, itemName: "Leather Cap", itemCategory: "HAT", itemRarity: "COMMON", itemAssetPath: "hats/hat_01_common.png", price: 150, sellerName: "FreshStart", listedAt: "3d ago" },
+  { id: 3, itemName: "Phantom Visage", itemCategory: "GLASSES", itemRarity: "UNCOMMON", itemAssetPath: "glasses/anonymous_mask_uncommon_.png", price: 800, sellerName: "CramQueen", listedAt: "1d ago" },
+  { id: 4, itemName: "Cloudshine Halo", itemCategory: "HAT", itemRarity: "COMMON", itemAssetPath: "hats/angel_halo.png", price: 150, sellerName: "FreshStart", listedAt: "3d ago" },
 ]
 
 // --------------- Enhancement demo ---------------
 
 export const MOCK_ENHANCEMENT = {
   before: {
-    name: "Battle Tunic",
+    name: "Titan Slayer Jacket",
     rarity: "RARE",
-    assetPath: "shirts/shirt_01_rare.png",
+    assetPath: "shirts/aot_shirt_aot_shirt_rare.png",
     enhancementLevel: 0,
     glowTier: "none" as const,
     glowIntensity: 0,
   },
   after: {
-    name: "Battle Tunic +5",
+    name: "Titan Slayer Jacket +5",
     rarity: "RARE",
-    assetPath: "shirts/shirt_01_rare.png",
+    assetPath: "shirts/aot_shirt_aot_shirt_rare.png",
     enhancementLevel: 5,
     glowTier: "gold" as const,
     glowIntensity: 2,
   },
   scroll: {
-    name: "Rare Scroll",
+    name: "Festive Scroll",
     rarity: "RARE",
-    assetPath: "scrolls/scroll_rare.png",
+    assetPath: "scrolls/festive_scroll.png",
   },
 }
 
