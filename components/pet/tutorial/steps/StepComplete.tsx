@@ -109,12 +109,11 @@ export default function StepComplete({ onFinish, onRetake }: StepCompleteProps) 
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 + i * 0.05 }}
               >
-                <Link
-                  href={link.href}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] hover:border-[var(--pet-gold,#f0c040)]/30 transition-colors"
-                >
-                  <span className={link.color}>{link.icon}</span>
-                  <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">{link.label}</span>
+                <Link href={link.href}>
+                  <a className="flex flex-col items-center gap-1.5 p-3 rounded bg-[var(--pet-bg,#0a0e1a)] border border-[var(--pet-border,#2a3a5c)] hover:border-[var(--pet-gold,#f0c040)]/30 transition-colors">
+                    <span className={link.color}>{link.icon}</span>
+                    <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">{link.label}</span>
+                  </a>
                 </Link>
               </motion.div>
             ))}

@@ -107,12 +107,11 @@ export default function StepWiki() {
       </PixelCard>
 
       <div className="flex justify-center">
-        <Link
-          href="/pet/wiki"
-          className="flex items-center gap-2 px-4 py-2 font-pixel text-[11px] text-[var(--pet-gold,#f0c040)] border border-[var(--pet-gold,#f0c040)]/30 rounded hover:bg-[var(--pet-gold,#f0c040)]/10 transition-colors"
-        >
-          Browse the Wiki
-          <ArrowRight className="w-3.5 h-3.5" />
+        <Link href="/pet/wiki">
+          <a className="flex items-center gap-2 px-4 py-2 font-pixel text-[11px] text-[var(--pet-gold,#f0c040)] border border-[var(--pet-gold,#f0c040)]/30 rounded hover:bg-[var(--pet-gold,#f0c040)]/10 transition-colors">
+            Browse the Wiki
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
         </Link>
       </div>
     </div>

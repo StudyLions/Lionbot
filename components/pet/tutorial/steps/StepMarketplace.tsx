@@ -127,12 +127,11 @@ export default function StepMarketplace() {
       </PixelCard>
 
       <div className="flex justify-center">
-        <Link
-          href="/pet/marketplace"
-          className="flex items-center gap-2 px-4 py-2 font-pixel text-[11px] text-[var(--pet-gold,#f0c040)] border border-[var(--pet-gold,#f0c040)]/30 rounded hover:bg-[var(--pet-gold,#f0c040)]/10 transition-colors"
-        >
-          Visit Marketplace
-          <ArrowRight className="w-3.5 h-3.5" />
+        <Link href="/pet/marketplace">
+          <a className="flex items-center gap-2 px-4 py-2 font-pixel text-[11px] text-[var(--pet-gold,#f0c040)] border border-[var(--pet-gold,#f0c040)]/30 rounded hover:bg-[var(--pet-gold,#f0c040)]/10 transition-colors">
+            Visit Marketplace
+            <ArrowRight className="w-3.5 h-3.5" />
+          </a>
         </Link>
       </div>
     </div>
