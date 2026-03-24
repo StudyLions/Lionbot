@@ -286,23 +286,13 @@ export default function ServerDetail() {
     status === "authenticated" && id ? `/api/dashboard/servers/${id}/overview-stats` : null
   )
 
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Auto-redirect to setup wizard for servers that haven't dismissed it
-  const { data: configForWizard } = useDashboard<{ setup_wizard_dismissed_at: string | null }>(
-    status === "authenticated" && id && permsData?.isAdmin
-      ? `/api/dashboard/servers/${id}/config`
-      : null
-  )
-  useEffect(() => {
-    if (
-      configForWizard &&
-      !configForWizard.setup_wizard_dismissed_at &&
-      permsData?.isAdmin &&
-      id
-    ) {
-      router.replace(`/dashboard/servers/${id}/setup`)
-    }
-  }, [configForWizard, permsData, id, router])
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Do NOT auto-redirect admins to the setup wizard from server overview.
+  //          Forced redirect caused a bad loop when setup_wizard_dismissed_at could not
+  //          persist (e.g. missing column on live DB) or users expected the dashboard.
+  //          Setup Wizard stays available from ServerNav → "Setup Wizard".
+  // --- Original behavior (2026-03-23, removed): fetch /config and router.replace to /setup
+  //     when setup_wizard_dismissed_at was null. See git history to restore.
   // --- END AI-MODIFIED ---
 
   const [setupStatus, setSetupStatus] = useState<SetupStatus | null>(null)
