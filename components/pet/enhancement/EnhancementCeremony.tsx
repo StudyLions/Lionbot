@@ -69,6 +69,14 @@ export default function EnhancementCeremony({
   const sfx = useEnhancementSFX()
   const timerRefs = useRef<ReturnType<typeof setTimeout>[]>([])
 
+  const sfxRef = useRef(sfx)
+  const onCompleteRef = useRef(onComplete)
+  const fastModeRef = useRef(fastMode)
+
+  useEffect(() => { sfxRef.current = sfx }, [sfx])
+  useEffect(() => { onCompleteRef.current = onComplete }, [onComplete])
+  useEffect(() => { fastModeRef.current = fastMode }, [fastMode])
+
   const intensity = calcIntensity(scrollRarity, destroyRate)
   const speedMult = fastMode ? 0.33 : 1
 
@@ -100,34 +108,35 @@ export default function EnhancementCeremony({
 
     setPhase('charging')
     setChargeProgress(0)
-    sfx.play('charge')
+    sfxRef.current.play('charge')
 
     const segments = 10
     const segInterval = chargeDur / segments
     for (let i = 1; i <= segments; i++) {
       addTimer(() => {
         setChargeProgress(i)
-        sfx.play('tick')
+        sfxRef.current.play('tick')
       }, segInterval * i)
     }
 
     addTimer(() => {
       setPhase('striking')
-      sfx.play('hammerStrike')
-      sfx.play('runeSpinTick')
+      sfxRef.current.play('hammerStrike')
+      sfxRef.current.play('runeSpinTick')
     }, chargeDur)
 
     addTimer(() => {
-      sfx.play('suspenseHold')
+      sfxRef.current.play('suspenseHold')
     }, chargeDur + strikeDur * 0.3)
 
     addTimer(() => {
       const r = resultRef.current
+      const fm = fastModeRef.current
       setPhase('revealing')
 
       if (r?.outcome === 'success') {
-        sfx.play('successFanfare')
-        sfx.play('sparkle')
+        sfxRef.current.play('successFanfare')
+        sfxRef.current.play('sparkle')
         setShowShake(true)
         addTimer(() => setShowShake(false), 400 * speedMult)
 
@@ -136,25 +145,25 @@ export default function EnhancementCeremony({
 
         try {
           confetti({
-            particleCount: fastMode ? 40 : 80,
+            particleCount: fm ? 40 : 80,
             spread: 70,
             origin: { x: 0.5, y: 0.4 },
             colors: ['#ffd700', '#f0c040', glowColor, '#ffffff'],
-            ticks: fastMode ? 100 : 200,
+            ticks: fm ? 100 : 200,
             gravity: 1.2,
             scalar: 0.8,
           })
         } catch {}
       } else if (r?.outcome === 'failed') {
-        sfx.play('failThud')
+        sfxRef.current.play('failThud')
       } else if (r?.outcome === 'destroyed') {
-        sfx.play('destroyCrash')
+        sfxRef.current.play('destroyCrash')
         setShowShake(true)
         addTimer(() => setShowShake(false), 600 * speedMult)
 
         try {
           confetti({
-            particleCount: fastMode ? 20 : 40,
+            particleCount: fm ? 20 : 40,
             spread: 120,
             origin: { x: 0.5, y: 0.4 },
             colors: ['#e04040', '#a02020', '#3a3e4c', '#1a1e2c'],
@@ -168,11 +177,13 @@ export default function EnhancementCeremony({
 
     addTimer(() => {
       setPhase('done')
-      onComplete()
+      onCompleteRef.current()
     }, chargeDur + strikeDur + revealDur)
 
     return clearTimers
-  }, [active, intensity, speedMult, fastMode, sfx, onComplete, clearTimers, addTimer])
+    // Only re-run when the ceremony starts/stops or timing parameters change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, intensity, speedMult, clearTimers, addTimer])
 
   if (!active && phase === 'idle') return null
 

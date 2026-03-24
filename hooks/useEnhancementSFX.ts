@@ -6,7 +6,7 @@
 //          Respects the global UI sound toggle from SoundContext.
 // ============================================================
 
-import { useCallback, useRef } from 'react'
+import { useCallback, useMemo, useRef } from 'react'
 import { useUISound } from '@/lib/SoundContext'
 
 export type EnhancementSFX =
@@ -151,5 +151,5 @@ export function useEnhancementSFX() {
     } catch {}
   }, [soundEnabled, tone, noise, sweep])
 
-  return { play, soundEnabled }
+  return useMemo(() => ({ play, soundEnabled }), [play, soundEnabled])
 }

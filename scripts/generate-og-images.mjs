@@ -53,6 +53,7 @@ const PAGES = [
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: OG image for the guides hub page
   { slug: 'guides', title: 'LionBot Guides', subtitle: 'In-depth articles on every feature — pomodoro, economy, study tracking & more', category: 'guide' },
+  { slug: 'guide-pomodoro-bot-discord', title: 'Pomodoro Timers on Discord', subtitle: 'How to set up free group pomodoro timers with voice alerts and accountability', category: 'guide' },
   // --- END AI-MODIFIED ---
   { slug: 'coming-soon', title: 'Coming Soon', subtitle: 'New features and updates are on the way — stay tuned', category: 'marketing' },
   { slug: '404', title: 'Page Not Found', subtitle: 'This page doesn\'t exist or has been moved', category: 'marketing' },

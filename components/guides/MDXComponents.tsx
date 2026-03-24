@@ -272,6 +272,15 @@ function HeadingWithAnchor({
   )
 }
 
+// ── Dynamic article assets ──────────────────────────────────
+import {
+  DiscordMessage,
+  DiscordEmbed,
+  DiscordButton,
+  DiscordButtonRow,
+} from "@/components/guides/DiscordMock"
+import PomodoroFlow from "@/components/guides/PomodoroFlow"
+
 // ── Component map for MDXRemote ─────────────────────────────
 export const mdxComponents = {
   InviteCTA,
@@ -280,6 +289,11 @@ export const mdxComponents = {
   Warning,
   Info: InfoBox,
   FAQSection,
+  DiscordMessage,
+  DiscordEmbed,
+  DiscordButton,
+  DiscordButtonRow,
+  PomodoroFlow,
   h2: (props: any) => <HeadingWithAnchor level={2} {...props} />,
   h3: (props: any) => <HeadingWithAnchor level={3} {...props} />,
   h4: (props: any) => <HeadingWithAnchor level={4} {...props} />,

@@ -1,0 +1,237 @@
+---
+title: "How to Set Up Pomodoro Timers on Your Discord Server"
+description: "Learn how to add a free pomodoro bot to your Discord server. Step-by-step guide to setting up group pomodoro timers with LionBot - voice alerts, auto-kick, and more."
+slug: "pomodoro-bot-discord"
+keywords: ["pomodoro bot discord", "discord pomodoro timer", "study timer discord bot", "pomodoro technique discord", "discord study bot"]
+category: "productivity"
+author: "Ari Horesh"
+publishedAt: "2026-03-24"
+updatedAt: "2026-03-24"
+readingTime: 10
+featured: true
+---
+
+## Why I Built a Pomodoro Bot for Discord
+
+I'm a final-year medical student, and if there's one technique that got me through years of brutal exam cycles, it's the Pomodoro Technique. Twenty-five minutes of deep focus, a five-minute break, then repeat. Simple, but incredibly effective.
+
+Back in 2021, I was running a study-with-me YouTube channel and had built a Discord community around it called Study Lions. We'd hop into voice channels together and study for hours. But there was a problem: nobody was taking breaks. People would sit in voice for 4+ hours straight and burn out. Others would zone out and forget they were supposed to be studying.
+
+I thought, what if the bot could manage the whole pomodoro cycle for us? Announce when it's time to focus, when it's time to break, and even hold people accountable by checking if they're actually present. So I built it. And honestly, it changed everything for our community.
+
+What started as a small feature for my study group is now used in over 70,000 Discord servers. The pomodoro timer is one of LionBot's most popular features, and the best part? It's completely free.
+
+## What Is the Pomodoro Technique?
+
+If you're new to it, the Pomodoro Technique is a time management method created by Francesco Cirillo in the late 1980s. The idea is simple:
+
+1. **Focus** for a set period (traditionally 25 minutes)
+2. **Break** for a short period (5 minutes)
+3. **Repeat** the cycle
+
+The magic is in the structure. Instead of trying to focus for hours straight (and failing), you work in short, intense bursts with guaranteed breaks. It trains your brain to focus deeply because it knows a break is coming.
+
+With LionBot's pomodoro bot for Discord, this entire cycle happens automatically in your voice channels. The bot announces stages, tracks who's present, posts status cards, and even kicks people who go AFK. It turns your Discord server into a productivity machine.
+
+<PomodoroFlow />
+
+## Getting Started
+
+Before setting up pomodoro timers, you'll need LionBot in your server. If you haven't added it yet:
+
+<InviteCTA text="Go ahead, add the bot. It's free, I promise" compact />
+
+Once LionBot is in your server, you're ready to create your first timer. No extra configuration needed.
+
+## Creating Your First Pomodoro Timer
+
+Setting up a timer takes about 30 seconds. Here's the command:
+
+<CommandShowcase command="/pomodoro create" description="Creates a new pomodoro timer attached to a voice channel.">
+
+**Required parameters:**
+- `focus_length` -- How long each focus period lasts (in minutes)
+- `break_length` -- How long each break lasts (in minutes)
+
+**Optional parameters:**
+- `timer_channel` -- Which voice channel to attach the timer to
+- `notification_channel` -- Where to post status cards
+- `name` -- A custom name for the timer
+
+</CommandShowcase>
+
+### Example: A Classic 25/5 Pomodoro
+
+The most popular setup is the classic 25-minute focus, 5-minute break cycle. Just run:
+
+<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 name:Study Session" />
+
+LionBot will create the timer and attach it to your current voice channel. If you're not in a voice channel, it'll create a new one for you.
+
+<DiscordMessage>
+  <DiscordEmbed
+    color="#3b82f6"
+    title="Pomodoro Timer Created"
+    description="Timer **Study Session** has been created and attached to your voice channel."
+    fields={[
+      { name: "Focus Length", value: "25 minutes", inline: true },
+      { name: "Break Length", value: "5 minutes", inline: true },
+      { name: "Voice Alerts", value: "Enabled", inline: true },
+    ]}
+    footer="Use the buttons below to start the timer"
+  />
+  <DiscordButtonRow>
+    <DiscordButton label="▶ Start" variant="success" />
+    <DiscordButton label="⚙ Options" variant="primary" />
+  </DiscordButtonRow>
+</DiscordMessage>
+
+<Tip title="My personal setup">
+When I'm studying for medical exams, I use 50/10 (50 minutes focus, 10 minutes break). For lighter study sessions, 25/5 works great. Experiment and find what works for your community.
+</Tip>
+
+## How the Timer Works in Practice
+
+Once someone starts the timer, here's what happens:
+
+### During Focus Periods
+
+The bot posts a status card in your notification channel showing the current stage and time remaining. If voice alerts are enabled, LionBot joins the voice channel and announces "Focus time has started" out loud.
+
+<DiscordMessage>
+  <DiscordEmbed
+    color="#3b82f6"
+    title="🎯 Focus Time — Study Session"
+    description="Time to focus! Stay on task until the break.\n\n⏱ **24:32** remaining"
+    fields={[
+      { name: "Members", value: "@Alex, @Sam, @Jordan", inline: false },
+    ]}
+    footer="Press 'Present' to confirm you're active"
+  />
+  <DiscordButtonRow>
+    <DiscordButton label="✅ Present" variant="success" />
+    <DiscordButton label="⚙ Options" variant="primary" />
+    <DiscordButton label="⏹ Stop" variant="danger" />
+  </DiscordButtonRow>
+</DiscordMessage>
+
+### The "Present" Button
+
+This is one of my favorite features. During each cycle, members need to press the "Present" button to confirm they're actually studying and not browsing social media. If someone misses too many cycles without pressing it, the bot can automatically kick them from the voice channel.
+
+<Info title="Accountability without being annoying">
+The default is 3 missed cycles before a kick. You can change this with the `inactivity_threshold` parameter, or set it to 0 to disable kicks entirely. The goal is gentle accountability, not punishment.
+</Info>
+
+### During Break Periods
+
+When the focus period ends, LionBot announces the break. The status card updates, and everyone gets a well-deserved rest.
+
+<DiscordMessage>
+  <DiscordEmbed
+    color="#22c55e"
+    title="☕ Break Time — Study Session"
+    description="Great work! Take a short break.\n\n⏱ **4:47** remaining"
+    footer="The next focus period starts automatically"
+  />
+</DiscordMessage>
+
+Then the cycle repeats automatically until someone stops the timer.
+
+## Customizing Your Timers
+
+### Multiple Timers per Server
+
+You can have a different timer in every voice channel. This is great for servers with different study groups:
+
+- **#deep-work** -- 50/10 for long focus sessions
+- **#casual-study** -- 25/5 classic pomodoro
+- **#speed-study** -- 15/3 for quick review sessions
+
+<CommandShowcase command="/timers" description="Lists all pomodoro timers in your server with their current status." />
+
+### Voice Alerts
+
+By default, LionBot joins your voice channel and announces stage changes out loud. If your community prefers silent timers (just the status card), you can toggle voice alerts off through the Options panel.
+
+### Custom Channel Names
+
+You can make the voice channel name update dynamically to show the timer status. Use these placeholders in the `channel_name` parameter:
+
+- `{remaining}` -- Time remaining (e.g., "24:32")
+- `{stage}` -- Current stage ("Focus" or "Break")
+- `{name}` -- Timer name
+- `{members}` -- Number of members
+- `{pattern}` -- Focus/break pattern (e.g., "25/5")
+
+<CommandShowcase command='/pomodoro edit timer_channel:#study-room channel_name:"{stage} | {remaining} left"' description="The channel name updates in real-time to show the current timer status." />
+
+<Warning>
+Discord rate-limits channel name changes, so updates may be delayed by a minute or two. This is a Discord limitation, not a LionBot issue.
+</Warning>
+
+### Manager Roles
+
+If you don't want every admin managing timers, you can assign a specific role as the timer manager:
+
+<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 manager_role:@Study Leader" description="Only members with the 'Study Leader' role (plus admins) can start, stop, and edit this timer." />
+
+## Pomodoro in Private Rooms
+
+Here's a feature I'm really proud of: if a member rents a private room using `/room rent`, they can create their own pomodoro timer in it. They get full control over the timer without needing any admin permissions.
+
+This is perfect for:
+- Solo study sessions where you want structure
+- Small group study with friends
+- Study accountability partners
+
+<CommandShowcase command="/room rent" description="Rent a private voice channel. You can then run /pomodoro create inside it to set up your own personal timer." />
+
+Check out our [private rooms guide](/guides/private-rooms-discord) to learn more about private rooms.
+
+## Permissions Checklist
+
+For the pomodoro bot to work properly, LionBot needs these permissions in your server:
+
+- **Connect** and **Speak** -- For voice alerts
+- **Move Members** -- For kicking inactive members (optional)
+- **Send Messages** and **Embed Links** -- For status cards
+
+<Tip>
+If you used the default invite link, LionBot already has all the permissions it needs. You only need to check this if you customized permissions during setup.
+</Tip>
+
+## Server-Wide Pomodoro Settings
+
+If you want all timers to post their status cards to the same channel by default:
+
+<CommandShowcase command="/configure pomodoro" description="Set a default notification channel for all pomodoro timers in your server." />
+
+This saves time when creating multiple timers -- you won't need to specify the notification channel each time.
+
+## Tips from Running 70,000+ Servers
+
+After years of watching communities use pomodoro timers, here's what I've learned actually works:
+
+1. **Start with 25/5** -- Don't overcomplicate it. The classic works for a reason.
+2. **Keep inactivity kicks on** -- It sounds harsh, but it keeps people honest. Set the threshold to 3 or 4 cycles.
+3. **Use a dedicated notification channel** -- Don't let status cards clutter your general chat.
+4. **Let members create private timers** -- Not everyone studies at the same pace. Private rooms let people customize their own flow.
+5. **Voice alerts make a huge difference** -- The audible announcement creates a shared sense of structure that text alone doesn't achieve.
+
+<InviteCTA />
+
+<FAQSection items={[
+  { "question": "Is the pomodoro bot on Discord free?", "answer": "Yes, LionBot's pomodoro timer feature is completely free. There are no premium locks on any pomodoro functionality. You can create unlimited timers across all your voice channels." },
+  { "question": "Can I have multiple pomodoro timers in one Discord server?", "answer": "Absolutely. Each voice channel can have its own timer with different focus and break lengths. For example, you could have a 25/5 timer in one channel and a 50/10 in another." },
+  { "question": "Does the bot announce pomodoro stages in voice chat?", "answer": "Yes, by default LionBot joins your voice channel and announces when focus and break periods start. You can toggle voice alerts off if you prefer silent timers with just the status card." },
+  { "question": "What happens if I leave the voice channel during a pomodoro session?", "answer": "The timer keeps running for other members. If the inactivity system is enabled and you don't press the Present button, you may be flagged as inactive after the threshold is reached." },
+  { "question": "Can regular members create pomodoro timers?", "answer": "Regular members can create timers in their own private rooms (rented with /room rent). For server-wide voice channels, you need the Manage Channels permission or a manager role assigned by an admin." },
+  { "question": "What if LionBot goes offline during a timer?", "answer": "The timer state is saved to the database. When LionBot comes back online, it resumes from where it left off. No progress is lost." },
+  { "question": "Can I change the focus length while a timer is running?", "answer": "Yes, managers can edit focus and break lengths at any time. Changes take effect at the next stage transition, so the current period finishes at its original length." },
+  { "question": "Is there a maximum focus or break length?", "answer": "Focus and break lengths can be set between 1 and 1,440 minutes (24 hours). Most communities use between 15 and 60 minutes for focus periods." }
+]} />
+
+---
+
+*- Ari, Founder of LionBot*

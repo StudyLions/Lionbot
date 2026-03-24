@@ -462,11 +462,24 @@ export default function RoomCanvas({
           const img = animImg || staticImg
           if (img) {
             const eqOff = curLayout.equipmentOffsets?.[slot] ?? [0, 0]
-            // --- AI-MODIFIED (2026-03-17) ---
-            // Purpose: Apply glow effect based on enhancement quality
+            // --- AI-MODIFIED (2026-03-24) ---
+            // Purpose: Apply glow effect based on enhancement quality,
+            //          and crop non-64x64 equipment from the correct region
+            //          instead of drawing at native size (which mispositions items)
             const eqData = curEquip[slot]
             applyGlow(lionCtx, eqData?.glowTier, eqData?.glowIntensity)
-            lionCtx.drawImage(img, eqOff[0], eqOff[1])
+            const nw = (img as HTMLImageElement).naturalWidth ?? LION_SPRITE_SIZE
+            const nh = (img as HTMLImageElement).naturalHeight ?? LION_SPRITE_SIZE
+            if (nw !== LION_SPRITE_SIZE || nh !== LION_SPRITE_SIZE) {
+              const cropX = Math.max(0, Math.floor((nw - LION_SPRITE_SIZE) / 2))
+              const cropY = nh > LION_SPRITE_SIZE ? 24 : 0
+              lionCtx.drawImage(img,
+                cropX, cropY, LION_SPRITE_SIZE, LION_SPRITE_SIZE,
+                eqOff[0], eqOff[1], LION_SPRITE_SIZE, LION_SPRITE_SIZE
+              )
+            } else {
+              lionCtx.drawImage(img, eqOff[0], eqOff[1])
+            }
             clearGlow(lionCtx)
             // --- END AI-MODIFIED ---
           }
