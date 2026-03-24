@@ -196,10 +196,12 @@ export function FAQSection({
   items,
   title,
 }: {
-  items: FAQItem[]
+  items?: FAQItem[]
   title?: string
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
+
+  if (!items?.length) return null
 
   return (
     <div className="not-prose my-8">
