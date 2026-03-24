@@ -948,6 +948,8 @@ model user_config {
   user_monthly_goals                                                       user_monthly_goals[]
   user_skin_inventory                                                      user_skin_inventory[]
   user_weekly_goals                                                        user_weekly_goals[]
+  lg_enhancement_log                                                       lg_enhancement_log[]
+  lg_enhancement_achievements                                              lg_enhancement_achievements[]
 }
 
 model user_experience {
@@ -2132,3 +2134,36 @@ enum lg_family_role {
   MODERATOR
   MEMBER
 }
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Enhancement log + achievement system tables
+
+model lg_enhancement_log {
+  logid        Int      @id @default(autoincrement())
+  userid       BigInt
+  inventoryid  Int
+  item_name    String   @db.Text
+  scroll_name  String   @db.Text
+  outcome      String   @db.VarChar(16)
+  from_level   Int
+  to_level     Int?
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  user_config  user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userid], map: "idx_enhancement_log_user")
+  @@index([userid, created_at], map: "idx_enhancement_log_user_time")
+}
+
+model lg_enhancement_achievements {
+  achievementid   Int      @id @default(autoincrement())
+  userid          BigInt
+  achievement_key String   @db.VarChar(64)
+  unlocked_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  user_config     user_config @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([userid, achievement_key])
+  @@index([userid], map: "idx_enhancement_achievements_user")
+}
+// --- END AI-MODIFIED ---

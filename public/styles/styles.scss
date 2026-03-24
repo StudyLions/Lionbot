@@ -364,3 +364,212 @@ p, a, b {
              item-celestial-rotate 6s linear infinite;
 }
 // --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Enhancement ceremony animations -- anvil forge, screen shake,
+//          item shatter, charge pulse, hammer strike, level-up burst
+
+@keyframes enhance-screen-shake {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-4px, 2px); }
+  20% { transform: translate(4px, -2px); }
+  30% { transform: translate(-3px, -3px); }
+  40% { transform: translate(3px, 3px); }
+  50% { transform: translate(-2px, 1px); }
+  60% { transform: translate(2px, -1px); }
+  70% { transform: translate(-1px, 2px); }
+  80% { transform: translate(1px, -1px); }
+  90% { transform: translate(-1px, -1px); }
+}
+
+@keyframes enhance-screen-shake-hard {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-8px, 4px); }
+  20% { transform: translate(8px, -4px); }
+  30% { transform: translate(-6px, -6px); }
+  40% { transform: translate(6px, 6px); }
+  50% { transform: translate(-4px, 2px); }
+  60% { transform: translate(4px, -2px); }
+  70% { transform: translate(-3px, 4px); }
+  80% { transform: translate(3px, -3px); }
+  90% { transform: translate(-2px, -2px); }
+}
+
+@keyframes enhance-charge-pulse {
+  0%, 100% { box-shadow: 0 0 4px var(--charge-color, rgba(240, 192, 64, 0.3)); }
+  50% { box-shadow: 0 0 20px var(--charge-color, rgba(240, 192, 64, 0.6)), 0 0 40px var(--charge-color, rgba(240, 192, 64, 0.2)); }
+}
+
+@keyframes enhance-forge-fire {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.7; }
+  25% { transform: scaleY(1.15) scaleX(0.95); opacity: 0.9; }
+  50% { transform: scaleY(1.3) scaleX(1.05); opacity: 1; }
+  75% { transform: scaleY(1.1) scaleX(0.98); opacity: 0.85; }
+}
+
+@keyframes enhance-forge-fire-intense {
+  0%, 100% { transform: scaleY(1) scaleX(1); opacity: 0.8; filter: brightness(1); }
+  25% { transform: scaleY(1.3) scaleX(0.9); opacity: 1; filter: brightness(1.2); }
+  50% { transform: scaleY(1.5) scaleX(1.1); opacity: 1; filter: brightness(1.4); }
+  75% { transform: scaleY(1.2) scaleX(0.95); opacity: 0.9; filter: brightness(1.1); }
+}
+
+@keyframes enhance-hammer-swing {
+  0% { transform: rotate(-60deg) translateY(-20px); }
+  60% { transform: rotate(0deg) translateY(0); }
+  65% { transform: rotate(2deg) translateY(2px); }
+  100% { transform: rotate(0deg) translateY(0); }
+}
+
+@keyframes enhance-anvil-impact {
+  0% { transform: scale(1); }
+  20% { transform: scale(0.95, 1.05); }
+  40% { transform: scale(1.02, 0.98); }
+  60% { transform: scale(0.99, 1.01); }
+  100% { transform: scale(1); }
+}
+
+@keyframes enhance-spark-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--spark-x, 30px), var(--spark-y, -40px)) scale(0); opacity: 0; }
+}
+
+@keyframes enhance-item-wobble {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15% { transform: translateX(-4px) rotate(-3deg); }
+  30% { transform: translateX(4px) rotate(3deg); }
+  45% { transform: translateX(-3px) rotate(-2deg); }
+  60% { transform: translateX(3px) rotate(2deg); }
+  75% { transform: translateX(-1px) rotate(-1deg); }
+  90% { transform: translateX(1px) rotate(1deg); }
+}
+
+@keyframes enhance-item-rise {
+  0% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-20px) scale(1.15); }
+  100% { transform: translateY(-10px) scale(1.1); }
+}
+
+@keyframes enhance-shatter-fragment {
+  0% { transform: translate(0, 0) rotate(0deg) scale(1); opacity: 1; }
+  100% { transform: translate(var(--frag-x, 50px), var(--frag-y, 80px)) rotate(var(--frag-rot, 180deg)) scale(0.2); opacity: 0; }
+}
+
+@keyframes enhance-crack-spread {
+  0% { clip-path: polygon(48% 48%, 52% 48%, 52% 52%, 48% 52%); opacity: 0; }
+  30% { opacity: 1; }
+  100% { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); opacity: 1; }
+}
+
+@keyframes enhance-golden-burst {
+  0% { transform: scale(0.3); opacity: 1; }
+  50% { opacity: 0.8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+@keyframes enhance-level-tick {
+  0% { transform: scale(1.5); opacity: 0; }
+  30% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes enhance-destroyed-stamp {
+  0% { transform: scale(3) rotate(-10deg); opacity: 0; }
+  60% { transform: scale(0.9) rotate(2deg); opacity: 1; }
+  80% { transform: scale(1.05) rotate(-1deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes enhance-red-flash {
+  0% { opacity: 0; }
+  20% { opacity: 0.5; }
+  100% { opacity: 0; }
+}
+
+@keyframes enhance-rune-spin {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-200%); }
+}
+
+@keyframes enhance-lion-bless {
+  0% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-5px) rotate(-5deg); }
+  50% { transform: translateY(-8px) rotate(0deg); }
+  75% { transform: translateY(-5px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+
+@keyframes enhance-smoke-rise {
+  0% { transform: translateY(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-40px) scale(2); opacity: 0; }
+}
+
+@keyframes enhance-ember-float {
+  0% { transform: translateY(0) scale(1); opacity: 0.8; }
+  50% { opacity: 1; }
+  100% { transform: translateY(-30px) translateX(var(--ember-drift, 10px)) scale(0.3); opacity: 0; }
+}
+
+@keyframes enhance-risk-pulse-safe {
+  0%, 100% { box-shadow: 0 0 4px rgba(64, 216, 112, 0.2), inset 0 0 2px rgba(64, 216, 112, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(64, 216, 112, 0.4), inset 0 0 4px rgba(64, 216, 112, 0.2); }
+}
+
+@keyframes enhance-risk-pulse-risky {
+  0%, 100% { box-shadow: 0 0 4px rgba(240, 192, 64, 0.3), inset 0 0 2px rgba(240, 192, 64, 0.1); }
+  50% { box-shadow: 0 0 16px rgba(240, 192, 64, 0.5), inset 0 0 6px rgba(240, 192, 64, 0.2); }
+}
+
+@keyframes enhance-risk-pulse-danger {
+  0%, 100% { box-shadow: 0 0 4px rgba(224, 64, 64, 0.3), inset 0 0 2px rgba(224, 64, 64, 0.1); }
+  50% { box-shadow: 0 0 20px rgba(224, 64, 64, 0.6), inset 0 0 8px rgba(224, 64, 64, 0.3); }
+}
+
+@keyframes enhance-risk-pulse-destroy {
+  0%, 100% { box-shadow: 0 0 6px rgba(180, 30, 30, 0.4), inset 0 0 3px rgba(180, 30, 30, 0.2); }
+  50% { box-shadow: 0 0 24px rgba(180, 30, 30, 0.7), inset 0 0 10px rgba(180, 30, 30, 0.4); }
+}
+
+@keyframes enhance-typewriter-cursor {
+  0%, 100% { border-color: transparent; }
+  50% { border-color: var(--pet-red); }
+}
+
+@keyframes enhance-skull-bob {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-2px) scale(1.05); }
+}
+
+@keyframes enhance-toast-enter {
+  0% { transform: translateX(120%); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes enhance-toast-exit {
+  0% { transform: translateX(0); opacity: 1; }
+  100% { transform: translateX(120%); opacity: 0; }
+}
+
+@keyframes enhance-streak-flame {
+  0%, 100% { transform: scaleY(1); }
+  25% { transform: scaleY(1.2) scaleX(0.9); }
+  50% { transform: scaleY(0.9) scaleX(1.1); }
+  75% { transform: scaleY(1.15) scaleX(0.95); }
+}
+
+.animate-enhance-shake { animation: enhance-screen-shake 0.4s ease-in-out; }
+.animate-enhance-shake-hard { animation: enhance-screen-shake-hard 0.6s ease-in-out; }
+.animate-enhance-charge { animation: enhance-charge-pulse var(--charge-speed, 1.5s) ease-in-out infinite; }
+.animate-enhance-fire { animation: enhance-forge-fire 0.8s ease-in-out infinite; }
+.animate-enhance-fire-intense { animation: enhance-forge-fire-intense 0.5s ease-in-out infinite; }
+.animate-enhance-hammer { animation: enhance-hammer-swing 0.3s ease-out forwards; }
+.animate-enhance-impact { animation: enhance-anvil-impact 0.3s ease-out; }
+.animate-enhance-wobble { animation: enhance-item-wobble 0.5s ease-out; }
+.animate-enhance-rise { animation: enhance-item-rise 0.6s ease-out forwards; }
+.animate-enhance-golden-burst { animation: enhance-golden-burst 0.8s ease-out forwards; }
+.animate-enhance-level-tick { animation: enhance-level-tick 0.3s ease-out forwards; }
+.animate-enhance-destroyed-stamp { animation: enhance-destroyed-stamp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-enhance-lion-bless { animation: enhance-lion-bless 1s ease-in-out infinite; }
+.animate-enhance-skull-bob { animation: enhance-skull-bob 1.5s ease-in-out infinite; }
+.animate-enhance-streak-flame { animation: enhance-streak-flame 0.4s ease-in-out infinite; }
+// --- END AI-MODIFIED ---

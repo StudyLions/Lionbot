@@ -27,13 +27,16 @@ const avatarBase64 = `data:image/png;base64,${avatarData.toString('base64')}`;
 const WIDTH = 1200;
 const HEIGHT = 630;
 
-// Category color schemes
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added 'guide' category for SEO article OG images
 const CATEGORIES = {
   marketing: { color: '#3b82f6', label: 'LionBot', gradient: '#1d4ed8' },
   dashboard: { color: '#8b5cf6', label: 'Dashboard', gradient: '#6d28d9' },
   server:    { color: '#10b981', label: 'Server Settings', gradient: '#047857' },
   pet:       { color: '#f0c040', label: 'LionGotchi', gradient: '#d97706' },
+  guide:     { color: '#06b6d4', label: 'Guide', gradient: '#0891b2' },
 };
+// --- END AI-MODIFIED ---
 
 // All pages to generate OG images for
 const PAGES = [
@@ -47,6 +50,10 @@ const PAGES = [
   { slug: 'privacy-policy', title: 'Privacy Policy', subtitle: 'How LionBot handles your data and protects your privacy', category: 'marketing' },
   { slug: 'terms', title: 'Terms & Conditions', subtitle: 'Terms governing your use of LionBot services and website', category: 'marketing' },
   { slug: 'tutorials', title: 'Tutorials', subtitle: 'Step-by-step guides to get the most out of LionBot', category: 'marketing' },
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: OG image for the guides hub page
+  { slug: 'guides', title: 'LionBot Guides', subtitle: 'In-depth articles on every feature — pomodoro, economy, study tracking & more', category: 'guide' },
+  // --- END AI-MODIFIED ---
   { slug: 'coming-soon', title: 'Coming Soon', subtitle: 'New features and updates are on the way — stay tuned', category: 'marketing' },
   { slug: '404', title: 'Page Not Found', subtitle: 'This page doesn\'t exist or has been moved', category: 'marketing' },
 

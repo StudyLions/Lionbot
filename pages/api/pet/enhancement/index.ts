@@ -193,6 +193,20 @@ export default apiHandler({
       const goldGained = bonusValue * ENHANCEMENT_GOLD_BONUS * 100
       const dropGained = bonusValue * ENHANCEMENT_DROP_BONUS * 100
 
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Log enhancement attempt + check achievements
+      const newAchievements = await logAndCheckAchievements(userId, {
+        inventoryid: equipInv.inventoryid,
+        itemName: equipInv.lg_items.name,
+        scrollName: scrollInv.lg_items.name,
+        outcome: "success",
+        fromLevel: equipInv.enhancement_level,
+        toLevel: newLevel,
+        itemRarity: equipInv.lg_items.rarity,
+        glowTier,
+      })
+      // --- END AI-MODIFIED ---
+
       return res.status(200).json({
         outcome: "success",
         itemName: equipInv.lg_items.name,
@@ -204,6 +218,7 @@ export default apiHandler({
         totalBonus,
         glowTier,
         scrollName: scrollInv.lg_items.name,
+        newAchievements,
       })
     }
 
@@ -219,17 +234,158 @@ export default apiHandler({
         where: { userid: userId, itemid: equipInv.lg_items.itemid },
       })
       await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
+
+      // --- AI-MODIFIED (2026-03-23) ---
+      // Purpose: Log destroy + check achievements
+      const newAchievements = await logAndCheckAchievements(userId, {
+        inventoryid: equipInv.inventoryid,
+        itemName: equipInv.lg_items.name,
+        scrollName: scrollInv.lg_items.name,
+        outcome: "destroyed",
+        fromLevel: equipInv.enhancement_level,
+        toLevel: null,
+        itemRarity: equipInv.lg_items.rarity,
+      })
+      // --- END AI-MODIFIED ---
+
       return res.status(200).json({
         outcome: "destroyed",
         itemName: equipInv.lg_items.name,
+        newAchievements,
       })
     }
+
+    // --- AI-MODIFIED (2026-03-23) ---
+    // Purpose: Log fail + check achievements
+    const newAchievements = await logAndCheckAchievements(userId, {
+      inventoryid: equipInv.inventoryid,
+      itemName: equipInv.lg_items.name,
+      scrollName: scrollInv.lg_items.name,
+      outcome: "failed",
+      fromLevel: equipInv.enhancement_level,
+      toLevel: null,
+      itemRarity: equipInv.lg_items.rarity,
+    })
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       outcome: "failed",
       itemName: equipInv.lg_items.name,
       currentLevel: equipInv.enhancement_level,
+      newAchievements,
     })
   },
 })
+
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Enhancement logging + achievement checking helper
+interface LogParams {
+  inventoryid: number
+  itemName: string
+  scrollName: string
+  outcome: string
+  fromLevel: number
+  toLevel: number | null
+  itemRarity: string
+  glowTier?: string
+}
+
+async function logAndCheckAchievements(userId: bigint, params: LogParams): Promise<string[]> {
+  const newAchievements: string[] = []
+
+  try {
+    await prisma.lg_enhancement_log.create({
+      data: {
+        userid: userId,
+        inventoryid: params.inventoryid,
+        item_name: params.itemName,
+        scroll_name: params.scrollName,
+        outcome: params.outcome,
+        from_level: params.fromLevel,
+        to_level: params.toLevel,
+      },
+    })
+
+    const existingAchievements = await prisma.lg_enhancement_achievements.findMany({
+      where: { userid: userId },
+      select: { achievement_key: true },
+    })
+    const has = new Set(existingAchievements.map(a => a.achievement_key))
+
+    const totalLogs = await prisma.lg_enhancement_log.count({ where: { userid: userId } })
+
+    const checks: { key: string; condition: boolean }[] = [
+      { key: "first_enhance", condition: totalLogs === 1 },
+      { key: "enhancement_master", condition: totalLogs >= 100 },
+    ]
+
+    if (params.outcome === "success" && params.toLevel !== null) {
+      checks.push({ key: "plus_5", condition: params.toLevel >= 5 })
+      checks.push({ key: "plus_10", condition: params.toLevel >= 10 })
+    }
+
+    if (params.outcome === "destroyed") {
+      checks.push({ key: "first_destroy", condition: true })
+      const highRarities = ["LEGENDARY", "MYTHICAL"]
+      checks.push({ key: "destroy_legendary", condition: highRarities.includes(params.itemRarity) })
+    }
+
+    if (params.glowTier === "celestial") {
+      checks.push({ key: "celestial_glow", condition: true })
+    }
+
+    const recentLogs = await prisma.lg_enhancement_log.findMany({
+      where: { userid: userId },
+      orderBy: { created_at: "desc" },
+      take: 10,
+      select: { outcome: true },
+    })
+
+    const consecutiveSuccesses = recentLogs.findIndex(l => l.outcome !== "success")
+    const actualSuccessStreak = consecutiveSuccesses === -1 ? recentLogs.length : consecutiveSuccesses
+    checks.push({ key: "lucky_streak_5", condition: actualSuccessStreak >= 5 })
+
+    const consecutiveFails = recentLogs.findIndex(l => l.outcome !== "failed")
+    const actualFailStreak = consecutiveFails === -1 ? recentLogs.length : consecutiveFails
+    checks.push({ key: "unlucky_streak_10", condition: actualFailStreak >= 10 })
+
+    const survivedDestroyCount = recentLogs
+      .filter(l => l.outcome === "failed")
+      .length
+    if (params.outcome === "failed") {
+      const recentWithDestroy = await prisma.lg_enhancement_log.count({
+        where: {
+          userid: userId,
+          outcome: { in: ["failed", "destroyed"] },
+          created_at: { gte: new Date(Date.now() - 86400000) },
+        },
+      })
+      const recentDestroyed = await prisma.lg_enhancement_log.count({
+        where: {
+          userid: userId,
+          outcome: "destroyed",
+          created_at: { gte: new Date(Date.now() - 86400000) },
+        },
+      })
+      checks.push({ key: "survivor_3", condition: recentWithDestroy - recentDestroyed >= 3 && recentDestroyed === 0 })
+    }
+
+    for (const check of checks) {
+      if (check.condition && !has.has(check.key)) {
+        try {
+          await prisma.lg_enhancement_achievements.create({
+            data: { userid: userId, achievement_key: check.key },
+          })
+          newAchievements.push(check.key)
+        } catch {
+          // unique constraint -- already unlocked
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Enhancement log/achievement error:", err)
+  }
+
+  return newAchievements
+}
 // --- END AI-MODIFIED ---

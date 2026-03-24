@@ -6,6 +6,7 @@ Allow: /
 User-agent: *
 Disallow: /api/
 Disallow: /dashboard/
+Disallow: /pet/
 
 # Host
 Host: https://lionbot.org

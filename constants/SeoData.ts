@@ -58,6 +58,22 @@ export const TermsAndConditionsSEO = {
   canonical: `${SITE_URL}/terms-and-conditions`,
 };
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: SEO data for the guides hub page
+export const GuidesSEO = {
+  title: "Guides - LionBot",
+  description:
+    "Step-by-step guides for setting up and using LionBot on Discord. Learn about pomodoro timers, study tracking, economy systems, leaderboards, and more.",
+  canonical: `${SITE_URL}/guides`,
+  openGraph: {
+    title: "LionBot Guides - Discord Bot Tutorials & How-To Articles",
+    description:
+      "Learn how to use every LionBot feature with detailed guides.",
+    url: `${SITE_URL}/guides`,
+  },
+};
+// --- END AI-MODIFIED ---
+
 export const SkinsSEO = {
   title: "Skin Collection",
   description:

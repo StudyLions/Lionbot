@@ -47,13 +47,22 @@ import Banner from "@/components/Layout/Header/Banner";
 // Purpose: added Support link to Discord server
 const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Added Features link, removed Stats from nav (kept in footer only)
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added Guides link between Features and Skins for SEO content discoverability
+// --- Original code (commented out for rollback) ---
+// const NAV_LINKS = [
+//   { label: "Home", href: "/", icon: Home, matchExact: true },
+//   { label: "Features", href: "/features", icon: Sparkles },
+//   { label: "Skins", href: "/skins", icon: Palette },
+//   { label: "Tutorials", href: "/tutorials", icon: BookOpen },
+//   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
+// ];
+// --- End original code ---
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Features", href: "/features", icon: Sparkles },
+  { label: "Guides", href: "/guides", icon: BookOpen },
   { label: "Skins", href: "/skins", icon: Palette },
-  { label: "Tutorials", href: "/tutorials", icon: BookOpen },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
 // --- END AI-MODIFIED ---

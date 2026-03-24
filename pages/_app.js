@@ -1,7 +1,7 @@
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Added DefaultSeo, i18n wrapping, ToastProvider, SoundProvider
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Added DefaultSeo, i18n wrapping, ToastProvider, SoundProvider, site-wide JSON-LD
 import { SessionProvider } from "next-auth/react";
-import { DefaultSeo } from "next-seo";
+import { DefaultSeo, OrganizationJsonLd, SoftwareAppJsonLd } from "next-seo";
 import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
@@ -45,9 +45,27 @@ function App({ Component, pageProps }) {
           gtag('config', 'G-5YBLTF11VW');
         `}
       </Script>
-      {/* --- AI-MODIFIED (2026-03-14) --- */}
-      {/* Purpose: Site-wide default SEO tags */}
+      {/* --- AI-MODIFIED (2026-03-23) --- */}
+      {/* Purpose: Site-wide default SEO tags + JSON-LD structured data */}
       <DefaultSeo {...defaultSEO} />
+      <OrganizationJsonLd
+        type="Organization"
+        name="LionBot"
+        url="https://lionbot.org"
+        logo="https://lionbot.org/apple-touch-icon.png"
+        sameAs={[
+          "https://discord.gg/studylions",
+          "https://github.com/StudyLions/StudyLion",
+          "https://top.gg/bot/889078613817831495",
+        ]}
+      />
+      <SoftwareAppJsonLd
+        name="LionBot"
+        operatingSystem="Discord"
+        applicationCategory="ProductivityApplication"
+        price="0"
+        priceCurrency="USD"
+      />
       {/* --- END AI-MODIFIED --- */}
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Global 8-bit UI sound system wrapping all pages */}

@@ -65,13 +65,28 @@ const ROUTE_TO_SLUG: Record<string, string> = {
   "/pet/marketplace/sell": "pet-sell",
   "/pet/marketplace/my-listings": "pet-my-listings",
   "/pet/marketplace/[listingId]": "pet-marketplace",
+
+  // --- AI-MODIFIED (2026-03-23) ---
+  // Purpose: Add guides section OG image mapping
+  "/guides": "guides",
+  "/guides/[slug]": "guides",
+  // --- END AI-MODIFIED ---
 };
 
+// --- AI-MODIFIED (2026-03-23) ---
+// Purpose: Support dynamic guide slug OG images with fallback
 export function getOgImageUrl(pathname: string): string {
   const slug = ROUTE_TO_SLUG[pathname];
   if (slug) return `${BLOB_BASE}/${slug}.png`;
+
+  if (pathname.startsWith("/guides/")) {
+    const guideSlug = pathname.replace("/guides/", "");
+    return `${BLOB_BASE}/guide-${guideSlug}.png`;
+  }
+
   return `${BLOB_BASE}/homepage.png`;
 }
+// --- END AI-MODIFIED ---
 
 export function getOgImageMeta(pathname: string) {
   return [
