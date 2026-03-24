@@ -21,21 +21,26 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
-import PetProfileCard from "@/components/pet/social/PetProfileCard"
-import type { PetVisualData } from "@/components/pet/social/MiniGameboy"
-import type { PetProfileData } from "@/components/pet/social/PetProfileCard"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: PetProfileCard removed -- friends grid now uses inline PixelCard since API
+//          doesn't return full petVisual data for every friend (too expensive to batch)
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match API response shape -- API returns name/expression/friendsSince, not discordName/food/bath/sleep/petVisual
 interface FriendEntry {
   discordId: string
-  discordName: string
+  name: string | null
   avatarHash?: string | null
-  petName: string
+  petName: string | null
   petLevel: number
-  food: number
-  bath: number
-  sleep: number
-  petVisual: PetVisualData
+  expression: string
+  friendsSince: string | null
+  food?: number
+  bath?: number
+  sleep?: number
 }
+// --- END AI-MODIFIED ---
 
 interface PendingRequest {
   requestId: number
@@ -62,13 +67,22 @@ interface SearchResult {
   isPending: boolean
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match activity event shape from API (was id/text/icon/createdAt, API returns type/userId/userName/description/timestamp)
 interface ActivityEvent {
-  id: string
   type: string
-  text: string
-  icon: string
-  createdAt: string
+  userId: string
+  userName: string
+  description: string
+  timestamp: string
 }
+
+const ACTIVITY_ICONS: Record<string, string> = {
+  rare_drop: "\uD83D\uDC8E",
+  marketplace_listing: "\uD83D\uDED2",
+  level_up: "\u2B50",
+}
+// --- END AI-MODIFIED ---
 
 interface FriendsData {
   friends: FriendEntry[]
@@ -399,29 +413,43 @@ export default function FriendsPage() {
                   </p>
                 </PixelCard>
               ) : (
+                // --- AI-MODIFIED (2026-03-24) ---
+                // Purpose: Render friend cards using API shape (name instead of discordName, no petVisual)
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {friends.map((friend) => {
-                    const profile: PetProfileData = {
-                      discordId: friend.discordId,
-                      discordName: friend.discordName,
-                      avatarHash: friend.avatarHash,
-                      petName: friend.petName,
-                      petLevel: friend.petLevel,
-                      food: friend.food,
-                      bath: friend.bath,
-                      sleep: friend.sleep,
-                      petVisual: friend.petVisual,
-                    }
-                    return (
-                      <PetProfileCard
-                        key={friend.discordId}
-                        profile={profile}
-                        gameboyWidth={140}
-                        href={`/pet/friends/${friend.discordId}`}
-                      />
-                    )
-                  })}
+                  {friends.map((friend) => (
+                    <a
+                      key={friend.discordId}
+                      href={`/pet/friends/${friend.discordId}`}
+                      className="block"
+                    >
+                      <PixelCard className="p-4 space-y-2 hover:border-[var(--pet-blue,#4080f0)] transition-colors cursor-pointer" corners>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={avatarUrl(friend.discordId, friend.avatarHash)}
+                            alt=""
+                            className="w-10 h-10 rounded-full border-2 border-[#2a3a5c] flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate">
+                              {friend.petName ?? "Unknown Pet"}
+                            </p>
+                            <p className="font-pixel text-[11px] text-[#6a7a8c] truncate">
+                              {friend.name ?? friend.discordId} · Lv.{friend.petLevel}
+                            </p>
+                          </div>
+                        </div>
+                        {(friend.food != null && friend.bath != null && friend.sleep != null) && (
+                          <div className="flex gap-2 pt-1">
+                            <PixelBar value={friend.food} max={8} label="🍖" color="gold" showText={false} />
+                            <PixelBar value={friend.bath} max={8} label="🧼" color="blue" showText={false} />
+                            <PixelBar value={friend.sleep} max={8} label="💤" color="blue" showText={false} />
+                          </div>
+                        )}
+                      </PixelCard>
+                    </a>
+                  ))}
                 </div>
+                // --- END AI-MODIFIED ---
               )}
 
               {/* Activity Feed */}
@@ -446,24 +474,28 @@ export default function FriendsPage() {
                     />
                   </button>
 
+                  {/* --- AI-MODIFIED (2026-03-24) --- */}
+                  {/* Purpose: Use API field names (type/userName/description/timestamp) and icon mapping */}
                   {activityOpen && (
                     <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                      {activity.map((event) => (
+                      {activity.map((event, idx) => (
                         <div
-                          key={event.id}
+                          key={`${event.type}-${event.userId}-${idx}`}
                           className="flex items-start gap-2 px-2 py-1.5"
                         >
-                          <span className="text-sm flex-shrink-0 mt-0.5">{event.icon}</span>
+                          <span className="text-sm flex-shrink-0 mt-0.5">{ACTIVITY_ICONS[event.type] ?? "\u2728"}</span>
                           <p className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] flex-1 min-w-0">
-                            {event.text}
+                            <span className="text-[var(--pet-gold,#f0c040)]">{event.userName}</span>{" "}
+                            {event.description}
                           </p>
                           <span className="font-pixel text-[10px] text-[#4a5a6a] flex-shrink-0 whitespace-nowrap">
-                            {relativeTime(event.createdAt)}
+                            {relativeTime(event.timestamp)}
                           </span>
                         </div>
                       ))}
                     </div>
                   )}
+                  {/* --- END AI-MODIFIED --- */}
                 </PixelCard>
               )}
 

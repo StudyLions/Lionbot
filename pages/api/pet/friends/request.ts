@@ -134,6 +134,21 @@ export default apiHandler({
       return res.status(400).json({ error: "That user has reached their friend limit" })
     }
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Rate limit friend requests to 10 per 24 hours per sender
+    const RATE_LIMIT = 10
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    const recentRequestCount = await prisma.lg_friend_requests.count({
+      where: {
+        from_userid: userId,
+        created_at: { gte: oneDayAgo },
+      },
+    })
+    if (recentRequestCount >= RATE_LIMIT) {
+      return res.status(429).json({ error: `You can only send ${RATE_LIMIT} friend requests per day. Try again later.` })
+    }
+    // --- END AI-MODIFIED ---
+
     await prisma.lg_friend_requests.create({
       data: {
         from_userid: userId,

@@ -23,7 +23,9 @@ import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
-import type { PetVisualData } from "@/components/pet/social/MiniGameboy"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: PetVisualData no longer used -- API returns flat fields
+// --- END AI-MODIFIED ---
 import type { FarmPlot } from "@/components/pet/farm/FarmScene"
 
 const GameboyFrame = dynamic(() => import("@/components/pet/GameboyFrame"), { ssr: false })
@@ -36,29 +38,35 @@ import { mergeLayout } from "@/utils/roomConstraints"
 import { xpForLevel } from "@/utils/gameConstants"
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match actual API shape from fetchPetVisualData -- flat fields (roomPrefix, furniture,
+//          roomLayout, gameboySkinPath, equipment, farmPlots), pet.xp is string, gold is string
 interface FriendProfileData {
   discordId: string
   discordName: string
   avatarHash?: string | null
   isFriend: boolean
-  isBlocked: boolean
+  isBlocked?: boolean
   pet: {
     name: string
     level: number
-    xp: number
-    xpToNext: number
+    xp: string
     expression: string
     food: number
     bath: number
     sleep: number
+    life: number
+    fullscreenMode: boolean
     createdAt: string
   }
-  gold: number
+  gold: string
   gems: number
-  petVisual: PetVisualData
-  farm: {
-    plots: FarmPlot[]
-  }
+  roomPrefix: string
+  furniture: Record<string, string>
+  roomLayout: Record<string, any>
+  gameboySkinPath: string | null
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier: string; glowIntensity: number }>
+  farmPlots: FarmPlot[]
   todayInteractions: {
     feed: boolean
     bathe: boolean
@@ -74,6 +82,7 @@ interface FriendProfileData {
     quantity: number
   }>
 }
+// --- END AI-MODIFIED ---
 
 function avatarUrl(discordId: string, hash?: string | null): string {
   if (hash) return `https://cdn.discordapp.com/avatars/${discordId}/${hash}.png?size=128`
@@ -132,11 +141,14 @@ export default function FriendProfilePage() {
     if (!amount || amount <= 0 || !userId) return
     setGiftLoading(true)
     try {
+      // --- AI-MODIFIED (2026-03-24) ---
+      // Purpose: API expects uppercase "GOLD" not lowercase "gold"
       await dashboardMutate("POST", "/api/pet/friends/gift", {
         targetUserId: userId,
-        type: "gold",
+        type: "GOLD",
         amount,
       })
+      // --- END AI-MODIFIED ---
       toast.success(`Sent ${amount}G to ${data?.pet.name}!`)
       setGoldAmount("")
       setShowGiftPanel(false)
@@ -153,11 +165,14 @@ export default function FriendProfilePage() {
     if (selectedItem === null || !userId) return
     setGiftLoading(true)
     try {
+      // --- AI-MODIFIED (2026-03-24) ---
+      // Purpose: API expects uppercase "ITEM" not lowercase "item"
       await dashboardMutate("POST", "/api/pet/friends/gift", {
         targetUserId: userId,
-        type: "item",
+        type: "ITEM",
         inventoryId: selectedItem,
       })
+      // --- END AI-MODIFIED ---
       toast.success("Item sent!")
       setSelectedItem(null)
       setShowGiftPanel(false)
@@ -232,16 +247,19 @@ export default function FriendProfilePage() {
     }
   }, [userId, router])
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: request API expects { query } not { targetUserId }
   const handleAddFriend = useCallback(async () => {
     if (!userId) return
     try {
-      await dashboardMutate("POST", "/api/pet/friends/request", { targetUserId: userId })
+      await dashboardMutate("POST", "/api/pet/friends/request", { query: userId as string })
       toast.success("Friend request sent!")
       mutate()
     } catch (err: any) {
       toast.error(err.message || "Failed")
     }
   }, [userId, mutate])
+  // --- END AI-MODIFIED ---
 
   const pet = data?.pet
   const isFriend = data?.isFriend ?? false
@@ -345,23 +363,26 @@ export default function FriendProfilePage() {
                             const gbWidth = typeof window !== "undefined" && window.innerWidth < 500
                               ? Math.min(340, window.innerWidth - 80)
                               : 400
+                            // --- AI-MODIFIED (2026-03-24) ---
+                            // Purpose: Use flat API fields instead of nested petVisual
                             return (
                               <GameboyFrame
                                 isFullscreen={false}
-                                skinAssetPath={data.petVisual.skinPath ?? undefined}
+                                skinAssetPath={data.gameboySkinPath ?? undefined}
                                 width={gbWidth}
                               >
                                 <RoomCanvas
-                                  roomPrefix={data.petVisual.roomPrefix}
-                                  furniture={data.petVisual.furniture}
-                                  layout={mergeLayout(data.petVisual.roomLayout as any)}
-                                  equipment={data.petVisual.equipment}
+                                  roomPrefix={data.roomPrefix}
+                                  furniture={data.furniture}
+                                  layout={mergeLayout(data.roomLayout as any)}
+                                  equipment={data.equipment}
                                   expression={pet.expression}
                                   size={Math.round(gbWidth * (200 / 260))}
                                   animated
                                 />
                               </GameboyFrame>
                             )
+                            // --- END AI-MODIFIED ---
                           })()}
                         </div>
                       </PixelCard>
@@ -382,15 +403,21 @@ export default function FriendProfilePage() {
                           </div>
                           {/* --- AI-MODIFIED (2026-03-23) --- */}
                           {/* Purpose: Compute xpToNext from polynomial curve instead of missing API field */}
-                          <PixelBar value={pet.xp} max={xpForLevel(pet.level)} label="XP" color="gold" />
+                          {/* --- AI-MODIFIED (2026-03-24) --- */}
+                          {/* Purpose: pet.xp is string from API, parse to number */}
+                          <PixelBar value={parseInt(pet.xp as any) || 0} max={xpForLevel(pet.level)} label="XP" color="gold" />
+                          {/* --- END AI-MODIFIED --- */}
                           {/* --- END AI-MODIFIED --- */}
                         </div>
 
+                        {/* --- AI-MODIFIED (2026-03-24) --- */}
+                        {/* Purpose: gold is a string from API, parse to number */}
                         <div className="flex items-center gap-4 pt-1">
-                          <GoldDisplay amount={data.gold} size="md" />
+                          <GoldDisplay amount={parseInt(data.gold) || 0} size="md" />
                           <div className="w-px h-5 bg-[#2a3a5c]" />
                           <GoldDisplay amount={data.gems} size="md" type="gem" />
                         </div>
+                        {/* --- END AI-MODIFIED --- */}
 
                         <div className="space-y-2 pt-1">
                           <PixelBar value={pet.food} max={8} label="Hunger" color="gold" />
@@ -571,6 +598,8 @@ export default function FriendProfilePage() {
                       )}
 
                       {/* Add Friend (non-friends) */}
+                      {/* --- AI-MODIFIED (2026-03-24) --- */}
+                      {/* Purpose: isBlocked is optional in API response */}
                       {!isFriend && !data.isBlocked && (
                         <PixelCard className="p-4 text-center space-y-3" corners>
                           <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
@@ -593,7 +622,9 @@ export default function FriendProfilePage() {
                               {pet.name}&apos;s Farm
                             </span>
                           </div>
-                          {isFriend && data.farm.plots.some((p) => !p.empty && !p.dead) && (
+                          {/* --- AI-MODIFIED (2026-03-24) --- */}
+                          {/* Purpose: API returns farmPlots at top level, not farm.plots */}
+                          {isFriend && data.farmPlots.some((p: any) => !p.empty && !p.dead) && (
                             <PixelButton
                               variant="info"
                               size="sm"
@@ -605,18 +636,20 @@ export default function FriendProfilePage() {
                           )}
                         </div>
 
-                        {data.farm.plots.length > 0 ? (
+                        {/* --- AI-MODIFIED (2026-03-24) --- */}
+                        {/* Purpose: Use farmPlots and flat gameboySkinPath */}
+                        {data.farmPlots.length > 0 ? (
                           <div className="flex justify-center overflow-x-auto">
                             <GameboyFrame
                               isFullscreen={false}
-                              skinAssetPath={data.petVisual.skinPath ?? undefined}
+                              skinAssetPath={data.gameboySkinPath ?? undefined}
                               width={typeof window !== "undefined" && window.innerWidth < 500
                                 ? Math.min(340, window.innerWidth - 80)
                                 : 400
                               }
                             >
                               <FarmScene
-                                plots={data.farm.plots}
+                                plots={data.farmPlots}
                                 selectedPlot={null}
                                 onSelectPlot={(plotId) => {
                                   if (isFriend && !wateredPlots.has(plotId)) {
@@ -634,7 +667,8 @@ export default function FriendProfilePage() {
                           </div>
                         )}
 
-                        {isFriend && data.farm.plots.length > 0 && (
+                        {/* --- END AI-MODIFIED --- */}
+                        {isFriend && data.farmPlots.length > 0 && (
                           <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] text-center">
                             Click a plot to water it
                           </p>

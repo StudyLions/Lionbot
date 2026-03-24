@@ -37,6 +37,8 @@ export default function TutorialPage({ tutorial }: TutorialPageProps) {
       }}
     >
       <TutorialLayout tutorial={tutorial}>
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: Pass warning and note props to TutorialStep */}
         {tutorial.steps.map((step, i) => (
           <TutorialStep
             key={step.id}
@@ -46,9 +48,12 @@ export default function TutorialPage({ tutorial }: TutorialPageProps) {
             paragraphs={step.paragraphs}
             command={step.command}
             tip={step.tip}
+            warning={step.warning}
+            note={step.note}
             interactive={step.interactive}
           />
         ))}
+        {/* --- END AI-MODIFIED --- */}
       </TutorialLayout>
     </Layout>
   )

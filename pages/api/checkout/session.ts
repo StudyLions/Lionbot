@@ -46,7 +46,11 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       rl.count++;
     }
 
-    const { donationID, quantity } = req.body;
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Accept currency parameter for dual-currency checkout
+    const { donationID, quantity, currency: rawCurrency } = req.body;
+    const currency = rawCurrency === "usd" ? "usd" : "eur";
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-20) ---
     // Purpose: Validate quantity is a positive integer (not decimal/NaN)
@@ -61,6 +65,10 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     const totalGems = (donationInfo.tokens + donationInfo.tokens_bonus) * quantity;
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Use correct amount for selected currency
+    const unitAmount = Math.round((currency === "usd" ? donationInfo.amount_usd : donationInfo.amount) * 100);
+    // --- END AI-MODIFIED ---
 
     const session = await stripe.checkout.sessions.create({
       submit_type: "auto",
@@ -68,8 +76,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       line_items: [
         {
           name: `Donation ${userID.name} (${userID.sub})`,
-          amount: donationInfo.amount * 100,
-          currency: "eur",
+          amount: unitAmount,
+          currency,
           quantity: quantity,
           description: `Total tokens: ${numberWithCommas(totalGems)}`,
         },

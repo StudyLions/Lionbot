@@ -73,9 +73,23 @@ export default apiHandler({
       }
     }
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Include isBlocked flag (viewer blocked by target is already handled above with 403;
+    //          this checks if the viewer has blocked the target)
+    const viewerBlock = await prisma.lg_blocks.findUnique({
+      where: {
+        blocker_userid_blocked_userid: {
+          blocker_userid: currentUserId,
+          blocked_userid: targetId,
+        },
+      },
+    })
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       ...profileData,
       isFriend,
+      isBlocked: !!viewerBlock,
       todayInteractions,
     })
   },

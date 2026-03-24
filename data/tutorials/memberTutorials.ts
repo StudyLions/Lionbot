@@ -1,7 +1,8 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-14
-// Purpose: Member-facing tutorial content (8 tutorials)
+// Updated: 2026-03-24
+// Purpose: Member-facing tutorial content (24 tutorials)
 // ============================================================
 import type { Tutorial } from "./index"
 
@@ -463,6 +464,8 @@ export const memberTutorials: Tutorial[] = [
   },
 
   // ── 9. Using the Dashboard ───────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated navigating-sections to mention new dashboard features, changed nextSlug to study-history
   {
     slug: "dashboard-tour",
     title: "Using the Dashboard",
@@ -471,7 +474,7 @@ export const memberTutorials: Tutorial[] = [
     iconName: "LayoutDashboard",
     estimatedMinutes: 4,
     prevSlug: "skins-and-shop",
-    nextSlug: "goals",
+    nextSlug: "study-history",
     steps: [
       {
         id: "what-is-dashboard",
@@ -495,8 +498,8 @@ export const memberTutorials: Tutorial[] = [
         title: "Navigating the Dashboard",
         paragraphs: [
           "The sidebar organizes everything into sections:",
-          "Activity — Tasks, Study History, Goals, and Reminders. This is where you manage your day-to-day productivity.",
-          "Collection — Skins, LionGems, and the Leaderboard. Browse cosmetics, check your gem balance, and see how you rank.",
+          "Activity — Tasks, Study History, Voice Editor, Goals, Reminders, and Live Session. This is where you manage your day-to-day productivity, review past study sessions, and enter Focus Mode for distraction-free studying.",
+          "Collection — Skins, LionGems, Supporter perks, and the Leaderboard. Browse cosmetics, manage your gem balance and subscriptions, and see how you rank.",
           "Account — Your Profile page where you can customize your bio and see your stats card.",
           "If you're a server admin, you'll also see a Servers section for managing your server's LionBot configuration.",
         ],
@@ -519,8 +522,187 @@ export const memberTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 10. Goals ────────────────────────────────────────────
+  // ── 10. Study History ────────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Study History dashboard page
+  {
+    slug: "study-history",
+    title: "Study History",
+    description: "Review your past study sessions, see daily and weekly breakdowns, and track your productivity trends over time.",
+    audience: "member",
+    iconName: "History",
+    estimatedMinutes: 3,
+    prevSlug: "dashboard-tour",
+    nextSlug: "voice-editor",
+    steps: [
+      {
+        id: "what-is-history",
+        title: "What Is Study History?",
+        paragraphs: [
+          "Study History is a dashboard page that shows every study session LionBot has tracked for you. Each session includes when you joined a voice channel, how long you studied, which server and channel it was in, and how many coins you earned.",
+          "It's your personal productivity journal — no manual logging required.",
+        ],
+      },
+      {
+        id: "viewing-sessions",
+        title: "Viewing Your Sessions",
+        paragraphs: [
+          "Head to the Study History page from the Activity section in the dashboard sidebar. You'll see a list of your recent sessions, sorted newest first.",
+          "Each session card shows the date, duration, server name, and coins earned. Longer sessions are visually distinct so you can quickly spot your best study days.",
+        ],
+      },
+      {
+        id: "charts-and-trends",
+        title: "Charts & Trends",
+        paragraphs: [
+          "Above the session list, you'll find charts that break down your study time by day, week, or month. These help you spot patterns — which days you study the most, whether your weekly totals are going up or down, and how consistent you've been.",
+          "Use these insights to adjust your study habits. If you notice a dip on Wednesdays, maybe that's the day to set a study reminder.",
+        ],
+        tip: "Check your Study History after each week to see if you're trending upward. Small, consistent improvements add up fast.",
+      },
+      {
+        id: "filtering",
+        title: "Filtering & Date Ranges",
+        paragraphs: [
+          "You can filter your history by server, date range, or session length. This is useful if you study in multiple servers and want to see your activity in just one of them.",
+          "The date picker lets you zoom in on a specific week or month to analyze your study patterns during exam periods, project sprints, or any time frame you care about.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 11. Voice Time Editor ───────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Voice Time Editor dashboard feature
+  {
+    slug: "voice-editor",
+    title: "Voice Time Editor",
+    description: "Edit your study sessions from the dashboard — adjust times, add missed sessions, and fix mistakes on a visual week timeline.",
+    audience: "member",
+    iconName: "Pencil",
+    estimatedMinutes: 4,
+    prevSlug: "study-history",
+    nextSlug: "live-session-and-focus",
+    steps: [
+      {
+        id: "what-is-voice-editor",
+        title: "What Is the Voice Editor?",
+        paragraphs: [
+          "The Voice Time Editor lets you adjust your study session records directly from the dashboard. If you forgot to leave a voice channel, had a session that didn't track properly, or need to log time you missed, the editor has you covered.",
+          "It displays your sessions on a visual week timeline — each day is a horizontal strip where your sessions appear as blocks you can drag and resize.",
+        ],
+      },
+      {
+        id: "accessing-editor",
+        title: "Accessing the Editor",
+        paragraphs: [
+          "Find the Voice Editor in the Activity section of the dashboard sidebar. When you open it, you'll pick which server's sessions you want to edit from a dropdown at the top.",
+          "The Voice Editor is a premium feature — your server needs an active premium subscription for you to use it. If it's not available, ask your server admin about premium.",
+        ],
+        note: "The Voice Editor is available in servers with an active premium subscription.",
+      },
+      {
+        id: "week-timeline",
+        title: "The Week Timeline",
+        paragraphs: [
+          "The main view shows seven day strips, one for each day of the current week. Each strip spans 24 hours, and your study sessions appear as colored blocks at the times they occurred.",
+          "Use the week navigation arrows at the top to move forward or backward through weeks. The current day is highlighted so you can orient yourself quickly.",
+        ],
+      },
+      {
+        id: "editing-sessions",
+        title: "Editing Sessions",
+        paragraphs: [
+          "To move a session, click and drag it to a new time or even a different day. To change its duration, grab the right edge and resize it.",
+          "Click on any session block to open its detail sheet, where you can set precise start and end times, or delete the session entirely.",
+        ],
+        warning: "Editing session times affects your coins, rank progress, and leaderboard position. Make sure your edits are accurate.",
+      },
+      {
+        id: "adding-removing",
+        title: "Adding & Removing Sessions",
+        paragraphs: [
+          "To add a missing session, click on an empty area of any day strip. A new session form opens where you set the start time, end time, and channel.",
+          "To remove an incorrect session, open its detail sheet and click Delete. Removed sessions no longer count toward your stats.",
+        ],
+      },
+      {
+        id: "usage-limits",
+        title: "Usage Limits & Rules",
+        paragraphs: [
+          "To keep things fair, the Voice Editor has usage limits. You can only make a certain number of edits per month, and there may be restrictions on how far back you can edit.",
+          "Your remaining edits are shown at the top of the editor. If you've used up your monthly allowance, you'll need to wait until the next month.",
+        ],
+        tip: "Save your edits for genuine corrections. If you consistently need to fix sessions, double-check that your voice channel setup is working correctly.",
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 12. Live Session & Focus Mode ───────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Live Session dashboard and Focus Mode
+  {
+    slug: "live-session-and-focus",
+    title: "Live Session & Focus Mode",
+    description: "Track your active study session in real time and enter Focus Mode for distraction-free studying with ambient sounds and timers.",
+    audience: "member",
+    iconName: "Maximize2",
+    estimatedMinutes: 4,
+    prevSlug: "voice-editor",
+    nextSlug: "goals",
+    steps: [
+      {
+        id: "session-dashboard",
+        title: "The Session Dashboard",
+        paragraphs: [
+          "When you're actively studying in a voice channel, the Session page on the dashboard comes alive. It shows your current session in real time — elapsed time, which channel you're in, who else is in the room, and your active tasks.",
+          "Think of it as your study cockpit. Everything you need to stay on track is in one place.",
+        ],
+      },
+      {
+        id: "entering-focus",
+        title: "Entering Focus Mode",
+        paragraphs: [
+          "Focus Mode is a full-screen, distraction-free interface designed for deep work. Click the Focus button on the Session page to enter it.",
+          "In Focus Mode, you see a large timer, your current task list, and nothing else. No sidebar, no notifications, no distractions — just you and your work.",
+        ],
+      },
+      {
+        id: "themes-and-sounds",
+        title: "Themes & Ambient Sounds",
+        paragraphs: [
+          "Focus Mode comes with visual themes you can switch between — dark, light, nature, and more. Pick whichever helps you concentrate best.",
+          "You can also enable ambient sounds directly from Focus Mode — rain, campfire, ocean waves, or white noise. These play through your browser without affecting your Discord audio.",
+        ],
+        tip: "Try the rain ambient sound with the dark theme for a cozy late-night study vibe.",
+      },
+      {
+        id: "wake-lock",
+        title: "Wake Lock & Pop-out",
+        paragraphs: [
+          "Focus Mode can keep your screen awake so your display doesn't turn off mid-session. This is especially useful on tablets propped up as a study timer.",
+          "You can also pop the timer out into a small, always-on-top window. This lets you keep the timer visible while working in other apps.",
+        ],
+      },
+      {
+        id: "focus-tips",
+        title: "Tips for Deep Work",
+        paragraphs: [
+          "Enter Focus Mode before you start studying, not after. The act of switching into it signals your brain that it's time to concentrate.",
+          "Keep your task list updated — having a clear next action in front of you removes the mental overhead of deciding what to work on. If a task is done, check it off right from Focus Mode and move to the next one.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 13. Goals ────────────────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated prevSlug from dashboard-tour to live-session-and-focus
   {
     slug: "goals",
     title: "Goals",
@@ -528,7 +710,7 @@ export const memberTutorials: Tutorial[] = [
     audience: "member",
     iconName: "Target",
     estimatedMinutes: 3,
-    prevSlug: "dashboard-tour",
+    prevSlug: "live-session-and-focus",
     nextSlug: "voting-and-support",
     steps: [
       {
@@ -558,8 +740,11 @@ export const memberTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 11. Voting & LionHeart ──────────────────────────────
+  // ── 14. Voting & LionHeart ──────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated nextSlug to gems-and-supporter, expanded LionGems step to mention dashboard
   {
     slug: "voting-and-support",
     title: "Voting & LionHeart",
@@ -568,7 +753,7 @@ export const memberTutorials: Tutorial[] = [
     iconName: "Heart",
     estimatedMinutes: 4,
     prevSlug: "goals",
-    nextSlug: "private-rooms",
+    nextSlug: "gems-and-supporter",
     steps: [
       {
         id: "voting-topgg",
@@ -584,8 +769,9 @@ export const memberTutorials: Tutorial[] = [
         title: "LionGems",
         paragraphs: [
           "LionGems are the premium currency. Unlike LionCoins (which are per-server), LionGems are tied to your Discord account and work everywhere.",
-          "You can purchase LionGems from the Donate page on this website. They unlock exclusive profile skins, cosmetics, and LionGotchi items.",
+          "You can purchase LionGems from the Donate page on this website, and manage your balance from the Gems page on the dashboard. They unlock exclusive profile skins, cosmetics, and LionGotchi items.",
         ],
+        note: "For a full walkthrough of the Gems dashboard, supporter perks, and subscriptions, check out the next tutorial: Gems & Supporter.",
       },
       {
         id: "lionheart",
@@ -605,8 +791,69 @@ export const memberTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 12. Private Rooms ───────────────────────────────────
+  // ── 15. Gems & Supporter ────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the dashboard Gems, Supporter, and Subscriptions pages
+  {
+    slug: "gems-and-supporter",
+    title: "Gems & Supporter",
+    description: "Manage your LionGem balance, explore supporter perks, handle subscriptions, and see where to spend your gems.",
+    audience: "member",
+    iconName: "Gem",
+    estimatedMinutes: 3,
+    prevSlug: "voting-and-support",
+    nextSlug: "private-rooms",
+    steps: [
+      {
+        id: "gem-balance",
+        title: "Your Gem Balance",
+        paragraphs: [
+          "The Gems page on the dashboard shows your current LionGem balance and a full transaction history — every purchase, every spend, and any gems you've received as gifts.",
+          "You can also see how many gems you've spent across different categories like profile skins, LionGotchi items, and marketplace purchases.",
+        ],
+      },
+      {
+        id: "buying-gems",
+        title: "Buying LionGems",
+        paragraphs: [
+          "To buy gems, visit the Donate page on this website. Choose a gem package, complete the secure checkout through Stripe, and your gems are credited instantly to your Discord account.",
+          "Gem packages come in several sizes — pick the one that fits your budget. Larger packages often offer better value per gem.",
+        ],
+        tip: "Gems are credited automatically within seconds of payment. If they don't appear, try refreshing the Gems page on the dashboard.",
+      },
+      {
+        id: "supporter-perks",
+        title: "Supporter Perks",
+        paragraphs: [
+          "The Supporter page on the dashboard showcases exclusive perks for LionBot backers. These include limited-edition profile skins, enhanced badges, priority support, and early access to new features.",
+          "Some perks are one-time unlocks, while others require an active subscription to maintain.",
+        ],
+      },
+      {
+        id: "subscriptions",
+        title: "Managing Subscriptions",
+        paragraphs: [
+          "If you have an active subscription (like LionHeart monthly), the Subscriptions page lets you view your billing cycle, update payment methods, or cancel if needed.",
+          "Changes take effect at the end of your current billing period — you won't lose access mid-cycle.",
+        ],
+      },
+      {
+        id: "spending-gems",
+        title: "Where to Spend Gems",
+        paragraphs: [
+          "LionGems can be spent on premium profile skins (from the Skins page), LionGotchi items and equipment on the marketplace, pet Gameboy skins, and other exclusive cosmetics.",
+          "Since gems work across all servers, any cosmetic you buy with gems is available everywhere you use LionBot.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 16. Private Rooms ───────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated prevSlug from voting-and-support to gems-and-supporter
   {
     slug: "private-rooms",
     title: "Private Rooms",
@@ -614,7 +861,7 @@ export const memberTutorials: Tutorial[] = [
     audience: "member",
     iconName: "DoorOpen",
     estimatedMinutes: 3,
-    prevSlug: "voting-and-support",
+    prevSlug: "gems-and-supporter",
     nextSlug: "liongotchi-basics",
     steps: [
       {
@@ -645,8 +892,11 @@ export const memberTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 13. LionGotchi: Your Virtual Pet ────────────────────
+  // ── 17. LionGotchi: Your Virtual Pet ────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated nextSlug to liongotchi-room, added overview step listing all sub-features
   {
     slug: "liongotchi-basics",
     title: "LionGotchi: Your Virtual Pet",
@@ -655,7 +905,7 @@ export const memberTutorials: Tutorial[] = [
     iconName: "Cat",
     estimatedMinutes: 5,
     prevSlug: "private-rooms",
-    nextSlug: "liongotchi-farm-equipment",
+    nextSlug: "liongotchi-room",
     steps: [
       {
         id: "what-is-liongotchi",
@@ -703,26 +953,109 @@ export const memberTutorials: Tutorial[] = [
           "The website has full-featured pages for your inventory, farm, room, marketplace, and more — all with visual interfaces that make managing your pet easier than Discord commands.",
         ],
       },
+      {
+        id: "feature-overview",
+        title: "What's Ahead",
+        paragraphs: [
+          "LionGotchi has a lot of depth. The next several tutorials cover each subsystem in detail:",
+          "Room Decoration — Customize your pet's room with furniture, themes, and Gameboy skins.",
+          "Farm & Equipment — Grow crops, collect equipment drops, and equip gear for stat bonuses.",
+          "Crafting — Combine materials into new items using crafting recipes.",
+          "Enhancement — Power up your equipment with scrolls for bigger bonuses (and glowing gear).",
+          "Marketplace — Buy and sell items with other players in the global marketplace.",
+          "Friends — Add friends, visit their pets, and send gifts.",
+          "Family — Join or create a family group with shared farming, a bank, and role-based permissions.",
+        ],
+      },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 14. LionGotchi: Farm & Equipment ────────────────────
+  // ── 18. LionGotchi: Room & Skins ────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for pet room decoration and Gameboy skins
+  {
+    slug: "liongotchi-room",
+    title: "LionGotchi: Room & Skins",
+    description: "Decorate your pet's room with furniture and themes, and customize the Gameboy frame with collectible skins.",
+    audience: "member",
+    iconName: "Armchair",
+    estimatedMinutes: 4,
+    prevSlug: "liongotchi-basics",
+    nextSlug: "liongotchi-farm-equipment",
+    steps: [
+      {
+        id: "your-room",
+        title: "Your Pet's Room",
+        paragraphs: [
+          "Every pet has a room — a personal space you can decorate with furniture and themes. Visit the Room page from the Pet section sidebar to see it.",
+          "The room is displayed inside a retro Gameboy-style frame. It's a visual showcase of your pet's personality and your collecting progress.",
+        ],
+      },
+      {
+        id: "room-themes",
+        title: "Room Themes",
+        paragraphs: [
+          "Room themes change the overall look of your pet's space — walls, floor, and background. Each theme has a different vibe, from cozy bedrooms to futuristic labs.",
+          "You can purchase new themes from the Room page and switch between any you own at any time.",
+        ],
+      },
+      {
+        id: "furniture-slots",
+        title: "Furniture Slots",
+        paragraphs: [
+          "Your room has seven furniture slots: Wall, Floor, Carpet, Bed, Chair, Desk, and Lamp. Each slot holds one item.",
+          "Furniture comes in different rarities and styles. Mix and match pieces to create your ideal room. Some furniture sets look particularly good together.",
+        ],
+      },
+      {
+        id: "placing-furniture",
+        title: "Placing & Arranging Furniture",
+        paragraphs: [
+          "From the Room page, click on a slot to see your available furniture for that position. Select a piece to place it.",
+          "The room editor lets you customize the layout and layer order to get everything looking just right. Changes save automatically.",
+        ],
+      },
+      {
+        id: "buying-room-items",
+        title: "Buying Room Items",
+        paragraphs: [
+          "New furniture and themes are available from the Room page's shop section. Items can be purchased with gold or LionGems.",
+          "You can also find room items on the Marketplace — other players may be selling furniture you're looking for at good prices.",
+        ],
+        tip: "Check the Marketplace before buying from the shop. Player listings are often cheaper, especially for common furniture.",
+      },
+      {
+        id: "gameboy-skins",
+        title: "Gameboy Skins",
+        paragraphs: [
+          "The Gameboy frame that wraps your pet's room and farm can be customized with collectible skins. Each skin changes the frame's color, pattern, and style.",
+          "Browse available Gameboy skins from the Pet Skins page. Some are purchasable with gold or gems, while rarer ones are earned through achievements or events.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 19. LionGotchi: Farm & Equipment ────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated prevSlug to liongotchi-room, nextSlug to liongotchi-crafting, removed enhancement step (now its own tutorial)
   {
     slug: "liongotchi-farm-equipment",
     title: "LionGotchi: Farm & Equipment",
-    description: "Grow resources on your farm, collect equipment from studying, enhance gear with scrolls, and boost your rewards.",
+    description: "Grow resources on your farm, collect equipment from studying, and equip gear to boost your rewards.",
     audience: "member",
     iconName: "Sprout",
-    estimatedMinutes: 6,
-    prevSlug: "liongotchi-basics",
-    nextSlug: "liongotchi-marketplace",
+    estimatedMinutes: 5,
+    prevSlug: "liongotchi-room",
+    nextSlug: "liongotchi-crafting",
     steps: [
       {
         id: "farming-overview",
         title: "Your Farm",
         paragraphs: [
           "Every pet owner gets a farm with 15 plots. You plant seeds, water them, and harvest materials — all from the Farm page on the website or the /pet command in Discord.",
-          "Farming is one of the main ways to get resources in LionGotchi. Harvested materials can be used, sold on the marketplace, or saved for later.",
+          "Farming is one of the main ways to get resources in LionGotchi. Harvested materials can be used for crafting, sold on the marketplace, or saved for later.",
         ],
       },
       {
@@ -755,31 +1088,151 @@ export const memberTutorials: Tutorial[] = [
         title: "Equipping Gear",
         paragraphs: [
           "Visit the Inventory page to see all your equipment. Your pet has 5 equipment slots: Head, Face, Body, Back, and Feet.",
-          "Equip items to dress up your pet and gain stat bonuses. Each piece of equipment can boost your gold earning rate, XP gains, or drop chances. The bonuses stack — a full set of enhanced gear makes a real difference.",
+          "Equip items to dress up your pet and gain stat bonuses. Each piece of equipment can boost your gold earning rate, XP gains, or drop chances. The bonuses stack — a full set of gear makes a real difference.",
         ],
-      },
-      {
-        id: "enhancement",
-        title: "Enhancement & Scrolls",
-        paragraphs: [
-          "Scrolls are special items that enhance your equipment, boosting their stats further. The Enhancement page lets you apply scrolls to equipped gear.",
-          "Be careful though — enhancement has a success rate and a destroy rate. If enhancement fails, you might lose the scroll. If it critically fails, the equipment could be destroyed. Higher-tier scrolls have better odds but are rarer.",
-          "Successfully enhanced items gain visual glow effects — from bronze all the way up to celestial. The glow shows off your dedication to other players.",
-        ],
-        tip: "Start by enhancing cheaper, more common equipment to learn the system. Save your best scrolls for your rarest gear.",
+        note: "Once you have gear equipped, you can enhance it with scrolls for even bigger bonuses. See the Enhancement tutorial for a full guide.",
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 15. LionGotchi: Marketplace & Collections ───────────
+  // ── 20. LionGotchi: Crafting ────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Crafting system
+  {
+    slug: "liongotchi-crafting",
+    title: "LionGotchi: Crafting",
+    description: "Combine harvested materials into new items using crafting recipes — turn farm resources into equipment, scrolls, and more.",
+    audience: "member",
+    iconName: "Hammer",
+    estimatedMinutes: 3,
+    prevSlug: "liongotchi-farm-equipment",
+    nextSlug: "liongotchi-enhancement",
+    steps: [
+      {
+        id: "what-is-crafting",
+        title: "What Is Crafting?",
+        paragraphs: [
+          "Crafting lets you combine materials into new items. Instead of relying solely on equipment drops or marketplace purchases, you can create specific items from resources you've farmed.",
+          "The Crafting page is in the Pet section sidebar. It shows all available recipes and what materials each one requires.",
+        ],
+      },
+      {
+        id: "viewing-recipes",
+        title: "Viewing Recipes",
+        paragraphs: [
+          "Each recipe lists the input materials (type, rarity, and quantity) and the output item you'll receive. Recipes range from simple (combine 3 common materials) to complex (require multiple rare or epic materials).",
+          "Recipes you have enough materials for are highlighted, so you can quickly see what's craftable right now.",
+        ],
+      },
+      {
+        id: "crafting-item",
+        title: "Crafting an Item",
+        paragraphs: [
+          "Select a recipe you have the materials for and click Craft. The materials are consumed and the new item appears in your inventory.",
+          "Some recipes produce equipment, others produce scrolls for enhancement, and some create decorative items for your room.",
+        ],
+        tip: "Before spending rare materials on crafting, check the marketplace. Sometimes buying the finished item directly is cheaper than crafting it from scratch.",
+      },
+      {
+        id: "getting-materials",
+        title: "Where to Get Materials",
+        paragraphs: [
+          "Materials primarily come from farming — harvest crops on your farm to collect them. Different seed types yield different material categories.",
+          "You can also buy materials from other players on the Marketplace, receive them as gifts from friends, or occasionally get them from equipment drops.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 21. LionGotchi: Enhancement ─────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New dedicated tutorial for the Enhancement system (MapleStory-inspired forge ceremony)
+  {
+    slug: "liongotchi-enhancement",
+    title: "LionGotchi: Enhancement",
+    description: "Power up your equipment with scrolls, experience the forge ceremony, earn glow effects, and track enhancement achievements.",
+    audience: "member",
+    iconName: "Sparkles",
+    estimatedMinutes: 5,
+    prevSlug: "liongotchi-crafting",
+    nextSlug: "liongotchi-marketplace",
+    steps: [
+      {
+        id: "enhancement-overview",
+        title: "What Is Enhancement?",
+        paragraphs: [
+          "Enhancement is the system for powering up your equipment. By applying scrolls to your gear, you increase their stat bonuses — more gold from studying, better XP rates, and higher drop chances.",
+          "The Enhancement page is in the Pet section sidebar. It features a cinematic forge ceremony inspired by classic RPGs, complete with animations, sound effects, and visual feedback.",
+        ],
+      },
+      {
+        id: "equipment-and-scrolls",
+        title: "Choosing Equipment & Scrolls",
+        paragraphs: [
+          "To enhance, you need two things: a piece of equipment (already in your inventory or equipped on your pet) and a scroll.",
+          "Equipment can be filtered by slot, sorted by rarity, and searched by name. Scrolls can be filtered by rarity and success rate. The interface shows you exactly what each scroll will do to your chosen equipment.",
+        ],
+      },
+      {
+        id: "success-rates",
+        title: "Success, Failure & Destruction",
+        paragraphs: [
+          "Every scroll has three rates: success rate, failure rate, and destruction rate. On success, the equipment gains a level and its stats increase. On failure, nothing happens (you lose the scroll but keep the equipment). On destruction, both the scroll and the equipment are lost.",
+          "Higher-tier scrolls generally have better success rates but are rarer and more expensive. Common scrolls are plentiful but riskier.",
+        ],
+        warning: "Enhancement can destroy your equipment permanently. Always start with common gear to learn the system before risking your best items.",
+      },
+      {
+        id: "the-ceremony",
+        title: "The Forge Ceremony",
+        paragraphs: [
+          "When you enhance, the forge ceremony plays out in three phases: charging (the equipment glows and builds energy), striking (the hammer hits the anvil), and revealing (the result appears with particles and effects).",
+          "Success shows a burst of golden confetti and sparkles. Failure shows a brief shake. Destruction shatters the equipment with dramatic fragments. It's tense, satisfying, and a little addictive.",
+        ],
+      },
+      {
+        id: "glow-tiers",
+        title: "Glow Tiers",
+        paragraphs: [
+          "As you successfully enhance equipment, it gains a visual glow effect that other players can see. Glow tiers progress through: Bronze, Silver, Gold, Platinum, Diamond, and Celestial.",
+          "The glow tier depends on the total enhancement level of the item. A Celestial-glowing piece of equipment is a serious flex — it means you've successfully enhanced it many times without destroying it.",
+        ],
+      },
+      {
+        id: "batch-enhance",
+        title: "Batch Enhancement",
+        paragraphs: [
+          "If you have a stack of scrolls, you can use batch enhancement to apply them one after another automatically. Set the number of attempts and the system will run them in sequence, stopping if the equipment is destroyed.",
+          "This saves time when you're enhancing common gear and don't want to click through each attempt individually.",
+        ],
+      },
+      {
+        id: "achievements-streaks",
+        title: "Achievements & Streaks",
+        paragraphs: [
+          "The Enhancement page tracks your session stats — consecutive successes, total attempts, and destruction count. Hitting streak milestones triggers achievement badges.",
+          "Achievements are displayed on your enhancement profile and unlock at various thresholds. They're a badge of honor for dedicated enhancers.",
+        ],
+        tip: "Check the enhancement leaderboard to see who has the highest total enhancement levels. Competition drives progress!",
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 22. LionGotchi: Marketplace & Collections ───────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated prevSlug to liongotchi-enhancement, added nextSlug to liongotchi-friends
   {
     slug: "liongotchi-marketplace",
     title: "LionGotchi: Marketplace & Collections",
-    description: "Buy and sell items on the player marketplace, decorate your pet's room, and track your item collection.",
+    description: "Buy and sell items on the player marketplace, explore the item wiki, and track your collection progress.",
     audience: "member",
     iconName: "Store",
     estimatedMinutes: 5,
-    prevSlug: "liongotchi-farm-equipment",
+    prevSlug: "liongotchi-enhancement",
+    nextSlug: "liongotchi-friends",
     steps: [
       {
         id: "marketplace-overview",
@@ -833,4 +1286,154 @@ export const memberTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
+
+  // ── 23. LionGotchi: Friends ─────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Friends social system
+  {
+    slug: "liongotchi-friends",
+    title: "LionGotchi: Friends",
+    description: "Add friends, visit their pets and rooms, send gifts, and interact with your LionGotchi social circle.",
+    audience: "member",
+    iconName: "Users2",
+    estimatedMinutes: 4,
+    prevSlug: "liongotchi-marketplace",
+    nextSlug: "liongotchi-family",
+    steps: [
+      {
+        id: "friends-system",
+        title: "The Friends System",
+        paragraphs: [
+          "LionGotchi has a built-in friends system that lets you connect with other pet owners. Friends can visit each other's pets, rooms, and farms, send gifts, and interact in ways that benefit both players.",
+          "Find the Friends page in the Pet section sidebar. It shows your friend list, pending requests, and a search to find new friends.",
+        ],
+      },
+      {
+        id: "adding-friends",
+        title: "Adding Friends",
+        paragraphs: [
+          "To add a friend, use the search bar on the Friends page to find them by Discord username. Send a friend request, and once they accept, you're connected.",
+          "You can also accept or decline incoming requests from the Pending tab. There's no limit to how many friends you can have.",
+        ],
+      },
+      {
+        id: "friend-profiles",
+        title: "Visiting Friend Profiles",
+        paragraphs: [
+          "Click on a friend to see their profile — their pet's stats, equipped gear, room, farm status, and recent activity.",
+          "Visiting friends gives you a peek at how they've decorated their room, what equipment they're running, and how their farm is doing. It's a great source of inspiration for your own setup.",
+        ],
+      },
+      {
+        id: "gifting",
+        title: "Gifting Items",
+        paragraphs: [
+          "You can send items from your inventory to friends as gifts. This is useful for sharing extra materials, giving a friend a scroll they need, or just being generous.",
+          "To gift, visit a friend's profile and use the Gift option. Select an item and quantity from your inventory, confirm, and it's sent instantly.",
+        ],
+        tip: "Gifting is a great way to help friends who are just starting out in LionGotchi. Spare seeds and common equipment go a long way for beginners.",
+      },
+      {
+        id: "interacting",
+        title: "Interacting with Friends",
+        paragraphs: [
+          "Beyond gifting, you can interact with friends' pets — pet them, play with them, or cheer them on. These interactions benefit both players with small mood boosts.",
+          "Regular interactions keep your social circle active and can unlock social achievements over time.",
+        ],
+      },
+      {
+        id: "managing-friends",
+        title: "Managing Your Friends List",
+        paragraphs: [
+          "From the Friends page, you can remove friends or block users if needed. Blocked users can't send you friend requests or interact with your pet.",
+          "Your friends list is global across all servers — once you're friends with someone, you can see each other regardless of which server you're in.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 24. LionGotchi: Family ──────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for the Family group system
+  {
+    slug: "liongotchi-family",
+    title: "LionGotchi: Family",
+    description: "Create or join a family group, share a farm and gold bank, manage roles and permissions, and grow together.",
+    audience: "member",
+    iconName: "Crown",
+    estimatedMinutes: 5,
+    prevSlug: "liongotchi-friends",
+    steps: [
+      {
+        id: "what-are-families",
+        title: "What Are Families?",
+        paragraphs: [
+          "Families are small groups of LionGotchi players who band together. A family shares a communal farm, a gold bank, and a member roster with role-based permissions.",
+          "Think of it as a mini guild within LionGotchi. You pool resources, farm together, and benefit from collective effort.",
+        ],
+      },
+      {
+        id: "creating-family",
+        title: "Creating a Family",
+        paragraphs: [
+          "To create a family, go to the Family page in the Pet section sidebar and click Create. You'll choose a name for your family and become its leader.",
+          "As the leader, you have full control over settings, roles, and membership. You can invite other players to join.",
+        ],
+      },
+      {
+        id: "joining-family",
+        title: "Joining a Family",
+        paragraphs: [
+          "If someone invites you to their family, you'll see the invitation on the Family page. You can view the family's info — name, members, and description — before accepting or declining.",
+          "You can only be in one family at a time. If you want to join a different family, you'll need to leave your current one first.",
+        ],
+      },
+      {
+        id: "roles-permissions",
+        title: "Roles & Permissions",
+        paragraphs: [
+          "Families have three roles: Leader, Officer, and Member. Each role has different permissions for managing the family.",
+          "Leaders can do everything — invite/kick members, change settings, manage the bank, and transfer leadership. Officers can manage farming and some bank operations. Members can farm and view the bank but can't change settings.",
+          "The leader can promote members to officer or demote officers back to members.",
+        ],
+      },
+      {
+        id: "family-farm",
+        title: "The Family Farm",
+        paragraphs: [
+          "Families have a shared farm separate from your personal farm. Members can plant, water, and harvest crops on family plots, with all harvested resources going to the family bank.",
+          "This is a collaborative effort — the more active your family members are, the faster your shared farm grows. Coordinate with your family on what seeds to plant for the best results.",
+        ],
+        tip: "Assign specific plots to different members so everyone knows what they're responsible for. It prevents overlap and keeps the farm organized.",
+      },
+      {
+        id: "family-bank",
+        title: "The Family Bank",
+        paragraphs: [
+          "The family bank holds shared gold and items. Gold earned from family farm harvests goes here, and members with permission can deposit or withdraw gold.",
+          "The leader can set a daily withdrawal cap to prevent any single member from draining the bank. Items in the bank are available for any member to use.",
+        ],
+      },
+      {
+        id: "family-settings",
+        title: "Family Settings",
+        paragraphs: [
+          "Leaders can customize the family from the Settings page — change the name, set the daily gold cap, transfer leadership to another member, or disband the family entirely.",
+          "Disbanding is permanent and distributes remaining bank gold equally among members.",
+        ],
+        warning: "Disbanding a family is permanent and cannot be undone. Make sure to discuss it with your members first.",
+      },
+      {
+        id: "leaving-family",
+        title: "Leaving a Family",
+        paragraphs: [
+          "If you want to leave, use the Leave button on the Family overview page. You'll keep your personal items but lose access to the shared farm and bank.",
+          "Leaders cannot leave — they must transfer leadership to another member first, or disband the family.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
 ]

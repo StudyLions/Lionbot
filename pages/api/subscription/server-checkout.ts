@@ -17,10 +17,17 @@ const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
 const VALID_PLANS = ["MONTHLY", "YEARLY"] as const
 type ServerPlan = (typeof VALID_PLANS)[number]
 
-const PRICE_MAP: Record<ServerPlan, string> = {
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Add EUR price map for dual-currency server premium checkout
+const PRICE_USD_MAP: Record<ServerPlan, string> = {
   MONTHLY: (process.env.STRIPE_PRICE_SERVER_PREMIUM_MONTHLY ?? "").trim(),
   YEARLY: (process.env.STRIPE_PRICE_SERVER_PREMIUM_YEARLY ?? "").trim(),
 }
+const PRICE_EUR_MAP: Record<ServerPlan, string> = {
+  MONTHLY: (process.env.STRIPE_PRICE_SERVER_PREMIUM_MONTHLY_EUR ?? "").trim(),
+  YEARLY: (process.env.STRIPE_PRICE_SERVER_PREMIUM_YEARLY_EUR ?? "").trim(),
+}
+// --- END AI-MODIFIED ---
 
 async function findOrCreateStripeCustomer(
   discordId: string
@@ -57,7 +64,11 @@ export default async function handler(
   }
 
   try {
-    const { guildId, plan } = req.body ?? {}
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Accept currency parameter for dual-currency checkout
+    const { guildId, plan, currency: rawCurrency } = req.body ?? {}
+    const currency = rawCurrency === "usd" ? "usd" : "eur"
+    // --- END AI-MODIFIED ---
 
     if (!guildId || typeof guildId !== "string") {
       return res.status(400).json({ error: "guildId is required" })
@@ -79,10 +90,15 @@ export default async function handler(
       })
     }
 
-    const priceId = PRICE_MAP[plan as ServerPlan]
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Select Price ID based on currency choice
+    const priceId = currency === "eur"
+      ? PRICE_EUR_MAP[plan as ServerPlan]
+      : PRICE_USD_MAP[plan as ServerPlan]
     if (!priceId) {
-      return res.status(500).json({ error: "Server premium price not configured." })
+      return res.status(500).json({ error: "Server premium price not configured for selected currency." })
     }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-23) ---
     // Purpose: Use findFirst with status filter instead of findUnique (PK changed from guildid to auto-increment id)

@@ -23,6 +23,10 @@ import {
   // Purpose: icon for Support nav link
   HelpCircle,
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: GraduationCap icon for "How to Use" nav link
+  GraduationCap,
+  // --- END AI-MODIFIED ---
   Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -47,8 +51,8 @@ import Banner from "@/components/Layout/Header/Banner";
 // Purpose: added Support link to Discord server
 const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Added Guides link between Features and Skins for SEO content discoverability
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Added Guides link, "How to Use" tutorials link, reordered nav
 // --- Original code (commented out for rollback) ---
 // const NAV_LINKS = [
 //   { label: "Home", href: "/", icon: Home, matchExact: true },
@@ -62,6 +66,7 @@ const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Features", href: "/features", icon: Sparkles },
   { label: "Guides", href: "/guides", icon: BookOpen },
+  { label: "How to Use", href: "/tutorials", icon: GraduationCap },
   { label: "Skins", href: "/skins", icon: Palette },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
