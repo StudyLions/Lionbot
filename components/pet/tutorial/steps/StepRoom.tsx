@@ -52,7 +52,7 @@ export default function StepRoom() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="absolute top-[8%] right-[-8px] sm:right-[-60px]"
+              className="hidden sm:block absolute top-[8%] right-[-60px]"
             >
               <div className="bg-[var(--pet-card,#0f1628)] border border-[var(--pet-border,#2a3a5c)] rounded px-2 py-1 font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] whitespace-nowrap">
                 ← Walls
@@ -62,7 +62,7 @@ export default function StepRoom() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1 }}
-              className="absolute bottom-[28%] right-[-8px] sm:right-[-80px]"
+              className="hidden sm:block absolute bottom-[28%] right-[-80px]"
             >
               <div className="bg-[var(--pet-card,#0f1628)] border border-[var(--pet-border,#2a3a5c)] rounded px-2 py-1 font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] whitespace-nowrap">
                 ← Furniture
@@ -72,7 +72,7 @@ export default function StepRoom() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 1.2 }}
-              className="absolute bottom-[18%] left-[-8px] sm:left-[-70px]"
+              className="hidden sm:block absolute bottom-[18%] left-[-70px]"
             >
               <div className="bg-[var(--pet-card,#0f1628)] border border-[var(--pet-border,#2a3a5c)] rounded px-2 py-1 font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] whitespace-nowrap">
                 Your pet →

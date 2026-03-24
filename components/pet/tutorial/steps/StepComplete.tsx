@@ -70,8 +70,9 @@ export default function StepComplete({ onFinish, onRetake }: StepCompleteProps) 
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center min-h-full px-4 py-8 space-y-8"
+      className="h-full overflow-y-auto"
     >
+      <div className="flex flex-col items-center min-h-full px-4 py-8 pb-20 lg:pb-8 space-y-8 justify-center">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -140,6 +141,7 @@ export default function StepComplete({ onFinish, onRetake }: StepCompleteProps) 
           Retake this tutorial
         </button>
       </motion.div>
+      </div>
     </motion.div>
   )
 }

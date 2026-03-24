@@ -62,9 +62,9 @@ export default function PetStepLayout({
       animate="center"
       exit="exit"
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="flex flex-col h-full"
+      className="flex flex-col h-full min-h-0"
     >
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="text-center space-y-1">
             <h2 className="font-pixel text-xl sm:text-2xl text-[var(--pet-text,#e2e8f0)]">{title}</h2>
