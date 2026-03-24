@@ -204,8 +204,8 @@ function SubscriptionManagementBanner({
   onManage: () => void;
   portalLoading: boolean;
   symbol: string;
-})
-// --- END AI-MODIFIED --- {
+}) {
+// --- END AI-MODIFIED ---
   const isActive =
     subStatus.status === "ACTIVE" || subStatus.status === "CANCELLING";
   const isCancelling = subStatus.status === "CANCELLING" || subStatus.cancelAtPeriodEnd;
@@ -390,8 +390,8 @@ function SubscriptionCard({
   portalLoading: boolean;
   currency: Currency;
   symbol: string;
-})
-// --- END AI-MODIFIED --- {
+}) {
+// --- END AI-MODIFIED ---
   const tier = SUBSCRIPTION_TIERS[tierId];
   const { data: session } = useSession();
 
