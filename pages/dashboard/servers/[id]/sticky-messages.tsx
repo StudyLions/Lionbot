@@ -369,8 +369,8 @@ export default function StickyMessagesPage() {
     }
   }, [apiUrl])
 
+  // --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> ---
   const pageContent = editing ? (
-    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
     <>
       <PageHeader
         title={editing.isNew ? "New Sticky Message" : "Edit Sticky Message"}
@@ -394,9 +394,7 @@ export default function StickyMessagesPage() {
         serverId={serverId}
       />
     </>
-    {/* --- END AI-MODIFIED --- */}
   ) : (
-    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
     <>
       <PageHeader
         title="Sticky Messages"
@@ -568,8 +566,8 @@ export default function StickyMessagesPage() {
         </div>
       )}
     </>
-    {/* --- END AI-MODIFIED --- */}
   )
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: "Sticky Messages", description: "Configure persistent sticky messages for your channels" }}>

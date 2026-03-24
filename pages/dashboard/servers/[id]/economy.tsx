@@ -341,7 +341,7 @@ export default function EconomyPage() {
                     ))}
                   </div>
                   --- End original code --- */}
-              <TabBar tabs={tabs} active={tab} onChange={setTab} variant="underline" />
+              <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as typeof tab)} variant="underline" />
               {/* --- END AI-REPLACED --- */}
 
               {/* ==================== OVERVIEW TAB ==================== */}

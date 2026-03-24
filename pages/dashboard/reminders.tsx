@@ -1008,8 +1008,8 @@ export default function RemindersPage() {
                           </div>
                         </div>
                       ))}
+                      {/* --- END AI-REPLACED --- */}
                     </div>
-                  {/* --- END AI-REPLACED --- */}
                   ) : reminders.length === 0 ? (
                     <EmptyState
                       icon={<Bell size={48} strokeWidth={1} className="text-muted-foreground" />}

@@ -259,14 +259,14 @@ export default function SearchSelect({
           {loading ? "Loading..." : hasValue ? selectedLabel : placeholder}
         </span>
         <div className="flex items-center gap-1 flex-shrink-0">
+          {/* --- AI-MODIFIED (2026-03-24) --- */}
+          {/* Purpose: Changed span to button for keyboard accessibility */}
           {clearable && hasValue && !disabled && (
-            {/* --- AI-MODIFIED (2026-03-24) --- */}
-            {/* Purpose: Changed span to button for keyboard accessibility */}
             <button type="button" aria-label="Clear selection" onClick={handleClear} className="p-0.5 hover:bg-accent rounded transition-colors">
               <X size={14} className="text-muted-foreground" />
             </button>
-            {/* --- END AI-MODIFIED --- */}
           )}
+          {/* --- END AI-MODIFIED --- */}
           <ChevronDown size={16} className={`text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </div>
       </button>

@@ -10,9 +10,9 @@ interface CategoryCount { category: string; count: number }
 interface Props { categories: CategoryCount[]; selected: string; onChange: (category: string) => void }
 
 export default function CategoryChips({ categories, selected, onChange }: Props) {
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Horizontal scroll instead of wrapping to prevent chips from reflowing on small screens
   return (
-    {/* --- AI-MODIFIED (2026-03-24) --- */}
-    {/* Purpose: Horizontal scroll instead of wrapping to prevent chips from reflowing on small screens */}
     <div className="flex flex-nowrap gap-1.5 overflow-x-auto scrollbar-hide">
       <button
         onClick={() => onChange("")}
@@ -42,6 +42,6 @@ export default function CategoryChips({ categories, selected, onChange }: Props)
         </button>
       ))}
     </div>
-    {/* --- END AI-MODIFIED --- */}
   )
+  // --- END AI-MODIFIED ---
 }

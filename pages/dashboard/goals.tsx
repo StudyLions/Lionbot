@@ -383,8 +383,8 @@ export default function GoalsPage() {
                       </div>
                     </div>
                   ))}
+                  {/* --- END AI-REPLACED --- */}
                 </div>
-              {/* --- END AI-REPLACED --- */}
               ) : goals.length === 0 ? (
                 <EmptyState
                   icon={<Target size={48} strokeWidth={1} className="text-muted-foreground" />}

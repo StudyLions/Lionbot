@@ -1274,8 +1274,8 @@ export default function LeaderboardAutopostPage() {
     setEditing({ config: { ...base, ...preset }, isNew: true })
   }
 
+  // --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> ---
   const pageContent = editing ? (
-    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
     <>
       <PageHeader
         title={editing.isNew ? "New Leaderboard Config" : `Edit: ${editing.config.config_name}`}
@@ -1289,9 +1289,7 @@ export default function LeaderboardAutopostPage() {
         onSaved={() => { mutate(); setEditing(null) }}
       />
     </>
-    {/* --- END AI-MODIFIED --- */}
   ) : (
-    {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> --- */}
     <>
       <PageHeader
         title="Leaderboard Auto-Post"
@@ -1497,8 +1495,8 @@ export default function LeaderboardAutopostPage() {
         </div>
       )}
     </>
-    {/* --- END AI-MODIFIED --- */}
   )
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-21) ---
   // Purpose: Add missing SEO prop required by Layout component

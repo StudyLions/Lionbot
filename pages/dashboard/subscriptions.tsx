@@ -296,8 +296,8 @@ export default function SubscriptionsPage() {
                     </div>
                     <Skeleton className="h-20 rounded-lg" />
                   </div>
+                  {/* --- END AI-REPLACED --- */}
                 </div>
-              {/* --- END AI-REPLACED --- */}
               ) : (
                 <div className="space-y-6 mt-6">
                   {/* LionHeart Subscription */}

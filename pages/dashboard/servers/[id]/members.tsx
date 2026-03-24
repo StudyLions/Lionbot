@@ -18,7 +18,6 @@ import { relativeTime } from "@/utils/relativeTime"
 import SearchInput from "@/components/dashboard/ui/SearchInput"
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import Pagination from "@/components/dashboard/ui/Pagination"
-import Pagination from "@/components/dashboard/ui/Pagination"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import {
   WarnModal, NoteModal, RestrictModal, CoinAdjustModal,

@@ -877,17 +877,7 @@ export default function AdminRoomsPage() {
                   )}
 
                   {/* Pagination */}
-                  {/* --- AI-REPLACED (2026-03-24) ---
-                      Reason: Replaced custom icon-only pagination with shared Pagination component
-                      --- Original code (commented out for rollback) ---
-                      {listData && listData.pagination.totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 pt-2">
-                          <button disabled={page === 1} onClick={() => setPage(page - 1)} ...><ChevronLeft size={16} /></button>
-                          <span>Page {page} of {listData.pagination.totalPages}</span>
-                          <button disabled={page >= listData.pagination.totalPages} onClick={() => setPage(page + 1)} ...><ChevronRight size={16} /></button>
-                        </div>
-                      )}
-                      --- End original code --- */}
+                  {/* --- AI-REPLACED (2026-03-24) --- Reason: Replaced custom pagination with shared Pagination component. Original: custom ChevronLeft/Right page buttons --- */}
                   {listData && (
                     <Pagination page={page} totalPages={listData.pagination.totalPages} onChange={setPage} showLabel className="pt-2" />
                   )}
@@ -910,9 +900,8 @@ export default function AdminRoomsPage() {
                     <ConfirmModal open={true} title={`Close ${selectedRooms.size} Rooms?`} message="This will force-close all selected rooms. The bot will destroy the Discord channels on next tick."
                       onConfirm={() => doBulk("close")} onCancel={() => setShowBulkConfirm(null)} loading={bulkLoading} variant="danger" />
                   )}
+                  {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Standardize overlay to bg-black/60 + blur for consistency --- */}
                   {showBulkConfirm === "adjust" && (
-                    {/* --- AI-MODIFIED (2026-03-24) --- */}
-                    {/* Purpose: Standardize overlay to bg-black/60 + blur for consistency */}
                     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     {/* --- END AI-MODIFIED --- */}
                       <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full space-y-4">
@@ -947,15 +936,10 @@ export default function AdminRoomsPage() {
                     {!configData ? (
                       <Skeleton className="h-64 rounded-xl" />
                     ) : (
-                      {/* --- AI-REPLACED (2026-03-24) ---
-                          Reason: Switch from local SettingRow (value= prop) to shared SettingRow (children prop)
-                          What the new code does better: Uses shared UI components with responsive layout, accessibility, consistent styling
-                          --- Original code (commented out for rollback) ---
-                          <div className="...bg-card divide-y divide-border">
-                            <SettingRow label="..." value={<NumberInput ... />} /> (all used local value= API)
-                            <SettingRow label="..." value={<Toggle ... />} />
-                          </div>
-                          --- End original code --- */}
+                      // --- AI-REPLACED (2026-03-24) ---
+                      // Reason: Switch from local SettingRow (value= prop) to shared SettingRow (children prop)
+                      // What the new code does better: Uses shared UI components with responsive layout, accessibility, consistent styling
+                      // --- Original code: <div> with local SettingRow value= API and local Toggle/NumberInput ---
                       <div className="rounded-xl border border-border bg-card">
                         <SettingRow label="Daily Rent Price" description="LionCoins charged per day for each room">
                           <NumberInput value={configVal("renting_price") as number | null} placeholder="1000" onChange={(v) => setConfigVal("renting_price", v)} allowNull />
@@ -987,8 +971,8 @@ export default function AdminRoomsPage() {
                         <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)">
                           <NumberInput value={configVal("renting_cooldown") as number | null} placeholder="No cooldown" onChange={(v) => setConfigVal("renting_cooldown", v)} allowNull />
                         </SettingRow>
+                        {/* --- END AI-REPLACED --- */}
                       </div>
-                      {/* --- END AI-REPLACED --- */}
                     )}
 
                     {hasConfigChanges && (

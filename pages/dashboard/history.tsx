@@ -549,8 +549,8 @@ export default function HistoryPage() {
                       </div>
                     </div>
                   ))}
+                  {/* --- END AI-REPLACED --- */}
                 </div>
-              {/* --- END AI-REPLACED --- */}
               ) : allSessions.length === 0 ? (
                 <EmptyState
                   icon={<History size={48} strokeWidth={1} className="text-muted-foreground" />}

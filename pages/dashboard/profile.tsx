@@ -267,8 +267,8 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <Skeleton className="rounded-2xl h-32" />
+                  {/* --- END AI-REPLACED --- */}
                 </div>
-              {/* --- END AI-REPLACED --- */}
               ) : error ? (
                 <div className="text-center py-20 text-red-400">{error.message}</div>
               ) : !profile ? (

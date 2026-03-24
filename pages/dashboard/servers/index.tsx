@@ -247,8 +247,8 @@ export default function Servers() {
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <Skeleton key={i} className="rounded-2xl h-32" />
                   ))}
+                  {/* --- END AI-REPLACED --- */}
                 </div>
-              {/* --- END AI-REPLACED --- */}
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                   <p className="text-destructive">{error.message}</p>
