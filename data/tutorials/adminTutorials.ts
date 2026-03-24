@@ -1,12 +1,15 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-14
-// Purpose: Admin-facing tutorial content (8 tutorials)
+// Updated: 2026-03-24
+// Purpose: Admin-facing tutorial content (11 tutorials)
 // ============================================================
 import type { Tutorial } from "./index"
 
 export const adminTutorials: Tutorial[] = [
   // ── 1. Initial Server Setup ─────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Expanded setup wizard step to detail all 12 wizard steps, mention localStorage auto-save
   {
     slug: "server-setup",
     title: "Setting Up LionBot",
@@ -46,8 +49,11 @@ export const adminTutorials: Tutorial[] = [
         id: "setup-wizard",
         title: "The Setup Wizard",
         paragraphs: [
-          "If you're setting up LionBot for the first time, the Setup Wizard walks you through the essentials step by step. It covers timezone, study channels, rank tiers, economy settings, and more.",
-          "You can find the Setup Wizard in the dashboard sidebar under your server's settings. It's the fastest way to get everything configured.",
+          "If you're setting up LionBot for the first time, the Setup Wizard walks you through everything step by step. It's a 12-step guided flow that covers:",
+          "Welcome — Introduction and what to expect. Ranks — Set up rank tiers and choose voice time, XP, or message-based progression. LionGotchi — Enable or disable the virtual pet system. Economy — Configure coin earn rates and daily study caps.",
+          "Tasks — Set up task completion rewards. Pomodoro — Configure focus/break timers for voice channels. Schedule — Set up bookable study time slots. Basics — Server timezone, logging channel, and core settings.",
+          "Community — Study channels, notification preferences, and welcome messages. Commands — Choose which command categories to enable. Premium — Overview of premium features. Celebration — You're all set!",
+          "Your progress saves automatically — if you close the browser and come back, the wizard picks up where you left off.",
         ],
         tip: "You can always come back and change settings later. The wizard just gives you a good starting point.",
       },
@@ -63,6 +69,7 @@ export const adminTutorials: Tutorial[] = [
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
   // ── 2. Configuring Ranks ────────────────────────────────
   {
@@ -270,6 +277,8 @@ export const adminTutorials: Tutorial[] = [
   },
 
   // ── 6. Pomodoro & Schedule ──────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Added Pomodoro Analytics step
   {
     slug: "pomodoro-and-schedule",
     title: "Pomodoro & Schedule",
@@ -313,8 +322,18 @@ export const adminTutorials: Tutorial[] = [
           "The bot posts an interactive schedule message that members can click to book or cancel slots.",
         ],
       },
+      {
+        id: "pomodoro-analytics",
+        title: "Pomodoro Analytics",
+        paragraphs: [
+          "Premium servers get access to Pomodoro Analytics — a dashboard page showing detailed usage data. See how many focus sessions your members complete, peak study hours, average session lengths, and which channels are most popular.",
+          "Use these insights to optimize your Pomodoro setup. If most members study between 8-10 PM, make sure your best channels are available during those hours.",
+        ],
+        note: "Pomodoro Analytics is a premium feature. See the Premium Features tutorial for more details on what's included.",
+      },
     ],
   },
+  // --- END AI-MODIFIED ---
 
   // ── 7. Economy & Moderation ─────────────────────────────
   {
@@ -366,6 +385,8 @@ export const adminTutorials: Tutorial[] = [
   },
 
   // ── 8. Video Channels & Branding ────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated nextSlug from liongotchi-admin to ambient-sounds
   {
     slug: "video-and-branding",
     title: "Video Channels & Branding",
@@ -374,7 +395,7 @@ export const adminTutorials: Tutorial[] = [
     iconName: "Video",
     estimatedMinutes: 4,
     prevSlug: "economy-and-moderation",
-    nextSlug: "liongotchi-admin",
+    nextSlug: "ambient-sounds",
     steps: [
       {
         id: "video-channels",
@@ -399,20 +420,158 @@ export const adminTutorials: Tutorial[] = [
           "Customize how LionBot looks in your server. You can set a custom embed color, server icon, and other branding options that make the bot feel like part of your community.",
           "Find branding settings in the dashboard. These affect how bot messages and embeds appear in your server.",
         ],
+        note: "Advanced branding options (custom embed colors, icons, and more) are available with a premium subscription. See the Premium Features tutorial for details.",
       },
       {
         id: "putting-it-together",
         title: "Putting It All Together",
         paragraphs: [
-          "You've now seen everything LionBot can do for your server. The key is to start simple — set up ranks and a few shop items, then add more features as your community grows.",
+          "You've covered the core LionBot features. The next tutorials cover premium add-ons — Ambient Sounds for background audio in study channels, and a roundup of all premium features.",
           "Remember, you can always come back to the dashboard to tweak settings. And if you need help, join the LionBot Discord server for support.",
         ],
         tip: "Don't enable everything at once. Start with the features your community will use most (usually study tracking + ranks), then add the shop, role menus, and other features over time.",
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 
-  // ── 9. LionGotchi Admin ─────────────────────────────────
+  // ── 9. Ambient Sounds ───────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial for Ambient Sounds / SoundsBot configuration (premium feature)
+  {
+    slug: "ambient-sounds",
+    title: "Ambient Sounds",
+    description: "Add background audio to your study channels — rain, campfire, ocean waves, and white noise — powered by the SoundsBot.",
+    audience: "admin",
+    iconName: "Volume2",
+    estimatedMinutes: 4,
+    prevSlug: "video-and-branding",
+    nextSlug: "premium-features",
+    steps: [
+      {
+        id: "what-are-ambient-sounds",
+        title: "What Are Ambient Sounds?",
+        paragraphs: [
+          "Ambient Sounds adds background audio to your voice channels — rain, campfire, ocean waves, brown noise, or white noise. It's powered by the SoundsBot, a companion bot that joins voice channels and plays looped audio.",
+          "Members studying in a channel with ambient sounds get a calming background that helps them focus. It's one of the most-loved premium features.",
+        ],
+        note: "Ambient Sounds requires a premium server subscription to enable.",
+      },
+      {
+        id: "enabling-sounds",
+        title: "Enabling Ambient Sounds",
+        paragraphs: [
+          "To set up Ambient Sounds, go to the Ambient Sounds page in your server's dashboard (under the premium section). You need an active premium subscription to access this.",
+          "The page shows up to 5 bot slots. Each slot represents one SoundsBot instance that can sit in a voice channel and play audio.",
+        ],
+      },
+      {
+        id: "configuring-slots",
+        title: "Configuring Bot Slots",
+        paragraphs: [
+          "For each slot, you choose three things: a sound type (rain, campfire, ocean, brown noise, or white noise), a voice channel for the bot to join, and a volume level.",
+          "Different channels can have different sounds. For example, put rain in your main study channel and campfire in a cozy late-night channel.",
+        ],
+        tip: "Start with one or two slots and see what your members prefer. You can always add more later. Rain and brown noise are the most popular choices.",
+      },
+      {
+        id: "channel-assignment",
+        title: "Assigning Channels",
+        paragraphs: [
+          "Select a voice channel from the dropdown for each active bot slot. The SoundsBot will automatically join that channel and start playing when enabled.",
+          "Make sure the SoundsBot has Connect and Speak permissions in the target channels. If it's not joining, check the channel permission overrides.",
+        ],
+      },
+      {
+        id: "schedule-analytics",
+        title: "Schedule & Analytics",
+        paragraphs: [
+          "You can set a schedule for when ambient sounds are active. For example, only play sounds during study hours (8 AM to midnight) to save resources during off-hours.",
+          "The analytics section shows usage data — how many members studied with ambient sounds, peak hours, and which sound types are most popular in your server.",
+        ],
+      },
+      {
+        id: "member-voting",
+        title: "Member Sound Voting",
+        paragraphs: [
+          "Enable sound voting to let members vote on which sound type plays in a channel. When voting is on, members can use a command to cast their preference, and the most popular choice wins.",
+          "This is a fun way to involve your community in the decision and keeps things democratic.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 10. Premium Features ────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: New tutorial covering all premium admin features (sticky messages, leaderboard autopost, voice editor, analytics, branding)
+  {
+    slug: "premium-features",
+    title: "Premium Features",
+    description: "A roundup of all premium features for server admins — sticky messages, leaderboard auto-posts, voice editing, analytics, and branding.",
+    audience: "admin",
+    iconName: "Crown",
+    estimatedMinutes: 5,
+    prevSlug: "ambient-sounds",
+    nextSlug: "liongotchi-admin",
+    steps: [
+      {
+        id: "premium-overview",
+        title: "What's Included in Premium?",
+        paragraphs: [
+          "Premium servers unlock a suite of advanced features that help you run a more polished, data-driven study community. These features are available as long as your server has an active premium subscription.",
+          "This tutorial covers each premium feature at a glance. Each one has its own section in the server dashboard.",
+        ],
+      },
+      {
+        id: "sticky-messages",
+        title: "Sticky Messages",
+        paragraphs: [
+          "Sticky messages are persistent messages that stay pinned to the bottom of a channel. When new messages push them up, LionBot automatically reposts them so they're always visible.",
+          "Use sticky messages for rules, study guidelines, important links, or any information you want members to always see. Configure them from the Sticky Messages page in the dashboard.",
+        ],
+        tip: "Sticky messages work great in channels like #rules, #resources, or #study-tips where you want key information always visible without members scrolling up.",
+      },
+      {
+        id: "leaderboard-autopost",
+        title: "Leaderboard Auto-Post",
+        paragraphs: [
+          "Set up automatic leaderboard posts on a daily, weekly, or monthly schedule. LionBot posts the current leaderboard to a channel of your choice at the time you configure.",
+          "You can also set up rewards — automatically give bonus coins or a special role to the top N members each period. This creates healthy competition and motivates members to study consistently.",
+        ],
+      },
+      {
+        id: "voice-time-editor-admin",
+        title: "Voice Time Editor",
+        paragraphs: [
+          "The Voice Time Editor lets members adjust their study session records — fix missing sessions, correct durations, and remove incorrect entries. As an admin, you control whether this feature is available and its limits.",
+          "Configure the maximum number of monthly edits, how far back members can edit, and any other restrictions from the Voice Time Editor settings page.",
+        ],
+        warning: "The Voice Time Editor gives members the ability to modify their study records. Set reasonable limits to prevent abuse while still being helpful for genuine corrections.",
+      },
+      {
+        id: "pomodoro-analytics-premium",
+        title: "Pomodoro Analytics",
+        paragraphs: [
+          "Pomodoro Analytics gives you detailed insights into how your members use Pomodoro timers. See completion rates, popular time slots, average focus durations, and which channels get the most use.",
+          "These insights help you optimize your Pomodoro setup — adjust timer durations, add or remove Pomodoro channels, and understand when your community is most active.",
+        ],
+      },
+      {
+        id: "server-branding-premium",
+        title: "Server Branding",
+        paragraphs: [
+          "Premium branding lets you fully customize LionBot's appearance in your server. Set a custom embed color that matches your server's theme, upload a custom bot icon, and adjust how messages look.",
+          "This makes LionBot feel like a native part of your server rather than a generic third-party bot. It's a small touch that goes a long way for professional-looking communities.",
+        ],
+      },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+
+  // ── 11. LionGotchi Admin ─────────────────────────────────
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Updated prevSlug from video-and-branding to premium-features
   {
     slug: "liongotchi-admin",
     title: "LionGotchi Admin",
@@ -420,7 +579,7 @@ export const adminTutorials: Tutorial[] = [
     audience: "admin",
     iconName: "Cat",
     estimatedMinutes: 3,
-    prevSlug: "video-and-branding",
+    prevSlug: "premium-features",
     steps: [
       {
         id: "liongotchi-overview",
@@ -446,8 +605,8 @@ export const adminTutorials: Tutorial[] = [
         paragraphs: [
           "Here's a quick overview of the LionGotchi features your members have access to, so you know what to expect:",
           "/pet — Adopt a pet, feed/bathe/rest it, check inventory and farm. The entry point for everything.",
-          "Website /pet section — Full-featured pages for inventory management, room decoration, farming, enhancement, marketplace trading, item wiki, and Gameboy skins.",
-          "Members earn equipment drops passively from studying and chatting. They can farm resources, enhance gear with scrolls, buy and sell items with other players, and decorate their pet's room.",
+          "Website /pet section — Full-featured pages for inventory management, room decoration, farming, crafting, enhancement, marketplace trading, friends, family groups, item wiki, and Gameboy skins.",
+          "Members earn equipment drops passively from studying and chatting. They can farm resources, craft items, enhance gear with scrolls, buy and sell items with other players, join families, and decorate their pet's room.",
         ],
       },
       {
@@ -457,8 +616,9 @@ export const adminTutorials: Tutorial[] = [
           "The best way to introduce LionGotchi is with a quick announcement in your server. Let members know they can use /pet to adopt their pet, and point them to the LionGotchi tutorials on this website for a full walkthrough.",
           "Consider creating a dedicated channel for pet-related discussion and marketplace trades. It helps build community around the feature without cluttering your main study channels.",
         ],
-        tip: "Pin a message in your pet channel with links to the three LionGotchi member tutorials. Members will have most of their questions answered there.",
+        tip: "Pin a message in your pet channel with links to the LionGotchi member tutorials. Members will have most of their questions answered there.",
       },
     ],
   },
+  // --- END AI-MODIFIED ---
 ]

@@ -207,6 +207,14 @@ export default function PetOverview() {
   const { data, error, isLoading, mutate } = useDashboard<PetOverviewData>(
     session ? "/api/pet/overview" : null
   )
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch pending friend request count for notification banner
+  const { data: pendingData } = useDashboard<{ requests: { requestId: number }[] }>(
+    session && data?.hasPet ? "/api/pet/friends/pending" : null,
+    { refreshInterval: 60000 }
+  )
+  const pendingCount = pendingData?.requests?.length ?? 0
+  // --- END AI-MODIFIED ---
 
   const pet = data?.pet
   const equipment = data?.equipment ?? {}
@@ -254,6 +262,30 @@ export default function PetOverview() {
                     </p>
                     {/* --- END AI-MODIFIED --- */}
                   </div>
+
+                  {/* --- AI-MODIFIED (2026-03-24) --- */}
+                  {/* Purpose: Pending friend requests banner */}
+                  {pendingCount > 0 && (
+                    <Link href="/pet/friends">
+                      <div
+                        className="border-[3px] border-[#f0c040]/50 bg-gradient-to-r from-[#f0c040]/10 to-[#f0c040]/5 px-4 py-3 cursor-pointer hover:border-[#f0c040] transition-colors group"
+                        style={{ boxShadow: "3px 3px 0 #060810" }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="text-lg animate-bounce">📬</span>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-pixel text-sm text-[var(--pet-gold,#f0c040)]">
+                              {pendingCount} pending friend request{pendingCount !== 1 ? "s" : ""}
+                            </span>
+                            <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] ml-2 group-hover:text-[var(--pet-text,#e2e8f0)] transition-colors">
+                              Click to review &rarr;
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Link>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Currency HUD Bar */}
                   <div

@@ -41,6 +41,7 @@ interface NavItem {
   icon: React.ReactNode
   disabled?: boolean
   requiresPet?: boolean
+  badge?: number
 }
 
 interface NavSection {
@@ -113,6 +114,9 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
     )
   }
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Badge indicator for pending friend requests
+  const hasBadge = item.badge != null && item.badge > 0
   return (
     <Link href={item.href} onClick={onClick}>
       <span
@@ -120,15 +124,23 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
           "font-pixel flex items-center gap-2.5 px-3 py-2 text-sm transition-all border-l-2",
           isActive
             ? "border-l-[#f0c040] bg-[#f0c040]/8 text-[#f0c040]"
-            : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
+            : hasBadge
+              ? "border-l-[#f0c040]/60 text-[#f0c040] bg-[#f0c040]/5 hover:bg-[#f0c040]/10"
+              : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
         )}
         aria-current={isActive ? "page" : undefined}
       >
         <span className="opacity-70">{item.icon}</span>
         {item.label}
+        {hasBadge && (
+          <span className="ml-auto font-pixel text-[10px] text-[#0a0e1a] bg-[#f0c040] px-1.5 py-0.5 min-w-[18px] text-center leading-none animate-pulse">
+            {item.badge}
+          </span>
+        )}
       </span>
     </Link>
   )
+  // --- END AI-MODIFIED ---
 }
 // --- END AI-MODIFIED ---
 
@@ -147,6 +159,14 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
     session ? "/api/pet/balance" : null,
     { refreshInterval: 30000 }
   )
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch pending friend request count for badge on Friends nav item
+  const { data: pendingData } = useDashboard<{ requests: { requestId: number }[] }>(
+    session && hasPet ? "/api/pet/friends/pending" : null,
+    { refreshInterval: 60000 }
+  )
+  const pendingCount = pendingData?.requests?.length ?? 0
   // --- END AI-MODIFIED ---
 
   return (
@@ -216,10 +236,16 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
                 // Purpose: Lock items that require a pet when user has no pet
                 const isLocked = !hasPet && item.requiresPet
                 // --- END AI-MODIFIED ---
+                // --- AI-MODIFIED (2026-03-24) ---
+                // Purpose: Inject pending badge onto Friends nav item
+                const itemWithBadge = item.href === "/pet/friends" && pendingCount > 0
+                  ? { ...item, badge: pendingCount }
+                  : item
+                // --- END AI-MODIFIED ---
                 return (
                   <NavItemLink
                     key={item.href}
-                    item={item}
+                    item={itemWithBadge}
                     isActive={isActive}
                     onClick={onNavigate}
                     locked={isLocked}

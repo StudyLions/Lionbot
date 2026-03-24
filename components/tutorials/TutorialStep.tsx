@@ -3,8 +3,10 @@
 // Created: 2026-03-14
 // Purpose: Single step block inside a tutorial page
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Added warning (AlertTriangle) and note (Info) callout rendering
 import { ReactNode } from "react"
-import { Terminal, Lightbulb } from "lucide-react"
+import { Terminal, Lightbulb, AlertTriangle, Info } from "lucide-react"
 import TryItLive from "./TryItLive"
 
 interface TutorialStepProps {
@@ -14,8 +16,11 @@ interface TutorialStepProps {
   paragraphs: string[]
   command?: string
   tip?: string
+  warning?: string
+  note?: string
   interactive?: string
 }
+// --- END AI-MODIFIED ---
 
 export default function TutorialStep({
   stepNumber,
@@ -24,6 +29,8 @@ export default function TutorialStep({
   paragraphs,
   command,
   tip,
+  warning,
+  note,
   interactive,
 }: TutorialStepProps) {
   return (
@@ -54,6 +61,20 @@ export default function TutorialStep({
             <div className="mt-4 bg-amber-500/5 border border-amber-500/20 rounded-lg px-4 py-3 flex gap-3">
               <Lightbulb size={16} className="text-amber-400 flex-shrink-0 mt-0.5" />
               <p className="text-sm text-amber-200/80 leading-relaxed">{tip}</p>
+            </div>
+          )}
+
+          {warning && (
+            <div className="mt-4 bg-red-500/5 border border-red-500/20 rounded-lg px-4 py-3 flex gap-3">
+              <AlertTriangle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-red-200/80 leading-relaxed">{warning}</p>
+            </div>
+          )}
+
+          {note && (
+            <div className="mt-4 bg-blue-500/5 border border-blue-500/20 rounded-lg px-4 py-3 flex gap-3">
+              <Info size={16} className="text-blue-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-blue-200/80 leading-relaxed">{note}</p>
             </div>
           )}
 

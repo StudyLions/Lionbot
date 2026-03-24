@@ -5,10 +5,13 @@
 // ============================================================
 import Link from "next/link"
 import { ChevronRight, Clock } from "lucide-react"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Added icons for new tutorials (History, Pencil, Maximize2, Gem, Armchair, Hammer, Sparkles, Users2, Volume2, Crown)
 import {
   Rocket, CheckSquare, Bell, User, Timer, Coins, Trophy, Palette,
   Settings, BarChart3, ShoppingBag, Layers, Sliders, Shield, Video,
   LayoutDashboard, Target, Heart, DoorOpen, Cat, Sprout, Store,
+  History, Pencil, Maximize2, Gem, Armchair, Hammer, Sparkles, Users2, Volume2, Crown,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 
@@ -16,7 +19,9 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Rocket, CheckSquare, Bell, User, Timer, Coins, Trophy, Palette,
   Settings, BarChart3, ShoppingBag, Layers, Sliders, Clock, Shield, Video,
   LayoutDashboard, Target, Heart, DoorOpen, Cat, Sprout, Store,
+  History, Pencil, Maximize2, Gem, Armchair, Hammer, Sparkles, Users2, Volume2, Crown,
 }
+// --- END AI-MODIFIED ---
 
 interface TutorialCardProps {
   slug: string

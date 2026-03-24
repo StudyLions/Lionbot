@@ -6,9 +6,12 @@
 import Layout from "@/components/Layout/Layout"
 import TutorialCard from "@/components/tutorials/TutorialCard"
 import { getTutorialsByAudience } from "@/data/tutorials"
-import { useState } from "react"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Added search functionality and Search icon import
+import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
-import { Users, ShieldCheck, BookOpen, MessageCircle, ExternalLink } from "lucide-react"
+import { Users, ShieldCheck, BookOpen, MessageCircle, ExternalLink, Search } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -19,6 +22,26 @@ type TabType = "all" | "member" | "admin"
 
 export default function TutorialsPage() {
   const [tab, setTab] = useState<TabType>("all")
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Client-side search filtering for tutorials
+  const [search, setSearch] = useState("")
+
+  const filteredMember = useMemo(() => {
+    if (!search.trim()) return memberTutorials
+    const q = search.toLowerCase()
+    return memberTutorials.filter(
+      (t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)
+    )
+  }, [search])
+
+  const filteredAdmin = useMemo(() => {
+    if (!search.trim()) return adminTutorials
+    const q = search.toLowerCase()
+    return adminTutorials.filter(
+      (t) => t.title.toLowerCase().includes(q) || t.description.toLowerCase().includes(q)
+    )
+  }, [search])
+  // --- END AI-MODIFIED ---
 
   const showMember = tab === "all" || tab === "member"
   const showAdmin = tab === "all" || tab === "admin"
@@ -46,6 +69,22 @@ export default function TutorialsPage() {
               Pick your track below and start learning.
             </p>
           </div>
+
+          {/* --- AI-MODIFIED (2026-03-24) --- */}
+          {/* Purpose: Search input for filtering tutorials */}
+          <div className="max-w-md mx-auto mb-8">
+            <div className="relative">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search tutorials..."
+                className="w-full bg-muted/50 border border-border text-foreground rounded-lg pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary/40 outline-none transition-all placeholder:text-muted-foreground/60"
+              />
+            </div>
+          </div>
+          {/* --- END AI-MODIFIED --- */}
 
           {/* Tab filter */}
           <div className="flex items-center justify-center gap-2 mb-10">
@@ -86,11 +125,17 @@ export default function TutorialsPage() {
                   </p>
                 </div>
               </div>
+              {/* --- AI-MODIFIED (2026-03-24) --- */}
+              {/* Purpose: Use filtered tutorials for search */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {memberTutorials.map((t) => (
+                {filteredMember.map((t) => (
                   <TutorialCard key={t.slug} {...t} />
                 ))}
+                {filteredMember.length === 0 && (
+                  <p className="text-sm text-muted-foreground col-span-full text-center py-6">No matching member tutorials</p>
+                )}
               </div>
+              {/* --- END AI-MODIFIED --- */}
             </section>
           )}
 
@@ -108,11 +153,17 @@ export default function TutorialsPage() {
                   </p>
                 </div>
               </div>
+              {/* --- AI-MODIFIED (2026-03-24) --- */}
+              {/* Purpose: Use filtered tutorials for search */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {adminTutorials.map((t) => (
+                {filteredAdmin.map((t) => (
                   <TutorialCard key={t.slug} {...t} />
                 ))}
+                {filteredAdmin.length === 0 && (
+                  <p className="text-sm text-muted-foreground col-span-full text-center py-6">No matching admin tutorials</p>
+                )}
               </div>
+              {/* --- END AI-MODIFIED --- */}
             </section>
           )}
 
