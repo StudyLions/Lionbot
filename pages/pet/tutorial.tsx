@@ -12,7 +12,6 @@ import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { NextSeo } from "next-seo"
 
-import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import {
   PetTutorialNavDesktop,
@@ -231,11 +230,10 @@ function PetTutorialInner() {
 
 export default function PetTutorialPage() {
   return (
-    <Layout SEO={{ title: "LionGotchi Tutorial", description: "Learn everything about LionGotchi" }}>
-      <AdminGuard variant="pet">
-        <PetTutorialInner />
-      </AdminGuard>
-    </Layout>
+    <AdminGuard variant="pet">
+      <NextSeo title="LionGotchi Tutorial" noindex />
+      <PetTutorialInner />
+    </AdminGuard>
   )
 }
 
