@@ -442,17 +442,46 @@ export default function RoomCanvas({
         }
       }
 
-      lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE)
+      // --- AI-REPLACED (2026-03-24) ---
+      // Reason: Fixed 64x64 lion canvas crops tall equipment. Now dynamically
+      //         expands the canvas to fit oversized assets (e.g. 65x88 hats)
+      //         and offsets the lion downward so tall items extend above.
+      // --- Original code (commented out for rollback) ---
+      // lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE)
+      // ... (see git history for original per-step drawing)
+      // osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE, lionX, lionY, scaledLionSize, scaledLionSize)
+      // --- End original code ---
       const curSeq = renderSeqRef.current
+
+      let maxEquipH = LION_SPRITE_SIZE
+      for (const step of curSeq) {
+        if (step.type !== 'lion' && step.key !== 'BACK') {
+          const eImg = cache.get(`equip_${step.key}_${frame}`) || cache.get(`equip_${step.key}`)
+          if (eImg) {
+            const eh = (eImg as HTMLImageElement).naturalHeight ?? LION_SPRITE_SIZE
+            if (eh > maxEquipH) maxEquipH = eh
+          }
+        }
+      }
+
+      const extraTop = maxEquipH - LION_SPRITE_SIZE
+      const canvasH = LION_SPRITE_SIZE + extraTop
+
+      if (lionOffscreen.width !== LION_SPRITE_SIZE || lionOffscreen.height !== canvasH) {
+        lionOffscreen.width = LION_SPRITE_SIZE
+        lionOffscreen.height = canvasH
+        lionCtx.imageSmoothingEnabled = false
+      }
+      lionCtx.clearRect(0, 0, LION_SPRITE_SIZE, canvasH)
 
       for (const step of curSeq) {
         if (step.type === 'lion') {
           if (step.key === 'expression') {
             const exprImg = cache.get(`lion_expr_${frame}`)
-            if (exprImg) lionCtx.drawImage(exprImg, 0, 0)
+            if (exprImg) lionCtx.drawImage(exprImg, 0, extraTop)
           } else {
             const img = cache.get(`lion_${step.key}_${frame}`)
-            if (img) lionCtx.drawImage(img, 0, 0)
+            if (img) lionCtx.drawImage(img, 0, extraTop)
           }
         } else {
           const slot = step.key
@@ -462,32 +491,30 @@ export default function RoomCanvas({
           const img = animImg || staticImg
           if (img) {
             const eqOff = curLayout.equipmentOffsets?.[slot] ?? [0, 0]
-            // --- AI-MODIFIED (2026-03-24) ---
-            // Purpose: Apply glow effect based on enhancement quality,
-            //          and crop non-64x64 equipment from the correct region
-            //          instead of drawing at native size (which mispositions items)
             const eqData = curEquip[slot]
             applyGlow(lionCtx, eqData?.glowTier, eqData?.glowIntensity)
             const nw = (img as HTMLImageElement).naturalWidth ?? LION_SPRITE_SIZE
             const nh = (img as HTMLImageElement).naturalHeight ?? LION_SPRITE_SIZE
+            const ox = Math.max(-16, Math.min(16, eqOff[0]))
+            const oy = Math.max(-16, Math.min(16, eqOff[1]))
             if (nw !== LION_SPRITE_SIZE || nh !== LION_SPRITE_SIZE) {
-              const cropX = Math.max(0, Math.floor((nw - LION_SPRITE_SIZE) / 2))
-              const cropY = nh > LION_SPRITE_SIZE ? 24 : 0
-              lionCtx.drawImage(img,
-                cropX, cropY, LION_SPRITE_SIZE, LION_SPRITE_SIZE,
-                eqOff[0], eqOff[1], LION_SPRITE_SIZE, LION_SPRITE_SIZE
-              )
+              const cx = Math.max(0, Math.floor((LION_SPRITE_SIZE - nw) / 2))
+              const cy = canvasH - nh
+              lionCtx.drawImage(img, cx + ox, cy + oy)
             } else {
-              lionCtx.drawImage(img, eqOff[0], eqOff[1])
+              lionCtx.drawImage(img, ox, extraTop + oy)
             }
             clearGlow(lionCtx)
-            // --- END AI-MODIFIED ---
           }
         }
       }
 
       const [lionX, lionY] = curLayout.lionPosition
-      osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, LION_SPRITE_SIZE, lionX, lionY, scaledLionSize, scaledLionSize)
+      const scaleFactor = scaledLionSize / LION_SPRITE_SIZE
+      const scaledH = Math.round(canvasH * scaleFactor)
+      const pasteY = lionY - Math.round(extraTop * scaleFactor)
+      osCtx.drawImage(lionOffscreen, 0, 0, LION_SPRITE_SIZE, canvasH, lionX, pasteY, scaledLionSize, scaledH)
+      // --- END AI-REPLACED ---
       // --- END AI-MODIFIED ---
 
       // --- AI-MODIFIED (2026-03-17) ---
