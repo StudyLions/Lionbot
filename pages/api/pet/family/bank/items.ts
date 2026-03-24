@@ -37,6 +37,10 @@ export default apiHandler({
     })
     const depositorMap = new Map(depositorPets.map((p) => [p.userid.toString(), p.pet_name]))
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Include glowTier/glowIntensity for ItemGlow rendering
+    const { calcGlowTier, calcGlowIntensity } = await import("@/utils/gameConstants")
+
     const items = bankItems.map((b) => ({
       bankEntryId: b.bank_entry_id,
       itemId: b.itemid,
@@ -44,14 +48,16 @@ export default apiHandler({
       category: b.lg_items.category,
       rarity: b.lg_items.rarity,
       assetPath: b.lg_items.asset_path,
-      enhancementLevel: b.enhancement_level,
+      enhancementLevel: b.enhancement_level ?? 0,
+      glowTier: calcGlowTier(b.enhancement_level ?? 0, b.total_bonus ?? 0),
+      glowIntensity: calcGlowIntensity(b.enhancement_level ?? 0),
       quantity: b.quantity,
       totalBonus: b.total_bonus,
-      scrollData: b.scroll_data,
       depositedBy: b.deposited_by.toString(),
       depositedByName: depositorMap.get(b.deposited_by.toString()) ?? "Unknown",
       depositedAt: b.deposited_at.toISOString(),
     }))
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ items })
   },

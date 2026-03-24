@@ -34,12 +34,17 @@ const GameboyFrame = dynamic(() => import("@/components/pet/GameboyFrame"), { ss
 const SeedSelector = dynamic(() => import("@/components/pet/farm/SeedSelector"), { ssr: false })
 const PlotDetail = dynamic(() => import("@/components/pet/farm/PlotDetail"), { ssr: false })
 
-interface FamilyCtx {
-  familyId: number
-  role: string
-  permissions: unknown
-  level: number
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match the nested response shape from /api/pet/family
+interface FamilyOverviewResponse {
+  family: {
+    familyId: number
+    rolePermissions?: unknown
+    level: number
+  } | null
+  membership: { role: string } | null
 }
+// --- END AI-MODIFIED ---
 
 interface FamilyFarmData {
   plots: FamilyFarmPlot[]
@@ -61,14 +66,17 @@ export default function FamilyFarmPage() {
   const [justWatered, setJustWatered] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
 
-  const { data: familyCtx } = useDashboard<FamilyCtx>(
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Correctly destructure nested API response
+  const { data: familyCtx } = useDashboard<FamilyOverviewResponse>(
     session ? "/api/pet/family" : null
   )
 
-  const familyId = familyCtx?.familyId
-  const role = familyCtx?.role ?? "MEMBER"
-  const perms = familyCtx?.permissions
-  const familyLevel = familyCtx?.level ?? 1
+  const familyId = familyCtx?.family?.familyId
+  const role = familyCtx?.membership?.role ?? "MEMBER"
+  const perms = familyCtx?.family?.rolePermissions
+  const familyLevel = familyCtx?.family?.level ?? 1
+  // --- END AI-MODIFIED ---
   const maxFarms = maxFarmsForLevel(familyLevel)
 
   const { data: farmData, error, isLoading, mutate } = useDashboard<FamilyFarmData>(

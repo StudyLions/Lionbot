@@ -371,10 +371,13 @@ export default function FamilyMembers() {
   const myRole = overviewData?.membership?.role ?? "MEMBER"
   const rolePermissions = overviewData?.family?.rolePermissions
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Members API no longer needs familyId param (uses auth user's family)
   const { data: membersData, error: membersError, isLoading: membersLoading, mutate: mutateMembers } =
     useDashboard<FamilyMembersData>(
-      familyId ? `/api/pet/family/members?familyId=${familyId}` : null
+      familyId ? `/api/pet/family/members` : null
     )
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!overviewLoading && !overviewData?.family) {
@@ -391,13 +394,20 @@ export default function FamilyMembers() {
     })
   }, [membersData?.members])
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Route actions to correct API endpoints (role.ts for promote/demote, kick.ts for kick)
   const handleMemberAction = useCallback(async (discordId: string, action: string, newRole?: string) => {
     try {
-      await dashboardMutate("POST", "/api/pet/family/members", {
-        targetUserId: discordId,
-        action,
-        ...(newRole ? { role: newRole } : {}),
-      })
+      if (action === "kick") {
+        await dashboardMutate("POST", "/api/pet/family/kick", {
+          targetUserId: discordId,
+        })
+      } else {
+        await dashboardMutate("POST", "/api/pet/family/role", {
+          targetUserId: discordId,
+          newRole: newRole,
+        })
+      }
       const labels: Record<string, string> = { promote: "Promoted!", demote: "Demoted!", kick: "Kicked!" }
       toast.success(labels[action] || "Done!")
       mutateMembers()
@@ -406,6 +416,7 @@ export default function FamilyMembers() {
       toast.error(err.message || "Action failed")
     }
   }, [mutateMembers])
+  // --- END AI-MODIFIED ---
 
   const canInvite = hasPermission(myRole, "invite_members", rolePermissions)
 

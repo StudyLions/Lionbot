@@ -2,26 +2,30 @@
 // AI-GENERATED FILE
 // Created: 2026-03-22
 // Purpose: List active family members with pet visual data
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Full rewrite to return PetVisualData for MiniGameboy,
+//          discordName/avatarHash from user_config, and correct
+//          field names (discordId, petName, petLevel, petVisual).
+// --- END AI-MODIFIED ---
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+import { apiHandler } from "@/utils/apiHandler"
+import { getRoomDefaults } from "@/utils/roomDefaults"
 
 export default apiHandler({
   async GET(req, res) {
     const auth = await requireAuth(req, res)
     if (!auth) return
 
-    const familyId = parseInt(req.query.familyId as string, 10)
-    if (!familyId || isNaN(familyId)) {
-      return res.status(400).json({ error: "familyId is required" })
-    }
+    const userId = BigInt(auth.discordId)
 
-    const family = await prisma.lg_families.findUnique({
-      where: { family_id: familyId },
-      select: { family_id: true },
+    const membership = await prisma.lg_family_members.findFirst({
+      where: { userid: userId, left_at: null },
     })
-    if (!family) return res.status(404).json({ error: "Family not found" })
+    if (!membership) return res.status(403).json({ error: "You are not in a family" })
+
+    const familyId = membership.family_id
 
     const members = await prisma.lg_family_members.findMany({
       where: { family_id: familyId, left_at: null },
@@ -30,64 +34,133 @@ export default apiHandler({
 
     const userIds = members.map((m) => m.userid)
 
-    const pets = await prisma.lg_pets.findMany({
-      where: { userid: { in: userIds } },
-      select: {
-        userid: true,
-        pet_name: true,
-        level: true,
-        expression: true,
-        active_room_id: true,
-      },
-    })
-    const petMap = new Map(pets.map((p) => [p.userid.toString(), p]))
-
-    const rooms = await prisma.lg_rooms.findMany({
-      where: {
-        room_id: {
-          in: pets.filter((p) => p.active_room_id != null).map((p) => p.active_room_id!),
+    const [pets, userConfigs, allEquipment] = await Promise.all([
+      prisma.lg_pets.findMany({
+        where: { userid: { in: userIds } },
+        select: {
+          userid: true,
+          pet_name: true,
+          level: true,
+          expression: true,
+          active_room_id: true,
+          active_gameboy_skin_id: true,
         },
-      },
-      select: { room_id: true, asset_prefix: true },
-    })
+      }),
+      prisma.user_config.findMany({
+        where: { userid: { in: userIds } },
+        select: { userid: true, name: true, avatar_hash: true },
+      }),
+      prisma.lg_pet_equipment.findMany({
+        where: { userid: { in: userIds } },
+        select: {
+          userid: true,
+          slot: true,
+          lg_items: {
+            select: { itemid: true, name: true, category: true, rarity: true, asset_path: true },
+          },
+        },
+      }),
+    ])
+
+    const petMap = new Map(pets.map((p) => [p.userid.toString(), p]))
+    const userMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
+
+    const roomIds = pets.filter((p) => p.active_room_id).map((p) => p.active_room_id!)
+    const rooms = roomIds.length > 0
+      ? await prisma.lg_rooms.findMany({
+          where: { room_id: { in: roomIds } },
+          select: { room_id: true, asset_prefix: true },
+        })
+      : []
     const roomMap = new Map(rooms.map((r) => [r.room_id, r.asset_prefix]))
 
-    const equipment = await prisma.lg_pet_equipment.findMany({
-      where: { userid: { in: userIds } },
-      select: {
-        userid: true,
-        slot: true,
-        lg_items: { select: { name: true, category: true, rarity: true, asset_path: true } },
-      },
-    })
-    const equipMap = new Map<string, Record<string, { name: string; category: string; rarity: string; assetPath: string }>>()
-    for (const e of equipment) {
+    const skinIds = pets
+      .filter((p) => p.active_gameboy_skin_id)
+      .map((p) => p.active_gameboy_skin_id!)
+    const skins = skinIds.length > 0
+      ? await prisma.lg_gameboy_skins.findMany({
+          where: { skin_id: { in: skinIds } },
+          select: { skin_id: true, asset_path: true },
+        })
+      : []
+    const skinMap = new Map(skins.map((s) => [s.skin_id, s.asset_path]))
+
+    const equipPerUser = new Map<
+      string,
+      Record<string, { assetPath: string; category: string }>
+    >()
+    for (const e of allEquipment) {
       const key = e.userid.toString()
-      if (!equipMap.has(key)) equipMap.set(key, {})
-      equipMap.get(key)![e.slot] = {
-        name: e.lg_items.name,
-        category: e.lg_items.category,
-        rarity: e.lg_items.rarity,
+      if (!equipPerUser.has(key)) equipPerUser.set(key, {})
+      equipPerUser.get(key)![e.slot] = {
         assetPath: e.lg_items.asset_path,
+        category: e.lg_items.category,
       }
     }
 
+    let allFurniture: { userid: bigint; slot: string; asset_path: string }[] = []
+    let allLayouts: { userid: bigint; layout: unknown }[] = []
+
+    if (userIds.length > 0) {
+      const placeholders = userIds.map((_, i) => `$${i + 1}`).join(", ")
+      ;[allFurniture, allLayouts] = await Promise.all([
+        prisma.$queryRawUnsafe<{ userid: bigint; slot: string; asset_path: string }[]>(
+          `SELECT userid, slot, asset_path FROM lg_user_furniture WHERE userid IN (${placeholders})`,
+          ...userIds
+        ),
+        prisma.$queryRawUnsafe<{ userid: bigint; layout: unknown }[]>(
+          `SELECT userid, layout FROM lg_room_layout WHERE userid IN (${placeholders})`,
+          ...userIds
+        ),
+      ])
+    }
+
+    const furniturePerUser = new Map<string, Record<string, string>>()
+    for (const f of allFurniture) {
+      const key = f.userid.toString()
+      if (!furniturePerUser.has(key)) furniturePerUser.set(key, {})
+      let path = f.asset_path
+      if (!path.startsWith("rooms/")) path = `rooms/furniture/${path}`
+      furniturePerUser.get(key)![f.slot] = path
+    }
+
+    const layoutPerUser = new Map<string, unknown>()
+    for (const l of allLayouts) {
+      layoutPerUser.set(l.userid.toString(), l.layout)
+    }
+
     const result = members.map((m) => {
-      const pet = petMap.get(m.userid.toString())
+      const uid = m.userid.toString()
+      const pet = petMap.get(uid)
+      const user = userMap.get(uid)
+      const roomPrefix = pet?.active_room_id
+        ? roomMap.get(pet.active_room_id) ?? "rooms/default"
+        : "rooms/default"
+      const skinPath = pet?.active_gameboy_skin_id
+        ? skinMap.get(pet.active_gameboy_skin_id) ?? null
+        : null
+
+      const defaults = getRoomDefaults(roomPrefix)
+      const userFurn = furniturePerUser.get(uid) ?? {}
+      const furniture = { ...defaults, ...userFurn }
+
       return {
-        userId: m.userid.toString(),
+        discordId: uid,
+        discordName: user?.name ?? "Unknown",
+        avatarHash: user?.avatar_hash ?? null,
+        petName: pet?.pet_name ?? "Unknown",
+        petLevel: pet?.level ?? 1,
         role: m.role,
         contributionXp: m.contribution_xp.toString(),
-        joinedAt: m.joined_at.toISOString(),
-        pet: pet
-          ? {
-              name: pet.pet_name,
-              level: pet.level,
-              expression: (pet.expression ?? "default").toLowerCase(),
-              roomPrefix: pet.active_room_id ? roomMap.get(pet.active_room_id) ?? "rooms/default" : "rooms/default",
-            }
-          : null,
-        equipment: equipMap.get(m.userid.toString()) ?? {},
+        joinedAt: m.joined_at?.toISOString() ?? new Date().toISOString(),
+        petVisual: {
+          roomPrefix,
+          furniture,
+          roomLayout: layoutPerUser.get(uid) ?? {},
+          equipment: equipPerUser.get(uid) ?? {},
+          expression: (pet?.expression ?? "default").toLowerCase(),
+          skinPath,
+        },
       }
     })
 

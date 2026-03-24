@@ -30,7 +30,6 @@ type BankTab = "equipment" | "treasury"
 
 interface BankItem {
   bankEntryId: number
-  inventoryId: number
   itemId: number
   name: string
   category: string
@@ -85,11 +84,16 @@ interface TreasuryData {
   }>
 }
 
-interface FamilyCtx {
-  familyId: number
-  role: string
-  permissions: unknown
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match the nested response shape from /api/pet/family
+interface FamilyOverviewResponse {
+  family: {
+    familyId: number
+    rolePermissions?: unknown
+  } | null
+  membership: { role: string } | null
 }
+// --- END AI-MODIFIED ---
 
 const RARITY_BORDER: Record<string, string> = {
   COMMON: "#3a4a6c", UNCOMMON: "#4080f0", RARE: "#e04040",
@@ -106,13 +110,16 @@ export default function FamilyBankPage() {
   const [tab, setTab] = useState<BankTab>("equipment")
   const [showDeposit, setShowDeposit] = useState(false)
 
-  const { data: familyCtx } = useDashboard<FamilyCtx>(
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Correctly destructure nested API response
+  const { data: familyCtx } = useDashboard<FamilyOverviewResponse>(
     session ? "/api/pet/family" : null
   )
 
-  const familyId = familyCtx?.familyId
-  const role = familyCtx?.role ?? "MEMBER"
-  const perms = familyCtx?.permissions
+  const familyId = familyCtx?.family?.familyId
+  const role = familyCtx?.membership?.role ?? "MEMBER"
+  const perms = familyCtx?.family?.rolePermissions
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: "Family Bank - LionGotchi", description: "Shared family storage" }}>

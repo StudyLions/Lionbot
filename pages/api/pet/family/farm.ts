@@ -121,20 +121,32 @@ export default apiHandler({
       }
     })
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Include family gold balance in response for seed cost display
+    const familyGold = await prisma.lg_families.findUnique({
+      where: { family_id: membership.family_id },
+      select: { gold: true },
+    })
+
     return res.status(200).json({
       plots: result,
       farmIndex,
       totalFarms: farmCount,
+      gold: Number(familyGold?.gold ?? 0),
       availableSeeds: seeds.map((s) => ({
         id: s.seed_id,
         name: s.name,
         plantType: s.plant_type,
         harvestGold: s.harvest_gold,
         plantCost: s.plant_cost,
+        growTimeHours: s.grow_time_hours,
+        waterIntervalHours: s.water_interval_hours,
         growthPointsNeeded: s.growth_points_needed,
         assetPrefix: s.asset_prefix,
+        typeId: s.seed_id,
       })),
     })
+    // --- END AI-MODIFIED ---
   },
 
   async POST(req, res) {
@@ -145,7 +157,6 @@ export default apiHandler({
     const { farmIndex: rawFarmIndex, plotId, action, seedId } = req.body
 
     if (!action) return res.status(400).json({ error: "action required" })
-    if (plotId === undefined || plotId === null) return res.status(400).json({ error: "plotId required" })
 
     const farmIndex = parseInt(rawFarmIndex ?? "0", 10)
 
@@ -156,6 +167,77 @@ export default apiHandler({
     if (!membership) return res.status(403).json({ error: "You are not in a family" })
 
     const family = membership.lg_families
+
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Handle bulk actions (waterAll, harvestAll) that don't need a plotId
+    if (action === "waterAll") {
+      if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
+        return res.status(403).json({ error: "You don't have permission" })
+      }
+      const allPlots = await prisma.lg_family_farm_plots.findMany({
+        where: { family_id: family.family_id, farm_index: farmIndex, seed_id: { not: null }, dead: false },
+        include: { lg_farm_seeds: true },
+      })
+      const needsWater = allPlots.filter((p) => {
+        if (!p.lg_farm_seeds || !p.planted_at) return false
+        return !isWatered(p.last_watered, p.lg_farm_seeds.water_interval_hours)
+      })
+      if (needsWater.length === 0) return res.status(200).json({ success: true, count: 0 })
+      await prisma.$transaction(
+        needsWater.map((p) =>
+          prisma.lg_family_farm_plots.update({
+            where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: p.plot_id } },
+            data: { last_watered: new Date() },
+          })
+        )
+      )
+      return res.status(200).json({ success: true, count: needsWater.length })
+    }
+
+    if (action === "harvestAll") {
+      if (!hasPermission(membership.role, "harvest_farm", family.role_permissions)) {
+        return res.status(403).json({ error: "You don't have permission to harvest" })
+      }
+      const allPlots = await prisma.lg_family_farm_plots.findMany({
+        where: { family_id: family.family_id, farm_index: farmIndex, seed_id: { not: null }, dead: false },
+        include: { lg_farm_seeds: true },
+      })
+      const harvestable = allPlots.filter((p) => {
+        if (!p.lg_farm_seeds) return false
+        const growth = computeProgress(p.growth_points, p.lg_farm_seeds.growth_points_needed)
+        return growth.readyToHarvest
+      })
+      if (harvestable.length === 0) return res.status(200).json({ success: true, count: 0, totalGold: 0 })
+
+      let totalGold = 0
+      const ops: any[] = []
+      for (const p of harvestable) {
+        const rarity = p.rarity || "COMMON"
+        const multiplier = RARITY_GOLD_MULTIPLIER[rarity] || 1.0
+        const goldReward = Math.round(p.lg_farm_seeds!.harvest_gold * multiplier)
+        totalGold += goldReward
+        ops.push(
+          prisma.lg_family_farm_plots.update({
+            where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: p.plot_id } },
+            data: { seed_id: null, planted_at: null, planted_by: null, last_watered: null, growth_stage: 0, dead: false, growth_points: 0, gold_invested: 0, rarity: "COMMON" },
+          })
+        )
+      }
+      ops.push(
+        prisma.lg_families.update({
+          where: { family_id: family.family_id },
+          data: { gold: { increment: totalGold } },
+        }),
+        prisma.lg_family_gold_log.create({
+          data: { family_id: family.family_id, userid: userId, amount: totalGold, action: "FARM_HARVEST", description: `Bulk harvest ${harvestable.length} crops +${totalGold}G` },
+        })
+      )
+      await prisma.$transaction(ops)
+      return res.status(200).json({ success: true, count: harvestable.length, totalGold })
+    }
+    // --- END AI-MODIFIED ---
+
+    if (plotId === undefined || plotId === null) return res.status(400).json({ error: "plotId required" })
 
     if (action === "plant") {
       if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
@@ -282,12 +364,44 @@ export default apiHandler({
       })
     }
 
-    if (action === "uproot") {
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Support uproot, remove (alias for uproot with refund), and clear (dead plants)
+    if (action === "uproot" || action === "remove") {
       if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
         return res.status(403).json({ error: "You don't have permission" })
       }
       if (!plot.seed_id) return res.status(400).json({ error: "Plot is empty" })
 
+      const refund = Math.floor((plot.gold_invested ?? 0) * 0.5)
+      const ops: any[] = [
+        prisma.lg_family_farm_plots.update({
+          where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: plotId } },
+          data: {
+            seed_id: null, planted_at: null, planted_by: null,
+            last_watered: null, growth_stage: 0, dead: false,
+            growth_points: 0, gold_invested: 0, rarity: "COMMON",
+          },
+        }),
+      ]
+      if (refund > 0) {
+        ops.push(
+          prisma.lg_families.update({
+            where: { family_id: family.family_id },
+            data: { gold: { increment: refund } },
+          })
+        )
+      }
+      await prisma.$transaction(ops)
+      return res.status(200).json({ success: true, action: "uprooted", refund })
+    }
+
+    if (action === "clear") {
+      if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
+        return res.status(403).json({ error: "You don't have permission" })
+      }
+      if (!plot.dead && !isDead(plot.last_watered, plot.planted_at)) {
+        return res.status(400).json({ error: "Plant is not dead" })
+      }
       await prisma.lg_family_farm_plots.update({
         where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: plotId } },
         data: {
@@ -296,10 +410,10 @@ export default apiHandler({
           growth_points: 0, gold_invested: 0, rarity: "COMMON",
         },
       })
-
-      return res.status(200).json({ success: true, action: "uprooted" })
+      return res.status(200).json({ success: true, action: "cleared" })
     }
+    // --- END AI-MODIFIED ---
 
-    return res.status(400).json({ error: "Invalid action. Use 'plant', 'water', 'harvest', or 'uproot'" })
+    return res.status(400).json({ error: "Invalid action. Use plant, water, harvest, uproot, remove, clear, waterAll, or harvestAll" })
   },
 })

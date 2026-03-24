@@ -120,36 +120,36 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
     meta.category.charAt(0).toUpperCase() + meta.category.slice(1)
 
   return (
-    <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-      <div className="max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background pt-8 pb-24 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto">
         {/* Breadcrumbs */}
-        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-6 flex-wrap">
+        <nav className="flex items-center gap-1.5 text-xs text-muted-foreground mb-8 flex-wrap">
           <Link href="/">
             <span className="hover:text-foreground transition-colors cursor-pointer">Home</span>
           </Link>
-          <ChevronRight size={12} />
+          <ChevronRight size={10} className="opacity-40" />
           <Link href="/guides">
             <span className="hover:text-foreground transition-colors cursor-pointer">Guides</span>
           </Link>
-          <ChevronRight size={12} />
-          <span className="text-muted-foreground truncate max-w-[200px]">{meta.title}</span>
+          <ChevronRight size={10} className="opacity-40" />
+          <span className="text-foreground/50 truncate max-w-[240px]">{meta.title}</span>
         </nav>
 
-        <div className="flex gap-10">
+        <div className="flex gap-12 lg:gap-16">
           {/* Desktop sidebar TOC */}
           {toc.length > 0 && (
             <aside className="hidden xl:block w-56 flex-shrink-0">
               <div className="sticky top-24">
-                <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 mb-3 px-2">
+                <h2 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50 mb-3 px-2">
                   On This Page
                 </h2>
-                <nav className="space-y-0.5 max-h-[calc(100vh-160px)] overflow-y-auto">
+                <nav className="space-y-0.5 max-h-[calc(100vh-180px)] overflow-y-auto pr-1">
                   {toc.map((item) => (
                     <button
                       key={item.id}
                       onClick={() => scrollToHeading(item.id)}
                       className={cn(
-                        "w-full text-left px-3 py-1.5 rounded-md text-xs transition-colors",
+                        "w-full text-left px-3 py-1.5 rounded-md text-[13px] leading-snug transition-colors",
                         item.level === 3 && "pl-6",
                         activeId === item.id
                           ? "bg-primary/10 text-primary font-medium"
@@ -162,11 +162,11 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
                 </nav>
 
                 {/* Share buttons */}
-                <div className="mt-6 pt-4 border-t border-border">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60 mb-2 px-2">
+                <div className="mt-8 pt-4 border-t border-border/50">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50 mb-2 px-2">
                     Share
                   </p>
-                  <div className="flex gap-2 px-2">
+                  <div className="flex gap-1 px-2">
                     <button
                       onClick={shareOnTwitter}
                       className="p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
@@ -200,8 +200,8 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
                     <List size={20} />
                   </button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-64 p-0">
-                  <SheetHeader className="p-5 pb-2">
+                <SheetContent side="right" className="w-72 p-0">
+                  <SheetHeader className="p-5 pb-3">
                     <SheetTitle className="text-sm">On This Page</SheetTitle>
                   </SheetHeader>
                   <nav className="px-3 pb-6 space-y-0.5">
@@ -229,29 +229,31 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
           {/* Main content */}
           <article className="flex-1 min-w-0 max-w-3xl">
             {/* Article header */}
-            <header className="mb-10">
-              <div className="flex items-center gap-2 mb-3 flex-wrap">
-                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-primary/10 text-primary">
+            <header className="mb-12 pb-8 border-b border-border/40">
+              <div className="flex items-center gap-2.5 mb-5 flex-wrap">
+                <span className="text-xs px-3 py-1 rounded-full font-semibold bg-primary/10 text-primary border border-primary/20">
                   {categoryLabel}
                 </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
+                <span className="text-xs text-muted-foreground/70 flex items-center gap-1.5">
+                  <Clock className="h-3.5 w-3.5" />
                   {meta.readingTimeMinutes} min read
                 </span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-3 leading-tight">
+              <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold text-foreground mb-4 leading-[1.15] tracking-tight">
                 {meta.title}
               </h1>
-              <p className="text-base text-muted-foreground leading-relaxed max-w-2xl mb-4">
+              <p className="text-base sm:text-lg text-muted-foreground leading-relaxed max-w-2xl mb-6">
                 {meta.description}
               </p>
-              <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <User className="h-3 w-3" />
+              <div className="flex items-center gap-5 text-sm text-muted-foreground/70">
+                <span className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center">
+                    <User className="h-3 w-3 text-primary" />
+                  </div>
                   {meta.author}
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3" />
+                  <Calendar className="h-3.5 w-3.5" />
                   {formattedDate}
                 </span>
               </div>
@@ -260,31 +262,50 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
             {/* MDX content */}
             <div
               id="guide-content"
-              className="prose prose-invert prose-sm sm:prose-base max-w-none
-                prose-headings:text-foreground prose-headings:font-bold
-                prose-p:text-muted-foreground prose-p:leading-relaxed
-                prose-a:text-primary prose-a:no-underline hover:prose-a:underline
-                prose-strong:text-foreground
-                prose-code:text-primary prose-code:bg-accent/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded prose-code:text-sm prose-code:before:content-none prose-code:after:content-none
-                prose-pre:bg-accent/30 prose-pre:border prose-pre:border-border
-                prose-img:rounded-xl prose-img:border prose-img:border-border
-                prose-li:text-muted-foreground
-                prose-blockquote:border-primary/30 prose-blockquote:text-muted-foreground
-                prose-hr:border-border"
+              className={cn(
+                "prose prose-invert max-w-none",
+                // Base sizing
+                "prose-base lg:prose-lg",
+                // Headings
+                "prose-headings:font-extrabold prose-headings:tracking-tight prose-headings:text-foreground",
+                "prose-h2:text-2xl prose-h2:lg:text-3xl prose-h2:mt-14 prose-h2:mb-5 prose-h2:pt-6 prose-h2:border-t prose-h2:border-border/30",
+                "prose-h3:text-xl prose-h3:lg:text-2xl prose-h3:mt-10 prose-h3:mb-4",
+                "prose-h4:text-lg prose-h4:mt-8 prose-h4:mb-3",
+                // Paragraphs
+                "prose-p:text-[hsl(var(--muted-foreground))] prose-p:leading-[1.8] prose-p:mb-5",
+                // Links
+                "prose-a:text-primary prose-a:font-medium prose-a:no-underline hover:prose-a:underline prose-a:decoration-primary/40 prose-a:underline-offset-2",
+                // Bold
+                "prose-strong:text-foreground prose-strong:font-semibold",
+                // Code
+                "prose-code:text-primary prose-code:bg-primary/10 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-[0.875em] prose-code:font-medium prose-code:before:content-none prose-code:after:content-none",
+                "prose-pre:bg-[#1e1e2e] prose-pre:border prose-pre:border-border/50 prose-pre:rounded-xl",
+                // Images
+                "prose-img:rounded-xl prose-img:border prose-img:border-border/50 prose-img:shadow-lg",
+                // Lists
+                "prose-li:text-[hsl(var(--muted-foreground))] prose-li:leading-[1.7]",
+                "prose-ol:my-5 prose-ul:my-5",
+                "prose-li:marker:text-primary/60",
+                // Blockquote
+                "prose-blockquote:border-l-primary/40 prose-blockquote:bg-primary/5 prose-blockquote:rounded-r-lg prose-blockquote:py-1 prose-blockquote:px-5 prose-blockquote:not-italic prose-blockquote:text-muted-foreground",
+                // Horizontal rule
+                "prose-hr:border-border/50 prose-hr:my-10",
+              )}
             >
               {children}
             </div>
 
             {/* Bottom CTA */}
-            <div className="mt-12 relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/10 p-6 sm:p-8 text-center">
+            <div className="mt-16 relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/[0.07] via-background to-primary/[0.04] p-8 sm:p-10 text-center">
+              <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_0%,_rgba(59,130,246,0.06),_transparent_70%)]" />
               <div className="relative z-10">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-4">
-                  <Bot className="h-6 w-6 text-primary" />
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary/10 border border-primary/20 mb-5">
+                  <Bot className="h-7 w-7 text-primary" />
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
+                <h3 className="text-2xl font-bold text-foreground mb-3">
                   Start Using LionBot Today
                 </h3>
-                <p className="text-muted-foreground max-w-md mx-auto mb-5 text-sm leading-relaxed">
+                <p className="text-muted-foreground max-w-lg mx-auto mb-6 leading-relaxed">
                   Add LionBot to your Discord server for free. No credit card, no complicated
                   setup. Works with servers of any size.
                 </p>
@@ -292,7 +313,7 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
                   href={BOT_INVITE_URL}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
+                  className="inline-flex items-center gap-2.5 px-7 py-3.5 rounded-xl bg-primary text-primary-foreground font-semibold hover:bg-primary/90 transition-all shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 hover:-translate-y-0.5"
                 >
                   <Bot className="h-5 w-5" />
                   Add to Discord
@@ -303,21 +324,21 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
 
             {/* Related guides */}
             {related && related.length > 0 && (
-              <div className="mt-10">
-                <h3 className="text-lg font-bold text-foreground mb-4">
+              <div className="mt-12">
+                <h3 className="text-lg font-bold text-foreground mb-5">
                   Related Guides
                 </h3>
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {related.map((guide) => (
                     <Link key={guide.slug} href={`/guides/${guide.slug}`}>
-                      <a className="group block p-4 rounded-lg border border-border hover:border-primary/30 bg-accent/20 hover:bg-accent/40 transition-all">
+                      <a className="group block p-5 rounded-xl border border-border/50 hover:border-primary/30 bg-accent/10 hover:bg-accent/30 transition-all">
                         <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-primary/10 text-primary">
                           {guide.category}
                         </span>
-                        <h4 className="text-sm font-semibold text-foreground mt-2 mb-1 group-hover:text-primary transition-colors line-clamp-2">
+                        <h4 className="text-sm font-semibold text-foreground mt-2.5 mb-1.5 group-hover:text-primary transition-colors line-clamp-2">
                           {guide.title}
                         </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2">
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                           {guide.description}
                         </p>
                       </a>
@@ -328,7 +349,7 @@ export default function GuideLayout({ meta, related, children }: GuideLayoutProp
             )}
 
             {/* Back to guides */}
-            <div className="mt-8 pt-6 border-t border-border">
+            <div className="mt-10 pt-6 border-t border-border/40">
               <Link href="/guides">
                 <a className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors group">
                   <ArrowLeft size={16} className="group-hover:-translate-x-0.5 transition-transform" />

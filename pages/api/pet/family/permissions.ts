@@ -29,12 +29,10 @@ export default apiHandler({
 
     const effective = getEffectivePermissions(membership.lg_families.role_permissions)
 
-    return res.status(200).json({
-      permissions: effective,
-      permissionKeys: PERMISSION_KEYS,
-      permissionLabels: PERMISSION_LABELS,
-      yourRole: membership.role,
-    })
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Return effective permissions as top-level object (matches AllRolePermissions)
+    return res.status(200).json(effective)
+    // --- END AI-MODIFIED ---
   },
 
   async POST(req, res) {

@@ -48,16 +48,18 @@ interface FamilyOverviewData {
     rolePermissions?: unknown
   } | null
   membership: { role: string; contributionXp: string } | null
-  members?: FamilyMemberPreview[]
   recentActivity?: Array<{ type: string; amount: string; description: string; createdAt: string }>
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match field names from /api/pet/family/invite response
 interface PendingInvite {
   inviteId: number
   familyName: string
-  familyMemberCount: number
+  memberCount: number
   inviterName: string
 }
+// --- END AI-MODIFIED ---
 
 const ROLE_COLORS: Record<string, string> = {
   LEADER: "#f0c040",
@@ -379,11 +381,13 @@ function PendingInvites() {
   )
   const [acting, setActing] = useState<number | null>(null)
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: POST to /api/pet/family/respond (not /invite which is for sending invites)
   const handleRespond = useCallback(async (inviteId: number, action: "accept" | "decline") => {
     if (acting) return
     setActing(inviteId)
     try {
-      await dashboardMutate("POST", "/api/pet/family/invite", { inviteId, action })
+      await dashboardMutate("POST", "/api/pet/family/respond", { inviteId, action })
       toast.success(action === "accept" ? "Joined family!" : "Invite declined")
       mutateInvites()
       if (action === "accept") {
@@ -395,6 +399,7 @@ function PendingInvites() {
       setActing(null)
     }
   }, [acting, mutateInvites])
+  // --- END AI-MODIFIED ---
 
   if (!data?.invites?.length) return null
 
@@ -419,7 +424,7 @@ function PendingInvites() {
             <div className="flex-1 min-w-0">
               <p className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate">{inv.familyName}</p>
               <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
-                {inv.familyMemberCount} members &middot; from {inv.inviterName}
+                {inv.memberCount} members &middot; from {inv.inviterName}
               </p>
             </div>
             <div className="flex gap-1.5 flex-shrink-0">
@@ -458,6 +463,54 @@ function formatRelativeTime(date: Date): string {
   return `${days}d ago`
 }
 
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Add members fetch, leave family handler
+interface FamilyMembersData {
+  members: FamilyMemberPreview[]
+}
+
+function LeaveButton() {
+  const [confirming, setConfirming] = useState(false)
+  const [leaving, setLeaving] = useState(false)
+  const router = useRouter()
+
+  const handleLeave = useCallback(async () => {
+    setLeaving(true)
+    try {
+      await dashboardMutate("POST", "/api/pet/family/leave", {})
+      toast.success("You left the family")
+      invalidate("/api/pet/family")
+      router.replace("/pet/family")
+    } catch (err: any) {
+      toast.error(err.message || "Failed to leave")
+    } finally {
+      setLeaving(false)
+      setConfirming(false)
+    }
+  }, [router])
+
+  if (!confirming) {
+    return (
+      <PixelButton variant="danger" size="sm" onClick={() => setConfirming(true)}>
+        Leave Family
+      </PixelButton>
+    )
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-pixel text-[10px] text-[var(--pet-red,#e04040)]">Are you sure?</span>
+      <PixelButton variant="danger" size="sm" disabled={leaving} loading={leaving} onClick={handleLeave}>
+        Confirm Leave
+      </PixelButton>
+      <PixelButton variant="ghost" size="sm" onClick={() => setConfirming(false)}>
+        Cancel
+      </PixelButton>
+    </div>
+  )
+}
+// --- END AI-MODIFIED ---
+
 export default function FamilyOverview() {
   const { data: session } = useSession()
 
@@ -469,7 +522,13 @@ export default function FamilyOverview() {
     session ? "/api/pet/balance" : null
   )
 
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch members separately for the member strip
   const hasFamily = data?.family !== null && data?.family !== undefined
+  const { data: membersData } = useDashboard<FamilyMembersData>(
+    hasFamily ? "/api/pet/family/members" : null
+  )
+  // --- END AI-MODIFIED ---
   const userGold = Number(balanceData?.gold ?? 0)
 
   return (
@@ -509,16 +568,27 @@ export default function FamilyOverview() {
                 <>
                   <FamilyHero family={data.family} membership={data.membership} />
 
-                  {data.members && data.members.length > 0 && (
-                    <MemberStrip members={data.members} />
+                  {membersData?.members && membersData.members.length > 0 && (
+                    <MemberStrip members={membersData.members} />
                   )}
 
                   <FamilyStats family={data.family} />
 
                   <QuickLinks family={data.family} membership={data.membership} />
 
-                  {data.recentActivity && (
+                  {data.recentActivity && data.recentActivity.length > 0 && (
                     <ActivityFeed activity={data.recentActivity} />
+                  )}
+
+                  {data.membership.role !== "LEADER" && (
+                    <PixelCard className="p-4" corners>
+                      <div className="flex items-center justify-between">
+                        <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+                          Want to leave this family?
+                        </span>
+                        <LeaveButton />
+                      </div>
+                    </PixelCard>
                   )}
                 </>
               ) : (

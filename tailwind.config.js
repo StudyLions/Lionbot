@@ -103,6 +103,9 @@ module.exports = {
       "2xl": "1536px",
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Added @tailwindcss/typography for prose styling in guide articles
+  plugins: [require("tailwindcss-animate"), require("@tailwindcss/typography")],
+  // --- END AI-MODIFIED ---
 }
 // --- END AI-MODIFIED ---

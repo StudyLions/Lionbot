@@ -26,12 +26,17 @@ import { toast } from "sonner"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
-interface FamilyCtx {
-  familyId: number
-  role: string
-  permissions: unknown
-  level: number
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match the nested response shape from /api/pet/family
+interface FamilyOverviewResponse {
+  family: {
+    familyId: number
+    rolePermissions?: unknown
+    level: number
+  } | null
+  membership: { role: string } | null
 }
+// --- END AI-MODIFIED ---
 
 interface FamilySettings {
   name: string
@@ -40,12 +45,17 @@ interface FamilySettings {
   dailyGoldCap: number
 }
 
-interface FamilyMember {
-  id: string
-  userId: string
-  userName: string
-  role: string
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Match /api/pet/family/members response shape
+interface FamilyMembersResponse {
+  members: Array<{
+    discordId: string
+    discordName: string
+    petName: string
+    role: string
+  }>
 }
+// --- END AI-MODIFIED ---
 
 const EDITABLE_ROLES = ["ADMIN", "MODERATOR", "MEMBER"] as const
 
@@ -53,14 +63,17 @@ export default function FamilySettingsPage() {
   const { data: session } = useSession()
   const router = useRouter()
 
-  const { data: familyCtx, isLoading: ctxLoading } = useDashboard<FamilyCtx>(
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Correctly destructure nested API response
+  const { data: familyCtx, isLoading: ctxLoading } = useDashboard<FamilyOverviewResponse>(
     session ? "/api/pet/family" : null
   )
 
-  const familyId = familyCtx?.familyId
-  const role = familyCtx?.role ?? "MEMBER"
-  const perms = familyCtx?.permissions
+  const familyId = familyCtx?.family?.familyId
+  const role = familyCtx?.membership?.role ?? "MEMBER"
+  const perms = familyCtx?.family?.rolePermissions
   const canEdit = hasPermission(role, "edit_settings", perms)
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!ctxLoading && familyId && !canEdit) {
@@ -548,8 +561,10 @@ function PermissionsSection({ familyId, role }: { familyId: number; role: string
 
 function DangerZoneSection({ familyId }: { familyId: number }) {
   const router = useRouter()
-  const { data: members } = useDashboard<FamilyMember[]>(
-    `/api/pet/family/members?familyId=${familyId}`
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Correctly destructure members API response
+  const { data: membersResp } = useDashboard<FamilyMembersResponse>(
+    familyId ? `/api/pet/family/members` : null
   )
 
   const [transferTarget, setTransferTarget] = useState("")
@@ -557,7 +572,8 @@ function DangerZoneSection({ familyId }: { familyId: number }) {
   const [disbandConfirm, setDisbandConfirm] = useState("")
   const [acting, setActing] = useState(false)
 
-  const adminMembers = members?.filter((m) => m.role === "ADMIN") ?? []
+  const adminMembers = membersResp?.members?.filter((m) => m.role === "ADMIN") ?? []
+  // --- END AI-MODIFIED ---
 
   const handleTransfer = useCallback(async () => {
     if (!transferTarget) { toast.error("Select a member"); return }
@@ -621,8 +637,8 @@ function DangerZoneSection({ familyId }: { familyId: number }) {
           >
             <option value="">Select an admin...</option>
             {adminMembers.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.userName}
+              <option key={m.discordId} value={m.discordId}>
+                {m.petName} (@{m.discordName})
               </option>
             ))}
           </select>

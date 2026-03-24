@@ -33,6 +33,7 @@ import {
   Star,
 } from "lucide-react"
 import Layout from "@/components/Layout/Layout"
+import { FEATURE_DEMOS } from "@/components/features/FeaturePageDemos"
 
 const BOT_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${
   process.env.NEXT_PUBLIC_BOT_CLIENT_ID || "889078613817831495"
@@ -248,22 +249,15 @@ export default function FeaturesPage() {
                   </ul>
                 </div>
 
-                {/* Image/preview side */}
+                {/* Demo side */}
                 <div className="flex-1 w-full min-w-0">
                   <div
-                    className={`relative aspect-[4/3] rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.glow} to-transparent overflow-hidden flex items-center justify-center`}
+                    className={`relative aspect-[4/3] rounded-2xl border ${feature.border} bg-gradient-to-br ${feature.glow} to-transparent overflow-hidden`}
                   >
-                    <div className="text-center p-8">
-                      <span className={`${feature.color} opacity-30`}>
-                        {React.cloneElement(feature.icon as React.ReactElement, { size: 64 })}
-                      </span>
-                      <p className="text-sm text-muted-foreground/50 mt-4">
-                        {feature.imagePlaceholder}
-                      </p>
-                      <p className="text-xs text-muted-foreground/30 mt-1">
-                        GIF preview coming soon
-                      </p>
-                    </div>
+                    {(() => {
+                      const DemoComponent = FEATURE_DEMOS[feature.id]
+                      return DemoComponent ? <DemoComponent /> : null
+                    })()}
                   </div>
                 </div>
               </div>
