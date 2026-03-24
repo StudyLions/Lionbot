@@ -51,6 +51,8 @@ export default apiHandler({
 
     const [petRows, configRows] = friendUserIds.length > 0
       ? await Promise.all([
+          // --- AI-MODIFIED (2026-03-24) ---
+          // Purpose: Include food/bath/sleep for friend cards + decay calculation
           prisma.lg_pets.findMany({
             where: { userid: { in: friendUserIds } },
             select: {
@@ -58,8 +60,13 @@ export default apiHandler({
               pet_name: true,
               level: true,
               expression: true,
+              food: true,
+              bath: true,
+              sleep: true,
+              last_decay_at: true,
             },
           }),
+          // --- END AI-MODIFIED ---
           prisma.user_config.findMany({
             where: { userid: { in: friendUserIds } },
             select: {
@@ -74,10 +81,27 @@ export default apiHandler({
     const petMap = new Map(petRows.map((p) => [p.userid.toString(), p]))
     const configMap = new Map(configRows.map((c) => [c.userid.toString(), c]))
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Include food/bath/sleep with decay applied for friend cards
+    const DECAY_INTERVAL_HOURS = 6
+    const now = new Date()
+
     const friends = friendUserIds.map((fid) => {
       const fidStr = fid.toString()
       const p = petMap.get(fidStr)
       const c = configMap.get(fidStr)
+
+      let food = p?.food ?? 0
+      let bath = p?.bath ?? 0
+      let sleep = p?.sleep ?? 0
+      if (p?.last_decay_at) {
+        const elapsed = (now.getTime() - new Date(p.last_decay_at).getTime()) / (1000 * 3600)
+        const ticks = Math.floor(elapsed / DECAY_INTERVAL_HOURS)
+        food = Math.max(0, food - ticks)
+        bath = Math.max(0, bath - ticks)
+        sleep = Math.max(0, sleep - ticks)
+      }
+
       return {
         discordId: fidStr,
         name: c?.name ?? null,
@@ -86,8 +110,12 @@ export default apiHandler({
         petLevel: p?.level ?? 0,
         expression: (p?.expression ?? "default").toLowerCase(),
         friendsSince: friendCreatedMap.get(fidStr)?.toISOString() ?? null,
+        food,
+        bath,
+        sleep,
       }
     })
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       friends,

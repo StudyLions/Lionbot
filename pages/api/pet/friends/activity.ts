@@ -112,6 +112,20 @@ export default apiHandler({
       })
     }
 
+    // --- AI-MODIFIED (2026-03-24) ---
+    // Purpose: Wire up levelUps events (were fetched but never pushed to the array)
+    for (const lu of levelUps) {
+      const uid = lu.userid.toString()
+      events.push({
+        type: "level_up",
+        userId: uid,
+        userName: nameMap.get(uid) ?? "Unknown",
+        description: `Reached Level ${lu.level}!`,
+        timestamp: new Date().toISOString(),
+      })
+    }
+    // --- END AI-MODIFIED ---
+
     events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
 
     return res.status(200).json({ events: events.slice(0, 50) })
