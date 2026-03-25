@@ -23,6 +23,11 @@ import {
 } from "@/components/dashboard/ui"
 import type { NavSection } from "@/components/dashboard/ui"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Import currency hook + price helpers for dynamic pricing
+import { useCurrency } from "@/hooks/useCurrency"
+import { getServerPremiumPrice } from "@/constants/SubscriptionData"
+// --- END AI-MODIFIED ---
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
@@ -224,6 +229,10 @@ const SECTION_DEFS: SectionDef[] = [
 // Purpose: Server Premium subscription management card for settings page
 function ServerPremiumCard({ guildId }: { guildId: string }) {
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Add currency support for dynamic pricing
+  const { currency, symbol } = useCurrency()
+  // --- END AI-MODIFIED ---
   const { data: subData, isLoading } = useDashboard<{
     hasSubscription: boolean
     isPremium: boolean
@@ -238,14 +247,17 @@ function ServerPremiumCard({ guildId }: { guildId: string }) {
   )
   const [checkingOut, setCheckingOut] = useState(false)
 
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Pass currency in checkout request for correct Stripe Price
   const handleCheckout = async (plan: string) => {
     setCheckingOut(true)
     try {
       const res = await fetch("/api/subscription/server-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guildId, plan }),
+        body: JSON.stringify({ guildId, plan, currency }),
       })
+  // --- END AI-MODIFIED ---
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to start checkout")
       if (data.url) window.location.href = data.url
@@ -338,14 +350,17 @@ function ServerPremiumCard({ guildId }: { guildId: string }) {
               disabled={checkingOut}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-card border border-border hover:border-amber-500/40 text-foreground transition-colors disabled:opacity-50"
             >
-              {checkingOut ? "..." : "\u20AC9.99/mo"}
+              {/* --- AI-MODIFIED (2026-03-25) --- */}
+              {/* Purpose: Dynamic currency pricing */}
+              {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
             </button>
             <button
               onClick={() => handleCheckout("YEARLY")}
               disabled={checkingOut}
               className="px-4 py-2 text-sm font-medium rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-50"
             >
-              {checkingOut ? "..." : "\u20AC99.99/yr \u2014 Save 17%"}
+              {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("YEARLY", currency)}/yr \u2014 Save 17%`}
+              {/* --- END AI-MODIFIED --- */}
             </button>
           </div>
         )}

@@ -21,7 +21,7 @@ export default function TermsAndConditions() {
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
             Terms and Conditions
           </h1>
-          <p className="text-muted-foreground mb-10">Last updated: March 20, 2026</p>
+          <p className="text-muted-foreground mb-10">Last updated: March 25, 2026</p>
 
           <div className="space-y-10 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7">
 
@@ -42,6 +42,31 @@ export default function TermsAndConditions() {
                 </a>.
               </p>
             </section>
+
+            {/* --- AI-MODIFIED (2026-03-25) --- */}
+            {/* Purpose: Added Company Information section with Italian business registration */}
+            <section>
+              <h2>Company Information</h2>
+              <p>
+                The Services are operated by <strong className="text-foreground">Ari Horesh</strong> (sole
+                proprietor / ditta individuale), located in Pavia, Italy.
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li>
+                  <strong className="text-foreground">P.IVA (VAT Number):</strong> IT02865360180
+                </li>
+                <li>
+                  <strong className="text-foreground">Location:</strong> Pavia, Italy
+                </li>
+                <li>
+                  <strong className="text-foreground">Email:</strong>{" "}
+                  <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
+                    contact@arihoresh.com
+                  </a>
+                </li>
+              </ul>
+            </section>
+            {/* --- END AI-MODIFIED --- */}
 
             {/* Eligibility */}
             <section>
@@ -79,10 +104,18 @@ export default function TermsAndConditions() {
                   LionBot.org where users can manage their account, view study statistics, configure
                   server settings, and access premium features.
                 </li>
+                {/* --- AI-MODIFIED (2026-03-25) --- */}
+                {/* Purpose: Added Ambient Sounds bot to service description */}
+                <li>
+                  <strong className="text-foreground">Ambient Sounds</strong> — A companion bot
+                  that plays looped ambient audio (rain, campfire, ocean, brown noise, white noise,
+                  etc.) in Discord voice channels, available as a Server Premium feature.
+                </li>
+                {/* --- END AI-MODIFIED --- */}
                 <li>
                   <strong className="text-foreground">Premium Features</strong> — Paid features
-                  including LionGem purchases, LionHeart subscriptions, Server Premium, profile card
-                  skins, and animated card effects.
+                  including LionGem purchases, LionHeart subscriptions, Server Premium, Ambient
+                  Sounds, profile card skins, and animated card effects.
                 </li>
               </ul>
             </section>
@@ -466,6 +499,39 @@ export default function TermsAndConditions() {
                   not limited to LionGems, subscription perks, skins, and LionGotchi items. Fraudulent
                   chargebacks may be reported to the relevant authorities.
                 </p>
+
+                {/* --- AI-MODIFIED (2026-03-25) --- */}
+                {/* Purpose: Added EU right of withdrawal waiver per Directive 2011/83/EU / D.Lgs. 206/2005 */}
+                <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">
+                  EU Right of Withdrawal Waiver
+                </h3>
+                <p>
+                  In accordance with Directive 2011/83/EU on consumer rights (implemented in Italy
+                  as D.Lgs. 206/2005, &ldquo;Codice del Consumo&rdquo;), consumers in the European
+                  Union normally have a 14-day right to withdraw from a distance contract. However,
+                  this right does not apply to digital content that is delivered immediately.
+                </p>
+                <p>
+                  By completing any purchase of digital content through the Services (including
+                  LionGems, LionHeart subscriptions, Server Premium subscriptions, or any other
+                  digital product), you:
+                </p>
+                <ul className="list-disc pl-6 space-y-2">
+                  <li>
+                    <strong className="text-foreground">Expressly consent</strong> to the immediate
+                    delivery and performance of the digital content
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Acknowledge</strong> that by consenting to
+                    immediate delivery, you lose your right of withdrawal under Article 16(m) of
+                    Directive 2011/83/EU (Article 59, comma 1, lettera o) of D.Lgs. 206/2005)
+                  </li>
+                </ul>
+                <p>
+                  This waiver is presented to you at the point of purchase and your completion of
+                  the transaction constitutes acceptance.
+                </p>
+                {/* --- END AI-MODIFIED --- */}
               </div>
             </section>
 
@@ -561,16 +627,19 @@ export default function TermsAndConditions() {
               </p>
             </section>
 
+            {/* --- AI-MODIFIED (2026-03-25) --- */}
+            {/* Purpose: Updated jurisdiction from Israel/Tel Aviv to Italy/Pavia to match company registration */}
             {/* Governing Law */}
             <section>
               <h2>Governing Law &amp; Jurisdiction</h2>
               <p>
-                These Terms are governed by and construed in accordance with the laws of the State
-                of Israel. Any legal suit, action, or proceeding arising out of, or related to, these
-                Terms or the Services shall be instituted exclusively in the judicial system of Israel,
-                specifically in Tel Aviv District Court.
+                These Terms are governed by and construed in accordance with the laws of the
+                Republic of Italy. Any legal suit, action, or proceeding arising out of, or
+                related to, these Terms or the Services shall be instituted exclusively in the
+                courts of Pavia, Italy.
               </p>
             </section>
+            {/* --- END AI-MODIFIED --- */}
 
             {/* Changes to Terms */}
             <section>

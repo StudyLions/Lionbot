@@ -11,7 +11,10 @@ import { useState, useEffect, useCallback } from "react";
 export type Currency = "eur" | "usd";
 
 const STORAGE_KEY = "preferred_currency";
-const DEFAULT_CURRENCY: Currency = "eur";
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Default to USD instead of EUR
+const DEFAULT_CURRENCY: Currency = "usd";
+// --- END AI-MODIFIED ---
 
 export function useCurrency() {
   const [currency, setCurrencyState] = useState<Currency>(DEFAULT_CURRENCY);
