@@ -191,6 +191,11 @@ export default function RanksPage() {
   const { id } = router.query
   const guildId = id as string
 
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Moved activeTab state above hooks that reference it
+  const [activeTab, setActiveTab] = useState<TabKey>("XP")
+  // --- END AI-MODIFIED ---
+
   const { data, isLoading: loading, mutate } = useDashboard<RanksData>(
     id && session ? `/api/dashboard/servers/${id}/ranks` : null
   )
@@ -207,7 +212,6 @@ export default function RanksPage() {
   const { roleMap } = useRoles(guildId)
   const serverName = serverData?.server?.name || "Server"
 
-  const [activeTab, setActiveTab] = useState<TabKey>("XP")
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Rank | null>(null)
   const [deleting, setDeleting] = useState(false)
