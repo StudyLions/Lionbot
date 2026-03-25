@@ -1436,7 +1436,7 @@ export default function Donate() {
         setSubscribing(false);
       }
     },
-    [subscribing]
+    [subscribing, currency]
   );
 
   const handleManageSubscription = useCallback(async () => {
@@ -1478,6 +1478,34 @@ export default function Donate() {
             animation: shimmerSweep 4s ease-in-out infinite;
           }
         `}</style>
+
+        {/* --- AI-MODIFIED (2026-03-25) --- */}
+        {/* Purpose: Sticky floating currency toggle, always visible near pricing */}
+        <div className="fixed bottom-6 right-6 z-50">
+          <div className="inline-flex rounded-full bg-gray-800/95 backdrop-blur-sm border border-gray-600 p-1 shadow-lg shadow-black/40">
+            <button
+              onClick={() => setCurrency("eur")}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                currency === "eur"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              &euro; EUR
+            </button>
+            <button
+              onClick={() => setCurrency("usd")}
+              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
+                currency === "usd"
+                  ? "bg-blue-600 text-white shadow-md"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              $ USD
+            </button>
+          </div>
+        </div>
+        {/* --- END AI-MODIFIED --- */}
         {/* Hero */}
         <section className="relative pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(91,141,239,0.08),_transparent_50%)]" />
@@ -1510,33 +1538,7 @@ export default function Donate() {
                 </a>
               </div>
 
-              {/* --- AI-MODIFIED (2026-03-24) --- */}
-              {/* Purpose: Currency toggle (EUR / USD) */}
-              <div className="flex items-center justify-center mt-6">
-                <div className="inline-flex rounded-full bg-gray-800 border border-gray-700 p-1">
-                  <button
-                    onClick={() => setCurrency("eur")}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      currency === "eur"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    &euro; EUR
-                  </button>
-                  <button
-                    onClick={() => setCurrency("usd")}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
-                      currency === "usd"
-                        ? "bg-blue-600 text-white shadow-md"
-                        : "text-gray-400 hover:text-white"
-                    }`}
-                  >
-                    $ USD
-                  </button>
-                </div>
-              </div>
-              {/* --- END AI-MODIFIED --- */}
+              {/* Currency toggle moved to sticky floating pill */}
             </div>
           </div>
         </section>
