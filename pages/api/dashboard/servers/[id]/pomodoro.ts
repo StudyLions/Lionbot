@@ -73,7 +73,10 @@ export default apiHandler({
       prisma.timers.findMany({ where: { guildid: guildId } }),
       prisma.guild_config.findUnique({
         where: { guildid: guildId },
-        select: { pomodoro_channel: true },
+        // --- AI-MODIFIED (2026-03-25) ---
+        // Purpose: Include session_leave_summary toggle in response
+        select: { pomodoro_channel: true, session_leave_summary: true },
+        // --- END AI-MODIFIED ---
       }),
     ])
 
@@ -82,6 +85,10 @@ export default apiHandler({
     return res.status(200).json({
       timers: timers.map(serializeTimer),
       pomodoro_channel: guildConfig.pomodoro_channel?.toString() ?? null,
+      // --- AI-MODIFIED (2026-03-25) ---
+      // Purpose: Expose session leave summary toggle to dashboard
+      session_leave_summary: guildConfig.session_leave_summary ?? false,
+      // --- END AI-MODIFIED ---
     })
   },
 
