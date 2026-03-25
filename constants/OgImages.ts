@@ -34,6 +34,9 @@ const ROUTE_TO_SLUG: Record<string, string> = {
   "/dashboard/inventory": "dashboard-inventory",
   "/dashboard/profile": "dashboard-profile",
   "/dashboard/gems": "dashboard-gems",
+  "/dashboard/rooms": "dashboard-rooms",
+  "/dashboard/voice-editor": "dashboard-voice-editor",
+  "/dashboard/subscriptions": "dashboard-subscriptions",
   "/dashboard/servers": "dashboard-overview",
   "/dashboard/servers/[id]": "server-overview",
   "/dashboard/servers/[id]/setup": "server-setup",
@@ -51,6 +54,11 @@ const ROUTE_TO_SLUG: Record<string, string> = {
   "/dashboard/servers/[id]/videochannels": "server-videochannels",
   "/dashboard/servers/[id]/liongotchi": "server-liongotchi",
   "/dashboard/servers/[id]/leaderboard-autopost": "server-leaderboard-autopost",
+  "/dashboard/servers/[id]/ambient-sounds": "server-ambient-sounds",
+  "/dashboard/servers/[id]/leaderboard": "server-leaderboard",
+  "/dashboard/servers/[id]/rooms": "server-rooms",
+  "/dashboard/servers/[id]/sticky-messages": "server-sticky-messages",
+  "/dashboard/servers/[id]/voice-time-editor": "server-voice-time-editor",
 
   "/pet": "pet-overview",
   "/pet/inventory": "pet-inventory",
@@ -65,6 +73,15 @@ const ROUTE_TO_SLUG: Record<string, string> = {
   "/pet/marketplace/sell": "pet-sell",
   "/pet/marketplace/my-listings": "pet-my-listings",
   "/pet/marketplace/[listingId]": "pet-marketplace",
+  "/pet/family": "pet-family",
+  "/pet/family/bank": "pet-family-bank",
+  "/pet/family/farm": "pet-family-farm",
+  "/pet/family/members": "pet-family-members",
+  "/pet/family/settings": "pet-family-settings",
+  "/pet/friends": "pet-friends",
+  "/pet/friends/[userId]": "pet-friends",
+  "/pet/leaderboard": "pet-leaderboard",
+  "/pet/tutorial": "pet-tutorial",
 
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Add guides section OG image mapping
