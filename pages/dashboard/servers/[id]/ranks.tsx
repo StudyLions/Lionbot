@@ -21,7 +21,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useRoles } from "@/hooks/useRoles"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import {
   Trophy, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Users, BarChart3,
   AlertTriangle, CheckCircle, Lightbulb, Calculator, Coins, ArrowUp,
@@ -194,6 +194,7 @@ export default function RanksPage() {
   // --- AI-MODIFIED (2026-03-25) ---
   // Purpose: Moved activeTab state above hooks that reference it
   const [activeTab, setActiveTab] = useState<TabKey>("XP")
+  const [initialTabSet, setInitialTabSet] = useState(false)
   // --- END AI-MODIFIED ---
 
   const { data, isLoading: loading, mutate } = useDashboard<RanksData>(
@@ -211,6 +212,16 @@ export default function RanksPage() {
   )
   const { roleMap } = useRoles(guildId)
   const serverName = serverData?.server?.name || "Server"
+
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Set initial tab to guild's primary rank type when data first loads
+  useEffect(() => {
+    if (data?.rankType && !initialTabSet) {
+      setActiveTab(data.rankType as TabKey)
+      setInitialTabSet(true)
+    }
+  }, [data, initialTabSet])
+  // --- END AI-MODIFIED ---
 
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Rank | null>(null)
