@@ -4,10 +4,18 @@
 // Purpose: Premium pomodoro analytics dashboard - streaks,
 //          focus power leaderboard, milestones, and advanced stats
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
+import { relativeTime } from "@/utils/relativeTime"
 import { PageHeader, SectionCard, EmptyState } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
@@ -51,19 +59,24 @@ interface AnalyticsData {
 
 // ---- Helpers ----
 
-function timeAgo(dateStr: string): string {
-  const now = Date.now()
-  const then = new Date(dateStr).getTime()
-  const diffMs = now - then
-  const minutes = Math.floor(diffMs / 60_000)
-  if (minutes < 1) return "just now"
-  if (minutes < 60) return `${minutes}m ago`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days}d ago`
-  return `${Math.floor(days / 30)}mo ago`
-}
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Replaced local timeAgo with shared relativeTime from @/utils/relativeTime
+// --- Original code (commented out for rollback) ---
+// function relativeTime(dateStr: string): string {
+//   const now = Date.now()
+//   const then = new Date(dateStr).getTime()
+//   const diffMs = now - then
+//   const minutes = Math.floor(diffMs / 60_000)
+//   if (minutes < 1) return "just now"
+//   if (minutes < 60) return `${minutes}m ago`
+//   const hours = Math.floor(minutes / 60)
+//   if (hours < 24) return `${hours}h ago`
+//   const days = Math.floor(hours / 24)
+//   if (days < 30) return `${days}d ago`
+//   return `${Math.floor(days / 30)}mo ago`
+// }
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 function milestoneLabel(type: string, value: number): string {
   switch (type) {
@@ -79,7 +92,7 @@ function focusPowerColor(power: number): string {
   if (power >= 5) return "bg-red-500/15 text-red-400"
   if (power >= 3) return "bg-orange-500/15 text-orange-400"
   if (power >= 1) return "bg-emerald-500/15 text-emerald-400"
-  return "bg-gray-500/15 text-gray-400"
+  return "bg-muted/15 text-muted-foreground"
 }
 
 // ---- Skeleton ----
@@ -95,7 +108,7 @@ function StatCard({ label, value, icon, color = "text-primary" }: {
 }) {
   return (
     <div className="bg-card/50 border border-border rounded-xl p-6 flex items-start gap-3">
-      <div className={`p-2 rounded-lg bg-gray-800 ${color}`}>{icon}</div>
+      <div className={`p-2 rounded-lg bg-muted ${color}`}>{icon}</div>
       <div className="min-w-0">
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">{label}</p>
         <p className="text-2xl font-bold text-foreground mt-0.5">{value}</p>
@@ -110,7 +123,7 @@ function MemberAvatar({ url, name, size = 32 }: { url: string; name: string; siz
   return (
     <img
       src={url} alt={name || "User"} width={size} height={size}
-      className="rounded-full bg-gray-700 flex-shrink-0"
+      className="rounded-full bg-muted flex-shrink-0"
       onError={(e) => { (e.target as HTMLImageElement).src = "https://cdn.discordapp.com/embed/avatars/0.png" }}
     />
   )
@@ -144,10 +157,16 @@ export default function PomodoroAnalyticsPage() {
     <Layout SEO={{ title: `Premium Pomodoro Analytics - ${serverName} - LionBot`, description: "Advanced pomodoro analytics" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
-            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin={isAdmin} isMod={...} />
+                <div className="flex-1 min-w-0 space-y-6">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Premium Pomodoro Analytics"
                 description="Streaks, focus power rankings, milestones, and advanced study stats for your server."
@@ -232,10 +251,10 @@ export default function PomodoroAnalyticsPage() {
                           </thead>
                           <tbody className="divide-y divide-border/50">
                             {data.streakLeaderboard.slice(0, 20).map((user, i) => (
-                              <tr key={user.userid} className="hover:bg-gray-800/30 transition-colors">
+                              <tr key={user.userid} className="hover:bg-accent transition-colors">
                                 <td className="py-2.5 px-2">
                                   <span className={`text-xs font-bold ${
-                                    i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-700" : "text-muted-foreground"
+                                    i === 0 ? "text-amber-400" : i === 1 ? "text-foreground" : i === 2 ? "text-amber-700" : "text-muted-foreground"
                                   }`}>
                                     #{i + 1}
                                   </span>
@@ -289,10 +308,10 @@ export default function PomodoroAnalyticsPage() {
                           </thead>
                           <tbody className="divide-y divide-border/50">
                             {data.focusPowerLeaderboard.slice(0, 20).map((user, i) => (
-                              <tr key={user.userid} className="hover:bg-gray-800/30 transition-colors">
+                              <tr key={user.userid} className="hover:bg-accent transition-colors">
                                 <td className="py-2.5 px-2">
                                   <span className={`text-xs font-bold ${
-                                    i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-amber-700" : "text-muted-foreground"
+                                    i === 0 ? "text-amber-400" : i === 1 ? "text-foreground" : i === 2 ? "text-amber-700" : "text-muted-foreground"
                                   }`}>
                                     #{i + 1}
                                   </span>
@@ -336,7 +355,7 @@ export default function PomodoroAnalyticsPage() {
                         {data.recentMilestones.map((m, i) => (
                           <div
                             key={`${m.userid}-${m.milestone_type}-${m.milestone_value}-${i}`}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-gray-800/30 transition-colors"
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-accent transition-colors"
                           >
                             <div className="p-1.5 rounded-lg bg-amber-500/10">
                               <Trophy size={16} className="text-amber-400" />
@@ -349,7 +368,7 @@ export default function PomodoroAnalyticsPage() {
                               </p>
                             </div>
                             <span className="text-xs text-muted-foreground flex-shrink-0">
-                              {timeAgo(m.achieved_at)}
+                              {relativeTime(m.achieved_at)}
                             </span>
                           </div>
                         ))}
@@ -364,9 +383,9 @@ export default function PomodoroAnalyticsPage() {
                   </SectionCard>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </ServerGuard>
       </AdminGuard>
     </Layout>

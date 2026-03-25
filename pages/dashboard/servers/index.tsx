@@ -8,9 +8,10 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, Badge } from "@/components/dashboard/ui"
+import { EmptyState, Badge, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
+import { Skeleton } from "@/components/ui/skeleton"
 import Link from "next/link"
 import { Server, Shield, ShieldCheck, ChevronRight, Plus, CheckCircle2, XCircle } from "lucide-react"
 import { GetServerSideProps } from "next"
@@ -205,20 +206,48 @@ export default function Servers() {
   return (
     <Layout SEO={{ title: "My Servers - LionBot Dashboard", description: "Your LionBot servers" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0"> */}
+        <DashboardShell nav={<DashboardNav />}>
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-foreground">My Servers</h1>
                 <span className="text-muted-foreground text-sm">{servers.length} servers</span>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="My Servers"
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "My Servers" },
+                ]}
+                actions={
+                  <span className="text-muted-foreground text-sm">{servers.length} servers</span>
+                }
+              />
+              {/* --- END AI-REPLACED --- */}
 
-              {loading ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+              {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[1, 2, 3, 4, 5, 6].map((i) => (
                     <div key={i} className="bg-card rounded-2xl p-5 h-32 animate-pulse border border-border" />
                   ))}
+                </div> */}
+              {/* --- End original code --- */}
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <Skeleton key={i} className="rounded-2xl h-32" />
+                  ))}
+                  {/* --- END AI-REPLACED --- */}
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
@@ -257,9 +286,8 @@ export default function Servers() {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

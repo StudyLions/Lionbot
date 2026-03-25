@@ -8,7 +8,15 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
-import { PageHeader, Badge, toast, ConfirmModal } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Import shared SettingRow, NumberInput, Toggle instead of local duplicates
+import { PageHeader, Badge, toast, ConfirmModal, NumberInput, SettingRow, Toggle } from "@/components/dashboard/ui"
+import Pagination from "@/components/dashboard/ui/Pagination"
+// --- END AI-MODIFIED ---
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
@@ -23,7 +31,7 @@ import {
   DoorOpen, Coins, Users, Clock, TrendingUp, Activity, ChevronDown, ChevronUp,
   Search, Download, Snowflake, Trash2, PencilLine, ArrowRightLeft, Plus, Minus,
   Shield, ExternalLink, Settings, BarChart3, Crown, AlertTriangle, Eye,
-  ChevronLeft, ChevronRight, X, UserMinus, RefreshCw, History, Timer, Play, Square, Pencil,
+  X, UserMinus, RefreshCw, History, Timer, Play, Square, Pencil,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import {
@@ -629,10 +637,16 @@ export default function AdminRoomsPage() {
     <Layout SEO={{ title: `Private Rooms - ${serverName}`, description: "Manage private rooms" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="moderator">
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-6xl mx-auto flex gap-8">
-              <ServerNav serverId={serverId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
-              <div className="flex-1 min-w-0 space-y-8">
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate to DashboardShell for consistent layout
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-6xl mx-auto flex gap-8">
+                  <ServerNav serverId={serverId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
+                  <div className="flex-1 min-w-0 space-y-8">
+              --- End original code --- */}
+          <DashboardShell nav={<ServerNav serverId={serverId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />} className="space-y-8">
+          {/* --- END AI-REPLACED --- */}
                 <PageHeader title="Private Rooms" description="Analytics, management, and configuration for private study rooms" />
 
                 {/* ======== SECTION A: ANALYTICS ======== */}
@@ -863,15 +877,11 @@ export default function AdminRoomsPage() {
                   )}
 
                   {/* Pagination */}
-                  {listData && listData.pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-2">
-                      <button disabled={page === 1} onClick={() => setPage(page - 1)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30"><ChevronLeft size={16} /></button>
-                      <span className="text-xs text-muted-foreground">Page {page} of {listData.pagination.totalPages}</span>
-                      <button disabled={page >= listData.pagination.totalPages} onClick={() => setPage(page + 1)}
-                        className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent disabled:opacity-30"><ChevronRight size={16} /></button>
-                    </div>
+                  {/* --- AI-REPLACED (2026-03-24) --- Reason: Replaced custom pagination with shared Pagination component. Original: custom ChevronLeft/Right page buttons --- */}
+                  {listData && (
+                    <Pagination page={page} totalPages={listData.pagination.totalPages} onChange={setPage} showLabel className="pt-2" />
                   )}
+                  {/* --- END AI-REPLACED --- */}
 
                   {/* Bulk Action Bar */}
                   {selectedRooms.size > 0 && (
@@ -890,8 +900,10 @@ export default function AdminRoomsPage() {
                     <ConfirmModal open={true} title={`Close ${selectedRooms.size} Rooms?`} message="This will force-close all selected rooms. The bot will destroy the Discord channels on next tick."
                       onConfirm={() => doBulk("close")} onCancel={() => setShowBulkConfirm(null)} loading={bulkLoading} variant="danger" />
                   )}
+                  {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Standardize overlay to bg-black/60 + blur for consistency --- */}
                   {showBulkConfirm === "adjust" && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    {/* --- END AI-MODIFIED --- */}
                       <div className="bg-card rounded-xl border border-border p-6 max-w-sm w-full space-y-4">
                         <h3 className="text-base font-semibold text-foreground">Adjust Balance ({selectedRooms.size} rooms)</h3>
                         <input type="number" value={bulkAmount} onChange={(e) => setBulkAmount(e.target.value)}
@@ -924,28 +936,42 @@ export default function AdminRoomsPage() {
                     {!configData ? (
                       <Skeleton className="h-64 rounded-xl" />
                     ) : (
-                      <div className="rounded-xl border border-border bg-card divide-y divide-border">
-                        <SettingRow label="Daily Rent Price" description="LionCoins charged per day for each room"
-                          value={<NumberInput value={configVal("renting_price") as number | null} placeholder="1000" onChange={(v) => setConfigVal("renting_price", v)} />} />
-                        <SettingRow label="Member Cap" description="Maximum members per room (owner + invited)"
-                          value={<NumberInput value={configVal("renting_cap") as number | null} placeholder="25" onChange={(v) => setConfigVal("renting_cap", v)} />} />
-                        <SettingRow label="Rooms Visible" description="New rooms visible to @everyone (but not connectable)"
-                          value={<Toggle checked={configVal("renting_visible") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_visible", v)} />} />
-                        <SettingRow label="Sync Permissions" description="Sync room permissions with server on creation"
-                          value={<Toggle checked={configVal("renting_sync_perms") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_sync_perms", v)} />} />
+                      // --- AI-REPLACED (2026-03-24) ---
+                      // Reason: Switch from local SettingRow (value= prop) to shared SettingRow (children prop)
+                      // What the new code does better: Uses shared UI components with responsive layout, accessibility, consistent styling
+                      // --- Original code: <div> with local SettingRow value= API and local Toggle/NumberInput ---
+                      <div className="rounded-xl border border-border bg-card">
+                        <SettingRow label="Daily Rent Price" description="LionCoins charged per day for each room">
+                          <NumberInput value={configVal("renting_price") as number | null} placeholder="1000" onChange={(v) => setConfigVal("renting_price", v)} allowNull />
+                        </SettingRow>
+                        <SettingRow label="Member Cap" description="Maximum members per room (owner + invited)">
+                          <NumberInput value={configVal("renting_cap") as number | null} placeholder="25" onChange={(v) => setConfigVal("renting_cap", v)} allowNull />
+                        </SettingRow>
+                        <SettingRow label="Rooms Visible" description="New rooms visible to @everyone (but not connectable)">
+                          <Toggle checked={configVal("renting_visible") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_visible", v)} />
+                        </SettingRow>
+                        <SettingRow label="Sync Permissions" description="Sync room permissions with server on creation">
+                          <Toggle checked={configVal("renting_sync_perms") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_sync_perms", v)} />
+                        </SettingRow>
                         <div className="px-4 py-2 bg-muted/20">
                           <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-semibold">Advanced Settings</p>
                         </div>
-                        <SettingRow label="Max Rooms Per User" description="Limit how many rooms one user can own (empty = unlimited)"
-                          value={<NumberInput value={configVal("renting_max_per_user") as number | null} placeholder="No limit" onChange={(v) => setConfigVal("renting_max_per_user", v)} />} />
-                        <SettingRow label="Name Character Limit" description="Max characters in room name (empty = no limit)"
-                          value={<NumberInput value={configVal("renting_name_limit") as number | null} placeholder="No limit" onChange={(v) => setConfigVal("renting_name_limit", v)} />} />
-                        <SettingRow label="Minimum Initial Deposit" description="Coins required upfront when renting a room (empty = 0)"
-                          value={<NumberInput value={configVal("renting_min_deposit") as number | null} placeholder="0" onChange={(v) => setConfigVal("renting_min_deposit", v)} />} />
-                        <SettingRow label="Auto-Extend" description="Automatically deduct from owner's balance when room runs out"
-                          value={<Toggle checked={configVal("renting_auto_extend") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_auto_extend", v)} />} />
-                        <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)"
-                          value={<NumberInput value={configVal("renting_cooldown") as number | null} placeholder="No cooldown" onChange={(v) => setConfigVal("renting_cooldown", v)} />} />
+                        <SettingRow label="Max Rooms Per User" description="Limit how many rooms one user can own (empty = unlimited)">
+                          <NumberInput value={configVal("renting_max_per_user") as number | null} placeholder="No limit" onChange={(v) => setConfigVal("renting_max_per_user", v)} allowNull />
+                        </SettingRow>
+                        <SettingRow label="Name Character Limit" description="Max characters in room name (empty = no limit)">
+                          <NumberInput value={configVal("renting_name_limit") as number | null} placeholder="No limit" onChange={(v) => setConfigVal("renting_name_limit", v)} allowNull />
+                        </SettingRow>
+                        <SettingRow label="Minimum Initial Deposit" description="Coins required upfront when renting a room (empty = 0)">
+                          <NumberInput value={configVal("renting_min_deposit") as number | null} placeholder="0" onChange={(v) => setConfigVal("renting_min_deposit", v)} allowNull />
+                        </SettingRow>
+                        <SettingRow label="Auto-Extend" description="Automatically deduct from owner's balance when room runs out">
+                          <Toggle checked={configVal("renting_auto_extend") as boolean | null ?? false} onChange={(v) => setConfigVal("renting_auto_extend", v)} />
+                        </SettingRow>
+                        <SettingRow label="Creation Cooldown" description="Seconds between room creations per user (empty = no cooldown)">
+                          <NumberInput value={configVal("renting_cooldown") as number | null} placeholder="No cooldown" onChange={(v) => setConfigVal("renting_cooldown", v)} allowNull />
+                        </SettingRow>
+                        {/* --- END AI-REPLACED --- */}
                       </div>
                     )}
 
@@ -960,49 +986,35 @@ export default function AdminRoomsPage() {
                     )}
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
+          {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
         </ServerGuard>
       </AdminGuard>
     </Layout>
   )
 }
 
-// ---- Setting Components ----
-
-function SettingRow({ label, description, value }: { label: string; description: string; value: React.ReactNode }) {
-  return (
-    <div className="flex items-center justify-between gap-4 px-4 py-3">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-[11px] text-muted-foreground">{description}</p>
-      </div>
-      <div className="flex-shrink-0">{value}</div>
-    </div>
-  )
-}
-
-function NumberInput({ value, placeholder, onChange }: { value: number | null; placeholder: string; onChange: (v: number | null) => void }) {
-  return (
-    <input type="number" value={value ?? ""} placeholder={placeholder}
-      onChange={(e) => onChange(e.target.value === "" ? null : Number(e.target.value))}
-      className="w-28 px-3 py-1.5 text-sm text-right rounded-lg bg-background border border-border text-foreground placeholder-muted-foreground" />
-  )
-}
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button onClick={() => onChange(!checked)}
-      className={cn("relative inline-flex h-5 w-9 items-center rounded-full transition-colors",
-        checked ? "bg-primary" : "bg-muted"
-      )}>
-      <span className={cn("inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform",
-        checked ? "translate-x-[18px]" : "translate-x-[3px]"
-      )} />
-    </button>
-  )
-}
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Local SettingRow, NumberInput, Toggle were duplicates of shared @/components/dashboard/ui
+// What the new code does better: Eliminates duplicate code; shared versions have responsive layout, accessibility, sound effects
+// --- Original code (commented out for rollback) ---
+// function SettingRow({ label, description, value }: { label: string; description: string; value: React.ReactNode }) {
+//   return (
+//     <div className="flex items-center justify-between gap-4 px-4 py-3">
+//       <div className="min-w-0">
+//         <p className="text-sm font-medium text-foreground">{label}</p>
+//         <p className="text-[11px] text-muted-foreground">{description}</p>
+//       </div>
+//       <div className="flex-shrink-0">{value}</div>
+//     </div>
+//   )
+// }
+// function NumberInput({ value, placeholder, onChange }: { ... }) { <input type="number" .../> }
+// function Toggle({ checked, onChange }: { ... }) { <button .../> }
+// --- End original code ---
+// Now imported from "@/components/dashboard/ui"
+// --- END AI-REPLACED ---
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {

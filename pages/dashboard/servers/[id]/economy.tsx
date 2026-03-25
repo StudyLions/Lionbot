@@ -8,11 +8,16 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Link component for Private Rooms cross-link
 import Link from "next/link"
 // --- END AI-MODIFIED ---
 import { PageHeader, Badge, toast, ConfirmModal } from "@/components/dashboard/ui"
+import Pagination from "@/components/dashboard/ui/Pagination"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
@@ -20,10 +25,11 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useEffect } from "react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   Coins, TrendingUp, TrendingDown, Users, ArrowUpDown, Download,
   ShoppingBag, Settings, ExternalLink, AlertTriangle, CheckCircle,
-  Lightbulb, Home, ChevronLeft, ChevronRight, Search, RotateCcw,
+  Lightbulb, Home, Search, RotateCcw,
   Wallet, BarChart3, Gift, Minus, RefreshCw, Info
 } from "lucide-react"
 import {
@@ -303,37 +309,40 @@ export default function EconomyPage() {
     <Layout SEO={{ title: `Economy - ${serverName} - LionBot`, description: "Economy command center" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="moderator">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
-            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-6xl mx-auto flex gap-8">
+                <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={...} />
+                <div className="flex-1 min-w-0 space-y-6">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />}>
               <PageHeader
                 title="Economy"
                 description="Track coin flow, analyze trends, manage balances, and keep your server's economy healthy. All data shown is from LionBot, not Discord."
               />
 
               {/* Tabs */}
-              {/* --- AI-MODIFIED (2026-03-21) --- */}
-              {/* Purpose: Add overflow-x-auto for tab scrolling on mobile */}
-              <div className="flex gap-1 border-b border-border overflow-x-auto">
-              {/* --- END AI-MODIFIED --- */}
-                {tabs.map((t) => (
-                  <button
-                    key={t.key}
-                    onClick={() => setTab(t.key)}
-                    className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
-                      tab === t.key
-                        ? "text-amber-400"
-                        : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    {t.label}
-                    {tab === t.key && (
-                      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-400 rounded-full" />
-                    )}
-                  </button>
-                ))}
-              </div>
+              {/* --- AI-REPLACED (2026-03-24) ---
+                  Reason: Migrated from custom inline tabs with amber underline to shared TabBar component
+                  --- Original code (commented out for rollback) ---
+                  <div className="flex gap-1 border-b border-border overflow-x-auto">
+                    {tabs.map((t) => (
+                      <button key={t.key} onClick={() => setTab(t.key)}
+                        className={`px-4 py-2.5 text-sm font-medium transition-colors relative ${
+                          tab === t.key ? "text-amber-400" : "text-muted-foreground hover:text-foreground"
+                        }`}>
+                        {t.label}
+                        {tab === t.key && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-amber-400 rounded-full" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  --- End original code --- */}
+              <TabBar tabs={tabs} active={tab} onChange={(k) => setTab(k as typeof tab)} variant="underline" />
+              {/* --- END AI-REPLACED --- */}
 
               {/* ==================== OVERVIEW TAB ==================== */}
               {tab === "overview" && (
@@ -816,32 +825,26 @@ export default function EconomyPage() {
                         </div>
 
                         {/* Pagination */}
-                        {txData.pagination.totalPages > 1 && (
-                          <div className="flex items-center justify-between px-4 py-3 border-t border-border">
-                            <p className="text-xs text-muted-foreground">
-                              {txData.pagination.total.toLocaleString()} transactions
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => setTxPage(p => Math.max(1, p - 1))}
-                                disabled={txPage <= 1}
-                                className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30 transition-colors"
-                              >
-                                <ChevronLeft size={16} />
-                              </button>
-                              <span className="text-sm text-muted-foreground">
-                                {txPage} / {txData.pagination.totalPages}
-                              </span>
-                              <button
-                                onClick={() => setTxPage(p => Math.min(txData.pagination.totalPages, p + 1))}
-                                disabled={txPage >= txData.pagination.totalPages}
-                                className="p-1.5 rounded-lg hover:bg-muted disabled:opacity-30 transition-colors"
-                              >
-                                <ChevronRight size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        {/* --- AI-REPLACED (2026-03-24) ---
+                            Reason: Replaced custom transaction pagination with shared Pagination component
+                            --- Original code (commented out for rollback) ---
+                            {txData.pagination.totalPages > 1 && (
+                              <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                                <p className="text-xs text-muted-foreground">{txData.pagination.total.toLocaleString()} transactions</p>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => setTxPage(p => Math.max(1, p - 1))} disabled={txPage <= 1} ...>
+                                    <ChevronLeft size={16} />
+                                  </button>
+                                  <span>{txPage} / {txData.pagination.totalPages}</span>
+                                  <button onClick={() => setTxPage(p => Math.min(txData.pagination.totalPages, p + 1))} disabled={txPage >= txData.pagination.totalPages} ...>
+                                    <ChevronRight size={16} />
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                            --- End original code --- */}
+                        <Pagination page={txPage} totalPages={txData.pagination.totalPages} onChange={setTxPage} showLabel className="px-4 py-3 border-t border-border" />
+                        {/* --- END AI-REPLACED --- */}
                       </>
                     )}
                   </div>
@@ -982,9 +985,9 @@ export default function EconomyPage() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Member Detail Panel */}
         <MemberDetailPanel

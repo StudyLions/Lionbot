@@ -47,7 +47,10 @@ export default function SectionCard({
         {icon && <span className="text-muted-foreground flex-shrink-0">{icon}</span>}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-white">{title}</h3>
+            {/* --- AI-MODIFIED (2026-03-24) --- */}
+            {/* Purpose: text-white replaced with text-foreground for theme consistency */}
+            <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+            {/* --- END AI-MODIFIED --- */}
             {badge && (
               <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${BADGE_STYLES[badgeVariant] || BADGE_STYLES.primary}`}>
                 {badge}

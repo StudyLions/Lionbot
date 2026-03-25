@@ -391,8 +391,11 @@ export default function ServerNav({ serverId, serverName, isAdmin = false, isMod
         <NavContent serverId={serverId} serverName={serverName} sections={sections} isAdmin={isAdmin} isMod={isMod} onOpenPalette={() => setPaletteOpen(true)} />
       </nav>
 
+      {/* --- AI-MODIFIED (2026-03-24) --- */}
+      {/* Purpose: Standardize mobile trigger to top-16 left-4 z-50 (consistent with DashboardNav/PetNav) */}
       {/* Mobile trigger */}
-      <div className="fixed top-4 left-4 z-40 lg:hidden">
+      <div className="fixed top-16 left-4 z-50 lg:hidden">
+      {/* --- END AI-MODIFIED --- */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="bg-card shadow-lg">

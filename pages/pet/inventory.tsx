@@ -13,7 +13,7 @@
 // (see git history for the original flat-list inventory page)
 // --- End original code ---
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -25,7 +25,7 @@ import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import { GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS, type GlowTier } from "@/utils/gameConstants"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
-import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import ItemTooltip, { type InventoryItem } from "@/components/pet/inventory/ItemTooltip"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
@@ -273,10 +273,19 @@ export default function InventoryPage() {
   return (
     <Layout SEO={{ title: "Inventory - LionGotchi", description: "Your pet inventory" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: Pass hasPet so PetNav shows correct state */}
+        <PetShell hasPet={overview?.hasPet ?? true}>
+        {/* --- END AI-MODIFIED --- */}
+        {/* --- END AI-REPLACED --- */}
               {/* Title */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
@@ -367,22 +376,24 @@ export default function InventoryPage() {
 
                 {/* Right Column: Inventory Grid */}
                 <div className="flex-1 min-w-0 space-y-3">
-                  {/* Tabs */}
+                  {/* --- AI-REPLACED (2026-03-24) --- */}
+                  {/* Reason: Migrated PixelButton tab row to shared PixelTabBar component */}
+                  {/* --- Original code (commented out for rollback) ---
                   <div className="flex gap-2">
                     {TABS.map((tab) => (
-                      <PixelButton
-                        key={tab.key}
-                        variant={filter === tab.key ? "primary" : "ghost"}
-                        size="sm"
-                        onClick={() => setFilter(tab.key)}
-                      >
+                      <PixelButton key={tab.key} variant={filter === tab.key ? "primary" : "ghost"} size="sm"
+                        onClick={() => setFilter(tab.key)}>
                         {tab.label}
-                        {invData?.counts && (
-                          <span className="opacity-60 ml-1">({invData.counts[tab.key]})</span>
-                        )}
+                        {invData?.counts && (<span className="opacity-60 ml-1">({invData.counts[tab.key]})</span>)}
                       </PixelButton>
                     ))}
                   </div>
+                  --- End original code --- */}
+                  <PixelTabBar
+                    tabs={TABS.map(t => ({ ...t, count: invData?.counts?.[t.key] }))}
+                    active={filter}
+                    onChange={(k) => setFilter(k as FilterTab)}
+                  />
 
                   {/* Items Grid */}
                   {invLoading ? (
@@ -419,9 +430,10 @@ export default function InventoryPage() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )
@@ -453,8 +465,10 @@ function InventoryItemCard({
   return (
     <ItemTooltip inv={inv}>
       <ItemGlow rarity={inv.item.rarity} glowTier={inv.glowTier} glowIntensity={inv.glowIntensity}>
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: min-h + h-full for consistent card heights across grid */}
         <div
-          className="flex flex-col border-2 bg-[#0c1020] transition-all hover:bg-[#101830] group"
+          className="flex flex-col min-h-[180px] h-full border-2 bg-[#0c1020] transition-all hover:bg-[#101830] group"
           style={{
             borderColor: `${effectiveBorder}80`,
             boxShadow: `2px 2px 0 #060810`,
@@ -514,7 +528,7 @@ function InventoryItemCard({
 
           {/* Equip/Unequip Button */}
           {isEquipmentTab && slot && (
-            <div className="px-2 pb-1.5">
+            <div className="px-2 pb-1.5 mt-auto">
               <button
                 className={cn(
                   "w-full font-pixel text-[9px] py-1 border transition-all",
@@ -536,7 +550,7 @@ function InventoryItemCard({
 
           {/* Scroll "Use in Enhancement" Button */}
           {isScrollsTab && (
-            <div className="px-2 pb-1.5">
+            <div className="px-2 pb-1.5 mt-auto">
               <button
                 className="w-full font-pixel text-[9px] py-1 border transition-all hover:brightness-125 active:translate-y-px border-[var(--pet-gold,#f0c040)] text-[var(--pet-gold,#f0c040)] bg-[#f0c040]/5 hover:bg-[#f0c040]/10"
                 onClick={(e) => {
@@ -549,6 +563,7 @@ function InventoryItemCard({
             </div>
           )}
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </ItemGlow>
     </ItemTooltip>
   )

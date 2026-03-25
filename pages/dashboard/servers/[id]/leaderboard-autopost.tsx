@@ -7,6 +7,11 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
+import { relativeTime } from "@/utils/relativeTime"
 import {
   SectionCard, SettingRow, Toggle, NumberInput, TextInput,
   ChannelSelect, RoleSelect, SaveBar, PageHeader, toast,
@@ -217,19 +222,28 @@ function hexToColorInt(hex: string): number {
   return parseInt(hex.replace("#", ""), 16)
 }
 
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Replaced local formatRelativeTime with shared relativeTime from @/utils/relativeTime
+// --- Original code (commented out for rollback) ---
+// function formatRelativeTime(iso: string | null): string {
+//   if (!iso) return "Never"
+//   const d = new Date(iso)
+//   const now = new Date()
+//   const diff = now.getTime() - d.getTime()
+//   const mins = Math.floor(diff / 60000)
+//   if (mins < 1) return "Just now"
+//   if (mins < 60) return `${mins}m ago`
+//   const hours = Math.floor(mins / 60)
+//   if (hours < 24) return `${hours}h ago`
+//   const days = Math.floor(hours / 24)
+//   return `${days}d ago`
+// }
+// --- End original code ---
 function formatRelativeTime(iso: string | null): string {
   if (!iso) return "Never"
-  const d = new Date(iso)
-  const now = new Date()
-  const diff = now.getTime() - d.getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "Just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
+  return relativeTime(iso)
 }
+// --- END AI-REPLACED ---
 
 function makeDefaultConfig(): Partial<AutopostConfig> {
   return {
@@ -1235,6 +1249,13 @@ export default function LeaderboardAutopostPage() {
   const apiUrl = serverId ? `/api/dashboard/servers/${serverId}/leaderboard-autopost` : null
 
   const { data, isLoading, mutate } = useDashboard<PageData>(apiUrl)
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Fetch server name so ServerNav shows actual name instead of "..."
+  const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
+    serverId ? `/api/dashboard/servers/${serverId}` : null
+  )
+  const serverName = serverData?.server?.name || "Server"
+  // --- END AI-MODIFIED ---
   const [editing, setEditing] = useState<{ config: Partial<AutopostConfig>; isNew: boolean } | null>(null)
   const [historyConfigId, setHistoryConfigId] = useState<number | null>(null)
 
@@ -1253,8 +1274,9 @@ export default function LeaderboardAutopostPage() {
     setEditing({ config: { ...base, ...preset }, isNew: true })
   }
 
+  // --- AI-MODIFIED (2026-03-24) --- Purpose: Removed <main> wrapper, DashboardShell provides it. Original: <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl"> ---
   const pageContent = editing ? (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl">
+    <>
       <PageHeader
         title={editing.isNew ? "New Leaderboard Config" : `Edit: ${editing.config.config_name}`}
         description="Configure automated leaderboard posting"
@@ -1266,9 +1288,9 @@ export default function LeaderboardAutopostPage() {
         onClose={() => setEditing(null)}
         onSaved={() => { mutate(); setEditing(null) }}
       />
-    </main>
+    </>
   ) : (
-    <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-4xl">
+    <>
       <PageHeader
         title="Leaderboard Auto-Post"
         description="Automatically post leaderboards, assign roles, and award LionCoins on a schedule"
@@ -1414,7 +1436,11 @@ export default function LeaderboardAutopostPage() {
                     <span>&middot;</span>
                     <span>Top {cfg.top_count}</span>
                     <span>&middot;</span>
-                    <span>Last: {formatRelativeTime(cfg.last_posted_at)}</span>
+                    {/* --- AI-REPLACED (2026-03-24) --- */}
+{/* Reason: Use shared relativeTime, handle null for "Never" */}
+{/* --- Original code: <span>Last: {formatRelativeTime(cfg.last_posted_at)}</span> --- */}
+                    <span>Last: {cfg.last_posted_at ? relativeTime(cfg.last_posted_at) : "Never"}</span>
+{/* --- END AI-REPLACED --- */}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1468,8 +1494,9 @@ export default function LeaderboardAutopostPage() {
           )}
         </div>
       )}
-    </main>
+    </>
   )
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-21) ---
   // Purpose: Add missing SEO prop required by Layout component
@@ -1478,12 +1505,22 @@ export default function LeaderboardAutopostPage() {
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
   {/* --- END AI-MODIFIED --- */}
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-6xl mx-auto flex gap-8">
-              <ServerNav serverId={serverId} serverName="..." isAdmin isMod />
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate to DashboardShell for consistent layout
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-6xl mx-auto flex gap-8">
+                  <ServerNav serverId={serverId} serverName="..." isAdmin isMod />
+                  {pageContent}
+                </div>
+              </div>
+              --- End original code --- */}
+          {/* --- AI-MODIFIED (2026-03-24) --- Purpose: Use fetched serverName instead of hardcoded "..." --- */}
+          <DashboardShell nav={<ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />}>
+          {/* --- END AI-MODIFIED --- */}
               {pageContent}
-            </div>
-          </div>
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
         </ServerGuard>
       </AdminGuard>
     </Layout>

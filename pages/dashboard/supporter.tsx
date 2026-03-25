@@ -11,7 +11,7 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { PageHeader, Toggle, toast } from "@/components/dashboard/ui"
+import { PageHeader, Toggle, toast, DashboardShell } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useEffect, useRef } from "react"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
@@ -728,7 +728,7 @@ function EffectsEditor({
                   placeholder="e.g. Grinding for finals..."
                   maxLength={50}
                   disabled={disabled}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:opacity-40"
                 />
                 <p className="text-[10px] text-muted-foreground mt-1">
                   {(prefs.bio_text || "").length}/50 characters
@@ -896,7 +896,7 @@ function TimerPersonalization({
                   placeholder={placeholder}
                   maxLength={20}
                   disabled={disabled}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/40 disabled:opacity-40"
+                  className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:opacity-40"
                 />
               </div>
             ))}
@@ -1118,10 +1118,10 @@ export default function SupporterPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-8">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-8"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-8">
               <PageHeader
                 title="LionHeart"
                 description="Manage your supporter subscription and customize your animated profile card effects."
@@ -1166,9 +1166,8 @@ export default function SupporterPage() {
                   <TierComparison currentTier={sub?.tier ?? "NONE"} />
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

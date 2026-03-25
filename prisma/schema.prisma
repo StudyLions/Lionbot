@@ -1788,6 +1788,7 @@ model lg_families {
   max_farms                  Int?                         @default(1)
   daily_gold_withdraw_cap    Int?                         @default(10000)
   role_permissions           Json                         @default("{}")
+  theme                      Json                         @default("{}")
   created_at                 DateTime?                    @default(now()) @db.Timestamptz(6)
   user_config                user_config                  @relation(fields: [leader_userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
   lg_family_bank             lg_family_bank[]

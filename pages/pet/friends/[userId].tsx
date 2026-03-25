@@ -8,7 +8,7 @@
 import { useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/router"
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -20,6 +20,7 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import dynamic from "next/dynamic"
 
 import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -268,10 +269,16 @@ export default function FriendProfilePage() {
   return (
     <Layout SEO={{ title: pet ? `${pet.name} - LionGotchi` : "Friend - LionGotchi", description: "View a friend's LionGotchi" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
 
               {isLoading ? (
                 <div className="space-y-4">
@@ -487,30 +494,25 @@ export default function FriendProfilePage() {
 
                           {showGiftPanel && (
                             <>
+                              {/* --- AI-REPLACED (2026-03-24) --- */}
+                              {/* Reason: Migrated gift tab toggle to shared PixelTabBar component */}
+                              {/* --- Original code (commented out for rollback) ---
                               <div className="flex gap-1.5">
-                                <button
-                                  onClick={() => setGiftTab("gold")}
-                                  className={cn(
-                                    "font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
-                                    giftTab === "gold"
-                                      ? "border-[var(--pet-gold,#f0c040)] bg-[var(--pet-gold,#f0c040)]/15 text-[var(--pet-gold,#f0c040)]"
-                                      : "border-[var(--pet-border,#2a3a5c)] text-[#8899aa] hover:text-[#c0d0e0]"
-                                  )}
-                                >
-                                  Gold
-                                </button>
-                                <button
-                                  onClick={() => setGiftTab("item")}
-                                  className={cn(
-                                    "font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
-                                    giftTab === "item"
-                                      ? "border-[var(--pet-blue,#4080f0)] bg-[var(--pet-blue,#4080f0)]/15 text-[var(--pet-blue,#4080f0)]"
-                                      : "border-[var(--pet-border,#2a3a5c)] text-[#8899aa] hover:text-[#c0d0e0]"
-                                  )}
-                                >
-                                  Item
-                                </button>
+                                <button onClick={() => setGiftTab("gold")}
+                                  className={cn("font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
+                                    giftTab === "gold" ? "border-[var(--pet-gold,#f0c040)] bg-[var(--pet-gold,#f0c040)]/15 text-[var(--pet-gold,#f0c040)]"
+                                      : "border-[var(--pet-border,#2a3a5c)] text-[#8899aa] hover:text-[#c0d0e0]")}>Gold</button>
+                                <button onClick={() => setGiftTab("item")}
+                                  className={cn("font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
+                                    giftTab === "item" ? "border-[var(--pet-blue,#4080f0)] bg-[var(--pet-blue,#4080f0)]/15 text-[var(--pet-blue,#4080f0)]"
+                                      : "border-[var(--pet-border,#2a3a5c)] text-[#8899aa] hover:text-[#c0d0e0]")}>Item</button>
                               </div>
+                              --- End original code --- */}
+                              <PixelTabBar
+                                tabs={[{ key: "gold", label: "Gold" }, { key: "item", label: "Item" }]}
+                                active={giftTab}
+                                onChange={(k) => setGiftTab(k as "gold" | "item")}
+                              />
 
                               {giftTab === "gold" ? (
                                 <div className="space-y-2">
@@ -679,9 +681,10 @@ export default function FriendProfilePage() {
                 </>
               ) : null}
 
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

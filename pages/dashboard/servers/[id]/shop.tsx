@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader, Badge, ConfirmModal, EmptyState, toast,
   clearRoleCache,
@@ -16,7 +20,7 @@ import { ColorPicker } from "@/components/ui/color-picker"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import {
   ShoppingBag, Plus, Pencil, Trash2, Check, X, ToggleLeft, ToggleRight,
   Coins, DoorOpen, Palette, Clock, Settings, ChevronDown, ChevronRight,
@@ -112,7 +116,16 @@ export default function ShopPage() {
     return `#${role.color.toString(16).padStart(6, "0")}`
   }
 
-  useState(() => { if (id) loadRoles() })
+  // --- AI-REPLACED (2026-03-24) ---
+  // Reason: useState initializer runs once and returns undefined; loadRoles() is an async
+  // side-effect that belongs in useEffect so it re-runs when id changes.
+  // What the new code does better: Properly triggers role loading as a side-effect
+  // --- Original code (commented out for rollback) ---
+  // useState(() => { if (id) loadRoles() })
+  // --- End original code ---
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { if (id) loadRoles() }, [id])
+  // --- END AI-REPLACED ---
 
   const togglePurchasable = async (item: ShopItem) => {
     try {
@@ -222,10 +235,16 @@ export default function ShopPage() {
     <Layout SEO={{ title: `Shop - ${serverName} - LionBot`, description: "Server shop" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="member">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod={isMod} />}>
+        {/* --- END AI-REPLACED --- */}
             <PageHeader
               title="Shop"
               description="Browse items available for purchase with LionCoins."
@@ -377,7 +396,7 @@ export default function ShopPage() {
                                     {editingId === item.itemId ? (
                                       <div className="flex items-center gap-1">
                                         <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)}
-                                          className="w-20 bg-muted border border-border text-foreground rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
+                                          className="w-20 bg-muted border border-border text-foreground rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring" />
                                         <button onClick={() => savePrice(item.itemId)} className="p-1 text-emerald-400 hover:bg-emerald-400/10 rounded-lg"><Check size={14} /></button>
                                         <button onClick={() => setEditingId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded-lg"><X size={14} /></button>
                                       </div>
@@ -415,13 +434,13 @@ export default function ShopPage() {
                                 <label className="block text-xs font-medium text-foreground/80 mb-1">Role name</label>
                                 <input type="text" value={addColourForm.roleName} onChange={(e) => setAddColourForm((f) => ({ ...f, roleName: e.target.value }))}
                                   placeholder="e.g. Blue Member"
-                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-foreground/80 mb-1">Price</label>
                                 <input type="number" value={addColourForm.price} onChange={(e) => setAddColourForm((f) => ({ ...f, price: e.target.value }))}
                                   placeholder="e.g. 5000"
-                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                               </div>
                             </div>
                             <button onClick={addColourItem} disabled={saving || !addColourForm.roleName?.trim() || !addColourForm.price}
@@ -462,7 +481,7 @@ export default function ShopPage() {
                                     {editingId === item.itemId ? (
                                       <div className="flex items-center gap-1">
                                         <input type="number" value={editPrice} onChange={(e) => setEditPrice(e.target.value)}
-                                          className="w-20 bg-muted border border-border text-foreground rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary" />
+                                          className="w-20 bg-muted border border-border text-foreground rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-ring" />
                                         <button onClick={() => savePrice(item.itemId)} className="p-1 text-emerald-400 hover:bg-emerald-400/10 rounded-lg"><Check size={14} /></button>
                                         <button onClick={() => setEditingId(null)} className="p-1 text-muted-foreground hover:bg-muted rounded-lg"><X size={14} /></button>
                                       </div>
@@ -496,14 +515,14 @@ export default function ShopPage() {
                                 <input type="number" min="1" max="30" value={addRoomForm.duration}
                                   onChange={(e) => setAddRoomForm((f) => ({ ...f, duration: e.target.value }))}
                                   placeholder="e.g. 7"
-                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                               </div>
                               <div>
                                 <label className="block text-xs font-medium text-foreground/80 mb-1">Price (coins)</label>
                                 <input type="number" min="0" value={addRoomForm.price}
                                   onChange={(e) => setAddRoomForm((f) => ({ ...f, price: e.target.value }))}
                                   placeholder="e.g. 3000"
-                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary" />
+                                  className="w-full bg-card border border-border text-foreground rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                               </div>
                             </div>
                             <button onClick={addRoomItem} disabled={saving || !addRoomForm.duration || !addRoomForm.price}
@@ -535,9 +554,9 @@ export default function ShopPage() {
                 )}
               </>
             )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         <ConfirmModal
           open={!!deleteTarget}

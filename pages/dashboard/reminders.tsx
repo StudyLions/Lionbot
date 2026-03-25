@@ -14,8 +14,10 @@ import {
   ConfirmModal,
   EmptyState,
   toast,
+  DashboardShell,
 } from "@/components/dashboard/ui"
 import { useDashboard } from "@/hooks/useDashboard"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   Bell,
   Plus,
@@ -34,6 +36,7 @@ import {
   Timer,
   MoreVertical,
 } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { GetServerSideProps } from "next"
@@ -699,10 +702,10 @@ export default function RemindersPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0"> */}
+        <DashboardShell nav={<DashboardNav />}>
               <PageHeader
                 title="Reminders"
                 description="LionBot will DM you when it's time. Set one-time or recurring reminders to stay on track."
@@ -750,7 +753,7 @@ export default function RemindersPage() {
 
               {/* Quick presets */}
               {!showForm && !atLimit && (
-                <div className="mb-5 overflow-x-auto scrollbar-none">
+                <div className="mb-5 overflow-x-auto scrollbar-hide">
                   <div className="flex gap-2 pb-1">
                     <span className="flex items-center gap-1.5 text-xs text-muted-foreground whitespace-nowrap pr-1">
                       <Zap size={13} />
@@ -787,7 +790,7 @@ export default function RemindersPage() {
                       placeholder="Title (optional)"
                       value={form.title}
                       onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                      className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition-all"
+                      className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
                     />
                     <div className="relative">
                       <textarea
@@ -796,7 +799,7 @@ export default function RemindersPage() {
                         rows={3}
                         maxLength={MAX_CONTENT}
                         onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                        className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none resize-none transition-all"
+                        className="w-full bg-muted border border-input text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none resize-none transition-all"
                       />
                       <span className={`absolute bottom-2 right-3 text-[10px] ${
                         form.content.length > MAX_CONTENT * 0.9 ? "text-amber-400" : "text-muted-foreground/50"
@@ -813,8 +816,8 @@ export default function RemindersPage() {
                         type="datetime-local"
                         value={form.remindAt}
                         onChange={(e) => setForm((f) => ({ ...f, remindAt: e.target.value }))}
-                        className={`w-full bg-muted border text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500/50 outline-none transition-all ${
-                          futureError ? "border-red-500/50" : "border-input focus:border-indigo-500/50"
+                        className={`w-full bg-muted border text-foreground rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-ring outline-none transition-all ${
+                          futureError ? "border-red-500/50" : "border-input focus:border-transparent"
                         }`}
                       />
                       {futureError && (
@@ -902,7 +905,7 @@ export default function RemindersPage() {
                         placeholder="Search reminders..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-muted border border-input text-foreground rounded-xl pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500/50 outline-none transition-all"
+                        className="w-full bg-muted border border-input text-foreground rounded-xl pl-9 pr-4 py-2 text-sm focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all"
                       />
                       {searchQuery && (
                         <button
@@ -923,25 +926,28 @@ export default function RemindersPage() {
                     </button>
                   </div>
 
-                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-none">
-                    {filters.map((f) => (
-                      <button
-                        key={f.key}
-                        onClick={() => setFilter(f.key)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border whitespace-nowrap transition-all ${
-                          filter === f.key
-                            ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-400"
-                            : "bg-muted/50 border-border text-muted-foreground hover:text-foreground hover:border-border"
-                        }`}
-                      >
-                        {f.label}
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                          filter === f.key ? "bg-indigo-500/20" : "bg-muted"
-                        }`}>
-                          {f.count}
-                        </span>
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: Migrated from custom filter chips with indigo active styling to shared TabBar component
+                        --- Original code (commented out for rollback) ---
+                        {filters.map((f) => (
+                          <button key={f.key} onClick={() => setFilter(f.key)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full border whitespace-nowrap transition-all ${
+                              filter === f.key ? "bg-indigo-500/15 border-indigo-500/30 text-indigo-400"
+                                : "bg-muted/50 border-border text-muted-foreground ..."
+                            }`}>
+                            {f.label}
+                            <span className={...}>{f.count}</span>
+                          </button>
+                        ))}
+                        --- End original code --- */}
+                    <TabBar
+                      tabs={filters.map((f) => ({ key: f.key, label: f.label, count: f.count }))}
+                      active={filter}
+                      onChange={(k) => setFilter(k as FilterType)}
+                      variant="pills"
+                    />
+                    {/* --- END AI-REPLACED --- */}
 
                     {pastOneTimeCount > 0 && (
                       <button
@@ -972,7 +978,11 @@ export default function RemindersPage() {
               <div className="flex gap-5">
                 {/* Timeline */}
                 <div className="flex-1 min-w-0">
-                  {loading ? (
+                  {/* --- AI-REPLACED (2026-03-24) --- */}
+                  {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+                  {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+                  {/* --- Original code (commented out for rollback) --- */}
+                  {/* loading ? (
                     <div className="space-y-3">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="bg-card rounded-xl border border-border border-l-[3px] border-l-muted p-4 animate-pulse">
@@ -984,6 +994,21 @@ export default function RemindersPage() {
                           </div>
                         </div>
                       ))}
+                    </div> */}
+                  {/* --- End original code --- */}
+                  {loading ? (
+                    <div className="space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="bg-card rounded-xl border border-border border-l-[3px] border-l-muted p-4">
+                          <Skeleton className="h-3.5 w-1/4 mb-2" />
+                          <Skeleton className="h-3 w-3/4 mb-3" />
+                          <div className="flex gap-2">
+                            <Skeleton className="h-2.5 w-20" />
+                            <Skeleton className="h-2.5 w-16" />
+                          </div>
+                        </div>
+                      ))}
+                      {/* --- END AI-REPLACED --- */}
                     </div>
                   ) : reminders.length === 0 ? (
                     <EmptyState
@@ -1059,9 +1084,8 @@ export default function RemindersPage() {
                   />
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         <ConfirmModal
           open={deleteTarget !== null}

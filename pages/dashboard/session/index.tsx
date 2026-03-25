@@ -4,11 +4,14 @@
 // Purpose: Live Session page - shows active voice/pomodoro session state,
 //          room members' tasks, user's editable task list, and focus mode entry
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import CountdownRing from "@/components/dashboard/CountdownRing"
-import { toast } from "@/components/dashboard/ui"
+import { toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useDashboard } from "@/hooks/useDashboard"
 import { useStageNotifications } from "@/hooks/useStageNotifications"
@@ -511,10 +514,10 @@ export default function SessionPage() {
   return (
     <Layout SEO={{ title: "Live Session - LionBot", description: "Your active study session" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-6"> */}
+        <DashboardShell nav={<DashboardNav />}>
               {/* --- AI-MODIFIED (2026-03-16) --- */}
               {/* Purpose: session summary overlay when session ends */}
               {isLoading ? (
@@ -556,10 +559,11 @@ export default function SessionPage() {
               ) : (
               /* --- END AI-MODIFIED --- */
                 <>
-                  {/* Session Header */}
-                  {/* --- AI-MODIFIED (2026-03-22) --- */}
-                  {/* Purpose: Add private room name, balance badge, and deposit inline */}
-                  <div className="flex items-start justify-between gap-4 flex-wrap">
+                  {/* --- AI-REPLACED (2026-03-24) --- */}
+                  {/* Reason: Migrated to shared PageHeader component for consistency */}
+                  {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+                  {/* --- Original code (commented out for rollback) --- */}
+                  {/* <div className="flex items-start justify-between gap-4 flex-wrap">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="relative flex h-2.5 w-2.5">
@@ -570,66 +574,88 @@ export default function SessionPage() {
                       </div>
                       <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground">
                         <span>{data.session!.guildName}</span>
-                        {data.privateRoom && (
-                          <>
-                            <span className="text-border">|</span>
-                            <span className="flex items-center gap-1 text-blue-400">
-                              <DoorOpen size={12} /> {data.privateRoom.name || "Private Room"}
-                            </span>
-                          </>
-                        )}
-                        {data.pomodoro && (
-                          <>
-                            <span className="text-border">|</span>
-                            <span>{data.pomodoro.channelName}</span>
-                          </>
-                        )}
-                        <span className="text-border">|</span>
-                        <span className="font-mono tabular-nums">{elapsed}</span>
-                        {data.session!.isCamera && (
-                          <span className="flex items-center gap-1 text-blue-400 text-xs">
-                            <Video size={12} /> Camera
-                          </span>
-                        )}
-                        {data.session!.isStream && (
-                          <span className="flex items-center gap-1 text-purple-400 text-xs">
-                            <MonitorPlay size={12} /> Stream
-                          </span>
-                        )}
+                        ... room, pomodoro, elapsed, camera/stream badges ...
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {data.privateRoom && (
-                        <div className="flex items-center gap-2">
-                          <span className={cn(
-                            "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border",
-                            data.privateRoom.daysRemaining > 7
-                              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                              : data.privateRoom.daysRemaining > 3
-                                ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                                : "bg-red-500/10 text-red-400 border-red-500/20"
-                          )}>
-                            <Coins size={12} /> {data.privateRoom.coinBalance.toLocaleString()}
-                            <span className="text-[10px] opacity-70 ml-0.5">
-                              ({data.privateRoom.daysRemaining}d)
-                            </span>
-                          </span>
-                          <button
-                            onClick={() => setShowRoomDeposit(!showRoomDeposit)}
-                            className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-600/80 text-white hover:bg-amber-500 transition-colors"
-                          >
-                            Deposit
-                          </button>
-                        </div>
-                      )}
-                      <Link href="/dashboard">
-                        <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
-                          onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
-                          <ArrowLeft size={14} /> Overview
-                        </a>
-                      </Link>
+                      ... room balance, deposit, overview link ...
                     </div>
+                  </div> */}
+                  {/* --- End original code --- */}
+                  <PageHeader
+                    title="Live Session"
+                    breadcrumbs={[
+                      { label: "Dashboard", href: "/dashboard" },
+                      { label: "Live Session" },
+                    ]}
+                    actions={
+                      <div className="flex items-center gap-3">
+                        {data.privateRoom && (
+                          <div className="flex items-center gap-2">
+                            <span className={cn(
+                              "flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border",
+                              data.privateRoom.daysRemaining > 7
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                                : data.privateRoom.daysRemaining > 3
+                                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                                  : "bg-red-500/10 text-red-400 border-red-500/20"
+                            )}>
+                              <Coins size={12} /> {data.privateRoom.coinBalance.toLocaleString()}
+                              <span className="text-[10px] opacity-70 ml-0.5">
+                                ({data.privateRoom.daysRemaining}d)
+                              </span>
+                            </span>
+                            <button
+                              onClick={() => setShowRoomDeposit(!showRoomDeposit)}
+                              className="px-2 py-1 rounded-lg text-xs font-medium bg-amber-600/80 text-white hover:bg-amber-500 transition-colors"
+                            >
+                              Deposit
+                            </button>
+                          </div>
+                        )}
+                        <Link href="/dashboard">
+                          <a className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
+                            onClick={() => sessionStorage.setItem("dismissed-session-redirect", "true")}>
+                            <ArrowLeft size={14} /> Overview
+                          </a>
+                        </Link>
+                      </div>
+                    }
+                  />
+                  <div className="flex items-center gap-3 flex-wrap text-sm text-muted-foreground -mt-4">
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                    </span>
+                    <span>{data.session!.guildName}</span>
+                    {data.privateRoom && (
+                      <>
+                        <span className="text-border">|</span>
+                        <span className="flex items-center gap-1 text-blue-400">
+                          <DoorOpen size={12} /> {data.privateRoom.name || "Private Room"}
+                        </span>
+                      </>
+                    )}
+                    {data.pomodoro && (
+                      <>
+                        <span className="text-border">|</span>
+                        <span>{data.pomodoro.channelName}</span>
+                      </>
+                    )}
+                    <span className="text-border">|</span>
+                    <span className="font-mono tabular-nums">{elapsed}</span>
+                    {data.session!.isCamera && (
+                      <span className="flex items-center gap-1 text-blue-400 text-xs">
+                        <Video size={12} /> Camera
+                      </span>
+                    )}
+                    {data.session!.isStream && (
+                      <span className="flex items-center gap-1 text-purple-400 text-xs">
+                        <MonitorPlay size={12} /> Stream
+                      </span>
+                    )}
                   </div>
+                  {/* --- END AI-REPLACED --- */}
                   {/* Room Deposit Panel (inline) */}
                   {data.privateRoom && showRoomDeposit && (
                     <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4 space-y-3">
@@ -637,7 +663,7 @@ export default function SessionPage() {
                         <span className="text-sm font-medium text-amber-300 flex items-center gap-1.5">
                           <Coins size={14} /> Quick Deposit
                         </span>
-                        <button onClick={() => setShowRoomDeposit(false)} className="text-gray-400 hover:text-gray-200">
+                        <button onClick={() => setShowRoomDeposit(false)} className="text-muted-foreground hover:text-foreground">
                           <X size={14} />
                         </button>
                       </div>
@@ -650,7 +676,7 @@ export default function SessionPage() {
                             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/20 transition-colors disabled:opacity-50"
                           >
                             +{d} days
-                            <span className="ml-1 text-gray-500">= {d * data.privateRoom!.rentPrice}</span>
+                            <span className="ml-1 text-muted-foreground">= {d * data.privateRoom!.rentPrice}</span>
                           </button>
                         ))}
                       </div>
@@ -660,7 +686,7 @@ export default function SessionPage() {
                           value={depositAmount}
                           onChange={(e) => setDepositAmount(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleCustomDeposit()}
-                          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+                          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:border-amber-500/50 focus:outline-none"
                         />
                         <button
                           disabled={depositing || !depositAmount || Number(depositAmount) <= 0}
@@ -710,10 +736,10 @@ export default function SessionPage() {
                                 <input type="text" value={roomNameInput} onChange={(e) => setRoomNameInput(e.target.value)}
                                   onKeyDown={(e) => e.key === "Enter" && handleRoomRename()}
                                   maxLength={100} autoFocus
-                                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-blue-500/30 text-gray-200 focus:border-blue-500/50 focus:outline-none" />
+                                  className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-muted border border-blue-500/30 text-foreground focus:border-blue-500/50 focus:outline-none" />
                                 <button disabled={savingRoomName || !roomNameInput.trim()} onClick={handleRoomRename}
                                   className="px-3 py-1.5 text-xs font-medium rounded-lg bg-blue-600 text-white disabled:opacity-50">Save</button>
-                                <button onClick={() => setEditingRoomName(false)} className="text-gray-400 hover:text-gray-200"><X size={14} /></button>
+                                <button onClick={() => setEditingRoomName(false)} className="text-muted-foreground hover:text-foreground"><X size={14} /></button>
                               </div>
                             ) : (
                               <div className="flex items-center gap-2">
@@ -726,14 +752,14 @@ export default function SessionPage() {
 
                           {/* Room Info Badges */}
                           <div className="flex flex-wrap gap-2">
-                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-muted text-muted-foreground border border-border">
                               <Coins size={9} className="inline mr-1" />{data.privateRoom.rentPrice}/day rent
                             </span>
-                            <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                            <span className="px-2 py-1 rounded-md text-[10px] bg-muted text-muted-foreground border border-border">
                               <Users size={9} className="inline mr-1" />{data.privateRoom.memberCount}{roomDetail ? `/${roomDetail.memberCap}` : ""} members
                             </span>
                             {data.privateRoom.createdAt && (
-                              <span className="px-2 py-1 rounded-md text-[10px] bg-gray-800 text-gray-400 border border-gray-700">
+                              <span className="px-2 py-1 rounded-md text-[10px] bg-muted text-muted-foreground border border-border">
                                 <Clock size={9} className="inline mr-1" />Created {Math.floor((Date.now() - new Date(data.privateRoom.createdAt).getTime()) / 86400000)}d ago
                               </span>
                             )}
@@ -778,36 +804,36 @@ export default function SessionPage() {
                                 <div className="space-y-2">
                                   <div className="grid grid-cols-2 gap-2">
                                     <div>
-                                      <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                      <label className="text-[10px] text-muted-foreground block mb-0.5">Focus</label>
                                       <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
-                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        className="w-full px-2 py-1 text-xs rounded bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
                                     </div>
                                     <div>
-                                      <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                      <label className="text-[10px] text-muted-foreground block mb-0.5">Break</label>
                                       <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
-                                        className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                        className="w-full px-2 py-1 text-xs rounded bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
                                     </div>
                                   </div>
-                                  <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                  <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
                                     <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
-                                      className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                      className="rounded border-border bg-muted text-purple-500" />
                                     Auto-restart
                                   </label>
                                   <div className="flex gap-2">
                                     <button onClick={handleTimerCreate} disabled={timerLoading}
                                       className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Create</button>
                                     <button onClick={() => setTimerCreating(false)}
-                                      className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                      className="px-3 py-1 text-xs rounded bg-muted text-foreground hover:bg-accent">Cancel</button>
                                   </div>
                                 </div>
                               ) : data.pomodoro ? (
                                 <div className="space-y-2">
                                   <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                       <span>{Math.floor(data.pomodoro.focusLength / 60)}m / {Math.floor(data.pomodoro.breakLength / 60)}m</span>
                                       <span className={cn("px-1 py-0.5 rounded text-[9px] font-semibold",
                                         data.pomodoro.stage === "stopped"
-                                          ? "bg-gray-700 text-gray-400"
+                                          ? "bg-muted text-muted-foreground"
                                           : "bg-emerald-500/15 text-emerald-400"
                                       )}>{data.pomodoro.stage === "stopped" ? "Stopped" : "Running"}</span>
                                     </div>
@@ -827,7 +853,7 @@ export default function SessionPage() {
                                         setTimerFocus(Math.floor(data.pomodoro!.focusLength / 60))
                                         setTimerBreak(Math.floor(data.pomodoro!.breakLength / 60))
                                         setTimerEditing(!timerEditing)
-                                      }} className="p-1 rounded bg-gray-700 text-gray-300 hover:bg-gray-600" title="Edit">
+                                      }} className="p-1 rounded bg-muted text-foreground hover:bg-accent" title="Edit">
                                         <Pencil size={10} />
                                       </button>
                                       <button onClick={handleTimerDelete} disabled={timerLoading}
@@ -840,26 +866,26 @@ export default function SessionPage() {
                                     <div className="space-y-2 pt-1">
                                       <div className="grid grid-cols-2 gap-2">
                                         <div>
-                                          <label className="text-[10px] text-gray-500 block mb-0.5">Focus</label>
+                                          <label className="text-[10px] text-muted-foreground block mb-0.5">Focus</label>
                                           <input type="number" min={1} max={1440} value={timerFocus} onChange={(e) => setTimerFocus(Number(e.target.value))}
-                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                            className="w-full px-2 py-1 text-xs rounded bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
                                         </div>
                                         <div>
-                                          <label className="text-[10px] text-gray-500 block mb-0.5">Break</label>
+                                          <label className="text-[10px] text-muted-foreground block mb-0.5">Break</label>
                                           <input type="number" min={1} max={1440} value={timerBreak} onChange={(e) => setTimerBreak(Number(e.target.value))}
-                                            className="w-full px-2 py-1 text-xs rounded bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                                            className="w-full px-2 py-1 text-xs rounded bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
                                         </div>
                                       </div>
-                                      <label className="flex items-center gap-1.5 text-[10px] text-gray-400 cursor-pointer">
+                                      <label className="flex items-center gap-1.5 text-[10px] text-muted-foreground cursor-pointer">
                                         <input type="checkbox" checked={timerAutoRestart} onChange={(e) => setTimerAutoRestart(e.target.checked)}
-                                          className="rounded border-gray-600 bg-gray-800 text-purple-500" />
+                                          className="rounded border-border bg-muted text-purple-500" />
                                         Auto-restart
                                       </label>
                                       <div className="flex gap-2">
                                         <button onClick={handleTimerEdit} disabled={timerLoading}
                                           className="px-3 py-1 text-xs rounded bg-purple-600 text-white hover:bg-purple-500 disabled:opacity-50">Save</button>
                                         <button onClick={() => setTimerEditing(false)}
-                                          className="px-3 py-1 text-xs rounded bg-gray-700 text-gray-300 hover:bg-gray-600">Cancel</button>
+                                          className="px-3 py-1 text-xs rounded bg-muted text-foreground hover:bg-accent">Cancel</button>
                                       </div>
                                     </div>
                                   )}
@@ -1123,7 +1149,7 @@ export default function SessionPage() {
                         onChange={(e) => setNewTask(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && addTask()}
                         maxLength={100}
-                        className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/40 transition-shadow"
+                        className="flex-1 bg-card border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring/40 transition-shadow"
                       />
                       <button
                         onClick={addTask}
@@ -1213,9 +1239,8 @@ export default function SessionPage() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

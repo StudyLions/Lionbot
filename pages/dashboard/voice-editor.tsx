@@ -9,7 +9,7 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, SaveBar, toast } from "@/components/dashboard/ui"
+import { EmptyState, SaveBar, toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
@@ -429,16 +429,30 @@ export default function VoiceEditorPage() {
   return (
     <Layout SEO={{ title: "Voice Time Editor - LionBot Dashboard", description: "Add and edit your study sessions" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 max-w-4xl space-y-5">
-              <div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 max-w-4xl space-y-5"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-5">
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div>
                 <h1 className="text-2xl font-bold text-foreground">Voice Time Editor</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
                   Drag blocks to shift time, drag the right edge to resize. Changes are staged locally until you save.
                 </p>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="Voice Time Editor"
+                description="Drag blocks to shift time, drag the right edge to resize. Changes are staged locally until you save."
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "Voice Time Editor" },
+                ]}
+              />
+              {/* --- END AI-REPLACED --- */}
 
               <div className="flex items-start gap-2.5 px-4 py-3 rounded-lg bg-blue-500/5 border border-blue-500/15">
                 <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
@@ -657,9 +671,8 @@ export default function VoiceEditorPage() {
                 saving={saving}
                 label={saveLabel}
               />
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

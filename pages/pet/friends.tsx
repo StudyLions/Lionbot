@@ -6,8 +6,9 @@
 //          block list management
 // ============================================================
 import { useState, useCallback, useMemo } from "react"
+import { relativeTime } from "@/utils/relativeTime"
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -90,16 +91,21 @@ interface FriendsData {
   maxFriends: number
 }
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime()
-  const mins = Math.floor(diff / 60000)
-  if (mins < 1) return "just now"
-  if (mins < 60) return `${mins}m ago`
-  const hours = Math.floor(mins / 60)
-  if (hours < 24) return `${hours}h ago`
-  const days = Math.floor(hours / 24)
-  return `${days}d ago`
-}
+// --- AI-REPLACED (2026-03-24) ---
+// Reason: Replaced local relativeTime with shared version from @/utils/relativeTime (imported at top)
+// --- Original code (commented out for rollback) ---
+// function relativeTime(dateStr: string): string {
+//   const diff = Date.now() - new Date(dateStr).getTime()
+//   const mins = Math.floor(diff / 60000)
+//   if (mins < 1) return "just now"
+//   if (mins < 60) return `${mins}m ago`
+//   const hours = Math.floor(mins / 60)
+//   if (hours < 24) return `${hours}h ago`
+//   const days = Math.floor(hours / 24)
+//   return `${days}d ago`
+// }
+// --- End original code ---
+// --- END AI-REPLACED ---
 
 function avatarUrl(discordId: string, hash?: string | null): string {
   if (hash) return `https://cdn.discordapp.com/avatars/${discordId}/${hash}.png?size=64`
@@ -210,10 +216,16 @@ export default function FriendsPage() {
   return (
     <Layout SEO={{ title: "Friends - LionGotchi", description: "Manage your LionGotchi friends" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
 
               {/* Header */}
               <div>
@@ -551,9 +563,10 @@ export default function FriendsPage() {
                 </PixelCard>
               )}
 
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

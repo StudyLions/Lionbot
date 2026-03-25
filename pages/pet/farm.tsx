@@ -5,7 +5,7 @@
 //          HUD bar, action toolbar, harvest modal, history log
 // ============================================================
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -258,11 +258,16 @@ export default function FarmPage() {
   return (
     <Layout SEO={{ title: "Farm - LionGotchi", description: "Grow plants for Gold" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Farm</h1>
                 <div className="mt-1.5 flex items-center gap-1">
@@ -437,9 +442,10 @@ export default function FarmPage() {
                 </>
                 // --- END AI-MODIFIED ---
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
 
         {harvestResult && (
           <HarvestModal result={harvestResult} onClose={() => setHarvestResult(null)} />

@@ -9,6 +9,7 @@
 // --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import DashboardNav from "@/components/dashboard/DashboardNav"
+import { DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -441,10 +442,10 @@ export default function Dashboard() {
   return (
     <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot study statistics" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-6"> */}
+        <DashboardShell nav={<DashboardNav />}>
               {loading ? (
                 <LoadingSkeleton />
               ) : error ? (
@@ -453,8 +454,11 @@ export default function Dashboard() {
                 </div>
               ) : (
                 <>
-                  {/* Hero Greeting */}
-                  <div className="space-y-1">
+                  {/* --- AI-REPLACED (2026-03-24) --- */}
+                  {/* Reason: Migrated to shared PageHeader component for consistency */}
+                  {/* What the new code does better: Consistent page header styling; personalized greeting kept via dynamic title */}
+                  {/* --- Original code (commented out for rollback) --- */}
+                  {/* <div className="space-y-1">
                     <h1 className="text-2xl font-bold text-foreground">
                       {getGreeting()}, {displayName}!
                     </h1>
@@ -476,7 +480,32 @@ export default function Dashboard() {
                         </span>
                       )}
                     </div>
-                  </div>
+                  </div> */}
+                  {/* --- End original code --- */}
+                  <PageHeader
+                    title={`${getGreeting()}, ${displayName}!`}
+                    description={
+                      stats && stats.studyTime.todayMinutes > 0
+                        ? `You've studied ${formatMinutes(stats.studyTime.todayMinutes)} today`
+                        : "Ready to start studying?"
+                    }
+                    actions={
+                      <div className="flex items-center gap-3 flex-wrap">
+                        {stats && stats.streaks.currentStreak > 0 && (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-500/15 text-orange-400 text-xs font-medium">
+                            <Flame size={12} />
+                            {stats.streaks.currentStreak}-day streak
+                          </span>
+                        )}
+                        {meData?.user.firstSeen && (
+                          <span className="text-xs text-muted-foreground/60">
+                            Member since {new Date(meData.user.firstSeen).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+                          </span>
+                        )}
+                      </div>
+                    }
+                  />
+                  {/* --- END AI-REPLACED --- */}
 
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -844,9 +873,8 @@ export default function Dashboard() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

@@ -10,7 +10,7 @@
 //   richer past listings table with images, improved sales log
 // --- Original code: see git history for pre-redesign version ---
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
@@ -24,6 +24,7 @@ import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import PixelBar from "@/components/pet/ui/PixelBar"
@@ -96,10 +97,16 @@ export default function MyListingsPage() {
   return (
     <Layout SEO={{ title: "My Listings - Marketplace", description: "Manage your marketplace listings" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
 
               <Link href="/pet/marketplace">
                 <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
@@ -143,18 +150,21 @@ export default function MyListingsPage() {
                 </div>
               )}
 
-              {/* Tabs */}
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated inline tab buttons to shared PixelTabBar component */}
+              {/* --- Original code (commented out for rollback) ---
               <div className="flex gap-2">
                 {TABS.map((t) => (
                   <button key={t.key} onClick={() => setTab(t.key)}
                     className={cn("font-pixel text-[12px] px-4 py-2 border-2 transition-all",
-                      tab === t.key
-                        ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
+                      tab === t.key ? "border-[var(--pet-blue,#4080f0)] bg-[#101830] text-[#80b0ff] shadow-[2px_2px_0_#060810]"
                         : "border-[#1a2a3c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#8899aa]")}>
                     {t.label}
                   </button>
                 ))}
               </div>
+              --- End original code --- */}
+              <PixelTabBar tabs={TABS} active={tab} onChange={(k) => setTab(k as DashTab)} />
 
               {isLoading ? (
                 <div className="space-y-2">
@@ -348,9 +358,10 @@ export default function MyListingsPage() {
                 </>
               )}
 
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

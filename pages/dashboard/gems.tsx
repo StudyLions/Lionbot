@@ -19,6 +19,7 @@ import {
   DataTable,
   EmptyState,
   toast,
+  DashboardShell,
 } from "@/components/dashboard/ui"
 import type { Column } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
@@ -128,10 +129,10 @@ export default function GemsPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0"> */}
+        <DashboardShell nav={<DashboardNav />}>
               <PageHeader
                 title="LionGems"
                 description="LionGems are LionBot's premium currency. Use them to unlock custom profile skins and access exclusive cosmetic features."
@@ -257,9 +258,8 @@ export default function GemsPage() {
                   </SectionCard>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

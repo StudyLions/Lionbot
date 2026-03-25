@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Link component for rooms admin panel cross-link
 import Link from "next/link"
@@ -828,17 +832,26 @@ export default function ServerSettings() {
     <Layout SEO={{ title: `Settings - ${config?.name || "Server"} - LionBot`, description: "Server settings" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />
-
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell. Settings page uses 3-column layout
+            (ServerNav + SettingsNav + content), so SettingsNav and content are wrapped
+            in a flex row inside the shell's main area. Uses wide prop for extra space.
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-6xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={...} isAdmin isMod />
+                <SettingsNav sections={navSections} searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={config?.name || "..."} isAdmin isMod />} wide className="!max-w-none !space-y-0">
+            <div className="flex gap-6">
             <SettingsNav
               sections={navSections}
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
             />
-
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Server Settings"
                 description="Configure how LionBot works in your server. Changes are saved when you click Save. Hover over question mark icons for details."
@@ -1395,9 +1408,11 @@ export default function ServerSettings() {
                   ? `${changeDiff.length} change${changeDiff.length !== 1 ? "s" : ""}: ${changeDiff.slice(0, 3).map((d) => `${SETTING_LABELS[d.key] || d.key} ${formatValue(d.from)} → ${formatValue(d.to)}`).join(", ")}${changeDiff.length > 3 ? ` +${changeDiff.length - 3} more` : ""}`
                   : listsHaveChanges ? "List settings changed" : undefined}
               />
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+            </div>{/* end content column */}
+            </div>{/* end flex wrapper for SettingsNav + content */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Preset preview modal */}
         <ConfirmModal

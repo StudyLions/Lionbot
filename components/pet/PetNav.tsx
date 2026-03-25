@@ -20,11 +20,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: Added Lock icon for no-pet nav items
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Added Trophy, Users, Shield icons for Social nav section
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Added GraduationCap icon for Tutorial nav link
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
   Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX, Lock,
-  Trophy, Users, Shield,
+  Trophy, Users, Shield, GraduationCap,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
@@ -56,6 +59,10 @@ const sections: NavSection[] = [
     title: "PET",
     items: [
       { href: "/pet", label: "Overview", icon: <PawPrint size={14} /> },
+      // --- AI-MODIFIED (2026-03-24) ---
+      // Purpose: Tutorial link -- always visible, no requiresPet
+      { href: "/pet/tutorial", label: "Tutorial", icon: <GraduationCap size={14} /> },
+      // --- END AI-MODIFIED ---
       { href: "/pet/room", label: "Room", icon: <Home size={14} />, requiresPet: true },
       { href: "/pet/inventory", label: "Inventory", icon: <Package size={14} />, requiresPet: true },
       { href: "/pet/skins", label: "Skins", icon: <Palette size={14} />, requiresPet: true },
@@ -224,7 +231,10 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
         {sections.map((section) => (
           <div key={section.title} className="mb-3">
             <div className="flex items-center gap-2 px-3 py-1.5">
-              <span className="font-pixel text-[12px] text-[#4a5a70] tracking-widest">{section.title}</span>
+              {/* --- AI-MODIFIED (2026-03-24) --- */}
+              {/* Purpose: Improved contrast for section labels */}
+              <span className="font-pixel text-[12px] text-[var(--pet-text-dim,#7a8a9a)] tracking-widest">{section.title}</span>
+              {/* --- END AI-MODIFIED --- */}
               <div className="flex-1 h-px bg-[var(--pet-border,#2a3a5c)]" />
             </div>
             <div>
@@ -271,6 +281,7 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
               ? "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438]"
               : "border-l-transparent text-[#4a5568] hover:text-[#8899aa] hover:bg-[#1a2438]"
           )}
+          aria-label={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
           title={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
         >
           <span className="opacity-70">
@@ -298,9 +309,9 @@ export default function PetNav({ hasPet = true }: { hasPet?: boolean }) {
         <NavContent hasPet={hasPet} />
       </nav>
 
-      {/* --- AI-MODIFIED (2026-03-21) --- */}
-      {/* Purpose: Minimum 44px touch target for hamburger button */}
-      <div className="fixed top-16 left-4 z-40 lg:hidden">
+      {/* --- AI-MODIFIED (2026-03-24) --- */}
+      {/* Purpose: Standardize mobile trigger to z-50 + minimum 44px touch target */}
+      <div className="fixed top-16 left-4 z-50 lg:hidden">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button variant="outline" size="icon" className="bg-[var(--pet-card,#0f1628)] border-2 border-[var(--pet-border,#2a3a5c)] shadow-[2px_2px_0_#060810] min-w-[44px] min-h-[44px]">

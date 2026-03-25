@@ -10,7 +10,13 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
+import SearchInput from "@/components/dashboard/ui/SearchInput"
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
+import Pagination from "@/components/dashboard/ui/Pagination"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
 import { ResolveModal } from "@/components/dashboard/MemberActionModals"
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
@@ -19,7 +25,7 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useEffect } from "react"
 import {
   Shield, AlertTriangle, Ban, FileText, CheckCircle2, TrendingUp,
-  ChevronDown, ChevronRight, Search, ChevronLeft, Clock, Users,
+  ChevronDown, ChevronRight, Search, Clock, Users,
   Info,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
@@ -193,7 +199,19 @@ export default function ModerationPage() {
     invalidate(`/api/dashboard/servers/${id}/moderation-stats`)
   }, [ticketsKey, id])
 
-  const handleSearch = () => { setSearch(searchInput); setCurrentPage(1) }
+  // --- AI-REPLACED (2026-03-24) ---
+  // Reason: Enter-key search removed with SearchInput migration; debounce replaces it
+  // --- Original code (commented out for rollback) ---
+  // const handleSearch = () => { setSearch(searchInput); setCurrentPage(1) }
+  // --- End original code ---
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearch(searchInput)
+      setCurrentPage(1)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [searchInput])
+  // --- END AI-REPLACED ---
 
   const toggleSelect = (ticketId: number) => {
     setSelectedIds((prev) => {
@@ -227,10 +245,15 @@ export default function ModerationPage() {
     <Layout SEO={{ title: `Moderation - ${serverName} - LionBot`, description: "Moderation command center" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="moderator">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />
-            <div className="flex-1 min-w-0 space-y-6">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-6xl mx-auto flex gap-8">
+                <ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={...} />
+                <div className="flex-1 min-w-0 space-y-6">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={id as string} serverName={serverName} isAdmin={isAdmin} isMod={(permsData as any)?.isModerator} />}>
               <PageHeader
                 title="Moderation"
                 description="LionBot moderation records and activity overview. These are bot records, not Discord moderation."
@@ -286,23 +309,25 @@ export default function ModerationPage() {
 
               {/* Filters + Search */}
               <div className="flex items-center gap-3 flex-wrap">
-                <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1) }} className="appearance-none px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+                <select value={filterType} onChange={(e) => { setFilterType(e.target.value); setCurrentPage(1) }} className="appearance-none px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer">
                   {TYPE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
-                <select value={filterState} onChange={(e) => { setFilterState(e.target.value); setCurrentPage(1) }} className="appearance-none px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer">
+                <select value={filterState} onChange={(e) => { setFilterState(e.target.value); setCurrentPage(1) }} className="appearance-none px-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring cursor-pointer">
                   {STATE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                 </select>
-                <div className="relative flex-1 min-w-[180px] max-w-xs">
-                  <input
-                    type="text"
-                    placeholder="Search member name or ID..."
-                    value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                </div>
+                {/* --- AI-REPLACED (2026-03-24) ---
+                    Reason: Replaced custom search input with shared SearchInput component
+                    --- Original code (commented out for rollback) ---
+                    <div className="relative flex-1 min-w-[180px] max-w-xs">
+                      <input type="text" placeholder="Search member name or ID..." value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                        className="w-full pl-9 pr-3 py-2 bg-card border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring" />
+                      <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    </div>
+                    --- End original code --- */}
+                <SearchInput value={searchInput} onChange={setSearchInput} placeholder="Search member name or ID..." className="flex-1 min-w-[180px] max-w-xs" />
+                {/* --- END AI-REPLACED --- */}
                 {selectedIds.size > 0 && (
                   <button
                     onClick={() => setResolveTarget(Array.from(selectedIds))}
@@ -438,22 +463,30 @@ export default function ModerationPage() {
               )}
 
               {/* Pagination */}
-              {!loading && pagination && pagination.totalPages > 1 && (
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <span>Page {pagination.page} of {pagination.totalPages} ({pagination.total} records)</span>
-                  <div className="flex gap-2">
-                    <button onClick={() => setCurrentPage((p) => p - 1)} disabled={pagination.page <= 1} className="px-3 py-1.5 bg-card border border-border rounded-lg text-sm hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1">
-                      <ChevronLeft size={14} /> Previous
-                    </button>
-                    <button onClick={() => setCurrentPage((p) => p + 1)} disabled={pagination.page >= pagination.totalPages} className="px-3 py-1.5 bg-card border border-border rounded-lg text-sm hover:bg-accent disabled:opacity-30 disabled:cursor-not-allowed transition-colors flex items-center gap-1">
-                      Next <ChevronRight size={14} />
-                    </button>
-                  </div>
-                </div>
+              {/* --- AI-REPLACED (2026-03-24) ---
+                  Reason: Replaced custom Prev/Next pagination with shared Pagination component
+                  --- Original code (commented out for rollback) ---
+                  {!loading && pagination && pagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between text-sm text-muted-foreground">
+                      <span>Page {pagination.page} of {pagination.totalPages} ({pagination.total} records)</span>
+                      <div className="flex gap-2">
+                        <button onClick={() => setCurrentPage((p) => p - 1)} ...>
+                          <ChevronLeft size={14} /> Previous
+                        </button>
+                        <button onClick={() => setCurrentPage((p) => p + 1)} ...>
+                          Next <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  --- End original code --- */}
+              {!loading && pagination && (
+                <Pagination page={pagination.page} totalPages={pagination.totalPages} onChange={setCurrentPage} showLabel />
               )}
-            </div>
-          </div>
-        </div>
+              {/* --- END AI-REPLACED --- */}
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Member Detail Panel */}
         <MemberDetailPanel

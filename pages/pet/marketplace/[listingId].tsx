@@ -6,7 +6,7 @@
 //          price history chart, and other listings comparison.
 // ============================================================
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
@@ -158,10 +158,16 @@ export default function ListingDetailPage() {
   return (
     <Layout SEO={{ title: listing ? `${listing.item.name} - Marketplace` : "Listing Detail", description: "Marketplace listing detail" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-5">
+        --- End original code --- */}
+        <PetShell className="space-y-5">
+        {/* --- END AI-REPLACED --- */}
 
               <Link href="/pet/marketplace">
                 <a className="font-pixel text-[13px] text-[#4a5a70] hover:text-[#8899aa] transition-colors inline-flex items-center gap-1.5">
@@ -457,9 +463,10 @@ export default function ListingDetailPage() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

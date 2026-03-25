@@ -8,15 +8,18 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Layout from "@/components/Layout/Layout"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import { PageHeader } from "@/components/dashboard/ui"
+import SearchInput from "@/components/dashboard/ui/SearchInput"
+import { PageHeader, DashboardShell } from "@/components/dashboard/ui"
+import Pagination from "@/components/dashboard/ui/Pagination"
 import { Skeleton } from "@/components/ui/skeleton"
 import EmptyState from "@/components/dashboard/ui/EmptyState"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import {
   Trophy, Clock, MessageSquare, Coins, Search,
-  ChevronLeft, ChevronRight, ChevronDown, Users,
+  ChevronDown, Users,
   Crown, Medal, Award, ArrowRight, Loader2, CalendarRange,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
@@ -363,27 +366,23 @@ function LeaderboardTable({
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
-          <button
-            onClick={() => onPageChange(page - 1)}
-            disabled={page <= 1}
-            className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <span className="text-sm text-muted-foreground px-3">
-            Page {page} of {totalPages}
-          </span>
-          <button
-            onClick={() => onPageChange(page + 1)}
-            disabled={page >= totalPages}
-            className="p-2 rounded-lg hover:bg-muted/50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-      )}
+      {/* --- AI-REPLACED (2026-03-24) ---
+          Reason: Replaced custom leaderboard table pagination with shared Pagination component
+          --- Original code (commented out for rollback) ---
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 py-4 border-t border-border">
+              <button onClick={() => onPageChange(page - 1)} disabled={page <= 1} ...>
+                <ChevronLeft size={18} />
+              </button>
+              <span>Page {page} of {totalPages}</span>
+              <button onClick={() => onPageChange(page + 1)} disabled={page >= totalPages} ...>
+                <ChevronRight size={18} />
+              </button>
+            </div>
+          )}
+          --- End original code --- */}
+      <Pagination page={page} totalPages={totalPages} onChange={onPageChange} showLabel className="py-4 border-t border-border" />
+      {/* --- END AI-REPLACED --- */}
     </div>
   )
 }
@@ -473,10 +472,10 @@ export default function LeaderboardPage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-5">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-5"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-5">
               <PageHeader
                 title="Leaderboard"
                 description="See who's on top across your servers"
@@ -506,26 +505,29 @@ export default function LeaderboardPage() {
                     />
 
                     {/* Type Tabs */}
-                    <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/40 w-fit">
-                      {TYPE_OPTIONS.map((opt) => {
-                        const Icon = opt.icon
-                        return (
-                          <button
-                            key={opt.value}
-                            onClick={() => setType(opt.value)}
-                            className={cn(
-                              "flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all",
-                              type === opt.value
-                                ? "bg-card text-foreground shadow-sm"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            <Icon size={15} />
-                            <span className="hidden sm:inline" title={opt.label}>{opt.label}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
+                    {/* --- AI-REPLACED (2026-03-24) ---
+                        Reason: Migrated from custom type tabs to shared TabBar component
+                        --- Original code (commented out for rollback) ---
+                        <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/40 w-fit">
+                          {TYPE_OPTIONS.map((opt) => {
+                            const Icon = opt.icon
+                            return (
+                              <button key={opt.value} onClick={() => setType(opt.value)}
+                                className={cn("flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all", ...)}>
+                                <Icon size={15} />
+                                <span className="hidden sm:inline">{opt.label}</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                        --- End original code --- */}
+                    <TabBar
+                      tabs={TYPE_OPTIONS.map((opt) => ({ key: opt.value, label: opt.label }))}
+                      active={type}
+                      onChange={(k) => setType(k as LBType)}
+                      variant="pills"
+                    />
+                    {/* --- END AI-REPLACED --- */}
 
                     {/* Period Filter + Search Row */}
                     {/* --- AI-MODIFIED (2026-03-21) --- */}
@@ -534,21 +536,24 @@ export default function LeaderboardPage() {
                     {/* --- END AI-MODIFIED --- */}
                       {type !== "coins" && (
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          {visiblePeriods.map((opt) => (
-                            <button
-                              key={opt.value}
-                              onClick={() => setPeriod(opt.value)}
-                              className={cn(
-                                "px-3 py-1.5 rounded-full text-xs font-medium transition-all",
-                                period === opt.value
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted"
-                              )}
-                            >
-                              {opt.value === "custom" && <CalendarRange size={12} className="inline mr-1 -mt-0.5" />}
-                              {opt.label}
-                            </button>
-                          ))}
+                          {/* --- AI-REPLACED (2026-03-24) ---
+                              Reason: Migrated period filter from custom pills to shared TabBar component
+                              --- Original code (commented out for rollback) ---
+                              {visiblePeriods.map((opt) => (
+                                <button key={opt.value} onClick={() => setPeriod(opt.value)}
+                                  className={cn("px-3 py-1.5 rounded-full text-xs font-medium transition-all", ...)}>
+                                  {opt.value === "custom" && <CalendarRange size={12} className="inline mr-1 -mt-0.5" />}
+                                  {opt.label}
+                                </button>
+                              ))}
+                              --- End original code --- */}
+                          <TabBar
+                            tabs={visiblePeriods.map((opt) => ({ key: opt.value, label: opt.label }))}
+                            active={period}
+                            onChange={(k) => setPeriod(k as LBPeriod)}
+                            variant="pills"
+                          />
+                          {/* --- END AI-REPLACED --- */}
                           {/* --- AI-MODIFIED (2026-03-15) --- */}
                           {/* Purpose: date range picker for custom period */}
                           {period === "custom" && (
@@ -557,7 +562,7 @@ export default function LeaderboardPage() {
                                 type="date"
                                 value={customFrom}
                                 onChange={(e) => setCustomFrom(e.target.value)}
-                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50"
                               />
                               <span className="text-xs text-muted-foreground">to</span>
                               <input
@@ -565,26 +570,25 @@ export default function LeaderboardPage() {
                                 value={customTo}
                                 onChange={(e) => setCustomTo(e.target.value)}
                                 min={customFrom || undefined}
-                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-primary/50"
+                                className="px-2 py-1 text-xs rounded-md bg-muted/40 border border-border text-foreground focus:outline-none focus:ring-1 focus:ring-ring/50"
                               />
                             </div>
                           )}
                           {/* --- END AI-MODIFIED --- */}
                         </div>
                       )}
-                      <div className="relative">
-                        <Search
-                          size={14}
-                          className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                        />
-                        <input
-                          type="text"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="Search members..."
-                          className="pl-8 pr-3 py-1.5 text-sm rounded-lg bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/50 w-48 sm:w-40"
-                        />
-                      </div>
+                      {/* --- AI-REPLACED (2026-03-24) ---
+                          Reason: Replaced custom search input with shared SearchInput component
+                          --- Original code (commented out for rollback) ---
+                          <div className="relative">
+                            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                              placeholder="Search members..."
+                              className="pl-8 pr-3 py-1.5 text-sm rounded-lg bg-muted/40 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring/50 w-48 sm:w-40" />
+                          </div>
+                          --- End original code --- */}
+                      <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search members..." className="w-48 sm:w-40" />
+                      {/* --- END AI-REPLACED --- */}
                     </div>
                   </div>
 
@@ -749,9 +753,8 @@ export default function LeaderboardPage() {
                   </div>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

@@ -8,6 +8,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import { PageHeader, SectionCard, SettingRow, Toggle, NumberInput, SaveBar, toast } from "@/components/dashboard/ui"
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
@@ -97,10 +101,16 @@ export default function VoiceTimeEditorAdminPage() {
     <Layout SEO={{ title: `Voice Time Editor - ${serverName} - LionBot`, description: "Configure Voice Time Editor" }}>
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-6xl mx-auto flex gap-8">
-              <ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />
-              <div className="flex-1 min-w-0 max-w-4xl space-y-6">
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate to DashboardShell for consistent layout (removes double max-w-4xl nesting)
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-6xl mx-auto flex gap-8">
+                  <ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />
+                  <div className="flex-1 min-w-0 max-w-4xl space-y-6">
+              --- End original code --- */}
+          <DashboardShell nav={<ServerNav serverId={serverId} serverName={serverName} isAdmin isMod />}>
+          {/* --- END AI-REPLACED --- */}
 
                   <PageHeader
                     title="Voice Time Editor"
@@ -165,7 +175,7 @@ export default function VoiceTimeEditorAdminPage() {
                               type="date"
                               value={untilDate}
                               onChange={e => { setUntilDate(e.target.value); setHasChanges(true) }}
-                              className="bg-muted/30 border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                              className="bg-muted/30 border border-border rounded-lg px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                             />
                             {untilDate && (
                               <button
@@ -216,9 +226,9 @@ export default function VoiceTimeEditorAdminPage() {
                       />
                     </>
                   )}
-                </div>
-              </div>
-            </div>
+          {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
         </ServerGuard>
       </AdminGuard>
     </Layout>

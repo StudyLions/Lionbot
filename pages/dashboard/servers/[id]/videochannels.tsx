@@ -7,6 +7,12 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Removed unused Badge import (dead code cleanup)
 import {
   PageHeader,
   SectionCard,
@@ -14,11 +20,11 @@ import {
   ChannelSelect,
   RoleSelect,
   NumberInput,
-  Badge,
   FirstTimeBanner,
   SaveBar,
   toast,
 } from "@/components/dashboard/ui"
+// --- END AI-MODIFIED ---
 import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
@@ -123,10 +129,16 @@ export default function VideoChannelsPage() {
     >
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-5xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-5xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Video Channels"
                 description="Configure which voice channels require members to have their camera on. Members without camera get a grace period before being disconnected. Exempt roles skip this requirement."
@@ -252,7 +264,7 @@ export default function VideoChannelsPage() {
                                   updated[i] = { ...updated[i], duration: val }
                                   set({ studybanDurations: updated })
                                 }}
-                                className="w-20 bg-card border border-border text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                className="w-20 bg-card border border-border text-white rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                                 min={1}
                               />
                               <span className="text-muted-foreground text-xs">s</span>
@@ -298,9 +310,9 @@ export default function VideoChannelsPage() {
                 onReset={handleReset}
                 saving={saving}
               />
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </ServerGuard>
       </AdminGuard>
     </Layout>

@@ -7,14 +7,14 @@
 // ============================================================
 import { useState, useEffect } from "react"
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import { cn } from "@/lib/utils"
 import PixelCard from "@/components/pet/ui/PixelCard"
-import PixelButton from "@/components/pet/ui/PixelButton"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import MiniGameboy from "@/components/pet/social/MiniGameboy"
 import PetProfileCard from "@/components/pet/social/PetProfileCard"
@@ -334,10 +334,16 @@ export default function PetLeaderboard() {
   return (
     <Layout SEO={{ title: "Leaderboard - LionGotchi", description: "LionGotchi pet leaderboard" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               {/* Header */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Leaderboard</h1>
@@ -351,40 +357,36 @@ export default function PetLeaderboard() {
                 </p>
               </div>
 
-              {/* Category tabs */}
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated PixelButton category tabs to shared PixelTabBar component */}
+              {/* --- Original code (commented out for rollback) ---
               <div className="flex flex-wrap gap-2">
                 {CATEGORIES.map((c) => (
-                  <PixelButton
-                    key={c.key}
-                    variant={category === c.key ? "gold" : "ghost"}
-                    size="sm"
-                    onClick={() => setCategory(c.key)}
-                  >
-                    {c.label}
-                  </PixelButton>
+                  <PixelButton key={c.key} variant={category === c.key ? "gold" : "ghost"} size="sm"
+                    onClick={() => setCategory(c.key)}>{c.label}</PixelButton>
                 ))}
               </div>
+              --- End original code --- */}
+              <PixelTabBar tabs={CATEGORIES} active={category} onChange={(k) => setCategory(k as Category)} />
 
-              {/* Timeframe toggle (hidden on family tab) */}
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated timeframe button strip to shared PixelTabBar component */}
+              {/* --- Original code (commented out for rollback) ---
               {!isFamily && (
                 <div className="flex gap-1.5">
                   {TIMEFRAMES.map((t) => (
-                    <button
-                      key={t.key}
-                      onClick={() => setTimeframe(t.key)}
-                      className={cn(
-                        "font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
-                        "shadow-[1px_1px_0_#060810]",
-                        "hover:translate-x-px hover:translate-y-px hover:shadow-none",
-                        timeframe === t.key
-                          ? "border-[var(--pet-gold,#f0c040)] bg-[var(--pet-gold,#f0c040)]/15 text-[var(--pet-gold,#f0c040)]"
+                    <button key={t.key} onClick={() => setTimeframe(t.key)}
+                      className={cn("font-pixel text-[12px] px-3 py-1.5 border-2 transition-all",
+                        "shadow-[1px_1px_0_#060810]", "hover:translate-x-px hover:translate-y-px hover:shadow-none",
+                        timeframe === t.key ? "border-[var(--pet-gold,#f0c040)] bg-[var(--pet-gold,#f0c040)]/15 text-[var(--pet-gold,#f0c040)]"
                           : "border-[var(--pet-border,#2a3a5c)] bg-transparent text-[#8899aa] hover:text-[#c0d0e0]"
-                      )}
-                    >
-                      {t.label}
-                    </button>
+                      )}>{t.label}</button>
                   ))}
                 </div>
+              )}
+              --- End original code --- */}
+              {!isFamily && (
+                <PixelTabBar tabs={TIMEFRAMES} active={timeframe} onChange={(k) => setTimeframe(k as Timeframe)} />
               )}
 
               {/* --- AI-MODIFIED (2026-03-22) --- */}
@@ -459,9 +461,10 @@ export default function PetLeaderboard() {
                   </div>
                 </div>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

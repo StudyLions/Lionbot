@@ -5,10 +5,13 @@
 //          with health bars, deposit presets, study leaderboard, activity feed,
 //          rename (owner), expired rooms history, and educational empty state
 // ============================================================
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Migrated hardcoded gray-* Tailwind colors to semantic design tokens
+// --- END AI-MODIFIED ---
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { toast } from "@/components/dashboard/ui"
+import { toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useMemo } from "react"
@@ -145,7 +148,7 @@ function HealthBar({ daysRemaining, rentPrice }: { daysRemaining: number; rentPr
         )}>
           {daysRemaining <= 0 ? "Expires next tick!" : `${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining`}
         </span>
-        <span className="text-gray-500">{rentPrice}/day</span>
+        <span className="text-muted-foreground">{rentPrice}/day</span>
       </div>
       <div className={cn("h-2 rounded-full overflow-hidden", bgColor)}>
         <div className={cn("h-full rounded-full transition-all duration-500", color)} style={{ width: `${pct}%` }} />
@@ -183,7 +186,7 @@ function DepositPanel({
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+      <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
         <Coins size={14} className="text-amber-400" /> Deposit Coins
       </h4>
       <div className="flex flex-wrap gap-2">
@@ -195,7 +198,7 @@ function DepositPanel({
             className="px-3 py-1.5 text-xs font-medium rounded-lg bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 border border-amber-500/20 transition-colors disabled:opacity-50"
           >
             {p.label}
-            <span className="ml-1 text-gray-500">= {p.days * rentPrice}</span>
+            <span className="ml-1 text-muted-foreground">= {p.days * rentPrice}</span>
           </button>
         ))}
       </div>
@@ -206,7 +209,7 @@ function DepositPanel({
           placeholder="Custom amount"
           value={customAmount}
           onChange={(e) => setCustomAmount(e.target.value)}
-          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 placeholder-gray-500 focus:border-amber-500/50 focus:outline-none"
+          className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground placeholder:text-muted-foreground focus:border-amber-500/50 focus:outline-none"
         />
         <button
           disabled={loading || !customAmount || Number(customAmount) <= 0}
@@ -246,7 +249,7 @@ function RenamePanel({ channelId, currentName, onRename }: {
     return (
       <button
         onClick={() => setEditing(true)}
-        className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
       >
         <Pencil size={12} /> Rename Room
       </button>
@@ -259,14 +262,14 @@ function RenamePanel({ channelId, currentName, onRename }: {
         value={name}
         onChange={(e) => setName(e.target.value)}
         maxLength={100}
-        className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:border-blue-500/50 focus:outline-none"
+        className="flex-1 px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground focus:border-blue-500/50 focus:outline-none"
         autoFocus
         onKeyDown={(e) => e.key === "Enter" && save()}
       />
-      <button onClick={save} disabled={loading} className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50">
+      <button onClick={save} disabled={loading} className="p-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50">
         <Check size={14} />
       </button>
-      <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600">
+      <button onClick={() => setEditing(false)} className="p-1.5 rounded-lg bg-muted text-foreground hover:bg-accent">
         <X size={14} />
       </button>
     </div>
@@ -279,30 +282,30 @@ function StudyLeaderboard({ members }: { members: RoomMember[] }) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+      <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
         <Trophy size={14} className="text-amber-400" /> Study Leaderboard
       </h4>
       <div className="space-y-1">
         {sorted.map((m, i) => (
-          <div key={m.userId} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-gray-800/50">
+          <div key={m.userId} className="flex items-center gap-3 px-3 py-2 rounded-lg bg-card/50">
             <span className={cn(
               "w-5 text-center text-xs font-bold",
-              i === 0 ? "text-amber-400" : i === 1 ? "text-gray-300" : i === 2 ? "text-orange-400" : "text-gray-500"
+              i === 0 ? "text-amber-400" : i === 1 ? "text-foreground" : i === 2 ? "text-orange-400" : "text-muted-foreground"
             )}>
               {i + 1}
             </span>
             {m.avatarUrl ? (
               <img src={m.avatarUrl} alt="" className="w-6 h-6 rounded-full" />
             ) : (
-              <div className="w-6 h-6 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-gray-400">
+              <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
                 {m.displayName.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="flex-1 text-sm text-gray-200 truncate">
+            <span className="flex-1 text-sm text-foreground truncate">
               {m.displayName}
               {m.isOwner && <Crown size={12} className="inline ml-1 text-amber-400" />}
             </span>
-            <span className="text-xs text-gray-400 font-mono">{formatDuration(m.totalStudySeconds)}</span>
+            <span className="text-xs text-muted-foreground font-mono">{formatDuration(m.totalStudySeconds)}</span>
           </div>
         ))}
       </div>
@@ -315,18 +318,18 @@ function ActivityFeed({ entries }: { entries: ActivityEntry[] }) {
 
   return (
     <div className="space-y-2">
-      <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+      <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
         <Activity size={14} className="text-blue-400" /> Recent Activity
       </h4>
       <div className="max-h-48 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
         {entries.map((e, i) => (
-          <div key={i} className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-gray-800/30 text-xs">
-            <span className="text-gray-500 whitespace-nowrap">
+          <div key={i} className="flex items-start gap-2 px-3 py-1.5 rounded-lg bg-card/50 text-xs">
+            <span className="text-muted-foreground whitespace-nowrap">
               {new Date(e.timestamp).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
             </span>
-            <span className="text-gray-300">
+            <span className="text-foreground">
               <span className="font-medium">{e.displayName}</span> studied for {formatDuration(e.durationSeconds)}
-              {e.tag && <span className="text-gray-500 ml-1">({e.tag})</span>}
+              {e.tag && <span className="text-muted-foreground ml-1">({e.tag})</span>}
             </span>
           </div>
         ))}
@@ -411,7 +414,7 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
   if (!timer && !creating) {
     return (
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+        <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <Timer size={14} className="text-purple-400" /> Pomodoro Timer
         </h4>
         {isOwner ? (
@@ -422,7 +425,7 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
             <Plus size={12} /> Add Timer
           </button>
         ) : (
-          <p className="text-xs text-gray-500">No timer configured for this room</p>
+          <p className="text-xs text-muted-foreground">No timer configured for this room</p>
         )}
       </div>
     )
@@ -431,24 +434,24 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
   if (creating) {
     return (
       <div className="space-y-3">
-        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+        <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <Timer size={14} className="text-purple-400" /> Create Timer
         </h4>
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Focus (min)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Focus (min)</label>
             <input type="number" min={1} max={1440} value={focus} onChange={(e) => setFocus(Number(e.target.value))}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+              className="w-full px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
           </div>
           <div>
-            <label className="text-xs text-gray-500 mb-1 block">Break (min)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">Break (min)</label>
             <input type="number" min={1} max={1440} value={brk} onChange={(e) => setBrk(Number(e.target.value))}
-              className="w-full px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+              className="w-full px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
           </div>
         </div>
-        <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+        <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
           <input type="checkbox" checked={autoRestart} onChange={(e) => setAutoRestart(e.target.checked)}
-            className="rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500/30" />
+            className="rounded border-border bg-muted text-purple-500 focus:ring-purple-500/30" />
           Auto-restart after break
         </label>
         <div className="flex gap-2">
@@ -457,7 +460,7 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
             Create
           </button>
           <button onClick={() => setCreating(false)}
-            className="px-4 py-1.5 text-sm font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">
+            className="px-4 py-1.5 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-accent transition-colors">
             Cancel
           </button>
         </div>
@@ -468,11 +471,11 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+        <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <Timer size={14} className="text-purple-400" /> Pomodoro Timer
           <span className={cn(
             "px-1.5 py-0.5 rounded text-[10px] font-semibold",
-            timer!.isRunning ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "bg-gray-700 text-gray-400"
+            timer!.isRunning ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20" : "bg-muted text-muted-foreground"
           )}>
             {timer!.isRunning ? "Running" : "Stopped"}
           </span>
@@ -491,7 +494,7 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
               </button>
             )}
             <button onClick={() => { setFocus(timer!.focusMinutes); setBrk(timer!.breakMinutes); setAutoRestart(timer!.autoRestart); setEditing(!editing) }}
-              className="p-1.5 rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors" title="Edit">
+              className="p-1.5 rounded-lg bg-muted text-foreground hover:bg-accent transition-colors" title="Edit">
               <Pencil size={12} />
             </button>
             <button onClick={handleDelete} disabled={loading}
@@ -503,28 +506,28 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
       </div>
 
       {!editing ? (
-        <div className="flex gap-4 text-xs text-gray-400">
-          <span>Focus: <span className="text-gray-200">{timer!.focusMinutes}min</span></span>
-          <span>Break: <span className="text-gray-200">{timer!.breakMinutes}min</span></span>
+        <div className="flex gap-4 text-xs text-muted-foreground">
+          <span>Focus: <span className="text-foreground">{timer!.focusMinutes}min</span></span>
+          <span>Break: <span className="text-foreground">{timer!.breakMinutes}min</span></span>
           {timer!.autoRestart && <span className="text-purple-400">Auto-restart</span>}
         </div>
       ) : (
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Focus (min)</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Focus (min)</label>
               <input type="number" min={1} max={1440} value={focus} onChange={(e) => setFocus(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                className="w-full px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Break (min)</label>
+              <label className="text-xs text-muted-foreground mb-1 block">Break (min)</label>
               <input type="number" min={1} max={1440} value={brk} onChange={(e) => setBrk(Number(e.target.value))}
-                className="w-full px-3 py-1.5 text-sm rounded-lg bg-gray-800 border border-gray-700 text-gray-200 focus:border-purple-500/50 focus:outline-none" />
+                className="w-full px-3 py-1.5 text-sm rounded-lg bg-muted border border-border text-foreground focus:border-purple-500/50 focus:outline-none" />
             </div>
           </div>
-          <label className="flex items-center gap-2 text-xs text-gray-400 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
             <input type="checkbox" checked={autoRestart} onChange={(e) => setAutoRestart(e.target.checked)}
-              className="rounded border-gray-600 bg-gray-800 text-purple-500 focus:ring-purple-500/30" />
+              className="rounded border-border bg-muted text-purple-500 focus:ring-purple-500/30" />
             Auto-restart after break
           </label>
           <div className="flex gap-2">
@@ -533,7 +536,7 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
               Save
             </button>
             <button onClick={() => setEditing(false)}
-              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-gray-700 text-gray-300 hover:bg-gray-600 transition-colors">
+              className="px-4 py-1.5 text-sm font-medium rounded-lg bg-muted text-foreground hover:bg-accent transition-colors">
               Cancel
             </button>
           </div>
@@ -559,10 +562,10 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
 
   if (isLoading) {
     return (
-      <div className="mt-2 p-4 rounded-xl bg-gray-800/60 border border-gray-700/50 animate-pulse">
-        <div className="h-4 bg-gray-700 rounded w-1/3 mb-3" />
-        <div className="h-3 bg-gray-700 rounded w-1/2 mb-2" />
-        <div className="h-3 bg-gray-700 rounded w-2/5" />
+      <div className="mt-2 p-4 rounded-xl bg-card/50 border border-border/50 animate-pulse">
+        <div className="h-4 bg-muted rounded w-1/3 mb-3" />
+        <div className="h-3 bg-muted rounded w-1/2 mb-2" />
+        <div className="h-3 bg-muted rounded w-2/5" />
       </div>
     )
   }
@@ -570,10 +573,10 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
   if (!data) return null
 
   return (
-    <div className="mt-2 p-4 rounded-xl bg-gray-800/60 border border-gray-700/50 space-y-5">
+    <div className="mt-2 p-4 rounded-xl bg-card/50 border border-border/50 space-y-5">
       <div className="flex items-start justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-xs text-gray-500">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Calendar size={12} /> Created {formatDate(data.createdAt)}
             <span className="mx-1">|</span>
             <Clock size={12} /> Next rent {formatRelative(data.nextTick)}
@@ -582,7 +585,7 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
             <RenamePanel channelId={channelId} currentName={data.name} onRename={handleMutate} />
           )}
         </div>
-        <button onClick={onClose} className="p-1 rounded hover:bg-gray-700 text-gray-400">
+        <button onClick={onClose} className="p-1 rounded hover:bg-muted text-muted-foreground">
           <X size={16} />
         </button>
       </div>
@@ -595,20 +598,20 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
       {/* --- END AI-MODIFIED --- */}
 
       <div className="space-y-2">
-        <h4 className="text-sm font-medium text-gray-300 flex items-center gap-1.5">
+        <h4 className="text-sm font-medium text-foreground flex items-center gap-1.5">
           <Users size={14} className="text-blue-400" /> Members ({data.members.length}/{data.memberCap})
         </h4>
         <div className="flex flex-wrap gap-2">
           {data.members.map((m) => (
-            <div key={m.userId} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-800/80 text-xs">
+            <div key={m.userId} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-card/50 text-xs">
               {m.avatarUrl ? (
                 <img src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full" />
               ) : (
-                <div className="w-5 h-5 rounded-full bg-gray-700 flex items-center justify-center text-[10px] text-gray-400">
+                <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-[10px] text-muted-foreground">
                   {m.displayName.charAt(0).toUpperCase()}
                 </div>
               )}
-              <span className="text-gray-200">{m.displayName}</span>
+              <span className="text-foreground">{m.displayName}</span>
               {m.isOwner && <Crown size={10} className="text-amber-400" />}
             </div>
           ))}
@@ -631,21 +634,21 @@ function RoomCardComponent({ room, expanded, onToggle, onMutate }: {
         className={cn(
           "w-full text-left p-4 rounded-xl border transition-all",
           expanded
-            ? "bg-gray-800/80 border-gray-600"
-            : "bg-gray-800/40 border-gray-700/50 hover:bg-gray-800/60 hover:border-gray-600/50"
+            ? "bg-card/50 border-border"
+            : "bg-card/50 border-border/50 hover:bg-muted hover:border-border/50"
         )}
       >
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center gap-2">
             <DoorOpen size={16} className="text-blue-400" />
-            <span className="font-medium text-gray-100">{room.name || "Unnamed Room"}</span>
+            <span className="font-medium text-foreground">{room.name || "Unnamed Room"}</span>
             {room.isOwner && (
               <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/20">
                 <Crown size={10} /> Owner
               </span>
             )}
           </div>
-          <div className="flex items-center gap-2 text-gray-400">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <span className="flex items-center gap-1 text-xs">
               <Users size={12} /> {room.memberCount}/{room.memberCap}
             </span>
@@ -683,10 +686,10 @@ export default function RoomsPage() {
   const skeleton = (
     <div className="space-y-4 animate-pulse">
       {[1, 2].map((i) => (
-        <div key={i} className="p-4 rounded-xl bg-gray-800/40 border border-gray-700/50">
-          <div className="h-4 bg-gray-700 rounded w-1/3 mb-3" />
-          <div className="h-3 bg-gray-700 rounded w-1/2 mb-2" />
-          <div className="h-2 bg-gray-700 rounded w-full" />
+        <div key={i} className="p-4 rounded-xl bg-card/50 border border-border/50">
+          <div className="h-4 bg-muted rounded w-1/3 mb-3" />
+          <div className="h-3 bg-muted rounded w-1/2 mb-2" />
+          <div className="h-2 bg-muted rounded w-full" />
         </div>
       ))}
     </div>
@@ -697,14 +700,14 @@ export default function RoomsPage() {
       <div className="w-20 h-20 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-6">
         <DoorOpen size={40} className="text-blue-400" strokeWidth={1.5} />
       </div>
-      <h2 className="text-xl font-semibold text-gray-100 mb-2">No Private Rooms Yet</h2>
-      <p className="text-gray-400 max-w-md mb-6 leading-relaxed">
+      <h2 className="text-xl font-semibold text-foreground mb-2">No Private Rooms Yet</h2>
+      <p className="text-muted-foreground max-w-md mb-6 leading-relaxed">
         Private rooms are personal voice channels you rent in a server. You get your own space
         to study with friends, set timers, and manage who can join.
       </p>
-      <div className="bg-gray-800/60 rounded-xl p-5 max-w-sm w-full text-left space-y-3 border border-gray-700/50">
-        <h3 className="text-sm font-semibold text-gray-200">How to get started</h3>
-        <div className="space-y-2 text-sm text-gray-400">
+      <div className="bg-card/50 rounded-xl p-5 max-w-sm w-full text-left space-y-3 border border-border/50">
+        <h3 className="text-sm font-semibold text-foreground">How to get started</h3>
+        <div className="space-y-2 text-sm text-muted-foreground">
           <div className="flex items-start gap-2">
             <span className="flex-shrink-0 w-5 h-5 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xs font-bold">1</span>
             <span>Join a server that has private rooms enabled</span>
@@ -727,28 +730,46 @@ export default function RoomsPage() {
   return (
     <Layout SEO={{ title: "My Rooms - LionBot Dashboard", description: "Manage your private rooms" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <main className="flex-1 min-w-0">
-              <div className="flex items-center justify-between mb-6">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><main className="flex-1 min-w-0"> */}
+        <DashboardShell nav={<DashboardNav />}>
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated to shared PageHeader component for consistency */}
+              {/* What the new code does better: Consistent page header styling with breadcrumbs */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
+                  <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
                     <DoorOpen size={24} className="text-blue-400" /> My Rooms
                   </h1>
                   {data && data.totalActiveRooms > 0 && (
-                    <p className="text-sm text-gray-500 mt-1">
+                    <p className="text-sm text-muted-foreground mt-1">
                       {data.totalActiveRooms} active room{data.totalActiveRooms !== 1 ? "s" : ""} across {data.servers.length} server{data.servers.length !== 1 ? "s" : ""}
                     </p>
                   )}
                 </div>
-              </div>
+              </div> */}
+              {/* --- End original code --- */}
+              <PageHeader
+                title="My Rooms"
+                description={
+                  data && data.totalActiveRooms > 0
+                    ? `${data.totalActiveRooms} active room${data.totalActiveRooms !== 1 ? "s" : ""} across ${data.servers.length} server${data.servers.length !== 1 ? "s" : ""}`
+                    : undefined
+                }
+                breadcrumbs={[
+                  { label: "Dashboard", href: "/dashboard" },
+                  { label: "My Rooms" },
+                ]}
+              />
+              {/* --- END AI-REPLACED --- */}
 
               {isLoading ? skeleton : !hasRooms ? emptyState : (
                 <div className="space-y-8">
                   {data!.servers.map((server) => (
                     <div key={server.guildId}>
-                      <h2 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 flex items-center gap-2">
                         <MessageCircle size={14} />
                         {server.guildName}
                       </h2>
@@ -772,7 +793,7 @@ export default function RoomsPage() {
                     <div>
                       <button
                         onClick={() => setShowExpired(!showExpired)}
-                        className="flex items-center gap-2 text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3 hover:text-gray-400 transition-colors"
+                        className="flex items-center gap-2 text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3 hover:text-muted-foreground transition-colors"
                       >
                         <History size={14} />
                         Expired Rooms ({data!.expiredRooms.length})
@@ -781,14 +802,14 @@ export default function RoomsPage() {
                       {showExpired && (
                         <div className="space-y-2 opacity-60">
                           {data!.expiredRooms.map((room) => (
-                            <div key={room.channelId} className="p-3 rounded-xl bg-gray-800/30 border border-gray-700/30">
+                            <div key={room.channelId} className="p-3 rounded-xl bg-card/50 border border-border/30">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
-                                  <DoorOpen size={14} className="text-gray-500" />
-                                  <span className="text-sm text-gray-400">{room.name || "Unnamed Room"}</span>
-                                  <span className="text-xs text-gray-600">in {room.guildName}</span>
+                                  <DoorOpen size={14} className="text-muted-foreground" />
+                                  <span className="text-sm text-muted-foreground">{room.name || "Unnamed Room"}</span>
+                                  <span className="text-xs text-muted-foreground">in {room.guildName}</span>
                                 </div>
-                                <div className="text-xs text-gray-600">
+                                <div className="text-xs text-muted-foreground">
                                   {formatDate(room.createdAt)} — {formatDate(room.deletedAt)}
                                 </div>
                               </div>
@@ -800,9 +821,8 @@ export default function RoomsPage() {
                   )}
                 </div>
               )}
-            </main>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

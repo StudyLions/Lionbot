@@ -7,7 +7,7 @@
 // Purpose: Full MapleStory-inspired overhaul -- cinematic anvil forge
 //          ceremony, step wizard mobile, filters, batch mode, achievements
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -466,10 +466,16 @@ export default function EnhancementPage() {
   return (
     <Layout SEO={{ title: "Enhancement - LionGotchi", description: "Enhance your equipment" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               {/* Title */}
               <div className="flex items-center justify-between">
                 <div>
@@ -545,9 +551,10 @@ export default function EnhancementPage() {
                   />
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Ceremony overlay */}
         <EnhancementCeremony

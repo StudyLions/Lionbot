@@ -9,6 +9,10 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import ServerNav from "@/components/dashboard/ServerNav"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: DashboardShell layout migration
+import DashboardShell from "@/components/dashboard/ui/DashboardShell"
+// --- END AI-MODIFIED ---
 import {
   PageHeader,
   SectionCard,
@@ -37,6 +41,7 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import Link from "next/link"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -809,10 +814,15 @@ export default function BrandingPage() {
       <Layout SEO={{ title: "Branding - LionBot", description: "Server branding editor" }}>
         <AdminGuard>
           <ServerGuard requiredLevel="admin">
-          <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-            <div className="max-w-7xl mx-auto flex gap-8">
-              <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
-              <div className="flex-1 min-w-0">
+          {/* --- AI-REPLACED (2026-03-24) ---
+              Reason: Migrate loading state to DashboardShell (wide) for consistent layout
+              --- Original code (commented out for rollback) ---
+              <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+                <div className="max-w-7xl mx-auto flex gap-8">
+                  <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
+                  <div className="flex-1 min-w-0">...loading...</div></div></div>
+              --- End original code --- */}
+          <DashboardShell wide nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />}>
                 <div className="h-8 bg-muted rounded w-48 animate-pulse mb-4" />
                 <div className="h-12 bg-muted/50 rounded-xl animate-pulse mb-6" />
                 <div className="grid grid-cols-1 xl:grid-cols-[1fr_400px] gap-8">
@@ -822,9 +832,8 @@ export default function BrandingPage() {
                   </div>
                   <div className="h-[500px] bg-muted/30 rounded-xl animate-pulse" />
                 </div>
-              </div>
-            </div>
-          </div>
+          </DashboardShell>
+          {/* --- END AI-REPLACED --- */}
           </ServerGuard>
         </AdminGuard>
       </Layout>
@@ -842,10 +851,16 @@ export default function BrandingPage() {
     >
       <AdminGuard>
         <ServerGuard requiredLevel="admin">
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-7xl mx-auto flex gap-8">
-            <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
-            <div className="flex-1 min-w-0">
+        {/* --- AI-REPLACED (2026-03-24) ---
+            Reason: Migrate to DashboardShell (wide) for consistent layout
+            --- Original code (commented out for rollback) ---
+            <div className="min-h-screen bg-background pt-6 pb-20 px-4">
+              <div className="max-w-7xl mx-auto flex gap-8">
+                <ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />
+                <div className="flex-1 min-w-0">
+            --- End original code --- */}
+        <DashboardShell wide nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />}>
+        {/* --- END AI-REPLACED --- */}
               <PageHeader
                 title="Server Branding"
                 description="Customize all card types your members see -- profile, stats, leaderboards, and more."
@@ -900,30 +915,31 @@ export default function BrandingPage() {
               </div>
 
               {/* Card type tabs */}
-              <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 scrollbar-thin bg-muted/30 rounded-xl p-1">
-                {CARD_TYPES.map((ct) => {
-                  const changeCount = cardChangeCounts[ct.id] || 0
-                  return (
-                    <button
-                      key={ct.id}
-                      type="button"
-                      onClick={() => setActiveCardType(ct.id)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap relative",
-                        activeCardType === ct.id
-                          ? "bg-background text-foreground shadow-sm border border-border"
-                          : "text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      {ct.icon}
-                      {ct.label}
-                      {changeCount > 0 && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1 right-1" />
-                      )}
-                    </button>
-                  )
-                })}
+              {/* --- AI-REPLACED (2026-03-24) ---
+                  Reason: Migrated from custom horizontal scroll chip row to shared TabBar component
+                  --- Original code (commented out for rollback) ---
+                  <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-1 scrollbar-thin bg-muted/30 rounded-xl p-1">
+                    {CARD_TYPES.map((ct) => {
+                      const changeCount = cardChangeCounts[ct.id] || 0
+                      return (
+                        <button key={ct.id} type="button" onClick={() => setActiveCardType(ct.id)}
+                          className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap relative", ...)}>
+                          {ct.icon} {ct.label}
+                          {changeCount > 0 && <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1 right-1" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                  --- End original code --- */}
+              <div className="mb-6">
+                <TabBar
+                  tabs={CARD_TYPES.map((ct) => ({ key: ct.id, label: ct.label, icon: ct.icon }))}
+                  active={activeCardType}
+                  onChange={setActiveCardType}
+                  variant="pills"
+                />
               </div>
+              {/* --- END AI-REPLACED --- */}
 
               <div className="grid grid-cols-1 xl:grid-cols-[1fr_420px] gap-8">
                 {/* Left: Editor panel */}
@@ -1219,9 +1235,9 @@ export default function BrandingPage() {
                   : "Design complete! Support LionBot to apply"
                 }
               />
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- Original: </div></div></div> --- */}
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Supporter upsell dialog */}
         <Dialog open={upsellOpen} onOpenChange={setUpsellOpen}>

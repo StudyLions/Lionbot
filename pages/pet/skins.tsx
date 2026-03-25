@@ -7,7 +7,7 @@
 // ============================================================
 import { useState, useCallback, useMemo, useEffect } from "react"
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -153,10 +153,19 @@ export default function SkinsPage() {
   return (
     <Layout SEO={{ title: "Gameboy Skins - LionGotchi", description: "Browse and equip gameboy frame skins" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        {/* --- AI-MODIFIED (2026-03-24) --- */}
+        {/* Purpose: Pass hasPet so PetNav shows correct state */}
+        <PetShell hasPet={data?.hasPet ?? true}>
+        {/* --- END AI-MODIFIED --- */}
+        {/* --- END AI-REPLACED --- */}
               {/* Toast */}
               {message && (
                 <div
@@ -340,9 +349,10 @@ export default function SkinsPage() {
                   )}
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

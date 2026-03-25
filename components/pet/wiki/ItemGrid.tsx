@@ -58,9 +58,12 @@ export default function ItemGrid({ items }: { items: WikiItemData[] }) {
                   x{item.userOwned}
                 </span>
               )}
-              <span className="font-pixel text-[12px] text-[#4a5a70] flex items-center gap-0.5">
+              {/* --- AI-MODIFIED (2026-03-24) --- */}
+              {/* Purpose: Improved contrast for owner count text */}
+              <span className="font-pixel text-[12px] text-[var(--pet-text-dim,#7a8a9a)] flex items-center gap-0.5">
                 <Users size={16} /> {item.ownerCount}
               </span>
+              {/* --- END AI-MODIFIED --- */}
             </div>
           </Link>
         )

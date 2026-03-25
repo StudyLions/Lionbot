@@ -15,6 +15,7 @@ import {
   EmptyState,
   SectionCard,
   toast,
+  DashboardShell,
 } from "@/components/dashboard/ui"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useRef, useEffect } from "react"
@@ -41,6 +42,7 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import TabBar from "@/components/dashboard/ui/TabBar"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { SKIN_CATALOG, SKIN_MAP, type SkinDef } from "@/constants/SkinCatalog"
@@ -305,10 +307,10 @@ export default function InventoryPage() {
   return (
     <Layout SEO={{ title: "Skin Shop - LionBot Dashboard", description: "Premium profile card skins" }}>
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-8">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-8"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-8">
               <PageHeader
                 title="Skin Shop"
                 description="Preview real bot-rendered card skins across all card types, then purchase with gems."
@@ -361,28 +363,32 @@ export default function InventoryPage() {
                   </div>
 
                   {/* Card type tabs */}
+                  {/* --- AI-REPLACED (2026-03-24) ---
+                      Reason: Migrated from custom scrollable chip row to shared TabBar component
+                      --- Original code (commented out for rollback) ---
+                      <div className="px-5 pt-4">
+                        <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-thin bg-muted/30 rounded-xl p-1">
+                          {CARD_TYPES.map((ct) => {
+                            const Icon = ct.icon
+                            return (
+                              <button key={ct.id} onClick={() => setActiveCard(ct.id)}
+                                className={cn("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap", ...)}>
+                                <Icon size={13} /> {ct.label}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      --- End original code --- */}
                   <div className="px-5 pt-4">
-                    <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-thin bg-muted/30 rounded-xl p-1">
-                      {CARD_TYPES.map((ct) => {
-                        const Icon = ct.icon
-                        return (
-                          <button
-                            key={ct.id}
-                            onClick={() => setActiveCard(ct.id)}
-                            className={cn(
-                              "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap",
-                              activeCard === ct.id
-                                ? "bg-background text-foreground shadow-sm border border-border"
-                                : "text-muted-foreground hover:text-foreground"
-                            )}
-                          >
-                            <Icon size={13} />
-                            {ct.label}
-                          </button>
-                        )
-                      })}
-                    </div>
+                    <TabBar
+                      tabs={CARD_TYPES.map((ct) => ({ key: ct.id, label: ct.label }))}
+                      active={activeCard}
+                      onChange={(k) => setActiveCard(k as CardType)}
+                      variant="pills"
+                    />
                   </div>
+                  {/* --- END AI-REPLACED --- */}
 
                   {/* Controls row */}
                   <div className="px-5 pt-3 flex flex-wrap items-center gap-3">
@@ -677,9 +683,8 @@ export default function InventoryPage() {
                   </div>
                 )}
               </SectionCard>
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
 
         {/* Confirm equip/deactivate modal */}
         <ConfirmModal

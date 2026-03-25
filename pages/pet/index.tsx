@@ -6,7 +6,11 @@
 // --- AI-MODIFIED (2026-03-19) ---
 // Purpose: Added useState, useCallback, toast for care buttons
 import Layout from "@/components/Layout/Layout"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
+// --- AI-MODIFIED (2026-03-24) ---
+// Purpose: Auto-redirect first-time visitors to the pet tutorial
+import { useRouter } from "next/router"
+// --- END AI-MODIFIED ---
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
@@ -25,7 +29,7 @@ import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import ArtistAttribution from "@/components/pet/ui/ArtistAttribution"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import { toast } from "sonner"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-16) ---
@@ -204,6 +208,18 @@ function PetNeedsCard({ pet, mood, moodLabel, moodMult, nextDecayAt, onStatsUpda
 
 export default function PetOverview() {
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-24) ---
+  // Purpose: Auto-redirect to tutorial on first visit
+  const router = useRouter()
+  const [tutorialDismissed, setTutorialDismissed] = useState<boolean | null>(null)
+  useEffect(() => {
+    const dismissed = localStorage.getItem("pet-tutorial-dismissed")
+    setTutorialDismissed(!!dismissed)
+    if (!dismissed && session) {
+      router.replace("/pet/tutorial")
+    }
+  }, [session, router])
+  // --- END AI-MODIFIED ---
   const { data, error, isLoading, mutate } = useDashboard<PetOverviewData>(
     session ? "/api/pet/overview" : null
   )
@@ -223,13 +239,16 @@ export default function PetOverview() {
   return (
     <Layout SEO={{ title: "LionGotchi - LionBot", description: "Your virtual pet companion" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
-            {/* --- AI-MODIFIED (2026-03-20) --- */}
-            {/* Purpose: Pass hasPet to PetNav for locked item display */}
             <PetNav hasPet={data?.hasPet ?? true} />
-            {/* --- END AI-MODIFIED --- */}
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell hasPet={data?.hasPet ?? true}>
+        {/* --- END AI-REPLACED --- */}
               {isLoading ? (
                 <div className="space-y-4">
                   <Skeleton className="h-12" />
@@ -246,6 +265,25 @@ export default function PetOverview() {
                 <NoPetShowcase />
               ) : pet && (
                 <>
+                  {/* --- AI-MODIFIED (2026-03-24) --- */}
+                  {/* Purpose: Retake tutorial banner */}
+                  {tutorialDismissed && (
+                    <Link
+                      href="/pet/tutorial"
+                      onClick={() => {
+                        localStorage.removeItem("pet-tutorial-dismissed")
+                        localStorage.removeItem("pet-tutorial-step")
+                        localStorage.removeItem("pet-tutorial-completed")
+                      }}
+                      className="flex items-center gap-2 px-3 py-2 border border-[var(--pet-border,#2a3a5c)] rounded hover:border-[var(--pet-gold,#f0c040)]/30 hover:bg-[var(--pet-gold,#f0c040)]/5 transition-colors"
+                    >
+                      <span className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+                        📖 New here? <span className="text-[var(--pet-gold,#f0c040)]">Retake the tutorial</span>
+                      </span>
+                    </Link>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
+
                   {/* Hero */}
                   <div>
                     <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">{pet.name}</h1>
@@ -423,9 +461,10 @@ export default function PetOverview() {
                   </PixelCard>
                 </>
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

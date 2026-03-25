@@ -8,8 +8,9 @@
 // ============================================================
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
-import PetNav from "@/components/pet/PetNav"
+import PetShell from "@/components/pet/PetShell"
 import PixelCard from "@/components/pet/ui/PixelCard"
+import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -124,11 +125,16 @@ export default function FamilyBankPage() {
   return (
     <Layout SEO={{ title: "Family Bank - LionGotchi", description: "Shared family storage" }}>
       <AdminGuard variant="pet">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to PetShell for consistent layout */}
+        {/* --- Original code (commented out for rollback) ---
         <div className="pet-section pet-scanline min-h-screen pt-6 pb-20 px-4">
           <div className="max-w-6xl mx-auto flex gap-6">
             <PetNav />
-
             <div className="flex-1 min-w-0 space-y-4">
+        --- End original code --- */}
+        <PetShell>
+        {/* --- END AI-REPLACED --- */}
               <div>
                 <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Family Bank</h1>
                 <div className="mt-1.5 flex items-center gap-1">
@@ -141,19 +147,19 @@ export default function FamilyBankPage() {
                 </p>
               </div>
 
-              {/* Tabs */}
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Migrated PixelButton tabs to shared PixelTabBar component */}
+              {/* --- Original code (commented out for rollback) ---
               <div className="flex gap-2">
                 {TABS.map((t) => (
-                  <PixelButton
-                    key={t.key}
-                    variant={tab === t.key ? "primary" : "ghost"}
-                    size="sm"
-                    onClick={() => { setTab(t.key); setShowDeposit(false) }}
-                  >
+                  <PixelButton key={t.key} variant={tab === t.key ? "primary" : "ghost"} size="sm"
+                    onClick={() => { setTab(t.key); setShowDeposit(false) }}>
                     <span>{t.icon}</span> {t.label}
                   </PixelButton>
                 ))}
               </div>
+              --- End original code --- */}
+              <PixelTabBar tabs={TABS} active={tab} onChange={(k) => { setTab(k as BankTab); setShowDeposit(false) }} />
 
               {!familyId ? (
                 <PixelCard className="p-12 text-center" corners>
@@ -172,9 +178,10 @@ export default function FamilyBankPage() {
               ) : (
                 <TreasuryTab familyId={familyId} role={role} perms={perms} />
               )}
-            </div>
-          </div>
-        </div>
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Original closing: </div></div></div> */}
+        </PetShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )

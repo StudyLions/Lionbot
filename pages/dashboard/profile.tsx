@@ -14,6 +14,7 @@ import {
   Toggle,
   SaveBar,
   toast,
+  DashboardShell,
 } from "@/components/dashboard/ui"
 import { Globe } from "lucide-react"
 import { useSession } from "next-auth/react"
@@ -35,6 +36,7 @@ import {
   ImageOff,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 // --- AI-MODIFIED (2026-03-14) ---
@@ -224,10 +226,10 @@ export default function ProfilePage() {
       }}
     >
       <AdminGuard>
-        <div className="min-h-screen bg-background pt-6 pb-20 px-4">
-          <div className="max-w-6xl mx-auto flex gap-8">
-            <DashboardNav />
-            <div className="flex-1 min-w-0 space-y-8">
+        {/* --- AI-REPLACED (2026-03-24) --- */}
+        {/* Reason: Migrated to DashboardShell layout wrapper */}
+        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-8"> */}
+        <DashboardShell nav={<DashboardNav />} className="space-y-8">
               <PageHeader
                 title="Profile"
                 description="Your profile card, study stats, skins, and preferences. Your timezone and language affect how LionBot displays times and messages."
@@ -237,7 +239,11 @@ export default function ProfilePage() {
                 ]}
               />
 
-              {loading ? (
+              {/* --- AI-REPLACED (2026-03-24) --- */}
+              {/* Reason: Replaced custom animate-pulse divs with shared Skeleton component */}
+              {/* What the new code does better: Consistent loading states using the shared Skeleton component */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/* loading ? (
                 <div className="space-y-8">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     <div className="bg-card rounded-2xl p-6 animate-pulse h-80" />
@@ -248,6 +254,20 @@ export default function ProfilePage() {
                     </div>
                   </div>
                   <div className="bg-card rounded-2xl p-6 animate-pulse h-32" />
+                </div> */}
+              {/* --- End original code --- */}
+              {loading ? (
+                <div className="space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <Skeleton className="rounded-2xl h-80" />
+                    <div className="space-y-4">
+                      {[1, 2, 3, 4].map((i) => (
+                        <Skeleton key={i} className="rounded-xl h-24" />
+                      ))}
+                    </div>
+                  </div>
+                  <Skeleton className="rounded-2xl h-32" />
+                  {/* --- END AI-REPLACED --- */}
                 </div>
               ) : error ? (
                 <div className="text-center py-20 text-red-400">{error.message}</div>
@@ -551,9 +571,8 @@ export default function ProfilePage() {
                 onReset={reset}
                 saving={saving}
               />
-            </div>
-          </div>
-        </div>
+        </DashboardShell>
+        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
   )
