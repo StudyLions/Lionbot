@@ -41,54 +41,62 @@ const CATEGORIES = {
 // All pages to generate OG images for
 const PAGES = [
   // --- Marketing / Public ---
-  { slug: 'homepage', title: 'LionBot', subtitle: 'The #1 Discord Productivity Bot — Study tracking, economy, leaderboards & more', category: 'marketing' },
-  { slug: 'features', title: 'Features', subtitle: 'Activity tracking, economy, pomodoro, leaderboards, reminders, and much more', category: 'marketing' },
-  { slug: 'donate', title: 'Support LionBot', subtitle: 'Get LionGems to unlock premium skins, gift friends, and power up your server', category: 'marketing' },
-  { slug: 'study', title: 'Study Timer', subtitle: 'Focus sessions with pomodoro, ambient sounds, and deep work tracking', category: 'marketing' },
-  { slug: 'skins', title: 'Skin Collection', subtitle: 'Browse and preview all available profile skins and customizations', category: 'marketing' },
-  { slug: 'stats', title: 'Stats for Nerds', subtitle: 'Real-time bot statistics, uptime, shard info, and performance metrics', category: 'marketing' },
+  { slug: 'homepage', title: 'LionBot', subtitle: 'The #1 Discord Productivity Bot for study & more', category: 'marketing' },
+  { slug: 'features', title: 'Features', subtitle: 'Study tracking, economy, pomodoro, leaderboards & more', category: 'marketing' },
+  { slug: 'donate', title: 'Support LionBot', subtitle: 'Get LionGems for premium skins, gifts & server perks', category: 'marketing' },
+  { slug: 'study', title: 'Study Timer', subtitle: 'Pomodoro, ambient sounds, and deep work tracking', category: 'marketing' },
+  { slug: 'skins', title: 'Skin Collection', subtitle: 'Browse and preview all available profile skins', category: 'marketing' },
+  { slug: 'stats', title: 'Stats for Nerds', subtitle: 'Real-time bot statistics, uptime, and shard metrics', category: 'marketing' },
   { slug: 'privacy-policy', title: 'Privacy Policy', subtitle: 'How LionBot handles your data and protects your privacy', category: 'marketing' },
   { slug: 'terms', title: 'Terms & Conditions', subtitle: 'Terms governing your use of LionBot services and website', category: 'marketing' },
   { slug: 'tutorials', title: 'Tutorials', subtitle: 'Step-by-step guides to get the most out of LionBot', category: 'marketing' },
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: OG image for the guides hub page
-  { slug: 'guides', title: 'LionBot Guides', subtitle: 'In-depth articles on every feature — pomodoro, economy, study tracking & more', category: 'guide' },
-  { slug: 'guide-pomodoro-bot-discord', title: 'Pomodoro Timers on Discord', subtitle: 'How to set up free group pomodoro timers with voice alerts and accountability', category: 'guide' },
+  { slug: 'guides', title: 'LionBot Guides', subtitle: 'In-depth articles on pomodoro, economy & more', category: 'guide' },
+  { slug: 'guide-pomodoro-bot-discord', title: 'Pomodoro Guide', subtitle: 'Set up free group pomodoro timers with voice alerts', category: 'guide' },
   // --- END AI-MODIFIED ---
   { slug: 'coming-soon', title: 'Coming Soon', subtitle: 'New features and updates are on the way — stay tuned', category: 'marketing' },
   { slug: '404', title: 'Page Not Found', subtitle: 'This page doesn\'t exist or has been moved', category: 'marketing' },
 
   // --- Dashboard (Member) ---
-  { slug: 'dashboard-overview', title: 'Dashboard', subtitle: 'Your personal study overview, stats, and activity at a glance', category: 'dashboard' },
+  { slug: 'dashboard-overview', title: 'Dashboard', subtitle: 'Your personal study overview, stats & activity', category: 'dashboard' },
   { slug: 'dashboard-tasks', title: 'Tasks', subtitle: 'Manage your to-do list, track progress, and stay organized', category: 'dashboard' },
   { slug: 'dashboard-reminders', title: 'Reminders', subtitle: 'Set up recurring and one-time reminders to stay on track', category: 'dashboard' },
   { slug: 'dashboard-goals', title: 'Goals', subtitle: 'Set weekly and monthly study goals and track your progress', category: 'dashboard' },
   { slug: 'dashboard-leaderboard', title: 'Leaderboard', subtitle: 'See how you rank against other members across all servers', category: 'dashboard' },
   { slug: 'dashboard-supporter', title: 'Supporter', subtitle: 'Premium features and perks for LionBot supporters', category: 'dashboard' },
   { slug: 'dashboard-session', title: 'Session', subtitle: 'Your current study session overview and timer', category: 'dashboard' },
-  { slug: 'dashboard-focus', title: 'Focus Mode', subtitle: 'Distraction-free study timer with ambient sounds and breaks', category: 'dashboard' },
-  { slug: 'dashboard-history', title: 'Study History', subtitle: 'Detailed breakdown of your past study sessions and patterns', category: 'dashboard' },
+  { slug: 'dashboard-focus', title: 'Focus Mode', subtitle: 'Distraction-free study timer with ambient sounds', category: 'dashboard' },
+  { slug: 'dashboard-history', title: 'Study History', subtitle: 'Detailed breakdown of your past study sessions', category: 'dashboard' },
   { slug: 'dashboard-inventory', title: 'Inventory', subtitle: 'View your collected skins, items, and customizations', category: 'dashboard' },
   { slug: 'dashboard-profile', title: 'Profile', subtitle: 'Customize your LionBot profile card and display settings', category: 'dashboard' },
   { slug: 'dashboard-gems', title: 'LionGems', subtitle: 'Your gem balance, transaction history, and cosmetics shop', category: 'dashboard' },
+  { slug: 'dashboard-rooms', title: 'Study Rooms', subtitle: 'Browse and join active voice study rooms', category: 'dashboard' },
+  { slug: 'dashboard-voice-editor', title: 'Voice Time Editor', subtitle: 'Review and adjust your tracked voice study hours', category: 'dashboard' },
+  { slug: 'dashboard-subscriptions', title: 'Subscriptions', subtitle: 'Manage your premium server subscriptions and billing', category: 'dashboard' },
 
   // --- Dashboard (Server) ---
-  { slug: 'server-overview', title: 'Server Overview', subtitle: 'Activity stats, top members, and server health at a glance', category: 'server' },
+  { slug: 'server-overview', title: 'Server Overview', subtitle: 'Activity stats, top members, and server health', category: 'server' },
   { slug: 'server-setup', title: 'Server Setup', subtitle: 'Quick setup wizard to configure LionBot for your server', category: 'server' },
-  { slug: 'server-settings', title: 'Server Settings', subtitle: 'Configure notifications, channels, permissions, and behavior', category: 'server' },
+  { slug: 'server-settings', title: 'Server Settings', subtitle: 'Configure notifications, channels & permissions', category: 'server' },
   { slug: 'server-members', title: 'Members', subtitle: 'View and manage member stats, roles, and activity', category: 'server' },
   { slug: 'server-moderation', title: 'Moderation', subtitle: 'Moderation logs, warnings, and automated rule enforcement', category: 'server' },
   { slug: 'server-economy', title: 'Economy', subtitle: 'Configure LionCoins, rewards, and server economy settings', category: 'server' },
-  { slug: 'server-ranks', title: 'Ranks Editor', subtitle: 'Create and manage study ranks with custom rewards and thresholds', category: 'server' },
+  { slug: 'server-ranks', title: 'Ranks Editor', subtitle: 'Create and manage study ranks with custom rewards', category: 'server' },
   { slug: 'server-shop', title: 'Shop Editor', subtitle: 'Set up server shop items, prices, and purchasable roles', category: 'server' },
-  { slug: 'server-rolemenus', title: 'Role Menus', subtitle: 'Create self-assignable role menus with buttons and reactions', category: 'server' },
+  { slug: 'server-rolemenus', title: 'Role Menus', subtitle: 'Create self-assignable role menus with buttons', category: 'server' },
   { slug: 'server-branding', title: 'Branding', subtitle: 'Customize bot colors, embed styles, and server branding', category: 'server' },
   { slug: 'server-schedule', title: 'Schedule', subtitle: 'Configure study room schedules and automated events', category: 'server' },
-  { slug: 'server-pomodoro', title: 'Pomodoro', subtitle: 'Set up group pomodoro timers with custom work and break intervals', category: 'server' },
-  { slug: 'server-pomodoro-analytics', title: 'Pomodoro Analytics', subtitle: 'Detailed pomodoro usage statistics and member participation', category: 'server' },
-  { slug: 'server-videochannels', title: 'Video Channels', subtitle: 'Configure camera-on study rooms and video channel settings', category: 'server' },
-  { slug: 'server-liongotchi', title: 'LionGotchi Config', subtitle: 'Enable and configure virtual pet features for your server', category: 'server' },
-  { slug: 'server-leaderboard-autopost', title: 'Leaderboard Auto-post', subtitle: 'Schedule automatic leaderboard updates to a channel', category: 'server' },
+  { slug: 'server-pomodoro', title: 'Pomodoro', subtitle: 'Set up group pomodoro timers with custom intervals', category: 'server' },
+  { slug: 'server-pomodoro-analytics', title: 'Pomodoro Analytics', subtitle: 'Pomodoro usage statistics and member participation', category: 'server' },
+  { slug: 'server-videochannels', title: 'Video Channels', subtitle: 'Configure camera-on study rooms and video settings', category: 'server' },
+  { slug: 'server-liongotchi', title: 'LionGotchi Config', subtitle: 'Enable and configure virtual pet features', category: 'server' },
+  { slug: 'server-leaderboard-autopost', title: 'Auto-post', subtitle: 'Schedule automatic leaderboard updates to a channel', category: 'server' },
+  { slug: 'server-ambient-sounds', title: 'Ambient Sounds', subtitle: 'Configure background audio for study voice channels', category: 'server' },
+  { slug: 'server-leaderboard', title: 'Server Leaderboard', subtitle: 'View and configure your server study leaderboard', category: 'server' },
+  { slug: 'server-rooms', title: 'Room Config', subtitle: 'Set up tracked study rooms and voice channel rules', category: 'server' },
+  { slug: 'server-sticky-messages', title: 'Sticky Messages', subtitle: 'Pin auto-refreshing messages to channel tops', category: 'server' },
+  { slug: 'server-voice-time-editor', title: 'Voice Time Editor', subtitle: 'Review and adjust member voice study hours', category: 'server' },
 
   // --- Pet / LionGotchi ---
   { slug: 'pet-overview', title: 'Your LionGotchi', subtitle: 'Feed, play, and care for your virtual study companion', category: 'pet' },
@@ -97,16 +105,25 @@ const PAGES = [
   { slug: 'pet-room', title: 'Pet Room', subtitle: 'Decorate and customize your LionGotchi\'s living space', category: 'pet' },
   { slug: 'pet-skins', title: 'Pet Skins', subtitle: 'Unlock and equip unique looks for your LionGotchi', category: 'pet' },
   { slug: 'pet-crafting', title: 'Crafting', subtitle: 'Combine materials to craft items, food, and equipment', category: 'pet' },
-  { slug: 'pet-enhancement', title: 'Enhancement', subtitle: 'Upgrade and enhance your items for better stats and effects', category: 'pet' },
-  { slug: 'pet-wiki', title: 'Wiki', subtitle: 'Encyclopedia of all LionGotchi items, recipes, and mechanics', category: 'pet' },
+  { slug: 'pet-enhancement', title: 'Enhancement', subtitle: 'Upgrade and enhance your items for better stats', category: 'pet' },
+  { slug: 'pet-wiki', title: 'Wiki', subtitle: 'Encyclopedia of all LionGotchi items and recipes', category: 'pet' },
   { slug: 'pet-marketplace', title: 'Marketplace', subtitle: 'Buy and sell items with other LionGotchi owners', category: 'pet' },
   { slug: 'pet-sell', title: 'Sell Items', subtitle: 'List your items for sale on the LionGotchi marketplace', category: 'pet' },
   { slug: 'pet-my-listings', title: 'My Listings', subtitle: 'Manage your active marketplace listings and sales', category: 'pet' },
+  { slug: 'pet-family', title: 'Family', subtitle: 'Create or join a LionGotchi family with friends', category: 'pet' },
+  { slug: 'pet-family-bank', title: 'Family Bank', subtitle: 'Shared family treasury for pooling Gold together', category: 'pet' },
+  { slug: 'pet-family-farm', title: 'Family Farm', subtitle: 'Grow crops together on your family\'s shared farm', category: 'pet' },
+  { slug: 'pet-family-members', title: 'Family Members', subtitle: 'View and manage your family\'s member roster', category: 'pet' },
+  { slug: 'pet-family-settings', title: 'Family Settings', subtitle: 'Configure your family name, roles, and permissions', category: 'pet' },
+  { slug: 'pet-friends', title: 'Friends', subtitle: 'View your LionGotchi friends and visit their pets', category: 'pet' },
+  { slug: 'pet-leaderboard', title: 'Pet Leaderboard', subtitle: 'See the top LionGotchi owners ranked by level', category: 'pet' },
+  { slug: 'pet-tutorial', title: 'Pet Tutorial', subtitle: 'Learn the basics of caring for your LionGotchi', category: 'pet' },
 ];
 
 function buildTemplate(page) {
   const cat = CATEGORIES[page.category];
   const titleSize = page.title.length > 22 ? 62 : page.title.length > 16 ? 72 : 80;
+  const subtitleSize = page.subtitle.length > 52 ? 22 : page.subtitle.length > 40 ? 24 : 28;
 
   return {
     type: 'div',
@@ -254,7 +271,7 @@ function buildTemplate(page) {
                 type: 'div',
                 props: {
                   style: {
-                    fontSize: 28,
+                    fontSize: subtitleSize,
                     fontWeight: 400,
                     color: '#94a3b8',
                     lineHeight: 1.4,
