@@ -43,6 +43,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import TabBar from "@/components/dashboard/ui/TabBar"
 import Link from "next/link"
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Import currency hook + price helpers for dynamic pricing
+import { useCurrency } from "@/hooks/useCurrency"
+import { getServerPremiumPrice } from "@/constants/SubscriptionData"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -389,13 +394,20 @@ interface HistoryEntry {
   properties: Record<string, Record<string, string>>
 }
 
-// --- AI-MODIFIED (2026-03-22) ---
-// Purpose: Replaced gem-based premium plans with Stripe subscription plans (EUR)
-const PREMIUM_PLANS = [
-  { id: "MONTHLY", name: "Monthly", price: "€9.99", period: "/mo" },
-  { id: "YEARLY", name: "Yearly", price: "€99.99", period: "/yr", save: "17%" },
+// --- AI-REPLACED (2026-03-25) ---
+// Reason: Use dynamic pricing from currency hook instead of hardcoded EUR
+// What the new code does better: supports EUR/USD currency toggle
+// --- Original code (commented out for rollback) ---
+// const PREMIUM_PLANS = [
+//   { id: "MONTHLY", name: "Monthly", price: "€9.99", period: "/mo" },
+//   { id: "YEARLY", name: "Yearly", price: "€99.99", period: "/yr", save: "17%" },
+// ]
+// --- End original code ---
+const PREMIUM_PLAN_IDS = [
+  { id: "MONTHLY" as const, name: "Monthly", period: "/mo" },
+  { id: "YEARLY" as const, name: "Yearly", period: "/yr", save: "17%" },
 ]
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 function generatePalette(accent: string): Record<string, string> {
   const hex = accent.replace("#", "")
@@ -430,6 +442,10 @@ export default function BrandingPage() {
   const router = useRouter()
   const { id } = router.query
   const guildId = id as string
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Add currency support for dynamic pricing
+  const { currency, symbol } = useCurrency()
+  // --- END AI-MODIFIED ---
 
   const { data: brandingData, isLoading: brandingLoading, mutate } = useDashboard<BrandingData>(
     id && session ? `/api/dashboard/servers/${id}/branding` : null
@@ -775,15 +791,15 @@ export default function BrandingPage() {
     toast.success("Palette applied!")
   }
 
-  // --- AI-MODIFIED (2026-03-22) ---
-  // Purpose: Replaced gem deduction with Stripe subscription checkout redirect
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Pass currency in checkout for correct Stripe Price
   const handlePurchase = async (plan: string) => {
     setPurchasing(true)
     try {
       const res = await fetch("/api/subscription/server-checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guildId: id, plan }),
+        body: JSON.stringify({ guildId: id, plan, currency }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "Failed to start checkout")
@@ -1254,8 +1270,10 @@ export default function BrandingPage() {
             </DialogHeader>
             {/* --- AI-MODIFIED (2026-03-22) --- */}
             {/* Purpose: Replaced gem purchase UI with Stripe subscription checkout */}
+            {/* --- AI-MODIFIED (2026-03-25) --- */}
+            {/* Purpose: Dynamic currency pricing in upsell dialog */}
             <div className="space-y-3 py-4">
-              {PREMIUM_PLANS.map((plan) => (
+              {PREMIUM_PLAN_IDS.map((plan) => (
                 <div
                   key={plan.id}
                   className={cn(
@@ -1273,7 +1291,7 @@ export default function BrandingPage() {
                     <p className="text-sm text-muted-foreground">Auto-renews, cancel anytime</p>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-amber-400">{plan.price}<span className="text-xs text-muted-foreground">{plan.period}</span></span>
+                    <span className="font-semibold text-amber-400">{symbol}{getServerPremiumPrice(plan.id, currency)}<span className="text-xs text-muted-foreground">{plan.period}</span></span>
                     <Button
                       size="sm"
                       onClick={() => handlePurchase(plan.id)}
@@ -1285,6 +1303,7 @@ export default function BrandingPage() {
                 </div>
               ))}
             </div>
+            {/* --- END AI-MODIFIED --- */}
             <DialogFooter className="flex-col gap-2 sm:flex-col">
               <Button variant="ghost" onClick={() => setUpsellOpen(false)} className="w-full">
                 Maybe later

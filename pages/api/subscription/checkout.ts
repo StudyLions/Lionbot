@@ -23,9 +23,9 @@ const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
 const VALID_TIERS = ["LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"] as const;
 type SubscriptionTier = (typeof VALID_TIERS)[number];
 
-// --- AI-REPLACED (2026-03-24) ---
-// Reason: Add EUR price map alongside existing USD map for dual-currency checkout
-// What the new code does better: selects the correct Stripe Price ID based on user's currency choice
+// --- AI-REPLACED (2026-03-25) ---
+// Reason: Use dedicated _USD env vars (actual USD Stripe Prices), _EUR for EUR
+// What the new code does better: correctly maps to Stripe Price objects in the right currency
 // --- Original code (commented out for rollback) ---
 // const PRICE_ENV_MAP: Record<SubscriptionTier, string> = {
 //   LIONHEART: (process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5").trim(),
@@ -34,14 +34,14 @@ type SubscriptionTier = (typeof VALID_TIERS)[number];
 // };
 // --- End original code ---
 const PRICE_USD_MAP: Record<SubscriptionTier, string> = {
-  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART ?? "price_1TBgSYAJ9zOg7wY9L8C9IEt5").trim(),
-  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "price_1TBgSZAJ9zOg7wY9Z55T26ae").trim(),
-  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "price_1TBgSbAJ9zOg7wY9wmMbpVd3").trim(),
+  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART_USD ?? "").trim(),
+  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_USD ?? "").trim(),
+  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_USD ?? "").trim(),
 };
 const PRICE_EUR_MAP: Record<SubscriptionTier, string> = {
-  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART_EUR ?? "").trim(),
-  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_EUR ?? "").trim(),
-  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_EUR ?? "").trim(),
+  LIONHEART: (process.env.STRIPE_PRICE_LIONHEART_EUR ?? process.env.STRIPE_PRICE_LIONHEART ?? "").trim(),
+  LIONHEART_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_EUR ?? process.env.STRIPE_PRICE_LIONHEART_PLUS ?? "").trim(),
+  LIONHEART_PLUS_PLUS: (process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_EUR ?? process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS ?? "").trim(),
 };
 // --- END AI-REPLACED ---
 
@@ -88,10 +88,10 @@ export default async function handler(
     const discordName = "User";
     // --- END AI-MODIFIED ---
 
-    // --- AI-MODIFIED (2026-03-24) ---
-    // Purpose: Accept currency parameter for dual-currency checkout
+    // --- AI-MODIFIED (2026-03-25) ---
+    // Purpose: Accept currency parameter for dual-currency checkout (default USD)
     const { tier, currency: rawCurrency } = req.body ?? {};
-    const currency = rawCurrency === "usd" ? "usd" : "eur";
+    const currency = rawCurrency === "eur" ? "eur" : "usd";
     // --- END AI-MODIFIED ---
     if (!tier || !VALID_TIERS.includes(tier)) {
       return res.status(400).json({

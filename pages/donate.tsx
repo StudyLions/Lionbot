@@ -1236,14 +1236,17 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         disabled={checkingOut}
                         className="flex-1 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700 hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
                       >
-                        {checkingOut ? "..." : "€9.99/mo"}
+                        {/* --- AI-MODIFIED (2026-03-25) --- */}
+                        {/* Purpose: Dynamic currency pricing on checkout buttons */}
+                        {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
                       </button>
                       <button
                         onClick={() => handleServerCheckout("YEARLY")}
                         disabled={checkingOut}
                         className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 relative overflow-hidden"
                       >
-                        {checkingOut ? "..." : "€99.99/yr"}
+                        {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("YEARLY", currency)}/yr`}
+                        {/* --- END AI-MODIFIED --- */}
                         <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
                       </button>
                     </div>

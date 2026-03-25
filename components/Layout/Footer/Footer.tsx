@@ -138,15 +138,18 @@ export default function Footer() {
           <FooterLinkGroup title="Legal" links={legalLinks} />
         </div>
 
+        {/* --- AI-MODIFIED (2026-03-25) --- */}
+        {/* Purpose: Added P.IVA and Pavia, Italy to footer bottom bar */}
         {/* Bottom bar */}
-        <div className="mt-12 pt-6 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="mt-12 pt-6 border-t border-border flex flex-col items-center gap-2 text-center">
           <p className="text-xs text-muted-foreground">
             &copy; {new Date().getFullYear()} LionBot. All rights reserved.
           </p>
           <p className="text-xs text-muted-foreground">
-            Made with love by Ari Horesh
+            Founded by Ari Horesh &middot; Pavia, Italy &middot; P.IVA IT02865360180
           </p>
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </footer>
   );

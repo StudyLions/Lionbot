@@ -64,10 +64,10 @@ export default async function handler(
   }
 
   try {
-    // --- AI-MODIFIED (2026-03-24) ---
-    // Purpose: Accept currency parameter for dual-currency checkout
+    // --- AI-MODIFIED (2026-03-25) ---
+    // Purpose: Accept currency parameter for dual-currency checkout (default USD)
     const { guildId, plan, currency: rawCurrency } = req.body ?? {}
-    const currency = rawCurrency === "usd" ? "usd" : "eur"
+    const currency = rawCurrency === "eur" ? "eur" : "usd"
     // --- END AI-MODIFIED ---
 
     if (!guildId || typeof guildId !== "string") {
