@@ -247,6 +247,9 @@ model guild_config {
   rank_type                       ranktype?
   rank_channel                    BigInt?
   dm_ranks                        Boolean?
+  voice_ranks_enabled             Boolean                        @default(false)
+  msg_ranks_enabled               Boolean                        @default(false)
+  xp_ranks_enabled                Boolean                        @default(false)
   renting_visible                 Boolean?
   first_joined_at                 DateTime?                      @default(now()) @db.Timestamptz(6)
   left_at                         DateTime?                      @db.Timestamptz(6)

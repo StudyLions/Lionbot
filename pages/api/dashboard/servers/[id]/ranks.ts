@@ -56,10 +56,16 @@ export default apiHandler({
         where: { guildid: guildId },
         orderBy: { required: "asc" },
       }),
+      // --- AI-MODIFIED (2026-03-25) ---
+      // Purpose: Include secondary rank type enabled flags in response
       prisma.guild_config.findUnique({
         where: { guildid: guildId },
-        select: { rank_type: true, rank_channel: true, dm_ranks: true },
+        select: {
+          rank_type: true, rank_channel: true, dm_ranks: true,
+          voice_ranks_enabled: true, msg_ranks_enabled: true, xp_ranks_enabled: true,
+        },
       }),
+      // --- END AI-MODIFIED ---
       prisma.$queryRaw<Array<{ rankid: number; cnt: bigint }>>(Prisma.sql`
         SELECT current_xp_rankid as rankid, COUNT(*)::bigint as cnt
         FROM member_ranks WHERE guildid = ${guildId} AND current_xp_rankid IS NOT NULL
@@ -83,10 +89,15 @@ export default apiHandler({
       return m
     }
 
+    // --- AI-MODIFIED (2026-03-25) ---
+    // Purpose: Include secondary rank type enabled flags in response
     return res.status(200).json({
       rankType: guildConfig?.rank_type || null,
       rankChannel: guildConfig?.rank_channel?.toString() || null,
       dmRanks: guildConfig?.dm_ranks ?? false,
+      voiceRanksEnabled: guildConfig?.voice_ranks_enabled ?? false,
+      msgRanksEnabled: guildConfig?.msg_ranks_enabled ?? false,
+      xpRanksEnabled: guildConfig?.xp_ranks_enabled ?? false,
       xpRanks: xpRanks.map(serializeRank),
       voiceRanks: voiceRanks.map(serializeRank),
       msgRanks: msgRanks.map(serializeRank),
@@ -98,6 +109,30 @@ export default apiHandler({
     })
     // --- END AI-MODIFIED ---
   },
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Config update endpoint for toggling secondary rank types
+  async PUT(req, res) {
+    const guildId = parseBigInt(req.query.id, "guild ID")
+    const auth = await requireAdmin(req, res, guildId)
+    if (!auth) return
+
+    const { voiceRanksEnabled, msgRanksEnabled, xpRanksEnabled } = req.body
+    const updates: Record<string, boolean> = {}
+    if (typeof voiceRanksEnabled === "boolean") updates.voice_ranks_enabled = voiceRanksEnabled
+    if (typeof msgRanksEnabled === "boolean") updates.msg_ranks_enabled = msgRanksEnabled
+    if (typeof xpRanksEnabled === "boolean") updates.xp_ranks_enabled = xpRanksEnabled
+
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ error: "No valid fields to update" })
+    }
+
+    await prisma.guild_config.update({
+      where: { guildid: guildId },
+      data: updates,
+    })
+    return res.status(200).json({ success: true })
+  },
+  // --- END AI-MODIFIED ---
   async POST(req, res) {
     const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
