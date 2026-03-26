@@ -26,8 +26,13 @@ import {
   SUBSCRIPTION_TIERS,
   TIER_ORDER,
   FREE_TIER,
+  getSubscriptionPrice,
   type SubscriptionTier,
 } from "@/constants/SubscriptionData"
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Import currency hook for dynamic pricing across supporter page
+import { useCurrency } from "@/hooks/useCurrency"
+// --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
 import {
   Crown,
@@ -351,7 +356,10 @@ function OptionSelector<T extends string>({
   )
 }
 
-function SubscriptionBanner({ sub }: { sub: SubscriptionData }) {
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Accept currency/symbol props for dynamic pricing display
+function SubscriptionBanner({ sub, symbol, currency }: { sub: SubscriptionData; symbol: string; currency: string }) {
+// --- END AI-MODIFIED ---
   const [portalLoading, setPortalLoading] = useState(false)
 
   const openPortal = async () => {
@@ -436,7 +444,10 @@ function SubscriptionBanner({ sub }: { sub: SubscriptionData }) {
                 ? `Renews ${renewalDate}`
                 : "Active subscription"
             }
-            {sub.tierPrice && ` · $${sub.tierPrice}/month`}
+            {/* --- AI-MODIFIED (2026-03-25) --- */}
+            {/* Purpose: Use dynamic currency symbol instead of hardcoded $ */}
+            {sub.tier && sub.tier !== "NONE" && ` · ${symbol}${getSubscriptionPrice(sub.tier as SubscriptionTier, currency as "eur" | "usd")}/month`}
+            {/* --- END AI-MODIFIED --- */}
           </p>
         </div>
         <Button
@@ -913,7 +924,10 @@ function TimerPersonalization({
   )
 }
 
-function TierComparison({ currentTier }: { currentTier: string }) {
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Accept currency/symbol props for dynamic pricing display
+function TierComparison({ currentTier, symbol, currency }: { currentTier: string; symbol: string; currency: string }) {
+// --- END AI-MODIFIED ---
   const tiersToShow = currentTier === "NONE"
     ? TIER_ORDER
     : TIER_ORDER.filter(
@@ -944,10 +958,13 @@ function TierComparison({ currentTier }: { currentTier: string }) {
                 </div>
                 <span className="font-bold text-foreground">{tier.name}</span>
               </div>
+              {/* --- AI-MODIFIED (2026-03-25) --- */}
+              {/* Purpose: Dynamic pricing based on user's currency preference */}
               <p className="text-2xl font-bold text-foreground mb-1">
-                ${tier.price}
+                {symbol}{getSubscriptionPrice(tierId, currency as "eur" | "usd")}
                 <span className="text-sm font-normal text-muted-foreground">/month</span>
               </p>
+              {/* --- END AI-MODIFIED --- */}
               <ul className="text-xs text-muted-foreground space-y-1.5 mt-3 mb-4 flex-1">
                 <li className="flex items-center gap-1.5">
                   <Check size={12} className="text-primary flex-shrink-0" />
@@ -998,6 +1015,10 @@ function TierComparison({ currentTier }: { currentTier: string }) {
 
 export default function SupporterPage() {
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Currency hook for dynamic pricing across supporter page
+  const { currency, symbol } = useCurrency()
+  // --- END AI-MODIFIED ---
 
   const { data: sub, isLoading: subLoading } = useDashboard<SubscriptionData>(
     session ? "/api/dashboard/subscription" : null
@@ -1139,7 +1160,7 @@ export default function SupporterPage() {
                 </div>
               ) : (
                 <>
-                  <SubscriptionBanner sub={sub!} />
+                  <SubscriptionBanner sub={sub!} symbol={symbol} currency={currency} />
 
                   {isSupporter && <PerksGrid sub={sub!} />}
 
@@ -1163,7 +1184,7 @@ export default function SupporterPage() {
                     isSupporter={!!isSupporter}
                   />
 
-                  <TierComparison currentTier={sub?.tier ?? "NONE"} />
+                  <TierComparison currentTier={sub?.tier ?? "NONE"} symbol={symbol} currency={currency} />
                 </>
               )}
         </DashboardShell>
