@@ -11,6 +11,15 @@ import {
 } from "lucide-react"
 import StepLayout from "../StepLayout"
 import { getLeoMessage } from "../leoMessages"
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Import currency hook and price helpers for dynamic pricing
+import { useCurrency } from "@/hooks/useCurrency"
+import {
+  SUBSCRIPTION_TIERS,
+  getSubscriptionPrice,
+  getServerPremiumPrice,
+} from "@/constants/SubscriptionData"
+// --- END AI-MODIFIED ---
 
 interface StepPremiumProps {
   serverName: string
@@ -19,10 +28,12 @@ interface StepPremiumProps {
   direction: number
 }
 
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Replace hardcoded EUR prices with tier IDs for dynamic pricing
 const TIERS = [
   {
+    id: "LIONHEART" as const,
     name: "LionHeart",
-    price: "€4.99",
     color: "#DDB21D",
     perks: [
       "500 gems/month",
@@ -33,8 +44,8 @@ const TIERS = [
     ],
   },
   {
+    id: "LIONHEART_PLUS" as const,
     name: "LionHeart+",
-    price: "€9.99",
     color: "#f57c00",
     popular: true,
     perks: [
@@ -47,8 +58,8 @@ const TIERS = [
     ],
   },
   {
+    id: "LIONHEART_PLUS_PLUS" as const,
     name: "LionHeart++",
-    price: "€19.99",
     color: "#ff6b6b",
     perks: [
       "3,000 gems/month",
@@ -61,8 +72,13 @@ const TIERS = [
     ],
   },
 ]
+// --- END AI-MODIFIED ---
 
 export default function StepPremium({ serverName, onNext, onBack, direction }: StepPremiumProps) {
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Dynamic pricing based on user's currency preference
+  const { currency, symbol } = useCurrency()
+  // --- END AI-MODIFIED ---
   return (
     <StepLayout
       title="Premium & Support"
@@ -98,11 +114,14 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
           <Crown className="w-4 h-4 text-[#DDB21D]" />
           Server Premium
         </div>
+        {/* --- AI-MODIFIED (2026-03-25) --- */}
+        {/* Purpose: Dynamic server premium pricing */}
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-[#DDB21D]">€9.99</span>
+          <span className="text-2xl font-bold text-[#DDB21D]">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
           <span className="text-sm text-gray-400">/month</span>
-          <span className="text-xs text-gray-500">(or €99.99/year -- save 17%)</span>
+          <span className="text-xs text-gray-500">(or {symbol}{getServerPremiumPrice("YEARLY", currency)}/year -- save 17%)</span>
         </div>
+        {/* --- END AI-MODIFIED --- */}
         <p className="text-xs text-gray-400">
           Server-wide perks for every member in your server:
         </p>
@@ -144,10 +163,13 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
                   POPULAR
                 </span>
               )}
+              {/* --- AI-MODIFIED (2026-03-25) --- */}
+              {/* Purpose: Dynamic tier pricing */}
               <div>
                 <p className="text-sm font-semibold" style={{ color: tier.color }}>{tier.name}</p>
-                <p className="text-lg font-bold text-white">{tier.price}<span className="text-xs text-gray-400">/mo</span></p>
+                <p className="text-lg font-bold text-white">{symbol}{getSubscriptionPrice(tier.id, currency)}<span className="text-xs text-gray-400">/mo</span></p>
               </div>
+              {/* --- END AI-MODIFIED --- */}
               <ul className="space-y-1">
                 {tier.perks.map((perk) => (
                   <li key={perk} className="flex items-start gap-1.5 text-[10px] text-gray-400">
