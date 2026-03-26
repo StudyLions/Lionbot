@@ -34,6 +34,7 @@ const EDITABLE_FIELDS = [
   // --- END AI-MODIFIED ---
   'rank_type', 'dm_ranks', 'xp_per_period', 'xp_per_centiword',
   'rank_channel', 'pomodoro_channel', // AI-MODIFIED (2026-03-13): guild default pomodoro notification channel
+  'session_leave_summary', // AI-MODIFIED (2026-03-25): pomodoro leave summary toggle
   'video_studyban', 'video_grace_period', 'persist_roles',
   'greeting_message', 'returning_message', 'greeting_channel',
   'min_workout_length', 'workout_reward',

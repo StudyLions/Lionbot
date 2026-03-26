@@ -61,6 +61,7 @@ interface PomodoroTimer {
 interface PomodoroData {
   timers: PomodoroTimer[]
   pomodoro_channel: string | null
+  session_leave_summary: boolean
 }
 
 interface TimerStatusItem {
@@ -294,6 +295,10 @@ export default function PomodoroPage() {
   const [deleteTarget, setDeleteTarget] = useState<PomodoroTimer | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [pomodoroChannel, setPomodoroChannel] = useState<string | null>(null)
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: State for session leave summary toggle
+  const [sessionLeaveSummary, setSessionLeaveSummary] = useState(false)
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-18) ---
   // Purpose: Premium pomodoro feature state
   const [premConfig, setPremConfig] = useState<any>(null)
@@ -304,7 +309,10 @@ export default function PomodoroPage() {
   // --- END AI-MODIFIED ---
 
   useEffect(() => {
-    if (data) setPomodoroChannel(data.pomodoro_channel)
+    if (data) {
+      setPomodoroChannel(data.pomodoro_channel)
+      setSessionLeaveSummary(data.session_leave_summary ?? false)
+    }
   }, [data])
 
   // --- AI-REPLACED (2026-03-19) ---
@@ -398,6 +406,22 @@ export default function PomodoroPage() {
       else toast.error("Failed to update")
     } catch { toast.error("Failed to update") }
   }
+
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Handler for session leave summary toggle
+  const handleSetSessionLeaveSummary = async (enabled: boolean) => {
+    setSessionLeaveSummary(enabled)
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/config`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_leave_summary: enabled }),
+      })
+      if (res.ok) { toast.success(enabled ? "Session summaries enabled" : "Session summaries disabled"); mutate() }
+      else toast.error("Failed to update")
+    } catch { toast.error("Failed to update") }
+  }
+  // --- END AI-MODIFIED ---
 
   const setTimerField = useCallback((timerId: string, field: keyof PomodoroTimer, value: unknown) => {
     setEditingTimers((prev) => ({ ...prev, [timerId]: { ...prev[timerId], [field]: value } }))
@@ -716,20 +740,27 @@ export default function PomodoroPage() {
               {/* ============= TIMERS TAB ============= */}
               {tab === "timers" && (
                 <div className="space-y-6">
-                  {/* Guild Default Channel */}
+                  {/* Guild Default Channel + Leave Summary Toggle */}
                   {data && (
-                    <div className="bg-card/50 border border-border rounded-xl p-5">
-                      <h3 className="text-sm font-semibold text-foreground mb-1">Default Notification Channel</h3>
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Fallback channel for timer notifications when a timer doesn&apos;t have its own notification channel set.
-                      </p>
-                      <ChannelSelect
-                        guildId={guildId}
-                        value={pomodoroChannel}
-                        onChange={(v) => handleSetPomodoroChannel((v as string) || null)}
-                        channelTypes={[0, 5]}
-                        placeholder="No default (use voice channel)"
-                      />
+                    <div className="bg-card/50 border border-border rounded-xl p-5 space-y-0">
+                      <SettingRow label="Default notification channel" description="Fallback channel for timer notifications when a timer doesn't have its own notification channel set.">
+                        <ChannelSelect
+                          guildId={guildId}
+                          value={pomodoroChannel}
+                          onChange={(v) => handleSetPomodoroChannel((v as string) || null)}
+                          channelTypes={[0, 5]}
+                          placeholder="No default (use voice channel)"
+                        />
+                      </SettingRow>
+                      {/* --- AI-MODIFIED (2026-03-25) --- */}
+                      {/* Purpose: Toggle for session leave summary messages */}
+                      <SettingRow label="Session leave summaries" description="Post a summary message when a member finishes studying in a pomodoro channel" tooltip="When enabled, members see a 'Great session!' message with their study duration and focus cycles completed.">
+                        <Toggle
+                          checked={sessionLeaveSummary}
+                          onChange={handleSetSessionLeaveSummary}
+                        />
+                      </SettingRow>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   )}
 

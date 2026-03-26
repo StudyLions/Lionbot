@@ -99,7 +99,14 @@ export default apiHandler({
       select: { rank_type: true, season_start: true },
     })
 
-    const rankType = (config?.rank_type as RankType) || null
+    // --- AI-MODIFIED (2026-03-25) ---
+    // Purpose: Accept optional ?type= query param for per-type stats
+    const queryType = req.query.type as string | undefined
+    const validTypes: RankType[] = ["XP", "VOICE", "MESSAGE"]
+    const rankType: RankType | null = (queryType && validTypes.includes(queryType as RankType))
+      ? (queryType as RankType)
+      : (config?.rank_type as RankType) || null
+    // --- END AI-MODIFIED ---
     if (!rankType) {
       return res.status(200).json({
         rankType: null,

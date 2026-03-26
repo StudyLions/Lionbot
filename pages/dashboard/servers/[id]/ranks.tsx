@@ -21,7 +21,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useRoles } from "@/hooks/useRoles"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import {
   Trophy, Plus, Pencil, Trash2, ChevronDown, ChevronUp, Users, BarChart3,
   AlertTriangle, CheckCircle, Lightbulb, Calculator, Coins, ArrowUp,
@@ -41,15 +41,21 @@ interface Rank {
   message: string | null
 }
 
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: Added secondary rank type enabled flags for multi-rank support
 interface RanksData {
   rankType: string | null
   rankChannel: string | null
   dmRanks: boolean
+  voiceRanksEnabled: boolean
+  msgRanksEnabled: boolean
+  xpRanksEnabled: boolean
   xpRanks: Rank[]
   voiceRanks: Rank[]
   msgRanks: Rank[]
   memberCounts: Record<string, Record<number, number>>
 }
+// --- END AI-MODIFIED ---
 
 interface StatsData {
   rankType: string | null
@@ -185,20 +191,38 @@ export default function RanksPage() {
   const { id } = router.query
   const guildId = id as string
 
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Moved activeTab state above hooks that reference it
+  const [activeTab, setActiveTab] = useState<TabKey>("XP")
+  const [initialTabSet, setInitialTabSet] = useState(false)
+  // --- END AI-MODIFIED ---
+
   const { data, isLoading: loading, mutate } = useDashboard<RanksData>(
     id && session ? `/api/dashboard/servers/${id}/ranks` : null
   )
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Pass current tab type to rank-stats API for per-type analytics
   const { data: stats, mutate: mutateStats } = useDashboard<StatsData>(
-    id && session ? `/api/dashboard/servers/${id}/rank-stats` : null,
+    id && session ? `/api/dashboard/servers/${id}/rank-stats?type=${activeTab}` : null,
     { revalidateOnFocus: false }
   )
+  // --- END AI-MODIFIED ---
   const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
     id && session ? `/api/dashboard/servers/${id}` : null
   )
   const { roleMap } = useRoles(guildId)
   const serverName = serverData?.server?.name || "Server"
 
-  const [activeTab, setActiveTab] = useState<TabKey>("XP")
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Set initial tab to guild's primary rank type when data first loads
+  useEffect(() => {
+    if (data?.rankType && !initialTabSet) {
+      setActiveTab(data.rankType as TabKey)
+      setInitialTabSet(true)
+    }
+  }, [data, initialTabSet])
+  // --- END AI-MODIFIED ---
+
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Rank | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -214,12 +238,39 @@ export default function RanksPage() {
   const [presetConfirm, setPresetConfirm] = useState<typeof PRESETS[number] | null>(null)
   const [loadingPreset, setLoadingPreset] = useState(false)
 
-  const effectiveTab = (data?.rankType as TabKey) || activeTab
-  const currentRanks = data ? (effectiveTab === "XP" ? data.xpRanks : effectiveTab === "VOICE" ? data.voiceRanks : data.msgRanks) : []
-  const counts = data?.memberCounts?.[effectiveTab] || {}
+  // --- AI-MODIFIED (2026-03-25) ---
+  // Purpose: Unlock tabs for free switching between rank types
+  // --- Original code (commented out for rollback) ---
+  // const effectiveTab = (data?.rankType as TabKey) || activeTab
+  // const currentTab = data?.rankType ? (data.rankType as TabKey) : activeTab
+  // --- End original code ---
+  const currentTab = activeTab
+  const currentRanks = data ? (currentTab === "XP" ? data.xpRanks : currentTab === "VOICE" ? data.voiceRanks : data.msgRanks) : []
+  const counts = data?.memberCounts?.[currentTab] || {}
 
-  // Sync tab to active rank type
-  const currentTab = data?.rankType ? (data.rankType as TabKey) : activeTab
+  const isTypeEnabled = useCallback((tab: TabKey) => {
+    if (!data) return false
+    if (data.rankType === tab) return true
+    if (tab === "VOICE") return data.voiceRanksEnabled
+    if (tab === "MESSAGE") return data.msgRanksEnabled
+    if (tab === "XP") return data.xpRanksEnabled
+    return false
+  }, [data])
+
+  const toggleSecondaryType = useCallback(async (tab: TabKey) => {
+    const fieldMap: Record<TabKey, string> = { VOICE: "voiceRanksEnabled", MESSAGE: "msgRanksEnabled", XP: "xpRanksEnabled" }
+    const currentlyEnabled = tab === "VOICE" ? data?.voiceRanksEnabled : tab === "MESSAGE" ? data?.msgRanksEnabled : data?.xpRanksEnabled
+    try {
+      const res = await fetch(`/api/dashboard/servers/${id}/ranks`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [fieldMap[tab]]: !currentlyEnabled }),
+      })
+      if (res.ok) { toast.success(`${tab} ranks ${currentlyEnabled ? "disabled" : "enabled"}`); mutate() }
+      else toast.error("Failed to toggle")
+    } catch { toast.error("Error toggling rank type") }
+  }, [data, id, mutate])
+  // --- END AI-MODIFIED ---
 
   // ── Inline Config ────────────────────────────────────────
 
@@ -482,12 +533,58 @@ export default function RanksPage() {
                 description="Ranks reward members as they study. When a member reaches the required threshold, they automatically receive the role and a coin reward."
               />
 
+              {/* --- AI-MODIFIED (2026-03-25) --- */}
+              {/* Purpose: Added rank type tabs + secondary type toggles */}
+              {/* ── Type Tabs ── */}
+              {data && (
+                <div className="flex items-center gap-1 mb-4 bg-card/30 border border-border rounded-xl p-1">
+                  {(["VOICE", "XP", "MESSAGE"] as TabKey[]).map((tab) => {
+                    const isPrimary = data.rankType === tab
+                    const enabled = isTypeEnabled(tab)
+                    const tabRanks = tab === "XP" ? data.xpRanks : tab === "VOICE" ? data.voiceRanks : data.msgRanks
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab)}
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          currentTab === tab
+                            ? "bg-primary/15 text-primary border border-primary/30"
+                            : "text-muted-foreground hover:text-foreground hover:bg-accent/20"
+                        }`}
+                      >
+                        {tab === "VOICE" ? "Voice" : tab === "XP" ? "XP" : "Messages"}
+                        {isPrimary && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary">Primary</span>
+                        )}
+                        {!isPrimary && enabled && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">On</span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground">({tabRanks.length})</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* ── Secondary Type Toggle (if viewing a non-primary tab) ── */}
+              {data && data.rankType !== currentTab && (
+                <div className="flex items-center gap-3 mb-4 bg-card/50 border border-border rounded-xl px-4 py-3">
+                  <Zap size={14} className="text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground flex-1">
+                    {isTypeEnabled(currentTab)
+                      ? `${currentTab} ranks are enabled as a secondary type. Members earn these roles alongside their primary ranks.`
+                      : `${currentTab} ranks are not active. Enable to track and assign roles for this type independently.`}
+                  </span>
+                  <Toggle checked={isTypeEnabled(currentTab)} onChange={() => toggleSecondaryType(currentTab)} />
+                </div>
+              )}
+
               {/* ── Inline Config Bar ── */}
               {data && (
                 <div className="bg-card/50 border border-border rounded-xl p-4 mb-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                     <div>
-                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">Active Rank Type</label>
+                      <label className="block text-xs font-medium text-muted-foreground mb-1.5">Primary Rank Type</label>
                       <SearchSelect
                         options={RANK_TYPE_OPTIONS}
                         value={data.rankType || null}
@@ -512,6 +609,7 @@ export default function RanksPage() {
                   </div>
                 </div>
               )}
+              {/* --- END AI-MODIFIED --- */}
 
               {loading ? (
                 <div className="space-y-3">
