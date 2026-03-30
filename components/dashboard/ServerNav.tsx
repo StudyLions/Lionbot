@@ -17,13 +17,16 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: add Pin icon for sticky messages nav link
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: add DoorOpen icon for Private Rooms nav link + Search/X for sidebar search
+// --- AI-MODIFIED (2026-03-25) ---
+// Purpose: add Bug and MessageSquareWarning icons for Advanced section
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
-  Search, X, Clock,
+  Search, X, Clock, Bug, MessageSquareWarning,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
@@ -148,6 +151,16 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
     // })
     // --- End original code ---
     // --- END AI-REPLACED ---
+    // --- AI-MODIFIED (2026-03-25) ---
+    // Purpose: Advanced section with Debug Info page and Report a Bug external link
+    sections.push({
+      title: "Advanced",
+      links: [
+        { href: "/debug-info", label: "Debug Info", icon: <Bug size={16} /> },
+        { href: "https://discord.gg/the-study-lions-780195610154237993", label: "Report a Bug", icon: <MessageSquareWarning size={16} /> },
+      ],
+    })
+    // --- END AI-MODIFIED ---
   }
 
   return sections
@@ -302,25 +315,38 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
             {/* --- END AI-MODIFIED --- */}
             <div className="space-y-0.5">
               {section.links.map((link) => {
-                const fullPath = basePath + link.href
-                const isActive = link.href === ""
+                // --- AI-MODIFIED (2026-03-25) ---
+                // Purpose: Support external links (e.g. Report a Bug) that open in new tab
+                const isExternal = link.href.startsWith("http")
+                const fullPath = isExternal ? link.href : basePath + link.href
+                const isActive = isExternal ? false : link.href === ""
                   ? router.asPath === fullPath || router.asPath === fullPath + "/"
                   : router.asPath.startsWith(fullPath)
+                const linkClassName = cn(
+                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  isActive
+                    ? link.supporterPerk
+                      ? "bg-amber-500/15 text-amber-400 font-medium"
+                      : "bg-primary/15 text-primary font-medium"
+                    : link.supporterPerk
+                      ? "text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10"
+                      : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                )
+                if (isExternal) {
+                  return (
+                    <a key={link.href} href={fullPath} target="_blank" rel="noopener noreferrer" className={linkClassName}>
+                      <span className="flex-shrink-0 opacity-70">{link.icon}</span>
+                      <span className="flex-1">{link.label}</span>
+                    </a>
+                  )
+                }
+                // --- END AI-MODIFIED ---
                 // --- AI-MODIFIED (2026-03-14) ---
                 // Purpose: supporter perk visual highlight for cosmetic features
                 return (
                   <Link key={link.href} href={fullPath} onClick={onNavigate}>
                     <span
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
-                        isActive
-                          ? link.supporterPerk
-                            ? "bg-amber-500/15 text-amber-400 font-medium"
-                            : "bg-primary/15 text-primary font-medium"
-                          : link.supporterPerk
-                            ? "text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10"
-                            : "text-muted-foreground hover:text-foreground hover:bg-accent"
-                      )}
+                      className={linkClassName}
                       aria-current={isActive ? "page" : undefined}
                     >
                       <span className="flex-shrink-0 opacity-70">{link.icon}</span>
