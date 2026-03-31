@@ -44,7 +44,7 @@ export default apiHandler({
     const hasMore = entries.length > PAGE_SIZE
     const page = hasMore ? entries.slice(0, PAGE_SIZE) : entries
 
-    const userIds = [...new Set(page.map((e) => e.userid))]
+    const userIds = Array.from(new Set(page.map((e) => e.userid)))
     const users = await prisma.user_config.findMany({
       where: { userid: { in: userIds } },
       select: { userid: true, name: true, avatar_hash: true },
