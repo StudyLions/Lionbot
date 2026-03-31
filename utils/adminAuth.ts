@@ -16,7 +16,10 @@ const secret = process.env.SECRET
 const MANAGE_GUILD = 0x20
 const ADMINISTRATOR = 0x8
 
-interface AuthContext {
+// --- AI-MODIFIED (2026-03-31) ---
+// Purpose: Export AuthContext for reuse in boardAuth.ts
+export interface AuthContext {
+// --- END AI-MODIFIED ---
   discordId: string
   userId: bigint
   accessToken: string
