@@ -206,7 +206,7 @@ export default function BoardPage() {
 
   if (isLoading) {
     return (
-      <Layout SEO={{ title: "Board - LionBot Dashboard" }}>
+      <Layout SEO={{ title: "Board - LionBot Dashboard", description: "Shared kanban board" }}>
         <AdminGuard>
           <DashboardShell nav={<DashboardNav />} className="max-w-full space-y-4">
             <Skeleton className="h-8 w-48" />
@@ -221,7 +221,7 @@ export default function BoardPage() {
 
   if (!board) {
     return (
-      <Layout SEO={{ title: "Board Not Found" }}>
+      <Layout SEO={{ title: "Board Not Found", description: "Board not found" }}>
         <AdminGuard>
           <DashboardShell nav={<DashboardNav />} className="max-w-3xl">
             <div className="text-center py-20">
@@ -240,7 +240,7 @@ export default function BoardPage() {
   const completedTasks = board.columns.reduce((s, c) => s + c.tasks.filter((t) => t.completed).length, 0) + board.unassignedTasks.filter((t) => t.completed).length
 
   return (
-    <Layout SEO={{ title: `${board.name} - LionBot Dashboard` }}>
+    <Layout SEO={{ title: `${board.name} - LionBot Dashboard`, description: "Shared kanban board" }}>
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />} className="max-w-full space-y-4">
           <div className="flex items-center gap-3 mb-1">
