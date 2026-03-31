@@ -96,14 +96,7 @@ export default function BoardsListPage() {
               icon={<KanbanSquare size={48} className="text-gray-500" />}
               title="No boards yet"
               description="Create your first shared board to collaborate with others on tasks and projects."
-              action={
-                <button
-                  onClick={() => setShowCreate(true)}
-                  className="mt-4 px-6 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors"
-                >
-                  Create Your First Board
-                </button>
-              }
+              action={{ label: "Create Your First Board", onClick: () => setShowCreate(true) }}
             />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
