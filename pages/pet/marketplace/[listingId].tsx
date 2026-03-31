@@ -14,9 +14,13 @@ import { useState, useCallback } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import dynamic from "next/dynamic"
+// --- AI-MODIFIED (2026-03-31) ---
+// Purpose: Add icons needed for wiki-sourced item info sections
 import {
   ChevronLeft, Clock, User, ScrollText, Coins, Gem, ExternalLink,
+  Users, Package, ShoppingCart, Sparkles, Droplets, Mic, MessageSquare,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
@@ -88,6 +92,10 @@ function timeLeft(expiresAt: string): string {
 }
 
 const MARKETPLACE_FEE_PERCENT = 5
+// --- AI-MODIFIED (2026-03-31) ---
+// Purpose: Equipment categories for enhancement info display
+const EQUIP_CATS = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"])
+// --- END AI-MODIFIED ---
 
 export default function ListingDetailPage() {
   const { data: session } = useSession()
@@ -100,6 +108,12 @@ export default function ListingDetailPage() {
   const { data: historyData } = useDashboard<any>(
     data?.listing ? `/api/pet/marketplace/history?itemId=${data.listing.item.id}&days=30` : null
   )
+  // --- AI-MODIFIED (2026-03-31) ---
+  // Purpose: Fetch wiki item data for ownership, drop info, and enhancement info sections
+  const { data: wikiData } = useDashboard<any>(
+    data?.listing ? `/api/pet/wiki/${data.listing.item.id}` : null
+  )
+  // --- END AI-MODIFIED ---
 
   const [quantity, setQuantity] = useState(1)
   const [buying, setBuying] = useState(false)
@@ -153,7 +167,12 @@ export default function ListingDetailPage() {
   const cumProb = calcCumulativeProb(scrollData)
   const totalPrice = listing ? listing.pricePerUnit * quantity : 0
   const fee = Math.floor(totalPrice * MARKETPLACE_FEE_PERCENT / 100)
-  const avgPrice = historyData?.summary?.avgPrice ?? 0
+  // --- AI-MODIFIED (2026-03-31) ---
+  // Purpose: Use currency-specific average for the listing's currency, falling back to combined
+  const avgPrice = listing?.currency === "GEMS"
+    ? (historyData?.gemSummary?.avgPrice ?? historyData?.summary?.avgPrice ?? 0)
+    : (historyData?.goldSummary?.avgPrice ?? historyData?.summary?.avgPrice ?? 0)
+  // --- END AI-MODIFIED ---
 
   return (
     <Layout SEO={{ title: listing ? `${listing.item.name} - Marketplace` : "Listing Detail", description: "Marketplace listing detail" }}>
@@ -331,6 +350,148 @@ export default function ListingDetailPage() {
                           </div>
                         )}
                       </PixelCard>
+
+                      {/* --- AI-MODIFIED (2026-03-31) --- */}
+                      {/* Purpose: Item Info grid, How to Obtain, and Enhancement Info from wiki data */}
+
+                      {/* Item Info Stats */}
+                      {wikiData && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                          <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                            <span className="font-pixel text-[11px] text-[#4a5a6a] flex items-center gap-1">
+                              <Coins size={12} className="text-[var(--pet-gold,#f0c040)]" /> MARKET PRICE
+                            </span>
+                            {wikiData.marketplaceSummary?.avgPrice > 0 ? (
+                              <GoldDisplay amount={wikiData.marketplaceSummary.avgPrice} size="md" className="mt-1" />
+                            ) : (
+                              <p className="font-pixel text-sm text-[#4a5a6a] mt-1">--</p>
+                            )}
+                            <p className="font-pixel text-[10px] text-[#3a4a5a]">30d avg</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                            <span className="font-pixel text-[11px] text-[#4a5a6a] flex items-center gap-1">
+                              <ShoppingCart size={12} className="text-[#80b0ff]" /> TOTAL TRADED
+                            </span>
+                            <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{wikiData.marketplaceSummary?.totalVolume ?? 0}</p>
+                            <p className="font-pixel text-[10px] text-[#3a4a5a]">units (30d)</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                            <span className="font-pixel text-[11px] text-[#4a5a6a] flex items-center gap-1">
+                              <Users size={12} /> OWNERS
+                            </span>
+                            <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] mt-1">{wikiData.ownership?.count ?? 0}</p>
+                            <p className="font-pixel text-[10px] text-[#4a5a6a]">{wikiData.ownership?.tier ?? ""}</p>
+                          </div>
+                          <div className="border-2 border-[#2a3a5c] bg-[#0c1020] p-3 shadow-[2px_2px_0_#060810]">
+                            <span className="font-pixel text-[11px] text-[#4a5a6a] flex items-center gap-1">
+                              <Package size={12} /> YOUR COLLECTION
+                            </span>
+                            <p className={`font-pixel text-sm mt-1 ${(wikiData.ownership?.userOwned ?? 0) > 0 ? "text-[var(--pet-green,#40d870)]" : "text-[#4a5a6a]"}`}>
+                              {(wikiData.ownership?.userOwned ?? 0) > 0 ? `You own x${wikiData.ownership.userOwned}` : "Not owned"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* How to Obtain */}
+                      {wikiData?.dropInfo && (
+                        <PixelCard className="p-4" corners>
+                          <h3 className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                            <Droplets size={14} /> HOW TO OBTAIN
+                          </h3>
+                          <div className="space-y-2 font-pixel text-[12px]">
+                            <div className="flex items-center gap-2 text-[var(--pet-text-dim,#8899aa)]">
+                              <Droplets size={14} className="text-[#80b0ff]" />
+                              Drops from activity (chatting, voice, farm harvests)
+                            </div>
+                            <div className="flex items-center gap-2 sm:gap-4 ml-5 text-[11px] text-[#4a5a6a] flex-wrap">
+                              <span className="flex items-center gap-1"><Mic size={11} /> {(wikiData.dropInfo.voiceChance * 100).toFixed(0)}% per voice session</span>
+                              <span className="flex items-center gap-1"><MessageSquare size={11} /> {(wikiData.dropInfo.textChance * 100).toFixed(0)}% per 5 messages</span>
+                            </div>
+                            {wikiData.dropInfo.dropWeight != null && wikiData.dropInfo.itemsInTier && (
+                              <div className="mt-2 border-t border-[#1a2a3c] pt-2 space-y-1">
+                                {wikiData.dropInfo.dropWeight < 0.2 ? (
+                                  <span className="font-pixel text-[11px] px-2 py-0.5 border border-[#ff60a0] text-[#ffa0c0] bg-[#ff60a010] inline-block">
+                                    ULTRA RARE — {(wikiData.dropInfo.relativeChance * 100).toFixed(1)}% within {listing.item.rarity} drops
+                                  </span>
+                                ) : wikiData.dropInfo.dropWeight < 0.5 ? (
+                                  <span className="font-pixel text-[11px] px-2 py-0.5 border border-[#d060f0] text-[#e0a0ff] bg-[#d060f010] inline-block">
+                                    SUPER RARE — {(wikiData.dropInfo.relativeChance * 100).toFixed(1)}% within {listing.item.rarity} drops
+                                  </span>
+                                ) : wikiData.dropInfo.dropWeight < 1.0 ? (
+                                  <span className="font-pixel text-[11px] px-2 py-0.5 border border-[#f0c040] text-[#ffe080] bg-[#f0c04010] inline-block">
+                                    UNCOMMON DROP — {(wikiData.dropInfo.relativeChance * 100).toFixed(1)}% within {listing.item.rarity} drops
+                                  </span>
+                                ) : null}
+                                <p className="font-pixel text-[10px] text-[#3a4a5a]">
+                                  {wikiData.dropInfo.itemsInTier} {listing.item.rarity.toLowerCase()} {listing.item.category === "SCROLL" ? "scrolls" : "items"} in the drop pool
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </PixelCard>
+                      )}
+
+                      {/* Enhancement Info (generic) */}
+                      {wikiData?.enhancement && EQUIP_CATS.has(listing.item.category) && (() => {
+                        const e = wikiData.enhancement
+                        const minPct = (e.minBonusPerLevel * 100).toFixed(1)
+                        const maxPct = (e.maxBonusPerLevel * 100).toFixed(1)
+                        const dropMin = (e.dropBonusRate * 1.0 * 100).toFixed(1)
+                        const dropMax = (e.dropBonusRate * 7.0 * 100).toFixed(1)
+                        const safePct = (e.safeBonus * 100).toFixed(0)
+                        const perfectPct = (e.perfectBonus * 100).toFixed(0)
+                        return (
+                          <PixelCard className="p-4" corners>
+                            <h3 className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)] mb-3 flex items-center gap-2">
+                              <Sparkles size={14} /> ENHANCEMENT INFO
+                            </h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                              <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-2.5">
+                                <p className="font-pixel text-base text-[var(--pet-blue,#4080f0)]">+{e.maxLevel}</p>
+                                <p className="font-pixel text-[10px] text-[#4a5a6a]">Max Level</p>
+                              </div>
+                              <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-2.5">
+                                <p className="font-pixel text-sm text-[var(--pet-green,#40d870)]">{minPct}% – {maxPct}%</p>
+                                <p className="font-pixel text-[10px] text-[#4a5a6a]">Gold/XP per lvl</p>
+                              </div>
+                              <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-2.5">
+                                <p className="font-pixel text-sm text-[#80b0ff]">{dropMin}% – {dropMax}%</p>
+                                <p className="font-pixel text-[10px] text-[#4a5a6a]">Drop Rate per lvl</p>
+                              </div>
+                              <div className="border-2 border-[#2a3a5c] bg-[#080c18] p-2.5">
+                                <p className="font-pixel text-[10px] text-[#4a5a6a] mb-0.5">Depends on scrolls</p>
+                                <p className="font-pixel text-[10px] text-[#6a7a8a]">No fixed max</p>
+                              </div>
+                            </div>
+                            <div className="mt-3 border-2 border-[#1a2a3c] bg-[#080c18] p-3">
+                              <p className="font-pixel text-[10px] text-[#4a5a6a] mb-2">POTENTIAL AT +{e.maxLevel}</p>
+                              <div className="flex items-center gap-3">
+                                <div className="flex-1">
+                                  <div className="flex justify-between font-pixel text-[10px] mb-1">
+                                    <span className="text-[#6a8a6a]">Safe (Dusty)</span>
+                                    <span className="text-[var(--pet-green,#40d870)]">+{safePct}% Gold/XP</span>
+                                  </div>
+                                  <div className="h-2 bg-[#0c1020] border border-[#1a2a3c] overflow-hidden">
+                                    <div className="h-full bg-[#40d87060]" style={{ width: `${Math.min((Number(safePct) / Number(perfectPct)) * 100, 100)}%` }} />
+                                  </div>
+                                </div>
+                                <div className="flex-1">
+                                  <div className="flex justify-between font-pixel text-[10px] mb-1">
+                                    <span className="text-[#8a6a8a]">Perfect (Doom)</span>
+                                    <span className="text-[#ff60a0]">+{perfectPct}% Gold/XP</span>
+                                  </div>
+                                  <div className="h-2 bg-[#0c1020] border border-[#1a2a3c] overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-[#d060f0] to-[#ff60a0]" style={{ width: "100%" }} />
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="font-pixel text-[9px] text-[#3a4a5a] mt-2">Bonus depends on which scrolls are used — riskier scrolls yield higher bonuses per level</p>
+                            </div>
+                          </PixelCard>
+                        )
+                      })()}
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
 
                     {/* RIGHT PANEL: Purchase + Market Data */}
@@ -407,7 +568,10 @@ export default function ListingDetailPage() {
                         )}
                       </PixelCard>
 
-                      {/* Price History */}
+                      {/* --- AI-REPLACED (2026-03-31) --- */}
+                      {/* Reason: Split single price chart into separate gold and gem charts */}
+                      {/* What the new code does better: Shows independent price history per currency */}
+                      {/* --- Original code (commented out for rollback) ---
                       <PixelCard className="p-4 space-y-3" corners>
                         <h4 className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)]">PRICE HISTORY (30d)</h4>
                         <PriceChart data={historyData?.priceHistory ?? []} height={140} />
@@ -428,6 +592,60 @@ export default function ListingDetailPage() {
                           </div>
                         )}
                       </PixelCard>
+                      --- End original code --- */}
+
+                      {/* Gold Price History */}
+                      {(historyData?.goldHistory?.length > 0 || !historyData?.gemHistory?.length) && (
+                        <PixelCard className="p-4 space-y-3" corners>
+                          <h4 className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] flex items-center gap-1.5">
+                            <Coins size={12} className="text-[#f0c040]" /> PRICE HISTORY — GOLD (30d)
+                          </h4>
+                          <PriceChart data={historyData?.goldHistory ?? []} height={140} currency="GOLD" />
+                          {historyData?.goldSummary && (
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">AVG</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.goldSummary.avgPrice.toLocaleString()}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">VOLUME</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.goldSummary.totalVolume}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">LISTINGS</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.summary?.activeListings ?? 0}</p>
+                              </div>
+                            </div>
+                          )}
+                        </PixelCard>
+                      )}
+
+                      {/* Gem Price History */}
+                      {historyData?.gemHistory?.length > 0 && (
+                        <PixelCard className="p-4 space-y-3" corners>
+                          <h4 className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] flex items-center gap-1.5">
+                            <Gem size={12} className="text-[#a060f0]" /> PRICE HISTORY — GEMS (30d)
+                          </h4>
+                          <PriceChart data={historyData.gemHistory} height={140} currency="GEMS" />
+                          {historyData?.gemSummary && (
+                            <div className="grid grid-cols-3 gap-2">
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">AVG</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.gemSummary.avgPrice.toLocaleString()}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">VOLUME</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.gemSummary.totalVolume}</p>
+                              </div>
+                              <div className="text-center">
+                                <p className="font-pixel text-[9px] text-[#4a5a70]">LISTINGS</p>
+                                <p className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)]">{historyData.summary?.activeListings ?? 0}</p>
+                              </div>
+                            </div>
+                          )}
+                        </PixelCard>
+                      )}
+                      {/* --- END AI-REPLACED --- */}
 
                       {/* Other Listings */}
                       {otherListings.length > 0 && (
