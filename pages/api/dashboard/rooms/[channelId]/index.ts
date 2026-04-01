@@ -237,7 +237,7 @@ export default apiHandler({
         ? [
             prisma.members.update({
               where: {
-                members_guildid_userid_key: {
+                guildid_userid: {
                   guildid: room.guildid,
                   userid: room.ownerid,
                 },
