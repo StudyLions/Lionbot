@@ -28,6 +28,21 @@ import {
   Loader2,
   Palette,
   Server,
+  Type,
+  Timer,
+  Trophy,
+  Volume2,
+  Pin,
+  Clock,
+  EyeOff,
+  MessageSquare,
+  CloudRain,
+  Flame,
+  Waves,
+  Wind,
+  Radio,
+  Music,
+  Coins,
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -799,74 +814,114 @@ function ComparisonTable() {
   );
 }
 
-// --- AI-MODIFIED (2026-03-17) ---
-// Purpose: Server Premium showcase with bot-rendered card demo and fake editor
+// --- AI-REPLACED (2026-04-01) ---
+// Reason: Complete redesign of Server Premium showcase section
+// What the new code does better: Full-width, demo-rich feature showcase with interactive visual demos
+//   for every premium feature (6 tabbed demos + 4 feature cards), replacing the cramped branding-focused layout
+// --- Original code (commented out for rollback) ---
+// const DEMO_SKINS = [
+//   { id: "obsidian", name: "Obsidian", accent: "#6366f1", swatches: [...] },
+//   { id: "cotton_candy", name: "Cotton Candy", accent: "#FF69B4", swatches: [...] },
+//   { id: "boston_blue", name: "Boston Blue", accent: "#3B82C4", swatches: [...] },
+//   { id: "platinum", name: "Platinum", accent: "#A0A0B0", swatches: [...] },
+// ];
+// function ServerPremiumShowcase({ currency, symbol }) {
+//   ... ~520 lines: Two-column layout with card carousel on left, fake branding editor +
+//   checklist + pricing on right. Mock skin selector with color swatches. All features
+//   crammed into 8-item checklist at 13px. Single card type (profile) shown.
+//   My Server Premiums panel at the bottom.
+// }
+// --- End original code ---
+
 const DEMO_SKINS = [
-  {
-    id: "obsidian",
-    name: "Obsidian",
-    accent: "#6366f1",
-    swatches: [
-      { label: "Username", color: "#A5A8FF" },
-      { label: "Badge BG", color: "#2D2D5E" },
-      { label: "Progress Bar", color: "#6366F1" },
-      { label: "Counter Text", color: "#8B8DCC" },
-    ],
-  },
-  {
-    id: "cotton_candy",
-    name: "Cotton Candy",
-    accent: "#FF69B4",
-    swatches: [
-      { label: "Username", color: "#FFB6C1" },
-      { label: "Badge BG", color: "#CC5490" },
-      { label: "Progress Bar", color: "#FF69B4" },
-      { label: "Counter Text", color: "#FFD4E0" },
-    ],
-  },
-  {
-    id: "boston_blue",
-    name: "Boston Blue",
-    accent: "#3B82C4",
-    swatches: [
-      { label: "Username", color: "#93C5FD" },
-      { label: "Badge BG", color: "#1E3A5F" },
-      { label: "Progress Bar", color: "#3B82C4" },
-      { label: "Counter Text", color: "#60A5FA" },
-    ],
-  },
-  {
-    id: "platinum",
-    name: "Platinum",
-    accent: "#A0A0B0",
-    swatches: [
-      { label: "Username", color: "#E8E8F0" },
-      { label: "Badge BG", color: "#505060" },
-      { label: "Progress Bar", color: "#C0C0CC" },
-      { label: "Counter Text", color: "#D4D4E0" },
-    ],
-  },
+  { id: "obsidian", name: "Obsidian", accent: "#6366f1" },
+  { id: "cotton_candy", name: "Cotton Candy", accent: "#FF69B4" },
+  { id: "boston_blue", name: "Boston Blue", accent: "#3B82C4" },
+  { id: "platinum", name: "Platinum", accent: "#A0A0B0" },
 ];
 
-// --- AI-MODIFIED (2026-03-23) ---
-// Purpose: Added server selector + Stripe checkout to ServerPremiumShowcase
+const DEMO_CARD_TYPES = ["profile", "stats", "leaderboard"];
+
+const POMO_THEMES = [
+  { id: "neon", color: "#22d3ee", label: "Neon", glow: "rgba(34,211,238,0.15)" },
+  { id: "forest", color: "#22c55e", label: "Forest", glow: "rgba(34,197,94,0.15)" },
+  { id: "ocean", color: "#3b82f6", label: "Ocean", glow: "rgba(59,130,246,0.15)" },
+  { id: "sakura", color: "#f472b6", label: "Sakura", glow: "rgba(244,114,182,0.15)" },
+  { id: "sunset", color: "#f97316", label: "Sunset", glow: "rgba(249,115,22,0.15)" },
+  { id: "midnight", color: "#6366f1", label: "Midnight", glow: "rgba(99,102,241,0.15)" },
+];
+
+const AMBIENT_SOUNDS = [
+  { id: "rain", name: "Rain", Icon: CloudRain },
+  { id: "campfire", name: "Campfire", Icon: Flame },
+  { id: "ocean", name: "Ocean Waves", Icon: Waves },
+  { id: "brown_noise", name: "Brown Noise", Icon: Wind },
+  { id: "white_noise", name: "White Noise", Icon: Radio },
+  { id: "lofi", name: "LoFi", Icon: Music },
+];
+
+const FEATURE_GROUP_TAGS = [
+  "Rank Notifications", "Welcome & Goodbye", "Economy & Coins",
+  "Study Sessions", "Reminders", "Tasks & To-Do", "Pomodoro Timer",
+  "Moderation", "Profile & Stats", "Leaderboard", "Role Menus",
+  "LionGotchi Pet", "Button Labels", "Goals Cards",
+];
+
+const PREMIUM_TABS = [
+  { id: "branding", label: "Visual Branding", Icon: Palette },
+  { id: "text", label: "Text Branding", Icon: Type },
+  { id: "pomodoro", label: "Pomodoro", Icon: Timer },
+  { id: "leaderboard", label: "Leaderboards", Icon: Trophy },
+  { id: "sounds", label: "Sounds", Icon: Volume2 },
+  { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
+] as const;
+
+type PremiumTabId = typeof PREMIUM_TABS[number]["id"];
+
+const POMO_RING_R = 42;
+const POMO_RING_C = 2 * Math.PI * POMO_RING_R;
+const POMO_TOTAL = 25 * 60;
+
 interface AdminServer {
-  guildId: string
-  guildName: string
-  iconUrl: string | null
+  guildId: string;
+  guildName: string;
+  iconUrl: string | null;
 }
 
-// --- AI-MODIFIED (2026-03-24) ---
-// Purpose: Accept currency/symbol props for dual-currency pricing
+interface ServerPremiumInfo {
+  id: number;
+  guildId: string;
+  plan: string;
+  status: string;
+  currentPeriodEnd: string | null;
+  transferCooldownEnds: string | null;
+}
+
+interface LionheartPremiumInfo {
+  guildId: string | null;
+  isApplied: boolean;
+  premiumUntil: string | null;
+  transferCooldownEnds: string | null;
+}
+
 function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbol: string }) {
   const { data: session } = useSession();
-// --- END AI-MODIFIED ---
+
+  const [activeTab, setActiveTab] = useState<PremiumTabId>("branding");
+  const [tabPaused, setTabPaused] = useState(false);
+
   const [activeSkin, setActiveSkin] = useState(0);
+  const [activeCardType, setActiveCardType] = useState(0);
   const [imagesReady, setImagesReady] = useState(false);
-  const [isHovering, setIsHovering] = useState(false);
   const [hasError, setHasError] = useState(false);
   const loadedCount = useRef(0);
-  const errorCount = useRef(0);
+
+  const [showCustomText, setShowCustomText] = useState(false);
+
+  const [pomoTheme, setPomoTheme] = useState(0);
+  const [pomoElapsed, setPomoElapsed] = useState(0);
+
+  const [activeSound, setActiveSound] = useState(0);
 
   const [adminServers, setAdminServers] = useState<AdminServer[]>([]);
   const [allServers, setAllServers] = useState<AdminServer[]>([]);
@@ -874,32 +929,44 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
   const [selectedServer, setSelectedServer] = useState<string>("");
   const [checkingOut, setCheckingOut] = useState(false);
 
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: State for "My Server Premiums" overview panel
-  interface ServerPremiumInfo {
-    id: number;
-    guildId: string;
-    plan: string;
-    status: string;
-    currentPeriodEnd: string | null;
-    transferCooldownEnds: string | null;
-  }
-  interface LionheartPremiumInfo {
-    guildId: string | null;
-    isApplied: boolean;
-    premiumUntil: string | null;
-    transferCooldownEnds: string | null;
-  }
   const [myPaidSubs, setMyPaidSubs] = useState<ServerPremiumInfo[]>([]);
   const [myLhPremium, setMyLhPremium] = useState<LionheartPremiumInfo | null>(null);
   const [premiumsLoading, setPremiumsLoading] = useState(false);
-  // --- END AI-MODIFIED ---
+
+  useEffect(() => {
+    if (tabPaused) return;
+    const timer = setInterval(() => {
+      setActiveTab((prev) => {
+        const idx = PREMIUM_TABS.findIndex((t) => t.id === prev);
+        return PREMIUM_TABS[(idx + 1) % PREMIUM_TABS.length].id;
+      });
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [tabPaused]);
+
+  useEffect(() => {
+    if (activeTab !== "branding" || !imagesReady) return;
+    const timer = setInterval(() => setActiveSkin((prev) => (prev + 1) % DEMO_SKINS.length), 4000);
+    return () => clearInterval(timer);
+  }, [activeTab, imagesReady]);
+
+  useEffect(() => {
+    if (activeTab !== "pomodoro") return;
+    const timer = setInterval(() => setPomoElapsed((e) => (e + 1) % POMO_TOTAL), 1000);
+    return () => clearInterval(timer);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "text") return;
+    const timer = setInterval(() => setShowCustomText((p) => !p), 4000);
+    return () => clearInterval(timer);
+  }, [activeTab]);
 
   useEffect(() => {
     if (!session) return;
     setServersLoading(true);
     fetch("/api/dashboard/servers")
-      .then((r) => r.ok ? r.json() : { servers: [] })
+      .then((r) => (r.ok ? r.json() : { servers: [] }))
       .then((data: { servers: Array<{ guildId: string; guildName: string; iconUrl: string | null; role: string; botPresent: boolean }> }) => {
         const servers = data.servers || [];
         const admins = servers.filter((s) => s.role === "admin" && s.botPresent);
@@ -910,22 +977,17 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
       .catch(() => setAdminServers([]))
       .finally(() => setServersLoading(false));
 
-    // --- AI-MODIFIED (2026-03-23) ---
-    // Purpose: Fetch user's server premiums for overview panel
     setPremiumsLoading(true);
     fetch("/api/subscription/my-server-premiums")
-      .then((r) => r.ok ? r.json() : { paidSubscriptions: [], lionheartServerPremium: null })
+      .then((r) => (r.ok ? r.json() : { paidSubscriptions: [], lionheartServerPremium: null }))
       .then((data: { paidSubscriptions: ServerPremiumInfo[]; lionheartServerPremium: LionheartPremiumInfo | null }) => {
         setMyPaidSubs(data.paidSubscriptions || []);
         setMyLhPremium(data.lionheartServerPremium || null);
       })
       .catch(() => {})
       .finally(() => setPremiumsLoading(false));
-    // --- END AI-MODIFIED ---
   }, [session]);
 
-  // --- AI-MODIFIED (2026-03-24) ---
-  // Purpose: Pass currency to server premium checkout
   const handleServerCheckout = async (plan: string) => {
     if (!selectedServer) return;
     setCheckingOut(true);
@@ -935,7 +997,6 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guildId: selectedServer, plan, currency }),
       });
-  // --- END AI-MODIFIED ---
       const data = await res.json();
       if (!res.ok) {
         alert(data.error || "Failed to start checkout");
@@ -948,344 +1009,618 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
       setCheckingOut(false);
     }
   };
-// --- END AI-MODIFIED ---
-
-  useEffect(() => {
-    if (!imagesReady || isHovering) return;
-    const timer = setInterval(() => {
-      setActiveSkin((prev) => (prev + 1) % DEMO_SKINS.length);
-    }, 4000);
-    return () => clearInterval(timer);
-  }, [imagesReady, isHovering]);
 
   const handleImageLoad = () => {
     loadedCount.current++;
     if (loadedCount.current >= 1) setImagesReady(true);
   };
 
-  const handleImageError = () => {
-    errorCount.current++;
-    if (errorCount.current >= DEMO_SKINS.length) setHasError(true);
-  };
+  const pomoRemaining = POMO_TOTAL - pomoElapsed;
+  const pomoMins = Math.floor(pomoRemaining / 60);
+  const pomoSecs = pomoRemaining % 60;
+  const pomoProgress = pomoElapsed / POMO_TOTAL;
+  const pomoDashOffset = POMO_RING_C * (1 - pomoProgress);
+  const currentPomoTheme = POMO_THEMES[pomoTheme];
 
-  const currentSkin = DEMO_SKINS[activeSkin];
+  const streakRef = useRef<HTMLDivElement>(null);
+  const [streakVisible, setStreakVisible] = useState(false);
+  const [streakCount, setStreakCount] = useState(0);
+  useEffect(() => {
+    const el = streakRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setStreakVisible(true); }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!streakVisible) return;
+    const target = 7;
+    let frame: number;
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = Math.min((now - start) / 800, 1);
+      setStreakCount(Math.floor(p * target));
+      if (p < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [streakVisible]);
+
+  const goldRef = useRef<HTMLDivElement>(null);
+  const [goldVisible, setGoldVisible] = useState(false);
+  const [goldCount, setGoldCount] = useState(100);
+  useEffect(() => {
+    const el = goldRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setGoldVisible(true); }, { threshold: 0.3 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  useEffect(() => {
+    if (!goldVisible) return;
+    let frame: number;
+    const start = performance.now();
+    const step = (now: number) => {
+      const p = Math.min((now - start) / 1200, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setGoldCount(100 + Math.floor(eased * 15));
+      if (p < 1) frame = requestAnimationFrame(step);
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [goldVisible]);
 
   return (
-    <section className="py-16 lg:py-20 border-t border-gray-800">
-      <div className="max-w-5xl mx-auto px-4 lg:px-6">
-        {/* --- AI-MODIFIED (2026-03-20) --- */}
-        {/* Purpose: Updated header with server icon and clearer description */}
-        <div className="text-center mb-10">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <Server className="h-7 w-7 text-blue-400" />
-            <h2 className="text-3xl font-bold text-white">Server Premium</h2>
+    <section className="py-16 lg:py-24 border-t border-gray-800" id="server-premium">
+      <style>{`
+        @keyframes sp-eq { 0%,100%{height:4px} 50%{height:var(--eq-h)} }
+        @keyframes sp-marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+        @keyframes sp-float { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-40px)} }
+        @keyframes sp-pulse-gold { 0%,100%{box-shadow:0 0 8px rgba(234,179,8,0.3)} 50%{box-shadow:0 0 20px rgba(234,179,8,0.6)} }
+      `}</style>
+
+      <div className="max-w-6xl mx-auto px-4 lg:px-6">
+        <div className="text-center mb-12">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <Server className="h-8 w-8 text-blue-400" />
+            <h2 className="text-3xl lg:text-4xl font-bold text-white">Server Premium</h2>
           </div>
-          {/* --- AI-MODIFIED (2026-03-23) --- */}
-          {/* Purpose: Updated subtitle to cover all premium features */}
-          <p className="text-gray-400 mt-2 max-w-xl mx-auto">
-            {/* --- AI-MODIFIED (2026-04-01) --- */}
-            {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
-            Unlock the full experience for your server &mdash; custom visual branding, premium pomodoro,
-            {/* --- END AI-MODIFIED --- */}
-            ambient sounds, auto-post leaderboards, sticky messages, and more
+          <p className="text-gray-400 mt-2 max-w-2xl mx-auto lg:text-lg">
+            10+ premium features that transform how your community studies, competes, and grows
           </p>
-          {/* --- END AI-MODIFIED --- */}
         </div>
-        {/* --- END AI-MODIFIED --- */}
 
         <div
           className="rounded-2xl border border-gray-700 bg-gray-800/50 overflow-hidden"
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
+          onMouseEnter={() => setTabPaused(true)}
+          onMouseLeave={() => setTabPaused(false)}
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2">
-            {/* Card Preview */}
-            <div className="relative bg-gray-900/60 flex items-center justify-center p-8 min-h-[320px] lg:min-h-[420px]">
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />
+          <div className="flex overflow-x-auto border-b border-gray-700 bg-gray-900/40 scrollbar-none">
+            {PREMIUM_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => { setActiveTab(tab.id); setTabPaused(true); }}
+                className={`flex items-center gap-2 px-3 lg:px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${
+                  activeTab === tab.id
+                    ? "text-blue-400 border-blue-400 bg-blue-500/5"
+                    : "text-gray-500 border-transparent hover:text-gray-300 hover:bg-gray-800/50"
+                }`}
+              >
+                <tab.Icon className="h-4 w-4" />
+                <span className="hidden sm:inline">{tab.label}</span>
+              </button>
+            ))}
+          </div>
 
-              {!hasError &&
-                DEMO_SKINS.map((skin, i) => (
-                  <img
-                    key={skin.id}
-                    src={`/api/card-demo?type=profile&skin=${skin.id}`}
-                    alt={`${skin.name} profile card`}
-                    className="absolute max-w-[240px] lg:max-w-[280px] w-full h-auto rounded-lg shadow-2xl"
-                    style={{
-                      opacity: i === activeSkin ? 1 : 0,
-                      transform:
-                        i === activeSkin
-                          ? "scale(1) translateY(0)"
-                          : "scale(0.95) translateY(10px)",
-                      transition: "opacity 0.7s ease, transform 0.7s ease",
-                      willChange: "opacity, transform",
-                    }}
-                    onLoad={handleImageLoad}
-                    onError={handleImageError}
-                    loading={i === 0 ? "eager" : "lazy"}
-                  />
-                ))}
-
-              {hasError && (
-                <div className="text-center text-gray-500">
-                  <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
-                  <p className="text-sm">Card preview temporarily unavailable</p>
+          <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px]">
+            <div className="p-6 lg:p-8 flex flex-col justify-center">
+              {activeTab === "branding" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Custom Visual Branding</h3>
+                  <p className="text-gray-400 mb-4 text-sm">Custom skins and colors for all 7 card types, applied server-wide to every member.</p>
+                  <div className="space-y-2 text-sm">
+                    {["Profile, Stats, Weekly, Monthly, Goals & Leaderboard cards",
+                      "7 premium base skins to choose from",
+                      "Custom color overrides for every element",
+                      "Applies automatically to all members",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="mt-5 flex items-center gap-2">
+                    {DEMO_CARD_TYPES.map((ct, i) => (
+                      <button
+                        key={ct}
+                        onClick={() => setActiveCardType(i)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
+                          activeCardType === i
+                            ? "bg-white/10 text-white border-white/20"
+                            : "text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-700"
+                        }`}
+                      >
+                        {ct.charAt(0).toUpperCase() + ct.slice(1)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {!imagesReady && !hasError && (
-                <div className="w-[240px] h-[310px] rounded-lg bg-gray-700/30 animate-pulse flex items-center justify-center">
-                  <Loader2 className="h-5 w-5 text-gray-500 animate-spin" />
+              {activeTab === "text" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Text Branding</h3>
+                  <p className="text-gray-400 mb-4 text-sm">
+                    Rewrite any of the bot&apos;s 2,372 messages to match your community&apos;s voice.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["2,372 customizable strings across 35 categories",
+                      "Export & import text bundles between servers",
+                      "Smart placeholders for dynamic content",
+                      "Up to 10,000 overrides (vs 3 for free)",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              {/* Skin indicator dots */}
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {DEMO_SKINS.map((_, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setActiveSkin(i)}
-                    className="p-0.5"
-                    aria-label={`Show ${DEMO_SKINS[i].name} skin`}
-                  >
-                    <div
-                      className={`h-1.5 rounded-full transition-all duration-300 ${
-                        i === activeSkin
-                          ? "bg-white w-5"
-                          : "bg-white/25 w-1.5 hover:bg-white/40"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
+              {activeTab === "pomodoro" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Premium Pomodoro</h3>
+                  <p className="text-gray-400 mb-4 text-sm">
+                    Advanced focus tools with themed timers, streaks, and analytics for your community.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["Focus roles assigned during sessions",
+                      "10 timer themes (Neon, Forest, Ocean, Sakura...)",
+                      "Streak tracking & milestone rewards",
+                      "Session summaries & golden hour",
+                      "Analytics dashboard with heatmaps",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div className="absolute bottom-4 right-4 text-[10px] text-gray-600 hidden lg:block">
-                Rendered by LionBot
-              </div>
+              {activeTab === "leaderboard" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Leaderboard Auto-Post</h3>
+                  <p className="text-gray-400 mb-4 text-sm">
+                    Scheduled leaderboard posts that keep your community competitive and engaged.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["Automated daily, weekly, or monthly posts",
+                      "Role rewards for top performers",
+                      "Coin prizes & winner DMs",
+                      "Custom announcement text & channel",
+                      "Include rendered leaderboard images",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "sounds" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Ambient Sound Bots</h3>
+                  <p className="text-gray-400 mb-4 text-sm">
+                    Background audio bots that create the perfect study atmosphere in voice channels.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["Up to 5 simultaneous bot slots",
+                      "6 sound types: rain, campfire, ocean & more",
+                      "Member voting for sound selection",
+                      "Auto-join configured channels",
+                      "Managed from the dashboard",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "liongotchi" && (
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">LionGotchi Bonuses</h3>
+                  <p className="text-gray-400 mb-4 text-sm">
+                    Boost the entire LionGotchi economy for every member in your server.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["+15% gold from all activities server-wide",
+                      "+15% drop rate on item drops for all members",
+                      "Stacks with personal LionHeart bonuses",
+                      "Applies automatically \u2014 no member action needed",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Mock Editor */}
-            <div className="p-7 lg:p-8 border-t lg:border-t-0 lg:border-l border-gray-700">
-              <div className="flex items-center gap-2 mb-6">
-                <Palette className="h-5 w-5 text-blue-400" />
-                <h3 className="text-lg font-semibold text-white">
-                  {/* --- AI-MODIFIED (2026-04-01) --- */}
-                  {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
-                  Visual Branding Editor
-                  {/* --- END AI-MODIFIED --- */}
-                </h3>
-                <span className="ml-auto text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full font-medium uppercase tracking-wider">
-                  Live Demo
-                </span>
-              </div>
-
-              {/* Skin selector */}
-              <div className="mb-6">
-                <p className="text-[11px] font-medium text-gray-500 mb-2 uppercase tracking-wider">
-                  Base Skin
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {DEMO_SKINS.map((skin, i) => (
-                    <button
-                      key={skin.id}
-                      onClick={() => setActiveSkin(i)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 border ${
-                        i === activeSkin
-                          ? "bg-white/10 text-white border-white/20"
-                          : "text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-700"
-                      }`}
-                    >
-                      <div
-                        className="w-3 h-3 rounded-sm transition-colors duration-700"
-                        style={{ backgroundColor: skin.accent }}
-                      />
-                      {skin.name}
-                    </button>
+            <div className="relative bg-gray-900/60 border-t lg:border-t-0 lg:border-l border-gray-700 flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
+              {activeTab === "branding" && (
+                <div className="relative w-full h-full flex items-center justify-center min-h-[320px]">
+                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />
+                  {!hasError && DEMO_SKINS.map((skin, i) => (
+                    <img
+                      key={`${skin.id}-${DEMO_CARD_TYPES[activeCardType]}`}
+                      src={`/api/card-demo?type=${DEMO_CARD_TYPES[activeCardType]}&skin=${skin.id}`}
+                      alt={`${skin.name} card`}
+                      className="absolute max-w-[260px] w-full h-auto rounded-lg shadow-2xl"
+                      style={{
+                        opacity: i === activeSkin ? 1 : 0,
+                        transform: i === activeSkin ? "scale(1) translateY(0)" : "scale(0.95) translateY(10px)",
+                        transition: "opacity 0.7s ease, transform 0.7s ease",
+                      }}
+                      onLoad={handleImageLoad}
+                      onError={() => setHasError(true)}
+                      loading={i === 0 ? "eager" : "lazy"}
+                    />
                   ))}
+                  {hasError && (
+                    <div className="text-center text-gray-500">
+                      <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">Card preview temporarily unavailable</p>
+                    </div>
+                  )}
+                  {!imagesReady && !hasError && (
+                    <div className="w-[240px] h-[310px] rounded-lg bg-gray-700/30 animate-pulse flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-gray-500 animate-spin" />
+                    </div>
+                  )}
+                  <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                    <div className="flex gap-1.5">
+                      {DEMO_SKINS.map((skin, i) => (
+                        <button key={skin.id} onClick={() => setActiveSkin(i)} className="p-0.5" aria-label={`Show ${skin.name} skin`}>
+                          <div className={`h-1.5 rounded-full transition-all duration-300 ${i === activeSkin ? "bg-white w-5" : "bg-white/25 w-1.5 hover:bg-white/40"}`} />
+                        </button>
+                      ))}
+                    </div>
+                    <span className="text-[10px] text-gray-600">Rendered by LionBot</span>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              {/* Color swatches */}
-              <div className="mb-6">
-                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Profile Colours
-                </p>
-                <div className="space-y-2.5">
-                  {currentSkin.swatches.map((swatch) => (
-                    <div
-                      key={swatch.label}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm text-gray-400">
-                        {swatch.label}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-5 h-5 rounded border border-white/10 shadow-sm"
-                          style={{
-                            backgroundColor: swatch.color,
-                            transition: "background-color 0.7s ease",
-                          }}
-                        />
-                        <span
-                          className="text-[11px] text-gray-600 font-mono w-16 text-right"
-                          style={{ transition: "color 0.7s ease" }}
-                        >
-                          {swatch.color}
-                        </span>
+              {activeTab === "text" && (
+                <div className="w-full max-w-sm">
+                  <div className="flex gap-1.5 mb-3">
+                    <button
+                      onClick={() => setShowCustomText(false)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${!showCustomText ? "bg-blue-500/20 text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
+                    >Default</button>
+                    <button
+                      onClick={() => setShowCustomText(true)}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${showCustomText ? "bg-amber-500/20 text-amber-400" : "text-gray-500 hover:text-gray-300"}`}
+                    >Your Server</button>
+                  </div>
+                  <div className="rounded-lg border border-[#2b2d31] bg-[#313338] overflow-hidden">
+                    <div className="px-3 py-2.5 flex gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-white text-xs font-bold">L</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-semibold text-xs text-[#f2f3f5]">Leo</span>
+                          <span className="text-[8px] px-1 py-px rounded bg-[#5865f2] text-white font-medium leading-none">BOT</span>
+                        </div>
+                        <div className="mt-1 rounded border-l-[3px] bg-[#2b2d31] overflow-hidden" style={{ borderLeftColor: showCustomText ? "#f59e0b" : "#3b82f6", transition: "border-color 0.4s" }}>
+                          <div className="p-2.5">
+                            <div className="text-xs font-semibold text-white mb-1" style={{ transition: "all 0.4s" }}>
+                              {showCustomText ? "\u{1f389} You just hit Gold Scholar!" : "Rank Up!"}
+                            </div>
+                            <div className="text-[11px] text-[#dbdee1] leading-relaxed" style={{ transition: "all 0.4s" }}>
+                              {showCustomText
+                                ? "Keep grinding, you beast! \u{1f525} Next stop: Diamond."
+                                : "Congratulations! You have reached Gold Scholar. Keep studying to reach the next rank."}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* --- AI-MODIFIED (2026-03-23) ---  */}
-              {/* Purpose: Complete server premium feature list with all current features + better pricing */}
-              <div className="border-t border-gray-700 pt-5">
-                <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
-                  Everything included
-                </p>
-                <div className="space-y-2 text-[13px]">
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      {/* --- AI-MODIFIED (2026-04-01) --- */}
-                      {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
-                      <span className="text-white font-medium">Custom visual branding</span> &mdash; skins &amp; colors for all 7 card types, applies to every member
-                      {/* --- END AI-MODIFIED --- */}
-                    </span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">Automated leaderboard posting</span> &mdash; scheduled posts with role rewards, coin prizes &amp; winner DMs
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">Premium Pomodoro</span> &mdash; focus roles, streak tracking, themed timer cards, session summaries &amp; milestone rewards
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">Ambient sound bots</span> &mdash; rain, campfire, ocean &amp; more playing in voice channels
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">Sticky messages</span> &mdash; persistent announcements that stay at the bottom of any channel
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      LionGotchi bonuses for all members: <span className="text-blue-400 font-semibold">+15% Gold</span> &amp; <span className="text-blue-400 font-semibold">+15% Drop Rate</span>
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">No ads</span> &mdash; vote &amp; sponsor prompts removed from all bot messages
-                    </span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <span className="text-gray-300">
-                      <span className="text-white font-medium">Priority feature requests</span> &mdash; propose &amp; vote on what gets built next
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="border-t border-gray-700 pt-5 mt-5">
-                <div className="flex items-baseline gap-3 mb-1">
-                  <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
-                  <span className="text-sm text-gray-500">/month</span>
-                  <span className="text-gray-600 mx-1">or</span>
-                  <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("YEARLY", currency)}</span>
-                  <span className="text-sm text-gray-500">/year</span>
-                </div>
-                <p className="text-xs text-green-400/80 mb-4">Yearly saves 17% &mdash; 2 months free</p>
-
-                {!session ? (
-                  <button
-                    onClick={() => signIn("discord")}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors"
-                  >
-                    Sign in to Subscribe
-                  </button>
-                ) : serversLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-4 text-gray-500 text-sm">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading your servers...
-                  </div>
-                ) : adminServers.length === 0 ? (
-                  <p className="text-sm text-gray-500 text-center py-3">
-                    You need to be an admin of a server with LionBot to subscribe.{" "}
-                    <a href="/invite" className="text-blue-400 hover:underline">Add LionBot</a>
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    <select
-                      value={selectedServer}
-                      onChange={(e) => setSelectedServer(e.target.value)}
-                      className="w-full rounded-lg bg-gray-900/80 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
-                    >
-                      {adminServers.map((s) => (
-                        <option key={s.guildId} value={s.guildId}>
-                          {s.guildName}
-                        </option>
+                  <div className="overflow-hidden mt-4 relative">
+                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900/60 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900/60 to-transparent z-10 pointer-events-none" />
+                    <div className="flex gap-2" style={{ animation: "sp-marquee 25s linear infinite" }}>
+                      {[...FEATURE_GROUP_TAGS, ...FEATURE_GROUP_TAGS].map((tag, i) => (
+                        <span key={i} className="px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 text-[10px] whitespace-nowrap border border-gray-700/60">{tag}</span>
                       ))}
-                    </select>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleServerCheckout("MONTHLY")}
-                        disabled={checkingOut}
-                        className="flex-1 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700 hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
-                      >
-                        {/* --- AI-MODIFIED (2026-03-25) --- */}
-                        {/* Purpose: Dynamic currency pricing on checkout buttons */}
-                        {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
-                      </button>
-                      <button
-                        onClick={() => handleServerCheckout("YEARLY")}
-                        disabled={checkingOut}
-                        className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 relative overflow-hidden"
-                      >
-                        {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("YEARLY", currency)}/yr`}
-                        {/* --- END AI-MODIFIED --- */}
-                        <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
-                      </button>
                     </div>
-                    <p className="text-[11px] text-gray-600 text-center">
-                      Auto-renews. Cancel anytime from your{" "}
-                      <a href="/dashboard" className="text-blue-400 hover:underline">dashboard</a>.
-                    </p>
                   </div>
-                )}
+                  <p className="text-center text-[10px] text-gray-600 mt-2">2,372 strings across 35 categories</p>
+                </div>
+              )}
+
+              {activeTab === "pomodoro" && (
+                <div className="flex flex-col items-center gap-4 w-full max-w-xs" ref={streakRef}>
+                  <div className="relative">
+                    <div className="absolute inset-0 rounded-full blur-xl transition-all duration-700" style={{ background: `radial-gradient(circle, ${currentPomoTheme.glow} 0%, transparent 70%)` }} />
+                    <svg viewBox="0 0 100 100" className="w-28 h-28 -rotate-90 relative">
+                      <circle cx="50" cy="50" r={POMO_RING_R} fill="none" strokeWidth="3" className="stroke-gray-800" />
+                      <circle cx="50" cy="50" r={POMO_RING_R} fill="none" strokeWidth="3.5" strokeLinecap="round"
+                        stroke={currentPomoTheme.color}
+                        strokeDasharray={POMO_RING_C} strokeDashoffset={pomoDashOffset}
+                        className="transition-[stroke-dashoffset] duration-1000 ease-linear" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-xl font-bold text-white font-mono tabular-nums">
+                        {String(pomoMins).padStart(2, "0")}:{String(pomoSecs).padStart(2, "0")}
+                      </span>
+                      <span className="text-[9px] text-gray-500 mt-0.5">remaining</span>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5">
+                    {POMO_THEMES.map((th, i) => (
+                      <button key={th.id} onClick={() => setPomoTheme(i)} title={th.label}
+                        className={`w-5 h-5 rounded-full border-2 transition-all ${i === pomoTheme ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"}`}
+                        style={{ backgroundColor: th.color }}
+                      />
+                    ))}
+                  </div>
+                  <div className="w-full rounded-lg bg-gray-800/80 border border-gray-700/60 p-3">
+                    <p className="text-[9px] text-gray-500 uppercase tracking-wider mb-2 font-medium">Premium Analytics</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-orange-500/15 flex items-center justify-center">
+                          <Zap className="h-3.5 w-3.5 text-orange-400" />
+                        </div>
+                        <div>
+                          <span className="text-lg font-bold text-white tabular-nums">{streakCount}</span>
+                          <span className="text-[9px] text-gray-500 block">Day Streak</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg bg-yellow-500/15 flex items-center justify-center">
+                          <Star className="h-3.5 w-3.5 text-yellow-400" />
+                        </div>
+                        <div>
+                          <span className="text-xs font-bold text-white">100 Sessions</span>
+                          <span className="text-[9px] text-gray-500 block">Milestone</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-end gap-1 mt-3 h-8">
+                      {[40, 65, 50, 80, 70, 90, 55].map((h, i) => (
+                        <div key={i} className="flex-1 rounded-sm transition-all duration-700"
+                          style={{ height: streakVisible ? `${h}%` : "4px", backgroundColor: currentPomoTheme.color, opacity: 0.6 + (h / 100) * 0.4, transitionDelay: `${i * 80}ms` }} />
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+                        <span key={i} className="flex-1 text-center text-[8px] text-gray-600">{d}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "leaderboard" && (
+                <div className="w-full max-w-sm">
+                  <div className="rounded-lg border border-[#2b2d31] bg-[#313338] overflow-hidden">
+                    <div className="px-3 py-2.5 flex gap-2.5">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0 mt-0.5 text-white text-xs font-bold">L</div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
+                          <span className="font-semibold text-xs text-[#f2f3f5]">Leo</span>
+                          <span className="text-[8px] px-1 py-px rounded bg-[#5865f2] text-white font-medium leading-none">BOT</span>
+                        </div>
+                        <div className="text-[11px] text-[#dbdee1] mb-1">{"\u{1f3c6}"} Weekly Study Leaderboard</div>
+                        <div className="rounded border-l-[3px] border-blue-500 bg-[#2b2d31] overflow-hidden">
+                          <div className="p-2.5">
+                            <div className="text-xs font-semibold text-white mb-2">{"\u{1f4ca}"} Top Studiers This Week</div>
+                            <div className="space-y-1.5 text-[11px]">
+                              <div className="flex items-center gap-2"><span>{"\u{1f947}"}</span><span className="text-[#f2f3f5] font-medium">Sarah</span><span className="text-[#949ba4] ml-auto">42h 15m</span></div>
+                              <div className="flex items-center gap-2"><span>{"\u{1f948}"}</span><span className="text-[#f2f3f5] font-medium">Alex</span><span className="text-[#949ba4] ml-auto">38h 42m</span></div>
+                              <div className="flex items-center gap-2"><span>{"\u{1f949}"}</span><span className="text-[#f2f3f5] font-medium">Mike</span><span className="text-[#949ba4] ml-auto">35h 08m</span></div>
+                            </div>
+                            <div className="mt-2 pt-2 border-t border-[#3f4147] text-[10px] text-[#949ba4]">
+                              {"\u{1f3c5}"} Role: <span className="text-blue-400">@Weekly Champion</span> &bull; {"\u{1fa99}"} Prize: <span className="text-yellow-400">500 coins</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "sounds" && (
+                <div className="w-full max-w-xs">
+                  <div className="grid grid-cols-3 gap-2">
+                    {AMBIENT_SOUNDS.map((sound, i) => {
+                      const isActive = i === activeSound;
+                      return (
+                        <button
+                          key={sound.id}
+                          onClick={() => setActiveSound(i)}
+                          className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
+                            isActive
+                              ? "bg-blue-500/10 border-blue-500/30 shadow-lg shadow-blue-500/5"
+                              : "bg-gray-800/50 border-gray-700/50 hover:border-gray-600"
+                          }`}
+                        >
+                          <sound.Icon className={`h-6 w-6 transition-colors ${isActive ? "text-blue-400" : "text-gray-500"}`} />
+                          <span className={`text-[10px] font-medium transition-colors ${isActive ? "text-blue-300" : "text-gray-500"}`}>{sound.name}</span>
+                          {isActive && (
+                            <div className="absolute top-2 right-2 flex items-end gap-px h-3">
+                              {[10, 14, 8, 12].map((h, j) => (
+                                <div key={j} className="w-[3px] bg-blue-400 rounded-full"
+                                  style={{ animation: "sp-eq 0.8s ease-in-out infinite", animationDelay: `${j * 0.12}s`, ["--eq-h" as string]: `${h}px`, height: "3px" }} />
+                              ))}
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                    Playing in #study-lounge
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "liongotchi" && (
+                <div className="flex flex-col items-center gap-6 w-full max-w-xs" ref={goldRef}>
+                  <div className="flex gap-4 w-full">
+                    <div className="flex-1 rounded-xl bg-gray-800/80 border border-yellow-500/20 p-4 text-center">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-yellow-500/15 flex items-center justify-center mb-2"
+                        style={{ animation: goldVisible ? "sp-pulse-gold 2s ease-in-out infinite" : "none" }}>
+                        <Coins className="h-6 w-6 text-yellow-400" />
+                      </div>
+                      <div className="text-2xl font-bold text-white tabular-nums">{goldCount}</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">gold per session</div>
+                      <div className="mt-2 inline-flex px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 text-[10px] font-bold">+15%</div>
+                    </div>
+                    <div className="flex-1 rounded-xl bg-gray-800/80 border border-purple-500/20 p-4 text-center relative overflow-hidden">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-purple-500/15 flex items-center justify-center mb-2">
+                        <Sparkles className="h-6 w-6 text-purple-400" />
+                      </div>
+                      <div className="text-2xl font-bold text-white">15%</div>
+                      <div className="text-[10px] text-gray-500 mt-0.5">bonus drop rate</div>
+                      <div className="mt-2 w-full bg-gray-700/50 rounded-full h-1.5 overflow-hidden">
+                        <div className="h-full bg-purple-400 rounded-full transition-all duration-1000 ease-out" style={{ width: goldVisible ? "100%" : "0%" }} />
+                      </div>
+                      {goldVisible && [0, 1, 2].map((j) => (
+                        <div key={j} className="absolute text-sm"
+                          style={{ left: `${25 + j * 25}%`, bottom: "60%", animation: `sp-float 2s ease-out ${j * 0.4 + 0.5}s both` }}>
+                          {["\u{2694}\u{FE0F}", "\u{1f48e}", "\u{1f9ea}"][j]}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-[10px] text-gray-500 text-center">Applied to every member automatically</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
+          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
+              <Pin className="h-4 w-4 text-green-400" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-white">Sticky Messages</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">Persistent announcements pinned to the bottom of any channel</div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
+              <Clock className="h-4 w-4 text-cyan-400" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-white">Voice Time Editor</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">Admin control to adjust member voice time stats</div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
+              <EyeOff className="h-4 w-4 text-red-400" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-white">No Ads</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">Vote &amp; sponsor prompts removed from all bot messages</div>
+            </div>
+          </div>
+          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
+              <MessageSquare className="h-4 w-4 text-amber-400" />
+            </div>
+            <div>
+              <div className="text-sm font-medium text-white">Priority Features</div>
+              <div className="text-[11px] text-gray-500 mt-0.5">Propose &amp; vote on what gets built next</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-gray-700 bg-gradient-to-r from-gray-800/80 to-gray-800/50 p-6 lg:p-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
+              <div className="flex items-baseline gap-3 mb-1 flex-wrap">
+                <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
+                <span className="text-sm text-gray-500">/month</span>
+                <span className="text-gray-600 mx-1">or</span>
+                <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("YEARLY", currency)}</span>
+                <span className="text-sm text-gray-500">/year</span>
               </div>
-              {/* --- END AI-MODIFIED --- */}
+              <p className="text-xs text-green-400/80">Yearly saves 17% &mdash; 2 months free</p>
+            </div>
+            <div className="flex-1 max-w-md">
+              {!session ? (
+                <button onClick={() => signIn("discord")} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
+                  Sign in to Subscribe
+                </button>
+              ) : serversLoading ? (
+                <div className="flex items-center justify-center gap-2 py-4 text-gray-500 text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers...
+                </div>
+              ) : adminServers.length === 0 ? (
+                <p className="text-sm text-gray-500 text-center py-3">
+                  You need to be an admin of a server with LionBot to subscribe.{" "}
+                  <a href="/invite" className="text-blue-400 hover:underline">Add LionBot</a>
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <select
+                    value={selectedServer}
+                    onChange={(e) => setSelectedServer(e.target.value)}
+                    className="w-full rounded-lg bg-gray-900/80 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
+                  >
+                    {adminServers.map((s) => (
+                      <option key={s.guildId} value={s.guildId}>{s.guildName}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleServerCheckout("MONTHLY")}
+                      disabled={checkingOut}
+                      className="flex-1 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700 hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                    >
+                      {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
+                    </button>
+                    <button
+                      onClick={() => handleServerCheckout("YEARLY")}
+                      disabled={checkingOut}
+                      className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 relative overflow-hidden"
+                    >
+                      {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("YEARLY", currency)}/yr`}
+                      <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-gray-600 text-center">
+                    Auto-renews. Cancel anytime from your{" "}
+                    <a href="/dashboard" className="text-blue-400 hover:underline">dashboard</a>.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* --- AI-MODIFIED (2026-03-23) --- */}
-      {/* Purpose: My Server Premiums overview panel */}
       {session && !premiumsLoading && (myPaidSubs.filter(s => s.status === "ACTIVE" || s.status === "CANCELLING").length > 0 || myLhPremium) && (
-        <div className="max-w-5xl mx-auto px-4 lg:px-6 mt-10">
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 mt-8">
           <div className="rounded-xl border border-gray-700 bg-gray-800/60 p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Crown className="h-5 w-5 text-yellow-400" />
                 My Server Premiums
               </h3>
-              <a
-                href="/dashboard/subscriptions"
-                className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors"
-              >
+              <a href="/dashboard/subscriptions" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
                 Manage <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -1295,31 +1630,22 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                 .map((s) => {
                   const serverName = allServers.find((sv) => sv.guildId === s.guildId)?.guildName || `Server ${s.guildId}`;
                   return (
-                    <div
-                      key={s.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-gray-700/50"
-                    >
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-gray-700/50">
                       <div className="flex items-center gap-3">
                         <Server className="h-4 w-4 text-blue-400 flex-shrink-0" />
                         <div>
                           <div className="text-sm font-medium text-white">{serverName}</div>
                           <div className="text-xs text-gray-500">
                             {s.plan === "YEARLY" ? "Yearly" : "Monthly"} &middot;{" "}
-                            {s.currentPeriodEnd
-                              ? `Renews ${new Date(s.currentPeriodEnd).toLocaleDateString()}`
-                              : ""}
+                            {s.currentPeriodEnd ? `Renews ${new Date(s.currentPeriodEnd).toLocaleDateString()}` : ""}
                           </div>
                         </div>
                       </div>
-                      <span
-                        className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-                          s.status === "ACTIVE"
-                            ? "bg-green-500/20 text-green-400"
-                            : s.status === "CANCELLING"
-                            ? "bg-yellow-500/20 text-yellow-400"
-                            : "bg-red-500/20 text-red-400"
-                        }`}
-                      >
+                      <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+                        s.status === "ACTIVE" ? "bg-green-500/20 text-green-400"
+                        : s.status === "CANCELLING" ? "bg-yellow-500/20 text-yellow-400"
+                        : "bg-red-500/20 text-red-400"
+                      }`}>
                         {s.status === "ACTIVE" ? "Active" : s.status === "CANCELLING" ? "Cancelling" : "Past Due"}
                       </span>
                     </div>
@@ -1335,22 +1661,13 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                           ? allServers.find((sv) => sv.guildId === myLhPremium.guildId)?.guildName || `Server ${myLhPremium.guildId}`
                           : "Not applied yet"}
                       </div>
-                      <div className="text-xs text-blue-400 font-medium">
-                        LionHeart++ included
-                      </div>
+                      <div className="text-xs text-blue-400 font-medium">LionHeart++ included</div>
                     </div>
                   </div>
                   {myLhPremium.isApplied ? (
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">
-                      Active
-                    </span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Active</span>
                   ) : (
-                    <a
-                      href="/dashboard/subscriptions"
-                      className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-                    >
-                      Apply Now
-                    </a>
+                    <a href="/dashboard/subscriptions" className="text-xs font-semibold px-3 py-1 rounded-full bg-blue-600 text-white hover:bg-blue-700 transition-colors">Apply Now</a>
                   )}
                 </div>
               )}
@@ -1358,12 +1675,11 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
           </div>
         </div>
       )}
-      {/* --- END AI-MODIFIED --- */}
 
     </section>
   );
 }
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 export default function Donate() {
   const { t } = useTranslation("donate");
