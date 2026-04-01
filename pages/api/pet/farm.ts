@@ -277,14 +277,21 @@ export default apiHandler({
       return res.status(200).json({ success: true, action: "wateredAll", count: result.count })
     }
 
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Fix harvestAll using raw growth_points check (required 100%) instead of
+    // computeProgress() which marks readyToHarvest at stage 5 (80%). This mismatch
+    // caused "Harvest All" button to appear but do nothing. Now matches single-harvest
+    // and family farm behavior.
     if (action === "harvestAll") {
       const allPlots = await prisma.lg_user_farm.findMany({
         where: { userid: userId, dead: false },
         include: { lg_farm_seeds: true },
       })
-      const harvestable = allPlots.filter(p =>
-        p.seed_id && p.lg_farm_seeds && p.growth_points >= (p.lg_farm_seeds.growth_points_needed || 100)
-      )
+      const harvestable = allPlots.filter(p => {
+        if (!p.seed_id || !p.lg_farm_seeds) return false
+        const growth = computeProgress(p.growth_points, p.lg_farm_seeds.growth_points_needed)
+        return growth.readyToHarvest
+      })
       if (harvestable.length === 0) {
         return res.status(400).json({ error: "Nothing ready to harvest" })
       }

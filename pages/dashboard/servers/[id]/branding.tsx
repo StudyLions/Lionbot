@@ -735,9 +735,12 @@ export default function BrandingPage() {
       setOriginal({ baseSkinName, properties: JSON.parse(JSON.stringify(properties)) })
       clearDraft()
       mutate()
-      toast.success("Branding saved! Changes will apply to new card renders.")
+      // --- AI-MODIFIED (2026-04-01) ---
+      // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+      toast.success("Visual branding saved! Changes will apply to new card renders.")
     } catch {
-      toast.error("Failed to save branding")
+      toast.error("Failed to save visual branding")
+      // --- END AI-MODIFIED ---
     }
     setSaving(false)
   }
@@ -827,7 +830,10 @@ export default function BrandingPage() {
 
   if (brandingLoading && !brandingData) {
     return (
-      <Layout SEO={{ title: "Branding - LionBot", description: "Server branding editor" }}>
+      {/* --- AI-MODIFIED (2026-04-01) --- */}
+      {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+      <Layout SEO={{ title: "Visual Branding - LionBot", description: "Server visual branding editor" }}>
+      {/* --- END AI-MODIFIED --- */}
         <AdminGuard>
           <ServerGuard requiredLevel="admin">
           {/* --- AI-REPLACED (2026-03-24) ---
@@ -861,7 +867,10 @@ export default function BrandingPage() {
   return (
     <Layout
       SEO={{
-        title: `Branding - ${serverName} - LionBot`,
+        // --- AI-MODIFIED (2026-04-01) ---
+        // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+        title: `Visual Branding - ${serverName} - LionBot`,
+        // --- END AI-MODIFIED ---
         description: "Customize your server's card colors and themes",
       }}
     >
@@ -878,7 +887,10 @@ export default function BrandingPage() {
         <DashboardShell wide nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />}>
         {/* --- END AI-REPLACED --- */}
               <PageHeader
-                title="Server Branding"
+                {/* --- AI-MODIFIED (2026-04-01) --- */}
+                {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                title="Visual Branding"
+                {/* --- END AI-MODIFIED --- */}
                 description="Customize all card types your members see -- profile, stats, leaderboards, and more."
               />
 
@@ -901,7 +913,10 @@ export default function BrandingPage() {
                         Thank you for supporting LionBot!
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Your custom branding is active until {brandingData.premiumUntil ? new Date(brandingData.premiumUntil).toLocaleDateString() : "—"}
+                        {/* --- AI-MODIFIED (2026-04-01) --- */}
+                        {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                        Your custom visual branding is active until
+                        {/* --- END AI-MODIFIED --- */} {brandingData.premiumUntil ? new Date(brandingData.premiumUntil).toLocaleDateString() : "—"}
                       </p>
                     </div>
                   </div>
@@ -916,7 +931,10 @@ export default function BrandingPage() {
                           Design your custom look freely below
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Custom branding is a supporter perk that helps keep LionBot free for everyone. All bot features are free forever.
+                          {/* --- AI-MODIFIED (2026-04-01) --- */}
+                          {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                          Custom visual branding is a supporter perk that helps keep LionBot free for everyone. All bot features are free forever.
+                          {/* --- END AI-MODIFIED --- */}
                         </p>
                       </div>
                     </div>

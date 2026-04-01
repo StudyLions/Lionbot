@@ -24,7 +24,7 @@ import {
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
-  Search, X, Clock, Bug, MessageSquareWarning,
+  Search, X, Clock, Bug, MessageSquareWarning, Type,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -125,7 +125,11 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
       title: "Premium Features",
       premium: true,
       links: [
-        { href: "/branding", label: "Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
+        // --- AI-MODIFIED (2026-04-01) ---
+        // Purpose: Rename "Branding" to "Visual Branding" and add Text Branding nav link
+        { href: "/branding", label: "Visual Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
+        { href: "/text-branding", label: "Text Branding", icon: <Type size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
         { href: "/leaderboard-autopost", label: "Leaderboard Auto-Post", icon: <Trophy size={16} />, supporterPerk: true },
         { href: "/ambient-sounds", label: "Ambient Sounds", icon: <Volume2 size={16} />, supporterPerk: true },
         // --- AI-MODIFIED (2026-03-22) ---

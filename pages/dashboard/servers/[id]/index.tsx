@@ -612,7 +612,10 @@ export default function ServerDetail() {
                             </div>
                             <Link href={`/dashboard/servers/${id}/branding`}>
                               <a className="ml-auto px-4 py-2 rounded-lg bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 text-sm font-medium transition-colors">
-                                Edit Branding
+                                {/* --- AI-MODIFIED (2026-04-01) --- */}
+                                {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                                Edit Visual Branding
+                                {/* --- END AI-MODIFIED --- */}
                               </a>
                             </Link>
                           </div>
@@ -628,7 +631,10 @@ export default function ServerDetail() {
                               <div>
                                 <p className="font-semibold text-foreground text-lg">Upgrade to Premium</p>
                                 <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
-                                  <li className="flex items-center gap-2"><Palette size={14} className="text-amber-400/70" /> Custom server branding &amp; skins</li>
+                                  {/* --- AI-MODIFIED (2026-04-01) --- */}
+                                  {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                                  <li className="flex items-center gap-2"><Palette size={14} className="text-amber-400/70" /> Custom visual branding &amp; skins</li>
+                                  {/* --- END AI-MODIFIED --- */}
                                   <li className="flex items-center gap-2"><Sparkles size={14} className="text-amber-400/70" /> Exclusive premium features</li>
                                   <li className="flex items-center gap-2"><Zap size={14} className="text-amber-400/70" /> Priority support &amp; early access</li>
                                 </ul>

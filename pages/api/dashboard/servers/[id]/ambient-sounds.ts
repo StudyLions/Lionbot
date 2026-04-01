@@ -37,6 +37,11 @@ function serializeConfig(c: any) {
     voting_enabled: c.voting_enabled ?? false,
     vote_cooldown_minutes: c.vote_cooldown_minutes ?? 30,
     // --- END AI-MODIFIED ---
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Include current LoFi song info for dashboard display
+    current_song_title: c.current_song_title ?? null,
+    current_song_artist: c.current_song_artist ?? null,
+    // --- END AI-MODIFIED ---
     updated_at: c.updated_at?.toISOString() ?? null,
   }
 }
@@ -74,10 +79,23 @@ export default apiHandler({
       }
     } catch (_) {}
 
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Fetch available lofi moods from any bot heartbeat
+    let lofiMoods: string[] = []
+    try {
+      const hbWithMoods = await (prisma as any).sounds_bot_heartbeat.findFirst({
+        where: { lofi_moods: { isEmpty: false } },
+        select: { lofi_moods: true },
+      })
+      if (hbWithMoods?.lofi_moods) lofiMoods = hbWithMoods.lofi_moods
+    } catch (_) {}
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       isPremium,
       configs: configs.map(serializeConfig),
       botStatus,
+      lofiMoods,
     })
     // --- END AI-MODIFIED ---
   },
@@ -109,11 +127,14 @@ export default apiHandler({
       throw new ValidationError("bot_number must be 1–5")
     }
 
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Accept lofi sub-mood types (lofi_chill, lofi_jazzy, etc.)
     if (body.sound_type !== undefined && body.sound_type !== null) {
-      if (!VALID_SOUNDS.includes(body.sound_type)) {
+      if (!VALID_SOUNDS.includes(body.sound_type) && !body.sound_type.startsWith("lofi_")) {
         throw new ValidationError(`Invalid sound type. Must be one of: ${VALID_SOUNDS.join(", ")}`)
       }
     }
+    // --- END AI-MODIFIED ---
 
     if (body.volume !== undefined && !VALID_VOLUMES.includes(body.volume)) {
       throw new ValidationError("Volume must be 25 (Low), 50 (Medium), or 100 (High)")

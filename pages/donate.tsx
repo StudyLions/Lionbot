@@ -983,7 +983,10 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
           {/* --- AI-MODIFIED (2026-03-23) --- */}
           {/* Purpose: Updated subtitle to cover all premium features */}
           <p className="text-gray-400 mt-2 max-w-xl mx-auto">
-            Unlock the full experience for your server &mdash; custom branding, premium pomodoro,
+            {/* --- AI-MODIFIED (2026-04-01) --- */}
+            {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+            Unlock the full experience for your server &mdash; custom visual branding, premium pomodoro,
+            {/* --- END AI-MODIFIED --- */}
             ambient sounds, auto-post leaderboards, sticky messages, and more
           </p>
           {/* --- END AI-MODIFIED --- */}
@@ -1065,7 +1068,10 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               <div className="flex items-center gap-2 mb-6">
                 <Palette className="h-5 w-5 text-blue-400" />
                 <h3 className="text-lg font-semibold text-white">
-                  Branding Editor
+                  {/* --- AI-MODIFIED (2026-04-01) --- */}
+                  {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                  Visual Branding Editor
+                  {/* --- END AI-MODIFIED --- */}
                 </h3>
                 <span className="ml-auto text-[10px] bg-blue-500/15 text-blue-400 px-2 py-0.5 rounded-full font-medium uppercase tracking-wider">
                   Live Demo
@@ -1142,7 +1148,10 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   <div className="flex items-start gap-2">
                     <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <span className="text-gray-300">
-                      <span className="text-white font-medium">Custom server branding</span> &mdash; skins &amp; colors for all 7 card types, applies to every member
+                      {/* --- AI-MODIFIED (2026-04-01) --- */}
+                      {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                      <span className="text-white font-medium">Custom visual branding</span> &mdash; skins &amp; colors for all 7 card types, applies to every member
+                      {/* --- END AI-MODIFIED --- */}
                     </span>
                   </div>
                   <div className="flex items-start gap-2">

@@ -22,12 +22,12 @@ import {
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import {
   Volume2, CloudRain, Flame, Waves, Wind, Radio, Music,
   ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
   Play, Square, Type, BarChart3, Clock, Vote, Coins,
-  Plus, Trash2, Calendar,
+  Plus, Trash2, Calendar, ListMusic, Ban, XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -76,6 +76,8 @@ interface BotSlotConfig {
   nickname_template: string | null
   voting_enabled: boolean
   vote_cooldown_minutes: number
+  current_song_title: string | null
+  current_song_artist: string | null
   updated_at: string | null
 }
 
@@ -83,6 +85,7 @@ interface ApiResponse {
   isPremium: boolean
   configs: BotSlotConfig[]
   botStatus: Record<number, { online: boolean; username: string | null }>
+  lofiMoods: string[]
 }
 
 type LocalSlot = Omit<BotSlotConfig, "guildid" | "updated_at" | "status" | "error_msg"> & {
@@ -131,6 +134,25 @@ interface ActiveRental {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-01) ---
+// Purpose: Types for LoFi play history and song blacklist
+interface LofiHistoryEntry {
+  id: number
+  bot_number: number
+  song_title: string | null
+  song_artist: string | null
+  song_filename: string | null
+  played_at: string
+}
+
+interface LofiBlacklistEntry {
+  id: number
+  song_filename: string
+  blacklisted_by: string | null
+  created_at: string
+}
+// --- END AI-MODIFIED ---
+
 const SOUND_EMOJIS: Record<string, string> = {
   rain: "\u{1F327}\u{FE0F}",
   campfire: "\u{1F525}",
@@ -144,7 +166,11 @@ const DEFAULT_NICK_TEMPLATE = "{emoji} {sound}"
 
 function previewNickname(template: string | null, soundId: string | null, botNumber: number): string {
   const t = template || DEFAULT_NICK_TEMPLATE
-  const label = SOUNDS.find((s) => s.id === soundId)?.name ?? "Sound"
+  let label = SOUNDS.find((s) => s.id === soundId)?.name
+  if (!label && soundId?.startsWith("lofi_")) {
+    label = "LoFi " + soundId.split("_").slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ")
+  }
+  label = label ?? "Sound"
   const emoji = (soundId && SOUND_EMOJIS[soundId]) || "\u{1F3B5}"
   return t.replace("{emoji}", emoji).replace("{sound}", label).replace("{bot}", String(botNumber)).slice(0, 32)
 }
@@ -235,6 +261,8 @@ export default function AmbientSoundsPage() {
         nickname_template: existing?.nickname_template ?? null,
         voting_enabled: existing?.voting_enabled ?? false,
         vote_cooldown_minutes: existing?.vote_cooldown_minutes ?? 30,
+        current_song_title: existing?.current_song_title ?? null,
+        current_song_artist: existing?.current_song_artist ?? null,
       })
     }
     setSlots(allSlots)
