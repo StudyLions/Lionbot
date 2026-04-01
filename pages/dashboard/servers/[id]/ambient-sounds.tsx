@@ -24,7 +24,7 @@ import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
 import { useState, useCallback, useEffect } from "react"
 import {
-  Volume2, CloudRain, Flame, Waves, Wind, Radio,
+  Volume2, CloudRain, Flame, Waves, Wind, Radio, Music,
   ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
   Play, Square, Type, BarChart3, Clock, Vote, Coins,
   Plus, Trash2, Calendar,
@@ -41,6 +41,7 @@ const SOUNDS = [
   { id: "ocean",       name: "Ocean Waves",  Icon: Waves },
   { id: "brown_noise", name: "Brown Noise",  Icon: Wind },
   { id: "white_noise", name: "White Noise",  Icon: Radio },
+  { id: "lofi",        name: "LoFi",         Icon: Music },
 ] as const
 
 const VOLUME_OPTIONS = [
@@ -136,6 +137,7 @@ const SOUND_EMOJIS: Record<string, string> = {
   ocean: "\u{1F30A}",
   brown_noise: "\u{1F7E4}",
   white_noise: "\u26AA",
+  lofi: "\u{1F3B5}",
 }
 
 const DEFAULT_NICK_TEMPLATE = "{emoji} {sound}"

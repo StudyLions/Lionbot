@@ -9,7 +9,7 @@ import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
-const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise"]
+const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise", "lofi"]
 const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5]
 
 function serializeSlot(s: any) {
