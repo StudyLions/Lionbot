@@ -830,10 +830,7 @@ export default function BrandingPage() {
 
   if (brandingLoading && !brandingData) {
     return (
-      {/* --- AI-MODIFIED (2026-04-01) --- */}
-      {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
       <Layout SEO={{ title: "Visual Branding - LionBot", description: "Server visual branding editor" }}>
-      {/* --- END AI-MODIFIED --- */}
         <AdminGuard>
           <ServerGuard requiredLevel="admin">
           {/* --- AI-REPLACED (2026-03-24) ---
@@ -887,10 +884,7 @@ export default function BrandingPage() {
         <DashboardShell wide nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin={isAdmin} isMod />}>
         {/* --- END AI-REPLACED --- */}
               <PageHeader
-                {/* --- AI-MODIFIED (2026-04-01) --- */}
-                {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
                 title="Visual Branding"
-                {/* --- END AI-MODIFIED --- */}
                 description="Customize all card types your members see -- profile, stats, leaderboards, and more."
               />
 
