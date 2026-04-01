@@ -20,7 +20,7 @@ const EDITABLE_FIELDS = [
   'starting_funds', 'allow_transfers', 'coins_per_centixp',
   'max_tasks', 'task_reward', 'task_reward_limit',
   'renting_price', 'renting_cap', 'renting_visible',
-  'renting_category', 'renting_sync_perms',
+  'renting_category', 'renting_sync_perms', 'renting_role', // AI-MODIFIED (2026-04-01): room moderator role
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: New admin-configurable room settings for Private Rooms panel
   'renting_max_per_user', 'renting_name_limit', 'renting_min_deposit',
@@ -46,7 +46,7 @@ const EDITABLE_FIELDS = [
 const BIGINT_FIELDS = new Set([
   'event_log_channel', 'mod_log_channel', 'alert_channel',
   'greeting_channel', 'rank_channel', 'pomodoro_channel', 'renting_category', // AI-MODIFIED: pomodoro_channel
-  'admin_role', 'mod_role',
+  'admin_role', 'mod_role', 'renting_role', // AI-MODIFIED (2026-04-01): room moderator role
   'accountability_category', 'accountability_lobby', // AI-MODIFIED (2026-03-23): setup wizard accountability channels
 ])
 // --- END AI-MODIFIED ---

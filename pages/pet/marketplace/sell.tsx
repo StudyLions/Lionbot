@@ -88,7 +88,12 @@ export default function SellPage() {
 
   const [selectedItem, setSelectedItem] = useState<InventoryItem | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [pricePerUnit, setPricePerUnit] = useState<number>(10)
+  // --- AI-MODIFIED (2026-03-26) ---
+  // Purpose: Use string state for price input so the field can be cleared while typing
+  // (number state with || 1 fallback forced the value to 1 on empty, preventing prices not starting with 1)
+  const [priceInput, setPriceInput] = useState("10")
+  const pricePerUnit = parseInt(priceInput) || 0
+  // --- END AI-MODIFIED ---
   const [currency, setCurrency] = useState<"GOLD" | "GEMS">("GOLD")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
@@ -417,9 +422,13 @@ export default function SellPage() {
 
                     <div>
                       <label className="font-pixel text-[11px] text-[#4a5a6a] block mb-1">PRICE PER UNIT</label>
-                      <input type="number" min={1} value={pricePerUnit}
-                        onChange={(e) => setPricePerUnit(Math.max(1, parseInt(e.target.value) || 1))}
+                      {/* --- AI-MODIFIED (2026-03-26) --- */}
+                      {/* Purpose: Allow free typing in price field; validate on blur instead of every keystroke */}
+                      <input type="number" min={1} value={priceInput}
+                        onChange={(e) => setPriceInput(e.target.value)}
+                        onBlur={() => { if (!priceInput || parseInt(priceInput) < 1) setPriceInput("1") }}
                         className="font-pixel text-sm w-full py-2 px-3 border-2 border-[#2a3a5c] bg-[#0a0e1a] text-[var(--pet-text,#e2e8f0)] focus:outline-none focus:border-[var(--pet-blue,#4080f0)]" />
+                      {/* --- END AI-MODIFIED --- */}
                       {historyData?.summary?.avgPrice > 0 && (
                         <p className="font-pixel text-[9px] text-[#4a5a6a] mt-1">
                           Suggested: ~{historyData.summary.avgPrice.toLocaleString()} (30d avg)

@@ -15,11 +15,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 import { useDashboard } from "@/hooks/useDashboard"
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Added DoorOpen icon for Rooms nav item; Coins for room balance badge
+// --- AI-MODIFIED (2026-03-31) ---
+// Purpose: Added KanbanSquare icon for Boards nav item
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
-  Volume2, VolumeX, DoorOpen, Coins, Clock,
+  Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- END AI-MODIFIED ---
 
@@ -50,6 +53,10 @@ const sections: NavSection[] = [
     title: "Activity",
     items: [
       { href: "/dashboard/tasks", label: "Tasks", icon: <CheckSquare size={16} /> },
+      // --- AI-MODIFIED (2026-03-31) ---
+      // Purpose: Shared kanban boards nav item
+      { href: "/dashboard/boards", label: "Boards", icon: <KanbanSquare size={16} /> },
+      // --- END AI-MODIFIED ---
       { href: "/dashboard/history", label: "History", icon: <History size={16} /> },
       { href: "/dashboard/goals", label: "Goals", icon: <Target size={16} /> },
       { href: "/dashboard/reminders", label: "Reminders", icon: <Bell size={16} /> },

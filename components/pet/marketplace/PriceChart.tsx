@@ -8,13 +8,24 @@ import { BarChart2 } from "lucide-react"
 
 interface PricePoint { date: string; avgPrice: number; volume: number }
 
+// --- AI-MODIFIED (2026-03-31) ---
+// Purpose: Add currency prop to control chart color and tooltip label
 interface Props {
   data: PricePoint[]
   height?: number
   showVolume?: boolean
+  currency?: "GOLD" | "GEMS"
 }
 
-export default function PriceChart({ data, height = 180, showVolume = false }: Props) {
+const CURRENCY_CONFIG = {
+  GOLD: { stroke: "#f0c040", label: "Gold", gradId: "priceGradGold" },
+  GEMS: { stroke: "#a060f0", label: "Gems", gradId: "priceGradGems" },
+} as const
+
+export default function PriceChart({ data, height = 180, showVolume = false, currency = "GOLD" }: Props) {
+  const cc = CURRENCY_CONFIG[currency]
+// --- END AI-MODIFIED ---
+
   if (!data.length) {
     return (
       <div
@@ -33,10 +44,13 @@ export default function PriceChart({ data, height = 180, showVolume = false }: P
       <ResponsiveContainer width="100%" height={height}>
         <AreaChart data={data} margin={{ left: 0, right: 5, top: 5, bottom: 0 }}>
           <defs>
-            <linearGradient id="priceGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#f0c040" stopOpacity={0.2} />
-              <stop offset="95%" stopColor="#f0c040" stopOpacity={0} />
+            {/* --- AI-MODIFIED (2026-03-31) --- */}
+            {/* Purpose: Use currency-specific gradient ID and color */}
+            <linearGradient id={cc.gradId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor={cc.stroke} stopOpacity={0.2} />
+              <stop offset="95%" stopColor={cc.stroke} stopOpacity={0} />
             </linearGradient>
+            {/* --- END AI-MODIFIED --- */}
           </defs>
           <CartesianGrid strokeDasharray="2 4" stroke="#1a2a3c" />
           <XAxis
@@ -50,6 +64,8 @@ export default function PriceChart({ data, height = 180, showVolume = false }: P
             width={40}
             stroke="#1a2a3c"
           />
+          {/* --- AI-MODIFIED (2026-03-31) --- */}
+          {/* Purpose: Use currency-aware color and label in tooltip */}
           <Tooltip
             contentStyle={{
               backgroundColor: "#0f1628",
@@ -60,12 +76,13 @@ export default function PriceChart({ data, height = 180, showVolume = false }: P
               color: "#c0d0e0",
               boxShadow: "2px 2px 0 #060810",
             }}
-            itemStyle={{ color: "#f0c040" }}
+            itemStyle={{ color: cc.stroke }}
             formatter={(value: number, name: string) =>
-              name === "avgPrice" ? [`${value} Gold`, "Avg Price"] : [`${value}`, "Volume"]
+              name === "avgPrice" ? [`${value} ${cc.label}`, "Avg Price"] : [`${value}`, "Volume"]
             }
           />
-          <Area type="monotone" dataKey="avgPrice" stroke="#f0c040" strokeWidth={2} fill="url(#priceGrad)" />
+          <Area type="monotone" dataKey="avgPrice" stroke={cc.stroke} strokeWidth={2} fill={`url(#${cc.gradId})`} />
+          {/* --- END AI-MODIFIED --- */}
         </AreaChart>
       </ResponsiveContainer>
     </div>

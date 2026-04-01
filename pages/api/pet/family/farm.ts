@@ -6,11 +6,15 @@
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
-import { hasPermission } from "@/utils/familyPermissions"
-
-const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
-  COMMON: 1.0, UNCOMMON: 1.5, RARE: 2.0, EPIC: 3.0, LEGENDARY: 5.0,
-}
+import { hasPermission, maxFarmsForLevel, familyLevelFromXp } from "@/utils/familyPermissions"
+// --- AI-MODIFIED (2026-03-30) ---
+// Purpose: Import shared farm helpers for rarity rolls and item drops
+import {
+  RARITY_GOLD_MULTIPLIER, RARITY_DROP_MULTIPLIER,
+  ITEM_DROP_CHANCE_HARVEST,
+  rollRarity, tryItemDrop,
+} from "@/utils/farmHelpers"
+// --- END AI-MODIFIED ---
 
 function computeProgress(growthPoints: number, growthPointsNeeded: number) {
   if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false }
@@ -46,10 +50,34 @@ export default apiHandler({
     })
     if (!membership) return res.status(403).json({ error: "You are not in a family" })
 
-    const farm = await prisma.lg_family_farms.findUnique({
+    // --- AI-MODIFIED (2026-03-30) ---
+    // Purpose: Lazy-create farm + plots if family level qualifies but rows don't exist yet
+    let farm = await prisma.lg_family_farms.findUnique({
       where: { family_id_farm_index: { family_id: membership.family_id, farm_index: farmIndex } },
     })
-    if (!farm) return res.status(404).json({ error: "Farm page not found" })
+    if (!farm) {
+      const family = await prisma.lg_families.findUnique({
+        where: { family_id: membership.family_id },
+        select: { xp: true },
+      })
+      const level = familyLevelFromXp(Number(family?.xp ?? 0))
+      if (farmIndex < maxFarmsForLevel(level)) {
+        farm = await prisma.lg_family_farms.create({
+          data: { family_id: membership.family_id, farm_index: farmIndex },
+        })
+        await prisma.lg_family_farm_plots.createMany({
+          data: Array.from({ length: 15 }, (_, i) => ({
+            family_id: membership.family_id,
+            farm_index: farmIndex,
+            plot_id: i,
+          })),
+          skipDuplicates: true,
+        })
+      } else {
+        return res.status(404).json({ error: "Farm page not found" })
+      }
+    }
+    // --- END AI-MODIFIED ---
 
     const [plots, seeds, farmCount] = await Promise.all([
       prisma.lg_family_farm_plots.findMany({
@@ -233,7 +261,18 @@ export default apiHandler({
         })
       )
       await prisma.$transaction(ops)
-      return res.status(200).json({ success: true, count: harvestable.length, totalGold })
+
+      // --- AI-MODIFIED (2026-03-30) ---
+      // Purpose: Roll item drops for each harvested crop (items go to harvesting user's inventory)
+      const allDrops: Array<{ itemId: number; name: string; rarity: string; category: string }> = []
+      for (const p of harvestable) {
+        const rarity = p.rarity || "COMMON"
+        const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
+        const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
+        if (drops) allDrops.push(...drops)
+      }
+      return res.status(200).json({ success: true, count: harvestable.length, totalGold, drops: allDrops.length > 0 ? allDrops : null })
+      // --- END AI-MODIFIED ---
     }
     // --- END AI-MODIFIED ---
 
@@ -260,6 +299,11 @@ export default apiHandler({
         return res.status(400).json({ error: `Not enough gold in treasury. Need ${seed.plant_cost}` })
       }
 
+      // --- AI-MODIFIED (2026-03-30) ---
+      // Purpose: Roll rarity on family farm plant (was always COMMON)
+      const rarity = rollRarity()
+      // --- END AI-MODIFIED ---
+
       await prisma.$transaction([
         prisma.lg_family_farm_plots.update({
           where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: plotId } },
@@ -272,7 +316,7 @@ export default apiHandler({
             dead: false,
             growth_points: 0,
             gold_invested: seed.plant_cost,
-            rarity: "COMMON",
+            rarity,
           },
         }),
         prisma.lg_families.update({
@@ -285,12 +329,12 @@ export default apiHandler({
             userid: userId,
             amount: -seed.plant_cost,
             action: "FARM_PLANT",
-            description: `Planted ${seed.name}`,
+            description: `Planted ${seed.name} (${rarity})`,
           },
         }),
       ])
 
-      return res.status(200).json({ success: true, action: "planted", seedName: seed.name, cost: seed.plant_cost })
+      return res.status(200).json({ success: true, action: "planted", seedName: seed.name, rarity, cost: seed.plant_cost })
     }
 
     const plot = await prisma.lg_family_farm_plots.findUnique({
@@ -354,6 +398,12 @@ export default apiHandler({
         }),
       ])
 
+      // --- AI-MODIFIED (2026-03-30) ---
+      // Purpose: Roll item drops on single harvest (items go to harvesting user's inventory)
+      const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
+      const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
+      // --- END AI-MODIFIED ---
+
       return res.status(200).json({
         success: true,
         action: "harvested",
@@ -361,6 +411,7 @@ export default apiHandler({
         seedName: plot.lg_farm_seeds.name,
         rarity,
         multiplier,
+        drops,
       })
     }
 
@@ -383,14 +434,26 @@ export default apiHandler({
           },
         }),
       ]
+      // --- AI-MODIFIED (2026-03-30) ---
+      // Purpose: Log uproot gold refund in family gold log (was invisible before)
       if (refund > 0) {
         ops.push(
           prisma.lg_families.update({
             where: { family_id: family.family_id },
             data: { gold: { increment: refund } },
+          }),
+          prisma.lg_family_gold_log.create({
+            data: {
+              family_id: family.family_id,
+              userid: userId,
+              amount: refund,
+              action: "FARM_UPROOT",
+              description: `Uprooted plant, refunded ${refund}G`,
+            },
           })
         )
       }
+      // --- END AI-MODIFIED ---
       await prisma.$transaction(ops)
       return res.status(200).json({ success: true, action: "uprooted", refund })
     }

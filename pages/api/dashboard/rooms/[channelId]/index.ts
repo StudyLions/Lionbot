@@ -202,4 +202,56 @@ export default apiHandler({
     res.status(200).json({ name: updated.name, message: "Name saved. Will sync to Discord within a few minutes." })
     // --- END AI-MODIFIED ---
   },
+
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: Let room owners close their own room and get remaining coins refunded
+  async DELETE(req, res) {
+    const auth = await requireAuth(req, res)
+    if (!auth) return
+
+    const channelId = parseBigInt(req.query.channelId, "channelId")
+
+    const room = await prisma.rented_rooms.findUnique({
+      where: { channelid: channelId },
+      select: { ownerid: true, guildid: true, coin_balance: true, deleted_at: true },
+    })
+
+    if (!room) {
+      return res.status(404).json({ error: "Room not found" })
+    }
+    if (room.deleted_at) {
+      return res.status(400).json({ error: "This room is already closed" })
+    }
+    if (room.ownerid !== auth.userId) {
+      return res.status(403).json({ error: "Only the room owner can close the room" })
+    }
+
+    const refundAmount = room.coin_balance
+
+    await prisma.$transaction([
+      prisma.rented_rooms.update({
+        where: { channelid: channelId },
+        data: { deleted_at: new Date() },
+      }),
+      ...(refundAmount > 0
+        ? [
+            prisma.members.update({
+              where: {
+                guildid_userid: {
+                  guildid: room.guildid,
+                  userid: room.ownerid,
+                },
+              },
+              data: { coins: { increment: refundAmount } },
+            }),
+          ]
+        : []),
+    ])
+
+    res.status(200).json({
+      message: "Room closed successfully",
+      refunded: refundAmount,
+    })
+  },
+  // --- END AI-MODIFIED ---
 })

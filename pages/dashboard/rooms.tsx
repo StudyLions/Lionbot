@@ -11,7 +11,10 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-01) ---
+// Purpose: Import ConfirmModal for close room confirmation dialog
+import { toast, DashboardShell, PageHeader, ConfirmModal } from "@/components/dashboard/ui"
+// --- END AI-MODIFIED ---
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useCallback, useMemo } from "react"
@@ -547,6 +550,62 @@ function TimerPanel({ channelId, timer, isOwner, onMutate }: {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-01) ---
+// Purpose: Close Room panel component for owners to permanently close their room
+function CloseRoomPanel({ channelId, coinBalance, onClose }: {
+  channelId: string; coinBalance: number; onClose: () => void
+}) {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const handleCloseRoom = async () => {
+    setIsClosing(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${channelId}`, { method: "DELETE" })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to close room")
+      }
+      const result = await res.json()
+      toast.success(
+        result.refunded > 0
+          ? `Room closed. ${result.refunded.toLocaleString()} coins refunded to your wallet.`
+          : "Room closed successfully."
+      )
+      onClose()
+    } catch (e: any) {
+      toast.error(e.message || "Failed to close room")
+    } finally {
+      setIsClosing(false)
+      setShowConfirm(false)
+    }
+  }
+
+  return (
+    <div className="pt-3 border-t border-border/50">
+      <button
+        onClick={() => setShowConfirm(true)}
+        disabled={isClosing}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-red-400 hover:bg-red-500/10 border border-red-500/20 hover:border-red-500/30 transition-colors disabled:opacity-50"
+      >
+        <Trash2 size={12} />
+        Close Room
+      </button>
+      <ConfirmModal
+        open={showConfirm}
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleCloseRoom}
+        title="Close Private Room?"
+        message={`This will permanently close your private room. The Discord channel will be cleaned up by the bot. ${coinBalance > 0 ? `Your remaining balance of ${coinBalance.toLocaleString()} coins will be refunded.` : "There are no coins to refund."}`}
+        confirmLabel="Close Room"
+        variant="danger"
+        loading={isClosing}
+      />
+    </div>
+  )
+}
+// --- END AI-MODIFIED ---
+
 function RoomDetailPanel({ channelId, onClose, onMutate }: {
   channelId: string; onClose: () => void; onMutate: () => void
 }) {
@@ -620,6 +679,13 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
 
       <StudyLeaderboard members={data.members} />
       <ActivityFeed entries={data.activityFeed} />
+
+      {/* --- AI-MODIFIED (2026-04-01) --- */}
+      {/* Purpose: Close Room button for owners with confirmation dialog */}
+      {data.isOwner && !data.deletedAt && (
+        <CloseRoomPanel channelId={channelId} coinBalance={data.coinBalance} onClose={() => { handleMutate(); onClose(); }} />
+      )}
+      {/* --- END AI-MODIFIED --- */}
     </div>
   )
 }

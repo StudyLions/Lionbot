@@ -202,7 +202,10 @@ const SECTION_DEFS: SectionDef[] = [
   { id: "tasks", label: "Tasks", icon: CheckSquare, settings: ["max_tasks", "task_reward", "task_reward_limit"], searchTerms: ["task", "todo", "reward", "limit"] },
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Add new room settings to the Private Rooms section
-  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit"] },
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: Add renting_role to rooms section for change tracking
+  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_role", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit", "moderator"] },
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   { id: "schedule", label: "Accountability", icon: Users, settings: ["accountability_price", "accountability_reward", "accountability_bonus"], searchTerms: ["schedule", "session", "booking", "accountability", "attendance"] },
   { id: "ranks", label: "Ranks", icon: Trophy, settings: ["rank_type", "dm_ranks", "xp_per_period"], searchTerms: ["rank", "level", "xp", "leaderboard"] },
@@ -1096,6 +1099,12 @@ export default function ServerSettings() {
                         <SettingRow label="Sync Permissions" description="Sync room permissions with the category" isModified={isModified("renting_sync_perms")} onReset={() => resetField("renting_sync_perms")}>
                           <Toggle checked={config.renting_sync_perms ?? false} onChange={(v) => set("renting_sync_perms", v)} />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-04-01) --- */}
+                        {/* Purpose: Room moderator role selector for auto-permissions on private rooms */}
+                        <SettingRow label="Room Moderator Role" description="This role automatically gets permissions to view, connect, and send messages in all private rooms" tooltip="Useful for moderation — lets staff see and moderate private channels without being invited." isModified={isModified("renting_role")} onReset={() => resetField("renting_role")}>
+                          <RoleSelect guildId={guildId} value={config.renting_role ?? null} onChange={(v) => set("renting_role", (v as string) || null)} placeholder="Select moderator role for rooms" excludeManaged excludeEveryone />
+                        </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                         {/* --- AI-MODIFIED (2026-03-22) --- */}
                         {/* Purpose: New advanced room settings + link to admin rooms panel */}
                         <SettingRow label="Max Rooms Per User" description="Limit how many rooms one user can own (empty = unlimited)" isModified={isModified("renting_max_per_user")} onReset={() => resetField("renting_max_per_user")}>

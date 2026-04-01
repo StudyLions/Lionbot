@@ -957,6 +957,9 @@ model user_config {
   user_weekly_goals                                                        user_weekly_goals[]
   lg_enhancement_log                                                       lg_enhancement_log[]
   lg_enhancement_achievements                                              lg_enhancement_achievements[]
+  shared_tasklists_owned                                                    shared_tasklist[]
+  shared_tasklist_memberships                                               shared_tasklist_member[]
+  shared_tasks_assigned                                                     shared_task[]                  @relation("shared_task_assignee")
 }
 
 model user_experience {
@@ -2175,3 +2178,94 @@ model lg_enhancement_achievements {
   @@index([userid], map: "idx_enhancement_achievements_user")
 }
 // --- END AI-MODIFIED ---
+
+// --- AI-GENERATED (2026-03-31) ---
+// Purpose: Shared kanban boards — collaborative task lists with columns, members, and audit history
+
+model shared_tasklist {
+  listid                  Int                       @id @default(autoincrement())
+  name                    String
+  description             String?
+  ownerid                 BigInt
+  color                   String?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  deleted_at              DateTime?                 @db.Timestamptz(6)
+
+  owner                   user_config               @relation(fields: [ownerid], references: [userid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_tasklist_owner")
+  columns                 shared_tasklist_column[]
+  members                 shared_tasklist_member[]
+  tasks                   shared_task[]
+  history                 shared_task_history[]
+
+  @@index([ownerid], map: "shared_tasklist_owners")
+}
+
+model shared_tasklist_column {
+  columnid                Int                       @id @default(autoincrement())
+  listid                  Int
+  name                    String
+  position                Int
+  color                   String?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+
+  board                   shared_tasklist           @relation(fields: [listid], references: [listid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_tasklist_column_list")
+  tasks                   shared_task[]
+
+  @@index([listid], map: "shared_tasklist_column_lists")
+}
+
+model shared_tasklist_member {
+  listid                  Int
+  userid                  BigInt
+  role                    String                    @default("viewer")
+  joined_at               DateTime?                 @default(now()) @db.Timestamptz(6)
+  invited_by              BigInt?
+
+  board                   shared_tasklist           @relation(fields: [listid], references: [listid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_tasklist_member_list")
+  user                    user_config               @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_tasklist_member_user")
+
+  @@id([listid, userid])
+  @@index([userid], map: "shared_tasklist_member_users")
+}
+
+model shared_task {
+  taskid                  Int                       @id @default(autoincrement())
+  listid                  Int
+  columnid                Int?
+  content                 String
+  description             String?
+  position                Int                       @default(0)
+  color                   String?
+  assignee_id             BigInt?
+  created_by              BigInt
+  completed_at            DateTime?                 @db.Timestamptz(6)
+  deleted_at              DateTime?                 @db.Timestamptz(6)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  last_updated_at         DateTime?                 @default(now()) @db.Timestamptz(6)
+
+  board                   shared_tasklist           @relation(fields: [listid], references: [listid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_task_list")
+  column                  shared_tasklist_column?   @relation(fields: [columnid], references: [columnid], onUpdate: NoAction, map: "fk_shared_task_column")
+  assignee                user_config?              @relation("shared_task_assignee", fields: [assignee_id], references: [userid], onUpdate: NoAction, map: "fk_shared_task_assignee")
+  history                 shared_task_history[]
+
+  @@index([listid], map: "shared_task_lists")
+  @@index([columnid], map: "shared_task_columns")
+}
+
+model shared_task_history {
+  historyid               Int                       @id @default(autoincrement())
+  listid                  Int
+  taskid                  Int?
+  userid                  BigInt
+  action                  String
+  details                 Json?
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+
+  board                   shared_tasklist           @relation(fields: [listid], references: [listid], onDelete: Cascade, onUpdate: NoAction, map: "fk_shared_task_history_list")
+  task                    shared_task?              @relation(fields: [taskid], references: [taskid], onUpdate: NoAction)
+
+  @@index([listid, created_at(sort: Desc)], map: "shared_task_history_lists")
+}
+
+// --- END AI-GENERATED ---

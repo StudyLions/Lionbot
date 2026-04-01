@@ -39,25 +39,34 @@ import {
 
 // ---- Types ----
 
-interface EconomyStats {
+// --- AI-MODIFIED (2026-03-30) ---
+// Purpose: Split into two response types for progressive loading (summary loads fast, flow loads slower)
+interface EconomySummary {
   summary: {
     totalCoins: number; memberCount: number; avgBalance: number
+    activeRooms: number; coinsInRoomBanks: number; top5HolderCoins: number
+  }
+  distribution: { zero: number; low: number; medium: number; high: number; whale: number }
+  shopAnalytics: {
+    bestSellers: Array<{ itemId: number; itemType: string; price: number; purchaseCount: number; totalRevenue: number }>
+    neverPurchased: number; totalItems: number
+  }
+}
+
+interface EconomyFlow {
+  summary: {
     activeMembers7d: number; coinsEarnedToday: number; coinsSpentToday: number
     coinsEarnedWeek: number; coinsSpentWeek: number
     coinsEarnedLastWeek: number; coinsSpentLastWeek: number
-    netFlowWeek: number; activeRooms: number; coinsInRoomBanks: number
+    netFlowWeek: number
   }
   dailyFlow: Array<{ date: string; earned: number; spent: number; transactions: number }>
   incomeBreakdown: Array<{ type: string; total: number; count: number }>
   spendingBreakdown: Array<{ type: string; total: number; count: number }>
-  distribution: { zero: number; low: number; medium: number; high: number; whale: number }
   topEarnersWeek: Array<{ userId: string; displayName: string; avatarUrl: string; earned: number }>
-  shopAnalytics: {
-    bestSellers: Array<{ itemId: number; itemType: string; price: number; purchaseCount: number; totalRevenue: number }>
-    neverPurchased: number; totalShopRevenue30d: number
-  }
-  healthTips: string[]
+  shopRevenue30d: number
 }
+// --- END AI-MODIFIED ---
 
 interface TxResponse {
   transactions: Array<{
@@ -187,6 +196,66 @@ function ChartTooltip({ active, payload, label }: any) {
   )
 }
 
+// --- AI-MODIFIED (2026-03-30) ---
+// Purpose: Health tips generated client-side from combined summary + flow data
+function generateHealthTips(
+  summary: EconomySummary | undefined,
+  flow: EconomyFlow | undefined
+): string[] {
+  if (!summary) return []
+  const tips: string[] = []
+  const { totalCoins, top5HolderCoins } = summary.summary
+  const { distribution, shopAnalytics } = summary
+  const earnedWeek = flow?.summary.coinsEarnedWeek ?? 0
+  const spentWeek = flow?.summary.coinsSpentWeek ?? 0
+
+  if (totalCoins > 0 && earnedWeek > 0 && spentWeek > 0) {
+    const ratio = earnedWeek / Math.max(spentWeek, 1)
+    if (ratio > 3) {
+      tips.push(`Your economy generated ${ratio.toFixed(1)}x more coins than were spent this week. Consider adding more coin sinks like shop items or increasing prices.`)
+    } else if (ratio < 0.5 && earnedWeek > 0) {
+      tips.push(`Members are spending more than they earn (${(1 / ratio).toFixed(1)}x). If this continues, balances will drain. Consider increasing study rewards.`)
+    }
+  }
+
+  if (totalCoins > 0 && top5HolderCoins > 0) {
+    const top5Pct = Math.round((top5HolderCoins / totalCoins) * 100)
+    if (top5Pct > 70) {
+      tips.push(`The top 5 members hold ${top5Pct}% of all coins. Consider ways for newer members to earn faster, like task rewards or starting funds.`)
+    }
+  }
+
+  if (shopAnalytics.totalItems > 0 && shopAnalytics.neverPurchased > 0) {
+    if (shopAnalytics.neverPurchased === shopAnalytics.totalItems) {
+      tips.push(`None of your ${shopAnalytics.totalItems} shop items have been purchased. Prices may be too high, or members may not know about the shop.`)
+    } else if (shopAnalytics.neverPurchased > shopAnalytics.totalItems / 2) {
+      tips.push(`${shopAnalytics.neverPurchased} of ${shopAnalytics.totalItems} shop items have never been purchased. Consider lowering their prices.`)
+    }
+  }
+
+  const { activeRooms, coinsInRoomBanks } = summary.summary
+  if (activeRooms > 0 && coinsInRoomBanks > 0 && totalCoins > 0) {
+    const roomPct = Math.round((coinsInRoomBanks / totalCoins) * 100)
+    if (roomPct > 20) {
+      tips.push(`${coinsInRoomBanks.toLocaleString()} coins (${roomPct}% of circulation) are locked in room banks and not actively circulating.`)
+    }
+  }
+
+  if (distribution.zero > 0 && summary.summary.memberCount > 0) {
+    const zeroPct = Math.round((distribution.zero / summary.summary.memberCount) * 100)
+    if (zeroPct > 60) {
+      tips.push(`${zeroPct}% of tracked members have zero coins. Consider increasing study rewards or adding starting funds for new members.`)
+    }
+  }
+
+  if (tips.length === 0) {
+    tips.push("Your economy looks healthy! Coin flow is balanced and members are actively earning and spending.")
+  }
+
+  return tips
+}
+// --- END AI-MODIFIED ---
+
 // ---- Main Component ----
 
 export default function EconomyPage() {
@@ -214,9 +283,13 @@ export default function EconomyPage() {
   // Member panel
   const [panelUserId, setPanelUserId] = useState<string | null>(null)
 
-  // Data fetching
-  const statsKey = id && session ? `/api/dashboard/servers/${id}/economy-stats` : null
-  const { data: stats, isLoading: statsLoading } = useDashboard<EconomyStats>(statsKey)
+  // --- AI-MODIFIED (2026-03-30) ---
+  // Purpose: Split into two independent fetches for progressive loading
+  const summaryKey = id && session ? `/api/dashboard/servers/${id}/economy-stats-summary` : null
+  const { data: summaryData, isLoading: summaryLoading } = useDashboard<EconomySummary>(summaryKey)
+  const flowKey = id && session ? `/api/dashboard/servers/${id}/economy-stats-flow` : null
+  const { data: flowData, isLoading: flowLoading } = useDashboard<EconomyFlow>(tab === "overview" ? flowKey : null)
+  // --- END AI-MODIFIED ---
 
   const txParams = new URLSearchParams()
   if (txType !== "all") txParams.set("type", txType)
@@ -254,6 +327,13 @@ export default function EconomyPage() {
   const serverName = (serverData as any)?.server?.name ?? "Server"
   const isAdmin = (permsData as any)?.isAdmin ?? false
 
+  // --- AI-MODIFIED (2026-03-30) ---
+  // Purpose: Derive combined values from the two split endpoints
+  const ss = summaryData?.summary
+  const fs = flowData?.summary
+  const healthTips = generateHealthTips(summaryData, flowData)
+  // --- END AI-MODIFIED ---
+
   const handleTxSearch = () => { setTxSearch(txSearchInput); setTxPage(1) }
 
   const handleCsvExport = async () => {
@@ -288,7 +368,11 @@ export default function EconomyPage() {
       setBulkConfirmOpen(false)
       setBulkAmount("")
       setBulkReason("")
-      if (statsKey) invalidate(statsKey)
+      // --- AI-MODIFIED (2026-03-30) ---
+      // Purpose: invalidate both split endpoints after bulk operations
+      if (summaryKey) invalidate(summaryKey)
+      if (flowKey) invalidate(flowKey)
+      // --- END AI-MODIFIED ---
     } catch (err: any) {
       toast.error(err.message || "Bulk operation failed")
     } finally {
@@ -302,8 +386,6 @@ export default function EconomyPage() {
     { key: "transactions" as const, label: "Transactions" },
     ...(isAdmin ? [{ key: "admin" as const, label: "Admin Tools" }] : []),
   ]
-
-  const s = stats?.summary
 
   return (
     <Layout SEO={{ title: `Economy - ${serverName} - LionBot`, description: "Economy command center" }}>
@@ -345,156 +427,96 @@ export default function EconomyPage() {
               {/* --- END AI-REPLACED --- */}
 
               {/* ==================== OVERVIEW TAB ==================== */}
+              {/* --- AI-REPLACED (2026-03-30) ---
+                  Reason: Progressive loading -- summary data (stat cards, distribution) shows
+                  immediately from the fast endpoint; flow data (charts, breakdowns) loads
+                  independently from the slower endpoint. Eliminates all-or-nothing skeleton.
+                  --- Original code (commented out for rollback) ---
+                  -- See economy-stats.ts (the original monolithic endpoint) and git history
+                  -- for the original single-fetch approach with statsLoading || !s skeleton.
+                  --- End original code --- */}
               {tab === "overview" && (
                 <div className="space-y-6">
-                  {statsLoading || !s ? (
-                    <div className="space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-28" />)}
-                      </div>
-                      <Skeleton className="h-64" />
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <Skeleton className="h-64" />
-                        <Skeleton className="h-64" />
-                      </div>
+                  {/* Summary Cards -- from fast endpoint */}
+                  {summaryLoading || !ss ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[1,2,3,4,5,6].map(i => <Skeleton key={i} className="h-28" />)}
                     </div>
                   ) : (
                     <>
-                      {/* Summary Cards */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <StatCard
                           icon={<Coins size={18} className="text-amber-400" />}
                           label="Total Coins"
-                          value={formatNum(s.totalCoins)}
+                          value={formatNum(ss.totalCoins)}
                           subtitle="in circulation"
                         />
                         <StatCard
                           icon={<Users size={18} className="text-blue-400" />}
                           label="Active Members"
-                          value={s.activeMembers7d.toLocaleString()}
+                          value={fs ? fs.activeMembers7d.toLocaleString() : "..."}
                           subtitle="transacted in 7 days"
                         />
                         <StatCard
                           icon={<TrendingUp size={18} className="text-emerald-400" />}
                           label="Earned This Week"
-                          value={formatNum(s.coinsEarnedWeek)}
-                          delta={deltaPercent(s.coinsEarnedWeek, s.coinsEarnedLastWeek)}
+                          value={fs ? formatNum(fs.coinsEarnedWeek) : "..."}
+                          delta={fs ? deltaPercent(fs.coinsEarnedWeek, fs.coinsEarnedLastWeek) : undefined}
                           color="text-emerald-400"
                         />
                         <StatCard
                           icon={<TrendingDown size={18} className="text-red-400" />}
                           label="Spent This Week"
-                          value={formatNum(s.coinsSpentWeek)}
-                          delta={deltaPercent(s.coinsSpentWeek, s.coinsSpentLastWeek)}
+                          value={fs ? formatNum(fs.coinsSpentWeek) : "..."}
+                          delta={fs ? deltaPercent(fs.coinsSpentWeek, fs.coinsSpentLastWeek) : undefined}
                           color="text-red-400"
                         />
                         <StatCard
-                          icon={<ArrowUpDown size={18} className={s.netFlowWeek > 0 ? "text-amber-400" : s.netFlowWeek < 0 ? "text-emerald-400" : "text-muted-foreground"} />}
+                          icon={<ArrowUpDown size={18} className={
+                            !fs ? "text-muted-foreground"
+                              : fs.netFlowWeek > 0 ? "text-amber-400"
+                              : fs.netFlowWeek < 0 ? "text-emerald-400"
+                              : "text-muted-foreground"
+                          } />}
                           label="Net Flow"
-                          value={`${s.netFlowWeek >= 0 ? "+" : ""}${formatNum(s.netFlowWeek)}`}
-                          subtitle={s.netFlowWeek > 0 ? "inflationary" : s.netFlowWeek < 0 ? "deflationary" : "balanced"}
-                          color={s.netFlowWeek > 0 ? "text-amber-400" : s.netFlowWeek < 0 ? "text-emerald-400" : "text-foreground"}
+                          value={fs ? `${fs.netFlowWeek >= 0 ? "+" : ""}${formatNum(fs.netFlowWeek)}` : "..."}
+                          subtitle={!fs ? undefined : fs.netFlowWeek > 0 ? "inflationary" : fs.netFlowWeek < 0 ? "deflationary" : "balanced"}
+                          color={!fs ? "text-foreground" : fs.netFlowWeek > 0 ? "text-amber-400" : fs.netFlowWeek < 0 ? "text-emerald-400" : "text-foreground"}
                         />
                         <StatCard
                           icon={<Wallet size={18} className="text-purple-400" />}
                           label="Avg Balance"
-                          value={formatNum(s.avgBalance)}
-                          subtitle={`across ${s.memberCount} members`}
+                          value={formatNum(ss.avgBalance)}
+                          subtitle={`across ${ss.memberCount} members`}
                         />
                       </div>
 
                       {/* Rooms Snapshot */}
-                      {/* --- AI-MODIFIED (2026-03-22) --- */}
-                      {/* Purpose: Add cross-link to Private Rooms admin panel */}
-                      {(s.activeRooms > 0 || s.coinsInRoomBanks > 0) && (
+                      {(ss.activeRooms > 0 || ss.coinsInRoomBanks > 0) && (
                         <div className="flex items-center gap-2 px-4 py-2.5 bg-card/30 border border-border rounded-lg text-sm text-muted-foreground">
                           <Home size={14} />
                           <span className="flex-1">
-                            <strong className="text-foreground">{s.activeRooms}</strong> active room{s.activeRooms !== 1 ? "s" : ""} with{" "}
-                            <strong className="text-amber-400">{s.coinsInRoomBanks.toLocaleString()}</strong> coins in room banks
+                            <strong className="text-foreground">{ss.activeRooms}</strong> active room{ss.activeRooms !== 1 ? "s" : ""} with{" "}
+                            <strong className="text-amber-400">{ss.coinsInRoomBanks.toLocaleString()}</strong> coins in room banks
                           </span>
                           <Link href={`/dashboard/servers/${router.query.id}/rooms`}>
                             <a className="text-xs text-primary hover:text-primary/80 font-medium whitespace-nowrap">View Rooms →</a>
                           </Link>
                         </div>
                       )}
-                      {/* --- END AI-MODIFIED --- */}
 
-                      {/* Health Tips */}
-                      {stats.healthTips.length > 0 && (
-                        <div className={`border rounded-xl p-4 space-y-2 ${
-                          stats.healthTips[0].includes("healthy")
-                            ? "border-emerald-500/30 bg-emerald-500/5"
-                            : "border-amber-500/30 bg-amber-500/5"
-                        }`}>
-                          <div className="flex items-center gap-2 text-sm font-medium">
-                            {stats.healthTips[0].includes("healthy")
-                              ? <><CheckCircle size={16} className="text-emerald-400" /><span className="text-emerald-400">Economy Health</span></>
-                              : <><Lightbulb size={16} className="text-amber-400" /><span className="text-amber-400">Economy Insights</span></>
-                            }
-                          </div>
-                          {stats.healthTips.map((tip, i) => (
-                            <p key={i} className="text-sm text-muted-foreground leading-relaxed">
-                              {tip}
-                            </p>
-                          ))}
-                        </div>
-                      )}
-
-                      {/* Coin Flow Chart */}
-                      <div className="bg-card/50 border border-border rounded-xl p-5">
-                        <h3 className="text-lg font-bold text-foreground mb-1">Coin Flow</h3>
-                        <p className="text-xs text-muted-foreground mb-4">Daily coins earned vs spent over the last 30 days</p>
-                        <div className="h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={stats.dailyFlow} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                              <defs>
-                                <linearGradient id="earnedGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
-                                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
-                                </linearGradient>
-                                <linearGradient id="spentGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
-                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                              <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} stroke="#666" tick={{ fontSize: 11 }} />
-                              <YAxis stroke="#666" tick={{ fontSize: 11 }} tickFormatter={formatNum} />
-                              <RechartsTooltip content={<ChartTooltip />} />
-                              <Area type="monotone" dataKey="earned" name="Earned" stroke="#22c55e" fill="url(#earnedGrad)" strokeWidth={2} />
-                              <Area type="monotone" dataKey="spent" name="Spent" stroke="#ef4444" fill="url(#spentGrad)" strokeWidth={2} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      {/* Income vs Spending Breakdown */}
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <PieSection
-                          title="Income Sources"
-                          subtitle="Where coins come from (30 days)"
-                          data={stats.incomeBreakdown}
-                        />
-                        <PieSection
-                          title="Spending Sinks"
-                          subtitle="Where coins go (30 days)"
-                          data={stats.spendingBreakdown}
-                        />
-                      </div>
-
-                      {/* Balance Distribution */}
+                      {/* Balance Distribution -- from fast endpoint */}
                       <div className="bg-card/50 border border-border rounded-xl p-5">
                         <h3 className="text-lg font-bold text-foreground mb-1">Balance Distribution</h3>
                         <p className="text-xs text-muted-foreground mb-4">How coins are distributed across members</p>
                         <div className="h-48">
                           <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={[
-                              { range: "0", count: stats.distribution.zero, fill: "#6b7280" },
-                              { range: "1-100", count: stats.distribution.low, fill: "#3b82f6" },
-                              { range: "101-1K", count: stats.distribution.medium, fill: "#22c55e" },
-                              { range: "1K-10K", count: stats.distribution.high, fill: "#f59e0b" },
-                              { range: "10K+", count: stats.distribution.whale, fill: "#ef4444" },
+                              { range: "0", count: summaryData!.distribution.zero, fill: "#6b7280" },
+                              { range: "1-100", count: summaryData!.distribution.low, fill: "#3b82f6" },
+                              { range: "101-1K", count: summaryData!.distribution.medium, fill: "#22c55e" },
+                              { range: "1K-10K", count: summaryData!.distribution.high, fill: "#f59e0b" },
+                              { range: "10K+", count: summaryData!.distribution.whale, fill: "#ef4444" },
                             ]} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                               <XAxis dataKey="range" stroke="#666" tick={{ fontSize: 12 }} />
@@ -516,9 +538,8 @@ export default function EconomyPage() {
                         </div>
                       </div>
 
-                      {/* Shop Analytics + Settings Preview */}
+                      {/* Shop Analytics + Settings Preview -- from fast endpoint */}
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {/* Shop Analytics */}
                         <div className="bg-card/50 border border-border rounded-xl p-5">
                           <div className="flex items-center justify-between mb-4">
                             <div>
@@ -535,29 +556,26 @@ export default function EconomyPage() {
                               Edit Shop <ExternalLink size={12} />
                             </button>
                           </div>
-                          {/* --- AI-MODIFIED (2026-03-21) --- */}
-                          {/* Purpose: Stack shop analytics blocks on mobile */}
                           <div className="flex flex-col sm:flex-row gap-4 mb-4">
                             <div className="flex-1 bg-background/50 rounded-lg p-3 text-center">
-                              <p className="text-lg font-bold text-amber-400">{formatNum(stats.shopAnalytics.totalShopRevenue30d)}</p>
+                              <p className="text-lg font-bold text-amber-400">{flowData ? formatNum(flowData.shopRevenue30d) : "..."}</p>
                               <p className="text-xs text-muted-foreground">Revenue</p>
                             </div>
                             <div className="flex-1 bg-background/50 rounded-lg p-3 text-center">
-                              <p className="text-lg font-bold text-foreground">{stats.shopAnalytics.bestSellers.length}</p>
+                              <p className="text-lg font-bold text-foreground">{summaryData!.shopAnalytics.bestSellers.length}</p>
                               <p className="text-xs text-muted-foreground">Items Sold</p>
                             </div>
                             <div className="flex-1 bg-background/50 rounded-lg p-3 text-center">
-                          {/* --- END AI-MODIFIED --- */}
-                              <p className={`text-lg font-bold ${stats.shopAnalytics.neverPurchased > 0 ? "text-amber-400" : "text-emerald-400"}`}>
-                                {stats.shopAnalytics.neverPurchased}
+                              <p className={`text-lg font-bold ${summaryData!.shopAnalytics.neverPurchased > 0 ? "text-amber-400" : "text-emerald-400"}`}>
+                                {summaryData!.shopAnalytics.neverPurchased}
                               </p>
                               <p className="text-xs text-muted-foreground">Unsold</p>
                             </div>
                           </div>
-                          {stats.shopAnalytics.bestSellers.length > 0 ? (
+                          {summaryData!.shopAnalytics.bestSellers.length > 0 ? (
                             <div className="space-y-2">
                               <p className="text-xs text-muted-foreground uppercase tracking-wide">Best Sellers</p>
-                              {stats.shopAnalytics.bestSellers.map((item, i) => (
+                              {summaryData!.shopAnalytics.bestSellers.map((item, i) => (
                                 <div key={item.itemId} className="flex items-center justify-between py-1.5 text-sm">
                                   <span className="text-foreground">
                                     <span className="text-muted-foreground mr-2">#{i + 1}</span>
@@ -574,7 +592,6 @@ export default function EconomyPage() {
                           )}
                         </div>
 
-                        {/* Settings Preview */}
                         <div className="bg-card/50 border border-border rounded-xl p-5">
                           <div className="flex items-center justify-between mb-4">
                             <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
@@ -604,16 +621,92 @@ export default function EconomyPage() {
                           </div>
                         </div>
                       </div>
+                    </>
+                  )}
+
+                  {/* Flow data sections -- load independently from slower endpoint */}
+                  {flowLoading ? (
+                    <div className="space-y-4">
+                      <Skeleton className="h-64" />
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        <Skeleton className="h-64" />
+                        <Skeleton className="h-64" />
+                      </div>
+                    </div>
+                  ) : flowData ? (
+                    <>
+                      {/* Health Tips -- computed client-side from both datasets */}
+                      {healthTips.length > 0 && (
+                        <div className={`border rounded-xl p-4 space-y-2 ${
+                          healthTips[0].includes("healthy")
+                            ? "border-emerald-500/30 bg-emerald-500/5"
+                            : "border-amber-500/30 bg-amber-500/5"
+                        }`}>
+                          <div className="flex items-center gap-2 text-sm font-medium">
+                            {healthTips[0].includes("healthy")
+                              ? <><CheckCircle size={16} className="text-emerald-400" /><span className="text-emerald-400">Economy Health</span></>
+                              : <><Lightbulb size={16} className="text-amber-400" /><span className="text-amber-400">Economy Insights</span></>
+                            }
+                          </div>
+                          {healthTips.map((tip, i) => (
+                            <p key={i} className="text-sm text-muted-foreground leading-relaxed">
+                              {tip}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Coin Flow Chart */}
+                      <div className="bg-card/50 border border-border rounded-xl p-5">
+                        <h3 className="text-lg font-bold text-foreground mb-1">Coin Flow</h3>
+                        <p className="text-xs text-muted-foreground mb-4">Daily coins earned vs spent over the last 30 days</p>
+                        <div className="h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={flowData.dailyFlow} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                              <defs>
+                                <linearGradient id="earnedGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3} />
+                                  <stop offset="95%" stopColor="#22c55e" stopOpacity={0} />
+                                </linearGradient>
+                                <linearGradient id="spentGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3} />
+                                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                              <XAxis dataKey="date" tickFormatter={(d) => d.slice(5)} stroke="#666" tick={{ fontSize: 11 }} />
+                              <YAxis stroke="#666" tick={{ fontSize: 11 }} tickFormatter={formatNum} />
+                              <RechartsTooltip content={<ChartTooltip />} />
+                              <Area type="monotone" dataKey="earned" name="Earned" stroke="#22c55e" fill="url(#earnedGrad)" strokeWidth={2} />
+                              <Area type="monotone" dataKey="spent" name="Spent" stroke="#ef4444" fill="url(#spentGrad)" strokeWidth={2} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Income vs Spending Breakdown */}
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <PieSection
+                          title="Income Sources"
+                          subtitle="Where coins come from (30 days)"
+                          data={flowData.incomeBreakdown}
+                        />
+                        <PieSection
+                          title="Spending Sinks"
+                          subtitle="Where coins go (30 days)"
+                          data={flowData.spendingBreakdown}
+                        />
+                      </div>
 
                       {/* Top Earners This Week */}
-                      {stats.topEarnersWeek.length > 0 && (
+                      {flowData.topEarnersWeek.length > 0 && (
                         <div className="bg-card/50 border border-border rounded-xl p-5">
                           <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                             <TrendingUp size={18} className="text-emerald-400" />
                             Top Earners This Week
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-                            {stats.topEarnersWeek.map((earner, i) => (
+                            {flowData.topEarnersWeek.map((earner, i) => (
                               <button
                                 key={earner.userId}
                                 onClick={() => setPanelUserId(earner.userId)}
@@ -635,9 +728,10 @@ export default function EconomyPage() {
                         </div>
                       )}
                     </>
-                  )}
+                  ) : null}
                 </div>
               )}
+              {/* --- END AI-REPLACED --- */}
 
               {/* ==================== LEADERBOARD TAB ==================== */}
               {tab === "leaderboard" && (
@@ -685,7 +779,9 @@ export default function EconomyPage() {
                   </div>
 
                   {/* Top Earners */}
-                  {stats?.topEarnersWeek && stats.topEarnersWeek.length > 0 && (
+                  {/* --- AI-MODIFIED (2026-03-30) ---
+                      Purpose: Use flowData instead of monolithic stats */}
+                  {flowData?.topEarnersWeek && flowData.topEarnersWeek.length > 0 && (
                     <div className="bg-card/50 border border-border rounded-xl p-5">
                       <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         <TrendingUp size={18} className="text-emerald-400" />
@@ -693,7 +789,7 @@ export default function EconomyPage() {
                       </h3>
                       <p className="text-xs text-muted-foreground mb-3">Members who earned the most coins in the past 7 days</p>
                       <div className="divide-y divide-border">
-                        {stats.topEarnersWeek.map((earner, i) => (
+                        {flowData!.topEarnersWeek.map((earner, i) => (
                           <button
                             key={earner.userId}
                             onClick={() => setPanelUserId(earner.userId)}
@@ -937,14 +1033,16 @@ export default function EconomyPage() {
                   </div>
 
                   {/* Economy Health Check */}
-                  {stats?.healthTips && (
+                  {/* --- AI-MODIFIED (2026-03-30) ---
+                      Purpose: Use client-side generated healthTips */}
+                  {healthTips.length > 0 && (
                     <div className="bg-card/50 border border-border rounded-xl p-5">
                       <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                         <Lightbulb size={18} className="text-amber-400" />
                         Economy Health Check
                       </h3>
                       <div className="space-y-3">
-                        {stats.healthTips.map((tip, i) => (
+                        {healthTips.map((tip, i) => (
                           <div key={i} className="flex gap-3 p-3 bg-background/50 rounded-lg">
                             <div className={`w-1.5 rounded-full flex-shrink-0 ${
                               tip.includes("healthy") || tip.includes("balanced")
