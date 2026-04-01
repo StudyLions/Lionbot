@@ -9,7 +9,7 @@ import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
-const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise"]
+const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise", "lofi"]
 const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5]
 
 function serializeSlot(s: any) {
@@ -60,9 +60,12 @@ export default apiHandler({
     if (!VALID_BOT_NUMBERS.includes(bot_number)) {
       throw new ValidationError("bot_number must be 1-5")
     }
-    if (!VALID_SOUNDS.includes(sound_type)) {
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Accept lofi sub-mood types (lofi_chill, lofi_jazzy, etc.)
+    if (!VALID_SOUNDS.includes(sound_type) && !sound_type.startsWith("lofi_")) {
       throw new ValidationError(`Invalid sound type: ${sound_type}`)
     }
+    // --- END AI-MODIFIED ---
     if (!start_time || !end_time) {
       throw new ValidationError("start_time and end_time are required (HH:MM format)")
     }

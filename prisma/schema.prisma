@@ -296,6 +296,11 @@ model guild_config {
   visible_statistics              visible_statistics[]          @ignore
   voice_ranks                     voice_ranks[]
   xp_ranks                        xp_ranks[]
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: Text Branding reverse relations
+  guild_text_overrides            guild_text_overrides[]
+  text_override_backups           text_override_backups[]
+  // --- END AI-MODIFIED ---
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -1664,6 +1669,8 @@ model ambient_sounds_config {
   nickname_template     String?  @db.VarChar(100)
   voting_enabled        Boolean? @default(false)
   vote_cooldown_minutes Int?     @default(30)
+  current_song_title    String?  @db.VarChar(200)
+  current_song_artist   String?  @db.VarChar(200)
 
   @@id([guildid, bot_number])
 }
@@ -1719,6 +1726,29 @@ model sounds_bot_heartbeat {
   last_seen    DateTime? @default(now()) @db.Timestamptz(6)
   bot_username String?   @db.VarChar(50)
   guild_count  Int?      @default(0)
+  lofi_moods   String[]
+}
+
+model lofi_play_history {
+  id            Int      @id @default(autoincrement())
+  guildid       BigInt
+  bot_number    Int      @db.SmallInt
+  song_title    String?  @db.VarChar(200)
+  song_artist   String?  @db.VarChar(200)
+  song_filename String?  @db.VarChar(300)
+  played_at     DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid, played_at(sort: Desc)], map: "idx_lofi_play_history_guild")
+}
+
+model lofi_blacklist {
+  id              Int      @id @default(autoincrement())
+  guildid         BigInt
+  song_filename   String   @db.VarChar(300)
+  blacklisted_by  BigInt?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([guildid, song_filename])
 }
 
 model sticky_messages {
@@ -2266,6 +2296,42 @@ model shared_task_history {
   task                    shared_task?              @relation(fields: [taskid], references: [taskid], onUpdate: NoAction)
 
   @@index([listid, created_at(sort: Desc)], map: "shared_task_history_lists")
+}
+
+// --- END AI-GENERATED ---
+
+// ============================================================
+// AI-GENERATED MODELS
+// Created: 2026-04-01
+// Purpose: Text Branding -- guild text override system
+// ============================================================
+
+model guild_text_overrides {
+  guildid             BigInt
+  text_key            String
+  domain              String
+  custom_text         String
+  custom_text_plural  String?
+  updated_at          DateTime    @default(now()) @db.Timestamptz(6)
+  updated_by          BigInt?
+
+  guild               guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([guildid, text_key])
+  @@index([guildid], map: "idx_guild_text_overrides_guild")
+}
+
+model text_override_backups {
+  backup_id           Int         @id @default(autoincrement())
+  guildid             BigInt
+  backup_name         String
+  backup_data         Json
+  created_at          DateTime    @default(now()) @db.Timestamptz(6)
+  created_by          BigInt?
+
+  guild               guild_config @relation(fields: [guildid], references: [guildid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([guildid], map: "idx_text_override_backups_guild")
 }
 
 // --- END AI-GENERATED ---

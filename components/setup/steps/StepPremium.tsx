@@ -127,7 +127,10 @@ export default function StepPremium({ serverName, onNext, onBack, direction }: S
         </p>
         <ul className="space-y-1.5">
           {[
-            "Custom server branding on all cards",
+            // --- AI-MODIFIED (2026-04-01) ---
+            // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+            "Custom visual branding on all cards",
+            // --- END AI-MODIFIED ---
             "Premium Pomodoro themes",
             "Ambient sounds bot (plays rain, campfire, and other background sounds in voice)",
             "15% bonus LionGotchi gold & drops",

@@ -384,12 +384,15 @@ export const adminTutorials: Tutorial[] = [
     ],
   },
 
-  // ── 8. Video Channels & Branding ────────────────────────
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+  // ── 8. Video Channels & Visual Branding ────────────────────────
   // --- AI-MODIFIED (2026-03-24) ---
   // Purpose: Updated nextSlug from liongotchi-admin to ambient-sounds
   {
     slug: "video-and-branding",
-    title: "Video Channels & Branding",
+    title: "Video Channels & Visual Branding",
+  // --- END AI-MODIFIED ---
     description: "Require video in certain channels and customize LionBot's appearance for your server.",
     audience: "admin",
     iconName: "Video",
@@ -415,12 +418,15 @@ export const adminTutorials: Tutorial[] = [
       },
       {
         id: "branding",
-        title: "Server Branding",
+        // --- AI-MODIFIED (2026-04-01) ---
+        // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+        title: "Visual Branding",
         paragraphs: [
-          "Customize how LionBot looks in your server. You can set a custom embed color, server icon, and other branding options that make the bot feel like part of your community.",
-          "Find branding settings in the dashboard. These affect how bot messages and embeds appear in your server.",
+          "Customize how LionBot looks in your server. You can set a custom embed color, server icon, and other visual branding options that make the bot feel like part of your community.",
+          "Find visual branding settings in the dashboard. These affect how bot messages and embeds appear in your server.",
         ],
-        note: "Advanced branding options (custom embed colors, icons, and more) are available with a premium subscription. See the Premium Features tutorial for details.",
+        note: "Advanced visual branding options (custom embed colors, icons, and more) are available with a premium subscription. See the Premium Features tutorial for details.",
+        // --- END AI-MODIFIED ---
       },
       {
         id: "putting-it-together",
@@ -508,7 +514,10 @@ export const adminTutorials: Tutorial[] = [
   {
     slug: "premium-features",
     title: "Premium Features",
-    description: "A roundup of all premium features for server admins — sticky messages, leaderboard auto-posts, voice editing, analytics, and branding.",
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+    description: "A roundup of all premium features for server admins — sticky messages, leaderboard auto-posts, voice editing, analytics, and visual branding.",
+    // --- END AI-MODIFIED ---
     audience: "admin",
     iconName: "Crown",
     estimatedMinutes: 5,
@@ -559,11 +568,14 @@ export const adminTutorials: Tutorial[] = [
       },
       {
         id: "server-branding-premium",
-        title: "Server Branding",
+        // --- AI-MODIFIED (2026-04-01) ---
+        // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+        title: "Visual Branding",
         paragraphs: [
-          "Premium branding lets you fully customize LionBot's appearance in your server. Set a custom embed color that matches your server's theme, upload a custom bot icon, and adjust how messages look.",
+          "Premium visual branding lets you fully customize LionBot's appearance in your server. Set a custom embed color that matches your server's theme, upload a custom bot icon, and adjust how messages look.",
           "This makes LionBot feel like a native part of your server rather than a generic third-party bot. It's a small touch that goes a long way for professional-looking communities.",
         ],
+        // --- END AI-MODIFIED ---
       },
     ],
   },

@@ -199,7 +199,10 @@ const PAGE_ITEMS: SearchItem[] = [
   },
   {
     id: "page-branding",
-    title: "Branding",
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+    title: "Visual Branding",
+    // --- END AI-MODIFIED ---
     description: "Customize card colors and themes",
     category: "page",
     page: "Premium",
@@ -209,6 +212,21 @@ const PAGE_ITEMS: SearchItem[] = [
     requiredLevel: "admin",
     premium: true,
   },
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: Text Branding search entry
+  {
+    id: "page-text-branding",
+    title: "Text Branding",
+    description: "Customize every message Leo sends in your server",
+    category: "page",
+    page: "Premium",
+    route: "/text-branding",
+    keywords: ["text", "branding", "customize", "message", "string", "override", "language", "wording"],
+    iconName: "Type",
+    requiredLevel: "admin",
+    premium: true,
+  },
+  // --- END AI-MODIFIED ---
   {
     id: "page-leaderboard-autopost",
     title: "Leaderboard Auto-Post",
@@ -538,7 +556,10 @@ const FEATURE_ITEMS: SearchItem[] = [
     title: "Card Customization",
     description: "Customize profile, stats, and leaderboard card colors",
     category: "feature",
-    page: "Branding",
+    // --- AI-MODIFIED (2026-04-01) ---
+    // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+    page: "Visual Branding",
+    // --- END AI-MODIFIED ---
     route: "/branding",
     keywords: ["card", "color", "customize", "profile", "stats", "leaderboard", "theme", "skin"],
     iconName: "Paintbrush",

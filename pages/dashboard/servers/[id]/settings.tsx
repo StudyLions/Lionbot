@@ -333,7 +333,10 @@ function ServerPremiumCard({ guildId }: { guildId: string }) {
               </p>
             ) : (
               <p className="text-sm text-muted-foreground mt-0.5">
-                Unlock custom branding, pomodoro themes, ambient sounds, and more.
+                {/* --- AI-MODIFIED (2026-04-01) --- */}
+                {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                Unlock custom visual branding, pomodoro themes, ambient sounds, and more.
+                {/* --- END AI-MODIFIED --- */}
               </p>
             )}
           </div>

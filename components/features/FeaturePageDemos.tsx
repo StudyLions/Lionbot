@@ -745,7 +745,9 @@ function PremiumDemo() {
           </span>
         </div>
         <div className="space-y-1.5">
-          {["Custom server branding", "Unlimited role menu slots", "Priority support"].map(
+          {/* --- AI-MODIFIED (2026-04-01) --- */}
+          {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+          {["Custom visual branding", "Unlimited role menu slots", "Priority support"].map(
             (perk, i) => (
               <div key={i} className="flex items-center gap-1.5">
                 <CheckCircle2 className="h-2.5 w-2.5 text-pink-400 flex-shrink-0" />
@@ -753,6 +755,7 @@ function PremiumDemo() {
               </div>
             )
           )}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       </motion.div>
     </motion.div>

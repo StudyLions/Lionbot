@@ -157,7 +157,10 @@ const FEATURES = [
     border: "border-pink-500/20",
     glow: "from-pink-500/10",
     description:
-      "Unlock custom profile skins, server branding, and premium perks with LionHeart subscriptions. LionGems power the premium economy, earnable for free by voting on top.gg.",
+      // --- AI-MODIFIED (2026-04-01) ---
+      // Purpose: Rename "Branding" to "Visual Branding" for text branding feature
+      "Unlock custom profile skins, visual branding, and premium perks with LionHeart subscriptions. LionGems power the premium economy, earnable for free by voting on top.gg.",
+      // --- END AI-MODIFIED ---
     bullets: [
       { icon: <Palette size={16} />, text: "Custom profile card skins" },
       { icon: <Crown size={16} />, text: "LionHeart server subscriptions" },
@@ -310,7 +313,10 @@ export default function FeaturesPage() {
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-2">LionHeart</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Monthly subscriptions unlock server branding, extra perks, and exclusive features for your community.
+                {/* --- AI-MODIFIED (2026-04-01) --- */}
+                {/* Purpose: Rename "Branding" to "Visual Branding" for text branding feature */}
+                Monthly subscriptions unlock visual branding, extra perks, and exclusive features for your community.
+                {/* --- END AI-MODIFIED --- */}
               </p>
             </div>
           </div>

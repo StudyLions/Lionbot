@@ -22,12 +22,12 @@ import {
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useMemo } from "react"
 import {
-  Volume2, CloudRain, Flame, Waves, Wind, Radio,
+  Volume2, CloudRain, Flame, Waves, Wind, Radio, Music,
   ExternalLink, CircleDot, AlertCircle, RefreshCw, WifiOff,
   Play, Square, Type, BarChart3, Clock, Vote, Coins,
-  Plus, Trash2, Calendar,
+  Plus, Trash2, Calendar, ListMusic, Ban, XCircle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -41,6 +41,7 @@ const SOUNDS = [
   { id: "ocean",       name: "Ocean Waves",  Icon: Waves },
   { id: "brown_noise", name: "Brown Noise",  Icon: Wind },
   { id: "white_noise", name: "White Noise",  Icon: Radio },
+  { id: "lofi",        name: "LoFi",         Icon: Music },
 ] as const
 
 const VOLUME_OPTIONS = [
@@ -75,6 +76,8 @@ interface BotSlotConfig {
   nickname_template: string | null
   voting_enabled: boolean
   vote_cooldown_minutes: number
+  current_song_title: string | null
+  current_song_artist: string | null
   updated_at: string | null
 }
 
@@ -82,6 +85,7 @@ interface ApiResponse {
   isPremium: boolean
   configs: BotSlotConfig[]
   botStatus: Record<number, { online: boolean; username: string | null }>
+  lofiMoods: string[]
 }
 
 type LocalSlot = Omit<BotSlotConfig, "guildid" | "updated_at" | "status" | "error_msg"> & {
@@ -130,19 +134,43 @@ interface ActiveRental {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-01) ---
+// Purpose: Types for LoFi play history and song blacklist
+interface LofiHistoryEntry {
+  id: number
+  bot_number: number
+  song_title: string | null
+  song_artist: string | null
+  song_filename: string | null
+  played_at: string
+}
+
+interface LofiBlacklistEntry {
+  id: number
+  song_filename: string
+  blacklisted_by: string | null
+  created_at: string
+}
+// --- END AI-MODIFIED ---
+
 const SOUND_EMOJIS: Record<string, string> = {
   rain: "\u{1F327}\u{FE0F}",
   campfire: "\u{1F525}",
   ocean: "\u{1F30A}",
   brown_noise: "\u{1F7E4}",
   white_noise: "\u26AA",
+  lofi: "\u{1F3B5}",
 }
 
 const DEFAULT_NICK_TEMPLATE = "{emoji} {sound}"
 
 function previewNickname(template: string | null, soundId: string | null, botNumber: number): string {
   const t = template || DEFAULT_NICK_TEMPLATE
-  const label = SOUNDS.find((s) => s.id === soundId)?.name ?? "Sound"
+  let label = SOUNDS.find((s) => s.id === soundId)?.name
+  if (!label && soundId?.startsWith("lofi_")) {
+    label = "LoFi " + soundId.split("_").slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ")
+  }
+  label = label ?? "Sound"
   const emoji = (soundId && SOUND_EMOJIS[soundId]) || "\u{1F3B5}"
   return t.replace("{emoji}", emoji).replace("{sound}", label).replace("{bot}", String(botNumber)).slice(0, 32)
 }
@@ -233,6 +261,8 @@ export default function AmbientSoundsPage() {
         nickname_template: existing?.nickname_template ?? null,
         voting_enabled: existing?.voting_enabled ?? false,
         vote_cooldown_minutes: existing?.vote_cooldown_minutes ?? 30,
+        current_song_title: existing?.current_song_title ?? null,
+        current_song_artist: existing?.current_song_artist ?? null,
       })
     }
     setSlots(allSlots)
@@ -352,6 +382,46 @@ export default function AmbientSoundsPage() {
   }, [guildId, rentalUrl])
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-04-01) ---
+  // Purpose: LoFi play history, blacklist hooks, dynamic lofi moods
+  const lofiMoods = apiData?.lofiMoods ?? []
+  const historyUrl = id ? `/api/dashboard/servers/${id}/lofi-history` : null
+  const { data: historyData } = useDashboard<LofiHistoryEntry[]>(historyUrl)
+  const blacklistUrl = id ? `/api/dashboard/servers/${id}/lofi-blacklist` : null
+  const { data: blacklistData } = useDashboard<LofiBlacklistEntry[]>(blacklistUrl)
+
+  const allSounds = useMemo(() => {
+    const base = [...SOUNDS] as { id: string; name: string; Icon: typeof Music }[]
+    for (const mood of lofiMoods) {
+      if (mood !== "lofi" && !base.find((s) => s.id === mood)) {
+        const pretty = mood.split("_").slice(1).map((w) => w[0].toUpperCase() + w.slice(1)).join(" ")
+        base.push({ id: mood, name: `LoFi ${pretty}`, Icon: Music })
+      }
+    }
+    return base
+  }, [lofiMoods])
+
+  const addToBlacklist = useCallback(async (filename: string) => {
+    try {
+      await dashboardMutate("POST", `/api/dashboard/servers/${guildId}/lofi-blacklist`, { song_filename: filename })
+      if (blacklistUrl) invalidate(blacklistUrl)
+      toast.success("Song blocked")
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to block song")
+    }
+  }, [guildId, blacklistUrl])
+
+  const removeFromBlacklist = useCallback(async (filename: string) => {
+    try {
+      await dashboardMutate("DELETE", `/api/dashboard/servers/${guildId}/lofi-blacklist`, { song_filename: filename })
+      if (blacklistUrl) invalidate(blacklistUrl)
+      toast.success("Song unblocked")
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to unblock song")
+    }
+  }, [guildId, blacklistUrl])
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Refresh button handler to re-fetch status
   const handleRefresh = useCallback(async () => {
@@ -361,8 +431,10 @@ export default function AmbientSoundsPage() {
     if (statsUrl) invalidate(statsUrl)
     if (schedUrl) invalidate(schedUrl)
     if (rentalUrl) invalidate(rentalUrl)
+    if (historyUrl) invalidate(historyUrl)
+    if (blacklistUrl) invalidate(blacklistUrl)
     setTimeout(() => setRefreshing(false), 1000)
-  }, [apiUrl, statsUrl, schedUrl, rentalUrl])
+  }, [apiUrl, statsUrl, schedUrl, rentalUrl, historyUrl, blacklistUrl])
   // --- END AI-MODIFIED ---
 
   // ── Render ────────────────────────────────────────────
@@ -483,7 +555,7 @@ export default function AmbientSoundsPage() {
                                 .map((s) => {
                                   const maxH = Math.max(...statsData.soundBreakdown.map((x) => x.hours))
                                   const pct = maxH > 0 ? (s.hours / maxH) * 100 : 0
-                                  const label = SOUNDS.find((x) => x.id === s.sound)?.name ?? s.sound
+                                  const label = allSounds.find((x) => x.id === s.sound)?.name ?? s.sound
                                   return (
                                     <div key={s.sound} className="flex items-center gap-2">
                                       <span className="text-xs text-muted-foreground w-24 shrink-0">{label}</span>
@@ -535,7 +607,7 @@ export default function AmbientSoundsPage() {
                       const inviteUrl = baseInviteUrl
                         ? `${baseInviteUrl}&guild_id=${guildId}&disable_guild_select=true`
                         : null
-                      const soundLabel = SOUNDS.find((s) => s.id === slot.sound_type)?.name
+                      const soundLabel = allSounds.find((s) => s.id === slot.sound_type)?.name
                       const hb = botStatus[slot.bot_number]
                       const botOnline = hb?.online ?? undefined
                       const botUsername = hb?.username ?? null
@@ -607,11 +679,30 @@ export default function AmbientSoundsPage() {
                           {/* Added — show configuration */}
                           {isAdded && !isOffline && (
                             <div className="space-y-4">
+                              {/* --- AI-MODIFIED (2026-04-01) --- */}
+                              {/* Purpose: Current song display when LoFi is actively playing */}
+                              {slot.status === "active" && slot.sound_type?.startsWith("lofi") && slot.current_song_title && (
+                                <div className="flex items-center gap-2 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                                  <Music size={14} className="text-emerald-400 shrink-0" />
+                                  <div className="min-w-0">
+                                    <p className="text-xs font-medium text-emerald-300 truncate">
+                                      Now Playing: {slot.current_song_title}
+                                    </p>
+                                    {slot.current_song_artist && (
+                                      <p className="text-[10px] text-emerald-400/60 truncate">
+                                        by {slot.current_song_artist}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              )}
+                              {/* --- END AI-MODIFIED --- */}
+
                               {/* Sound picker */}
                               <div>
                                 <label className="text-xs font-medium text-muted-foreground mb-2 block">Sound</label>
                                 <div className="flex flex-wrap gap-2">
-                                  {SOUNDS.map(({ id: sid, name, Icon }) => (
+                                  {allSounds.map(({ id: sid, name, Icon }) => (
                                     <button
                                       key={sid}
                                       onClick={() => updateAndSave(slot.bot_number, { sound_type: sid })}
@@ -751,7 +842,7 @@ export default function AmbientSoundsPage() {
                                     {schedules
                                       .filter((s) => s.bot_number === slot.bot_number)
                                       .map((s) => {
-                                        const sLabel = SOUNDS.find((x) => x.id === s.sound_type)?.name ?? s.sound_type
+                                        const sLabel = allSounds.find((x) => x.id === s.sound_type)?.name ?? s.sound_type
                                         const dayNames = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
                                         const dayStr = s.days.length === 7 ? "Every day" : s.days.map((d) => dayNames[d]).join(", ")
                                         return (
@@ -781,7 +872,7 @@ export default function AmbientSoundsPage() {
                                       onChange={(e) => setNewSlot((p) => ({ ...p, bot_number: slot.bot_number, sound_type: e.target.value }))}
                                       className="bg-gray-800/50 border border-white/10 rounded px-2 py-1 text-xs text-foreground"
                                     >
-                                      {SOUNDS.map((s) => (
+                                      {allSounds.map((s) => (
                                         <option key={s.id} value={s.id}>{s.name}</option>
                                       ))}
                                     </select>
@@ -927,7 +1018,7 @@ export default function AmbientSoundsPage() {
                               <p className="text-xs font-medium text-muted-foreground mb-2">Active Rentals</p>
                               <div className="space-y-1.5">
                                 {rentalData!.activeRentals.map((r) => {
-                                  const sLabel = SOUNDS.find((s) => s.id === r.sound_type)?.name ?? r.sound_type
+                                  const sLabel = allSounds.find((s) => s.id === r.sound_type)?.name ?? r.sound_type
                                   const expiresAt = new Date(r.expires_at)
                                   const remaining = Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 60000))
                                   return (
@@ -947,6 +1038,94 @@ export default function AmbientSoundsPage() {
                         </>
                       )}
                     </SectionCard>
+                    {/* --- END AI-MODIFIED --- */}
+
+                    {/* --- AI-MODIFIED (2026-04-01) --- */}
+                    {/* Purpose: LoFi play history with block buttons */}
+                    {(historyData ?? []).length > 0 && (
+                      <SectionCard title="">
+                        <div className="flex items-center gap-2 mb-4">
+                          <ListMusic size={16} className="text-primary" />
+                          <h3 className="text-sm font-semibold text-foreground">LoFi Play History</h3>
+                          <span className="text-[10px] text-muted-foreground ml-auto">Last 50 songs</span>
+                        </div>
+                        <div className="space-y-1 max-h-64 overflow-y-auto pr-1">
+                          {(historyData ?? []).map((h) => {
+                            const isBlocked = (blacklistData ?? []).some((b) => b.song_filename === h.song_filename)
+                            return (
+                              <div key={h.id} className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2 group">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <Music size={10} className="text-muted-foreground shrink-0" />
+                                  <span className="text-xs font-medium text-foreground truncate">
+                                    {h.song_title || "Unknown"}
+                                  </span>
+                                  {h.song_artist && (
+                                    <span className="text-[10px] text-muted-foreground truncate shrink-0">
+                                      {h.song_artist}
+                                    </span>
+                                  )}
+                                  <span className="text-[10px] text-muted-foreground/50 shrink-0">
+                                    Bot #{h.bot_number}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <span className="text-[10px] text-muted-foreground">
+                                    {new Date(h.played_at).toLocaleString(undefined, {
+                                      month: "short", day: "numeric",
+                                      hour: "2-digit", minute: "2-digit",
+                                    })}
+                                  </span>
+                                  {h.song_filename && !isBlocked && (
+                                    <button
+                                      onClick={() => addToBlacklist(h.song_filename!)}
+                                      className="p-1 text-red-400/0 group-hover:text-red-400/60 hover:!text-red-400 transition-colors"
+                                      title="Block this song"
+                                    >
+                                      <Ban size={10} />
+                                    </button>
+                                  )}
+                                  {isBlocked && (
+                                    <span className="text-[10px] text-red-400/60">blocked</span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </SectionCard>
+                    )}
+
+                    {/* Blocked songs management */}
+                    {(blacklistData ?? []).length > 0 && (
+                      <SectionCard title="">
+                        <div className="flex items-center gap-2 mb-4">
+                          <Ban size={16} className="text-red-400" />
+                          <h3 className="text-sm font-semibold text-foreground">Blocked Songs</h3>
+                          <span className="text-[10px] text-muted-foreground ml-auto">
+                            {blacklistData!.length} song{blacklistData!.length !== 1 && "s"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground/60 mb-3">
+                          Blocked songs will be skipped when LoFi is playing. Unblock to allow them again.
+                        </p>
+                        <div className="space-y-1">
+                          {(blacklistData ?? []).map((b) => (
+                            <div key={b.id} className="flex items-center justify-between bg-gray-800/30 rounded-lg px-3 py-2">
+                              <span className="text-xs text-foreground truncate">
+                                {b.song_filename.replace(/\.[^.]+$/, "")}
+                              </span>
+                              <button
+                                onClick={() => removeFromBlacklist(b.song_filename)}
+                                className="p-1 text-muted-foreground hover:text-emerald-400 transition-colors"
+                                title="Unblock this song"
+                              >
+                                <XCircle size={12} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </SectionCard>
+                    )}
                     {/* --- END AI-MODIFIED --- */}
                   </div>
                 )}
