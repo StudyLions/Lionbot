@@ -374,7 +374,7 @@ export default function BoardPage() {
 
 function getDiscordAvatarUrl(userId: string, hash: string | null) {
   if (hash) return `https://cdn.discordapp.com/avatars/${userId}/${hash}.png?size=64`
-  const index = Number(BigInt(userId) % BigInt(6))
+  const index = Number((BigInt(userId) >> BigInt(22)) % BigInt(6))
   return `https://cdn.discordapp.com/embed/avatars/${index}.png`
 }
 

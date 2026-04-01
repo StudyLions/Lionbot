@@ -126,14 +126,16 @@ export default apiHandler({
     })
 
     if (role === "owner") {
-      await prisma.shared_tasklist.update({
-        where: { listid: listId },
-        data: { ownerid: targetUserId },
-      })
-      await prisma.shared_tasklist_member.update({
-        where: { listid_userid: { listid: listId, userid: ctx.auth.userId } },
-        data: { role: "editor" },
-      })
+      await prisma.$transaction([
+        prisma.shared_tasklist.update({
+          where: { listid: listId },
+          data: { ownerid: targetUserId },
+        }),
+        prisma.shared_tasklist_member.update({
+          where: { listid_userid: { listid: listId, userid: ctx.auth.userId } },
+          data: { role: "editor" },
+        }),
+      ])
     }
 
     await prisma.shared_task_history.create({
