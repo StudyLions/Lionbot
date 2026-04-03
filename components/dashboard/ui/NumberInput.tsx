@@ -19,6 +19,12 @@ interface NumberInputProps {
   allowNull?: boolean
 }
 
+// --- AI-MODIFIED (2026-04-02) ---
+// Purpose: Allow free typing by using local draft state; only clamp to min/max on blur
+// so users can type intermediate values (e.g. clearing "49" to type "120" without
+// the empty/partial value being rejected for being below min)
+import { useState, useEffect } from "react"
+
 export default function NumberInput({
   value,
   onChange,
@@ -35,19 +41,44 @@ export default function NumberInput({
 }: NumberInputProps) {
   const inputId = id || `num-${label?.replace(/\s+/g, "-").toLowerCase() || "default"}`
   const isDefault = defaultValue !== undefined && value === defaultValue
-  const displayValue = value === null || value === undefined ? "" : value
+
+  const [draft, setDraft] = useState<string>(
+    value === null || value === undefined ? "" : String(value)
+  )
+
+  useEffect(() => {
+    setDraft(value === null || value === undefined ? "" : String(value))
+  }, [value])
 
   function handleChange(raw: string) {
+    setDraft(raw)
     if (raw === "" && allowNull) {
       onChange(null)
       return
     }
     const num = parseFloat(raw)
     if (isNaN(num)) return
-    if (min !== undefined && num < min) return
-    if (max !== undefined && num > max) return
     onChange(num)
   }
+
+  function handleBlur() {
+    if (draft === "" && allowNull) return
+    const num = parseFloat(draft)
+    if (isNaN(num) || draft === "") {
+      const fallback = min ?? 0
+      setDraft(String(fallback))
+      onChange(fallback)
+      return
+    }
+    let clamped = num
+    if (min !== undefined && clamped < min) clamped = min
+    if (max !== undefined && clamped > max) clamped = max
+    if (clamped !== num) {
+      setDraft(String(clamped))
+      onChange(clamped)
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   return (
     <div className="flex flex-col gap-1">
@@ -62,8 +93,9 @@ export default function NumberInput({
         <input
           id={inputId}
           type="number"
-          value={displayValue}
+          value={draft}
           onChange={(e) => handleChange(e.target.value)}
+          onBlur={handleBlur}
           placeholder={placeholder || (defaultValue !== undefined && defaultValue !== null ? `Default: ${defaultValue}` : undefined)}
           min={min}
           max={max}

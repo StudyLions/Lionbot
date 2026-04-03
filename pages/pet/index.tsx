@@ -29,7 +29,7 @@ import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import ArtistAttribution from "@/components/pet/ui/ArtistAttribution"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { toast } from "sonner"
 // --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-16) ---
@@ -206,6 +206,108 @@ function PetNeedsCard({ pet, mood, moodLabel, moodMult, nextDecayAt, onStatsUpda
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Pet rename modal - costs 250 gems, validates name length
+const RENAME_COST = 250
+
+function RenameModal({ currentName, gems, onClose, onRenamed }: {
+  currentName: string
+  gems: number
+  onClose: () => void
+  onRenamed: () => void
+}) {
+  const [name, setName] = useState(currentName)
+  const [submitting, setSubmitting] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const canAfford = gems >= RENAME_COST
+  const trimmed = name.trim()
+  const isValid = trimmed.length >= 1 && trimmed.length <= 20 && trimmed !== currentName
+
+  useEffect(() => { inputRef.current?.select() }, [])
+
+  const handleSubmit = useCallback(async () => {
+    if (!isValid || !canAfford || submitting) return
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/pet/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: trimmed }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        toast.error(body.error || "Rename failed")
+        return
+      }
+      toast.success(`Renamed to ${body.newName}!`)
+      onRenamed()
+      onClose()
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      setSubmitting(false)
+    }
+  }, [isValid, canAfford, submitting, trimmed, onRenamed, onClose])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60" />
+      <div
+        className="relative border-[3px] border-[#3a4a6c] bg-[#0c1020] p-5 w-full max-w-sm space-y-4"
+        style={{ boxShadow: "4px 4px 0 #060810" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)]">Rename Pet</h2>
+
+        <input
+          ref={inputRef}
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          maxLength={20}
+          onKeyDown={(e) => { if (e.key === "Enter") handleSubmit() }}
+          className="w-full bg-[#080c18] border-2 border-[#2a3a5c] px-3 py-2 font-pixel text-sm text-[var(--pet-text,#e2e8f0)] outline-none focus:border-[var(--pet-gold,#f0c040)] transition-colors"
+          placeholder="New name..."
+        />
+
+        <div className="flex items-center justify-between">
+          <span className={cn(
+            "font-pixel text-xs",
+            canAfford ? "text-[var(--pet-text-dim,#8899aa)]" : "text-[#e04040]"
+          )}>
+            Cost: {RENAME_COST} gems {!canAfford && `(you have ${gems})`}
+          </span>
+          <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+            {trimmed.length}/20
+          </span>
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 font-pixel text-xs py-2 border-2 border-[#3a4a6c] text-[var(--pet-text-dim,#8899aa)] hover:border-[#5a6a8c] transition-colors bg-[#080c18]"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={!isValid || !canAfford || submitting}
+            className={cn(
+              "flex-1 font-pixel text-xs py-2 border-2 transition-all bg-[#080c18]",
+              isValid && canAfford
+                ? "border-[var(--pet-gold,#f0c040)] text-[var(--pet-gold,#f0c040)] hover:brightness-125 active:translate-y-px"
+                : "border-[#2a3a5c] text-[#3a4a5c] cursor-not-allowed"
+            )}
+          >
+            {submitting ? "..." : `Rename (${RENAME_COST} 💎)`}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+// --- END AI-MODIFIED ---
+
 export default function PetOverview() {
   const { data: session } = useSession()
   // --- AI-MODIFIED (2026-03-24) ---
@@ -232,6 +334,10 @@ export default function PetOverview() {
   const pendingCount = pendingData?.requests?.length ?? 0
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Rename modal state
+  const [showRename, setShowRename] = useState(false)
+  // --- END AI-MODIFIED ---
   const pet = data?.pet
   const equipment = data?.equipment ?? {}
   const equipSlots = ["HEAD", "FACE", "BODY", "BACK", "FEET"]
@@ -284,9 +390,33 @@ export default function PetOverview() {
                   )}
                   {/* --- END AI-MODIFIED --- */}
 
+                  {/* --- AI-MODIFIED (2026-04-03) --- */}
+                  {/* Purpose: Rename modal portal */}
+                  {showRename && (
+                    <RenameModal
+                      currentName={pet.name}
+                      gems={data.gems}
+                      onClose={() => setShowRename(false)}
+                      onRenamed={() => mutate()}
+                    />
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
+
                   {/* Hero */}
                   <div>
-                    <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">{pet.name}</h1>
+                    {/* --- AI-MODIFIED (2026-04-03) --- */}
+                    {/* Purpose: Added rename pencil button next to pet name */}
+                    <div className="flex items-center gap-2">
+                      <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">{pet.name}</h1>
+                      <button
+                        onClick={() => setShowRename(true)}
+                        className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)] hover:text-[var(--pet-gold,#f0c040)] transition-colors mt-0.5"
+                        title="Rename pet (250 gems)"
+                      >
+                        ✎
+                      </button>
+                    </div>
+                    {/* --- END AI-MODIFIED --- */}
                     <div className="mt-1.5 flex items-center gap-1">
                       <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
                       <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />

@@ -246,10 +246,12 @@ function FamilyInfoSection({ familyId, role }: { familyId: number; role: string 
           <label className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] block mb-1">
             Description
           </label>
+          {/* --- AI-MODIFIED (2026-04-03) --- */}
+          {/* Purpose: Match API limit of 500 chars (was 200, causing mismatch) */}
           <textarea
             value={description}
             onChange={(e) => { setDescription(e.target.value); setDirty(true) }}
-            maxLength={200}
+            maxLength={500}
             rows={3}
             className={cn(
               "w-full font-pixel text-sm bg-[#080c18] border-2 border-[#2a3a5c] px-3 py-2 resize-none",
@@ -259,8 +261,9 @@ function FamilyInfoSection({ familyId, role }: { familyId: number; role: string 
             placeholder="Tell others about your family..."
           />
           <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] text-right">
-            {description.length}/200
+            {description.length}/500
           </p>
+          {/* --- END AI-MODIFIED --- */}
         </div>
 
         <PixelButton

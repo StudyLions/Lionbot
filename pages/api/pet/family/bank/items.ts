@@ -90,21 +90,28 @@ export default apiHandler({
         where: { inventoryid: inventoryId },
         include: {
           lg_items: { select: { itemid: true, name: true } },
+          // --- AI-MODIFIED (2026-04-03) ---
+          // Purpose: Include scroll_name so it survives the bank round-trip
           lg_enhancement_slots: {
-            select: { slot_number: true, scroll_itemid: true, bonus_value: true },
+            select: { slot_number: true, scroll_itemid: true, scroll_name: true, bonus_value: true },
           },
+          // --- END AI-MODIFIED ---
         },
       })
       if (!invItem) return res.status(404).json({ error: "Inventory item not found" })
       if (invItem.userid !== userId) return res.status(403).json({ error: "This item doesn't belong to you" })
 
+      // --- AI-MODIFIED (2026-04-03) ---
+      // Purpose: Persist scroll_name in scroll_data JSON for withdraw restoration
       const scrollData = invItem.lg_enhancement_slots.length > 0
         ? invItem.lg_enhancement_slots.map((s) => ({
             slot_number: s.slot_number,
             scroll_itemid: s.scroll_itemid,
+            scroll_name: s.scroll_name,
             bonus_value: s.bonus_value,
           }))
         : null
+      // --- END AI-MODIFIED ---
 
       const totalBonus = invItem.lg_enhancement_slots.reduce((sum, s) => sum + s.bonus_value, 0)
 
@@ -147,6 +154,8 @@ export default apiHandler({
         return res.status(403).json({ error: "This item doesn't belong to your family" })
       }
 
+      // --- AI-MODIFIED (2026-04-03) ---
+      // Purpose: Include scroll_name in the INSERT (NOT NULL column) so enhanced items can be withdrawn
       await prisma.$transaction(async (tx) => {
         const newInv = await tx.lg_user_inventory.create({
           data: {
@@ -161,11 +170,13 @@ export default apiHandler({
         if (bankItem.scroll_data && Array.isArray(bankItem.scroll_data)) {
           const slots = bankItem.scroll_data as Array<{
             slot_number: number
-            scroll_itemid: number | null
+            scroll_itemid: number
+            scroll_name?: string
             bonus_value: number
           }>
           for (const slot of slots) {
-            await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, bonus_value) VALUES (${newInv.inventoryid}, ${slot.slot_number}, ${slot.scroll_itemid}, ${slot.bonus_value})`
+            const scrollName = slot.scroll_name ?? "Scroll"
+            await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, scroll_name, bonus_value) VALUES (${newInv.inventoryid}, ${slot.slot_number}, ${slot.scroll_itemid}, ${scrollName}, ${slot.bonus_value})`
           }
         }
 
@@ -173,6 +184,7 @@ export default apiHandler({
           where: { bank_entry_id: bankEntryId },
         })
       })
+      // --- END AI-MODIFIED ---
 
       return res.status(200).json({ success: true, action: "withdrawn" })
     }

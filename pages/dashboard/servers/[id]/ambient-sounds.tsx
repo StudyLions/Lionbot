@@ -53,13 +53,21 @@ const VOLUME_OPTIONS = [
 // --- AI-MODIFIED (2026-03-23) ---
 // Purpose: Added permissions=70323200 (View Channel, Send Messages, Read History,
 // Connect, Speak, Change Nickname) + scope=bot so bots get the right perms on invite
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Expanded to 10 bot slots. Bots 6-10 need client IDs filled in after Ari creates them.
 const BOT_INVITE_URLS: Record<number, string> = {
   1: "https://discord.com/oauth2/authorize?client_id=838178898764103741&permissions=70323200&scope=bot",
   2: "https://discord.com/oauth2/authorize?client_id=838309890858287125&permissions=70323200&scope=bot",
   3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&permissions=70323200&scope=bot",
   4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&permissions=70323200&scope=bot",
   5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&permissions=70323200&scope=bot",
+  6: "https://discord.com/oauth2/authorize?client_id=838310246472220702&permissions=70323200&scope=bot",
+  7: "https://discord.com/oauth2/authorize?client_id=838310379176198184&permissions=70323200&scope=bot",
+  8: "https://discord.com/oauth2/authorize?client_id=838310411450187797&permissions=70323200&scope=bot",
+  9: "https://discord.com/oauth2/authorize?client_id=838310453033041930&permissions=70323200&scope=bot",
+  10: "https://discord.com/oauth2/authorize?client_id=838310544871653386&permissions=70323200&scope=bot",
 }
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 // ── Types ─────────────────────────────────────────────────
@@ -248,7 +256,9 @@ export default function AmbientSoundsPage() {
   useEffect(() => {
     if (!apiData) return
     const allSlots: LocalSlot[] = []
-    for (let n = 1; n <= 5; n++) {
+    // --- AI-MODIFIED (2026-04-03) ---
+    // Purpose: Support 10 sound bot slots
+    for (let n = 1; n <= 10; n++) {
       const existing = apiData.configs.find((c) => c.bot_number === n)
       allSlots.push({
         bot_number: n,

@@ -1209,17 +1209,20 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                 </div>
               )}
 
+              {/* --- AI-MODIFIED (2026-04-03) --- */}
+              {/* Purpose: Updated to 10 bots, added LoFi mention and private room rental */}
               {activeTab === "sounds" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ambient Sound Bots</h3>
+                  <h3 className="text-xl font-bold text-white mb-2">Ambient Sound & LoFi Bots</h3>
                   <p className="text-gray-400 mb-4 text-sm">
                     Background audio bots that create the perfect study atmosphere in voice channels.
                   </p>
                   <div className="space-y-2 text-sm">
-                    {["Up to 5 simultaneous bot slots",
-                      "6 sound types: rain, campfire, ocean & more",
+                    {["Up to 10 simultaneous bot slots",
+                      "Ambient sounds: rain, campfire, ocean, noise & more",
+                      "LoFi music with curated playlists & Now Playing",
                       "Member voting for sound selection",
-                      "Auto-join configured channels",
+                      "Members can rent bots for private rooms",
                       "Managed from the dashboard",
                     ].map((t, i) => (
                       <div key={i} className="flex items-center gap-2 text-gray-300">
@@ -1229,6 +1232,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   </div>
                 </div>
               )}
+              {/* --- END AI-MODIFIED --- */}
 
               {activeTab === "liongotchi" && (
                 <div>

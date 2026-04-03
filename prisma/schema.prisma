@@ -1337,7 +1337,7 @@ model lg_user_farm {
   growth_points        Float          @default(0) @db.Real
   gold_invested        Int            @default(0)
   voice_minutes_earned Float          @default(0) @db.Real
-  messages_earned      Int            @default(0)
+  messages_earned      Float          @default(0) @db.Real
   rarity               String         @default("COMMON")
   lg_farm_seeds        lg_farm_seeds? @relation(fields: [seed_id], references: [seed_id], onDelete: NoAction, onUpdate: NoAction)
   lg_pets              lg_pets        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)

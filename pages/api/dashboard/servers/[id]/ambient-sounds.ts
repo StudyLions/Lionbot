@@ -2,7 +2,7 @@
 // AI-GENERATED FILE
 // Created: 2026-03-22
 // Purpose: API route for Ambient Sounds Bot configuration.
-//          GET returns all 5 bot slot configs + premium status.
+//          GET returns all 10 bot slot configs + premium status.
 //          PATCH updates a specific bot slot (admin + premium only).
 // ============================================================
 import { prisma } from "@/utils/prisma"
@@ -11,7 +11,10 @@ import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise", "lofi"]
 const VALID_VOLUMES = [25, 50, 100]
-const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5]
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Support 10 sound bots instead of 5
+const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+// --- END AI-MODIFIED ---
 
 async function isPremiumGuild(guildId: bigint): Promise<boolean> {
   const row = await prisma.premium_guilds.findUnique({

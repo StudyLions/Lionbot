@@ -209,19 +209,25 @@ export default function FamilyFarmPage() {
     }
   }, [farmIndex, mutate, showMessage, canHarvest])
 
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Use bulk clearAll API instead of N sequential requests per dead plot
   const handleClearDead = useCallback(async () => {
-    if (!farmData) return
-    const deadPlots = farmData.plots.filter(p => p.dead)
-    for (const p of deadPlots) {
-      await fetch("/api/pet/family/farm", {
+    if (!canPlant) { toast.error("No permission"); return }
+    try {
+      const res = await fetch("/api/pet/family/farm", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ farmIndex, plotId: p.plotId, action: "clear" }),
+        body: JSON.stringify({ farmIndex, action: "clearAll" }),
       })
+      const body = await res.json()
+      if (!res.ok) { showMessage(body.error || "Failed", "error"); return }
+      showMessage(`Cleared ${body.count} dead plots`, "success")
+      mutate()
+    } catch {
+      showMessage("Network error", "error")
     }
-    showMessage(`Cleared ${deadPlots.length} dead plots`, "success")
-    mutate()
-  }, [farmData, farmIndex, mutate, showMessage])
+  }, [farmIndex, mutate, showMessage, canPlant])
+  // --- END AI-MODIFIED ---
 
   const switchFarm = useCallback((idx: number) => {
     if (idx >= maxFarms) return

@@ -109,10 +109,14 @@ export default function FriendProfilePage() {
   const [confirmUnfriend, setConfirmUnfriend] = useState(false)
   const [farmWatering, setFarmWatering] = useState(false)
 
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Match backend tax formula (Math.floor) -- was Math.ceil which showed
+  //          a higher tax than actually deducted for small amounts
   const goldTax = useMemo(() => {
     const amount = parseInt(goldAmount) || 0
-    return Math.ceil(amount * 0.05)
+    return Math.floor(amount * 5 / 100)
   }, [goldAmount])
+  // --- END AI-MODIFIED ---
 
   const wateredPlots = useMemo(
     () => new Set(data?.todayInteractions.waterPlots ?? []),

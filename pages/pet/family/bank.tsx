@@ -29,6 +29,8 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
 type BankTab = "equipment" | "treasury"
 
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Add quantity field (API returns it but UI was missing it)
 interface BankItem {
   bankEntryId: number
   itemId: number
@@ -39,10 +41,12 @@ interface BankItem {
   enhancementLevel: number
   glowTier: string
   glowIntensity: number
+  quantity: number
   depositedBy: string
   depositedByName: string
   depositedAt: string
 }
+// --- END AI-MODIFIED ---
 
 interface BankItemsData {
   items: BankItem[]
@@ -316,6 +320,14 @@ function BankItemCard({
               +{item.enhancementLevel}
             </span>
           )}
+          {/* --- AI-MODIFIED (2026-04-03) --- */}
+          {/* Purpose: Show quantity badge for stacked items */}
+          {item.quantity > 1 && (
+            <span className="absolute bottom-1 left-1 font-pixel text-[9px] text-[var(--pet-text,#e2e8f0)] bg-[#0a0e1a]/80 px-1">
+              x{item.quantity}
+            </span>
+          )}
+          {/* --- END AI-MODIFIED --- */}
         </div>
 
         <div className="px-2 py-1.5 flex-1 min-h-0">
