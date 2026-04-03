@@ -21,12 +21,15 @@ import { useState, useCallback, useMemo } from "react"
 import { cn } from "@/lib/utils"
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Added Timer, Play, Square, Trash2, Plus icons for timer controls
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Added LogOut icon for the Leave Room button
 import {
   DoorOpen, Crown, Coins, Users, ChevronDown, ChevronRight,
   Clock, Calendar, Pencil, Check, X, ArrowRight, History,
   Trophy, Activity, MessageCircle, Timer, Play, Square, Trash2, Plus,
-  Volume2, Music, StopCircle,
+  Volume2, Music, StopCircle, LogOut,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -608,6 +611,57 @@ function CloseRoomPanel({ channelId, coinBalance, onClose }: {
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Leave Room panel for non-owner members to voluntarily leave a private room
+function LeaveRoomPanel({ channelId, onLeave }: {
+  channelId: string; onLeave: () => void
+}) {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const [isLeaving, setIsLeaving] = useState(false)
+
+  const handleLeave = async () => {
+    setIsLeaving(true)
+    try {
+      const res = await fetch(`/api/dashboard/rooms/${channelId}/leave`, { method: "POST" })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || "Failed to leave room")
+      }
+      toast.success("You have left the room.")
+      onLeave()
+    } catch (e: any) {
+      toast.error(e.message || "Failed to leave room")
+    } finally {
+      setIsLeaving(false)
+      setShowConfirm(false)
+    }
+  }
+
+  return (
+    <div className="pt-3 border-t border-border/50">
+      <button
+        onClick={() => setShowConfirm(true)}
+        disabled={isLeaving}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-orange-400 hover:bg-orange-500/10 border border-orange-500/20 hover:border-orange-500/30 transition-colors disabled:opacity-50"
+      >
+        <LogOut size={12} />
+        Leave Room
+      </button>
+      <ConfirmModal
+        open={showConfirm}
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleLeave}
+        title="Leave Private Room?"
+        message="You will lose access to this room until the owner invites you back. Your Discord channel permissions will be updated by the bot shortly."
+        confirmLabel="Leave Room"
+        variant="danger"
+        loading={isLeaving}
+      />
+    </div>
+  )
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-03) ---
 // Purpose: Sound rental panel for members to rent, extend, and cancel sound bots in private rooms
 const SOUND_OPTIONS: { value: string; label: string }[] = [
   { value: "rain", label: "Rain" },
@@ -943,6 +997,13 @@ function RoomDetailPanel({ channelId, onClose, onMutate }: {
       {/* Purpose: Close Room button for owners with confirmation dialog */}
       {data.isOwner && !data.deletedAt && (
         <CloseRoomPanel channelId={channelId} coinBalance={data.coinBalance} onClose={() => { handleMutate(); onClose(); }} />
+      )}
+      {/* --- END AI-MODIFIED --- */}
+
+      {/* --- AI-MODIFIED (2026-04-03) --- */}
+      {/* Purpose: Leave Room button for non-owner members */}
+      {!data.isOwner && data.isMember && !data.deletedAt && (
+        <LeaveRoomPanel channelId={channelId} onLeave={() => { handleMutate(); onClose(); }} />
       )}
       {/* --- END AI-MODIFIED --- */}
     </div>
