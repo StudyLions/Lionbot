@@ -61,11 +61,11 @@ const BOT_INVITE_URLS: Record<number, string> = {
   3: "https://discord.com/oauth2/authorize?client_id=838309965055655946&permissions=70323200&scope=bot",
   4: "https://discord.com/oauth2/authorize?client_id=838310064904470588&permissions=70323200&scope=bot",
   5: "https://discord.com/oauth2/authorize?client_id=838310176845987870&permissions=70323200&scope=bot",
-  6: "https://discord.com/oauth2/authorize?client_id=REPLACE_WITH_BOT_6_CLIENT_ID&permissions=70323200&scope=bot",
-  7: "https://discord.com/oauth2/authorize?client_id=REPLACE_WITH_BOT_7_CLIENT_ID&permissions=70323200&scope=bot",
-  8: "https://discord.com/oauth2/authorize?client_id=REPLACE_WITH_BOT_8_CLIENT_ID&permissions=70323200&scope=bot",
-  9: "https://discord.com/oauth2/authorize?client_id=REPLACE_WITH_BOT_9_CLIENT_ID&permissions=70323200&scope=bot",
-  10: "https://discord.com/oauth2/authorize?client_id=REPLACE_WITH_BOT_10_CLIENT_ID&permissions=70323200&scope=bot",
+  6: "https://discord.com/oauth2/authorize?client_id=838310246472220702&permissions=70323200&scope=bot",
+  7: "https://discord.com/oauth2/authorize?client_id=838310379176198184&permissions=70323200&scope=bot",
+  8: "https://discord.com/oauth2/authorize?client_id=838310411450187797&permissions=70323200&scope=bot",
+  9: "https://discord.com/oauth2/authorize?client_id=838310453033041930&permissions=70323200&scope=bot",
+  10: "https://discord.com/oauth2/authorize?client_id=838310544871653386&permissions=70323200&scope=bot",
 }
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
