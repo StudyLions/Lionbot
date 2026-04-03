@@ -1,10 +1,14 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-22
-// Purpose: Room detail API (GET) and room rename (PATCH).
-//          Returns full room data, members with avatars, study leaderboard,
-//          and recent activity derived from voice sessions.
+// Purpose: Room detail API (GET), room rename (PATCH), close room (DELETE).
+//          Returns full room data, members with avatars + voice indicators,
+//          study leaderboard, activity feed, wallet balance, freeze status.
 // ============================================================
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Added walletBalance, isInVoice per member, frozenAt,
+//          autoExtendEnabled to support redesigned rooms dashboard
+// --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 import { requireAuth } from "@/utils/adminAuth"
 import { prisma } from "@/utils/prisma"
@@ -42,7 +46,12 @@ export default apiHandler({
 
     const guildConfig = await prisma.guild_config.findUnique({
       where: { guildid: room.guildid },
-      select: { name: true, renting_price: true, renting_cap: true },
+      select: {
+        name: true,
+        renting_price: true,
+        renting_cap: true,
+        renting_auto_extend: true,
+      },
     })
 
     const rentPrice = guildConfig?.renting_price ?? 1000
@@ -54,51 +63,66 @@ export default apiHandler({
         ? new Date(new Date(room.created_at).getTime() + 24 * 60 * 60 * 1000)
         : null
 
-    // --- AI-MODIFIED (2026-03-22) ---
-    // Purpose: Fetch timer data for the room
     const timerRow = await prisma.timers.findUnique({
       where: { channelid: channelId },
       select: {
-        channelid: true, focus_length: true, break_length: true,
-        auto_restart: true, last_started: true, inactivity_threshold: true,
-        channel_name: true, pretty_name: true, voice_alerts: true,
+        channelid: true,
+        focus_length: true,
+        break_length: true,
+        auto_restart: true,
+        last_started: true,
+        inactivity_threshold: true,
+        channel_name: true,
+        pretty_name: true,
+        voice_alerts: true,
       },
     })
-    // --- END AI-MODIFIED ---
 
-    const [userConfigs, memberRows, studyStats, recentSessions] = await Promise.all([
-      prisma.user_config.findMany({
-        where: { userid: { in: allMemberIds } },
-        select: { userid: true, name: true, avatar_hash: true },
-      }),
-      prisma.members.findMany({
-        where: { guildid: room.guildid, userid: { in: allMemberIds } },
-        select: { userid: true, display_name: true, coins: true },
-      }),
-      prisma.voice_sessions.groupBy({
-        by: ["userid"],
-        where: { channelid: channelId, userid: { in: allMemberIds } },
-        _sum: { duration: true },
-        orderBy: { _sum: { duration: "desc" } },
-      }),
-      prisma.voice_sessions.findMany({
-        where: { channelid: channelId },
-        orderBy: { start_time: "desc" },
-        take: 30,
-        select: {
-          userid: true,
-          start_time: true,
-          duration: true,
-          tag: true,
-        },
-      }),
-    ])
+    const [userConfigs, memberDataRows, studyStats, recentSessions, walletRow, voiceOngoing] =
+      await Promise.all([
+        prisma.user_config.findMany({
+          where: { userid: { in: allMemberIds } },
+          select: { userid: true, name: true, avatar_hash: true },
+        }),
+        prisma.members.findMany({
+          where: { guildid: room.guildid, userid: { in: allMemberIds } },
+          select: { userid: true, display_name: true, coins: true },
+        }),
+        prisma.voice_sessions.groupBy({
+          by: ["userid"],
+          where: { channelid: channelId, userid: { in: allMemberIds } },
+          _sum: { duration: true },
+          orderBy: { _sum: { duration: "desc" } },
+        }),
+        prisma.voice_sessions.findMany({
+          where: { channelid: channelId },
+          orderBy: { start_time: "desc" },
+          take: 30,
+          select: {
+            userid: true,
+            start_time: true,
+            duration: true,
+            tag: true,
+          },
+        }),
+        prisma.members.findUnique({
+          where: {
+            guildid_userid: { guildid: room.guildid, userid: auth.userId },
+          },
+          select: { coins: true },
+        }),
+        prisma.voice_sessions_ongoing.findMany({
+          where: { channelid: channelId },
+          select: { userid: true },
+        }),
+      ])
 
     const userConfigMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
-    const memberMap = new Map(memberRows.map((m) => [m.userid.toString(), m]))
+    const memberMap = new Map(memberDataRows.map((m) => [m.userid.toString(), m]))
     const studyMap = new Map(
       studyStats.map((s) => [s.userid.toString(), s._sum.duration ?? 0])
     )
+    const voiceUserIds = new Set(voiceOngoing.map((v) => v.userid.toString()))
 
     const members = allMemberIds.map((uid) => {
       const uidStr = uid.toString()
@@ -112,6 +136,7 @@ export default apiHandler({
         isOwner: uid === room.ownerid,
         totalStudySeconds: totalSeconds,
         coinBalance: mem?.coins ?? 0,
+        isInVoice: voiceUserIds.has(uidStr),
       }
     })
 
@@ -148,20 +173,20 @@ export default apiHandler({
       nextTick: nextTick?.toISOString() ?? null,
       members,
       activityFeed,
-      // --- AI-MODIFIED (2026-03-22) ---
-      // Purpose: Include timer data for room timer controls
-      timer: timerRow ? {
-        focusMinutes: Math.round(timerRow.focus_length / 60),
-        breakMinutes: Math.round(timerRow.break_length / 60),
-        autoRestart: timerRow.auto_restart ?? false,
-        isRunning: !!timerRow.last_started,
-        lastStarted: timerRow.last_started?.toISOString() ?? null,
-        inactivityThreshold: timerRow.inactivity_threshold,
-        channelName: timerRow.channel_name,
-        prettyName: timerRow.pretty_name,
-        voiceAlerts: timerRow.voice_alerts ?? true,
-      } : null,
-      // --- END AI-MODIFIED ---
+      timer: timerRow
+        ? {
+            focusMinutes: Math.round(timerRow.focus_length / 60),
+            breakMinutes: Math.round(timerRow.break_length / 60),
+            autoRestart: timerRow.auto_restart ?? false,
+            isRunning: !!timerRow.last_started,
+            lastStarted: timerRow.last_started?.toISOString() ?? null,
+            inactivityThreshold: timerRow.inactivity_threshold,
+            voiceAlerts: timerRow.voice_alerts ?? true,
+          }
+        : null,
+      walletBalance: walletRow?.coins ?? 0,
+      frozenAt: room.frozen_at?.toISOString() ?? null,
+      autoExtendEnabled: guildConfig?.renting_auto_extend ?? false,
     })
   },
 
@@ -197,14 +222,14 @@ export default apiHandler({
       select: { name: true },
     })
 
-    // --- AI-MODIFIED (2026-03-22) ---
-    // Purpose: Include sync timing message so users know when the name will appear on Discord
-    res.status(200).json({ name: updated.name, message: "Name saved. Will sync to Discord within a few minutes." })
-    // --- END AI-MODIFIED ---
+    res
+      .status(200)
+      .json({
+        name: updated.name,
+        message: "Name saved. Will sync to Discord within a few minutes.",
+      })
   },
 
-  // --- AI-MODIFIED (2026-04-01) ---
-  // Purpose: Let room owners close their own room and get remaining coins refunded
   async DELETE(req, res) {
     const auth = await requireAuth(req, res)
     if (!auth) return
@@ -253,5 +278,4 @@ export default apiHandler({
       refunded: refundAmount,
     })
   },
-  // --- END AI-MODIFIED ---
 })
