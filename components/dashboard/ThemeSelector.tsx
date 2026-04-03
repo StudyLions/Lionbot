@@ -37,6 +37,11 @@ const themes: ThemeOption[] = [
     colors: { bg: "hsl(150, 30%, 8%)", card: "hsl(150, 25%, 12%)", primary: "hsl(142, 70%, 50%)" },
   },
   {
+    id: "pink",
+    label: "Pink",
+    colors: { bg: "hsl(320, 25%, 8%)", card: "hsl(320, 20%, 12%)", primary: "hsl(330, 80%, 60%)" },
+  },
+  {
     id: "sunset",
     label: "Sunset",
     colors: { bg: "hsl(20, 30%, 8%)", card: "hsl(20, 25%, 12%)", primary: "hsl(28, 90%, 55%)" },

@@ -117,6 +117,32 @@
     --ring: 142 70% 50%;
   }
 
+  [data-theme="pink"] {
+    --background: 320 25% 8%;
+    --foreground: 330 15% 95%;
+    --card: 320 20% 12%;
+    --card-foreground: 330 15% 95%;
+    --popover: 320 20% 12%;
+    --popover-foreground: 330 15% 95%;
+    --primary: 330 80% 60%;
+    --primary-foreground: 320 25% 8%;
+    --secondary: 320 15% 16%;
+    --secondary-foreground: 330 15% 95%;
+    --muted: 320 15% 16%;
+    --muted-foreground: 325 10% 58%;
+    --accent: 320 15% 20%;
+    --accent-foreground: 330 15% 95%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 330 15% 95%;
+    --success: 142 71% 45%;
+    --success-foreground: 320 25% 8%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 320 25% 8%;
+    --border: 320 14% 18%;
+    --input: 320 14% 18%;
+    --ring: 330 80% 60%;
+  }
+
   [data-theme="sunset"] {
     --background: 20 30% 8%;
     --foreground: 30 15% 95%;

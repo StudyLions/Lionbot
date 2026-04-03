@@ -76,7 +76,7 @@ function App({ Component, pageProps }) {
       <ThemeProvider
         attribute="data-theme"
         defaultTheme="midnight"
-        themes={["midnight", "light", "ocean", "forest", "sunset"]}
+        themes={["midnight", "light", "ocean", "forest", "pink", "sunset"]}
         disableTransitionOnChange={false}
       >
       {/* --- END AI-MODIFIED --- */}
