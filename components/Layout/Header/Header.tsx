@@ -86,7 +86,10 @@ export default function Header() {
   const { data: session } = useSession();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isDashboard = router.pathname.startsWith("/dashboard");
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Include /pet pages so Header's mobile hamburger is hidden (each section has its own nav trigger)
+  const isDashboard = router.pathname.startsWith("/dashboard") || router.pathname.startsWith("/pet");
+  // --- END AI-MODIFIED ---
 
   function isActive(href: string, exact?: boolean) {
     return exact ? router.pathname === href : router.pathname.startsWith(href);

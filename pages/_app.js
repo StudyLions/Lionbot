@@ -8,6 +8,10 @@ import { ToastProvider } from "@/components/dashboard/ui/Toast";
 import { SoundProvider } from "@/lib/SoundContext";
 import MiniSessionTimer from "@/components/dashboard/MiniSessionTimer";
 import defaultSEO from "next-seo.config";
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Multi-theme support via next-themes
+import { ThemeProvider } from "next-themes";
+// --- END AI-MODIFIED ---
 
 import "public/styles/styles.scss";
 // --- END AI-MODIFIED ---
@@ -67,6 +71,15 @@ function App({ Component, pageProps }) {
         priceCurrency="USD"
       />
       {/* --- END AI-MODIFIED --- */}
+      {/* --- AI-MODIFIED (2026-04-03) --- */}
+      {/* Purpose: Multi-theme support wrapping all pages */}
+      <ThemeProvider
+        attribute="data-theme"
+        defaultTheme="midnight"
+        themes={["midnight", "light", "ocean", "forest", "sunset"]}
+        disableTransitionOnChange={false}
+      >
+      {/* --- END AI-MODIFIED --- */}
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Global 8-bit UI sound system wrapping all pages */}
       <SoundProvider>
@@ -78,6 +91,7 @@ function App({ Component, pageProps }) {
         <ToastProvider />
       </SoundProvider>
       {/* --- END AI-MODIFIED --- */}
+      </ThemeProvider>
     </SessionProvider>
   );
 }
