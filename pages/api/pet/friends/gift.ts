@@ -7,7 +7,7 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
-import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const GIFT_TAX_PERCENT = 5
 
@@ -60,9 +60,13 @@ export default apiHandler({
           SELECT gold FROM user_config WHERE userid = ${senderId} FOR UPDATE
         `
         const sender = senders[0]
+        // --- AI-MODIFIED (2026-04-03) ---
+        // Purpose: Use ValidationError so apiHandler returns the message to the client
+        //          instead of swallowing it as "Internal server error"
         if (!sender || Number(sender.gold) < amount) {
-          throw Object.assign(new Error("Not enough gold"), { status: 400 })
+          throw new ValidationError("Not enough gold", 400)
         }
+        // --- END AI-MODIFIED ---
 
         await tx.$queryRaw`SELECT 1 FROM user_config WHERE userid = ${targetId} FOR UPDATE`
 
@@ -106,12 +110,22 @@ export default apiHandler({
         FOR UPDATE OF i
       `
       const item = items[0]
+      // --- AI-MODIFIED (2026-04-03) ---
+      // Purpose: Use ValidationError so apiHandler returns the message to the client
       if (!item) {
-        throw Object.assign(new Error("Item not found in your inventory"), { status: 404 })
+        throw new ValidationError("Item not found in your inventory", 404)
       }
       if (!item.tradeable) {
-        throw Object.assign(new Error("This item cannot be traded"), { status: 400 })
+        throw new ValidationError("This item cannot be traded", 400)
       }
+
+      const equipped = await tx.lg_pet_equipment.findFirst({
+        where: { userid: senderId, itemid: item.itemid },
+      })
+      if (equipped) {
+        throw new ValidationError("Unequip this item before gifting it", 400)
+      }
+      // --- END AI-MODIFIED ---
 
       const scrollSlots = await tx.lg_enhancement_slots.findMany({
         where: { inventoryid: inventoryId },

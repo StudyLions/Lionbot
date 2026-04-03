@@ -86,11 +86,65 @@ export default apiHandler({
     })
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-04-03) ---
+    // Purpose: Fetch the viewer's tradeable inventory so the gift panel's "Item" tab
+    //          can display items the viewer can send. Without this, inventory was always
+    //          undefined and item gifting was completely broken.
+    let inventory: Array<{
+      inventoryId: number
+      itemId: number
+      name: string
+      category: string
+      rarity: string
+      quantity: number
+    }> = []
+
+    if (isFriend) {
+      const [invRows, equippedRows] = await Promise.all([
+        prisma.lg_user_inventory.findMany({
+          where: { userid: currentUserId },
+          select: {
+            inventoryid: true,
+            itemid: true,
+            quantity: true,
+            lg_items: {
+              select: {
+                name: true,
+                category: true,
+                rarity: true,
+                tradeable: true,
+              },
+            },
+          },
+          orderBy: { acquired_at: "desc" },
+        }),
+        prisma.lg_pet_equipment.findMany({
+          where: { userid: currentUserId },
+          select: { itemid: true },
+        }),
+      ])
+
+      const equippedItemIds = new Set(equippedRows.map((e) => e.itemid))
+
+      inventory = invRows
+        .filter((r) => r.lg_items.tradeable && !equippedItemIds.has(r.itemid))
+        .map((r) => ({
+          inventoryId: r.inventoryid,
+          itemId: r.itemid,
+          name: r.lg_items.name,
+          category: r.lg_items.category,
+          rarity: r.lg_items.rarity,
+          quantity: r.quantity,
+        }))
+    }
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       ...profileData,
       isFriend,
       isBlocked: !!viewerBlock,
       todayInteractions,
+      inventory,
     })
   },
 })

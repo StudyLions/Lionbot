@@ -1,22 +1,86 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-01
-// Purpose: Text Branding API -- CRUD for guild text overrides.
-//          GET returns all overrides for a guild.
-//          PUT upserts a single override.
-//          DELETE removes a single override.
-//          POST with action=export returns all overrides as JSON.
-//          POST with action=import bulk-upserts overrides.
-//          POST with action=reset-all deletes all overrides.
+// Updated: 2026-04-01
+// Purpose: Text Branding API -- CRUD for guild text overrides
+//          with catalog-backed validation, placeholder safety
+//          enforcement, and blocked domain/key protection.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAdmin } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+import fs from "fs"
+import path from "path"
 
 const MAX_CUSTOM_TEXT_LENGTH = 2000
 const MAX_OVERRIDES_FREE = 3
 const MAX_OVERRIDES_PREMIUM = 10000
+
+interface CatalogString {
+  key: string
+  default: string
+  category: string
+  has_plural: boolean
+  string_type: string
+  safety: string
+  breadcrumb: string
+  context_type: string
+  context_region: string
+  placeholders?: Array<{ name: string; required: boolean }>
+  default_plural?: string
+  popular?: boolean
+}
+
+interface CatalogDomain {
+  display_name: string
+  strings: CatalogString[]
+  count: number
+}
+
+interface Catalog {
+  version: string
+  total_strings: number
+  total_domains: number
+  domains: Record<string, CatalogDomain>
+}
+
+let _catalog: Catalog | null = null
+let _keyIndex: Map<string, { domain: string; entry: CatalogString }> | null = null
+
+function loadCatalog(): Catalog {
+  if (_catalog) return _catalog
+  const catalogPath = path.join(process.cwd(), "public", "string-catalog.json")
+  const raw = fs.readFileSync(catalogPath, "utf-8")
+  _catalog = JSON.parse(raw) as Catalog
+  return _catalog
+}
+
+function getKeyIndex(): Map<string, { domain: string; entry: CatalogString }> {
+  if (_keyIndex) return _keyIndex
+  const catalog = loadCatalog()
+  _keyIndex = new Map()
+  for (const [domain, domData] of Object.entries(catalog.domains)) {
+    for (const entry of domData.strings) {
+      _keyIndex.set(entry.key, { domain, entry })
+    }
+  }
+  return _keyIndex
+}
+
+function validatePlaceholders(
+  customText: string,
+  entry: CatalogString
+): string[] {
+  if (!entry.placeholders || entry.placeholders.length === 0) return []
+  const missing: string[] = []
+  for (const ph of entry.placeholders) {
+    if (ph.required && !customText.includes(`{${ph.name}}`)) {
+      missing.push(ph.name)
+    }
+  }
+  return missing
+}
 
 export default apiHandler({
 
@@ -70,6 +134,24 @@ export default apiHandler({
     }
     if (custom_text.length > MAX_CUSTOM_TEXT_LENGTH) {
       return res.status(400).json({ error: `custom_text exceeds max length of ${MAX_CUSTOM_TEXT_LENGTH}` })
+    }
+
+    const keyIndex = getKeyIndex()
+    const catalogEntry = keyIndex.get(text_key)
+    if (!catalogEntry) {
+      return res.status(400).json({ error: "This text key is not customizable." })
+    }
+    if (catalogEntry.domain !== domain) {
+      return res.status(400).json({ error: "Domain mismatch for this text key." })
+    }
+
+    const missingPlaceholders = validatePlaceholders(custom_text, catalogEntry.entry)
+    if (missingPlaceholders.length > 0) {
+      return res.status(400).json({
+        error: "missing_placeholders",
+        missing: missingPlaceholders,
+        message: `Your custom text is missing required placeholders: ${missingPlaceholders.map(p => `{${p}}`).join(", ")}. The bot needs these to work correctly.`,
+      })
     }
 
     const premium = await prisma.premium_guilds.findUnique({
@@ -196,11 +278,38 @@ export default apiHandler({
         return res.status(400).json({ error: "overrides array is required" })
       }
 
+      const keyIndex = getKeyIndex()
       let imported = 0
+      let skipped = 0
+      const errors: Array<{ key: string; reason: string }> = []
+
       for (const o of overrides) {
-        if (!o.text_key || !o.domain || !o.custom_text) continue
-        if (typeof o.custom_text !== "string") continue
-        if (o.custom_text.length > MAX_CUSTOM_TEXT_LENGTH) continue
+        if (!o.text_key || !o.domain || !o.custom_text) {
+          skipped++
+          continue
+        }
+        if (typeof o.custom_text !== "string") {
+          skipped++
+          continue
+        }
+        if (o.custom_text.length > MAX_CUSTOM_TEXT_LENGTH) {
+          skipped++
+          continue
+        }
+
+        const catalogEntry = keyIndex.get(o.text_key)
+        if (!catalogEntry) {
+          errors.push({ key: o.text_key, reason: "Not in catalog (blocked or unknown)" })
+          skipped++
+          continue
+        }
+
+        const missing = validatePlaceholders(o.custom_text, catalogEntry.entry)
+        if (missing.length > 0) {
+          errors.push({ key: o.text_key, reason: `Missing placeholders: ${missing.map(p => `{${p}}`).join(", ")}` })
+          skipped++
+          continue
+        }
 
         await prisma.guild_text_overrides.upsert({
           where: {
@@ -225,7 +334,7 @@ export default apiHandler({
         imported++
       }
 
-      return res.json({ success: true, imported })
+      return res.json({ success: true, imported, skipped, errors: errors.slice(0, 20) })
     }
 
     if (action === "reset-all") {
