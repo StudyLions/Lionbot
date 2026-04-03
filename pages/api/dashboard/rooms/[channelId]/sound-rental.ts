@@ -123,11 +123,11 @@ export default apiHandler({
       ...adminBots.map((b) => b.bot_number),
     ])
     let freeBotNum: number | null = null
-    for (let i = 1; i <= 5; i++) {
+    for (let i = 1; i <= 10; i++) {
       if (!usedNums.has(i)) { freeBotNum = i; break }
     }
     if (freeBotNum === null) {
-      throw new ValidationError("All 5 sound bots are currently in use. Try again later.")
+      throw new ValidationError("All 10 sound bots are currently in use. Try again later.")
     }
 
     const expiresAt = new Date(Date.now() + rentHours * 3600_000)

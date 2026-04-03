@@ -10,7 +10,10 @@ import { requireAdmin } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const VALID_SOUNDS = ["rain", "campfire", "ocean", "brown_noise", "white_noise", "lofi"]
-const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5]
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Support 10 sound bots instead of 5
+const VALID_BOT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+// --- END AI-MODIFIED ---
 
 function serializeSlot(s: any) {
   return {

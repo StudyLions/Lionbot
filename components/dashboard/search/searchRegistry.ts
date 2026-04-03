@@ -593,7 +593,7 @@ const FEATURE_ITEMS: SearchItem[] = [
   {
     id: "feature-ambient-bots",
     title: "Ambient Sound Bots",
-    description: "Configure up to 5 sound bot slots",
+    description: "Configure up to 10 sound bot slots",
     category: "feature",
     page: "Ambient Sounds",
     route: "/ambient-sounds",
