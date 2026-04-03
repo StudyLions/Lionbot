@@ -285,14 +285,22 @@ export default function TasksPage() {
     return map
   }, [tasks])
 
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Include completed parents that have active children in "active" filter,
+  // so subtasks aren't invisible when their parent is completed (fixes count mismatch)
   const filteredRootTasks = useMemo(() => {
-    if (filter === "active") return rootTasks.filter(t => !t.completed)
+    if (filter === "active") return rootTasks.filter(t => {
+      if (!t.completed) return true
+      const children = childTasksMap.get(t.id) || []
+      return children.some(c => !c.completed)
+    })
     if (filter === "completed") return rootTasks.filter(t => t.completed)
     return [...rootTasks].sort((a, b) => {
       if (a.completed !== b.completed) return a.completed ? 1 : -1
       return 0
     })
-  }, [rootTasks, filter])
+  }, [rootTasks, filter, childTasksMap])
+  // --- END AI-MODIFIED ---
 
   const activeTasks = useMemo(() => tasks.filter(t => !t.completed), [tasks])
   const completedTasks = useMemo(() => tasks.filter(t => t.completed), [tasks])
