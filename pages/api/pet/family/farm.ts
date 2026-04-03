@@ -274,6 +274,30 @@ export default apiHandler({
       return res.status(200).json({ success: true, count: harvestable.length, totalGold, drops: allDrops.length > 0 ? allDrops : null })
       // --- END AI-MODIFIED ---
     }
+
+    // --- AI-MODIFIED (2026-04-03) ---
+    // Purpose: Bulk clear all dead plots in one request (was N sequential requests from frontend)
+    if (action === "clearAll") {
+      if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
+        return res.status(403).json({ error: "You don't have permission" })
+      }
+      const allPlots = await prisma.lg_family_farm_plots.findMany({
+        where: { family_id: family.family_id, farm_index: farmIndex, seed_id: { not: null } },
+      })
+      const deadPlots = allPlots.filter((p) => p.dead || isDead(p.last_watered, p.planted_at))
+      if (deadPlots.length === 0) return res.status(200).json({ success: true, count: 0 })
+
+      await prisma.$transaction(
+        deadPlots.map((p) =>
+          prisma.lg_family_farm_plots.update({
+            where: { family_id_farm_index_plot_id: { family_id: family.family_id, farm_index: farmIndex, plot_id: p.plot_id } },
+            data: { seed_id: null, planted_at: null, planted_by: null, last_watered: null, growth_stage: 0, dead: false, growth_points: 0, gold_invested: 0, rarity: "COMMON" },
+          })
+        )
+      )
+      return res.status(200).json({ success: true, count: deadPlots.length })
+    }
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     if (plotId === undefined || plotId === null) return res.status(400).json({ error: "plotId required" })
@@ -477,6 +501,6 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
-    return res.status(400).json({ error: "Invalid action. Use plant, water, harvest, uproot, remove, clear, waterAll, or harvestAll" })
+    return res.status(400).json({ error: "Invalid action. Use plant, water, harvest, uproot, remove, clear, waterAll, harvestAll, or clearAll" })
   },
 })

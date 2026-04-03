@@ -31,6 +31,8 @@ export default apiHandler({
         where: { family_id: family.family_id },
       })
 
+      // --- AI-MODIFIED (2026-04-03) ---
+      // Purpose: Include scroll_name in the INSERT (NOT NULL column) so enhanced items are restored correctly
       for (const item of bankItems) {
         const newInv = await tx.lg_user_inventory.create({
           data: {
@@ -45,14 +47,17 @@ export default apiHandler({
         if (item.scroll_data && Array.isArray(item.scroll_data)) {
           const slots = item.scroll_data as Array<{
             slot_number: number
-            scroll_itemid: number | null
+            scroll_itemid: number
+            scroll_name?: string
             bonus_value: number
           }>
           for (const slot of slots) {
-            await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, bonus_value) VALUES (${newInv.inventoryid}, ${slot.slot_number}, ${slot.scroll_itemid}, ${slot.bonus_value})`
+            const scrollName = slot.scroll_name ?? "Scroll"
+            await tx.$executeRaw`INSERT INTO lg_enhancement_slots (inventoryid, slot_number, scroll_itemid, scroll_name, bonus_value) VALUES (${newInv.inventoryid}, ${slot.slot_number}, ${slot.scroll_itemid}, ${scrollName}, ${slot.bonus_value})`
           }
         }
       }
+      // --- END AI-MODIFIED ---
 
       if (family.gold > BigInt(0)) {
         await tx.user_config.update({
