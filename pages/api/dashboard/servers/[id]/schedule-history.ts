@@ -31,11 +31,32 @@ export default apiHandler({
     const pageSize = Math.min(50, Math.max(1, parseInt(req.query.pageSize as string) || 20))
     const offset = (page - 1) * pageSize
 
+    // --- AI-MODIFIED (2026-04-04) ---
+    // Purpose: Support from/to date range filtering for calendar view
+    const fromParam = req.query.from as string | undefined
+    const toParam = req.query.to as string | undefined
+    let fromSlotId: number | null = null
+    let toSlotId: number | null = null
+    if (fromParam) {
+      const d = new Date(fromParam)
+      if (!isNaN(d.getTime())) fromSlotId = Math.floor(d.getTime() / 1000)
+    }
+    if (toParam) {
+      const d = new Date(toParam)
+      if (!isNaN(d.getTime())) toSlotId = Math.floor(d.getTime() / 1000)
+    }
+
+    const hasDateFilter = fromSlotId !== null || toSlotId !== null
+    const dateFilterClause = hasDateFilter
+      ? Prisma.sql`${fromSlotId !== null ? Prisma.sql`AND slotid >= ${fromSlotId}` : Prisma.empty}${toSlotId !== null ? Prisma.sql` AND slotid <= ${toSlotId}` : Prisma.empty}`
+      : Prisma.empty
+    // --- END AI-MODIFIED ---
+
     const [totalCountRaw, sessionsRaw] = await Promise.all([
       prisma.$queryRaw<[{ cnt: bigint }]>`
         SELECT COUNT(*) as cnt
         FROM schedule_sessions
-        WHERE guildid = ${guildId}
+        WHERE guildid = ${guildId} ${dateFilterClause}
       `,
       prisma.$queryRaw<Array<{
         slotid: number
@@ -45,7 +66,7 @@ export default apiHandler({
       }>>`
         SELECT slotid, opened_at, closed_at, created_at
         FROM schedule_sessions
-        WHERE guildid = ${guildId}
+        WHERE guildid = ${guildId} ${dateFilterClause}
         ORDER BY slotid DESC
         LIMIT ${pageSize} OFFSET ${offset}
       `,
