@@ -24,6 +24,10 @@ import {
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Theme selector in sidebar
+import ThemeSelector from "@/components/dashboard/ThemeSelector"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 interface NavItem {
@@ -395,9 +399,10 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         ))}
         {/* --- END AI-MODIFIED --- */}
       </ScrollArea>
-      {/* --- AI-MODIFIED (2026-03-20) --- */}
-      {/* Purpose: Sound toggle at bottom of nav for enabling/disabling 8-bit UI sounds */}
-      <div className="px-3 py-3 border-t border-border/40">
+      {/* --- AI-MODIFIED (2026-04-03) --- */}
+      {/* Purpose: Theme selector and sound toggle at bottom of nav */}
+      <div className="px-3 py-3 border-t border-border/40 space-y-0.5">
+        <ThemeSelector />
         <button
           onClick={() => {
             const next = !soundEnabled

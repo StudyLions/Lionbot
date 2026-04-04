@@ -1671,6 +1671,7 @@ model ambient_sounds_config {
   vote_cooldown_minutes Int?     @default(30)
   current_song_title    String?  @db.VarChar(200)
   current_song_artist   String?  @db.VarChar(200)
+  control_message_id    String?
 
   @@id([guildid, bot_number])
 }

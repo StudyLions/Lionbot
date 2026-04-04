@@ -110,25 +110,65 @@ export default apiHandler({
       )
     }
 
-    const usedBots = await prisma.ambient_sounds_rentals.findMany({
-      where: { guildid: room.guildid, ended_at: null, expires_at: { gt: new Date() } },
-      select: { bot_number: true },
-    })
-    const adminBots = await prisma.ambient_sounds_config.findMany({
-      where: { guildid: room.guildid, enabled: true },
-      select: { bot_number: true },
-    })
-    const usedNums = new Set([
-      ...usedBots.map((b) => b.bot_number),
-      ...adminBots.map((b) => b.bot_number),
+    // --- AI-MODIFIED (2026-04-03) ---
+    // Purpose: Only consider bots that are actually in the guild (have an
+    // ambient_sounds_config row, auto-created by the SoundsBot on guild join).
+    // Previously iterated 1-10 blindly, which could assign a bot not in the server.
+    // --- Original code (commented out for rollback) ---
+    // const usedBots = await prisma.ambient_sounds_rentals.findMany({
+    //   where: { guildid: room.guildid, ended_at: null, expires_at: { gt: new Date() } },
+    //   select: { bot_number: true },
+    // })
+    // const adminBots = await prisma.ambient_sounds_config.findMany({
+    //   where: { guildid: room.guildid, enabled: true },
+    //   select: { bot_number: true },
+    // })
+    // const usedNums = new Set([
+    //   ...usedBots.map((b) => b.bot_number),
+    //   ...adminBots.map((b) => b.bot_number),
+    // ])
+    // let freeBotNum: number | null = null
+    // for (let i = 1; i <= 10; i++) {
+    //   if (!usedNums.has(i)) { freeBotNum = i; break }
+    // }
+    // if (freeBotNum === null) {
+    //   throw new ValidationError("All 10 sound bots are currently in use. Try again later.")
+    // }
+    // --- End original code ---
+    const [botsInGuild, usedByRentals, usedByAdmin] = await Promise.all([
+      prisma.ambient_sounds_config.findMany({
+        where: { guildid: room.guildid },
+        select: { bot_number: true },
+      }),
+      prisma.ambient_sounds_rentals.findMany({
+        where: { guildid: room.guildid, ended_at: null, expires_at: { gt: new Date() } },
+        select: { bot_number: true },
+      }),
+      prisma.ambient_sounds_config.findMany({
+        where: { guildid: room.guildid, enabled: true, channelid: { not: null } },
+        select: { bot_number: true },
+      }),
+    ])
+    const inGuild = new Set(botsInGuild.map((b) => b.bot_number))
+    const busyNums = new Set([
+      ...usedByRentals.map((b) => b.bot_number),
+      ...usedByAdmin.map((b) => b.bot_number),
     ])
     let freeBotNum: number | null = null
-    for (let i = 1; i <= 10; i++) {
-      if (!usedNums.has(i)) { freeBotNum = i; break }
+    for (const num of Array.from(inGuild).sort((a, b) => a - b)) {
+      if (!busyNums.has(num)) { freeBotNum = num; break }
     }
     if (freeBotNum === null) {
-      throw new ValidationError("All 10 sound bots are currently in use. Try again later.")
+      if (inGuild.size === 0) {
+        throw new ValidationError(
+          "No sound bots have been invited to this server. Ask an admin to invite at least one LionBotMusic bot."
+        )
+      }
+      throw new ValidationError(
+        `All ${inGuild.size} sound bot(s) in this server are currently in use. Try again later, or ask an admin to invite more LionBotMusic bots.`
+      )
     }
+    // --- END AI-MODIFIED ---
 
     const expiresAt = new Date(Date.now() + rentHours * 3600_000)
 

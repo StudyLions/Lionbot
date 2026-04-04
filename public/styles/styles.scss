@@ -35,6 +35,141 @@
     --ring: 217 91% 60%;
     --radius: 0.625rem;
   }
+
+  // --- AI-MODIFIED (2026-04-03) ---
+  // Purpose: Multi-theme CSS variable overrides for theme selector
+
+  [data-theme="light"] {
+    --background: 210 20% 98%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 217 91% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 222 47% 20%;
+    --muted: 220 14% 96%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 220 14% 92%;
+    --accent-foreground: 222 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222 47% 11%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 50%;
+  }
+
+  [data-theme="ocean"] {
+    --background: 200 50% 8%;
+    --foreground: 185 20% 95%;
+    --card: 200 45% 12%;
+    --card-foreground: 185 20% 95%;
+    --popover: 200 45% 12%;
+    --popover-foreground: 185 20% 95%;
+    --primary: 187 80% 50%;
+    --primary-foreground: 200 50% 8%;
+    --secondary: 200 35% 15%;
+    --secondary-foreground: 185 20% 95%;
+    --muted: 200 35% 15%;
+    --muted-foreground: 195 15% 60%;
+    --accent: 200 35% 20%;
+    --accent-foreground: 185 20% 95%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 185 20% 95%;
+    --success: 160 70% 42%;
+    --success-foreground: 200 50% 8%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 200 50% 8%;
+    --border: 200 30% 18%;
+    --input: 200 30% 18%;
+    --ring: 187 80% 50%;
+  }
+
+  [data-theme="forest"] {
+    --background: 150 30% 8%;
+    --foreground: 140 15% 95%;
+    --card: 150 25% 12%;
+    --card-foreground: 140 15% 95%;
+    --popover: 150 25% 12%;
+    --popover-foreground: 140 15% 95%;
+    --primary: 142 70% 50%;
+    --primary-foreground: 150 30% 8%;
+    --secondary: 150 20% 16%;
+    --secondary-foreground: 140 15% 95%;
+    --muted: 150 20% 16%;
+    --muted-foreground: 145 12% 58%;
+    --accent: 150 20% 20%;
+    --accent-foreground: 140 15% 95%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 140 15% 95%;
+    --success: 142 71% 45%;
+    --success-foreground: 150 30% 8%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 150 30% 8%;
+    --border: 150 18% 18%;
+    --input: 150 18% 18%;
+    --ring: 142 70% 50%;
+  }
+
+  [data-theme="pink"] {
+    --background: 320 25% 8%;
+    --foreground: 330 15% 95%;
+    --card: 320 20% 12%;
+    --card-foreground: 330 15% 95%;
+    --popover: 320 20% 12%;
+    --popover-foreground: 330 15% 95%;
+    --primary: 330 80% 60%;
+    --primary-foreground: 320 25% 8%;
+    --secondary: 320 15% 16%;
+    --secondary-foreground: 330 15% 95%;
+    --muted: 320 15% 16%;
+    --muted-foreground: 325 10% 58%;
+    --accent: 320 15% 20%;
+    --accent-foreground: 330 15% 95%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 330 15% 95%;
+    --success: 142 71% 45%;
+    --success-foreground: 320 25% 8%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 320 25% 8%;
+    --border: 320 14% 18%;
+    --input: 320 14% 18%;
+    --ring: 330 80% 60%;
+  }
+
+  [data-theme="sunset"] {
+    --background: 20 30% 8%;
+    --foreground: 30 15% 95%;
+    --card: 20 25% 12%;
+    --card-foreground: 30 15% 95%;
+    --popover: 20 25% 12%;
+    --popover-foreground: 30 15% 95%;
+    --primary: 28 90% 55%;
+    --primary-foreground: 20 30% 8%;
+    --secondary: 20 18% 16%;
+    --secondary-foreground: 30 15% 95%;
+    --muted: 20 18% 16%;
+    --muted-foreground: 25 12% 58%;
+    --accent: 20 18% 20%;
+    --accent-foreground: 30 15% 95%;
+    --destructive: 0 63% 57%;
+    --destructive-foreground: 30 15% 95%;
+    --success: 142 71% 45%;
+    --success-foreground: 20 30% 8%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 20 30% 8%;
+    --border: 20 16% 18%;
+    --input: 20 16% 18%;
+    --ring: 28 90% 55%;
+  }
+
+  // --- END AI-MODIFIED ---
 }
 /* --- END AI-MODIFIED --- */
 
@@ -89,9 +224,8 @@ footer, header, hgroup, menu, nav, section {
   display: block;
 }
 
-// --- AI-MODIFIED (2026-03-24) ---
-// Purpose: Align body background with --background CSS variable instead of SCSS $color-6,
-//          and remove explicit font-family so Tailwind's font-sans (Inter, Rubik) applies
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Use --foreground CSS variable for body text so it responds to theme changes
 // --- Original code (commented out for rollback) ---
 // body {
 //   font-family: 'Rubik', sans-serif;
@@ -105,7 +239,7 @@ body {
   margin: 0;
   padding: 0;
   background: hsl(var(--background));
-  color: globalVariables.$color-0;
+  color: hsl(var(--foreground));
   line-height: 1;
 }
 // --- END AI-MODIFIED ---
@@ -134,10 +268,16 @@ table {
   @include mixinHelper.container;
 }
 
+// --- AI-MODIFIED (2026-04-03) ---
+// Purpose: Use --foreground so anchor colors respond to theme changes
+// --- Original code (commented out for rollback) ---
+// a { text-decoration: none; color: white; }
+// --- End original code ---
 a {
   text-decoration: none;
-  color: white;
+  color: hsl(var(--foreground));
 }
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: Removed body margin-top hacks -- header is now sticky (part of document flow)
