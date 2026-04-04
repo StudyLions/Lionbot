@@ -25,6 +25,7 @@ const EDITABLE_FIELDS = [
   // Purpose: New admin-configurable room settings for Private Rooms panel
   'renting_max_per_user', 'renting_name_limit', 'renting_min_deposit',
   'renting_auto_extend', 'renting_cooldown',
+  'renting_notifications', // AI-MODIFIED (2026-04-04): join/leave notification toggle
   // --- END AI-MODIFIED ---
   'accountability_bonus', 'accountability_reward', 'accountability_price',
   // --- AI-MODIFIED (2026-03-23) ---
