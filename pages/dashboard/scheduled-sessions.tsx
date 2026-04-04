@@ -212,7 +212,7 @@ export default function ScheduledSessionsPage() {
   }, [upcomingData?.sessions])
 
   return (
-    <Layout seo={{ title: "Scheduled Sessions", description: "Your study session calendar" }}>
+    <Layout SEO={{ title: "Scheduled Sessions", description: "Your study session calendar" }}>
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />}>
           <PageHeader
