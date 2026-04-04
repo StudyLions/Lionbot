@@ -72,9 +72,9 @@ interface StatsData {
 }
 
 const TABS = [
-  { id: "calendar", label: "Calendar" },
-  { id: "upcoming", label: "Upcoming" },
-  { id: "stats", label: "Stats" },
+  { key: "calendar", label: "Calendar" },
+  { key: "upcoming", label: "Upcoming" },
+  { key: "stats", label: "Stats" },
 ]
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
