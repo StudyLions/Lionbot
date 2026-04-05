@@ -62,14 +62,17 @@ const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 //   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 // ];
 // --- End original code ---
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: Added Updates (timeline) link to nav
 const NAV_LINKS = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Features", href: "/features", icon: Sparkles },
-  { label: "Guides", href: "/guides", icon: BookOpen },
+  { label: "Updates", href: "/timeline", icon: Sparkles },
   { label: "How to Use", href: "/tutorials", icon: GraduationCap },
   { label: "Skins", href: "/skins", icon: Palette },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
