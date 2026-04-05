@@ -74,7 +74,7 @@ const sections: NavSection[] = [
       // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-04-04) ---
       // Purpose: Scheduled Sessions member page link
-      { href: "/dashboard/scheduled-sessions", label: "Sessions", icon: <CalendarCheck size={16} /> },
+      { href: "/dashboard/scheduled-sessions", label: "Schedule", icon: <CalendarCheck size={16} /> },
       // --- END AI-MODIFIED ---
     ],
   },
