@@ -275,6 +275,8 @@ export default function ScheduledSessionsPage() {
                         </div>
                       ))}
                     </div>
+                    {/* --- AI-MODIFIED (2026-04-04) --- */}
+                    {/* Purpose: Redesign calendar cells for much higher visibility — colored backgrounds instead of tiny dots */}
                     <div className="grid grid-cols-7 border-t border-border/50">
                       {monthDays.map(({ date, inMonth }, i) => {
                         const key = dateKey(date)
@@ -284,33 +286,53 @@ export default function ScheduledSessionsPage() {
                         const hasAttended = daySessions.some((s) => s.attended && s.isClosed)
                         const hasMissed = daySessions.some((s) => !s.attended && s.isClosed)
                         const hasUpcoming = daySessions.some((s) => s.isUpcoming)
+                        const hasSessions = daySessions.length > 0
+
+                        const bgColor = !inMonth ? "bg-muted/20"
+                          : isSelected ? "bg-primary/15"
+                          : hasUpcoming ? "bg-blue-500/10"
+                          : hasAttended && !hasMissed ? "bg-emerald-500/10"
+                          : hasMissed ? "bg-red-500/8"
+                          : "bg-card"
 
                         return (
                           <button
                             key={i}
-                            onClick={() => daySessions.length > 0 ? setSelectedDay(isSelected ? null : key) : undefined}
+                            onClick={() => hasSessions ? setSelectedDay(isSelected ? null : key) : undefined}
                             className={cn(
-                              "relative min-h-[52px] p-1.5 border-b border-r border-border/30 transition-colors text-left",
-                              inMonth ? "bg-card" : "bg-muted/30",
-                              daySessions.length > 0 && "cursor-pointer hover:bg-accent/50",
-                              isSelected && "bg-primary/10 ring-1 ring-primary/30",
+                              "relative min-h-[60px] p-1.5 border-b border-r border-border/30 transition-all text-left",
+                              bgColor,
+                              hasSessions && "cursor-pointer hover:brightness-125",
+                              isSelected && "ring-1 ring-primary/40",
                             )}
                           >
                             <span className={cn(
-                              "text-xs tabular-nums",
-                              !inMonth && "text-muted-foreground/30",
+                              "text-xs tabular-nums block",
+                              !inMonth && "text-muted-foreground/25",
                               isToday && "text-primary font-bold",
-                              inMonth && !isToday && "text-foreground/70",
+                              inMonth && !isToday && (hasSessions ? "text-foreground font-medium" : "text-foreground/50"),
                             )}>
                               {date.getDate()}
                             </span>
-                            {daySessions.length > 0 && (
-                              <div className="flex gap-0.5 mt-1 flex-wrap">
-                                {hasAttended && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
-                                {hasMissed && <span className="w-1.5 h-1.5 rounded-full bg-red-500" />}
-                                {hasUpcoming && <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                                {daySessions.length > 1 && (
-                                  <span className="text-[8px] text-muted-foreground/60 ml-0.5">{daySessions.length}</span>
+                            {hasSessions && (
+                              <div className="mt-0.5 space-y-0.5">
+                                {hasUpcoming && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="h-1 flex-1 rounded-full bg-blue-500/70" />
+                                    <span className="text-[9px] font-semibold text-blue-400">{daySessions.filter(s => s.isUpcoming).length}</span>
+                                  </div>
+                                )}
+                                {hasAttended && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="h-1 flex-1 rounded-full bg-emerald-500/70" />
+                                    <span className="text-[9px] font-semibold text-emerald-400">{daySessions.filter(s => s.attended && s.isClosed).length}</span>
+                                  </div>
+                                )}
+                                {hasMissed && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="h-1 flex-1 rounded-full bg-red-500/70" />
+                                    <span className="text-[9px] font-semibold text-red-400">{daySessions.filter(s => !s.attended && s.isClosed).length}</span>
+                                  </div>
                                 )}
                               </div>
                             )}
@@ -318,13 +340,14 @@ export default function ScheduledSessionsPage() {
                         )
                       })}
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
                   </div>
 
                   {/* Legend */}
                   <div className="flex items-center gap-4 px-1 text-[10px] text-muted-foreground">
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> Attended</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> Missed</span>
-                    <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Upcoming</span>
+                    <span className="flex items-center gap-1.5"><span className="w-5 h-1.5 rounded-full bg-emerald-500/70" /> Attended</span>
+                    <span className="flex items-center gap-1.5"><span className="w-5 h-1.5 rounded-full bg-red-500/70" /> Missed</span>
+                    <span className="flex items-center gap-1.5"><span className="w-5 h-1.5 rounded-full bg-blue-500/70" /> Upcoming</span>
                     {calendarData?.timezone && (
                       <span className="ml-auto text-muted-foreground/40">Timezone: {calendarData.timezone}</span>
                     )}

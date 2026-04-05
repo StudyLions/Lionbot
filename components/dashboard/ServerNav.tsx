@@ -134,7 +134,7 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/branding", label: "Visual Branding", icon: <Paintbrush size={16} />, supporterPerk: true },
         { href: "/text-branding", label: "Text Branding", icon: <Type size={16} />, supporterPerk: true },
         // --- END AI-MODIFIED ---
-        { href: "/leaderboard-autopost", label: "Leaderboard Auto-Post", icon: <Trophy size={16} />, supporterPerk: true },
+        { href: "/leaderboard-autopost", label: "Leaderboard", icon: <Trophy size={16} />, supporterPerk: true },
         { href: "/ambient-sounds", label: "Ambient Sounds", icon: <Volume2 size={16} />, supporterPerk: true },
         // --- AI-MODIFIED (2026-03-22) ---
         // Purpose: Sticky messages premium feature nav link
