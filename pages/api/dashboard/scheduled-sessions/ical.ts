@@ -55,78 +55,83 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Invalid token" })
   }
 
-  const userIdBigInt = BigInt(userId)
-  const now = Math.floor(Date.now() / 1000)
-  const nowSlotId = now - (now % 3600)
-
-  const rows = await prisma.$queryRaw<Array<{
-    slotid: number
-    guildid: bigint
-    guild_name: string | null
-  }>>`
-    SELECT
-      ssm.slotid,
-      ssm.guildid,
-      gc.guild_name
-    FROM schedule_session_members ssm
-    LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
-    WHERE ssm.userid = ${userIdBigInt}
-      AND ssm.slotid >= ${nowSlotId}
-      AND ssm.slotid <= ${nowSlotId + 86400 * 30}
-    ORDER BY ssm.slotid ASC
-  `
-
-  const userConfig = await prisma.user_config.findUnique({
-    where: { userid: userIdBigInt },
-    select: { timezone: true, name: true },
-  })
-
-  const calName = `StudyLion Sessions${userConfig?.name ? ` - ${userConfig.name}` : ""}`
-
-  let ical = [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//LionBot//Scheduled Sessions//EN",
-    `X-WR-CALNAME:${escapeIcal(calName)}`,
-    "CALSCALE:GREGORIAN",
-    "METHOD:PUBLISH",
-    `X-WR-TIMEZONE:${userConfig?.timezone || "UTC"}`,
-  ]
-
   // --- AI-MODIFIED (2026-04-05) ---
-  // Purpose: Add DTSTAMP (required by RFC 5545)
-  const nowStamp = formatIcalDate(new Date())
-  for (const row of rows) {
-    const start = new Date(row.slotid * 1000)
-    const end = new Date((row.slotid + 3600) * 1000)
-    const guildName = row.guild_name || "Unknown Server"
-    const uid = `schedule-${row.guildid}-${row.slotid}@lionbot.org`
+  // Purpose: Wrap handler body in try-catch to return meaningful errors instead of 500
+  try {
+    const userIdBigInt = BigInt(userId)
+    const now = Math.floor(Date.now() / 1000)
+    const nowSlotId = now - (now % 3600)
 
-    ical.push(
-      "BEGIN:VEVENT",
-      `UID:${uid}`,
-      `DTSTAMP:${nowStamp}`,
-      `DTSTART:${formatIcalDate(start)}`,
-      `DTEND:${formatIcalDate(end)}`,
-      `SUMMARY:${escapeIcal(`Study Session — ${guildName}`)}`,
-      `DESCRIPTION:${escapeIcal(`Scheduled study session in ${guildName}. Open your Discord server to attend!`)}`,
-      "STATUS:CONFIRMED",
-      "BEGIN:VALARM",
-      "TRIGGER:-PT15M",
-      "ACTION:DISPLAY",
-      "DESCRIPTION:Your study session starts in 15 minutes!",
-      "END:VALARM",
-      "END:VEVENT"
-    )
+    const rows = await prisma.$queryRaw<Array<{
+      slotid: number
+      guildid: bigint
+      guild_name: string | null
+    }>>`
+      SELECT
+        ssm.slotid,
+        ssm.guildid,
+        gc.guild_name
+      FROM schedule_session_members ssm
+      LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
+      WHERE ssm.userid = ${userIdBigInt}
+        AND ssm.slotid >= ${nowSlotId}
+        AND ssm.slotid <= ${nowSlotId + 86400 * 30}
+      ORDER BY ssm.slotid ASC
+    `
+
+    const userConfig = await prisma.user_config.findUnique({
+      where: { userid: userIdBigInt },
+      select: { timezone: true, name: true },
+    })
+
+    const calName = `StudyLion Sessions${userConfig?.name ? ` - ${userConfig.name}` : ""}`
+
+    let ical = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//LionBot//Scheduled Sessions//EN",
+      `X-WR-CALNAME:${escapeIcal(calName)}`,
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      `X-WR-TIMEZONE:${userConfig?.timezone || "UTC"}`,
+    ]
+
+    const nowStamp = formatIcalDate(new Date())
+    for (const row of rows) {
+      const start = new Date(row.slotid * 1000)
+      const end = new Date((row.slotid + 3600) * 1000)
+      const guildName = row.guild_name || "Unknown Server"
+      const uid = `schedule-${row.guildid}-${row.slotid}@lionbot.org`
+
+      ical.push(
+        "BEGIN:VEVENT",
+        `UID:${uid}`,
+        `DTSTAMP:${nowStamp}`,
+        `DTSTART:${formatIcalDate(start)}`,
+        `DTEND:${formatIcalDate(end)}`,
+        `SUMMARY:${escapeIcal(`Study Session — ${guildName}`)}`,
+        `DESCRIPTION:${escapeIcal(`Scheduled study session in ${guildName}. Open your Discord server to attend!`)}`,
+        "STATUS:CONFIRMED",
+        "BEGIN:VALARM",
+        "TRIGGER:-PT15M",
+        "ACTION:DISPLAY",
+        "DESCRIPTION:Your study session starts in 15 minutes!",
+        "END:VALARM",
+        "END:VEVENT"
+      )
+    }
+
+    ical.push("END:VCALENDAR")
+
+    const body = ical.join("\r\n")
+
+    res.setHeader("Content-Type", "text/calendar; charset=utf-8")
+    res.setHeader("Content-Disposition", 'attachment; filename="studylion-sessions.ics"')
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
+    res.status(200).send(body)
+  } catch (err: any) {
+    console.error("[iCal] Handler error:", err)
+    return res.status(500).json({ error: "Internal server error", detail: err?.message || String(err) })
   }
   // --- END AI-MODIFIED ---
-
-  ical.push("END:VCALENDAR")
-
-  const body = ical.join("\r\n")
-
-  res.setHeader("Content-Type", "text/calendar; charset=utf-8")
-  res.setHeader("Content-Disposition", 'attachment; filename="studylion-sessions.ics"')
-  res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate")
-  res.status(200).send(body)
 }
