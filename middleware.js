@@ -40,8 +40,12 @@ export async function middleware(req) {
     if (!session) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
   }
 
-  const needsAuth = pathname.startsWith("/api/dashboard/") ||
+  // --- AI-MODIFIED (2026-04-05) ---
+  // Purpose: Whitelist the iCal feed endpoint — it uses its own HMAC token auth
+  const isIcalFeed = pathname === "/api/dashboard/scheduled-sessions/ical"
+  const needsAuth = (pathname.startsWith("/api/dashboard/") && !isIcalFeed) ||
     (pathname.startsWith("/api/pet/") && !isPublicPetRoute(pathname))
+  // --- END AI-MODIFIED ---
 
   if (needsAuth) {
     const token = await getToken({
