@@ -85,6 +85,35 @@ export interface DiscordGuild {
 // --- END AI-MODIFIED ---
 
 let guildCache = new Map<string, { guilds: DiscordGuild[]; expiresAt: number }>()
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: In-flight promise map prevents concurrent getUserGuilds calls for the
+// same user from each hitting Discord (thundering herd on Vercel serverless)
+const guildInflight = new Map<string, Promise<DiscordGuild[]>>()
+
+async function _fetchGuildsWithRetry(accessToken: string, userId: string): Promise<DiscordGuild[]> {
+  const url = "https://discord.com/api/v10/users/@me/guilds?with_counts=true"
+  const headers = { Authorization: `Bearer ${accessToken}` }
+  const maxRetries = 3
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(url, { headers })
+    if (res.status === 429) {
+      const retryAfter = parseFloat(res.headers.get("retry-after") || String(2 ** attempt))
+      await new Promise((r) => setTimeout(r, retryAfter * 1000))
+      continue
+    }
+    if (!res.ok) {
+      const err: any = new Error(`Discord API returned ${res.status}`)
+      err.discordStatus = res.status
+      throw err
+    }
+    const guilds = (await res.json()) as DiscordGuild[]
+    guildCache.set(userId, { guilds, expiresAt: Date.now() + 300000 })
+    return guilds
+  }
+  const err: any = new Error("Discord API returned 429")
+  err.discordStatus = 429
+  throw err
+}
 
 export async function getUserGuilds(accessToken: string, userId: string): Promise<DiscordGuild[]> {
 // --- END AI-MODIFIED ---
@@ -93,50 +122,39 @@ export async function getUserGuilds(accessToken: string, userId: string): Promis
     return cached.guilds
   }
 
-  // --- AI-REPLACED (2026-03-21) ---
-  // Reason: Returning [] on Discord errors made API failures indistinguishable from
-  //         "user has no guilds", causing false "Access Denied" on transient errors.
-  // What the new code does better: Throws on Discord API errors so callers can
-  //         distinguish "couldn't check" from "user lacks permission". Cache extended
-  //         from 60s to 5min to reduce Discord API calls.
+  // --- AI-REPLACED (2026-04-05) ---
+  // Reason: Single-retry 429 handling failed under parallel dashboard API calls on
+  //         Vercel serverless, causing 500s visible to real users.
+  // What the new code does better: Deduplicates concurrent in-flight requests for
+  //         the same user and retries up to 3 times with Retry-After / exponential backoff.
   // --- Original code (commented out for rollback) ---
-  // try {
-  //   let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+  // let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
+  //   headers: { Authorization: `Bearer ${accessToken}` },
+  // })
+  // if (res.status === 429) {
+  //   const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+  //   await new Promise((r) => setTimeout(r, retryAfter * 1000))
+  //   res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
   //     headers: { Authorization: `Bearer ${accessToken}` },
   //   })
-  //   if (res.status === 429) {
-  //     const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
-  //     await new Promise((r) => setTimeout(r, retryAfter * 1000))
-  //     res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
-  //       headers: { Authorization: `Bearer ${accessToken}` },
-  //     })
-  //   }
-  //   if (!res.ok) return []
-  //   const guilds = (await res.json()) as DiscordGuild[]
-  //   guildCache.set(userId, { guilds, expiresAt: Date.now() + 60000 })
-  //   return guilds
-  // } catch {
-  //   return []
   // }
+  // if (!res.ok) {
+  //   const err: any = new Error(`Discord API returned ${res.status}`)
+  //   err.discordStatus = res.status
+  //   throw err
+  // }
+  // const guilds = (await res.json()) as DiscordGuild[]
+  // guildCache.set(userId, { guilds, expiresAt: Date.now() + 300000 })
+  // return guilds
   // --- End original code ---
-  let res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
-    headers: { Authorization: `Bearer ${accessToken}` },
+  const existing = guildInflight.get(userId)
+  if (existing) return existing
+
+  const promise = _fetchGuildsWithRetry(accessToken, userId).finally(() => {
+    guildInflight.delete(userId)
   })
-  if (res.status === 429) {
-    const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
-    await new Promise((r) => setTimeout(r, retryAfter * 1000))
-    res = await fetch("https://discord.com/api/v10/users/@me/guilds?with_counts=true", {
-      headers: { Authorization: `Bearer ${accessToken}` },
-    })
-  }
-  if (!res.ok) {
-    const err: any = new Error(`Discord API returned ${res.status}`)
-    err.discordStatus = res.status
-    throw err
-  }
-  const guilds = (await res.json()) as DiscordGuild[]
-  guildCache.set(userId, { guilds, expiresAt: Date.now() + 300000 })
-  return guilds
+  guildInflight.set(userId, promise)
+  return promise
   // --- END AI-REPLACED ---
 }
 
