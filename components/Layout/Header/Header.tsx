@@ -28,6 +28,7 @@ import {
   GraduationCap,
   // --- END AI-MODIFIED ---
   Sparkles,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -62,14 +63,33 @@ const SUPPORT_URL = "https://discord.gg/the-study-lions-780195610154237993";
 //   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 // ];
 // --- End original code ---
-const NAV_LINKS = [
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: Restructured nav — "Guides" dropdown (How to Use + Articles), removed Skins, added Updates
+type NavLink = {
+  label: string;
+  href: string;
+  icon: React.ElementType;
+  matchExact?: boolean;
+  external?: boolean;
+  children?: { label: string; href: string; icon: React.ElementType; external?: boolean }[];
+};
+
+const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
   { label: "Features", href: "/features", icon: Sparkles },
-  { label: "Guides", href: "/guides", icon: BookOpen },
-  { label: "How to Use", href: "/tutorials", icon: GraduationCap },
-  { label: "Skins", href: "/skins", icon: Palette },
+  {
+    label: "Guides",
+    href: "/guides",
+    icon: BookOpen,
+    children: [
+      { label: "How to Use", href: "/tutorials", icon: GraduationCap },
+      { label: "Articles", href: "/guides", icon: BookOpen },
+    ],
+  },
+  { label: "Updates", href: "/timeline", icon: Sparkles },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
@@ -120,10 +140,41 @@ export default function Header() {
 
           {/* Desktop navigation */}
           <nav className="hidden lg:flex items-center gap-1">
-            {/* --- AI-MODIFIED (2026-03-15) --- */}
-            {/* Purpose: handle external nav links (Support -> Discord) */}
+            {/* --- AI-MODIFIED (2026-04-05) --- */}
+            {/* Purpose: Support dropdown nav items (Guides -> How to Use / Articles) */}
             {NAV_LINKS.map((link) =>
-              link.external ? (
+              link.children ? (
+                <DropdownMenu key={link.label}>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={cn(
+                        "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1 outline-none",
+                        isActive("/guides") || isActive("/tutorials")
+                          ? "text-foreground bg-accent"
+                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      )}
+                    >
+                      {link.label}
+                      <ChevronDown className="h-3 w-3 opacity-60" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-44">
+                    {link.children.map((child) => {
+                      const ChildIcon = child.icon;
+                      return (
+                        <DropdownMenuItem
+                          key={child.href}
+                          onSelect={() => router.push(child.href)}
+                          className="cursor-pointer gap-2.5"
+                        >
+                          <ChildIcon className="h-4 w-4 text-muted-foreground" />
+                          {child.label}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : link.external ? (
                 <a
                   key={link.href}
                   href={link.href}
@@ -312,10 +363,38 @@ export default function Header() {
                     <p className="px-3 mb-1 mt-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                       Navigate
                     </p>
-                    {/* --- AI-MODIFIED (2026-03-15) --- */}
-                    {/* Purpose: handle external nav links in mobile menu */}
+                    {/* --- AI-MODIFIED (2026-04-05) --- */}
+                    {/* Purpose: Handle dropdown nav items in mobile menu (render children inline) */}
                     {NAV_LINKS.map((link) => {
                       const Icon = link.icon;
+                      if (link.children) {
+                        return (
+                          <React.Fragment key={link.label}>
+                            <p className="px-3 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                              {link.label}
+                            </p>
+                            {link.children.map((child) => {
+                              const ChildIcon = child.icon;
+                              return (
+                                <Link key={child.href} href={child.href}>
+                                  <a
+                                    className={cn(
+                                      "flex items-center gap-3 px-3 py-3 pl-5 rounded-md text-sm font-medium transition-colors",
+                                      isActive(child.href)
+                                        ? "text-foreground bg-accent"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                                    )}
+                                    onClick={() => setMobileOpen(false)}
+                                  >
+                                    <ChildIcon className="h-4 w-4 opacity-70" />
+                                    {child.label}
+                                  </a>
+                                </Link>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      }
                       return link.external ? (
                         <a
                           key={link.href}

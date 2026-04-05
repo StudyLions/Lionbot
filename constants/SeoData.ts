@@ -74,6 +74,22 @@ export const GuidesSEO = {
 };
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: SEO data for the public timeline/changelog page
+export const TimelineSEO = {
+  title: "What's New — LionBot Updates",
+  description:
+    "See everything we've been working on: new features, improvements, bug fixes, and more. We're always building and improving LionBot for you.",
+  canonical: `${SITE_URL}/timeline`,
+  openGraph: {
+    title: "What's New in LionBot — Updates & Changelog",
+    description:
+      "New features, improvements, and bug fixes. See what's changed in LionBot.",
+    url: `${SITE_URL}/timeline`,
+  },
+};
+// --- END AI-MODIFIED ---
+
 export const SkinsSEO = {
   title: "Skin Collection",
   description:

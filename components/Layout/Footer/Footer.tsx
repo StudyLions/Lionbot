@@ -29,13 +29,17 @@ const productLinks = [
 
 // --- AI-MODIFIED (2026-03-19) ---
 // Purpose: Added Stats link to resources
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: Added Updates link to footer resources
 const resourceLinks = [
   { label: "Tutorials", href: "/tutorials" },
+  { label: "Updates", href: "/timeline" },
   { label: "Stats for Nerds", href: "/stats" },
   { label: "Support", href: DISCORD_INVITE, external: true },
   { label: "Source Code", href: GITHUB_URL, external: true },
   { label: "Contact", href: "mailto:contact@arihoresh.com" },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 

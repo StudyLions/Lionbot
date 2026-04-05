@@ -17,6 +17,7 @@ const ROUTE_TO_SLUG: Record<string, string> = {
   "/stats": "stats",
   "/privacy-policy": "privacy-policy",
   "/terms-and-conditions": "terms",
+  "/timeline": "features",
   "/tutorials": "tutorials",
   "/tutorials/[slug]": "tutorials",
   "/coming-soon": "coming-soon",
