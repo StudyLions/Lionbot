@@ -22,6 +22,15 @@ import {
   Calendar,
   AlertTriangle,
   UserCheck,
+  Volume2,
+  Users,
+  DoorOpen,
+  Timer,
+  Check,
+  Columns3,
+  BarChart3,
+  Settings,
+  Monitor,
 } from "lucide-react"
 
 function useInView(threshold = 0.3) {
@@ -762,6 +771,557 @@ function PremiumDemo() {
   )
 }
 
+// --- AI-MODIFIED (2026-04-05) ---
+// Purpose: Add 5 new demo components for features page overhaul
+
+// ---------------------------------------------------------------------------
+// 8. Private Rooms Demo
+// ---------------------------------------------------------------------------
+const ROOM_MEMBERS = [
+  { name: "Alex", avatar: "A", color: "bg-blue-500" },
+  { name: "Sarah", avatar: "S", color: "bg-emerald-500" },
+  { name: "Mike", avatar: "M", color: "bg-violet-500" },
+]
+
+function PrivateRoomsDemo() {
+  const { ref, inView } = useInView(0.2)
+  const deposit = useCountUp(1240, inView, 1500)
+
+  return (
+    <motion.div
+      ref={ref}
+      className="w-full h-full flex flex-col p-4"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <motion.div
+        variants={fadeUp}
+        className="p-3 rounded-xl border border-teal-500/20 bg-teal-500/5 mb-3"
+      >
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-cyan-600 flex items-center justify-center">
+            <DoorOpen className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-teal-400">Study Room #3</span>
+              <span className="px-1.5 py-0.5 rounded-md bg-teal-500/15 text-[9px] font-semibold text-teal-400">
+                Active
+              </span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">Owned by Alex</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex -space-x-1.5">
+            {ROOM_MEMBERS.map((m, i) => (
+              <div
+                key={i}
+                className={`w-5 h-5 rounded-full ${m.color} flex items-center justify-center text-[8px] font-bold text-white border-2 border-card`}
+              >
+                {m.avatar}
+              </div>
+            ))}
+          </div>
+          <span className="text-[9px] text-muted-foreground">3 members</span>
+          <span className="ml-auto text-[9px] text-teal-400 font-mono">50 coins/hr</span>
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04] mb-3"
+      >
+        <div className="flex items-center justify-between mb-1.5">
+          <div className="flex items-center gap-1.5">
+            <Coins className="h-3 w-3 text-teal-400" />
+            <span className="text-[10px] text-muted-foreground">Deposit Balance</span>
+          </div>
+          <span className="text-xs font-bold text-teal-400 font-mono tabular-nums">
+            {deposit.toLocaleString()}
+          </span>
+        </div>
+        <div className="h-1.5 rounded-full bg-teal-500/10 overflow-hidden">
+          <motion.div
+            className="h-full bg-gradient-to-r from-teal-400 to-cyan-400 rounded-full"
+            initial={{ width: 0 }}
+            animate={inView ? { width: "65%" } : {}}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.4 }}
+          />
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-[8px] text-muted-foreground">~24h remaining</span>
+          <span className="text-[8px] text-teal-400/70">Deposit more</span>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp} className="flex gap-2 mb-3">
+        {[
+          { icon: <Users className="h-3 w-3" />, label: "Invite" },
+          { icon: <Timer className="h-3 w-3" />, label: "Pomodoro" },
+          { icon: <Volume2 className="h-3 w-3" />, label: "Sounds" },
+        ].map((btn) => (
+          <div
+            key={btn.label}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-teal-500/8 border border-teal-500/15 text-[10px] font-medium text-teal-400 cursor-default"
+          >
+            {btn.icon}
+            {btn.label}
+          </div>
+        ))}
+      </motion.div>
+
+      <motion.div variants={fadeUp} className="flex-1">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Volume2 className="h-3 w-3 text-teal-400" />
+          <span className="text-[10px] font-semibold text-foreground">Ambient Sound</span>
+        </div>
+        <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-teal-500/5 border border-teal-500/15">
+          <span className="text-sm">{"\u{1F327}\uFE0F"}</span>
+          <span className="text-[10px] text-foreground font-medium flex-1">Rain</span>
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-teal-400" />
+          </span>
+          <span className="text-[9px] text-teal-400">Playing</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 9. Tasks & Boards Demo
+// ---------------------------------------------------------------------------
+const TASK_ITEMS = [
+  { text: "Review chapter 5 notes", done: true },
+  { text: "Practice calculus problems", done: true },
+  { text: "Write lab report intro", done: false },
+  { text: "Read 20 pages of textbook", done: false },
+]
+
+function TasksBoardsDemo() {
+  const { ref, inView } = useInView(0.2)
+  const [checked, setChecked] = useState<boolean[]>(TASK_ITEMS.map(() => false))
+
+  useEffect(() => {
+    if (!inView) return
+    const timeouts = TASK_ITEMS.map((task, i) => {
+      if (!task.done) return undefined
+      return setTimeout(() => {
+        setChecked((prev) => {
+          const next = [...prev]
+          next[i] = true
+          return next
+        })
+      }, 600 + i * 400)
+    })
+    return () => timeouts.forEach((t) => t && clearTimeout(t))
+  }, [inView])
+
+  return (
+    <motion.div
+      ref={ref}
+      className="w-full h-full flex flex-col p-4"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+        <CheckCircle2 className="h-3.5 w-3.5 text-sky-400" />
+        <span className="text-xs font-semibold text-foreground">My Tasks</span>
+        <span className="ml-auto text-[9px] text-sky-400 font-mono font-semibold">
+          {checked.filter(Boolean).length}/{TASK_ITEMS.length}
+        </span>
+      </motion.div>
+
+      <div className="space-y-1.5 mb-3">
+        {TASK_ITEMS.map((task, i) => (
+          <motion.div
+            key={i}
+            variants={fadeUp}
+            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] border border-white/[0.04]"
+          >
+            <div
+              className={`w-4 h-4 rounded border-2 flex items-center justify-center transition-all duration-300 ${
+                checked[i]
+                  ? "bg-sky-400 border-sky-500"
+                  : "border-white/15 bg-transparent"
+              }`}
+            >
+              {checked[i] && <Check className="h-2.5 w-2.5 text-white" />}
+            </div>
+            <span
+              className={`text-[10px] flex-1 transition-all duration-300 ${
+                checked[i] ? "line-through text-muted-foreground/50" : "text-foreground/80"
+              }`}
+            >
+              {task.text}
+            </span>
+            {checked[i] && (
+              <span className="text-[8px] text-sky-400 font-mono">+5</span>
+            )}
+          </motion.div>
+        ))}
+      </div>
+
+      <motion.div variants={fadeUp} className="border-t border-white/[0.05] pt-2.5 flex-1">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Columns3 className="h-3 w-3 text-sky-400" />
+          <span className="text-[10px] font-semibold text-foreground">Shared Board</span>
+        </div>
+        <div className="grid grid-cols-3 gap-1.5">
+          {[
+            { label: "To Do", count: 3, color: "text-muted-foreground" },
+            { label: "Doing", count: 2, color: "text-sky-400" },
+            { label: "Done", count: 5, color: "text-emerald-400" },
+          ].map((col) => (
+            <div
+              key={col.label}
+              className="rounded-lg bg-white/[0.02] border border-white/[0.05] p-1.5"
+            >
+              <div className="flex items-center justify-between mb-1">
+                <span className={`text-[8px] font-semibold ${col.color}`}>{col.label}</span>
+                <span className="text-[8px] text-muted-foreground/50">{col.count}</span>
+              </div>
+              {Array.from({ length: Math.min(col.count, 2) }).map((_, j) => (
+                <div
+                  key={j}
+                  className="h-3 rounded bg-white/[0.04] mb-1 last:mb-0"
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 10. Scheduled Sessions Demo
+// ---------------------------------------------------------------------------
+const CAL_DAYS = Array.from({ length: 28 }, (_, i) => i + 1)
+const SESSION_DAYS = [3, 5, 8, 10, 12, 15, 17, 19, 22, 24, 26]
+
+function ScheduleCalendarDemo() {
+  const { ref, inView } = useInView(0.2)
+
+  return (
+    <motion.div
+      ref={ref}
+      className="w-full h-full flex flex-col p-4"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+        <Calendar className="h-3.5 w-3.5 text-indigo-400" />
+        <span className="text-xs font-semibold text-foreground">April 2026</span>
+        <span className="ml-auto text-[9px] text-indigo-400 font-medium">
+          {SESSION_DAYS.length} sessions
+        </span>
+      </motion.div>
+
+      <motion.div variants={fadeUp} className="mb-3">
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
+          {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
+            <div key={i} className="text-center text-[7px] text-muted-foreground/50 font-medium">
+              {d}
+            </div>
+          ))}
+        </div>
+        <div className="grid grid-cols-7 gap-0.5">
+          {CAL_DAYS.map((day) => {
+            const isSession = SESSION_DAYS.includes(day)
+            const isToday = day === 5
+            return (
+              <motion.div
+                key={day}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={inView ? { opacity: 1, scale: 1 } : {}}
+                transition={{ duration: 0.2, delay: 0.3 + day * 0.015 }}
+                className={`aspect-square rounded-md flex items-center justify-center text-[8px] font-mono transition-all ${
+                  isToday
+                    ? "bg-indigo-500 text-white font-bold ring-1 ring-indigo-400/50"
+                    : isSession
+                    ? "bg-indigo-500/15 text-indigo-400 font-semibold"
+                    : "text-muted-foreground/40"
+                }`}
+              >
+                {day}
+              </motion.div>
+            )
+          })}
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        className="p-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/5 mb-2"
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[10px] font-semibold text-foreground">Morning Study</span>
+          <span className="ml-auto px-1.5 py-0.5 rounded-md bg-indigo-500/15 text-[8px] font-semibold text-indigo-400">
+            Today
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-[9px] text-muted-foreground">9:00 AM &middot; #study-hall</span>
+          <div className="flex items-center gap-1">
+            <div className="flex -space-x-1">
+              {["bg-blue-500", "bg-emerald-500", "bg-amber-500", "bg-rose-500"].map((c, i) => (
+                <div key={i} className={`w-3.5 h-3.5 rounded-full ${c} border border-card`} />
+              ))}
+            </div>
+            <span className="text-[8px] text-muted-foreground">+12</span>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04]"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-[10px] font-semibold text-foreground">Evening Review</span>
+          <span className="ml-auto text-[9px] text-muted-foreground">7:00 PM</span>
+        </div>
+        <div className="flex items-center justify-between mt-1">
+          <span className="text-[9px] text-muted-foreground">Tomorrow &middot; #focus-room</span>
+          <span className="text-[8px] text-indigo-400">8 attending</span>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 11. Ambient Sounds Demo
+// ---------------------------------------------------------------------------
+const SOUND_TYPES = [
+  { emoji: "\u{1F327}\uFE0F", label: "Rain", active: true },
+  { emoji: "\u{1F525}", label: "Campfire", active: false },
+  { emoji: "\u{1F30A}", label: "Ocean", active: false },
+  { emoji: "\u{1F333}", label: "Forest", active: false },
+  { emoji: "\u2601\uFE0F", label: "White", active: false },
+]
+
+function AmbientSoundsDemo() {
+  const { ref, inView } = useInView(0.2)
+  const [bars, setBars] = useState<number[]>(Array(12).fill(0.3))
+
+  useEffect(() => {
+    if (!inView) return
+    const id = setInterval(() => {
+      setBars((prev) =>
+        prev.map(() => 0.15 + Math.random() * 0.85)
+      )
+    }, 200)
+    return () => clearInterval(id)
+  }, [inView])
+
+  return (
+    <motion.div
+      ref={ref}
+      className="w-full h-full flex flex-col p-4"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <motion.div variants={fadeUp} className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-1.5 text-cyan-400">
+          <Volume2 className="h-3.5 w-3.5" />
+          <span className="text-xs font-semibold">Now Playing</span>
+        </div>
+        <span className="ml-auto flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+          </span>
+          <span className="text-[10px] text-cyan-400 font-medium">Live</span>
+        </span>
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        className="flex-1 flex items-center justify-center px-2 mb-3"
+      >
+        <div className="flex items-end gap-1 h-16 w-full">
+          {bars.map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-gradient-to-t from-cyan-500/40 to-cyan-400/80 rounded-t transition-all duration-200"
+              style={{ height: `${h * 100}%` }}
+            />
+          ))}
+        </div>
+      </motion.div>
+
+      <motion.div
+        variants={fadeUp}
+        className="p-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/5 mb-3"
+      >
+        <div className="flex items-center gap-2.5">
+          <span className="text-lg">{"\u{1F327}\uFE0F"}</span>
+          <div className="flex-1">
+            <span className="text-xs font-bold text-foreground">Rain</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <div className="flex-1 h-1 rounded-full bg-cyan-500/10 overflow-hidden">
+                <motion.div
+                  className="h-full bg-cyan-400/60 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={inView ? { width: "75%" } : {}}
+                  transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 }}
+                />
+              </div>
+              <span className="text-[8px] text-muted-foreground font-mono">75%</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp}>
+        <div className="flex flex-wrap gap-1.5">
+          {SOUND_TYPES.map((s) => (
+            <div
+              key={s.label}
+              className={`flex items-center gap-1 px-2 py-1.5 rounded-lg text-[9px] font-medium cursor-default transition-all ${
+                s.active
+                  ? "bg-cyan-500/15 border border-cyan-500/30 text-cyan-300"
+                  : "bg-white/[0.03] border border-white/[0.06] text-muted-foreground"
+              }`}
+            >
+              <span className="text-xs">{s.emoji}</span>
+              {s.label}
+            </div>
+          ))}
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// 12. Dashboard Showcase Demo
+// ---------------------------------------------------------------------------
+function DashboardShowcaseDemo() {
+  const { ref, inView } = useInView(0.2)
+
+  return (
+    <motion.div
+      ref={ref}
+      className="w-full h-full flex flex-col p-3"
+      variants={stagger}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.2 }}
+    >
+      <motion.div variants={fadeUp} className="flex items-center gap-1.5 mb-2">
+        <div className="flex gap-1">
+          <div className="w-2 h-2 rounded-full bg-red-400/60" />
+          <div className="w-2 h-2 rounded-full bg-amber-400/60" />
+          <div className="w-2 h-2 rounded-full bg-emerald-400/60" />
+        </div>
+        <div className="flex-1 h-4 rounded bg-white/[0.04] flex items-center px-2">
+          <span className="text-[7px] text-muted-foreground/50 font-mono">lionbot.org/dashboard</span>
+        </div>
+      </motion.div>
+
+      <motion.div variants={fadeUp} className="flex-1 flex gap-2 min-h-0">
+        <div className="w-16 shrink-0 rounded-lg bg-white/[0.03] border border-white/[0.05] p-1.5 flex flex-col gap-1">
+          {[
+            { Icon: BarChart3, label: "Stats", active: true },
+            { Icon: Users, label: "Members", active: false },
+            { Icon: Settings, label: "Config", active: false },
+            { Icon: Shield, label: "Mod", active: false },
+            { Icon: Coins, label: "Economy", active: false },
+          ].map((item) => (
+            <div
+              key={item.label}
+              className={`flex items-center gap-1 px-1 py-1 rounded text-[7px] ${
+                item.active
+                  ? "bg-primary/15 text-primary font-semibold"
+                  : "text-muted-foreground/50"
+              }`}
+            >
+              <item.Icon className="h-2.5 w-2.5 flex-shrink-0" />
+              <span className="truncate">{item.label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 flex flex-col gap-2 min-w-0">
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { label: "Members", value: "1,247", color: "text-blue-400" },
+              { label: "Active", value: "89", color: "text-emerald-400" },
+              { label: "Coins", value: "42.8k", color: "text-amber-400" },
+            ].map((stat) => (
+              <motion.div
+                key={stat.label}
+                variants={fadeUp}
+                className="rounded-lg bg-white/[0.03] border border-white/[0.05] p-1.5 text-center"
+              >
+                <span className={`text-xs font-bold font-mono ${stat.color}`}>{stat.value}</span>
+                <span className="block text-[7px] text-muted-foreground/50">{stat.label}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            variants={fadeUp}
+            className="flex-1 rounded-lg bg-white/[0.03] border border-white/[0.05] p-2"
+          >
+            <div className="flex items-center gap-1 mb-1.5">
+              <BarChart3 className="h-2.5 w-2.5 text-primary" />
+              <span className="text-[8px] font-semibold text-foreground">Activity</span>
+            </div>
+            <div className="flex items-end gap-0.5 h-12">
+              {[35, 52, 48, 65, 72, 58, 80, 74, 90, 68, 55, 78].map((h, i) => (
+                <motion.div
+                  key={i}
+                  className="flex-1 bg-gradient-to-t from-primary/30 to-primary/60 rounded-t"
+                  initial={{ height: 0 }}
+                  animate={inView ? { height: `${h}%` } : {}}
+                  transition={{ duration: 0.5, delay: 0.4 + i * 0.05 }}
+                />
+              ))}
+            </div>
+          </motion.div>
+
+          <motion.div
+            variants={fadeUp}
+            className="rounded-lg bg-white/[0.03] border border-white/[0.05] p-2"
+          >
+            <div className="flex items-center gap-1 mb-1">
+              <Monitor className="h-2.5 w-2.5 text-primary" />
+              <span className="text-[8px] font-semibold text-foreground">Quick Actions</span>
+            </div>
+            <div className="flex gap-1">
+              {["Ranks", "Shop", "Roles"].map((a) => (
+                <div
+                  key={a}
+                  className="flex-1 py-1 rounded bg-primary/10 text-[7px] text-primary font-medium text-center cursor-default"
+                >
+                  {a}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+    </motion.div>
+  )
+}
+
+// --- END AI-MODIFIED ---
+
 // ---------------------------------------------------------------------------
 // Mapping: feature ID -> demo component
 // ---------------------------------------------------------------------------
@@ -773,4 +1333,9 @@ export const FEATURE_DEMOS: Record<string, React.ComponentType> = {
   liongotchi: LionGotchiDemo,
   management: ServerManagementDemo,
   premium: PremiumDemo,
+  rooms: PrivateRoomsDemo,
+  tasks: TasksBoardsDemo,
+  schedule: ScheduleCalendarDemo,
+  sounds: AmbientSoundsDemo,
+  dashboard: DashboardShowcaseDemo,
 }

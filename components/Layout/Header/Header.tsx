@@ -213,7 +213,7 @@ export default function Header() {
                 )}
               >
                 <Diamond className="h-3.5 w-3.5" />
-                Donate
+                Premium
               </a>
             </Link>
 
@@ -437,7 +437,7 @@ export default function Header() {
                         onClick={() => setMobileOpen(false)}
                       >
                         <Diamond className="h-4 w-4" />
-                        Donate
+                        Premium
                       </a>
                     </Link>
 
