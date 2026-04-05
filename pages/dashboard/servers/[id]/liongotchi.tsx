@@ -143,7 +143,7 @@ export default function LionGotchiSettings() {
 
       setOriginal({ ...config })
       mutate()
-      toast.success(`Saved ${Object.keys(changes).length} LionGotchi setting${Object.keys(changes).length !== 1 ? "s" : ""} successfully`)
+      toast.success(`Saved ${Object.keys(changes).length} LionGotchi setting${Object.keys(changes).length !== 1 ? "s" : ""} — allow 1-2 min for changes to take effect`)
     } catch {
       toast.error("Failed to save. Check your permissions.")
     }

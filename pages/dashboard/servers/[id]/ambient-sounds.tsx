@@ -384,7 +384,7 @@ export default function AmbientSoundsPage() {
     try {
       await dashboardMutate("PATCH", `/api/dashboard/servers/${guildId}/ambient-sounds-rental-config`, patch)
       invalidate(rentalUrl!)
-      toast.success("Rental settings saved")
+      toast.success("Rental settings saved — allow 1-2 min for changes to take effect")
     } catch (err: any) {
       toast.error(err?.message || "Failed to save rental settings")
     }

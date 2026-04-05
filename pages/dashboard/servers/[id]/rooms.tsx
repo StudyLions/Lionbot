@@ -618,7 +618,7 @@ export default function AdminRoomsPage() {
         body: JSON.stringify(configDraft),
       })
       if (!res.ok) { const d = await res.json(); throw new Error(d.error || "Failed") }
-      toast.success("Room settings saved")
+      toast.success("Room settings saved — allow 1-2 min for changes to take effect")
       setConfigDraft({}); mutateConfig()
     } catch (err: any) { toast.error(err.message) }
     finally { setSavingConfig(false) }

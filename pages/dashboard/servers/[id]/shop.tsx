@@ -148,7 +148,7 @@ export default function ShopPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ itemId, price }),
       })
-      if (res.ok) { toast.success("Price updated"); setEditingId(null); mutate() }
+      if (res.ok) { toast.success("Price updated — allow 1-2 min to take effect"); setEditingId(null); mutate() }
     } catch { toast.error("Failed to update price") }
     setSaving(false)
   }

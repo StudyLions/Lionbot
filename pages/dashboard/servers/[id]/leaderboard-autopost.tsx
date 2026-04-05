@@ -580,7 +580,7 @@ function ConfigEditor({
         toast.success("Config created!")
       } else {
         await dashboardMutate("PATCH", apiBase, { configid: form.configid, ...form })
-        toast.success("Config saved!")
+        toast.success("Config saved — allow 1-2 min to take effect")
       }
       setDirty(false)
       onSaved()

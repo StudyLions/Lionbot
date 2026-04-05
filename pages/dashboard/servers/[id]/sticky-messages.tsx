@@ -332,7 +332,7 @@ export default function StickyMessagesPage() {
           stickyid: editing.stickyid,
           ...editing.form,
         })
-        toast.success("Sticky message updated")
+        toast.success("Sticky message updated — allow 1-2 min to take effect")
       }
       setEditing(null)
       invalidate(apiUrl)

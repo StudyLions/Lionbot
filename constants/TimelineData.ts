@@ -26,6 +26,14 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 5, 2026 ──────────────────────────────────────────
   {
     date: "2026-04-05",
+    title: "Features Page Overhaul — 12 Sections, Live Stats & FAQ",
+    description:
+      "We completely rebuilt the features page with 5 new sections (Private Rooms, Tasks & Boards, Scheduled Sessions, Ambient Sounds, Web Dashboard), live stats counters, sticky category navigation, a 'More Features' grid, and a FAQ section. The page now showcases 20+ features instead of just 7.",
+    category: "website",
+    area: "website",
+  },
+  {
+    date: "2026-04-05",
     title: "Scheduled Sessions: Calendar, iCal Sync & Server View",
     description:
       "Your study sessions now appear on a beautiful monthly calendar. You can sync them to Google Calendar or Apple Calendar with one click. Server admins also get a calendar tab showing attendance across all sessions.",

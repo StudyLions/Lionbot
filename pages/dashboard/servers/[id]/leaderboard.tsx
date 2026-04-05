@@ -93,7 +93,7 @@ export default function LeaderboardConfigPage() {
       if (!res.ok) throw new Error("Save failed")
       setOriginal({ ...data })
       mutate()
-      toast.success("Leaderboard settings saved")
+      toast.success("Leaderboard settings saved — allow 1-2 min for changes to take effect")
     } catch {
       toast.error("Failed to save. Check your permissions.")
     }
