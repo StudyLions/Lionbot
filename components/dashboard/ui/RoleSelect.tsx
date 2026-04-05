@@ -73,7 +73,7 @@ export default function RoleSelect({
       })
       .then((data) => {
         setRoles(data)
-        roleCache.set(guildId, { roles: data, expiresAt: Date.now() + 300000 })
+        roleCache.set(guildId, { roles: data, expiresAt: Date.now() + 30000 })
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
