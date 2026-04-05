@@ -28,7 +28,10 @@ export default apiHandler({
     if (!auth) return
 
     const page = Math.max(1, parseInt(req.query.page as string) || 1)
-    const pageSize = Math.min(50, Math.max(1, parseInt(req.query.pageSize as string) || 20))
+    // --- AI-MODIFIED (2026-04-05) ---
+    // Purpose: Allow larger page sizes for calendar view (up to 500)
+    const pageSize = Math.min(500, Math.max(1, parseInt(req.query.pageSize as string) || 20))
+    // --- END AI-MODIFIED ---
     const offset = (page - 1) * pageSize
 
     // --- AI-MODIFIED (2026-04-04) ---

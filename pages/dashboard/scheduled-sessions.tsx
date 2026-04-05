@@ -437,7 +437,9 @@ export default function ScheduledSessionsPage() {
                             ? "Live now"
                             : diffH > 0
                               ? `in ${diffH}h ${diffM}m`
-                              : `in ${diffM}m`
+                              : diffM > 0
+                                ? `in ${diffM}m`
+                                : "Starting now"
 
                           return (
                             <div key={`${s.guildId}-${s.slotid}`} className="bg-card rounded-xl border border-border p-3 flex items-center gap-3">

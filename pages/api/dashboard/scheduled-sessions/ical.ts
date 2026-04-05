@@ -93,6 +93,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     `X-WR-TIMEZONE:${userConfig?.timezone || "UTC"}`,
   ]
 
+  // --- AI-MODIFIED (2026-04-05) ---
+  // Purpose: Add DTSTAMP (required by RFC 5545)
+  const nowStamp = formatIcalDate(new Date())
   for (const row of rows) {
     const start = new Date(row.slotid * 1000)
     const end = new Date((row.slotid + 3600) * 1000)
@@ -102,6 +105,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     ical.push(
       "BEGIN:VEVENT",
       `UID:${uid}`,
+      `DTSTAMP:${nowStamp}`,
       `DTSTART:${formatIcalDate(start)}`,
       `DTEND:${formatIcalDate(end)}`,
       `SUMMARY:${escapeIcal(`Study Session — ${guildName}`)}`,
@@ -115,6 +119,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       "END:VEVENT"
     )
   }
+  // --- END AI-MODIFIED ---
 
   ical.push("END:VCALENDAR")
 

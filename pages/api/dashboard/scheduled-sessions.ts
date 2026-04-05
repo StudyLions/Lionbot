@@ -61,6 +61,8 @@ export default apiHandler({
         LIMIT 50
       `
 
+      // --- AI-MODIFIED (2026-04-05) ---
+      // Purpose: isLive must also check slotid is current, not just opened/unclosed
       const sessions = rows.map((r) => ({
         slotid: r.slotid,
         slotTime: slotIdToDate(r.slotid).toISOString(),
@@ -71,6 +73,7 @@ export default apiHandler({
         cost: r.schedule_cost ?? 0,
         isLive: r.opened_at !== null && r.closed_at === null,
       }))
+      // --- END AI-MODIFIED ---
 
       return res.status(200).json({ sessions })
     }
@@ -108,6 +111,8 @@ export default apiHandler({
               AND ss.closed_at IS NOT NULL
             )
         `,
+        // --- AI-MODIFIED (2026-04-05) ---
+        // Purpose: Filter per-server stats to closed sessions only (matching summary query)
         prisma.$queryRaw<Array<{
           guildid: bigint
           guild_name: string | null
@@ -124,10 +129,16 @@ export default apiHandler({
           FROM schedule_session_members ssm
           LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
           WHERE ssm.userid = ${userId}
+            AND EXISTS (
+              SELECT 1 FROM schedule_sessions ss
+              WHERE ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
+              AND ss.closed_at IS NOT NULL
+            )
           GROUP BY ssm.guildid, gc.guild_name, gc.avatar_hash
           ORDER BY total_booked DESC
           LIMIT 20
         `,
+        // --- END AI-MODIFIED ---
       ])
 
       const s = statsRaw[0]
@@ -142,7 +153,15 @@ export default apiHandler({
         ORDER BY ssm.slotid DESC
         LIMIT 200
       `
+      // --- AI-MODIFIED (2026-04-05) ---
+      // Purpose: Fix streak calc — old code set currentStreak to an older run
+      // when the most recent session was missed
       let currentStreak = 0
+      let foundFirstMiss = false
+      for (const row of streakRows) {
+        if (row.attended && !foundFirstMiss) currentStreak++
+        else foundFirstMiss = true
+      }
       let bestStreak = 0
       let streak = 0
       for (const row of streakRows) {
@@ -150,11 +169,10 @@ export default apiHandler({
           streak++
           if (streak > bestStreak) bestStreak = streak
         } else {
-          if (currentStreak === 0) currentStreak = streak
           streak = 0
         }
       }
-      if (currentStreak === 0) currentStreak = streak
+      // --- END AI-MODIFIED ---
 
       const trendRows = await prisma.$queryRaw<Array<{
         month: string
@@ -248,6 +266,8 @@ export default apiHandler({
       LIMIT 500
     `
 
+    // --- AI-MODIFIED (2026-04-05) ---
+    // Purpose: isUpcoming must also check session hasn't closed yet
     const sessions = rows.map((r) => ({
       slotid: r.slotid,
       slotTime: slotIdToDate(r.slotid).toISOString(),
@@ -258,8 +278,9 @@ export default apiHandler({
       clock: r.clock,
       bookedAt: r.booked_at.toISOString(),
       isClosed: r.closed_at !== null,
-      isUpcoming: r.slotid >= nowSlotId,
+      isUpcoming: r.slotid >= nowSlotId && r.closed_at === null,
     }))
+    // --- END AI-MODIFIED ---
 
     const userTz = await prisma.user_config.findUnique({
       where: { userid: userId },

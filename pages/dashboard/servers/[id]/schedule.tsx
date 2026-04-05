@@ -274,7 +274,7 @@ export default function SchedulePage() {
 
   const { data: calHistory, isLoading: calLoading } = useDashboard<SessionHistory>(
     id && session && tab === "calendar"
-      ? `/api/dashboard/servers/${id}/schedule-history?from=${calFrom.toISOString()}&to=${calTo.toISOString()}&pageSize=50`
+      ? `/api/dashboard/servers/${id}/schedule-history?from=${calFrom.toISOString()}&to=${calTo.toISOString()}&pageSize=500`
       : null
   )
   // --- END AI-MODIFIED ---
