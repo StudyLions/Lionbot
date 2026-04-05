@@ -75,7 +75,7 @@ function App({ Component, pageProps }) {
       {/* Purpose: Multi-theme support wrapping all pages */}
       <ThemeProvider
         attribute="data-theme"
-        defaultTheme="midnight"
+        defaultTheme="pink"
         themes={["midnight", "light", "ocean", "forest", "pink", "sunset"]}
         disableTransitionOnChange={false}
       >

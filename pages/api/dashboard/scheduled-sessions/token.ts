@@ -13,9 +13,14 @@ export default apiHandler({
     const auth = await requireAuth(req, res)
     if (!auth) return
 
+    // --- AI-MODIFIED (2026-04-05) ---
+    // Purpose: Always derive URL from the request host, not NEXTAUTH_URL,
+    // so the iCal link matches the domain the user is actually on (lionbot.org)
     const token = generateIcalToken(auth.discordId)
-    const baseUrl = process.env.NEXTAUTH_URL || `https://${req.headers.host}`
-    const icalUrl = `${baseUrl}/api/dashboard/scheduled-sessions/ical?userId=${auth.discordId}&token=${token}`
+    const proto = (req.headers["x-forwarded-proto"] as string) || "https"
+    const host = req.headers.host
+    const icalUrl = `${proto}://${host}/api/dashboard/scheduled-sessions/ical?userId=${auth.discordId}&token=${token}`
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ token, icalUrl })
   },
