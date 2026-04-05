@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       SELECT
         ssm.slotid,
         ssm.guildid,
-        gc.guild_name
+        gc.name as guild_name
       FROM schedule_session_members ssm
       LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
       WHERE ssm.userid = ${userIdBigInt}
