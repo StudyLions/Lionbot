@@ -52,7 +52,7 @@ export default apiHandler({
           ss.opened_at,
           ss.closed_at
         FROM schedule_session_members ssm
-        JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
+        LEFT JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
         LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
         LEFT JOIN schedule_guild_config sgc ON sgc.guildid = ssm.guildid
         WHERE ssm.userid = ${userId}
@@ -166,7 +166,7 @@ export default apiHandler({
           COUNT(*) as booked,
           COUNT(*) FILTER (WHERE ssm.attended) as attended
         FROM schedule_session_members ssm
-        JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
+        LEFT JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
         WHERE ssm.userid = ${userId}
           AND ssm.slotid >= ${nowSlotId - 86400 * 180}
         GROUP BY month
@@ -239,7 +239,7 @@ export default apiHandler({
         ss.opened_at,
         ss.closed_at
       FROM schedule_session_members ssm
-      JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
+      LEFT JOIN schedule_sessions ss ON ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
       LEFT JOIN guild_config gc ON gc.guildid = ssm.guildid
       WHERE ssm.userid = ${userId}
         AND ssm.slotid >= ${fromSlotId}
