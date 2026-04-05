@@ -330,7 +330,7 @@ export default function SchedulePage() {
       setConfig(updated)
       setOrigConfig({ ...updated })
       mutateConfig()
-      toast.success("Schedule settings saved")
+      toast.success("Schedule settings saved — allow 1-2 min for changes to take effect")
     } catch {
       toast.error("Failed to save settings")
     }

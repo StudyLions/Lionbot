@@ -109,7 +109,7 @@ export default function VideoChannelsPage() {
       if (!res.ok) throw new Error("Save failed")
       setOriginal({ ...data })
       mutate()
-      toast.success("Video channels settings saved")
+      toast.success("Video channels settings saved — allow 1-2 min for changes to take effect")
     } catch {
       toast.error("Failed to save. Check your permissions.")
     }

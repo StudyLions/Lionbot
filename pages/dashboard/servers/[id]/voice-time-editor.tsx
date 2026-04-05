@@ -86,7 +86,7 @@ export default function VoiceTimeEditorAdminPage() {
       if (resp.error) {
         toast.error(resp.error)
       } else {
-        toast.success("Settings saved")
+        toast.success("Settings saved — allow 1-2 min to take effect")
         mutate()
         setHasChanges(false)
       }

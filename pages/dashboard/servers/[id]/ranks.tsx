@@ -282,7 +282,7 @@ export default function RanksPage() {
         body: JSON.stringify({ [field]: value }),
       })
       if (res.ok) {
-        toast.success("Setting updated")
+        toast.success("Setting updated — allow 1-2 min for changes to take effect")
         mutate()
         mutateStats()
       } else toast.error("Failed to update")
@@ -315,7 +315,7 @@ export default function RanksPage() {
           message: editForm.message || null,
         }),
       })
-      if (res.ok) { toast.success("Rank updated"); setEditingRank(null); mutate(); mutateStats() }
+      if (res.ok) { toast.success("Rank updated — allow 1-2 min to take effect"); setEditingRank(null); mutate(); mutateStats() }
       else toast.error("Failed to update rank")
     } catch { toast.error("Error saving rank") }
     setSaving(false)

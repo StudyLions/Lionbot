@@ -366,7 +366,7 @@ export default function PomodoroPage() {
       if (res.ok) {
         const data = await res.json()
         setPremConfig(data.config)
-        toast.success('Premium settings saved!')
+        toast.success('Premium settings saved — allow 1-2 min to take effect')
       } else {
         const err = await res.json()
         toast.error(err.error || 'Failed to save')
@@ -402,7 +402,7 @@ export default function PomodoroPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pomodoro_channel: channelId }),
       })
-      if (res.ok) { toast.success("Default notification channel updated"); mutate() }
+      if (res.ok) { toast.success("Default notification channel updated — allow 1-2 min to take effect"); mutate() }
       else toast.error("Failed to update")
     } catch { toast.error("Failed to update") }
   }
@@ -417,7 +417,7 @@ export default function PomodoroPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_leave_summary: enabled }),
       })
-      if (res.ok) { toast.success(enabled ? "Session summaries enabled" : "Session summaries disabled"); mutate() }
+      if (res.ok) { toast.success(enabled ? "Session summaries enabled — allow 1-2 min to take effect" : "Session summaries disabled — allow 1-2 min to take effect"); mutate() }
       else toast.error("Failed to update")
     } catch { toast.error("Failed to update") }
   }
@@ -451,7 +451,7 @@ export default function PomodoroPage() {
       if (!res.ok) throw new Error("Save failed")
       setEditingTimers((prev) => { const next = { ...prev }; delete next[timer.timerid]; return next })
       mutate()
-      toast.success("Timer settings saved")
+      toast.success("Timer settings saved — allow 1-2 min to take effect")
     } catch { toast.error("Failed to save. Check your permissions.") }
     setSaving((prev) => ({ ...prev, [timer.timerid]: false }))
   }

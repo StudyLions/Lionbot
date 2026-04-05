@@ -629,7 +629,7 @@ export default function ServerSettings() {
         (key) => JSON.stringify(lists[key]) !== JSON.stringify(originalLists[key])
       ).length
       const changeCount = changeDiff.length + listChangeCount
-      toast.success(`Saved ${changeCount} setting${changeCount !== 1 ? "s" : ""} successfully`)
+      toast.success(`Saved ${changeCount} setting${changeCount !== 1 ? "s" : ""} — allow 1-2 min for changes to take effect`)
       // --- END AI-MODIFIED ---
     } catch {
       toast.error("Failed to save. Check your permissions.")
