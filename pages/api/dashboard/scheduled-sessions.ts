@@ -47,7 +47,7 @@ export default apiHandler({
           ssm.guildid,
           ssm.booked_at,
           gc.name as guild_name,
-          gc.avatar_hash as guild_icon,
+          NULL::text as guild_icon,
           sgc.schedule_cost,
           ss.opened_at,
           ss.closed_at
@@ -123,7 +123,7 @@ export default apiHandler({
           SELECT
             ssm.guildid,
             gc.name as guild_name,
-            gc.avatar_hash as guild_icon,
+            NULL::text as guild_icon,
             COUNT(*) as total_booked,
             COUNT(*) FILTER (WHERE ssm.attended) as total_attended
           FROM schedule_session_members ssm
@@ -134,7 +134,7 @@ export default apiHandler({
               WHERE ss.guildid = ssm.guildid AND ss.slotid = ssm.slotid
               AND ss.closed_at IS NOT NULL
             )
-          GROUP BY ssm.guildid, gc.name, gc.avatar_hash
+          GROUP BY ssm.guildid, gc.name
           ORDER BY total_booked DESC
           LIMIT 20
         `,
@@ -253,7 +253,7 @@ export default apiHandler({
         ssm.clock,
         ssm.booked_at,
         gc.name as guild_name,
-        gc.avatar_hash as guild_icon,
+        NULL::text as guild_icon,
         ss.opened_at,
         ss.closed_at
       FROM schedule_session_members ssm
