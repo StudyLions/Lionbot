@@ -17,11 +17,14 @@ import { useDashboard } from "@/hooks/useDashboard"
 // Purpose: Added DoorOpen icon for Rooms nav item; Coins for room balance badge
 // --- AI-MODIFIED (2026-03-31) ---
 // Purpose: Added KanbanSquare icon for Boards nav item
+// --- AI-MODIFIED (2026-04-04) ---
+// Purpose: Added CalendarCheck icon for Scheduled Sessions nav item
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
-  Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare,
+  Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare, CalendarCheck,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
 // --- AI-MODIFIED (2026-04-03) ---
@@ -68,6 +71,10 @@ const sections: NavSection[] = [
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Voice Time Editor member page link
       { href: "/dashboard/voice-editor", label: "Voice Time Editor", icon: <Clock size={16} /> },
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-04-04) ---
+      // Purpose: Scheduled Sessions member page link
+      { href: "/dashboard/scheduled-sessions", label: "Schedule", icon: <CalendarCheck size={16} /> },
       // --- END AI-MODIFIED ---
     ],
   },

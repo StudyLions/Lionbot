@@ -163,6 +163,7 @@ const SETTING_LABELS: Record<string, string> = {
   renting_cap: "Max Room Members",
   renting_visible: "Rooms Visible",
   renting_sync_perms: "Sync Permissions",
+  renting_notifications: "Room Notifications",
   accountability_price: "Booking Cost",
   accountability_reward: "Attendance Reward",
   accountability_bonus: "Full Group Bonus",
@@ -204,7 +205,7 @@ const SECTION_DEFS: SectionDef[] = [
   // Purpose: Add new room settings to the Private Rooms section
   // --- AI-MODIFIED (2026-04-01) ---
   // Purpose: Add renting_role to rooms section for change tracking
-  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_role", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit", "moderator"] },
+  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_role", "renting_notifications", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit", "moderator", "notification"] },
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   { id: "schedule", label: "Accountability", icon: Users, settings: ["accountability_price", "accountability_reward", "accountability_bonus"], searchTerms: ["schedule", "session", "booking", "accountability", "attendance"] },
@@ -1106,6 +1107,12 @@ export default function ServerSettings() {
                         {/* Purpose: Room moderator role selector for auto-permissions on private rooms */}
                         <SettingRow label="Room Moderator Role" description="This role automatically gets permissions to view, connect, and send messages in all private rooms" tooltip="Useful for moderation — lets staff see and moderate private channels without being invited." isModified={isModified("renting_role")} onReset={() => resetField("renting_role")}>
                           <RoleSelect guildId={guildId} value={config.renting_role ?? null} onChange={(v) => set("renting_role", (v as string) || null)} placeholder="Select moderator role for rooms" excludeManaged excludeEveryone />
+                        </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
+                        {/* --- AI-MODIFIED (2026-04-04) --- */}
+                        {/* Purpose: Toggle for join/leave notification embeds in private rooms */}
+                        <SettingRow label="Room Notifications" description="Post join/leave notification embeds inside private room channels" tooltip="When enabled, the bot sends a 'New Members!' embed when someone is invited and a 'has left the room' embed when someone leaves. Disable to keep private room channels clean." isModified={isModified("renting_notifications")} onReset={() => resetField("renting_notifications")}>
+                          <Toggle checked={config.renting_notifications ?? true} onChange={(v) => set("renting_notifications", v)} />
                         </SettingRow>
                         {/* --- END AI-MODIFIED --- */}
                         {/* --- AI-MODIFIED (2026-03-22) --- */}

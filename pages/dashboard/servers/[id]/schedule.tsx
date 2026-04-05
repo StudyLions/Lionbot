@@ -85,12 +85,16 @@ interface ScheduleConfig {
 
 // ---- Helpers ----
 
+// --- AI-MODIFIED (2026-04-04) ---
+// Purpose: Added Calendar tab for visual month-view session calendar
 const TABS = [
   { id: "overview", label: "Overview", icon: <BarChart3 size={14} /> },
+  { id: "calendar", label: "Calendar", icon: <Calendar size={14} /> },
   { id: "sessions", label: "Sessions", icon: <Calendar size={14} /> },
   { id: "members", label: "Members", icon: <Users size={14} /> },
   { id: "settings", label: "Settings", icon: <Settings size={14} /> },
 ] as const
+// --- END AI-MODIFIED ---
 
 type TabId = typeof TABS[number]["id"]
 
@@ -231,6 +235,11 @@ export default function SchedulePage() {
   const [panelUserId, setPanelUserId] = useState<string | null>(null)
   const [historyPage, setHistoryPage] = useState(1)
   const [expandedSessions, setExpandedSessions] = useState<Set<number>>(new Set())
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Purpose: Calendar tab state
+  const [calViewDate, setCalViewDate] = useState(() => new Date())
+  const [calSelectedDay, setCalSelectedDay] = useState<string | null>(null)
+  // --- END AI-MODIFIED ---
 
   // Data fetching
   const { data: serverData } = useDashboard<{ server?: { name?: string } }>(
@@ -255,6 +264,20 @@ export default function SchedulePage() {
   const { data: panelData, isLoading: panelLoading, error: panelError } = useDashboard(
     panelUserId && id ? `/api/dashboard/servers/${id}/members/${panelUserId}` : null
   )
+
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Purpose: Calendar tab data fetching with date range filtering
+  const calYear = calViewDate.getFullYear()
+  const calMonth = calViewDate.getMonth()
+  const calFrom = new Date(calYear, calMonth - 1, 1)
+  const calTo = new Date(calYear, calMonth + 2, 0)
+
+  const { data: calHistory, isLoading: calLoading } = useDashboard<SessionHistory>(
+    id && session && tab === "calendar"
+      ? `/api/dashboard/servers/${id}/schedule-history?from=${calFrom.toISOString()}&to=${calTo.toISOString()}&pageSize=500`
+      : null
+  )
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (panelError && panelUserId) {
@@ -543,6 +566,156 @@ export default function SchedulePage() {
                 </div>
               )}
 
+              {/* ============= CALENDAR TAB ============= */}
+              {/* --- AI-GENERATED (2026-04-04) --- */}
+              {/* Purpose: Visual month calendar view for server scheduled sessions */}
+              {tab === "calendar" && (
+                <div className="space-y-4">
+                  {calLoading ? (
+                    <div className="space-y-3">
+                      <div className="h-8 bg-muted rounded w-48 mx-auto animate-pulse" />
+                      <div className="h-[340px] bg-card border border-border rounded-xl animate-pulse" />
+                    </div>
+                  ) : (() => {
+                    const WDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+                    const firstDay = new Date(calYear, calMonth, 1)
+                    const lastDay = new Date(calYear, calMonth + 1, 0)
+                    const startPad = firstDay.getDay()
+                    const cells: Array<{ date: Date; inMonth: boolean }> = []
+                    for (let i = startPad - 1; i >= 0; i--) cells.push({ date: new Date(calYear, calMonth, -i), inMonth: false })
+                    for (let i = 1; i <= lastDay.getDate(); i++) cells.push({ date: new Date(calYear, calMonth, i), inMonth: true })
+                    const rem = 7 - (cells.length % 7)
+                    if (rem < 7) for (let i = 1; i <= rem; i++) cells.push({ date: new Date(calYear, calMonth + 1, i), inMonth: false })
+
+                    const sessionsByDay = new Map<string, typeof calHistory.sessions>()
+                    if (calHistory?.sessions) {
+                      for (const s of calHistory.sessions) {
+                        const d = new Date(s.slotTime)
+                        const k = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`
+                        if (!sessionsByDay.has(k)) sessionsByDay.set(k, [])
+                        sessionsByDay.get(k)!.push(s)
+                      }
+                    }
+
+                    const todayK = (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}` })()
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between px-1">
+                          <button onClick={() => { setCalViewDate(new Date(calYear, calMonth - 1, 1)); setCalSelectedDay(null) }}
+                            className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+                            <ChevronDown size={18} className="rotate-90 text-muted-foreground" />
+                          </button>
+                          <h3 className="text-sm font-semibold text-foreground">
+                            {calViewDate.toLocaleDateString([], { month: "long", year: "numeric" })}
+                          </h3>
+                          <button onClick={() => { setCalViewDate(new Date(calYear, calMonth + 1, 1)); setCalSelectedDay(null) }}
+                            className="p-1.5 rounded-lg hover:bg-accent transition-colors">
+                            <ChevronDown size={18} className="-rotate-90 text-muted-foreground" />
+                          </button>
+                        </div>
+                        <div className="bg-card rounded-xl border border-border overflow-hidden">
+                          <div className="grid grid-cols-7">
+                            {WDAYS.map((d) => (
+                              <div key={d} className="py-2 text-center text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider">{d}</div>
+                            ))}
+                          </div>
+                          <div className="grid grid-cols-7 border-t border-border/50">
+                            {cells.map(({ date, inMonth }, i) => {
+                              const k = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`
+                              const daySessions = sessionsByDay.get(k) || []
+                              const isToday = k === todayK
+                              const isSelected = k === calSelectedDay
+                              const totalBooked = daySessions.reduce((a, s) => a + s.totalBooked, 0)
+                              const totalAttended = daySessions.reduce((a, s) => a + s.totalAttended, 0)
+                              const rate = totalBooked > 0 ? Math.round((totalAttended / totalBooked) * 100) : -1
+                              return (
+                                <button key={i}
+                                  onClick={() => daySessions.length > 0 ? setCalSelectedDay(isSelected ? null : k) : undefined}
+                                  className={[
+                                    "relative min-h-[52px] p-1.5 border-b border-r border-border/30 transition-colors text-left",
+                                    inMonth ? "bg-card" : "bg-muted/30",
+                                    daySessions.length > 0 ? "cursor-pointer hover:bg-accent/50" : "",
+                                    isSelected ? "bg-primary/10 ring-1 ring-primary/30" : "",
+                                  ].join(" ")}>
+                                  <span className={[
+                                    "text-xs tabular-nums",
+                                    !inMonth ? "text-muted-foreground/30" : isToday ? "text-primary font-bold" : "text-foreground/70",
+                                  ].join(" ")}>
+                                    {date.getDate()}
+                                  </span>
+                                  {daySessions.length > 0 && (
+                                    <div className="flex items-center gap-0.5 mt-1">
+                                      <span className={[
+                                        "w-1.5 h-1.5 rounded-full",
+                                        rate >= 80 ? "bg-emerald-500" : rate >= 50 ? "bg-amber-500" : rate >= 0 ? "bg-red-500" : "bg-blue-500",
+                                      ].join(" ")} />
+                                      <span className="text-[8px] text-muted-foreground/60">{daySessions.length}</span>
+                                    </div>
+                                  )}
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 px-1 text-[10px] text-muted-foreground">
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500" /> 80%+</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-amber-500" /> 50-79%</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500" /> &lt;50%</span>
+                          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500" /> Upcoming</span>
+                        </div>
+                        {calSelectedDay && sessionsByDay.has(calSelectedDay) && (
+                          <div className="bg-card rounded-xl border border-border p-4 space-y-2">
+                            <h4 className="text-sm font-semibold text-foreground">
+                              {new Date(calSelectedDay + "T00:00:00").toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" })}
+                            </h4>
+                            {sessionsByDay.get(calSelectedDay)!.map((s) => {
+                              const start = new Date(s.slotTime)
+                              const end = new Date(start.getTime() + 3600000)
+                              return (
+                                <div key={s.slotid} className="flex items-center gap-3 py-2 border-t border-border/30 first:border-0">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium text-foreground">
+                                      {start.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} — {end.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                                    </p>
+                                  </div>
+                                  <span className="text-[10px] text-muted-foreground tabular-nums">
+                                    {s.totalAttended}/{s.totalBooked} attended
+                                  </span>
+                                  <span className={[
+                                    "text-[10px] font-medium px-2 py-0.5 rounded-full",
+                                    s.closedAt ? (s.attendanceRate >= 80 ? "bg-emerald-500/15 text-emerald-400" : s.attendanceRate >= 50 ? "bg-amber-500/15 text-amber-400" : "bg-red-500/15 text-red-400") : "bg-blue-500/15 text-blue-400",
+                                  ].join(" ")}>
+                                    {s.closedAt ? `${s.attendanceRate}%` : "Open"}
+                                  </span>
+                                  <div className="flex -space-x-1.5">
+                                    {s.members.slice(0, 5).map((m) => (
+                                      <img key={m.userId} src={m.avatarUrl} alt="" className="w-5 h-5 rounded-full ring-1 ring-card" />
+                                    ))}
+                                    {s.members.length > 5 && (
+                                      <span className="w-5 h-5 rounded-full bg-muted text-[8px] font-medium flex items-center justify-center ring-1 ring-card text-muted-foreground">
+                                        +{s.members.length - 5}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+                        {(!calHistory?.sessions || calHistory.sessions.length === 0) && (
+                          <div className="text-center py-12">
+                            <Calendar size={32} className="mx-auto text-muted-foreground/40 mb-3" />
+                            <p className="text-sm text-muted-foreground">No sessions in this month</p>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+              )}
+              {/* --- END AI-GENERATED --- */}
+
               {/* ============= SESSIONS TAB ============= */}
               {tab === "sessions" && !isEmpty && (
                 <div className="space-y-4">
@@ -775,6 +948,12 @@ export default function SchedulePage() {
                     </div>
                   ) : (
                     <>
+                      {/* --- AI-MODIFIED (2026-04-04) --- */}
+                      {/* Purpose: Fix channel type filters and improve descriptions for clarity */}
+                      {/* --- Original code (commented out for rollback) --- */}
+                      {/* channelTypes for lobby was [0, 2] showing voice channels incorrectly */}
+                      {/* descriptions were vague about which channel type to pick */}
+                      {/* --- End original code --- */}
                       <SectionCard
                         title="Session Channels"
                         description="Where members wait and where sessions are held"
@@ -782,33 +961,33 @@ export default function SchedulePage() {
                       >
                         <SettingRow
                           label="Lobby Channel"
-                          description="Text channel for session announcements and status updates"
+                          description="Text channel where the bot posts session status embeds, booking announcements, and member pings. Pick a text channel."
                           impactText={stats && stats.summary.sessionsThisWeek > 0 ? `${stats.summary.sessionsThisWeek} sessions announced this week` : undefined}
                         >
                           <ChannelSelect
                             guildId={guildId}
                             value={config.lobby_channel}
                             onChange={(v) => setField("lobby_channel", (v as string) || null)}
-                            channelTypes={[0, 2]}
-                            placeholder="Select lobby channel"
+                            channelTypes={[0, 5]}
+                            placeholder="Select a text channel"
                           />
                         </SettingRow>
                         <SettingRow
                           label="Session Room"
-                          description="Voice channel (or category) for the study session"
-                          impactText={config.room_channel ? undefined : "Not set -- sessions cannot run without a room"}
+                          description="Voice channel where members join during the session, or a category to auto-create temporary voice channels. Pick a voice channel or category."
+                          impactText={config.room_channel ? undefined : "Not set — sessions cannot run without a room"}
                         >
                           <ChannelSelect
                             guildId={guildId}
                             value={config.room_channel}
                             onChange={(v) => setField("room_channel", (v as string) || null)}
                             channelTypes={[2, 4]}
-                            placeholder="Select session room"
+                            placeholder="Select a voice channel or category"
                           />
                         </SettingRow>
                         <SettingRow
                           label="Schedule Channels"
-                          description="Voice channels that count for attendance tracking"
+                          description="Voice channels where attendance is tracked. Members must be in one of these channels to be counted as attending. If empty, only the Session Room is used."
                         >
                           <ChannelSelect
                             guildId={guildId}
@@ -819,10 +998,11 @@ export default function SchedulePage() {
                             }}
                             channelTypes={[2]}
                             multiple
-                            placeholder="Select schedule channels"
+                            placeholder="Select voice channels"
                           />
                         </SettingRow>
                       </SectionCard>
+                      {/* --- END AI-MODIFIED --- */}
 
                       <SectionCard
                         title="Rewards"

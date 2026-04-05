@@ -85,7 +85,7 @@ export default function ChannelSelect({
       })
       .then((data) => {
         setChannels(data)
-        channelCache.set(guildId, { channels: data, expiresAt: Date.now() + 300000 })
+        channelCache.set(guildId, { channels: data, expiresAt: Date.now() + 30000 })
       })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))

@@ -264,6 +264,10 @@ model guild_config {
   renting_min_deposit             Int?
   renting_auto_extend             Boolean?
   renting_cooldown                Int?
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Purpose: Toggle for join/leave notification embeds inside private room channels
+  renting_notifications           Boolean?                       @default(true)
+  // --- END AI-MODIFIED ---
   setup_wizard_dismissed_at       DateTime?                      @db.Timestamptz(6)
   leaderboard_role_filter_enabled Boolean?                       @default(false)
   // --- AI-MODIFIED (2026-03-25) ---

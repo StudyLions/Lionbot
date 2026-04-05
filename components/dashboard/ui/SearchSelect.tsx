@@ -110,11 +110,22 @@ export default function SearchSelect({
     }
   }, [open, updatePosition])
 
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Reason: focus() without preventScroll scrolled the page to the portal element at body bottom
+  // What the new code does better: Prevents browser from scrolling to the portaled dropdown
+  // --- Original code (commented out for rollback) ---
+  // useEffect(() => {
+  //   if (open && inputRef.current) {
+  //     requestAnimationFrame(() => inputRef.current?.focus())
+  //   }
+  // }, [open])
+  // --- End original code ---
   useEffect(() => {
     if (open && inputRef.current) {
-      requestAnimationFrame(() => inputRef.current?.focus())
+      requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }))
     }
   }, [open])
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
 
   const filtered = options.filter((opt) =>

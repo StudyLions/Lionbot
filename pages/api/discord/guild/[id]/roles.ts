@@ -37,11 +37,25 @@ export default apiHandler({
   const auth = await requireModerator(req, res, guildId)
   if (!auth) return
 
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Reason: 5-min cache caused newly created roles to not appear after refresh
+  // What the new code does better: 30s TTL + ?refresh=true bypass
+  // --- Original code (commented out for rollback) ---
+  // const cacheKey = guildId.toString()
+  // const cached = cache.get(cacheKey)
+  // if (cached && Date.now() < cached.expiresAt) {
+  //   return res.status(200).json(cached.data)
+  // }
+  // --- End original code ---
   const cacheKey = guildId.toString()
-  const cached = cache.get(cacheKey)
-  if (cached && Date.now() < cached.expiresAt) {
-    return res.status(200).json(cached.data)
+  const forceRefresh = req.query.refresh === "true"
+  if (!forceRefresh) {
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() < cached.expiresAt) {
+      return res.status(200).json(cached.data)
+    }
   }
+  // --- END AI-MODIFIED ---
 
   try {
     const response = await fetch(
@@ -65,7 +79,7 @@ export default apiHandler({
       const retryRoles: DiscordRole[] = retryRaw.map((r: any) => ({
         id: r.id, name: r.name, color: r.color, position: r.position, managed: r.managed,
       }))
-      cache.set(cacheKey, { data: retryRoles, expiresAt: Date.now() + 300000 })
+      cache.set(cacheKey, { data: retryRoles, expiresAt: Date.now() + 30000 })
       return res.status(200).json(retryRoles)
     }
     // --- END AI-MODIFIED ---
@@ -87,7 +101,7 @@ export default apiHandler({
       managed: r.managed,
     }))
 
-    cache.set(cacheKey, { data: roles, expiresAt: Date.now() + 300000 })
+    cache.set(cacheKey, { data: roles, expiresAt: Date.now() + 30000 })
     res.status(200).json(roles)
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch roles from Discord" })

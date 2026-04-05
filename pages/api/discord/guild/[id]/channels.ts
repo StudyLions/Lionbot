@@ -39,11 +39,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const auth = await requireModerator(req, res, guildId)
   if (!auth) return
 
+  // --- AI-MODIFIED (2026-04-04) ---
+  // Reason: 5-min cache caused newly added channels to not appear after refresh
+  // What the new code does better: 30s TTL + ?refresh=true bypass
+  // --- Original code (commented out for rollback) ---
+  // const cacheKey = guildId.toString()
+  // const cached = cache.get(cacheKey)
+  // if (cached && Date.now() < cached.expiresAt) {
+  //   return res.status(200).json(cached.data)
+  // }
+  // --- End original code ---
   const cacheKey = guildId.toString()
-  const cached = cache.get(cacheKey)
-  if (cached && Date.now() < cached.expiresAt) {
-    return res.status(200).json(cached.data)
+  const forceRefresh = req.query.refresh === "true"
+  if (!forceRefresh) {
+    const cached = cache.get(cacheKey)
+    if (cached && Date.now() < cached.expiresAt) {
+      return res.status(200).json(cached.data)
+    }
   }
+  // --- END AI-MODIFIED ---
 
   try {
     const response = await fetch(
@@ -67,7 +81,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const retryChannels: DiscordChannel[] = retryRaw.map((ch: any) => ({
         id: ch.id, name: ch.name, type: ch.type, position: ch.position, parent_id: ch.parent_id,
       }))
-      cache.set(cacheKey, { data: retryChannels, expiresAt: Date.now() + 300000 })
+      cache.set(cacheKey, { data: retryChannels, expiresAt: Date.now() + 30000 })
       return res.status(200).json(retryChannels)
     }
     // --- END AI-MODIFIED ---
@@ -89,7 +103,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       parent_id: ch.parent_id,
     }))
 
-    cache.set(cacheKey, { data: channels, expiresAt: Date.now() + 300000 })
+    cache.set(cacheKey, { data: channels, expiresAt: Date.now() + 30000 })
     res.status(200).json(channels)
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch channels from Discord" })
