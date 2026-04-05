@@ -948,6 +948,12 @@ export default function SchedulePage() {
                     </div>
                   ) : (
                     <>
+                      {/* --- AI-MODIFIED (2026-04-04) --- */}
+                      {/* Purpose: Fix channel type filters and improve descriptions for clarity */}
+                      {/* --- Original code (commented out for rollback) --- */}
+                      {/* channelTypes for lobby was [0, 2] showing voice channels incorrectly */}
+                      {/* descriptions were vague about which channel type to pick */}
+                      {/* --- End original code --- */}
                       <SectionCard
                         title="Session Channels"
                         description="Where members wait and where sessions are held"
@@ -955,33 +961,33 @@ export default function SchedulePage() {
                       >
                         <SettingRow
                           label="Lobby Channel"
-                          description="Text channel for session announcements and status updates"
+                          description="Text channel where the bot posts session status embeds, booking announcements, and member pings. Pick a text channel."
                           impactText={stats && stats.summary.sessionsThisWeek > 0 ? `${stats.summary.sessionsThisWeek} sessions announced this week` : undefined}
                         >
                           <ChannelSelect
                             guildId={guildId}
                             value={config.lobby_channel}
                             onChange={(v) => setField("lobby_channel", (v as string) || null)}
-                            channelTypes={[0, 2]}
-                            placeholder="Select lobby channel"
+                            channelTypes={[0, 5]}
+                            placeholder="Select a text channel"
                           />
                         </SettingRow>
                         <SettingRow
                           label="Session Room"
-                          description="Voice channel (or category) for the study session"
-                          impactText={config.room_channel ? undefined : "Not set -- sessions cannot run without a room"}
+                          description="Voice channel where members join during the session, or a category to auto-create temporary voice channels. Pick a voice channel or category."
+                          impactText={config.room_channel ? undefined : "Not set — sessions cannot run without a room"}
                         >
                           <ChannelSelect
                             guildId={guildId}
                             value={config.room_channel}
                             onChange={(v) => setField("room_channel", (v as string) || null)}
                             channelTypes={[2, 4]}
-                            placeholder="Select session room"
+                            placeholder="Select a voice channel or category"
                           />
                         </SettingRow>
                         <SettingRow
                           label="Schedule Channels"
-                          description="Voice channels that count for attendance tracking"
+                          description="Voice channels where attendance is tracked. Members must be in one of these channels to be counted as attending. If empty, only the Session Room is used."
                         >
                           <ChannelSelect
                             guildId={guildId}
@@ -992,10 +998,11 @@ export default function SchedulePage() {
                             }}
                             channelTypes={[2]}
                             multiple
-                            placeholder="Select schedule channels"
+                            placeholder="Select voice channels"
                           />
                         </SettingRow>
                       </SectionCard>
+                      {/* --- END AI-MODIFIED --- */}
 
                       <SectionCard
                         title="Rewards"
