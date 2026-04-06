@@ -336,7 +336,11 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Stripe</strong> — If you purchase LionGems, Stripe processes your payment. Stripe&apos;s own privacy policy governs their handling of your payment data.</li>
                 <li><strong className="text-foreground">Vercel</strong> — Our website is hosted on Vercel. Vercel may process standard web server logs (IP addresses, request metadata) as part of hosting. See Vercel&apos;s privacy policy.</li>
                 <li><strong className="text-foreground">Hetzner</strong> — Our database and bot are hosted on Hetzner servers in the EU. Hetzner provides infrastructure only and does not access our data.</li>
-                <li>We do <strong className="text-foreground">not</strong> share your data with any other third parties.</li>
+                {/* --- AI-MODIFIED (2026-04-06) --- */}
+                {/* Purpose: add business transfer / acquisition clause */}
+                <li><strong className="text-foreground">Business transfers</strong> — If StudyLion is acquired, merged with another company, or its assets are sold, your data may be transferred to the new owner as part of that transaction. The new owner will be bound by this privacy policy with respect to your data. If such a transfer occurs, we will notify users through the bot, our Discord server, or email where available.</li>
+                <li>Outside of the parties listed above, we do <strong className="text-foreground">not</strong> sell, rent, or share your personal data with third parties for their own marketing purposes.</li>
+                {/* --- END AI-MODIFIED --- */}
               </ul>
             </section>
 
