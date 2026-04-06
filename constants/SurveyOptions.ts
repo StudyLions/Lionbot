@@ -20,8 +20,8 @@ export const GENDERS = [
 ] as const
 
 export const USE_CASES = [
-  { value: "study", label: "Studying" },
-  { value: "community", label: "Community" },
+  { value: "study", label: "Study / Educational Server" },
+  { value: "community", label: "Non-study Community" },
 ] as const
 
 export const FIELDS_OF_STUDY = [
@@ -39,7 +39,7 @@ export const FIELDS_OF_STUDY = [
 
 export const EDUCATION_LEVELS = [
   { value: "high_school", label: "High School" },
-  { value: "undergraduate", label: "Undergrad" },
+  { value: "undergraduate", label: "University" },
   { value: "graduate", label: "Masters" },
   { value: "phd", label: "PhD" },
   { value: "professional", label: "Professional" },

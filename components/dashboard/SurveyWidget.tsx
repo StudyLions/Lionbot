@@ -8,7 +8,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X } from "lucide-react"
+import { X, Sparkles } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
   AGE_RANGES,
@@ -162,12 +162,64 @@ function CountrySearch({
   )
 }
 
+function ConfettiParticle({ delay, x }: { delay: number; x: number }) {
+  const colors = ["#f59e0b", "#8b5cf6", "#ec4899", "#10b981", "#3b82f6", "#f97316"]
+  const color = colors[Math.floor(Math.random() * colors.length)]
+  const size = 4 + Math.random() * 4
+  return (
+    <motion.div
+      className="absolute rounded-full pointer-events-none"
+      style={{
+        width: size,
+        height: size,
+        backgroundColor: color,
+        left: `${x}%`,
+        top: "50%",
+      }}
+      initial={{ opacity: 1, y: 0, x: 0, scale: 1 }}
+      animate={{
+        opacity: [1, 1, 0],
+        y: [0, -60 - Math.random() * 80, -100 - Math.random() * 60],
+        x: [-20 + Math.random() * 40, -40 + Math.random() * 80],
+        scale: [1, 1.2, 0.6],
+        rotate: [0, 180 + Math.random() * 360],
+      }}
+      transition={{
+        duration: 1.2 + Math.random() * 0.6,
+        delay,
+        ease: "easeOut",
+      }}
+    />
+  )
+}
+
+function Confetti() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        delay: Math.random() * 0.3,
+        x: 10 + Math.random() * 80,
+      })),
+    []
+  )
+  return (
+    <div className="absolute inset-0 overflow-hidden pointer-events-none">
+      {particles.map((p) => (
+        <ConfettiParticle key={p.id} delay={p.delay} x={p.x} />
+      ))}
+    </div>
+  )
+}
+
 export default function SurveyWidget() {
   const { status: authStatus } = useSession()
   const [surveyStatus, setSurveyStatus] = useState<SurveyStatus>("loading")
   const [visible, setVisible] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const [step, setStep] = useState(1)
   const [submitting, setSubmitting] = useState(false)
+  const [showConfetti, setShowConfetti] = useState(false)
   const [answers, setAnswers] = useState<SurveyAnswers>({
     country: "",
     age_range: "",
@@ -228,7 +280,8 @@ export default function SurveyWidget() {
   }, [surveyStatus])
 
   const dismiss = async () => {
-    setVisible(false)
+    setExpanded(false)
+    setTimeout(() => setVisible(false), 300)
     const until = Date.now() + DISMISS_DAYS * 24 * 60 * 60 * 1000
     localStorage.setItem(LS_DISMISSED, String(until))
     setSurveyStatus("dismissed")
@@ -245,9 +298,13 @@ export default function SurveyWidget() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers),
       })
-      localStorage.setItem(LS_COMPLETED, "true")
-      setSurveyStatus("completed")
-      setVisible(false)
+      setShowConfetti(true)
+      setTimeout(() => {
+        localStorage.setItem(LS_COMPLETED, "true")
+        setSurveyStatus("completed")
+        setExpanded(false)
+        setVisible(false)
+      }, 2000)
     } catch {
       setSubmitting(false)
     }
@@ -258,226 +315,309 @@ export default function SurveyWidget() {
   return (
     <AnimatePresence>
       {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 40, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 20, scale: 0.95 }}
-          transition={{ type: "spring", damping: 24, stiffness: 300 }}
-          className={cn(
-            "fixed z-[60] shadow-2xl border border-border rounded-2xl bg-card overflow-hidden",
-            "w-[360px] max-h-[85vh] overflow-y-auto",
-            "bottom-24 right-4",
-            "max-[639px]:bottom-0 max-[639px]:right-0 max-[639px]:left-0 max-[639px]:w-full",
-            "max-[639px]:rounded-b-none max-[639px]:rounded-t-2xl"
-          )}
-        >
-          <div className="p-5 space-y-4">
-            {/* Header */}
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="text-base font-semibold text-foreground">
-                  {step === 1 ? "Help us build what YOU need!" : "Almost done!"}
-                </h3>
-                {step === 1 && (
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    Your answers help us understand our audience and build
-                    features that matter to you.
-                  </p>
-                )}
-              </div>
-              <button
+        <div className={cn(
+          "fixed z-[60]",
+          "bottom-24 right-4",
+          "max-[639px]:bottom-0 max-[639px]:right-0 max-[639px]:left-0 max-[639px]:w-full"
+        )}>
+          {/* Teaser pill (shown when not expanded) */}
+          <AnimatePresence>
+            {!expanded && (
+              <motion.button
                 type="button"
-                onClick={dismiss}
-                className="text-muted-foreground hover:text-foreground p-1 -mt-1 -mr-1 cursor-pointer"
+                onClick={() => setExpanded(true)}
+                initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+                className={cn(
+                  "relative flex items-center gap-2.5 px-5 py-3 rounded-full cursor-pointer",
+                  "bg-gradient-to-r from-amber-500/90 via-primary to-violet-500/90",
+                  "text-white font-semibold text-sm shadow-xl",
+                  "border border-white/20",
+                  "max-[639px]:w-full max-[639px]:rounded-full max-[639px]:mx-4 max-[639px]:mb-4"
+                )}
               >
-                <X size={16} />
-              </button>
-            </div>
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                >
+                  <Sparkles size={18} className="text-amber-200" />
+                </motion.div>
+                <span>Help us help you!</span>
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  animate={{ opacity: [0, 0.3, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  style={{
+                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)",
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); dismiss() }}
+                  className="ml-1 text-white/60 hover:text-white cursor-pointer"
+                >
+                  <X size={14} />
+                </button>
+              </motion.button>
+            )}
+          </AnimatePresence>
 
-            {/* Step 1 */}
-            {step === 1 && (
+          {/* Expanded survey card */}
+          <AnimatePresence>
+            {expanded && (
               <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                className="space-y-4"
+                initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                transition={{ type: "spring", damping: 24, stiffness: 300 }}
+                className={cn(
+                  "relative shadow-2xl border border-border rounded-2xl bg-card overflow-hidden",
+                  "w-[360px] max-h-[85vh] overflow-y-auto",
+                  "max-[639px]:w-full max-[639px]:rounded-b-none max-[639px]:rounded-t-2xl"
+                )}
               >
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Where are you from?
-                  </label>
-                  <CountrySearch
-                    value={answers.country}
-                    onChange={(v) =>
-                      setAnswers((prev) => ({ ...prev, country: v }))
-                    }
-                  />
+                {showConfetti && <Confetti />}
+
+                {/* Gradient accent strip */}
+                <div className="h-1 bg-gradient-to-r from-amber-500 via-primary to-violet-500" />
+
+                <div className="p-5 space-y-4">
+                  {/* Header */}
+                  {showConfetti ? (
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="text-center py-4"
+                    >
+                      <div className="text-3xl mb-2">🎉</div>
+                      <h3 className="text-base font-semibold text-foreground">
+                        Thank you!
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Your answers help us build a better LionBot for everyone.
+                      </p>
+                    </motion.div>
+                  ) : (
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-2">
+                        <div className="mt-0.5">
+                          <Sparkles size={16} className="text-amber-500" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-semibold text-foreground">
+                            {step === 1 ? "Help us help you!" : "Almost done!"}
+                          </h3>
+                          {step === 1 && (
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                              Quick survey so we can build features that matter to you.
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={dismiss}
+                        className="text-muted-foreground hover:text-foreground p-1 -mt-1 -mr-1 cursor-pointer"
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 1 */}
+                  {!showConfetti && step === 1 && (
+                    <motion.div
+                      key="step1"
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 20 }}
+                      className="space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Where are you from?
+                        </label>
+                        <CountrySearch
+                          value={answers.country}
+                          onChange={(v) =>
+                            setAnswers((prev) => ({ ...prev, country: v }))
+                          }
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          How old are you?
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {AGE_RANGES.map((o) => (
+                            <Chip
+                              key={o.value}
+                              label={o.label}
+                              selected={answers.age_range === o.value}
+                              onClick={() => set("age_range", o.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          Gender
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {GENDERS.map((o) => (
+                            <Chip
+                              key={o.value}
+                              label={o.label}
+                              selected={answers.gender === o.value}
+                              onClick={() => set("gender", o.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Step 2 */}
+                  {!showConfetti && step === 2 && (
+                    <motion.div
+                      key="step2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-4"
+                    >
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          My Discord server is a...
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {USE_CASES.map((o) => (
+                            <Chip
+                              key={o.value}
+                              label={o.label}
+                              selected={answers.use_case === o.value}
+                              onClick={() => set("use_case", o.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          What do you study?
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {FIELDS_OF_STUDY.map((o) => (
+                            <Chip
+                              key={o.value}
+                              label={o.label}
+                              selected={answers.field_of_study === o.value}
+                              onClick={() => set("field_of_study", o.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium text-foreground">
+                          I currently study
+                        </label>
+                        <div className="flex flex-wrap gap-2">
+                          {EDUCATION_LEVELS.map((o) => (
+                            <Chip
+                              key={o.value}
+                              label={o.label}
+                              selected={answers.education_level === o.value}
+                              onClick={() => set("education_level", o.value)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Footer */}
+                  {!showConfetti && (
+                    <div className="flex items-center justify-between pt-1">
+                      {step === 1 ? (
+                        <>
+                          <div />
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={dismiss}
+                              className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              Maybe later
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setStep(2)}
+                              className={cn(
+                                "px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                                "bg-primary text-primary-foreground hover:bg-primary/90"
+                              )}
+                            >
+                              Next &rarr;
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => setStep(1)}
+                            className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                          >
+                            &larr; Back
+                          </button>
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={dismiss}
+                              className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
+                            >
+                              Maybe later
+                            </button>
+                            <button
+                              type="button"
+                              onClick={submit}
+                              disabled={submitting}
+                              className={cn(
+                                "px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors",
+                                "bg-primary text-primary-foreground hover:bg-primary/90",
+                                "disabled:opacity-50 disabled:cursor-not-allowed"
+                              )}
+                            >
+                              {submitting ? "Saving..." : "Done!"}
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    How old are you?
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {AGE_RANGES.map((o) => (
-                      <Chip
-                        key={o.value}
-                        label={o.label}
-                        selected={answers.age_range === o.value}
-                        onClick={() => set("age_range", o.value)}
-                      />
-                    ))}
+                {/* Progress bar */}
+                {!showConfetti && (
+                  <div className="h-1 bg-muted/50">
+                    <motion.div
+                      className="h-full bg-gradient-to-r from-amber-500 via-primary to-violet-500"
+                      initial={{ width: "0%" }}
+                      animate={{ width: step === 1 ? "50%" : "100%" }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                    />
                   </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Gender
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {GENDERS.map((o) => (
-                      <Chip
-                        key={o.value}
-                        label={o.label}
-                        selected={answers.gender === o.value}
-                        onClick={() => set("gender", o.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
+                )}
               </motion.div>
             )}
-
-            {/* Step 2 */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-4"
-              >
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    I use LionBot for...
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {USE_CASES.map((o) => (
-                      <Chip
-                        key={o.value}
-                        label={o.label}
-                        selected={answers.use_case === o.value}
-                        onClick={() => set("use_case", o.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    What do you study?
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {FIELDS_OF_STUDY.map((o) => (
-                      <Chip
-                        key={o.value}
-                        label={o.label}
-                        selected={answers.field_of_study === o.value}
-                        onClick={() => set("field_of_study", o.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Education level
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {EDUCATION_LEVELS.map((o) => (
-                      <Chip
-                        key={o.value}
-                        label={o.label}
-                        selected={answers.education_level === o.value}
-                        onClick={() => set("education_level", o.value)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </motion.div>
-            )}
-
-            {/* Footer */}
-            <div className="flex items-center justify-between pt-1">
-              {step === 1 ? (
-                <>
-                  <div />
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={dismiss}
-                      className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                    >
-                      Maybe later
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setStep(2)}
-                      className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors",
-                        "bg-primary text-primary-foreground hover:bg-primary/90"
-                      )}
-                    >
-                      Next &rarr;
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => setStep(1)}
-                    className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                  >
-                    &larr; Back
-                  </button>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={dismiss}
-                      className="text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-                    >
-                      Maybe later
-                    </button>
-                    <button
-                      type="button"
-                      onClick={submit}
-                      disabled={submitting}
-                      className={cn(
-                        "px-4 py-2 rounded-lg text-sm font-medium cursor-pointer transition-colors",
-                        "bg-primary text-primary-foreground hover:bg-primary/90",
-                        "disabled:opacity-50 disabled:cursor-not-allowed"
-                      )}
-                    >
-                      {submitting ? "Saving..." : "Done!"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="h-1 bg-muted/50">
-            <motion.div
-              className="h-full bg-primary"
-              initial={{ width: "0%" }}
-              animate={{ width: step === 1 ? "50%" : "100%" }}
-              transition={{ duration: 0.3, ease: "easeInOut" }}
-            />
-          </div>
-        </motion.div>
+          </AnimatePresence>
+        </div>
       )}
     </AnimatePresence>
   )
