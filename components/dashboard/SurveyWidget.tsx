@@ -8,7 +8,9 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Sparkles } from "lucide-react"
+import { X } from "lucide-react"
+import Image from "next/image"
+
 import { cn } from "@/lib/utils"
 import {
   AGE_RANGES,
@@ -340,10 +342,15 @@ export default function SurveyWidget() {
                 )}
               >
                 <motion.div
-                  animate={{ rotate: [0, 15, -15, 0] }}
+                  animate={{ rotate: [0, 8, -8, 0] }}
                   transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
                 >
-                  <Sparkles size={18} className="text-amber-200" />
+                  <Image
+                    src="/images/lion-heart.webp"
+                    alt=""
+                    width={22}
+                    height={22}
+                  />
                 </motion.div>
                 <span>Help us help you!</span>
                 <motion.div
@@ -392,7 +399,13 @@ export default function SurveyWidget() {
                       animate={{ opacity: 1, scale: 1 }}
                       className="text-center py-4"
                     >
-                      <div className="text-3xl mb-2">🎉</div>
+                      <Image
+                        src="/images/lion-heart.webp"
+                        alt="LionBot mascot"
+                        width={64}
+                        height={64}
+                        className="mx-auto mb-2"
+                      />
                       <h3 className="text-base font-semibold text-foreground">
                         Thank you!
                       </h3>
@@ -402,10 +415,14 @@ export default function SurveyWidget() {
                     </motion.div>
                   ) : (
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start gap-2">
-                        <div className="mt-0.5">
-                          <Sparkles size={16} className="text-amber-500" />
-                        </div>
+                      <div className="flex items-start gap-2.5">
+                        <Image
+                          src="/images/lion-heart.webp"
+                          alt="LionBot mascot"
+                          width={36}
+                          height={36}
+                          className="flex-shrink-0 -mt-0.5"
+                        />
                         <div>
                           <h3 className="text-base font-semibold text-foreground">
                             {step === 1 ? "Help us help you!" : "Almost done!"}
