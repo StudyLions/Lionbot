@@ -1,4 +1,3 @@
-// @ts-nocheck
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-06
@@ -191,34 +190,27 @@ export default function AntiAfkPage() {
             ) : (
               <div className="space-y-6 mt-6">
                 {/* ── Section 1: System Control ── */}
-                <SectionCard>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <ShieldAlert size={20} className="text-amber-400" />
-                      <div>
-                        <h3 className="text-sm font-semibold text-gray-100">System Control</h3>
-                        <p className="text-xs text-gray-400 mt-0.5">
-                          Enable or disable the Anti AFK system for this server
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={cn(
-                            "w-2 h-2 rounded-full",
-                            config.enabled ? "bg-green-400" : "bg-gray-500",
-                          )}
-                        />
-                        <span className="text-xs text-gray-400">
-                          {config.enabled ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <Toggle
-                        checked={config.enabled}
-                        onChange={(v) => update({ enabled: v })}
+                <SectionCard
+                  title="System Control"
+                  description="Enable or disable the Anti AFK system for this server"
+                  icon={<ShieldAlert size={16} />}
+                >
+                  <div className="flex items-center justify-between pt-4">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className={cn(
+                          "w-2 h-2 rounded-full",
+                          config.enabled ? "bg-green-400" : "bg-gray-500",
+                        )}
                       />
+                      <span className="text-sm text-gray-400">
+                        {config.enabled ? "Active" : "Inactive"}
+                      </span>
                     </div>
+                    <Toggle
+                      checked={config.enabled}
+                      onChange={(v) => update({ enabled: v })}
+                    />
                   </div>
                 </SectionCard>
 
@@ -413,8 +405,8 @@ export default function AntiAfkPage() {
                         </p>
                         <ChannelSelect
                           guildId={guildId}
-                          value={config.fallback_channelid ? [config.fallback_channelid] : []}
-                          onChange={(v) => update({ fallback_channelid: v[0] || null })}
+                          value={config.fallback_channelid ?? null}
+                          onChange={(v) => update({ fallback_channelid: (v as string) || null })}
                           channelTypes={[0]}
                         />
                       </div>
@@ -450,7 +442,8 @@ export default function AntiAfkPage() {
                       <RoleSelect
                         guildId={guildId}
                         value={config.exempt_roles}
-                        onChange={(v) => update({ exempt_roles: v })}
+                        onChange={(v) => update({ exempt_roles: (v as string[]) || [] })}
+                        multiple
                       />
                     </div>
 
@@ -464,8 +457,9 @@ export default function AntiAfkPage() {
                       <ChannelSelect
                         guildId={guildId}
                         value={config.target_channels}
-                        onChange={(v) => update({ target_channels: v })}
+                        onChange={(v) => update({ target_channels: (v as string[]) || [] })}
                         channelTypes={[2, 13]}
+                        multiple
                       />
                     </div>
 
@@ -479,8 +473,9 @@ export default function AntiAfkPage() {
                       <ChannelSelect
                         guildId={guildId}
                         value={config.exclude_channels}
-                        onChange={(v) => update({ exclude_channels: v })}
+                        onChange={(v) => update({ exclude_channels: (v as string[]) || [] })}
                         channelTypes={[2, 13]}
+                        multiple
                       />
                     </div>
 
@@ -521,8 +516,8 @@ export default function AntiAfkPage() {
                         </p>
                         <ChannelSelect
                           guildId={guildId}
-                          value={config.notification_channelid ? [config.notification_channelid] : []}
-                          onChange={(v) => update({ notification_channelid: v[0] || null })}
+                          value={config.notification_channelid ?? null}
+                          onChange={(v) => update({ notification_channelid: (v as string) || null })}
                           channelTypes={[0]}
                         />
                       </div>
@@ -531,12 +526,11 @@ export default function AntiAfkPage() {
                 </SectionCard>
 
                 {/* ── SaveBar ── */}
-                {hasChanges && (
-                  <SaveBar
-                    onSave={handleSave}
-                    onReset={handleReset}
-                  />
-                )}
+                <SaveBar
+                  show={hasChanges}
+                  onSave={handleSave}
+                  onReset={handleReset}
+                />
               </div>
             )}
           </DashboardShell>
