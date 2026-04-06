@@ -7,6 +7,10 @@ import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
 import { SoundProvider } from "@/lib/SoundContext";
 import MiniSessionTimer from "@/components/dashboard/MiniSessionTimer";
+// --- AI-MODIFIED (2026-04-06) ---
+// Purpose: "Get to know you" survey widget for collecting user demographics
+import SurveyWidget from "@/components/dashboard/SurveyWidget";
+// --- END AI-MODIFIED ---
 import defaultSEO from "next-seo.config";
 // --- AI-MODIFIED (2026-04-03) ---
 // Purpose: Multi-theme support via next-themes
@@ -87,6 +91,10 @@ function App({ Component, pageProps }) {
         {/* --- AI-MODIFIED (2026-03-16) --- */}
         {/* Purpose: Persistent mini-timer on all dashboard pages when user has active session */}
         <MiniSessionTimer />
+        {/* --- END AI-MODIFIED --- */}
+        {/* --- AI-MODIFIED (2026-04-06) --- */}
+        {/* Purpose: Survey widget to collect user demographics for product/ad insights */}
+        <SurveyWidget />
         {/* --- END AI-MODIFIED --- */}
         <ToastProvider />
       </SoundProvider>
