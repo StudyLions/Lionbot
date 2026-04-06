@@ -933,6 +933,8 @@ model user_config {
   locale                                                                   String?
   show_global_stats                                                        Boolean?
   gold                                                                     BigInt                        @default(0)
+  email                                                                    String?
+  email_verified                                                           Boolean?
   lg_blocks_lg_blocks_blocked_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocked_useridTouser_config")
   lg_blocks_lg_blocks_blocker_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocker_useridTouser_config")
   lg_families                                                              lg_families[]
