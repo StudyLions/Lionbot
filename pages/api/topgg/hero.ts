@@ -58,14 +58,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   <circle cx="720" cy="40" r="100" fill="#3b82f6" opacity="0.05"/>
   <circle cx="80" cy="180" r="80" fill="#8b5cf6" opacity="0.04"/>
   <text x="400" y="60" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="36" font-weight="700" fill="url(#accent)">LionBot</text>
-  <text x="400" y="92" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="16" fill="rgba(255,255,255,0.7)">The Ultimate Discord Productivity Bot</text>
+  <text x="400" y="92" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="16" fill="rgba(255,255,255,0.7)">The Ultimate Discord Community Bot</text>
   <line x1="300" y1="112" x2="500" y2="112" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
   <text x="200" y="150" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#60a5fa">${formatNum(guilds)}</text>
   <text x="200" y="172" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.08em">SERVERS</text>
   <text x="400" y="150" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#a78bfa">${formatNum(users)}</text>
   <text x="400" y="172" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.08em">USERS</text>
   <text x="600" y="150" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="24" font-weight="700" fill="#f472b6">${formatNum(sessions)}</text>
-  <text x="600" y="172" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.08em">STUDY SESSIONS</text>
+  <text x="600" y="172" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="11" fill="rgba(255,255,255,0.45)" letter-spacing="0.08em">SESSIONS</text>
 </svg>`
 
   res.setHeader("Content-Type", "image/svg+xml")
