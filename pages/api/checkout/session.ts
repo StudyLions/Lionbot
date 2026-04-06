@@ -24,11 +24,14 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     // --- AI-MODIFIED (2026-03-20) ---
     // Purpose: Add secureCookie for correct session reading in HTTPS/Vercel production
+    // --- AI-MODIFIED (2026-04-06) ---
+    // Purpose: use versioned cookie name matching [...nextauth].js cookies config
     const userID = await getToken({
       req,
       secret,
-      secureCookie: process.env.NEXTAUTH_URL?.startsWith("https://") ?? !!process.env.VERCEL_URL,
+      cookieName: '__Secure-next-auth.session-token.v2',
     });
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
     if (!userID?.sub || !userID?.name) {
       return res.status(401).json({ error: "Not authenticated. Please sign in." });
