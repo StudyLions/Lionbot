@@ -103,6 +103,10 @@ export default function AntiAfkPage() {
 
   const apiUrl = id ? `/api/dashboard/servers/${id}/anti-afk` : null
   const { data: apiData, isLoading } = useDashboard<ApiResponse>(apiUrl)
+  const { data: serverData } = useDashboard<any>(
+    id ? `/api/dashboard/servers/${id}` : null,
+  )
+  const serverName = serverData?.server?.name || "Server"
   const isPremium = apiData?.isPremium ?? false
 
   const [config, setConfig] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
@@ -154,10 +158,10 @@ export default function AntiAfkPage() {
   }, [original])
 
   return (
-    <Layout>
+    <Layout SEO={{ title: "Anti AFK System - LionBot Dashboard", description: "Configure voice channel activity checks" }}>
       <AdminGuard>
-        <ServerGuard>
-          <DashboardShell nav={<ServerNav serverId={guildId} />}>
+        <ServerGuard requiredLevel="admin">
+          <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName} isAdmin isMod />}>
             <PageHeader
               title="Anti AFK System"
               description="Automatically check if voice channel users are still active. Users who don't respond get disconnected, paused, or moved."
