@@ -5,12 +5,6 @@ import DiscordProvider from "next-auth/providers/discord";
 import { prisma } from '../../../utils/prisma';
 // --- END AI-MODIFIED ---
 
-// --- AI-MODIFIED (2026-04-06) ---
-// Purpose: bump this to invalidate all existing sessions and force re-login
-// (so we capture every user's email on their next sign-in)
-const TOKEN_VERSION = 2;
-// --- END AI-MODIFIED ---
-
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
 export default NextAuth({
@@ -80,18 +74,10 @@ export default NextAuth({
         token.discordId = account.providerAccountId;
         token.accessToken = account.access_token;
         token.refreshToken = account.refresh_token;
-        token.tokenVersion = TOKEN_VERSION;
         token.expiresAt = account.expires_at
           ? account.expires_at * 1000
           : Date.now() + 604800000;
       }
-
-      // --- AI-MODIFIED (2026-04-06) ---
-      // Purpose: invalidate old sessions that pre-date email capture
-      if (token.tokenVersion !== TOKEN_VERSION) {
-        return {};
-      }
-      // --- END AI-MODIFIED ---
 
       if (token.expiresAt && Date.now() < token.expiresAt - 60000) {
         return token;
@@ -186,6 +172,23 @@ export default NextAuth({
     colorScheme: "dark",
     // --- END AI-MODIFIED ---
   },
+
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: renamed session cookie to invalidate all old sessions and force re-login
+  // (so the signIn event captures every user's email)
+  // To force another mass logout in the future, bump ".v2" to ".v3" etc.
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token.v2',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+      },
+    },
+  },
+  // --- END AI-MODIFIED ---
 
   // Enable debug messages in the console if you are having problems
   debug: false,
