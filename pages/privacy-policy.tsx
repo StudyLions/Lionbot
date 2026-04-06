@@ -292,7 +292,7 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Education Level</strong> — Your current education stage (e.g. High School, Undergraduate, Graduate).</li>
               </ul>
               <p>
-                This data is stored in our database and used in aggregate to guide product decisions. It is never shared with third parties or used for individual targeting.
+                This data is stored in our database and used to guide product decisions, personalize your experience, and deliver relevant communications and content based on your profile (e.g. features, tips, or promotions relevant to your field of study or region). We do not sell or share this data with third parties. You can request deletion of your survey data at any time.
               </p>
               {/* --- END AI-MODIFIED --- */}
 
@@ -322,7 +322,7 @@ export default function PrivacyPolicy() {
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: document email and survey data usage */}
                 <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of StudyLion — never spam, never advertising, and never third-party promotions.</li>
-                <li><strong className="text-foreground">Audience insights</strong> — Using aggregated, anonymized survey data to understand our user base and prioritize features that matter most to our community.</li>
+                <li><strong className="text-foreground">Personalization &amp; audience insights</strong> — Using survey data to understand our user base, personalize your experience, deliver content and communications relevant to your profile (such as your field of study or region), and prioritize features that matter most to our community.</li>
                 {/* --- END AI-MODIFIED --- */}
               </ul>
             </section>
