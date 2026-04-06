@@ -153,7 +153,10 @@ export default function PrivacyPolicy() {
       <div className="bg-background min-h-screen">
         <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
-          <p className="text-muted-foreground mb-10">Last updated: March 16, 2026</p>
+          {/* --- AI-MODIFIED (2026-04-06) --- */}
+          {/* Purpose: update date for email notifications + survey data additions */}
+          <p className="text-muted-foreground mb-10">Last updated: April 6, 2026</p>
+          {/* --- END AI-MODIFIED --- */}
 
           <div className="space-y-10 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7">
 
@@ -195,7 +198,10 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Discord User ID</strong> — Your unique Discord snowflake ID. This is our primary identifier for your account.</li>
                 <li><strong className="text-foreground">Discord Username / Display Name</strong> — Cached from Discord to display in leaderboards and the dashboard.</li>
                 <li><strong className="text-foreground">Avatar Hash</strong> — Cached to render your profile picture on the dashboard.</li>
-                <li><strong className="text-foreground">Email Address</strong> — Obtained through Discord OAuth when you sign in to the web dashboard. Used only for authentication.</li>
+                {/* --- AI-MODIFIED (2026-04-06) --- */}
+                {/* Purpose: clarify email is also used for product notifications */}
+                <li><strong className="text-foreground">Email Address</strong> — Obtained through Discord OAuth when you sign in to the web dashboard. Used for authentication and to send you important product-related notifications (e.g. major feature launches, service updates, and account-related communications). By signing in, you agree to receive these communications. We will never send spam or share your email with third parties.</li>
+                {/* --- END AI-MODIFIED --- */}
                 <li><strong className="text-foreground">Timezone &amp; Locale</strong> — Set by you to display times correctly and localize the bot interface.</li>
               </ul>
 
@@ -270,7 +276,25 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Discord OAuth Tokens</strong> — Temporary access and refresh tokens obtained when you sign in to the web dashboard. Stored in an encrypted JWT cookie on your browser, not in our database. Used to verify your identity and fetch your server list from Discord.</li>
                 <li><strong className="text-foreground">Server List</strong> — When you use the dashboard, we temporarily cache (in memory, not in database) your Discord server list to determine which servers you can manage.</li>
               </ul>
-            </section>
+
+              {/* --- AI-MODIFIED (2026-04-06) --- */}
+              {/* Purpose: document survey data collection */}
+              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Optional Survey Data</h3>
+              <p>
+                When you sign in to the web dashboard, we may ask you to fill out a short, optional survey to help us understand our audience and build better features. All survey fields are optional, and you can dismiss or skip the survey at any time. If you choose to participate, we may collect:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong className="text-foreground">Country</strong> — Helps us understand where our users are located so we can prioritize features and content relevant to different regions.</li>
+                <li><strong className="text-foreground">Age Range</strong> — A broad age bracket (e.g. 18–24, 25–34). We never ask for your exact date of birth.</li>
+                <li><strong className="text-foreground">Gender</strong> — Optional demographic information. You can skip this question entirely.</li>
+                <li><strong className="text-foreground">Use Case</strong> — Whether you use LionBot primarily for studying or for a general community.</li>
+                <li><strong className="text-foreground">Field of Study</strong> — Your academic discipline (e.g. Medicine, Computer Science, Business). Helps us tailor features to the subjects our users study.</li>
+                <li><strong className="text-foreground">Education Level</strong> — Your current education stage (e.g. High School, Undergraduate, Graduate).</li>
+              </ul>
+              <p>
+                This data is stored in our database and used in aggregate to guide product decisions. It is never shared with third parties or used for individual targeting.
+              </p>
+              {/* --- END AI-MODIFIED --- */}
 
             {/* What We Do NOT Collect */}
             <section>
@@ -295,6 +319,11 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Premium features</strong> — Processing gem purchases and managing subscription billing.</li>
                 <li><strong className="text-foreground">Statistics &amp; leaderboards</strong> — Displaying your study stats, rankings, and progress within servers you are a member of.</li>
                 <li><strong className="text-foreground">Notifications</strong> — Sending reminders and vote reminders you opt into.</li>
+                {/* --- AI-MODIFIED (2026-04-06) --- */}
+                {/* Purpose: document email and survey data usage */}
+                <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of StudyLion — never spam, never advertising, and never third-party promotions.</li>
+                <li><strong className="text-foreground">Audience insights</strong> — Using aggregated, anonymized survey data to understand our user base and prioritize features that matter most to our community.</li>
+                {/* --- END AI-MODIFIED --- */}
               </ul>
             </section>
 
