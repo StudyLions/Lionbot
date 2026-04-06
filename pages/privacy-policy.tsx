@@ -164,7 +164,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2>Overview</h2>
               <p>
-                StudyLion (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a Discord bot and web dashboard
+                LionBot (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a Discord bot and web dashboard
                 that helps users track study time, manage tasks, set goals, and interact with a virtual pet system
                 (LionGotchi). This privacy policy explains exactly what data we collect, why we collect it, how we
                 use it, and your rights regarding that data.
@@ -179,7 +179,7 @@ export default function PrivacyPolicy() {
             <section>
               <h2>Who We Are</h2>
               <p>
-                StudyLion is operated by Ari Horesh. For any privacy-related questions, contact us at{" "}
+                LionBot is operated by Ari Horesh. For any privacy-related questions, contact us at{" "}
                 <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
                   contact@arihoresh.com
                 </a>.
@@ -244,7 +244,7 @@ export default function PrivacyPolicy() {
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Server Membership Data</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Server Memberships</strong> — Which servers you are a member of (where StudyLion is also present), join/leave dates.</li>
+                <li><strong className="text-foreground">Server Memberships</strong> — Which servers you are a member of (where LionBot is also present), join/leave dates.</li>
                 <li><strong className="text-foreground">Role History</strong> — Roles you held when leaving a server (for role persistence on rejoin).</li>
                 <li><strong className="text-foreground">Role Menu History</strong> — Roles obtained through role menus, when they were equipped/removed.</li>
                 <li><strong className="text-foreground">Rented Rooms</strong> — Private voice channels you rented, their names, and coin balances.</li>
@@ -268,7 +268,7 @@ export default function PrivacyPolicy() {
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Voting Data</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Top.gg Votes</strong> — When you vote for StudyLion on Top.gg, we record your user ID and the vote timestamp to grant the voting bonus.</li>
+                <li><strong className="text-foreground">Top.gg Votes</strong> — When you vote for LionBot on Top.gg, we record your user ID and the vote timestamp to grant the voting bonus.</li>
               </ul>
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Dashboard &amp; Website</h3>
@@ -321,7 +321,7 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Notifications</strong> — Sending reminders and vote reminders you opt into.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: document email and survey data usage */}
-                <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of StudyLion — never spam, never advertising, and never third-party promotions.</li>
+                <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of LionBot — never spam, never advertising, and never third-party promotions.</li>
                 <li><strong className="text-foreground">Personalization &amp; audience insights</strong> — Using survey data to understand our user base, personalize your experience, deliver content and communications relevant to your profile (such as your field of study or region), and prioritize features that matter most to our community.</li>
                 {/* --- END AI-MODIFIED --- */}
               </ul>
@@ -338,7 +338,7 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Hetzner</strong> — Our database and bot are hosted on Hetzner servers in the EU. Hetzner provides infrastructure only and does not access our data.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: add business transfer / acquisition clause */}
-                <li><strong className="text-foreground">Business transfers</strong> — If StudyLion is acquired, merged with another company, or its assets are sold, your data may be transferred to the new owner as part of that transaction. The new owner will be bound by this privacy policy with respect to your data. If such a transfer occurs, we will notify users through the bot, our Discord server, or email where available.</li>
+                <li><strong className="text-foreground">Business transfers</strong> — If LionBot is acquired, merged with another company, or its assets are sold, your data may be transferred to the new owner as part of that transaction. The new owner will be bound by this privacy policy with respect to your data. If such a transfer occurs, we will notify users through the bot, our Discord server, or email where available.</li>
                 <li>Outside of the parties listed above, we do <strong className="text-foreground">not</strong> sell, rent, or share your personal data with third parties for their own marketing purposes.</li>
                 {/* --- END AI-MODIFIED --- */}
               </ul>
@@ -366,7 +366,7 @@ export default function PrivacyPolicy() {
               </p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Study session history, tasks, goals, and economy data are kept indefinitely while you are an active user.</li>
-                <li>If you leave all servers where StudyLion is present, your per-server data remains stored but becomes inactive.</li>
+                <li>If you leave all servers where LionBot is present, your per-server data remains stored but becomes inactive.</li>
                 <li>If you request data deletion (see below), all your data will be permanently removed within 30 days.</li>
                 <li>Moderation tickets may be retained for server safety purposes even after you leave a server, unless you request full deletion.</li>
               </ul>
