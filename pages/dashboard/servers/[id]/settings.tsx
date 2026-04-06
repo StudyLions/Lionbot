@@ -164,6 +164,8 @@ const SETTING_LABELS: Record<string, string> = {
   renting_visible: "Rooms Visible",
   renting_sync_perms: "Sync Permissions",
   renting_notifications: "Room Notifications",
+  renting_inactivity_enabled: "Inactivity Auto-Delete",
+  renting_inactivity_days: "Inactivity Period",
   accountability_price: "Booking Cost",
   accountability_reward: "Attendance Reward",
   accountability_bonus: "Full Group Bonus",
@@ -205,7 +207,7 @@ const SECTION_DEFS: SectionDef[] = [
   // Purpose: Add new room settings to the Private Rooms section
   // --- AI-MODIFIED (2026-04-01) ---
   // Purpose: Add renting_role to rooms section for change tracking
-  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_role", "renting_notifications", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit", "moderator", "notification"] },
+  { id: "rooms", label: "Private Rooms", icon: Lock, settings: ["renting_price", "renting_cap", "renting_visible", "renting_sync_perms", "renting_role", "renting_notifications", "renting_max_per_user", "renting_name_limit", "renting_min_deposit", "renting_auto_extend", "renting_cooldown", "renting_inactivity_enabled", "renting_inactivity_days"], searchTerms: ["room", "rent", "private", "visible", "cooldown", "auto-extend", "deposit", "moderator", "notification", "inactivity", "auto-delete", "inactive"] },
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   { id: "schedule", label: "Accountability", icon: Users, settings: ["accountability_price", "accountability_reward", "accountability_bonus"], searchTerms: ["schedule", "session", "booking", "accountability", "attendance"] },
@@ -1132,6 +1134,17 @@ export default function ServerSettings() {
                         <SettingRow label="Creation Cooldown" description="Minutes between room creations per user (empty = no cooldown)" isModified={isModified("renting_cooldown")} onReset={() => resetField("renting_cooldown")}>
                           <NumberInput value={config.renting_cooldown} onChange={(v) => set("renting_cooldown", v)} min={0} allowNull placeholder="No cooldown" unit="minutes" />
                         </SettingRow>
+                        {/* --- AI-MODIFIED (2026-04-06) --- */}
+                        {/* Purpose: Inactivity auto-delete toggle and configurable period */}
+                        <SettingRow label="Auto-Delete Inactive Rooms" description="Automatically delete rooms after a period of no voice joins or messages" tooltip="When enabled, rooms with no activity (no one joining the voice channel or sending messages in the room's text chat) for the configured number of days will be automatically deleted. The remaining coin balance is refunded to the room owner. Frozen rooms are exempt." isModified={isModified("renting_inactivity_enabled")} onReset={() => resetField("renting_inactivity_enabled")}>
+                          <Toggle checked={config.renting_inactivity_enabled ?? false} onChange={(v) => set("renting_inactivity_enabled", v)} />
+                        </SettingRow>
+                        {(config.renting_inactivity_enabled ?? false) && (
+                          <SettingRow label="Inactivity Period" description="Days of inactivity before a room is auto-deleted (balance refunded to owner)" isModified={isModified("renting_inactivity_days")} onReset={() => resetField("renting_inactivity_days")}>
+                            <NumberInput value={config.renting_inactivity_days} onChange={(v) => set("renting_inactivity_days", v)} min={1} allowNull placeholder="e.g. 14" unit="days" />
+                          </SettingRow>
+                        )}
+                        {/* --- END AI-MODIFIED --- */}
                         <div className="flex items-center justify-center gap-2 py-3 border-t border-border">
                           <Link href={`/dashboard/servers/${guildId}/rooms`}>
                             <a className="text-xs text-primary hover:text-primary/80 flex items-center gap-1.5">

@@ -38,11 +38,22 @@ export default apiHandler({
       ]
     }
 
+    // --- AI-MODIFIED (2026-04-06) ---
+    // Purpose: Add "activity" sort option for last_activity column
+    // --- Original code (commented out for rollback) ---
+    // const orderBy: Prisma.rented_roomsOrderByWithRelationInput =
+    //   sort === "balance" ? { coin_balance: "desc" } :
+    //   sort === "members" ? { rented_members: { _count: "desc" } } :
+    //   sort === "name" ? { name: "asc" } :
+    //   { created_at: "desc" }
+    // --- End original code ---
     const orderBy: Prisma.rented_roomsOrderByWithRelationInput =
       sort === "balance" ? { coin_balance: "desc" } :
       sort === "members" ? { rented_members: { _count: "desc" } } :
       sort === "name" ? { name: "asc" } :
+      sort === "activity" ? { last_activity: "asc" } :
       { created_at: "desc" }
+    // --- END AI-MODIFIED ---
 
     const [rooms, total] = await Promise.all([
       prisma.rented_rooms.findMany({
@@ -150,6 +161,10 @@ export default apiHandler({
         deletedAt: r.deleted_at?.toISOString() ?? null,
         frozenAt: r.frozen_at?.toISOString() ?? null,
         frozenBy: r.frozen_by?.toString() ?? null,
+        // --- AI-MODIFIED (2026-04-06) ---
+        // Purpose: Expose last_activity for inactivity display in admin panel
+        lastActivity: r.last_activity?.toISOString() ?? null,
+        // --- END AI-MODIFIED ---
         owner,
         liveUsers,
         isLive: liveUsers.length > 0,

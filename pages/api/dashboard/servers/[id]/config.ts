@@ -26,6 +26,7 @@ const EDITABLE_FIELDS = [
   'renting_max_per_user', 'renting_name_limit', 'renting_min_deposit',
   'renting_auto_extend', 'renting_cooldown',
   'renting_notifications', // AI-MODIFIED (2026-04-04): join/leave notification toggle
+  'renting_inactivity_enabled', 'renting_inactivity_days', // AI-MODIFIED (2026-04-06): inactivity auto-delete
   // --- END AI-MODIFIED ---
   'accountability_bonus', 'accountability_reward', 'accountability_price',
   // --- AI-MODIFIED (2026-03-23) ---

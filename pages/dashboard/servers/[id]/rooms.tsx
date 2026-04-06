@@ -56,6 +56,10 @@ interface RoomCard {
   rentPrice: number; memberCount: number; totalContribution: number
   createdAt: string | null; deletedAt: string | null
   frozenAt: string | null; frozenBy: string | null
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: Last activity timestamp for inactivity tracking display
+  lastActivity: string | null
+  // --- END AI-MODIFIED ---
   owner: RoomUser; liveUsers: RoomUser[]; isLive: boolean
   hasTimer?: boolean; timerRunning?: boolean
 }
@@ -797,6 +801,7 @@ export default function AdminRoomsPage() {
                       <option value="balance">Balance</option>
                       <option value="members">Members</option>
                       <option value="name">Name</option>
+                      <option value="activity">Last Active</option>
                     </select>
                   </div>
 
@@ -845,6 +850,10 @@ export default function AdminRoomsPage() {
                                 <span>Owner: {room.owner.displayName}</span>
                                 <span><Users size={9} className="inline mr-0.5" />{room.memberCount}</span>
                                 {room.createdAt && <span>{relativeTime(room.createdAt)}</span>}
+                                {/* --- AI-MODIFIED (2026-04-06) --- */}
+                                {/* Purpose: Show last activity timestamp for inactivity tracking */}
+                                {room.lastActivity && !room.deletedAt && <span title={`Last activity: ${new Date(room.lastActivity).toLocaleString()}`}>Active {relativeTime(room.lastActivity)}</span>}
+                                {/* --- END AI-MODIFIED --- */}
                               </div>
                             </div>
                             <div className="flex items-center gap-3 flex-shrink-0">
