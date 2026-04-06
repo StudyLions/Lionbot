@@ -295,6 +295,7 @@ export default function PrivacyPolicy() {
                 This data is stored in our database and used to guide product decisions, personalize your experience, and deliver relevant communications and content based on your profile (e.g. features, tips, or promotions relevant to your field of study or region). We do not sell or share this data with third parties. You can request deletion of your survey data at any time.
               </p>
               {/* --- END AI-MODIFIED --- */}
+            </section>
 
             {/* What We Do NOT Collect */}
             <section>
