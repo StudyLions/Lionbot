@@ -7,6 +7,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { requireAuth, unauthorized } from "@/utils/adminAuth"
 import { prisma } from "@/utils/prisma"
+import { notifySurveyCompleted } from "@/utils/surveyWebhook"
 
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000
 
@@ -88,6 +89,16 @@ export default async function handler(
         completed_at: new Date(),
       },
     })
+
+    notifySurveyCompleted({
+      discordId: auth.discordId,
+      country: country || null,
+      age_range: age_range || null,
+      gender: gender || null,
+      use_case: use_case || null,
+      field_of_study: field_of_study || null,
+      education_level: education_level || null,
+    }).catch(() => {})
 
     return res.json({ status: "completed" })
   }
