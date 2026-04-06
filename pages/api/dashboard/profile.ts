@@ -8,7 +8,10 @@ import { prisma } from "@/utils/prisma"
 import { requireAuth } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 
-const EDITABLE_FIELDS = ["timezone", "show_global_stats", "locale"] as const
+// --- AI-MODIFIED (2026-04-06) ---
+// Purpose: Add schedule_dm_muted to editable profile fields
+const EDITABLE_FIELDS = ["timezone", "show_global_stats", "locale", "schedule_dm_muted"] as const
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: wrapped with apiHandler for error handling and method validation
@@ -28,6 +31,7 @@ export default apiHandler({
         timezone: null,
         locale: null,
         showGlobalStats: null,
+        scheduleDmMuted: false,
         gems: 0,
         firstSeen: null,
         lastSeen: null,
@@ -41,6 +45,7 @@ export default apiHandler({
       timezone: profile.timezone,
       locale: profile.locale,
       showGlobalStats: profile.show_global_stats,
+      scheduleDmMuted: profile.schedule_dm_muted ?? false,
       gems: profile.gems ?? 0,
       firstSeen: profile.first_seen?.toISOString() || null,
       lastSeen: profile.last_seen?.toISOString() || null,

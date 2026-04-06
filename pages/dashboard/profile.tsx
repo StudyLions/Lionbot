@@ -65,6 +65,7 @@ interface ProfileData {
   timezone: string | null
   locale: string | null
   showGlobalStats: boolean | null
+  scheduleDmMuted: boolean
   gems: number
   firstSeen: string | null
   lastSeen: string | null
@@ -192,6 +193,8 @@ export default function ProfilePage() {
       updates.locale = profile.locale || null
     if (profile.showGlobalStats !== original.showGlobalStats)
       updates.show_global_stats = profile.showGlobalStats
+    if (profile.scheduleDmMuted !== original.scheduleDmMuted)
+      updates.schedule_dm_muted = profile.scheduleDmMuted
 
     try {
       await dashboardMutate("PATCH", "/api/dashboard/profile", updates)
@@ -561,6 +564,21 @@ export default function ProfilePage() {
                         id="profile-show-global-stats"
                       />
                     </SettingRow>
+                    {/* --- AI-MODIFIED (2026-04-06) --- */}
+                    {/* Purpose: Mute toggle for schedule DM reminders */}
+                    <SettingRow
+                      label="Mute Schedule Reminders"
+                      description="Stop DM notifications for upcoming scheduled study sessions"
+                    >
+                      <Toggle
+                        checked={profile.scheduleDmMuted ?? false}
+                        onChange={(v) =>
+                          setProfile((p) => (p ? { ...p, scheduleDmMuted: v } : p))
+                        }
+                        id="profile-schedule-dm-muted"
+                      />
+                    </SettingRow>
+                    {/* --- END AI-MODIFIED --- */}
                   </SectionCard>
                 </>
               )}
