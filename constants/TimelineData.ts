@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 6, 2026 ──────────────────────────────────────────
+  {
+    date: "2026-04-06",
+    title: "Anti AFK System — Premium Voice Activity Checks",
+    description:
+      "We added a new premium feature that automatically checks if users in voice channels are still active. Admins can configure check intervals, grace periods, and choose between disconnecting, pausing sessions, or moving inactive users to the AFK channel. Everything is configured from the dashboard with smart exemptions for streaming users, pomodoro sessions, and specific roles or channels.",
+    category: "premium",
+    area: "both",
+  },
   // ── April 5, 2026 ──────────────────────────────────────────
   {
     date: "2026-04-05",

@@ -30,13 +30,14 @@ export async function middleware(req) {
   const { pathname } = req.nextUrl
 
   if (pathname === "/middleware-protected") {
+    // --- AI-MODIFIED (2026-04-06) ---
+    // Purpose: use versioned cookie name matching [...nextauth].js cookies config
     const session = await getToken({
       req,
       secret: process.env.SECRET,
-      secureCookie:
-        process.env.NEXTAUTH_URL?.startsWith("https://") ??
-        !!process.env.VERCEL_URL,
+      cookieName: '__Secure-next-auth.session-token.v2',
     })
+    // --- END AI-MODIFIED ---
     if (!session) return NextResponse.redirect(new URL("/api/auth/signin", req.url))
   }
 
@@ -48,13 +49,14 @@ export async function middleware(req) {
   // --- END AI-MODIFIED ---
 
   if (needsAuth) {
+    // --- AI-MODIFIED (2026-04-06) ---
+    // Purpose: use versioned cookie name matching [...nextauth].js cookies config
     const token = await getToken({
       req,
       secret: process.env.SECRET,
-      secureCookie:
-        process.env.NEXTAUTH_URL?.startsWith("https://") ??
-        !!process.env.VERCEL_URL,
+      cookieName: '__Secure-next-auth.session-token.v2',
     })
+    // --- END AI-MODIFIED ---
     if (!token?.discordId) {
       // --- AI-REPLACED (2026-03-21) ---
       // Reason: Next.js 12 middleware cannot return response bodies

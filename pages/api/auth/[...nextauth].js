@@ -1,5 +1,9 @@
 import NextAuth from "next-auth"
 import DiscordProvider from "next-auth/providers/discord";
+// --- AI-MODIFIED (2026-04-06) ---
+// Purpose: import Prisma to save Discord email on login
+import { prisma } from '../../../utils/prisma';
+// --- END AI-MODIFIED ---
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -139,7 +143,26 @@ export default NextAuth({
 
   // Events are useful for logging
   // https://next-auth.js.org/configuration/events
-  events: {},
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: save Discord email to user_config on every sign-in
+  events: {
+    async signIn({ user, profile, account }) {
+      if (account?.provider === 'discord' && (profile?.email || user?.email)) {
+        const email = profile?.email || user?.email;
+        const verified = profile?.verified ?? user?.emailVerified ?? null;
+        try {
+          await prisma.user_config.upsert({
+            where: { userid: BigInt(profile?.id || account.providerAccountId) },
+            update: { email, email_verified: verified },
+            create: { userid: BigInt(profile?.id || account.providerAccountId), email, email_verified: verified },
+          });
+        } catch (e) {
+          console.error('[NextAuth] Failed to save user email:', e);
+        }
+      }
+    },
+  },
+  // --- END AI-MODIFIED ---
 
   // You can set the theme to 'light', 'dark' or use 'auto' to default to the
   // whatever prefers-color-scheme is set to in the browser. Default is 'auto'
@@ -149,6 +172,23 @@ export default NextAuth({
     colorScheme: "dark",
     // --- END AI-MODIFIED ---
   },
+
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: renamed session cookie to invalidate all old sessions and force re-login
+  // (so the signIn event captures every user's email)
+  // To force another mass logout in the future, bump ".v2" to ".v3" etc.
+  cookies: {
+    sessionToken: {
+      name: '__Secure-next-auth.session-token.v2',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+      },
+    },
+  },
+  // --- END AI-MODIFIED ---
 
   // Enable debug messages in the console if you are having problems
   debug: false,

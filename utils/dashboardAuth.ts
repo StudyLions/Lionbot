@@ -9,7 +9,10 @@ import type { NextApiRequest, NextApiResponse } from "next"
 const secret = process.env.SECRET
 
 export async function getDiscordId(req: NextApiRequest): Promise<string | null> {
-  const token = await getToken({ req, secret })
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: use versioned cookie name matching [...nextauth].js cookies config
+  const token = await getToken({ req, secret, cookieName: '__Secure-next-auth.session-token.v2' })
+  // --- END AI-MODIFIED ---
   return (token?.discordId as string) || null
 }
 

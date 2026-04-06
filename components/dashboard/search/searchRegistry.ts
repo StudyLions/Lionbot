@@ -263,6 +263,21 @@ const PAGE_ITEMS: SearchItem[] = [
     requiredLevel: "admin",
     premium: true,
   },
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: Anti AFK System search entry
+  {
+    id: "page-anti-afk",
+    title: "Anti AFK System",
+    description: "Activity checks for voice channel users",
+    category: "page",
+    page: "Premium",
+    route: "/anti-afk",
+    keywords: ["anti", "afk", "activity", "check", "kick", "idle", "voice", "inactive"],
+    iconName: "ShieldAlert",
+    requiredLevel: "admin",
+    premium: true,
+  },
+  // --- END AI-MODIFIED ---
 ]
 
 const SETTINGS_SECTION_ITEMS: SearchItem[] = [

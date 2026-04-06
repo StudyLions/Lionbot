@@ -477,8 +477,10 @@ export default function PomodoroPage() {
           manager_roleid: createForm.manager_roleid, channel_name: createForm.channel_name || null,
         }),
       })
+      // --- AI-MODIFIED (2026-04-06) ---
+      // Purpose: Show warning when timer-control reload fails so admins know
+      // they may need to use Discord commands instead of silently failing
       if (res.ok) {
-        toast.success("Timer created")
         const channelToReload = createForm.channelid
         setCreateForm({
           channelid: null, focus_length: 25, break_length: 5, pretty_name: "",
@@ -486,10 +488,20 @@ export default function PomodoroPage() {
           inactivity_threshold: "", manager_roleid: null, channel_name: "",
         })
         mutate()
-        fetch(`/api/dashboard/servers/${id}/timer-control`, {
-          method: "POST", headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ channelid: channelToReload, action: "reload" }),
-        }).catch(() => {})
+        try {
+          const reloadRes = await fetch(`/api/dashboard/servers/${id}/timer-control`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ channelid: channelToReload, action: "reload" }),
+          })
+          if (reloadRes.ok) {
+            toast.success("Timer created and activated")
+          } else {
+            toast.success("Timer created, but the bot hasn't picked it up yet. Use /timer start in Discord or wait for the next bot restart.", { duration: 8000 })
+          }
+        } catch {
+          toast.success("Timer created, but the bot hasn't picked it up yet. Use /timer start in Discord or wait for the next bot restart.", { duration: 8000 })
+        }
+      // --- END AI-MODIFIED ---
       } else {
         const err = await res.json()
         toast.error(err.error || "Failed to create timer")
@@ -754,7 +766,10 @@ export default function PomodoroPage() {
                       </SettingRow>
                       {/* --- AI-MODIFIED (2026-03-25) --- */}
                       {/* Purpose: Toggle for session leave summary messages */}
-                      <SettingRow label="Session leave summaries" description="Post a summary message when a member finishes studying in a pomodoro channel" tooltip="When enabled, members see a 'Great session!' message with their study duration and focus cycles completed.">
+                      {/* --- AI-MODIFIED (2026-04-06) --- */}
+                      {/* Purpose: Updated tooltip to clarify this is the master switch for all summaries */}
+                      <SettingRow label="Session leave summaries" description="Post a summary message when a member finishes studying in a pomodoro channel" tooltip="Master switch: when disabled, ALL session summaries are suppressed (including premium session summaries). When enabled, members see a summary with their study duration and focus cycles.">
+                      {/* --- END AI-MODIFIED --- */}
                         <Toggle
                           checked={sessionLeaveSummary}
                           onChange={handleSetSessionLeaveSummary}
