@@ -98,7 +98,7 @@ export default async function handler(
       use_case: use_case || null,
       field_of_study: field_of_study || null,
       education_level: education_level || null,
-    }).catch(() => {})
+    }).catch((e) => console.error('[Survey] notifySurveyCompleted failed:', e))
 
     return res.json({ status: "completed" })
   }

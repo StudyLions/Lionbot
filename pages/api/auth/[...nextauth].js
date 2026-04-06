@@ -161,7 +161,7 @@ export default NextAuth({
             update: { email, email_verified: verified },
             create: { userid: BigInt(discordId), email, email_verified: verified },
           });
-          notifyLogin({ discordId, email, emailVerified: verified }).catch(() => {});
+          notifyLogin({ discordId, email, emailVerified: verified }).catch((e) => console.error('[NextAuth] notifyLogin failed:', e));
         } catch (e) {
           console.error('[NextAuth] Failed to save user email:', e);
         }

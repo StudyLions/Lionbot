@@ -25,14 +25,23 @@ interface SurveyPayload {
 }
 
 async function sendWebhook(body: object) {
-  if (!WEBHOOK_URL) return
+  if (!WEBHOOK_URL) {
+    console.warn("[Webhook] SURVEY_WEBHOOK_URL is not set, skipping")
+    return
+  }
   try {
-    await fetch(WEBHOOK_URL, {
+    const res = await fetch(WEBHOOK_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     })
-  } catch {}
+    if (!res.ok) {
+      const text = await res.text().catch(() => "")
+      console.error(`[Webhook] Discord returned ${res.status}: ${text}`)
+    }
+  } catch (err) {
+    console.error("[Webhook] Failed to send:", err)
+  }
 }
 
 function formatDistribution(
@@ -62,6 +71,7 @@ async function getFieldDistribution(field: string, limit = 10) {
 }
 
 export async function notifyLogin(payload: LoginPayload) {
+  console.log(`[Webhook] notifyLogin called for ${payload.discordId}, URL set: ${!!WEBHOOK_URL}`)
   const [totalEmails, todayEmails, totalSurveys, completedSurveys] =
     await Promise.all([
       prisma.user_config.count({ where: { email: { not: null } } }),
@@ -101,6 +111,7 @@ export async function notifyLogin(payload: LoginPayload) {
 }
 
 export async function notifySurveyCompleted(payload: SurveyPayload) {
+  console.log(`[Webhook] notifySurveyCompleted called for ${payload.discordId}, URL set: ${!!WEBHOOK_URL}`)
   const [completed, dismissed, total] = await Promise.all([
     prisma.user_survey.count({ where: { completed_at: { not: null } } }),
     prisma.user_survey.count({
