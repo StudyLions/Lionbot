@@ -4,6 +4,10 @@ import DiscordProvider from "next-auth/providers/discord";
 // Purpose: import Prisma to save Discord email on login
 import { prisma } from '../../../utils/prisma';
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-04-06) ---
+// Purpose: send Discord webhook on login
+import { notifyLogin } from '../../../utils/surveyWebhook';
+// --- END AI-MODIFIED ---
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -150,12 +154,14 @@ export default NextAuth({
       if (account?.provider === 'discord' && (profile?.email || user?.email)) {
         const email = profile?.email || user?.email;
         const verified = profile?.verified ?? user?.emailVerified ?? null;
+        const discordId = profile?.id || account.providerAccountId;
         try {
           await prisma.user_config.upsert({
-            where: { userid: BigInt(profile?.id || account.providerAccountId) },
+            where: { userid: BigInt(discordId) },
             update: { email, email_verified: verified },
-            create: { userid: BigInt(profile?.id || account.providerAccountId), email, email_verified: verified },
+            create: { userid: BigInt(discordId), email, email_verified: verified },
           });
+          notifyLogin({ discordId, email, emailVerified: verified }).catch(() => {});
         } catch (e) {
           console.error('[NextAuth] Failed to save user email:', e);
         }

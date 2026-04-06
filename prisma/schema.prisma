@@ -268,6 +268,11 @@ model guild_config {
   // Purpose: Toggle for join/leave notification embeds inside private room channels
   renting_notifications           Boolean?                       @default(true)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: Auto-delete private rooms after configurable inactivity period
+  renting_inactivity_enabled      Boolean?                       @default(false)
+  renting_inactivity_days         Int?
+  // --- END AI-MODIFIED ---
   setup_wizard_dismissed_at       DateTime?                      @db.Timestamptz(6)
   leaderboard_role_filter_enabled Boolean?                       @default(false)
   // --- AI-MODIFIED (2026-03-25) ---
@@ -551,6 +556,10 @@ model rented_rooms {
   contribution   Int              @default(0)
   frozen_at      DateTime?        @db.Timestamptz(6)
   frozen_by      BigInt?
+  // --- AI-MODIFIED (2026-04-06) ---
+  // Purpose: Track last activity for inactivity auto-delete feature
+  last_activity  DateTime?        @db.Timestamptz(6)
+  // --- END AI-MODIFIED ---
   rented_members rented_members[]
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
   room_admin_log room_admin_log[]
