@@ -146,20 +146,15 @@ export default NextAuth({
   // --- AI-MODIFIED (2026-04-06) ---
   // Purpose: save Discord email to user_config on every sign-in
   events: {
-    async signIn({ profile, account }) {
-      if (account?.provider === 'discord' && profile?.email) {
+    async signIn({ user, profile, account }) {
+      if (account?.provider === 'discord' && (profile?.email || user?.email)) {
+        const email = profile?.email || user?.email;
+        const verified = profile?.verified ?? user?.emailVerified ?? null;
         try {
           await prisma.user_config.upsert({
-            where: { userid: BigInt(profile.id) },
-            update: {
-              email: profile.email,
-              email_verified: profile.verified ?? null,
-            },
-            create: {
-              userid: BigInt(profile.id),
-              email: profile.email,
-              email_verified: profile.verified ?? null,
-            },
+            where: { userid: BigInt(profile?.id || account.providerAccountId) },
+            update: { email, email_verified: verified },
+            create: { userid: BigInt(profile?.id || account.providerAccountId), email, email_verified: verified },
           });
         } catch (e) {
           console.error('[NextAuth] Failed to save user email:', e);
