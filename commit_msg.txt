@@ -1,5 +1,0 @@
-[AI] fix: session summary master switch + timer creation error handling
-
-- Session leave summaries toggle now acts as master switch: when OFF, premium session summaries are also suppressed
-- Updated tooltip to clarify master switch behavior
-- Timer creation now shows warning if bot reload fails instead of silently swallowing the error
