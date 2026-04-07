@@ -23,6 +23,31 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 7, 2026 ──────────────────────────────────────────
+  {
+    date: "2026-04-07",
+    title: "Privacy Dashboard — GDPR Compliance",
+    description:
+      "We added a new Privacy section to the dashboard where you can view a summary of all data we store about you, download a full copy of your data as a JSON file, or request deletion of your account data. Deletion requests include a 14-day cooling-off period and are reviewed by an admin before processing.",
+    category: "feature",
+    area: "website",
+  },
+  {
+    date: "2026-04-07",
+    title: "Room Inactivity Auto-Delete",
+    description:
+      "Server admins can now enable automatic cleanup of inactive private rooms. Set a number of days, and rooms with no messages or voice activity will be deleted automatically — with the remaining balance refunded to the owner. The dashboard also shows each room's last active time so admins can monitor activity at a glance.",
+    category: "feature",
+    area: "both",
+  },
+  {
+    date: "2026-04-07",
+    title: "Configurable Schedule Reminder Timing",
+    description:
+      "Server admins can now customize how early scheduled session reminders are sent, anywhere from 5 to 30 minutes before the session starts. Previously this was locked at 15 minutes. Configure it with /admin config schedule or through the bot's interactive settings panel.",
+    category: "improvement",
+    area: "bot",
+  },
   // ── April 6, 2026 ──────────────────────────────────────────
   {
     date: "2026-04-06",
@@ -30,6 +55,14 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     description:
       "We added a new premium feature that automatically checks if users in voice channels are still active. Admins can configure check intervals, grace periods, and choose between disconnecting, pausing sessions, or moving inactive users to the AFK channel. Everything is configured from the dashboard with smart exemptions for streaming users, pomodoro sessions, and specific roles or channels.",
     category: "premium",
+    area: "both",
+  },
+  {
+    date: "2026-04-06",
+    title: "Schedule Reminder Mute + Notification Fix",
+    description:
+      "You can now mute scheduled session reminders with a button right on the DM itself, or from the dashboard profile page. We also fixed an issue where booking consecutive hourly slots would send a separate reminder for each hour — now you only get one notification for the entire block.",
+    category: "improvement",
     area: "both",
   },
   // ── April 5, 2026 ──────────────────────────────────────────

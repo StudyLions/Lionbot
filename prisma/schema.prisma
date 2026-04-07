@@ -1577,15 +1577,21 @@ model pomodoro_milestones {
 }
 
 model data_deletion_requests {
-  requestid    Int                   @id @default(autoincrement())
-  userid       BigInt
-  discord_tag  String?               @db.VarChar(100)
-  reason       String?               @db.VarChar(1000)
-  status       deletionrequeststatus @default(PENDING)
-  requested_at DateTime              @default(now()) @db.Timestamptz(6)
-  resolved_at  DateTime?             @db.Timestamptz(6)
-  resolved_by  String?               @db.VarChar(255)
-  notes        String?
+  requestid          Int                   @id @default(autoincrement())
+  userid             BigInt
+  discord_tag        String?               @db.VarChar(100)
+  reason             String?               @db.VarChar(1000)
+  status             deletionrequeststatus @default(PENDING)
+  requested_at       DateTime              @default(now()) @db.Timestamptz(6)
+  resolved_at        DateTime?             @db.Timestamptz(6)
+  resolved_by        String?               @db.VarChar(255)
+  notes              String?
+  // --- AI-MODIFIED (2026-04-07) ---
+  // Purpose: GDPR compliance fields for secure approval flow and audit trail
+  approval_token     String?               @db.VarChar(128)
+  cooloff_expires_at DateTime?             @db.Timestamptz(6)
+  deletion_summary   Json?
+  // --- END AI-MODIFIED ---
 
   @@index([userid], map: "data_deletion_requests_userid")
   @@index([status], map: "data_deletion_requests_status")
