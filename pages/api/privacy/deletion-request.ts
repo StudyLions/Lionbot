@@ -54,7 +54,7 @@ async function sendWebhookNotification(
   requestId: number,
   approvalToken: string,
   cooloffExpiresAt: Date,
-  dataCounts: Record<string, number>,
+  dataCounts: Record<string, number | boolean>,
 ) {
   if (!WEBHOOK_URL) {
     console.error("GDPR_WEBHOOK_URL not set, cannot send deletion request webhook")
