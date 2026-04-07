@@ -159,7 +159,7 @@ export default function PrivacyPage() {
   }
 
   return (
-    <Layout SEO={{ title: "Privacy | LionBot Dashboard" }}>
+    <Layout SEO={{ title: "Privacy | LionBot Dashboard", description: "View, export, or request deletion of your personal data stored by LionBot." }}>
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />}>
           <PageHeader
