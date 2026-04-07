@@ -2385,6 +2385,7 @@ model anti_afk_config {
   target_channels      String       @default("[]")
   exclude_channels     String       @default("[]")
   use_dms              Boolean      @default(false)
+  prompt_channelid     BigInt?
   fallback_channelid   BigInt?
   skip_streaming       Boolean      @default(true)
   notify_on_action     Boolean      @default(true)

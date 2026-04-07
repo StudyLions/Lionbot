@@ -38,6 +38,7 @@ function serializeConfig(c: any) {
     target_channels: parseJsonArray(c.target_channels),
     exclude_channels: parseJsonArray(c.exclude_channels),
     use_dms: c.use_dms,
+    prompt_channelid: c.prompt_channelid?.toString() ?? null,
     fallback_channelid: c.fallback_channelid?.toString() ?? null,
     skip_streaming: c.skip_streaming,
     notify_on_action: c.notify_on_action,
@@ -72,6 +73,7 @@ const DEFAULT_CONFIG = {
   target_channels: "[]",
   exclude_channels: "[]",
   use_dms: false,
+  prompt_channelid: null,
   fallback_channelid: null,
   skip_streaming: true,
   notify_on_action: true,
@@ -202,6 +204,15 @@ export default apiHandler({
     if (body.use_dms !== undefined) {
       updateData.use_dms = Boolean(body.use_dms)
     }
+
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Support custom channel delivery for Anti AFK prompts
+    if (body.prompt_channelid !== undefined) {
+      updateData.prompt_channelid = body.prompt_channelid
+        ? BigInt(body.prompt_channelid)
+        : null
+    }
+    // --- END AI-MODIFIED ---
 
     if (body.fallback_channelid !== undefined) {
       updateData.fallback_channelid = body.fallback_channelid
