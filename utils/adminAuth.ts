@@ -235,16 +235,61 @@ export async function getUserGuildRoles(guildId: bigint, userId: string): Promis
 
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: check if the bot is actually present in a guild via Discord API (cached 5 min)
-const botPresenceCache = new Map<string, { present: boolean; expiresAt: number }>()
+// --- AI-REPLACED (2026-04-07) ---
+// Reason: Refactored to cache full guild data so we can also check afk_channel_id
+// What the new code does better: Caches guild payload for reuse by getGuildAfkChannelId
+// --- Original code (commented out for rollback) ---
+// const botPresenceCache = new Map<string, { present: boolean; expiresAt: number }>()
+//
+// export async function checkBotInGuild(guildId: string): Promise<boolean> {
+//   const cached = botPresenceCache.get(guildId)
+//   if (cached && Date.now() < cached.expiresAt) {
+//     return cached.present
+//   }
+//
+//   const botToken = process.env.DISCORD_BOT_TOKEN
+//   if (!botToken) return false
+//
+//   try {
+//     let res = await fetch(
+//       `https://discord.com/api/v10/guilds/${guildId}`,
+//       { headers: { Authorization: `Bot ${botToken}` } }
+//     )
+//     if (res.status === 429) {
+//       const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+//       await new Promise((r) => setTimeout(r, retryAfter * 1000))
+//       res = await fetch(
+//         `https://discord.com/api/v10/guilds/${guildId}`,
+//         { headers: { Authorization: `Bot ${botToken}` } }
+//       )
+//     }
+//     const present = res.ok
+//     botPresenceCache.set(guildId, { present, expiresAt: Date.now() + 300000 })
+//     return present
+//   } catch {
+//     return false
+//   }
+// }
+// --- End original code ---
 
-export async function checkBotInGuild(guildId: string): Promise<boolean> {
-  const cached = botPresenceCache.get(guildId)
+interface CachedGuildInfo {
+  present: boolean
+  afk_channel_id: string | null
+  expiresAt: number
+}
+
+const guildInfoCache = new Map<string, CachedGuildInfo>()
+
+async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
+  const cached = guildInfoCache.get(guildId)
   if (cached && Date.now() < cached.expiresAt) {
-    return cached.present
+    return cached
   }
 
   const botToken = process.env.DISCORD_BOT_TOKEN
-  if (!botToken) return false
+  if (!botToken) {
+    return { present: false, afk_channel_id: null, expiresAt: Date.now() + 60000 }
+  }
 
   try {
     let res = await fetch(
@@ -259,13 +304,34 @@ export async function checkBotInGuild(guildId: string): Promise<boolean> {
         { headers: { Authorization: `Bot ${botToken}` } }
       )
     }
-    const present = res.ok
-    botPresenceCache.set(guildId, { present, expiresAt: Date.now() + 300000 })
-    return present
+    if (!res.ok) {
+      const info: CachedGuildInfo = { present: false, afk_channel_id: null, expiresAt: Date.now() + 300000 }
+      guildInfoCache.set(guildId, info)
+      return info
+    }
+    const guild = await res.json()
+    const info: CachedGuildInfo = {
+      present: true,
+      afk_channel_id: guild.afk_channel_id || null,
+      expiresAt: Date.now() + 300000,
+    }
+    guildInfoCache.set(guildId, info)
+    return info
   } catch {
-    return false
+    return { present: false, afk_channel_id: null, expiresAt: Date.now() + 60000 }
   }
 }
+
+export async function checkBotInGuild(guildId: string): Promise<boolean> {
+  const info = await fetchGuildInfo(guildId)
+  return info.present
+}
+
+export async function getGuildHasAfkChannel(guildId: string): Promise<boolean> {
+  const info = await fetchGuildInfo(guildId)
+  return !!info.afk_channel_id
+}
+// --- END AI-REPLACED ---
 // --- END AI-MODIFIED ---
 
 export async function isMember(userId: bigint, guildId: bigint): Promise<boolean> {

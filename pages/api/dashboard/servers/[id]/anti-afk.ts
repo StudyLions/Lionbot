@@ -6,7 +6,10 @@
 //          PATCH updates config (admin + premium only).
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Import getGuildHasAfkChannel to validate move_afk action
+import { requireAdmin, getGuildHasAfkChannel } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const VALID_ACTIONS = ["kick", "pause", "move_afk"]
@@ -87,24 +90,30 @@ export default apiHandler({
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
-    const [config, isPremium] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Also check if guild has an AFK channel so frontend can disable move_afk
+    const [config, isPremium, hasAfkChannel] = await Promise.all([
       prisma.anti_afk_config.findUnique({
         where: { guildid: guildId },
       }),
       isPremiumGuild(guildId),
+      getGuildHasAfkChannel(guildId.toString()),
     ])
 
     if (config) {
       return res.status(200).json({
         config: serializeConfig(config),
         isPremium,
+        hasAfkChannel,
       })
     }
 
     return res.status(200).json({
       config: serializeConfig({ guildid: guildId, ...DEFAULT_CONFIG }),
       isPremium,
+      hasAfkChannel,
     })
+    // --- END AI-MODIFIED ---
   },
 
   async PATCH(req, res) {
@@ -145,14 +154,25 @@ export default apiHandler({
       updateData.grace_period = val
     }
 
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Reject move_afk when the guild has no AFK channel configured in Discord
     if (body.action !== undefined) {
       if (!VALID_ACTIONS.includes(body.action)) {
         throw new ValidationError(
           `Action must be one of: ${VALID_ACTIONS.join(", ")}`
         )
       }
+      if (body.action === "move_afk") {
+        const hasAfk = await getGuildHasAfkChannel(guildId.toString())
+        if (!hasAfk) {
+          throw new ValidationError(
+            "Cannot use 'Move to AFK' — this server has no AFK channel configured in Discord Server Settings"
+          )
+        }
+      }
       updateData.action = body.action
     }
+    // --- END AI-MODIFIED ---
 
     if (body.max_warnings !== undefined) {
       const val = Number(body.max_warnings)

@@ -49,10 +49,14 @@ interface AntiAfkConfig {
   max_actions_per_hour: number
 }
 
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Add hasAfkChannel to disable Move to AFK when server has no AFK channel
 interface ApiResponse {
   config: AntiAfkConfig
   isPremium: boolean
+  hasAfkChannel: boolean
 }
+// --- END AI-MODIFIED ---
 
 const DEFAULT_CONFIG: AntiAfkConfig = {
   guildid: "",
@@ -110,14 +114,25 @@ export default function AntiAfkPage() {
   )
   const serverName = serverData?.server?.name || "Server"
   const isPremium = apiData?.isPremium ?? false
+  // --- AI-MODIFIED (2026-04-07) ---
+  // Purpose: Track whether guild has an AFK channel for disabling move_afk option
+  const hasAfkChannel = apiData?.hasAfkChannel ?? false
+  // --- END AI-MODIFIED ---
 
   const [config, setConfig] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
   const [original, setOriginal] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
 
   useEffect(() => {
     if (!apiData?.config) return
-    setConfig(apiData.config)
-    setOriginal(apiData.config)
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: If move_afk was saved but guild lost its AFK channel, fall back to kick
+    const loaded = { ...apiData.config }
+    if (loaded.action === "move_afk" && apiData.hasAfkChannel === false) {
+      loaded.action = "kick"
+    }
+    // --- END AI-MODIFIED ---
+    setConfig(loaded)
+    setOriginal(loaded)
   }, [apiData])
 
   const hasChanges = useMemo(
@@ -228,7 +243,7 @@ export default function AntiAfkPage() {
                         Check Interval (minutes)
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        How often each user is prompted to confirm they're still active.
+                        How often each user is prompted to confirm they're still active. <span className="text-gray-500">(15–180 min)</span>
                       </p>
                       <NumberInput
                         value={config.check_interval}
@@ -243,7 +258,7 @@ export default function AntiAfkPage() {
                         Grace Period (minutes)
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        How long users have to click the confirmation button.
+                        How long users have to click the confirmation button. <span className="text-gray-500">(2–14 min)</span>
                       </p>
                       <NumberInput
                         value={config.grace_period}
@@ -253,36 +268,47 @@ export default function AntiAfkPage() {
                       />
                     </div>
 
+                    {/* --- AI-MODIFIED (2026-04-07) --- */}
+                    {/* Purpose: Disable Move to AFK when server has no AFK channel */}
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2">
                         Action on Failure
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {ACTION_OPTIONS.map(({ id, label, description, Icon }) => (
-                          <button
-                            key={id}
-                            onClick={() => update({ action: id })}
-                            className={cn(
-                              "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all",
-                              config.action === id
-                                ? "bg-amber-500/15 border-amber-500/50 text-amber-400"
-                                : "bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300",
-                            )}
-                          >
-                            <Icon size={20} />
-                            <span className="text-sm font-medium">{label}</span>
-                            <span className="text-[11px] text-center opacity-70">{description}</span>
-                          </button>
-                        ))}
+                        {ACTION_OPTIONS.map(({ id, label, description, Icon }) => {
+                          const disabled = id === "move_afk" && !hasAfkChannel
+                          return (
+                            <button
+                              key={id}
+                              onClick={() => !disabled && update({ action: id })}
+                              disabled={disabled}
+                              className={cn(
+                                "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all",
+                                disabled
+                                  ? "bg-gray-800/30 border-gray-700/50 text-gray-600 cursor-not-allowed opacity-50"
+                                  : config.action === id
+                                    ? "bg-amber-500/15 border-amber-500/50 text-amber-400"
+                                    : "bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300",
+                              )}
+                            >
+                              <Icon size={20} />
+                              <span className="text-sm font-medium">{label}</span>
+                              <span className="text-[11px] text-center opacity-70">
+                                {disabled ? "No AFK channel in this server" : description}
+                              </span>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-1">
                         Max Warnings Before Action
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Number of missed checks before the action is applied. Users receive warning messages for each miss until this limit is reached.
+                        Number of missed checks before the action is applied. Users receive warning messages for each miss until this limit is reached. <span className="text-gray-500">(1–5)</span>
                       </p>
                       <NumberInput
                         value={config.max_warnings}
@@ -297,7 +323,7 @@ export default function AntiAfkPage() {
                         Min Users in Channel
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Only run checks when this many users are in the channel. Set to 1 to always check.
+                        Only run checks when this many users are in the channel. Set to 1 to always check. <span className="text-gray-500">(1–10)</span>
                       </p>
                       <NumberInput
                         value={config.min_users}
