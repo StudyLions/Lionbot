@@ -6,7 +6,10 @@
 //          PATCH updates config (admin + premium only).
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { requireAdmin } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Import getGuildHasAfkChannel to validate move_afk action
+import { requireAdmin, getGuildHasAfkChannel } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 const VALID_ACTIONS = ["kick", "pause", "move_afk"]
@@ -38,6 +41,7 @@ function serializeConfig(c: any) {
     target_channels: parseJsonArray(c.target_channels),
     exclude_channels: parseJsonArray(c.exclude_channels),
     use_dms: c.use_dms,
+    prompt_channelid: c.prompt_channelid?.toString() ?? null,
     fallback_channelid: c.fallback_channelid?.toString() ?? null,
     skip_streaming: c.skip_streaming,
     notify_on_action: c.notify_on_action,
@@ -72,6 +76,7 @@ const DEFAULT_CONFIG = {
   target_channels: "[]",
   exclude_channels: "[]",
   use_dms: false,
+  prompt_channelid: null,
   fallback_channelid: null,
   skip_streaming: true,
   notify_on_action: true,
@@ -85,24 +90,30 @@ export default apiHandler({
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
-    const [config, isPremium] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Also check if guild has an AFK channel so frontend can disable move_afk
+    const [config, isPremium, hasAfkChannel] = await Promise.all([
       prisma.anti_afk_config.findUnique({
         where: { guildid: guildId },
       }),
       isPremiumGuild(guildId),
+      getGuildHasAfkChannel(guildId.toString()),
     ])
 
     if (config) {
       return res.status(200).json({
         config: serializeConfig(config),
         isPremium,
+        hasAfkChannel,
       })
     }
 
     return res.status(200).json({
       config: serializeConfig({ guildid: guildId, ...DEFAULT_CONFIG }),
       isPremium,
+      hasAfkChannel,
     })
+    // --- END AI-MODIFIED ---
   },
 
   async PATCH(req, res) {
@@ -143,14 +154,25 @@ export default apiHandler({
       updateData.grace_period = val
     }
 
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Reject move_afk when the guild has no AFK channel configured in Discord
     if (body.action !== undefined) {
       if (!VALID_ACTIONS.includes(body.action)) {
         throw new ValidationError(
           `Action must be one of: ${VALID_ACTIONS.join(", ")}`
         )
       }
+      if (body.action === "move_afk") {
+        const hasAfk = await getGuildHasAfkChannel(guildId.toString())
+        if (!hasAfk) {
+          throw new ValidationError(
+            "Cannot use 'Move to AFK' — this server has no AFK channel configured in Discord Server Settings"
+          )
+        }
+      }
       updateData.action = body.action
     }
+    // --- END AI-MODIFIED ---
 
     if (body.max_warnings !== undefined) {
       const val = Number(body.max_warnings)
@@ -202,6 +224,15 @@ export default apiHandler({
     if (body.use_dms !== undefined) {
       updateData.use_dms = Boolean(body.use_dms)
     }
+
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: Support custom channel delivery for Anti AFK prompts
+    if (body.prompt_channelid !== undefined) {
+      updateData.prompt_channelid = body.prompt_channelid
+        ? BigInt(body.prompt_channelid)
+        : null
+    }
+    // --- END AI-MODIFIED ---
 
     if (body.fallback_channelid !== undefined) {
       updateData.fallback_channelid = body.fallback_channelid

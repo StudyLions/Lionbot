@@ -94,7 +94,10 @@ export default apiHandler({
     return res.status(200).json({
       rankType: guildConfig?.rank_type || null,
       rankChannel: guildConfig?.rank_channel?.toString() || null,
-      dmRanks: guildConfig?.dm_ranks ?? false,
+      // --- AI-MODIFIED (2026-04-07) ---
+      // Purpose: Match bot's default (True) so NULL shows as ON, not OFF
+      dmRanks: guildConfig?.dm_ranks ?? true,
+      // --- END AI-MODIFIED ---
       voiceRanksEnabled: guildConfig?.voice_ranks_enabled ?? false,
       msgRanksEnabled: guildConfig?.msg_ranks_enabled ?? false,
       xpRanksEnabled: guildConfig?.xp_ranks_enabled ?? false,

@@ -41,6 +41,7 @@ interface AntiAfkConfig {
   target_channels: string[]
   exclude_channels: string[]
   use_dms: boolean
+  prompt_channelid: string | null
   fallback_channelid: string | null
   skip_streaming: boolean
   notify_on_action: boolean
@@ -48,10 +49,14 @@ interface AntiAfkConfig {
   max_actions_per_hour: number
 }
 
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Add hasAfkChannel to disable Move to AFK when server has no AFK channel
 interface ApiResponse {
   config: AntiAfkConfig
   isPremium: boolean
+  hasAfkChannel: boolean
 }
+// --- END AI-MODIFIED ---
 
 const DEFAULT_CONFIG: AntiAfkConfig = {
   guildid: "",
@@ -66,6 +71,7 @@ const DEFAULT_CONFIG: AntiAfkConfig = {
   target_channels: [],
   exclude_channels: [],
   use_dms: false,
+  prompt_channelid: null,
   fallback_channelid: null,
   skip_streaming: true,
   notify_on_action: true,
@@ -108,14 +114,25 @@ export default function AntiAfkPage() {
   )
   const serverName = serverData?.server?.name || "Server"
   const isPremium = apiData?.isPremium ?? false
+  // --- AI-MODIFIED (2026-04-07) ---
+  // Purpose: Track whether guild has an AFK channel for disabling move_afk option
+  const hasAfkChannel = apiData?.hasAfkChannel ?? false
+  // --- END AI-MODIFIED ---
 
   const [config, setConfig] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
   const [original, setOriginal] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
 
   useEffect(() => {
     if (!apiData?.config) return
-    setConfig(apiData.config)
-    setOriginal(apiData.config)
+    // --- AI-MODIFIED (2026-04-07) ---
+    // Purpose: If move_afk was saved but guild lost its AFK channel, fall back to kick
+    const loaded = { ...apiData.config }
+    if (loaded.action === "move_afk" && apiData.hasAfkChannel === false) {
+      loaded.action = "kick"
+    }
+    // --- END AI-MODIFIED ---
+    setConfig(loaded)
+    setOriginal(loaded)
   }, [apiData])
 
   const hasChanges = useMemo(
@@ -226,7 +243,7 @@ export default function AntiAfkPage() {
                         Check Interval (minutes)
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        How often each user is prompted to confirm they're still active.
+                        How often each user is prompted to confirm they're still active. <span className="text-gray-500">(15–180 min)</span>
                       </p>
                       <NumberInput
                         value={config.check_interval}
@@ -241,7 +258,7 @@ export default function AntiAfkPage() {
                         Grace Period (minutes)
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        How long users have to click the confirmation button.
+                        How long users have to click the confirmation button. <span className="text-gray-500">(2–14 min)</span>
                       </p>
                       <NumberInput
                         value={config.grace_period}
@@ -251,36 +268,47 @@ export default function AntiAfkPage() {
                       />
                     </div>
 
+                    {/* --- AI-MODIFIED (2026-04-07) --- */}
+                    {/* Purpose: Disable Move to AFK when server has no AFK channel */}
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2">
                         Action on Failure
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                        {ACTION_OPTIONS.map(({ id, label, description, Icon }) => (
-                          <button
-                            key={id}
-                            onClick={() => update({ action: id })}
-                            className={cn(
-                              "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all",
-                              config.action === id
-                                ? "bg-amber-500/15 border-amber-500/50 text-amber-400"
-                                : "bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300",
-                            )}
-                          >
-                            <Icon size={20} />
-                            <span className="text-sm font-medium">{label}</span>
-                            <span className="text-[11px] text-center opacity-70">{description}</span>
-                          </button>
-                        ))}
+                        {ACTION_OPTIONS.map(({ id, label, description, Icon }) => {
+                          const disabled = id === "move_afk" && !hasAfkChannel
+                          return (
+                            <button
+                              key={id}
+                              onClick={() => !disabled && update({ action: id })}
+                              disabled={disabled}
+                              className={cn(
+                                "flex flex-col items-center gap-2 p-4 rounded-lg border transition-all",
+                                disabled
+                                  ? "bg-gray-800/30 border-gray-700/50 text-gray-600 cursor-not-allowed opacity-50"
+                                  : config.action === id
+                                    ? "bg-amber-500/15 border-amber-500/50 text-amber-400"
+                                    : "bg-gray-800/50 border-gray-700 text-gray-400 hover:border-gray-600 hover:text-gray-300",
+                              )}
+                            >
+                              <Icon size={20} />
+                              <span className="text-sm font-medium">{label}</span>
+                              <span className="text-[11px] text-center opacity-70">
+                                {disabled ? "No AFK channel in this server" : description}
+                              </span>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
 
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-1">
                         Max Warnings Before Action
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Number of missed checks before the action is applied. Users receive warning messages for each miss until this limit is reached.
+                        Number of missed checks before the action is applied. Users receive warning messages for each miss until this limit is reached. <span className="text-gray-500">(1–5)</span>
                       </p>
                       <NumberInput
                         value={config.max_warnings}
@@ -295,7 +323,7 @@ export default function AntiAfkPage() {
                         Min Users in Channel
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Only run checks when this many users are in the channel. Set to 1 to always check.
+                        Only run checks when this many users are in the channel. Set to 1 to always check. <span className="text-gray-500">(1–10)</span>
                       </p>
                       <NumberInput
                         value={config.min_users}
@@ -348,75 +376,118 @@ export default function AntiAfkPage() {
                 </SectionCard>
 
                 {/* ── Section 3: Delivery Method ── */}
+                {/* --- AI-MODIFIED (2026-04-07) --- */}
+                {/* Purpose: Add "Custom Channel" as a third delivery option */}
                 <SectionCard title="Delivery Method" icon={<MessageSquare size={16} />}>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-2">
                         How should prompts be delivered?
                       </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <button
-                          onClick={() => update({ use_dms: false })}
-                          className={cn(
-                            "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
-                            !config.use_dms
-                              ? "bg-amber-500/15 border-amber-500/50"
-                              : "bg-gray-800/50 border-gray-700 hover:border-gray-600",
-                          )}
-                        >
-                          <span className={cn("text-sm font-medium", !config.use_dms ? "text-amber-400" : "text-gray-300")}>
-                            Voice Channel Text
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            Recommended — prompts are sent in the voice channel's text chat
-                          </span>
-                        </button>
-                        <button
-                          onClick={() => update({ use_dms: true })}
-                          className={cn(
-                            "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
-                            config.use_dms
-                              ? "bg-amber-500/15 border-amber-500/50"
-                              : "bg-gray-800/50 border-gray-700 hover:border-gray-600",
-                          )}
-                        >
-                          <span className={cn("text-sm font-medium", config.use_dms ? "text-amber-400" : "text-gray-300")}>
-                            Direct Messages
-                          </span>
-                          <span className="text-xs text-gray-400">
-                            Private — sent to the user's DMs (may be blocked)
-                          </span>
-                        </button>
-                      </div>
+                      {(() => {
+                        const mode = config.prompt_channelid ? "custom" : config.use_dms ? "dm" : "vc"
+                        return (
+                          <>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                              <button
+                                onClick={() => update({ use_dms: false, prompt_channelid: null })}
+                                className={cn(
+                                  "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
+                                  mode === "vc"
+                                    ? "bg-amber-500/15 border-amber-500/50"
+                                    : "bg-gray-800/50 border-gray-700 hover:border-gray-600",
+                                )}
+                              >
+                                <span className={cn("text-sm font-medium", mode === "vc" ? "text-amber-400" : "text-gray-300")}>
+                                  Voice Channel Text
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  Recommended — prompts in the VC&apos;s text chat
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => update({ use_dms: false, prompt_channelid: "__pending" })}
+                                className={cn(
+                                  "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
+                                  mode === "custom"
+                                    ? "bg-amber-500/15 border-amber-500/50"
+                                    : "bg-gray-800/50 border-gray-700 hover:border-gray-600",
+                                )}
+                              >
+                                <span className={cn("text-sm font-medium", mode === "custom" ? "text-amber-400" : "text-gray-300")}>
+                                  Custom Channel
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  All prompts sent to one text channel
+                                </span>
+                              </button>
+                              <button
+                                onClick={() => update({ use_dms: true, prompt_channelid: null })}
+                                className={cn(
+                                  "flex flex-col items-start gap-1 p-4 rounded-lg border transition-all text-left",
+                                  mode === "dm"
+                                    ? "bg-amber-500/15 border-amber-500/50"
+                                    : "bg-gray-800/50 border-gray-700 hover:border-gray-600",
+                                )}
+                              >
+                                <span className={cn("text-sm font-medium", mode === "dm" ? "text-amber-400" : "text-gray-300")}>
+                                  Direct Messages
+                                </span>
+                                <span className="text-xs text-gray-400">
+                                  Private — sent to user&apos;s DMs (may be blocked)
+                                </span>
+                              </button>
+                            </div>
+
+                            {mode === "vc" && (
+                              <div className="flex items-start gap-2 p-3 mt-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                                <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
+                                <p className="text-xs text-blue-300">
+                                  Prompts are sent in the voice channel&apos;s built-in text chat. The user is @mentioned with a button to confirm. The bot needs <strong>Send Messages</strong> permission in voice channels.
+                                </p>
+                              </div>
+                            )}
+
+                            {mode === "custom" && (
+                              <div className="mt-3">
+                                <label className="block text-sm font-medium text-gray-200 mb-1">
+                                  Prompt Channel
+                                </label>
+                                <p className="text-xs text-gray-400 mb-2">
+                                  All &quot;Are you studying?&quot; prompts will be sent here with @mentions, regardless of which voice channel the user is in.
+                                </p>
+                                <ChannelSelect
+                                  guildId={guildId}
+                                  value={config.prompt_channelid === "__pending" ? null : config.prompt_channelid}
+                                  onChange={(v) => update({ prompt_channelid: (v as string) || null })}
+                                  channelTypes={[0]}
+                                />
+                              </div>
+                            )}
+
+                            {mode === "dm" && (
+                              <div className="mt-3">
+                                <label className="block text-sm font-medium text-gray-200 mb-1">
+                                  Fallback Channel
+                                </label>
+                                <p className="text-xs text-gray-400 mb-2">
+                                  Where to mention users if their DMs are blocked. Leave empty to skip users with blocked DMs.
+                                </p>
+                                <ChannelSelect
+                                  guildId={guildId}
+                                  value={config.fallback_channelid ?? null}
+                                  onChange={(v) => update({ fallback_channelid: (v as string) || null })}
+                                  channelTypes={[0]}
+                                />
+                              </div>
+                            )}
+                          </>
+                        )
+                      })()}
                     </div>
-
-                    {!config.use_dms && (
-                      <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-                        <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-xs text-blue-300">
-                          Prompts are sent in the voice channel's built-in text chat. The user is @mentioned with a button to confirm. The bot needs <strong>Send Messages</strong> permission in voice channels.
-                        </p>
-                      </div>
-                    )}
-
-                    {config.use_dms && (
-                      <div>
-                        <label className="block text-sm font-medium text-gray-200 mb-1">
-                          Fallback Channel
-                        </label>
-                        <p className="text-xs text-gray-400 mb-2">
-                          Where to mention users if their DMs are blocked. Leave empty to skip users with blocked DMs.
-                        </p>
-                        <ChannelSelect
-                          guildId={guildId}
-                          value={config.fallback_channelid ?? null}
-                          onChange={(v) => update({ fallback_channelid: (v as string) || null })}
-                          channelTypes={[0]}
-                        />
-                      </div>
-                    )}
                   </div>
                 </SectionCard>
+                {/* --- END AI-MODIFIED --- */}
 
                 {/* ── Section 4: Smart Exemptions ── */}
                 <SectionCard title="Smart Exemptions" icon={<Users size={16} />}>
