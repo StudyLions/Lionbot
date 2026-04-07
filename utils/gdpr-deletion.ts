@@ -8,7 +8,6 @@
 //          Category C = SPECIAL HANDLING.
 // ============================================================
 import { prisma } from "./prisma"
-import { Prisma } from "@prisma/client"
 
 export interface DeletionSummary {
   [table: string]: { action: "deleted" | "anonymized" | "special"; count: number }
@@ -100,21 +99,21 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     })
     if (ownedSkinIds.length > 0) {
       const skinIds = ownedSkinIds.map(s => s.custom_skin_id)
-      await tx.customised_skin_properties.deleteMany({ where: { custom_skin_id: { in: skinIds } } })
-      // Only delete skins not referenced by other users' inventory
+      let skinsDeleted = 0
       for (const skinId of skinIds) {
         const otherOwners = await tx.user_skin_inventory.count({
           where: { custom_skin_id: skinId, userid: { not: userId } },
         })
         if (otherOwners === 0) {
-          // Check no premium_guilds reference it
           const guildRefs = await tx.premium_guilds.count({ where: { custom_skin_id: skinId } })
           if (guildRefs === 0) {
+            await tx.customised_skin_properties.deleteMany({ where: { custom_skin_id: skinId } })
             await tx.customised_skins.delete({ where: { custom_skin_id: skinId } }).catch(() => {})
+            skinsDeleted++
           }
         }
       }
-      record("customised_skins", "special", skinIds.length)
+      if (skinsDeleted > 0) record("customised_skins", "special", skinsDeleted)
     }
 
     // =====================================================
@@ -134,12 +133,12 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const r3b = await tx.lg_family_gold_withdrawals.deleteMany({ where: { userid: userId } })
     record("lg_family_gold_withdrawals", "deleted", r3b.count)
 
-    // Anonymize family records before deleting member row
-    const r3c = await tx.$executeRaw`UPDATE lg_family_gold_log SET userid = NULL WHERE userid = ${userId}`
-    record("lg_family_gold_log", "anonymized", r3c)
+    // These have NOT NULL FK to user_config -- must delete, can't anonymize
+    const r3c = await tx.lg_family_gold_log.deleteMany({ where: { userid: userId } })
+    record("lg_family_gold_log", "deleted", r3c.count)
 
-    const r3d = await tx.$executeRaw`UPDATE lg_family_bank SET deposited_by = NULL WHERE deposited_by = ${userId}`
-    record("lg_family_bank", "anonymized", r3d)
+    const r3d = await tx.lg_family_bank.deleteMany({ where: { deposited_by: userId } })
+    record("lg_family_bank", "deleted", r3d.count)
 
     const r3e = await tx.lg_family_invites.deleteMany({
       where: { OR: [{ from_userid: userId }, { to_userid: userId }] },
@@ -149,16 +148,16 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const r3f = await tx.lg_family_members.deleteMany({ where: { userid: userId } })
     record("lg_family_members", "deleted", r3f.count)
 
-    // Marketplace: anonymize (no FK to user_config)
-    const r4a = await tx.$executeRaw`UPDATE lg_marketplace_sales SET buyer_userid = NULL WHERE buyer_userid = ${userId}`
-    const r4b = await tx.$executeRaw`UPDATE lg_marketplace_sales SET seller_userid = NULL WHERE seller_userid = ${userId}`
+    // Marketplace: anonymize with 0 (columns are NOT NULL, no FK)
+    const r4a = await tx.$executeRaw`UPDATE lg_marketplace_sales SET buyer_userid = 0 WHERE buyer_userid = ${userId}`
+    const r4b = await tx.$executeRaw`UPDATE lg_marketplace_sales SET seller_userid = 0 WHERE seller_userid = ${userId}`
     record("lg_marketplace_sales", "anonymized", Number(r4a) + Number(r4b))
 
-    const r4c = await tx.$executeRaw`UPDATE lg_marketplace_listings SET seller_userid = NULL WHERE seller_userid = ${userId}`
+    const r4c = await tx.$executeRaw`UPDATE lg_marketplace_listings SET seller_userid = 0 WHERE seller_userid = ${userId}`
     record("lg_marketplace_listings", "anonymized", r4c)
 
-    // Gold transactions: anonymize (no FK to user_config)
-    const r4d = await tx.$executeRaw`UPDATE lg_gold_transactions SET actorid = NULL WHERE actorid = ${userId}`
+    // Gold transactions: anonymize with 0 for actorid (NOT NULL, no FK)
+    const r4d = await tx.$executeRaw`UPDATE lg_gold_transactions SET actorid = 0 WHERE actorid = ${userId}`
     const r4e = await tx.$executeRaw`UPDATE lg_gold_transactions SET from_account = NULL WHERE from_account = ${userId}`
     const r4f = await tx.$executeRaw`UPDATE lg_gold_transactions SET to_account = NULL WHERE to_account = ${userId}`
     record("lg_gold_transactions", "anonymized", Number(r4d) + Number(r4e) + Number(r4f))
@@ -240,7 +239,7 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const rg = await tx.$executeRaw`UPDATE text_override_backups SET created_by = NULL WHERE created_by = ${userId}`
     record("text_override_backups", "anonymized", rg)
 
-    const rh = await tx.$executeRaw`UPDATE leaderboard_autopost_action_queue SET requested_by = NULL WHERE requested_by = ${userId}`
+    const rh = await tx.$executeRaw`UPDATE leaderboard_autopost_action_queue SET requested_by = 0 WHERE requested_by = ${userId}`
     record("leaderboard_autopost_action_queue", "anonymized", rh)
 
     const ri = await tx.$executeRaw`UPDATE shared_task SET assignee_id = NULL WHERE assignee_id = ${userId}`
