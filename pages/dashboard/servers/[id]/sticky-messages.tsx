@@ -20,10 +20,10 @@ import {
 import PremiumGate from "@/components/dashboard/PremiumGate"
 import { useDashboard, dashboardMutate, invalidate } from "@/hooks/useDashboard"
 import { useRouter } from "next/router"
-import { useState, useCallback, useMemo } from "react"
+import { useState, useCallback, useMemo, useEffect } from "react"
 import {
   Pin, Plus, Trash2, Pencil, X, Eye,
-  MessageSquare, Clock, Hash, Megaphone, BookOpen, Info,
+  MessageSquare, Clock, Hash, Megaphone, BookOpen, Info, AlertTriangle,
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -276,6 +276,35 @@ function StickyEditor({
   )
 }
 
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Resolve channel names for sticky list + flag deleted channels
+interface DiscordChannel {
+  id: string
+  name: string
+  type: number
+}
+
+function useGuildChannels(guildId: string | undefined) {
+  const [channelMap, setChannelMap] = useState<Map<string, DiscordChannel>>(new Map())
+  const [loaded, setLoaded] = useState(false)
+
+  useEffect(() => {
+    if (!guildId) return
+    fetch(`/api/discord/guild/${guildId}/channels`)
+      .then((r) => r.ok ? r.json() : [])
+      .then((channels: DiscordChannel[]) => {
+        const map = new Map<string, DiscordChannel>()
+        channels.forEach((ch) => map.set(ch.id, ch))
+        setChannelMap(map)
+      })
+      .catch(() => {})
+      .finally(() => setLoaded(true))
+  }, [guildId])
+
+  return { channelMap, loaded }
+}
+// --- END AI-MODIFIED ---
+
 export default function StickyMessagesPage() {
   const router = useRouter()
   const serverId = router.query.id as string
@@ -294,6 +323,11 @@ export default function StickyMessagesPage() {
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<StickyMessage | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  // --- AI-MODIFIED (2026-04-07) ---
+  // Purpose: Fetch channel names to display instead of raw IDs
+  const { channelMap, loaded: channelsLoaded } = useGuildChannels(serverId)
+  // --- END AI-MODIFIED ---
 
   const stickies = data?.stickies ?? []
   const isPremium = data?.isPremium ?? false
@@ -487,58 +521,82 @@ export default function StickyMessagesPage() {
             )}
           </div>
 
-          {stickies.map((s) => (
-            <div
-              key={s.stickyid}
-              className="rounded-lg border border-gray-700/50 bg-gray-800/40 overflow-hidden"
-            >
-              <div className="flex items-start gap-4 p-4">
-                <div
-                  className="w-1 self-stretch rounded-full flex-shrink-0"
-                  style={{ backgroundColor: colorIntToHex(s.color) }}
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1 flex-wrap">
-                    <Hash size={14} className="text-muted-foreground" />
-                    <span className="text-sm font-medium text-gray-300">
-                      {s.channelid}
-                    </span>
-                    <Badge variant={s.enabled ? "success" : "default"}>
-                      {s.enabled ? "Active" : "Disabled"}
-                    </Badge>
-                    <Badge variant="info">Every {s.interval_seconds}s</Badge>
-                  </div>
-                  {s.title && (
-                    <p className="text-sm font-semibold text-white mt-1">{s.title}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                    {s.content}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <Toggle
-                    checked={s.enabled}
-                    onChange={(v) => handleToggle(s, v)}
-                    silent
+          {/* --- AI-MODIFIED (2026-04-07) ---
+              Purpose: Show channel names instead of raw IDs, flag deleted channels */}
+          {stickies.map((s) => {
+            const channel = channelMap.get(s.channelid)
+            const isDeleted = channelsLoaded && !channel
+            return (
+              <div
+                key={s.stickyid}
+                className={`rounded-lg border overflow-hidden ${
+                  isDeleted
+                    ? "border-red-500/30 bg-red-950/20"
+                    : "border-gray-700/50 bg-gray-800/40"
+                }`}
+              >
+                <div className="flex items-start gap-4 p-4">
+                  <div
+                    className="w-1 self-stretch rounded-full flex-shrink-0"
+                    style={{ backgroundColor: isDeleted ? "#ef4444" : colorIntToHex(s.color) }}
                   />
-                  <button
-                    onClick={() => startEdit(s)}
-                    className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
-                    title="Edit"
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => setDeleteTarget(s)}
-                    className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      {isDeleted ? (
+                        <AlertTriangle size={14} className="text-red-400" />
+                      ) : (
+                        <Hash size={14} className="text-muted-foreground" />
+                      )}
+                      <span className={`text-sm font-medium ${isDeleted ? "text-red-400" : "text-gray-300"}`}>
+                        {isDeleted ? "Deleted Channel" : (channel?.name ?? s.channelid)}
+                      </span>
+                      {isDeleted ? (
+                        <Badge variant="error">Channel Deleted</Badge>
+                      ) : (
+                        <Badge variant={s.enabled ? "success" : "default"}>
+                          {s.enabled ? "Active" : "Disabled"}
+                        </Badge>
+                      )}
+                      <Badge variant="info">Every {s.interval_seconds}s</Badge>
+                    </div>
+                    {isDeleted && (
+                      <p className="text-xs text-red-400/80 mt-1">
+                        This channel no longer exists. The sticky will not function — you can safely delete it.
+                      </p>
+                    )}
+                    {s.title && (
+                      <p className="text-sm font-semibold text-white mt-1">{s.title}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                      {s.content}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <Toggle
+                      checked={s.enabled}
+                      onChange={(v) => handleToggle(s, v)}
+                      silent
+                    />
+                    <button
+                      onClick={() => startEdit(s)}
+                      className="p-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                      title="Edit"
+                    >
+                      <Pencil size={14} />
+                    </button>
+                    <button
+                      onClick={() => setDeleteTarget(s)}
+                      className="p-1.5 text-muted-foreground hover:text-red-400 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       )}
 
