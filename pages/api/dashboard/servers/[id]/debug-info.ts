@@ -365,7 +365,7 @@ export default apiHandler({
         msg_ranks_enabled: gc?.msg_ranks_enabled ?? false,
         xp_ranks_enabled: gc?.xp_ranks_enabled ?? false,
         rank_type: gc?.rank_type || null,
-        dm_ranks: gc?.dm_ranks ?? false,
+        dm_ranks: gc?.dm_ranks ?? true,
         lg_enabled: gc?.lg_enabled ?? true,
         lg_teaser_enabled: gc?.lg_teaser_enabled ?? true,
         manual_sessions_enabled: gc?.manual_sessions_enabled ?? false,
