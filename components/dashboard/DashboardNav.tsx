@@ -22,7 +22,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
-  Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare, CalendarCheck,
+  Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare, CalendarCheck, Shield,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -93,6 +93,10 @@ const sections: NavSection[] = [
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Subscriptions management page link
       { href: "/dashboard/subscriptions", label: "Subscriptions", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-04-07) ---
+      // Purpose: GDPR privacy dashboard link
+      { href: "/dashboard/privacy", label: "Privacy", icon: <Shield size={16} /> },
       // --- END AI-MODIFIED ---
     ],
   },

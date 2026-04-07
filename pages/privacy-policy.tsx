@@ -2,150 +2,18 @@
 // Purpose: Complete rewrite of privacy policy to be fully transparent
 //          about all data collected, used, and stored. Added interactive
 //          data deletion request section requiring Discord auth.
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Removed inline DeletionRequestSection -- moved to /dashboard/privacy
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import Layout from "@/components/Layout/Layout";
 import { PrivacyPolicySEO } from "@/constants/SeoData";
-import { useSession, signIn } from "next-auth/react";
-import { useState, useEffect } from "react";
+import Link from "next/link";
+// --- END AI-MODIFIED ---
 
-function DeletionRequestSection() {
-  const { data: session, status } = useSession();
-  const [reason, setReason] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [hasPending, setHasPending] = useState(false);
-  const [pendingInfo, setPendingInfo] = useState<{ requestId: number; requestedAt: string } | null>(null);
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState("");
-  const [checkingStatus, setCheckingStatus] = useState(true);
-
-  useEffect(() => {
-    if (status !== "authenticated") {
-      setCheckingStatus(false);
-      return;
-    }
-    fetch("/api/privacy/deletion-request")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.hasPending) {
-          setHasPending(true);
-          setPendingInfo(data.request);
-        }
-      })
-      .catch(() => {})
-      .finally(() => setCheckingStatus(false));
-  }, [status]);
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    setError("");
-    try {
-      const res = await fetch("/api/privacy/deletion-request", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reason }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSuccess(true);
-      } else {
-        setError(data.error || "Something went wrong. Please try again.");
-      }
-    } catch {
-      setError("Network error. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="mt-8 rounded-2xl border-2 border-red-500/20 bg-red-500/5 p-6 sm:p-8">
-      <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 !mt-0">Request Data Deletion</h2>
-      <p className="text-muted-foreground leading-7 mb-6">
-        You have the right to request deletion of all personal data we hold about you. This includes your
-        study sessions, tasks, goals, economy data, pet data, moderation records, and all other information
-        tied to your Discord account. Once processed, this action is <strong className="text-foreground">irreversible</strong>.
-      </p>
-
-      {status === "loading" || checkingStatus ? (
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-          </svg>
-          Loading...
-        </div>
-      ) : status === "unauthenticated" ? (
-        <div>
-          <p className="text-muted-foreground mb-4">
-            To request deletion, you must first verify your identity by signing in with Discord.
-          </p>
-          <button
-            onClick={() => signIn("discord")}
-            className="px-6 py-3 bg-[#5865F2] hover:bg-[#4752C4] text-white rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-indigo-500/25 active:scale-95 flex items-center gap-2"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03z" />
-            </svg>
-            Sign in with Discord
-          </button>
-        </div>
-      ) : success ? (
-        <div className="rounded-xl bg-green-500/10 border border-green-500/30 p-4">
-          <p className="text-green-400 font-medium">Your data deletion request has been submitted successfully.</p>
-          <p className="text-muted-foreground mt-2">
-            We will review and process your request within 30 days. You will not be able to submit another
-            request while this one is pending.
-          </p>
-        </div>
-      ) : hasPending ? (
-        <div className="rounded-xl bg-yellow-500/10 border border-yellow-500/30 p-4">
-          <p className="text-yellow-400 font-medium">You already have a pending deletion request.</p>
-          {pendingInfo && (
-            <p className="text-muted-foreground mt-2">
-              Request #{pendingInfo.requestId} submitted on{" "}
-              {new Date(pendingInfo.requestedAt).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-              . We will process it within 30 days of the submission date.
-            </p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <label htmlFor="deletion-reason" className="block text-sm font-medium text-muted-foreground mb-2">
-              Reason for deletion (optional)
-            </label>
-            <textarea
-              id="deletion-reason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              maxLength={1000}
-              rows={3}
-              placeholder="You may optionally tell us why you're requesting deletion..."
-              className="w-full rounded-xl bg-card border border-border px-4 py-3 text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-red-500/50 resize-none"
-            />
-          </div>
-          {error && <p className="text-red-400 text-sm">{error}</p>}
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="px-6 py-3 bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-medium transition-all hover:shadow-lg hover:shadow-red-500/25 active:scale-95"
-          >
-            {loading ? "Submitting..." : "Request Data Deletion"}
-          </button>
-          <p className="text-xs text-muted-foreground/70">
-            By clicking this button, you confirm that you understand this will permanently delete all of your
-            data from our systems once processed.
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+// --- Original DeletionRequestSection component (commented out for rollback) ---
+// function DeletionRequestSection() { ... }
+// --- End original code ---
 
 export default function PrivacyPolicy() {
   return (
@@ -378,11 +246,14 @@ export default function PrivacyPolicy() {
               <h2>Your Rights</h2>
               <p>You have the following rights regarding your personal data:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Right to access</strong> — You can view most of your data through the bot commands and web dashboard.</li>
+                {/* --- AI-MODIFIED (2026-04-07) --- */}
+                {/* Purpose: Updated rights section to reference self-service tools */}
+                <li><strong className="text-foreground">Right to access</strong> — You can view most of your data through the bot commands and web dashboard. A full summary is available on your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to rectification</strong> — You can update your timezone, locale, pet name, profile tags, and other user-configured settings at any time.</li>
-                <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data using the form below or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>.</li>
-                <li><strong className="text-foreground">Right to data portability</strong> — Contact us to receive a copy of your data in a machine-readable format.</li>
+                <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period.</li>
+                <li><strong className="text-foreground">Right to data portability</strong> — You can download a full copy of your data in JSON format from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to object</strong> — You can stop using our services at any time by removing the bot from your server or leaving servers where it is present.</li>
+                {/* --- END AI-MODIFIED --- */}
               </ul>
               <p>
                 If you are a resident of the EU, UK, Liechtenstein, Norway, or Iceland, you have additional rights
@@ -426,10 +297,24 @@ export default function PrivacyPolicy() {
               </ul>
             </section>
 
-            {/* Deletion Request Section */}
+            {/* --- AI-MODIFIED (2026-04-07) --- */}
+            {/* Purpose: Replaced inline deletion form with link to /dashboard/privacy */}
             <section>
-              <DeletionRequestSection />
+              <div className="mt-8 rounded-2xl border border-border bg-card p-6 sm:p-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-foreground mb-2 !mt-0">Manage Your Data</h2>
+                <p className="text-muted-foreground leading-7 mb-4">
+                  You can view a summary of your stored data, download a full export, or request
+                  deletion of your account data from your Privacy dashboard.
+                </p>
+                <Link
+                  href="/dashboard/privacy"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl font-medium transition-all hover:shadow-lg active:scale-95"
+                >
+                  Go to Privacy Dashboard
+                </Link>
+              </div>
             </section>
+            {/* --- END AI-MODIFIED --- */}
           </div>
         </div>
       </div>

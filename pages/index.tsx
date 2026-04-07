@@ -20,6 +20,7 @@ import {
   CalendarClock,
   ArrowRight,
   Sparkles,
+  Play,
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { HomepageSEO } from "@/constants/SeoData";
@@ -220,6 +221,59 @@ function HeroSection({ guildCount }: { guildCount?: number }) {
             </Link>
           </div>
         </div>
+      </div>
+    </section>
+  );
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-07) ---
+// Purpose: Add YouTube trailer section after the hero
+function TrailerSection() {
+  return (
+    <section className="py-16 lg:py-24 border-t border-border/50 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(800px_circle_at_50%_50%,_rgba(59,130,246,0.06),_transparent_70%)]" />
+
+      <div className="relative max-w-4xl mx-auto px-4 lg:px-6">
+        <motion.div
+          className="text-center mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-4">
+            <Play className="h-3.5 w-3.5" />
+            Watch the trailer
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+            See LionBot in Action
+          </h2>
+          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+            Discover how LionBot transforms your Discord server into a productive study community.
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 30, scale: 0.97 }}
+          whileInView={{ opacity: 1, y: 0, scale: 1 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.6, ease: "easeOut", delay: 0.1 }}
+        >
+          <div className="relative group">
+            <div className="absolute -inset-1 bg-gradient-to-br from-primary/20 via-blue-500/10 to-violet-500/20 rounded-2xl blur-xl opacity-50 group-hover:opacity-70 transition-opacity duration-500" />
+            <div className="relative aspect-video rounded-2xl overflow-hidden border border-border/80 bg-card shadow-2xl shadow-primary/5">
+              <iframe
+                src="https://www.youtube-nocookie.com/embed/488nXnp3kXs?rel=0&modestbranding=1"
+                title="LionBot Trailer"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                loading="lazy"
+                className="absolute inset-0 w-full h-full"
+              />
+            </div>
+          </div>
+        </motion.div>
       </div>
     </section>
   );
@@ -492,6 +546,7 @@ export default function HomePage() {
     <Layout SEO={HomepageSEO}>
       <div className="bg-background min-h-screen">
         <HeroSection guildCount={stats?.guilds} />
+        <TrailerSection />
         <LionGotchiHeroSection />
         <FarmShowcaseSection />
         <MarketplaceShowcaseSection />
