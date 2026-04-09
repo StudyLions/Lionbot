@@ -66,7 +66,10 @@ export default apiHandler({
       isPremiumGuild(guildId),
     ])
 
-    const STALE_THRESHOLD_MS = 30_000
+    // --- AI-MODIFIED (2026-04-09) ---
+    // Purpose: Threshold must exceed SoundsBot's 90s heartbeat interval
+    const STALE_THRESHOLD_MS = 120_000
+    // --- END AI-MODIFIED ---
     const now = Date.now()
     const botStatus: Record<number, { online: boolean; username: string | null }> = {}
     try {
