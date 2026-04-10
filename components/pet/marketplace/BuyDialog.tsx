@@ -8,13 +8,18 @@
 // Purpose: Two-column modal -- full item card with scroll trace on left,
 //   price breakdown with avg price comparison on right
 // --- Original code: see git history for pre-redesign version ---
-import { useState } from "react"
+import { useState, useMemo } from "react"
+import { useSession } from "next-auth/react"
+import { useDashboard } from "@/hooks/useDashboard"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
+import RoomCanvas from "@/components/pet/room/RoomCanvas"
+import GameboyFrame from "@/components/pet/GameboyFrame"
+import { mergeLayout, buildRenderSequence } from "@/utils/roomConstraints"
 import { ScrollText, ExternalLink } from "lucide-react"
 import {
   GAME_CONSTANTS, GLOW_LABELS, GLOW_TEXT_COLORS,
@@ -23,6 +28,25 @@ import {
 import { cn } from "@/lib/utils"
 import type { ScrollSlot } from "./ListingTooltip"
 import Link from "next/link"
+
+// --- AI-MODIFIED (2026-04-10) ---
+// Purpose: Slot resolution for Try On preview
+const CATEGORY_TO_SLOT: Record<string, string> = {
+  HAT: "HEAD", GLASSES: "FACE", COSTUME: "BODY",
+  SHIRT: "BODY", WINGS: "BACK", BOOTS: "FEET",
+}
+const EQUIPMENT_CATEGORIES = new Set(Object.keys(CATEGORY_TO_SLOT))
+
+interface OverviewData {
+  hasPet: boolean
+  pet: { name: string; expression: string; level: number } | null
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  roomPrefix?: string
+  furniture?: Record<string, string>
+  roomLayout?: any
+  gameboySkinPath?: string | null
+}
+// --- END AI-MODIFIED ---
 
 interface ListingData {
   listingId: number
@@ -67,6 +91,31 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
   const [quantity, setQuantity] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: Try On preview state and pet overview fetch
+  const [showTryOn, setShowTryOn] = useState(false)
+  const { data: session } = useSession()
+  const { data: overview } = useDashboard<OverviewData>(
+    showTryOn && session ? "/api/pet/overview" : null
+  )
+
+  const itemSlot = listing.item.slot || CATEGORY_TO_SLOT[listing.item.category] || null
+  const canTryOn = !!itemSlot && EQUIPMENT_CATEGORIES.has(listing.item.category)
+
+  const tryOnEquipment = useMemo(() => {
+    if (!showTryOn || !overview || !itemSlot) return null
+    const merged = { ...overview.equipment }
+    merged[itemSlot] = {
+      name: listing.item.name,
+      category: listing.item.category,
+      rarity: listing.item.rarity,
+      assetPath: listing.item.assetPath,
+      glowTier: calcGlowTier(listing.enhancementLevel, listing.totalBonus ?? 0),
+      glowIntensity: calcGlowIntensity(listing.enhancementLevel),
+    }
+    return merged
+  }, [showTryOn, overview, itemSlot, listing])
+  // --- END AI-MODIFIED ---
 
   const totalPrice = listing.pricePerUnit * quantity
   const imgUrl = getItemImageUrl(listing.item.assetPath, listing.item.category)
@@ -198,6 +247,56 @@ export default function BuyDialog({ listing, onClose, onConfirm }: Props) {
                   <ExternalLink size={9} /> View Full Details
                 </a>
               </Link>
+
+              {/* --- AI-MODIFIED (2026-04-10) --- */}
+              {/* Purpose: Try On toggle and compact pet preview */}
+              {canTryOn && (
+                <div>
+                  <button
+                    onClick={() => setShowTryOn(!showTryOn)}
+                    className={cn(
+                      "w-full font-pixel text-[9px] py-1.5 border transition-all",
+                      showTryOn
+                        ? "border-[#d060f0] text-[#e0a0ff] bg-[#d060f0]/15"
+                        : "border-[#d060f0]/40 text-[#d060f0]/70 bg-[#d060f0]/5 hover:bg-[#d060f0]/10 hover:text-[#e0a0ff]"
+                    )}
+                  >
+                    {showTryOn ? "\u{1F457} Trying On..." : "\u{1F457} Try On"}
+                  </button>
+                  {showTryOn && overview?.hasPet && tryOnEquipment && (
+                    <div className="mt-2 flex justify-center">
+                      <GameboyFrame
+                        isFullscreen={false}
+                        skinAssetPath={overview.gameboySkinPath ?? undefined}
+                        width={200}
+                      >
+                        <RoomCanvas
+                          roomPrefix={overview.roomPrefix ?? "rooms/default"}
+                          furniture={overview.furniture ?? {}}
+                          layout={mergeLayout(overview.roomLayout ?? {})}
+                          equipment={Object.fromEntries(
+                            Object.entries(tryOnEquipment).map(([slot, item]) => [
+                              slot,
+                              { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity },
+                            ])
+                          )}
+                          expression={overview.pet?.expression ?? "default"}
+                          size={150}
+                          animated
+                        />
+                      </GameboyFrame>
+                    </div>
+                  )}
+                  {showTryOn && !overview && (
+                    <div className="mt-2 flex justify-center">
+                      <div className="w-[150px] h-[150px] border border-[#2a3a5c] bg-[#080c18] flex items-center justify-center">
+                        <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)] animate-pulse">Loading pet...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
             </div>
 
             {/* Right: Price + Actions */}

@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 10, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-10",
+    title: "Inventory QoL — Equip Best, Try On, and Marketplace Links",
+    description:
+      "We added three quality-of-life features to the pet inventory based on community feedback: an 'Equip Best' button that auto-equips your strongest items across all slots with one click, a 'Try On' preview that lets you see how any item looks on your lion before equipping or buying, and convenient marketplace links throughout the inventory page so you can easily browse for new gear.",
+    category: "liongotchi",
+    area: "website",
+  },
   // ── April 7, 2026 ──────────────────────────────────────────
   {
     date: "2026-04-07",

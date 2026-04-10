@@ -27,6 +27,7 @@ import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelTabBar from "@/components/pet/ui/PixelTabBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
+import PixelButton from "@/components/pet/ui/PixelButton"
 import ItemTooltip, { type InventoryItem } from "@/components/pet/inventory/ItemTooltip"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
 import RoomCanvas from "@/components/pet/room/RoomCanvas"
@@ -96,16 +97,75 @@ function resolveSlot(item: { slot: string | null; category: string }): string | 
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-10) ---
+// Purpose: Reverse slot lookup for marketplace links from empty equipment slots
+const SLOT_TO_CATEGORY: Record<string, string> = {
+  HEAD: "HAT", FACE: "GLASSES", BODY: "COSTUME", BACK: "WINGS", FEET: "BOOTS",
+}
+// --- END AI-MODIFIED ---
+
 export default function InventoryPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [filter, setFilter] = useState<FilterTab>("equipment")
   const [equipping, setEquipping] = useState<number | null>(null)
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: State for Equip Best loading and Try On preview
+  const [equipBestLoading, setEquipBestLoading] = useState(false)
+  const [previewItem, setPreviewItem] = useState<InventoryItem | null>(null)
+  // --- END AI-MODIFIED ---
 
   const { data: invData, error: invError, isLoading: invLoading, mutate: mutateInv } =
     useDashboard<InventoryData>(session ? `/api/pet/inventory?filter=${filter}` : null)
 
   const { data: overview, isLoading: overviewLoading, mutate: mutateOverview } =
     useDashboard<OverviewData>(session ? "/api/pet/overview" : null)
+
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: Equip Best handler -- calls batch equip API and refreshes all data
+  const handleEquipBest = useCallback(async () => {
+    if (equipBestLoading) return
+    setEquipBestLoading(true)
+    try {
+      const res = await fetch("/api/pet/inventory/equip-best", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        toast.error(body.error || "Failed to equip best items")
+        return
+      }
+      toast.success(`Equipped best items in ${body.equipped} slot${body.equipped !== 1 ? "s" : ""}!`)
+      setPreviewItem(null)
+    } catch {
+      toast.error("Something went wrong")
+    } finally {
+      mutateInv()
+      mutateOverview()
+      invalidate("/api/pet/inventory?filter=equipment")
+      invalidate("/api/pet/inventory?filter=scrolls")
+      setEquipBestLoading(false)
+    }
+  }, [equipBestLoading, mutateInv, mutateOverview])
+
+  // Purpose: Compute preview equipment map for Try On feature
+  const previewEquipment = useMemo(() => {
+    if (!previewItem || !overview) return null
+    const slot = resolveSlot(previewItem.item)
+    if (!slot) return null
+    const merged = { ...overview.equipment }
+    merged[slot] = {
+      name: previewItem.item.name,
+      category: previewItem.item.category,
+      rarity: previewItem.item.rarity,
+      assetPath: previewItem.item.assetPath,
+      glowTier: previewItem.glowTier,
+      glowIntensity: previewItem.glowIntensity,
+    }
+    return merged
+  }, [previewItem, overview])
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-20) ---
   // Purpose: Optimistic SWR updates so equip/unequip reflects instantly in the UI.
@@ -221,6 +281,10 @@ export default function InventoryPage() {
   // --- END AI-MODIFIED ---
 
   const equipment = overview?.equipment ?? {}
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: When Try On preview is active, use merged equipment for the lion render
+  const displayEquipment = previewEquipment ?? equipment
+  // --- END AI-MODIFIED ---
   const pet = overview?.pet
 
   // --- AI-MODIFIED (2026-03-20) ---
@@ -286,18 +350,37 @@ export default function InventoryPage() {
         <PetShell hasPet={overview?.hasPet ?? true}>
         {/* --- END AI-MODIFIED --- */}
         {/* --- END AI-REPLACED --- */}
-              {/* Title */}
-              <div>
-                <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
-                <div className="mt-1.5 flex items-center gap-1">
-                  <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
-                  <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
-                  <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
+              {/* --- AI-MODIFIED (2026-04-10) --- */}
+              {/* Purpose: Title area with Equip Best and Browse Marketplace action buttons */}
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                <div>
+                  <h1 className="font-pixel text-2xl text-[var(--pet-text,#e2e8f0)]">Inventory</h1>
+                  <div className="mt-1.5 flex items-center gap-1">
+                    <span className="block h-[3px] w-8 bg-[var(--pet-gold,#f0c040)]" />
+                    <span className="block h-[3px] w-4 bg-[var(--pet-gold,#f0c040)]/60" />
+                    <span className="block h-[3px] w-2 bg-[var(--pet-gold,#f0c040)]/30" />
+                  </div>
+                  <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
+                    Manage your equipment, view stats, and change gear
+                  </p>
                 </div>
-                <p className="font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)] mt-1">
-                  Manage your equipment, view stats, and change gear
-                </p>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {filter === "equipment" && (invData?.counts?.equipment ?? 0) > 0 && (
+                    <PixelButton
+                      variant="gold"
+                      size="sm"
+                      loading={equipBestLoading}
+                      onClick={handleEquipBest}
+                    >
+                      {"\u2B50"} Equip Best
+                    </PixelButton>
+                  )}
+                  <PixelButton variant="info" size="sm" onClick={() => router.push("/pet/marketplace")}>
+                    {"\u{1F6D2}"} Marketplace
+                  </PixelButton>
+                </div>
               </div>
+              {/* --- END AI-MODIFIED --- */}
 
               {/* Two-column layout */}
               <div className="flex flex-col lg:flex-row gap-4">
@@ -316,11 +399,24 @@ export default function InventoryPage() {
                         </span>
                       )}
                     </div>
+                    {/* --- AI-MODIFIED (2026-04-10) --- */}
+                    {/* Purpose: Try On preview banner above the lion render */}
+                    {previewItem && (
+                      <div className="flex items-center justify-between gap-2 mb-2 px-2 py-1.5 border border-[#d060f0]/30 bg-[#d060f0]/10">
+                        <span className="font-pixel text-[10px] text-[#e0a0ff] truncate">
+                          {"\u{1F457}"} Trying on: {previewItem.item.name}
+                        </span>
+                        <button
+                          onClick={() => setPreviewItem(null)}
+                          className="font-pixel text-[9px] text-[#ff8080] hover:text-[#ff6060] flex-shrink-0 border border-[#e04040]/30 px-1.5 py-0.5 bg-[#e04040]/10 transition-colors"
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    )}
+                    {/* --- END AI-MODIFIED --- */}
                     <div className="flex justify-center overflow-hidden">
                       {overviewLoading ? (
-                        // --- AI-MODIFIED (2026-03-21) ---
-                        // Purpose: Responsive skeleton -- scale down on narrow screens
-                        // --- END AI-MODIFIED ---
                         <Skeleton className="w-full max-w-[280px] aspect-square" />
                       ) : overview?.hasPet ? (
                         <GameboyFrame
@@ -328,12 +424,14 @@ export default function InventoryPage() {
                           skinAssetPath={overview.gameboySkinPath ?? undefined}
                           width={310}
                         >
+                          {/* --- AI-MODIFIED (2026-04-10) --- */}
+                          {/* Purpose: Use displayEquipment (which includes Try On preview item) */}
                           <RoomCanvas
                             roomPrefix={overview.roomPrefix ?? "rooms/default"}
                             furniture={overview.furniture ?? {}}
                             layout={{ ...layout, renderSequence: activeSequence, equipmentOffsets: activeOffsets }}
                             equipment={Object.fromEntries(
-                              Object.entries(equipment).map(([slot, item]) => [
+                              Object.entries(displayEquipment).map(([slot, item]) => [
                                 slot,
                                 { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity },
                               ])
@@ -342,13 +440,11 @@ export default function InventoryPage() {
                             size={238}
                             animated
                           />
+                          {/* --- END AI-MODIFIED --- */}
                         </GameboyFrame>
                       ) : (
                         <div className="w-full max-w-[280px] h-[200px] flex items-center justify-center">
-                          {/* --- AI-MODIFIED (2026-03-21) --- */}
-                          {/* Purpose: Responsive placeholder -- scale down on narrow screens */}
                           <span className="font-pixel text-sm text-[var(--pet-text-dim)]">No pet yet</span>
-                          {/* --- END AI-MODIFIED --- */}
                         </div>
                       )}
                     </div>
@@ -409,11 +505,23 @@ export default function InventoryPage() {
                       </p>
                     </PixelCard>
                   ) : !invData?.items.length ? (
+                    // --- AI-MODIFIED (2026-04-10) ---
+                    // Purpose: Empty state with marketplace link
                     <PixelCard className="p-12 text-center" corners>
                       <p className="font-pixel text-base text-[var(--pet-text-dim,#8899aa)]">
-                        No {filter} found. Earn items from Discord activity!
+                        No {filter} found.
+                      </p>
+                      <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)] mt-2">
+                        Earn items from Discord activity or{" "}
+                        <button
+                          onClick={() => router.push("/pet/marketplace")}
+                          className="text-[#80b0ff] hover:text-[#a0c0ff] underline underline-offset-2 transition-colors"
+                        >
+                          browse the Marketplace
+                        </button>
                       </p>
                     </PixelCard>
+                    // --- END AI-MODIFIED ---
                   ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2">
                       {invData.items.map((inv) => (
@@ -422,6 +530,8 @@ export default function InventoryPage() {
                           inv={inv}
                           equipping={equipping}
                           onEquip={handleEquip}
+                          onTryOn={setPreviewItem}
+                          isPreviewing={previewItem?.inventoryId === inv.inventoryId}
                           isEquipmentTab={filter === "equipment"}
                           isScrollsTab={filter === "scrolls"}
                         />
@@ -439,18 +549,22 @@ export default function InventoryPage() {
   )
 }
 
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Use resolveSlot for button label, add scroll "Use in Enhancement" button
+// --- AI-MODIFIED (2026-04-10) ---
+// Purpose: Added onTryOn and isPreviewing props for Try On preview feature
 function InventoryItemCard({
   inv,
   equipping,
   onEquip,
+  onTryOn,
+  isPreviewing,
   isEquipmentTab,
   isScrollsTab,
 }: {
   inv: InventoryItem
   equipping: number | null
   onEquip: (id: number, action: "equip" | "unequip") => void
+  onTryOn: (item: InventoryItem | null) => void
+  isPreviewing: boolean
   isEquipmentTab: boolean
   isScrollsTab: boolean
 }) {
@@ -526,9 +640,10 @@ function InventoryItemCard({
             )}
           </div>
 
-          {/* Equip/Unequip Button */}
+          {/* --- AI-MODIFIED (2026-04-10) --- */}
+          {/* Purpose: Equip/Unequip + Try On buttons */}
           {isEquipmentTab && slot && (
-            <div className="px-2 pb-1.5 mt-auto">
+            <div className="px-2 pb-1.5 mt-auto space-y-1">
               <button
                 className={cn(
                   "w-full font-pixel text-[9px] py-1 border transition-all",
@@ -545,8 +660,26 @@ function InventoryItemCard({
               >
                 {isEquipping ? "..." : inv.equipped ? "Unequip" : `Equip \u2192 ${slot}`}
               </button>
+              {!inv.equipped && (
+                <button
+                  className={cn(
+                    "w-full font-pixel text-[9px] py-1 border transition-all",
+                    "hover:brightness-125 active:translate-y-px",
+                    isPreviewing
+                      ? "border-[#d060f0] text-[#e0a0ff] bg-[#d060f0]/15"
+                      : "border-[#d060f0]/40 text-[#d060f0]/70 bg-[#d060f0]/5 hover:bg-[#d060f0]/10 hover:text-[#e0a0ff]"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onTryOn(isPreviewing ? null : inv)
+                  }}
+                >
+                  {isPreviewing ? "\u{1F457} Trying On..." : "\u{1F457} Try On"}
+                </button>
+              )}
             </div>
           )}
+          {/* --- END AI-MODIFIED --- */}
 
           {/* Scroll "Use in Enhancement" Button */}
           {isScrollsTab && (
@@ -659,11 +792,22 @@ function RenderStackPanel({
         </button>
       </div>
 
+      {/* --- AI-MODIFIED (2026-04-10) --- */}
+      {/* Purpose: Empty equipment state with marketplace link */}
       {!hasEquipment ? (
-        <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] italic py-2">
-          No equipment worn. Equip items to arrange their layers.
-        </p>
+        <div className="py-2 space-y-2">
+          <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] italic">
+            No equipment worn. Equip items to arrange their layers.
+          </p>
+          <button
+            onClick={() => router.push("/pet/marketplace")}
+            className="w-full font-pixel text-[9px] py-1 border border-[#4080f0]/30 text-[#80b0ff] bg-[#4080f0]/5 hover:bg-[#4080f0]/10 transition-colors"
+          >
+            Find items on Marketplace {"\u2192"}
+          </button>
+        </div>
       ) : (
+      // --- END AI-MODIFIED ---
         <div className="space-y-1">
           {/* BACK is always behind the lion */}
           {backItem && (
@@ -752,6 +896,26 @@ function RenderStackPanel({
             <span>{"\u2191"} Front</span>
             <span>{"\u2193"} Back</span>
           </div>
+
+          {/* --- AI-MODIFIED (2026-04-10) --- */}
+          {/* Purpose: Show marketplace link for empty equipment slots */}
+          {Object.keys(equipment).length < 5 && (() => {
+            const emptySlots = EQUIP_SLOTS.filter(s => !equipment[s])
+            return (
+              <div className="mt-2 pt-2 border-t border-[#1a2a3c]/50">
+                <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] mb-1">
+                  Empty: {emptySlots.map(s => `${SLOT_ICONS[s]} ${s}`).join(", ")}
+                </p>
+                <button
+                  onClick={() => router.push(`/pet/marketplace?cat=${SLOT_TO_CATEGORY[emptySlots[0]] || ""}`)}
+                  className="w-full font-pixel text-[9px] py-1 border border-[#4080f0]/30 text-[#80b0ff] bg-[#4080f0]/5 hover:bg-[#4080f0]/10 transition-colors"
+                >
+                  Find items on Marketplace {"\u2192"}
+                </button>
+              </div>
+            )
+          })()}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       )}
 
