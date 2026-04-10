@@ -166,8 +166,10 @@ export default function FriendProfilePage() {
     }
   }, [goldAmount, userId, data?.pet.name, mutate])
 
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: Use == null to guard against both null and undefined selectedItem
   const handleSendItem = useCallback(async () => {
-    if (selectedItem === null || !userId) return
+    if (selectedItem == null || !userId) return
     setGiftLoading(true)
     try {
       // --- AI-MODIFIED (2026-03-24) ---
@@ -189,6 +191,7 @@ export default function FriendProfilePage() {
       setGiftLoading(false)
     }
   }, [selectedItem, userId, mutate])
+  // --- END AI-MODIFIED ---
 
   const handleWaterPlot = useCallback(async (plotId: number) => {
     if (!userId) return
@@ -549,31 +552,51 @@ export default function FriendProfilePage() {
                                   </PixelButton>
                                 </div>
                               ) : (
+                                // --- AI-MODIFIED (2026-04-10) ---
+                                // Purpose: Fix mobile UX -- add checkmark for selected items, clearer
+                                //          disabled state text, and touch-action for reliable mobile taps
                                 <div className="space-y-2">
                                   {data.inventory && data.inventory.length > 0 ? (
-                                    <div className="max-h-48 overflow-y-auto space-y-1">
-                                      {data.inventory.map((item) => (
-                                        <button
-                                          key={item.inventoryId}
-                                          onClick={() => setSelectedItem(item.inventoryId)}
-                                          className={cn(
-                                            "w-full flex items-center gap-2 px-3 py-2 border-2 text-left transition-all",
-                                            selectedItem === item.inventoryId
-                                              ? "border-[var(--pet-blue,#4080f0)] bg-[var(--pet-blue,#4080f0)]/10"
-                                              : "border-[#1a2a3c] bg-[#080c18] hover:border-[#3a4a5c]"
-                                          )}
-                                        >
-                                          <div className="flex-1 min-w-0">
-                                            <p className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] truncate">
-                                              {item.name}
-                                            </p>
-                                            <p className="font-pixel text-[10px] text-[#4a5a6a]">
-                                              {item.category} · x{item.quantity}
-                                            </p>
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
+                                    <>
+                                      <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+                                        Tap an item to select it:
+                                      </p>
+                                      <div className="max-h-48 overflow-y-auto space-y-1" style={{ touchAction: "pan-y" }}>
+                                        {data.inventory.map((item) => {
+                                          const isSelected = selectedItem === item.inventoryId
+                                          return (
+                                            <button
+                                              key={item.inventoryId}
+                                              onClick={() => setSelectedItem(item.inventoryId)}
+                                              style={{ touchAction: "manipulation" }}
+                                              className={cn(
+                                                "w-full flex items-center gap-2 px-3 py-2 border-2 text-left transition-all",
+                                                isSelected
+                                                  ? "border-[var(--pet-blue,#4080f0)] bg-[var(--pet-blue,#4080f0)]/15 ring-1 ring-[var(--pet-blue,#4080f0)]"
+                                                  : "border-[#1a2a3c] bg-[#080c18] hover:border-[#3a4a5c]"
+                                              )}
+                                            >
+                                              <div className={cn(
+                                                "w-5 h-5 flex-shrink-0 flex items-center justify-center border-2 transition-all",
+                                                isSelected
+                                                  ? "border-[var(--pet-blue,#4080f0)] bg-[var(--pet-blue,#4080f0)]/30 text-[var(--pet-blue,#4080f0)]"
+                                                  : "border-[#2a3a5c] bg-transparent"
+                                              )}>
+                                                {isSelected && <span className="text-[10px]">✓</span>}
+                                              </div>
+                                              <div className="flex-1 min-w-0">
+                                                <p className="font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)] truncate">
+                                                  {item.name}
+                                                </p>
+                                                <p className="font-pixel text-[10px] text-[#4a5a6a]">
+                                                  {item.category} · x{item.quantity}
+                                                </p>
+                                              </div>
+                                            </button>
+                                          )
+                                        })}
+                                      </div>
+                                    </>
                                   ) : (
                                     <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)] text-center py-3">
                                       No items to send
@@ -584,12 +607,13 @@ export default function FriendProfilePage() {
                                     size="sm"
                                     onClick={handleSendItem}
                                     loading={giftLoading}
-                                    disabled={selectedItem === null}
+                                    disabled={selectedItem == null}
                                     className="w-full"
                                   >
-                                    Send Item
+                                    {selectedItem == null ? "Select an item first" : "Send Item"}
                                   </PixelButton>
                                 </div>
+                                /* --- END AI-MODIFIED --- */
                               )}
 
                               <button
