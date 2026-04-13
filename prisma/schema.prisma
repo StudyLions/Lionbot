@@ -560,6 +560,10 @@ model rented_rooms {
   // Purpose: Track last activity for inactivity auto-delete feature
   last_activity  DateTime?        @db.Timestamptz(6)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-13) ---
+  // Purpose: Per-room auto-extend preference set by room owner
+  owner_auto_extend Boolean?
+  // --- END AI-MODIFIED ---
   rented_members rented_members[]
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
   room_admin_log room_admin_log[]

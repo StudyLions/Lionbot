@@ -187,6 +187,10 @@ export default apiHandler({
       walletBalance: walletRow?.coins ?? 0,
       frozenAt: room.frozen_at?.toISOString() ?? null,
       autoExtendEnabled: guildConfig?.renting_auto_extend ?? false,
+      // --- AI-MODIFIED (2026-04-13) ---
+      // Purpose: Expose per-room auto-extend preference set by the owner
+      ownerAutoExtend: room.owner_auto_extend,
+      // --- END AI-MODIFIED ---
     })
   },
 
@@ -211,23 +215,44 @@ export default apiHandler({
       return res.status(403).json({ error: "Only the room owner can rename" })
     }
 
-    const { name } = req.body
-    if (typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
-      return res.status(400).json({ error: "Name must be 1-100 characters" })
+    const { name, ownerAutoExtend } = req.body
+
+    // --- AI-MODIFIED (2026-04-13) ---
+    // Purpose: Allow PATCH to toggle per-room auto-extend preference
+    const updateData: Record<string, unknown> = {}
+
+    if (name !== undefined) {
+      if (typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
+        return res.status(400).json({ error: "Name must be 1-100 characters" })
+      }
+      updateData.name = name.trim()
+    }
+
+    if (ownerAutoExtend !== undefined) {
+      if (typeof ownerAutoExtend !== "boolean" && ownerAutoExtend !== null) {
+        return res.status(400).json({ error: "ownerAutoExtend must be boolean or null" })
+      }
+      updateData.owner_auto_extend = ownerAutoExtend
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ error: "No fields to update" })
     }
 
     const updated = await prisma.rented_rooms.update({
       where: { channelid: channelId },
-      data: { name: name.trim() },
-      select: { name: true },
+      data: updateData,
+      select: { name: true, owner_auto_extend: true },
     })
 
-    res
-      .status(200)
-      .json({
-        name: updated.name,
-        message: "Name saved. Will sync to Discord within a few minutes.",
-      })
+    res.status(200).json({
+      name: updated.name,
+      ownerAutoExtend: updated.owner_auto_extend,
+      message: updateData.name
+        ? "Name saved. Will sync to Discord within a few minutes."
+        : "Settings updated.",
+    })
+    // --- END AI-MODIFIED ---
   },
 
   async DELETE(req, res) {
