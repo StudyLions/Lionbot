@@ -20,7 +20,7 @@ import { useRouter } from "next/router"
 import { useState, useCallback, useEffect, useMemo } from "react"
 import {
   ShieldAlert, UserX, Pause, ArrowRightLeft,
-  Video, Users, Bell, MessageSquare, Info,
+  Video, Users, Bell, MessageSquare, Info, AlertTriangle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GetServerSideProps } from "next"
@@ -49,12 +49,13 @@ interface AntiAfkConfig {
   max_actions_per_hour: number
 }
 
-// --- AI-MODIFIED (2026-04-07) ---
-// Purpose: Add hasAfkChannel to disable Move to AFK when server has no AFK channel
+// --- AI-MODIFIED (2026-04-08) ---
+// Purpose: Add hasAfkChannel and afkTimeout for move_afk gating and conflict warnings
 interface ApiResponse {
   config: AntiAfkConfig
   isPremium: boolean
   hasAfkChannel: boolean
+  afkTimeout: number
 }
 // --- END AI-MODIFIED ---
 
@@ -114,13 +115,20 @@ export default function AntiAfkPage() {
   )
   const serverName = serverData?.server?.name || "Server"
   const isPremium = apiData?.isPremium ?? false
-  // --- AI-MODIFIED (2026-04-07) ---
-  // Purpose: Track whether guild has an AFK channel for disabling move_afk option
+  // --- AI-MODIFIED (2026-04-08) ---
+  // Purpose: Track AFK channel and timeout for move_afk gating + conflict warning
   const hasAfkChannel = apiData?.hasAfkChannel ?? false
+  const afkTimeoutSeconds = apiData?.afkTimeout ?? 0
+  const afkTimeoutMinutes = Math.floor(afkTimeoutSeconds / 60)
   // --- END AI-MODIFIED ---
 
   const [config, setConfig] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
   const [original, setOriginal] = useState<AntiAfkConfig>(DEFAULT_CONFIG)
+
+  // --- AI-MODIFIED (2026-04-13) ---
+  // Purpose: Fix ReferenceError -- was accessing config.check_interval before useState declaration
+  const hasAfkConflict = hasAfkChannel && afkTimeoutSeconds > 0 && afkTimeoutMinutes <= config.check_interval
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!apiData?.config) return
@@ -251,6 +259,30 @@ export default function AntiAfkPage() {
                         min={15}
                         max={180}
                       />
+                      {/* --- AI-MODIFIED (2026-04-08) --- */}
+                      {/* Purpose: Warn when Discord's AFK timeout will move users before LionBot checks */}
+                      {hasAfkConflict && (
+                        <div className="flex items-start gap-2.5 p-3 mt-3 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+                          <AlertTriangle size={16} className="text-amber-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-xs text-amber-200/90 space-y-1">
+                            <p className="font-medium text-amber-300">
+                              Discord&apos;s AFK timeout may interfere
+                            </p>
+                            <p>
+                              This server&apos;s Discord AFK timeout is set to <strong>{afkTimeoutMinutes} minute{afkTimeoutMinutes !== 1 ? "s" : ""}</strong>.
+                              {" "}Since your check interval ({config.check_interval} min) is {config.check_interval === afkTimeoutMinutes ? "the same" : "longer"},
+                              Discord will move idle users to the AFK channel before LionBot can check them.
+                            </p>
+                            <p>
+                              {afkTimeoutMinutes > 15
+                                ? <>To fix this, either set the check interval below {afkTimeoutMinutes} minutes, or remove the AFK channel in <strong>Discord Server Settings &gt; Overview</strong>.</>
+                                : <>To fix this, remove the AFK channel in <strong>Discord Server Settings &gt; Overview</strong>. The minimum check interval (15 min) is already higher than the server&apos;s AFK timeout.</>
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
 
                     <div>
