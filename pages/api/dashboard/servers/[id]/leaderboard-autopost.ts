@@ -83,6 +83,9 @@ function serializeConfig(c: any) {
     dm_template_title: c.dm_template_title,
     dm_template_body: c.dm_template_body,
     dm_stagger_seconds: c.dm_stagger_seconds,
+    top1_dm_enabled: c.top1_dm_enabled,
+    top1_dm_template_title: c.top1_dm_template_title,
+    top1_dm_template_body: c.top1_dm_template_body,
     notify_mod_log: c.notify_mod_log,
     mod_log_channel: c.mod_log_channel?.toString() ?? null,
     skip_if_empty: c.skip_if_empty,
@@ -174,6 +177,11 @@ export default apiHandler({
     validateTemplateField(body.embed_author_name, "embed_author_name", 256)
     validateTemplateField(body.dm_template_title, "dm_template_title", 256)
     validateTemplateField(body.dm_template_body, "dm_template_body", 4096)
+    // --- AI-MODIFIED (2026-04-15) ---
+    // Purpose: Validate Top 1 DM template fields
+    validateTemplateField(body.top1_dm_template_title, "top1_dm_template_title", 256)
+    validateTemplateField(body.top1_dm_template_body, "top1_dm_template_body", 4096)
+    // --- END AI-MODIFIED ---
     if (body.embed_fields) validateEmbedFields(body.embed_fields)
 
     if (!body.post_channel) {
@@ -219,6 +227,12 @@ export default apiHandler({
         dm_template_title: body.dm_template_title || null,
         dm_template_body: body.dm_template_body || null,
         dm_stagger_seconds: Math.min(Math.max(body.dm_stagger_seconds ?? 2, 1), 10),
+        // --- AI-MODIFIED (2026-04-15) ---
+        // Purpose: Top 1 DM fields
+        top1_dm_enabled: body.top1_dm_enabled ?? false,
+        top1_dm_template_title: body.top1_dm_template_title || null,
+        top1_dm_template_body: body.top1_dm_template_body || null,
+        // --- END AI-MODIFIED ---
         notify_mod_log: body.notify_mod_log ?? false,
         mod_log_channel: body.mod_log_channel
           ? parseBigInt(body.mod_log_channel, "mod_log_channel")
@@ -274,6 +288,13 @@ export default apiHandler({
       validateTemplateField(updates.dm_template_title, "dm_template_title", 256)
     if (updates.dm_template_body !== undefined)
       validateTemplateField(updates.dm_template_body, "dm_template_body", 4096)
+    // --- AI-MODIFIED (2026-04-15) ---
+    // Purpose: Validate Top 1 DM template fields on update
+    if (updates.top1_dm_template_title !== undefined)
+      validateTemplateField(updates.top1_dm_template_title, "top1_dm_template_title", 256)
+    if (updates.top1_dm_template_body !== undefined)
+      validateTemplateField(updates.top1_dm_template_body, "top1_dm_template_body", 4096)
+    // --- END AI-MODIFIED ---
     if (updates.embed_fields !== undefined) validateEmbedFields(updates.embed_fields)
 
     const data: any = {}
@@ -284,6 +305,7 @@ export default apiHandler({
       "announce_content", "embed_title", "embed_description", "embed_footer",
       "embed_url", "embed_author_name", "embed_author_url",
       "dm_template_title", "dm_template_body",
+      "top1_dm_template_title", "top1_dm_template_body",
     ]
     for (const f of stringFields) {
       if (updates[f] !== undefined) data[f] = updates[f] || null
@@ -292,7 +314,7 @@ export default apiHandler({
     const boolFields = [
       "enabled", "auto_remove_roles",
       "include_image", "mention_winners", "pin_post", "delete_previous",
-      "notify_public_post", "notify_dm_winners", "notify_mod_log",
+      "notify_public_post", "notify_dm_winners", "top1_dm_enabled", "notify_mod_log",
       "skip_if_empty", "skip_if_same_as_last", "continue_on_partial",
     ]
     for (const f of boolFields) {

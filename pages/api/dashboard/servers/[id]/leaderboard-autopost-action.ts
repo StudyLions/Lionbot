@@ -9,11 +9,15 @@ import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Raised test limit to 50/day so admins don't get locked out while configuring
+// --- AI-MODIFIED (2026-04-15) ---
+// Purpose: Added test_dm rate limit (shares same limit as test)
 const RATE_LIMITS: Record<string, { max: number; windowMs: number }> = {
   test: { max: 50, windowMs: 86400000 },
+  test_dm: { max: 50, windowMs: 86400000 },
   run_now: { max: 1, windowMs: 3600000 },
   simulate: { max: 999, windowMs: 60000 },
 }
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 export default apiHandler({
@@ -27,7 +31,10 @@ export default apiHandler({
       throw new ValidationError("configid and action are required")
     }
 
-    const validActions = ["test", "run_now", "simulate"]
+    // --- AI-MODIFIED (2026-04-15) ---
+    // Purpose: Added test_dm action type for previewing DMs
+    const validActions = ["test", "run_now", "simulate", "test_dm"]
+    // --- END AI-MODIFIED ---
     if (!validActions.includes(action)) {
       throw new ValidationError(`action must be one of: ${validActions.join(", ")}`)
     }

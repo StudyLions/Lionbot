@@ -1638,6 +1638,9 @@ model leaderboard_autopost_config {
   dm_template_title    String?
   dm_template_body     String?
   dm_stagger_seconds   Int                                 @default(2)
+  top1_dm_enabled      Boolean                             @default(false)
+  top1_dm_template_title String?                           @db.VarChar(256)
+  top1_dm_template_body  String?                           @db.VarChar(4096)
   notify_mod_log       Boolean                             @default(false)
   mod_log_channel      BigInt?
   skip_if_empty        Boolean                             @default(true)

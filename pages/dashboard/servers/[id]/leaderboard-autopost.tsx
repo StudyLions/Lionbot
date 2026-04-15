@@ -86,6 +86,9 @@ interface AutopostConfig {
   dm_template_title: string | null
   dm_template_body: string | null
   dm_stagger_seconds: number
+  top1_dm_enabled: boolean
+  top1_dm_template_title: string | null
+  top1_dm_template_body: string | null
   notify_mod_log: boolean
   mod_log_channel: string | null
   skip_if_empty: boolean
@@ -283,6 +286,9 @@ function makeDefaultConfig(): Partial<AutopostConfig> {
     dm_template_title: null,
     dm_template_body: null,
     dm_stagger_seconds: 2,
+    top1_dm_enabled: false,
+    top1_dm_template_title: null,
+    top1_dm_template_body: null,
     notify_mod_log: false,
     mod_log_channel: null,
     skip_if_empty: true,
@@ -636,7 +642,11 @@ function ConfigEditor({
         }
         if (tries >= 30) toast.error("Simulation timed out")
       } else {
-        toast.success(action === "test" ? "Test post queued!" : "Full cycle queued!")
+        // --- AI-MODIFIED (2026-04-15) ---
+        // Purpose: Differentiated toast messages for test_dm action
+        const queueMsg = action === "test" ? "Test post queued!" : action === "test_dm" ? "Sending test DM..." : "Full cycle queued!"
+        toast.success(queueMsg)
+        // --- END AI-MODIFIED ---
         let tries = 0
         while (tries < 20) {
           await new Promise((r) => setTimeout(r, 2000))
@@ -644,7 +654,10 @@ function ConfigEditor({
           const data = await res.json()
           if (data.status === "done" || data.status === "failed") {
             if (data.status === "done") {
-              toast.success("Action completed!")
+              // --- AI-MODIFIED (2026-04-15) ---
+              // Purpose: Specific success message for test DM
+              toast.success(action === "test_dm" ? "Test DM sent! Check your Discord DMs." : "Action completed!")
+              // --- END AI-MODIFIED ---
             } else {
               const err = typeof data.result === "string" ? JSON.parse(data.result) : data.result
               toast.error(err?.error || "Action failed")
@@ -948,6 +961,38 @@ function ConfigEditor({
               />
               <VariableChips variables={[...TEMPLATE_VARIABLES, ...DM_EXTRA_VARIABLES]} onInsert={copyVariable} />
             </SettingRow>
+            {/* --- AI-MODIFIED (2026-04-15) --- */}
+            {/* Purpose: Separate Top 1 DM template UI */}
+            <SettingRow label="Separate Top 1 DM" description="Send a different DM to the #1 winner">
+              <Toggle
+                checked={form.top1_dm_enabled ?? false}
+                onChange={(v) => update("top1_dm_enabled", v)}
+              />
+            </SettingRow>
+            {form.top1_dm_enabled && (
+              <>
+                <SettingRow label="Top 1 DM Title" description="Embed title for the #1 winner's DM">
+                  <TextInput
+                    value={form.top1_dm_template_title || ""}
+                    onChange={(v) => update("top1_dm_template_title", v || null)}
+                    placeholder="You're #1!"
+                    maxLength={256}
+                  />
+                </SettingRow>
+                <SettingRow label="Top 1 DM Body" description="Embed description for the #1 winner's DM">
+                  <textarea
+                    value={form.top1_dm_template_body || ""}
+                    onChange={(e) => update("top1_dm_template_body", e.target.value || null)}
+                    placeholder="You placed #1 on the {frequency} {type} leaderboard in {server_name}! Amazing work!"
+                    className="w-full px-3 py-2 text-sm bg-gray-800 border border-gray-700 rounded-md resize-none"
+                    rows={3}
+                    maxLength={4096}
+                  />
+                  <VariableChips variables={[...TEMPLATE_VARIABLES, ...DM_EXTRA_VARIABLES]} onInsert={copyVariable} />
+                </SettingRow>
+              </>
+            )}
+            {/* --- END AI-MODIFIED --- */}
           </>
         )}
         <SettingRow label="Mod Log">
@@ -1115,27 +1160,55 @@ function ConfigEditor({
             <div className="text-xs text-muted-foreground mb-2">Channel Post Preview</div>
             <EmbedPreview config={form} />
           </div>
+          {/* --- AI-MODIFIED (2026-04-15) --- */}
+          {/* Purpose: Show both regular DM and Top 1 DM previews */}
           {form.notify_dm_winners && (
-            <div>
-              <div className="text-xs text-muted-foreground mb-2">DM Preview (sample rank #3)</div>
-              <div className="bg-[#2f3136] rounded-lg p-3 max-w-sm">
-                <div className="flex" style={{ borderLeft: `3px solid ${colorIntToHex(form.embed_color ?? 16766720)}` }}>
-                  <div className="pl-3 py-1">
-                    {form.dm_template_title && (
-                      <div className="text-sm font-semibold text-blue-400 mb-1">
-                        {renderPreview(form.dm_template_title)}
+            <div className="space-y-3">
+              <div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  {form.top1_dm_enabled ? "DM Preview (rank #2+)" : "DM Preview (sample rank #3)"}
+                </div>
+                <div className="bg-[#2f3136] rounded-lg p-3 max-w-sm">
+                  <div className="flex" style={{ borderLeft: `3px solid ${colorIntToHex(form.embed_color ?? 16766720)}` }}>
+                    <div className="pl-3 py-1">
+                      {form.dm_template_title && (
+                        <div className="text-sm font-semibold text-blue-400 mb-1">
+                          {renderPreview(form.dm_template_title)}
+                        </div>
+                      )}
+                      <div className="text-sm text-gray-300 whitespace-pre-wrap">
+                        {form.dm_template_body
+                          ? renderPreview(form.dm_template_body)
+                          : "Congratulations! You placed #3 on the Weekly Study Time leaderboard in My Server!"}
                       </div>
-                    )}
-                    <div className="text-sm text-gray-300 whitespace-pre-wrap">
-                      {form.dm_template_body
-                        ? renderPreview(form.dm_template_body)
-                        : "Congratulations! You placed #3 on the Weekly Study Time leaderboard in My Server!"}
                     </div>
                   </div>
                 </div>
               </div>
+              {form.top1_dm_enabled && (
+                <div>
+                  <div className="text-xs text-muted-foreground mb-2">Top 1 DM Preview</div>
+                  <div className="bg-[#2f3136] rounded-lg p-3 max-w-sm">
+                    <div className="flex" style={{ borderLeft: `3px solid ${colorIntToHex(form.embed_color ?? 16766720)}` }}>
+                      <div className="pl-3 py-1">
+                        {form.top1_dm_template_title && (
+                          <div className="text-sm font-semibold text-blue-400 mb-1">
+                            {renderPreview(form.top1_dm_template_title)}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-300 whitespace-pre-wrap">
+                          {form.top1_dm_template_body
+                            ? renderPreview(form.top1_dm_template_body)
+                            : "Congratulations! You placed #1 on the Weekly Study Time leaderboard in My Server!"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       </SectionCard>
 
@@ -1151,6 +1224,17 @@ function ConfigEditor({
               {actionLoading === "test" ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
               Test Post
             </button>
+            {/* --- AI-MODIFIED (2026-04-15) --- */}
+            {/* Purpose: Test DM button to preview DMs */}
+            <button
+              onClick={() => handleAction("test_dm")}
+              disabled={!!actionLoading}
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-400 hover:bg-purple-600/30 rounded-md text-sm transition-colors disabled:opacity-50"
+            >
+              {actionLoading === "test_dm" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+              Test DM
+            </button>
+            {/* --- END AI-MODIFIED --- */}
             <button
               onClick={() => handleAction("simulate")}
               disabled={!!actionLoading}
@@ -1169,7 +1253,8 @@ function ConfigEditor({
             </button>
           </div>
           <div className="mt-2 text-xs text-muted-foreground space-y-1">
-            <p><strong>Test Post</strong> &ndash; Posts to channel with TEST footer, no roles/coins/DMs. (3/hour)</p>
+            <p><strong>Test Post</strong> &ndash; Posts to channel with TEST footer, no roles/coins/DMs.</p>
+            <p><strong>Test DM</strong> &ndash; Sends a sample DM to you so you can preview it.</p>
             <p><strong>Simulate</strong> &ndash; Shows what would happen without any side effects.</p>
             <p><strong>Run Now</strong> &ndash; Full production cycle immediately. (1/hour)</p>
           </div>
