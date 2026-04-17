@@ -4,6 +4,7 @@
 // Purpose: GET moderation records with filters, member info (moderator+)
 //          PATCH to resolve (pardon) records individually or in bulk
 // ============================================================
+import { Prisma } from "@prisma/client"
 import { prisma } from "@/utils/prisma"
 import { requireModerator } from "@/utils/adminAuth"
 // --- AI-MODIFIED (2026-03-20) ---
@@ -91,10 +92,80 @@ export default apiHandler({
       : []
     const memberMap = new Map(targetMembers.map((m) => [m.userid.toString(), m]))
 
+    // --- AI-MODIFIED (2026-04-17) ---
+    // Purpose: Surface "Offense #N of M" on STUDY_BAN/SCREEN_BAN tickets so
+    //   moderators see the escalation context inline (matches bot ticket log).
+    //   - offenseNumber: row-number among non-pardoned same-target same-type
+    //                    tickets (mirrors bot's autocreate count + 1 logic).
+    //   - totalTiers   : configured number of escalation durations for that
+    //                    blacklist type in this guild.
+    const blacklistTickets = tickets.filter(
+      (t) => t.ticket_type === "STUDY_BAN" || t.ticket_type === "SCREEN_BAN"
+    )
+    const offenseMap = new Map<number, number>()
+    let studyBanTiers: number | null = null
+    let screenBanTiers: number | null = null
+
+    if (blacklistTickets.length > 0) {
+      const blacklistTargetIds = Array.from(
+        new Set(blacklistTickets.map((t) => t.targetid))
+      )
+      const offenseRows = await prisma.$queryRaw<{ ticketid: number; offense_number: bigint }[]>`
+        WITH ranked AS (
+          SELECT
+            ticketid,
+            ROW_NUMBER() OVER (
+              PARTITION BY targetid, ticket_type
+              ORDER BY ticketid
+            ) AS offense_number
+          FROM tickets
+          WHERE guildid = ${guildId}
+            AND ticket_type IN ('STUDY_BAN'::tickettype, 'SCREEN_BAN'::tickettype)
+            AND ticket_state != 'PARDONED'::ticketstate
+            AND targetid IN (${Prisma.join(blacklistTargetIds)})
+        )
+        SELECT ticketid, offense_number
+        FROM ranked
+        WHERE ticketid IN (${Prisma.join(blacklistTickets.map((t) => t.ticketid))})
+      `
+      for (const row of offenseRows) {
+        offenseMap.set(row.ticketid, Number(row.offense_number))
+      }
+
+      const hasStudyBan = blacklistTickets.some((t) => t.ticket_type === "STUDY_BAN")
+      const hasScreenBan = blacklistTickets.some((t) => t.ticket_type === "SCREEN_BAN")
+      if (hasStudyBan) {
+        const c = await prisma.studyban_durations.count({ where: { guildid: guildId } })
+        studyBanTiers = c || null
+      }
+      if (hasScreenBan) {
+        const screenRows = await prisma.$queryRaw<{ count: bigint }[]>`
+          SELECT COUNT(*)::bigint AS count
+          FROM screenban_durations
+          WHERE guildid = ${guildId}
+        `
+        const c = screenRows[0]?.count ? Number(screenRows[0].count) : 0
+        screenBanTiers = c || null
+      }
+    }
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       tickets: tickets.map((t) => {
         const uid = t.targetid.toString()
         const member = memberMap.get(uid)
+        // --- AI-MODIFIED (2026-04-17) ---
+        // Purpose: Add offenseNumber/totalTiers fields for blacklist tickets.
+        let offenseNumber: number | null = null
+        let totalTiers: number | null = null
+        if (t.ticket_type === "STUDY_BAN") {
+          offenseNumber = offenseMap.get(t.ticketid) ?? null
+          totalTiers = studyBanTiers
+        } else if (t.ticket_type === "SCREEN_BAN") {
+          offenseNumber = offenseMap.get(t.ticketid) ?? null
+          totalTiers = screenBanTiers
+        }
+        // --- END AI-MODIFIED ---
         return {
           id: t.ticketid,
           targetId: uid,
@@ -113,6 +184,8 @@ export default apiHandler({
           pardonedBy: t.pardoned_by?.toString(),
           pardonedAt: t.pardoned_at,
           pardonedReason: t.pardoned_reason,
+          offenseNumber,
+          totalTiers,
         }
       }),
       pagination: { page, pageSize, total, totalPages: Math.ceil(total / pageSize) },
