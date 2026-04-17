@@ -797,13 +797,14 @@ function TaskRow({
     >
       {/* Select checkbox */}
       {selectMode && (
-        <button onClick={onToggleSelect} className="flex-shrink-0">
-          <div className={cn(
-            "w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
+        <button
+          onClick={onToggleSelect}
+          className={cn(
+            "flex-shrink-0 w-4 h-4 rounded border-2 flex items-center justify-center transition-colors",
             isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border"
-          )}>
-            {isSelected && <Check size={10} strokeWidth={3} />}
-          </div>
+          )}
+        >
+          {isSelected && <Check size={10} strokeWidth={3} />}
         </button>
       )}
 
@@ -818,18 +819,16 @@ function TaskRow({
       {/* Completion checkbox */}
       <button
         onClick={onToggle}
-        className="flex-shrink-0"
-      >
-        <div className={cn(
-          "rounded-md flex items-center justify-center transition-all",
+        className={cn(
+          "flex-shrink-0 rounded-full flex items-center justify-center transition-all",
           isSubtask ? "w-4 h-4 border" : "w-5 h-5 border-2",
           task.completed
             ? "bg-emerald-500 border-emerald-500 text-white"
             : "border-border hover:border-emerald-500",
           isAnimating && task.completed && "animate-check-pop"
-        )}>
-          {task.completed && <Check size={isSubtask ? 10 : 12} strokeWidth={3} />}
-        </div>
+        )}
+      >
+        {task.completed && <Check size={isSubtask ? 10 : 12} strokeWidth={3} />}
       </button>
 
       {/* Content */}
