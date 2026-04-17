@@ -179,6 +179,11 @@ export default function ModerationPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
   const [resolveTarget, setResolveTarget] = useState<number[] | null>(null)
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Bumped after pardons complete; passed to MemberDetailPanel so the
+  //          lazy-loaded Blacklist History tab can refetch its data.
+  const [panelRefreshNonce, setPanelRefreshNonce] = useState(0)
+  // --- END AI-MODIFIED ---
   const [actionLoading, setActionLoading] = useState(false)
   const [panelUserId, setPanelUserId] = useState<string | null>(null)
 
@@ -249,6 +254,12 @@ export default function ModerationPage() {
       if (!res.ok) throw new Error(data.error || "Failed to resolve")
       toast.success(data.message || "Resolved")
       refreshData()
+      // --- AI-MODIFIED (2026-04-17) ---
+      // Purpose: Notify the open MemberDetailPanel to refetch blacklist data
+      //          and invalidate the panel's records tab data so it stays fresh.
+      setPanelRefreshNonce((n) => n + 1)
+      if (panelDetailKey) invalidate(panelDetailKey)
+      // --- END AI-MODIFIED ---
       setSelectedIds(new Set())
     } catch (err: any) {
       toast.error(err.message || "Failed to resolve")
@@ -516,6 +527,8 @@ export default function ModerationPage() {
         {/* --- END AI-REPLACED --- */}
 
         {/* Member Detail Panel */}
+        {/* --- AI-MODIFIED (2026-04-17) ---
+            Purpose: Wire onResolve so the new Blacklist History tab actions actually pardon */}
         <MemberDetailPanel
           open={!!panelUserId}
           onClose={() => setPanelUserId(null)}
@@ -524,9 +537,11 @@ export default function ModerationPage() {
           onWarn={() => {}}
           onNote={() => {}}
           onRestrict={() => {}}
-          onResolve={() => {}}
+          onResolve={(ticketIds) => setResolveTarget(ticketIds)}
           onAdjustCoins={() => {}}
+          refreshNonce={panelRefreshNonce}
         />
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Resolve Modal */}
         <ResolveModal
