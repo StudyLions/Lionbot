@@ -2122,6 +2122,9 @@ enum tickettype {
   MESSAGE_CENSOR
   INVITE_CENSOR
   WARNING
+  // Added 2026-04-17: live DB already has SCREEN_BAN (added by
+  // StudyLion/data/migration/v17-v18/migration.sql); Prisma schema was stale.
+  SCREEN_BAN
 }
 
 enum lgexpression {
