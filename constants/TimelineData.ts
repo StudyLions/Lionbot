@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 17, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-17",
+    title: "Reset a Member's Tracked Stats from the Dashboard",
+    description:
+      "Server admins can now selectively wipe a single member's tracked study data from the dashboard — voice and text study time, voice and text XP, pomodoro milestones, season stats, and (optionally) coins — with an optional time-frame filter (last 24 hours, last 7 days, last 30 days, custom range, or all time). Every reset shows a live preview of exactly what will be deleted, requires a written reason, and asks you to type the member's name to confirm. Each action is logged with the admin who ran it, the scope, and the rows affected, so nothing happens silently. Only admins of that specific server can use this, and the tool is locked to the targeted member in the targeted server — it cannot accidentally touch anyone else's data.",
+    category: "feature",
+    area: "website",
+  },
   // ── April 10, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-10",
