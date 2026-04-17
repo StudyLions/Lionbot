@@ -2019,6 +2019,30 @@ model manual_session_log {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Audit log for destructive admin actions on the dashboard
+//          (currently used by the "Reset member stats" feature). Captures
+//          who did what, to whom, in which guild, with what scope, why,
+//          and the exact rows affected. Insert happens inside the same
+//          transaction as the destructive operation so it is all-or-nothing.
+model dashboard_admin_audit {
+  auditid       BigInt   @id @default(autoincrement())
+  performed_at  DateTime @default(now()) @db.Timestamptz(6)
+  actor_userid  BigInt
+  guildid       BigInt
+  target_userid BigInt
+  action_type   String   @db.VarChar(64)
+  selections    Json
+  time_frame    Json?
+  reason        String
+  result        Json
+
+  @@index([guildid, target_userid], map: "idx_dashboard_admin_audit_guild_target")
+  @@index([actor_userid], map: "idx_dashboard_admin_audit_actor")
+  @@index([performed_at], map: "idx_dashboard_admin_audit_time")
+}
+// --- END AI-MODIFIED ---
+
 model shard_presence_stats {
   shard_id    Int      @id
   in_vc       Int      @default(0)

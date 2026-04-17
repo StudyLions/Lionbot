@@ -73,6 +73,13 @@ interface Props {
   //          lazy-loaded Blacklist History tab can refetch.
   refreshNonce?: number
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Optional admin-only "Reset stats..." trigger surfaced in
+  //          the Quick Actions block. Hidden when isAdmin is false or
+  //          onReset is not supplied so non-admin viewers see no change.
+  isAdmin?: boolean
+  onReset?: () => void
+  // --- END AI-MODIFIED ---
 }
 
 // --- AI-MODIFIED (2026-04-17) ---
@@ -369,7 +376,10 @@ function BlacklistTypeCard({ kind, entry, onResolveActive }: BlacklistTypeCardPr
 
 // --- END AI-MODIFIED ---
 
-export default function MemberDetailPanel({ open, onClose, data, loading, onWarn, onNote, onRestrict, onResolve, onAdjustCoins, onRefund, refreshNonce }: Props) {
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Accept optional onReset / isAdmin to render the new Reset button
+export default function MemberDetailPanel({ open, onClose, data, loading, onWarn, onNote, onRestrict, onResolve, onAdjustCoins, onRefund, refreshNonce, isAdmin, onReset }: Props) {
+// --- END AI-MODIFIED ---
   const [copiedId, setCopiedId] = useState(false)
   // --- AI-MODIFIED (2026-03-22) ---
   // Purpose: Get serverId from router for room history cross-link
@@ -624,6 +634,15 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                         <span className="flex items-center gap-2"><Ban size={14} /> Study Restriction</span>
                         <span className="text-[10px] text-red-400/50 mt-0.5">Block voice coin/XP earning</span>
                       </button>
+                      {/* --- AI-MODIFIED (2026-04-17) --- */}
+                      {/* Purpose: Admin-only "Reset stats..." action surfaced beside the destructive Restriction button */}
+                      {isAdmin && onReset && (
+                        <button onClick={onReset} className="col-span-2 flex flex-col px-3 py-2 bg-red-500/10 border border-red-500/30 rounded-lg text-sm text-red-300 hover:bg-red-500/15 transition-colors">
+                          <span className="flex items-center gap-2"><RotateCcw size={14} /> Reset stats...</span>
+                          <span className="text-[10px] text-red-300/60 mt-0.5">Selectively wipe voice/text time, XP, season, or coins (audited).</span>
+                        </button>
+                      )}
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   </div>
                 </TabsContent>
