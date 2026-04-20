@@ -17,12 +17,19 @@ export default apiHandler({
     if (!auth) return
 
     const senderId = BigInt(auth.discordId)
-    const { targetUserId, type, amount, inventoryId } = req.body as {
+    // --- AI-MODIFIED (2026-04-19) ---
+    // Purpose: Ticket #0014 — accept optional `quantity` for ITEM gifts so
+    // users can send a partial stack of fungible items (scrolls, seeds, etc.)
+    // instead of being forced to send the entire stack. Backward-compatible:
+    // if `quantity` is missing or equals the full stack, behavior is unchanged.
+    const { targetUserId, type, amount, inventoryId, quantity } = req.body as {
       targetUserId?: string
       type?: string
       amount?: number
       inventoryId?: number
+      quantity?: number
     }
+    // --- END AI-MODIFIED ---
 
     const targetId = parseBigInt(targetUserId, "targetUserId")
 
@@ -101,6 +108,19 @@ export default apiHandler({
       return res.status(400).json({ error: "inventoryId is required for item gifts" })
     }
 
+    // --- AI-MODIFIED (2026-04-19) ---
+    // Purpose: Ticket #0014 — validate optional `quantity`. If provided it
+    // must be a positive integer not exceeding the stack size; otherwise we
+    // default to the full stack (preserves prior behavior).
+    let requestedQuantity: number | null = null
+    if (quantity !== undefined && quantity !== null) {
+      if (typeof quantity !== "number" || !Number.isInteger(quantity) || quantity < 1) {
+        throw new ValidationError("quantity must be a positive integer", 400)
+      }
+      requestedQuantity = quantity
+    }
+    // --- END AI-MODIFIED ---
+
     await prisma.$transaction(async (tx) => {
       const items = await tx.$queryRaw<any[]>`
         SELECT i.*, it.tradeable
@@ -130,6 +150,54 @@ export default apiHandler({
       const scrollSlots = await tx.lg_enhancement_slots.findMany({
         where: { inventoryid: inventoryId },
       })
+
+      // --- AI-MODIFIED (2026-04-19) ---
+      // Purpose: Ticket #0014 — partial-stack gifting. Resolve the actual
+      // quantity to send and decide whether this is a full-stack transfer
+      // (existing behavior) or a partial split.
+      //
+      // Partial transfers are blocked for items that have enhancement_level
+      // > 0 or scroll slots, because those bonuses are tied to the specific
+      // inventoryid row and can't be cleanly split across two stacks.
+      const stackSize = Number(item.quantity ?? 1)
+      const sendQuantity = requestedQuantity == null
+        ? stackSize
+        : Math.min(requestedQuantity, stackSize)
+
+      if (sendQuantity < 1) {
+        throw new ValidationError("Cannot send 0 items", 400)
+      }
+      if (sendQuantity > stackSize) {
+        throw new ValidationError("You don't have that many of this item", 400)
+      }
+
+      const isPartial = sendQuantity < stackSize
+      if (isPartial) {
+        const enhanceLevel = Number(item.enhancement_level ?? 0)
+        if (enhanceLevel > 0 || scrollSlots.length > 0) {
+          throw new ValidationError(
+            "Enhanced or scrolled items must be gifted as the entire stack — "
+              + "their bonuses are tied to the stack and can't be split.",
+            400,
+          )
+        }
+        await tx.lg_user_inventory.update({
+          where: { inventoryid: inventoryId },
+          data: { quantity: { decrement: sendQuantity } },
+        })
+        await tx.lg_user_inventory.create({
+          data: {
+            userid: targetId,
+            itemid: item.itemid,
+            enhancement_level: 0,
+            quantity: sendQuantity,
+            source: "TRADE",
+          },
+        })
+        return
+      }
+      // Full-stack gift: same as before.
+      // --- END AI-MODIFIED ---
 
       await tx.lg_user_inventory.delete({
         where: { inventoryid: inventoryId },

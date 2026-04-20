@@ -1337,23 +1337,30 @@ export default function ServerSettings() {
                   {/* Tracking (new) */}
                   {filteredSections.includes("tracking") && (
                     <div id="tracking">
-                      <SectionCard title="Tracking Exclusions" description="Channels excluded from study and XP tracking" icon={<EyeOff size={18} />} {...badgeProps("tracking", modifiedCounts["tracking"])}>
+                      <SectionCard title="Tracking Exclusions" description="Channels (or whole categories) excluded from study and XP tracking" icon={<EyeOff size={18} />} {...badgeProps("tracking", modifiedCounts["tracking"])}>
+                        {/* --- AI-MODIFIED (2026-04-19) --- */}
+                        {/* Purpose: Add category (type 4) support to both selectors so admins
+                            can untrack a whole category in one click instead of every child
+                            channel. The bot already supports this -- the dashboard was the
+                            limiting factor. Same change motivated the Anti-AFK bug fix shipped
+                            today: untracked categories now also auto-skip AFK checks. */}
                         <SettingRow
                           label="Untracked Voice Channels"
-                          description="Voice channels where study time is not counted"
-                          tooltip="Members in these channels won't earn coins or XP from studying. Useful for social/music channels."
+                          description="Voice channels (or whole categories) where study time is not counted"
+                          tooltip="Members in these channels won't earn coins or XP from studying, and the Anti-AFK system also skips them. You can pick individual voice/stage channels or a whole category to untrack everything inside it."
                           impactText={ctx.untrackedVoiceCount !== undefined ? `${ctx.untrackedVoiceCount} channel${ctx.untrackedVoiceCount !== 1 ? "s" : ""} currently excluded` : undefined}
                         >
-                          <ChannelSelect guildId={guildId} value={lists.untrackedVoiceChannels || []} onChange={(v) => setList("untrackedVoiceChannels", (v as string[]) || [])} channelTypes={[2, 13]} placeholder="Select channels to exclude" multiple />
+                          <ChannelSelect guildId={guildId} value={lists.untrackedVoiceChannels || []} onChange={(v) => setList("untrackedVoiceChannels", (v as string[]) || [])} channelTypes={[2, 13, 4]} placeholder="Select channels or categories to exclude" multiple />
                         </SettingRow>
                         <SettingRow
                           label="Untracked Text Channels"
-                          description="Text channels where message XP is not counted"
-                          tooltip="Messages in these channels won't earn XP. Useful for bot command channels or off-topic."
+                          description="Text channels (or whole categories) where message XP is not counted"
+                          tooltip="Messages in these channels won't earn XP. Useful for bot command channels or off-topic. Pick individual text channels or a whole category to untrack everything inside it."
                           impactText={ctx.untrackedTextCount !== undefined ? `${ctx.untrackedTextCount} channel${ctx.untrackedTextCount !== 1 ? "s" : ""} currently excluded` : undefined}
                         >
-                          <ChannelSelect guildId={guildId} value={lists.untrackedTextChannels || []} onChange={(v) => setList("untrackedTextChannels", (v as string[]) || [])} channelTypes={[0, 5, 15]} placeholder="Select channels to exclude" multiple />
+                          <ChannelSelect guildId={guildId} value={lists.untrackedTextChannels || []} onChange={(v) => setList("untrackedTextChannels", (v as string[]) || [])} channelTypes={[0, 5, 15, 4]} placeholder="Select channels or categories to exclude" multiple />
                         </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                       </SectionCard>
                     </div>
                   )}

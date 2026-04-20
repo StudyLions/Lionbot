@@ -180,11 +180,14 @@ const RANK_TIERS = [
   { name: "Master", hours: "1000h+", color: "#DDB21D" },
 ]
 
+// --- AI-MODIFIED (2026-04-19) ---
+// Purpose: Ticket #0020 — "Combined XP" was misleading; XP rank type only counts text activity.
 const RANK_TYPE_LABELS: Record<string, { label: string; icon: typeof Mic }> = {
   VOICE: { label: "Voice Time", icon: Mic },
   MESSAGE: { label: "Messages", icon: MessageSquare },
-  XP: { label: "Combined XP", icon: Zap },
+  XP: { label: "Text XP", icon: Zap },
 }
+// --- END AI-MODIFIED ---
 
 export function RankUpPreview({ serverName, rankType }: RankUpPreviewProps) {
   const [highlightIdx, setHighlightIdx] = useState(1)

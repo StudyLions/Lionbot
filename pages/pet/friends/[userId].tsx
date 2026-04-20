@@ -105,6 +105,12 @@ export default function FriendProfilePage() {
   const [giftTab, setGiftTab] = useState<"gold" | "item">("gold")
   const [goldAmount, setGoldAmount] = useState("")
   const [selectedItem, setSelectedItem] = useState<number | null>(null)
+  // --- AI-MODIFIED (2026-04-19) ---
+  // Purpose: Ticket #0014 — track how many of the selected stack to gift.
+  // Empty string means "send all" (default, preserves prior behavior). The
+  // input only appears for items with quantity > 1.
+  const [itemSendQuantity, setItemSendQuantity] = useState<string>("")
+  // --- END AI-MODIFIED ---
   const [giftLoading, setGiftLoading] = useState(false)
   const [confirmUnfriend, setConfirmUnfriend] = useState(false)
   const [farmWatering, setFarmWatering] = useState(false)
@@ -172,16 +178,36 @@ export default function FriendProfilePage() {
     if (selectedItem == null || !userId) return
     setGiftLoading(true)
     try {
-      // --- AI-MODIFIED (2026-03-24) ---
-      // Purpose: API expects uppercase "ITEM" not lowercase "item"
+      // --- AI-MODIFIED (2026-04-19) ---
+      // Purpose: Ticket #0014 — pass `quantity` so users can send a partial
+      // stack instead of always shipping the whole thing. Empty string or
+      // missing quantity sends the full stack (preserves prior behavior).
+      const qtyRaw = itemSendQuantity.trim()
+      const parsedQty = qtyRaw === "" ? null : parseInt(qtyRaw, 10)
+      const selected = data?.inventory?.find((i) => i.inventoryId === selectedItem)
+      const stackSize = selected?.quantity ?? 1
+      if (parsedQty !== null) {
+        if (Number.isNaN(parsedQty) || parsedQty < 1) {
+          toast.error("Quantity must be a positive number")
+          setGiftLoading(false)
+          return
+        }
+        if (parsedQty > stackSize) {
+          toast.error(`You only have ${stackSize} of this item`)
+          setGiftLoading(false)
+          return
+        }
+      }
       await dashboardMutate("POST", "/api/pet/friends/gift", {
         targetUserId: userId,
         type: "ITEM",
         inventoryId: selectedItem,
+        ...(parsedQty !== null ? { quantity: parsedQty } : {}),
       })
       // --- END AI-MODIFIED ---
       toast.success("Item sent!")
       setSelectedItem(null)
+      setItemSendQuantity("")
       setShowGiftPanel(false)
       mutate()
       invalidatePrefix("/api/pet/inventory")
@@ -190,7 +216,7 @@ export default function FriendProfilePage() {
     } finally {
       setGiftLoading(false)
     }
-  }, [selectedItem, userId, mutate])
+  }, [selectedItem, itemSendQuantity, userId, data?.inventory, mutate])
   // --- END AI-MODIFIED ---
 
   const handleWaterPlot = useCallback(async (plotId: number) => {
@@ -567,7 +593,15 @@ export default function FriendProfilePage() {
                                           return (
                                             <button
                                               key={item.inventoryId}
-                                              onClick={() => setSelectedItem(item.inventoryId)}
+                                              // --- AI-MODIFIED (2026-04-19) ---
+                                              // Purpose: Ticket #0014 — reset the quantity input
+                                              // when the user picks a different item so the previous
+                                              // value doesn't carry over.
+                                              onClick={() => {
+                                                setSelectedItem(item.inventoryId)
+                                                setItemSendQuantity("")
+                                              }}
+                                              // --- END AI-MODIFIED ---
                                               style={{ touchAction: "manipulation" }}
                                               className={cn(
                                                 "w-full flex items-center gap-2 px-3 py-2 border-2 text-left transition-all",
@@ -602,6 +636,58 @@ export default function FriendProfilePage() {
                                       No items to send
                                     </p>
                                   )}
+                                  {/* --- AI-MODIFIED (2026-04-19) --- */}
+                                  {/* Purpose: Ticket #0014 — quantity selector. Only renders for
+                                      stacks > 1 since single items always send 1. Empty input means
+                                      "send the whole stack" (default), matching the API's behavior. */}
+                                  {(() => {
+                                    if (selectedItem == null) return null
+                                    const sel = data.inventory?.find((i) => i.inventoryId === selectedItem)
+                                    if (!sel || sel.quantity <= 1) return null
+                                    const parsed = itemSendQuantity.trim() === ""
+                                      ? sel.quantity
+                                      : parseInt(itemSendQuantity, 10)
+                                    const isInvalid = !Number.isNaN(parsed) && (parsed < 1 || parsed > sel.quantity)
+                                    return (
+                                      <div className="space-y-1 pt-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                          <label className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)]">
+                                            How many to send?
+                                          </label>
+                                          <button
+                                            type="button"
+                                            onClick={() => setItemSendQuantity(String(sel.quantity))}
+                                            className="font-pixel text-[10px] text-[var(--pet-blue,#4080f0)] hover:underline"
+                                          >
+                                            All ({sel.quantity})
+                                          </button>
+                                        </div>
+                                        <input
+                                          type="number"
+                                          inputMode="numeric"
+                                          min={1}
+                                          max={sel.quantity}
+                                          step={1}
+                                          value={itemSendQuantity}
+                                          onChange={(e) => setItemSendQuantity(e.target.value)}
+                                          placeholder={`Default: all ${sel.quantity}`}
+                                          className={cn(
+                                            "w-full px-3 py-2 bg-[#080c18] border-2 font-pixel text-[12px] text-[var(--pet-text,#e2e8f0)]",
+                                            "focus:outline-none focus:border-[var(--pet-blue,#4080f0)]",
+                                            isInvalid
+                                              ? "border-[var(--pet-red,#f04040)]"
+                                              : "border-[#1a2a3c] hover:border-[#3a4a5c]",
+                                          )}
+                                        />
+                                        {isInvalid && (
+                                          <p className="font-pixel text-[10px] text-[var(--pet-red,#f04040)]">
+                                            Must be between 1 and {sel.quantity}
+                                          </p>
+                                        )}
+                                      </div>
+                                    )
+                                  })()}
+                                  {/* --- END AI-MODIFIED --- */}
                                   <PixelButton
                                     variant="info"
                                     size="sm"
@@ -610,14 +696,30 @@ export default function FriendProfilePage() {
                                     disabled={selectedItem == null}
                                     className="w-full"
                                   >
-                                    {selectedItem == null ? "Select an item first" : "Send Item"}
+                                    {/* --- AI-MODIFIED (2026-04-19) --- */}
+                                    {/* Ticket #0014 — surface partial-send count in the button label. */}
+                                    {selectedItem == null
+                                      ? "Select an item first"
+                                      : (() => {
+                                          const sel = data.inventory?.find((i) => i.inventoryId === selectedItem)
+                                          const stackSize = sel?.quantity ?? 1
+                                          const qtyTrim = itemSendQuantity.trim()
+                                          const parsedQty = qtyTrim === "" ? stackSize : parseInt(qtyTrim, 10)
+                                          if (Number.isNaN(parsedQty) || parsedQty < 1 || parsedQty > stackSize) {
+                                            return "Send Item"
+                                          }
+                                          return parsedQty < stackSize
+                                            ? `Send ${parsedQty} of ${stackSize}`
+                                            : stackSize > 1 ? `Send all ${stackSize}` : "Send Item"
+                                        })()}
+                                    {/* --- END AI-MODIFIED --- */}
                                   </PixelButton>
                                 </div>
                                 /* --- END AI-MODIFIED --- */
                               )}
 
                               <button
-                                onClick={() => { setShowGiftPanel(false); setSelectedItem(null); setGoldAmount("") }}
+                                onClick={() => { setShowGiftPanel(false); setSelectedItem(null); setItemSendQuantity(""); setGoldAmount("") }}
                                 className="font-pixel text-[11px] text-[#4a5a6a] hover:text-[#8899aa] transition-colors"
                               >
                                 Close

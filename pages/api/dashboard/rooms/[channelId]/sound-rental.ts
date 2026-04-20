@@ -172,7 +172,20 @@ export default apiHandler({
 
     const expiresAt = new Date(Date.now() + rentHours * 3600_000)
 
-    await prisma.$transaction([
+    // --- AI-MODIFIED (2026-04-13) ---
+    // Purpose: Clear stale permanent configs that point to this same channel.
+    // If another bot has an enabled ambient config targeting this private room
+    // channel, it would also connect when permissions allow, resulting in
+    // duplicate bots. Nullify those channelids so only the rental bot serves it.
+    const conflictingConfigs = await prisma.ambient_sounds_config.findMany({
+      where: {
+        guildid: room.guildid,
+        channelid: channelId,
+        bot_number: { not: freeBotNum },
+      },
+      select: { bot_number: true, guildid: true },
+    })
+    const txOps: any[] = [
       prisma.members.update({
         where: { guildid_userid: { guildid: room.guildid, userid: auth.userId } },
         data: { coins: { decrement: totalCost } },
@@ -188,7 +201,22 @@ export default apiHandler({
           total_cost: totalCost,
         },
       }),
-    ])
+    ]
+    for (const conflict of conflictingConfigs) {
+      txOps.push(
+        prisma.ambient_sounds_config.update({
+          where: {
+            guildid_bot_number: {
+              guildid: conflict.guildid,
+              bot_number: conflict.bot_number,
+            },
+          },
+          data: { channelid: null, enabled: false, status: "pending", error_msg: null },
+        })
+      )
+    }
+    await prisma.$transaction(txOps)
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({
       success: true,

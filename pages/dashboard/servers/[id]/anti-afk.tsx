@@ -575,7 +575,7 @@ export default function AntiAfkPage() {
                         Exclude Channels
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Never check users in these channels, even if they're tracked.
+                        Never check users in these channels, even if they're otherwise tracked.
                       </p>
                       <ChannelSelect
                         guildId={guildId}
@@ -586,12 +586,21 @@ export default function AntiAfkPage() {
                       />
                     </div>
 
+                    {/* --- AI-MODIFIED (2026-04-19) --- */}
+                    {/* Purpose: Make it explicit that untracked channels (set in
+                        the Voice Tracker config) are auto-excluded from AFK
+                        checks. Bug fix shipped same day -- user in GOSS got an
+                        AFK check inside an untracked HANGOUT CHAT category. */}
                     <div className="flex items-start gap-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                       <Info size={14} className="text-blue-400 mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-blue-300">
                         Users in active pomodoro timers or scheduled sessions are always exempt automatically.
+                        Voice channels (or whole categories) listed in your
+                        Voice Tracker&apos;s <span className="font-semibold">Untracked Channels</span> setting
+                        are also skipped automatically -- no need to add them again here.
                       </p>
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
                   </div>
                 </SectionCard>
 

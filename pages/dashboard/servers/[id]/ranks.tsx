@@ -96,11 +96,16 @@ type TabKey = "XP" | "VOICE" | "MESSAGE"
 // Purpose: Removed unused TAB_OPTIONS constant (dead code cleanup)
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-19) ---
+// Purpose: Ticket #0020 — "XP (combined activity)" was misleading. The bot's XP rank type
+// only counts text/message activity (TEXT_XP); no VOICE_XP is ever written. Updated label so
+// admins don't expect voice study time to count toward the XP rank.
 const RANK_TYPE_OPTIONS = [
-  { value: "XP", label: "XP (combined activity)" },
+  { value: "XP", label: "Text XP (word-weighted)" },
   { value: "VOICE", label: "Voice (study hours)" },
   { value: "MESSAGE", label: "Messages (text count)" },
 ]
+// --- END AI-MODIFIED ---
 
 function unitForType(t: string | null) {
   if (t === "VOICE") return "hours"

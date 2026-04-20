@@ -23,6 +23,39 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 19, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-19",
+    title: "Send a Partial Stack of Items to Friends",
+    description:
+      "When you gift an item to a friend on the website, you can now choose how many to send instead of being forced to ship the entire stack. Pick an item, type the quantity (or hit \"All\"), and the rest stays in your inventory. Stacks of 1 work the same as before — no extra tap. Enhanced or scrolled gear still has to be sent as the whole stack, since the bonuses are tied to the stack itself and can't be cleanly split. Requested by an admin who wanted to send a few scrolls to a friend without losing the rest of their own collection.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-19",
+    title: "/strikes Now Loads Instantly for High-Offense Users",
+    description:
+      "If a server had a long moderation history, the /strikes command would sometimes get stuck on \"thinking…\" when looking up a member with lots of past offenses. Under the hood the bot was scanning the entire guild's ticket history just to compute the per-guild ticket numbering for everyone before it could filter to one person. We rewrote that lookup to use three small targeted queries instead, so the command now responds in under a second regardless of how many tickets the server has — and it skips the heavy file attachment data it didn't actually need.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-04-19",
+    title: "Clearer Descriptions for the Rank Type Setting",
+    description:
+      "The dashboard previously labelled the \"XP\" rank type as \"Combined XP\" with a description that said it counted both voice time and messages. That was misleading — the bot's XP rank type only counts text/word activity (longer messages earn more); voice study time is its own separate metric. We've updated the labels and tooltips on the Settings page, the Ranks page, and the setup wizard so admins know exactly which activity each option counts. The setting itself didn't change — just the description of what it does.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-19",
+    title: "Anti-AFK Now Respects Untracked Channels (and Untrack Whole Categories from the Dashboard)",
+    description:
+      "Two related improvements. First, a bug fix: the Anti-AFK system was still sending activity check prompts in voice and stage channels that you'd marked as untracked in the Voice Tracker settings — including channels inside untracked categories like hangout or chat-only spaces. From now on, if a channel doesn't count toward study stats, Anti-AFK won't ping people there either. Second, you can now untrack a whole category in one click directly from the dashboard's Tracking Exclusions section (both for voice and text). Previously the dropdown only listed individual channels, so admins had to either pick every child channel one by one or use a slash command. Same goes for stage channels — they're properly handled across both improvements.",
+    category: "bugfix",
+    area: "both",
+  },
   // ── April 17, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-17",

@@ -195,7 +195,10 @@ const FEATURES = [
     border: "border-amber-500/20",
     glow: "from-amber-500/10",
     description:
-      "Create a competitive environment with customizable rank tiers. Members progress through ranks based on voice time, messages, or combined XP. Profile cards and leaderboards make activity visible, and seasonal resets keep things fresh.",
+      // --- AI-MODIFIED (2026-04-19) ---
+      // Ticket #0020 — removed misleading "combined XP" wording; XP rank type only counts text.
+      "Create a competitive environment with customizable rank tiers. Members progress through ranks based on voice time, message count, or word-weighted text XP — pick the metric that matches your community. Profile cards and leaderboards make activity visible, and seasonal resets keep things fresh.",
+      // --- END AI-MODIFIED ---
     bullets: [
       { icon: <Trophy size={16} />, text: "Customizable rank tiers with role rewards" },
       { icon: <BarChart3 size={16} />, text: "Server-wide leaderboards with filters" },
