@@ -23,6 +23,23 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 20, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-20",
+    title: "Disable Auto-Blacklisting (and Wipe Active Bans) From the Dashboard",
+    description:
+      "We heard from a few admins this week that when LionBot kicks a member from a camera-required or screen-share channel, it can also assign a 'blacklist' role for repeat offenders — and there was no obvious way to turn that off, or to clear out everyone who was already affected. Both problems are now solved on the dashboard. The Video Channels page now has a clearly labelled 'Auto-Blacklisting' card that shows whether the feature is ON or OFF in plain language, with a one-click 'Disable' button next to the role selector — clear it, save, and members will only ever be kicked, never auto-blacklisted again. We also built a brand-new Screen Channels page with the exact same controls (previously screen-share enforcement was only configurable via slash command). And if you've already accumulated a list of currently-blacklisted members, both pages now show how many are active and let you 'Clear All Active Blacklists' — which pardons every active record AND removes the role from each affected member in Discord, in one action, with a typed confirmation and an audit trail. Built in response to a support ticket from a Study Space admin asking exactly how to do this.",
+    category: "feature",
+    area: "website",
+  },
+  {
+    date: "2026-04-20",
+    title: "Pomodoro Voice Alerts Are Audible Again",
+    description:
+      "If you had voice alerts enabled on a Pomodoro timer, you may have noticed that lately the bot would join the channel for a few seconds each round but no chime would actually play (or, on some systems, you'd hear a faint click followed by silence). After digging into a stubborn report from a regular user whose timer had been silent for weeks, we found the root cause: the bot was sending the raw bytes of the alert sound files directly to Discord, but Discord's voice service expects the audio to be in a very specific format (48 kHz raw PCM). Our alert files were 44.1 kHz WAV files with a header on top, so what Discord actually received was a brief blip of header noise followed by audio it couldn't make sense of — which most ears interpret as silence. We now route the alert through ffmpeg, which decodes the WAV file and converts it to exactly the format Discord wants. Same alert sounds, same timing, same volume — just actually audible now. The fix mirrors how our SoundsBot has always played its rain/campfire/LoFi tracks, which is why those have been working perfectly.",
+    category: "bugfix",
+    area: "bot",
+  },
   // ── April 19, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-19",

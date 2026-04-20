@@ -182,10 +182,24 @@ const PAGE_ITEMS: SearchItem[] = [
     category: "page",
     page: "Features",
     route: "/videochannels",
-    keywords: ["video", "camera", "channels", "enforcement", "webcam"],
+    keywords: ["video", "camera", "channels", "enforcement", "webcam", "blacklist", "study ban"],
     iconName: "Video",
     requiredLevel: "admin",
   },
+  // --- AI-MODIFIED (2026-04-20) ---
+  // Purpose: Add Screen Channels page to dashboard search registry.
+  {
+    id: "page-screenchannels",
+    title: "Screen Channels",
+    description: "Screen-share-required channel enforcement",
+    category: "page",
+    page: "Features",
+    route: "/screenchannels",
+    keywords: ["screen", "share", "channels", "enforcement", "study space", "blacklist", "screenban"],
+    iconName: "MonitorPlay",
+    requiredLevel: "admin",
+  },
+  // --- END AI-MODIFIED ---
   {
     id: "page-setup",
     title: "Setup Wizard",
@@ -566,6 +580,54 @@ const FEATURE_ITEMS: SearchItem[] = [
     iconName: "Video",
     requiredLevel: "admin",
   },
+  // --- AI-MODIFIED (2026-04-20) ---
+  // Purpose: Add Screen Channels feature search items so admins can
+  // jump to the auto-blacklist toggle directly from search.
+  {
+    id: "feature-screen-enforcement",
+    title: "Screen Enforcement",
+    description: "Grace period, blacklist role, duration ladder",
+    category: "feature",
+    page: "Screen Channels",
+    route: "/screenchannels",
+    keywords: ["screen", "share", "enforcement", "grace", "blacklist", "screenban", "duration", "ladder"],
+    iconName: "MonitorPlay",
+    requiredLevel: "admin",
+  },
+  {
+    id: "feature-screen-exempt",
+    title: "Screen Exempt Roles",
+    description: "Roles exempt from screen-share requirements",
+    category: "feature",
+    page: "Screen Channels",
+    route: "/screenchannels",
+    keywords: ["exempt", "screen", "share", "role", "skip", "bypass"],
+    iconName: "MonitorPlay",
+    requiredLevel: "admin",
+  },
+  {
+    id: "feature-disable-blacklisting",
+    title: "Disable Auto-Blacklisting",
+    description: "Turn off the auto-blacklist role for video and screen channels",
+    category: "feature",
+    page: "Video Channels",
+    route: "/videochannels",
+    keywords: ["disable", "blacklist", "remove", "turn off", "study ban", "screen ban", "stop", "off"],
+    iconName: "ShieldOff",
+    requiredLevel: "admin",
+  },
+  {
+    id: "feature-clear-blacklists",
+    title: "Clear All Active Blacklists",
+    description: "Pardon every active study-ban or screen-ban and remove the role",
+    category: "feature",
+    page: "Video Channels",
+    route: "/videochannels",
+    keywords: ["clear", "all", "blacklist", "pardon", "unblacklist", "wipe", "reset", "lift"],
+    iconName: "ShieldOff",
+    requiredLevel: "admin",
+  },
+  // --- END AI-MODIFIED ---
   {
     id: "feature-branding-cards",
     title: "Card Customization",

@@ -13,6 +13,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
+// --- AI-MODIFIED (2026-04-20) ---
+// Purpose: Add MonitorPlay + ShieldOff icons used by new Screen
+//   Channels search items + the "Disable / Clear Blacklists" rows.
 import {
   Search, BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video, Wand2,
@@ -20,7 +23,9 @@ import {
   BookOpen, CheckSquare, Lock, Globe, MessageSquare,
   Dumbbell, Hash, UserCog, EyeOff, Bot, AlertTriangle,
   Sparkles, ArrowRight, CornerDownLeft,
+  MonitorPlay, ShieldOff,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 import type { SearchItem } from "./searchRegistry"
 import { getSearchItems } from "./searchRegistry"
 import { useSearch, flatResults, hasResults } from "./useSearch"
@@ -54,6 +59,11 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   EyeOff: <EyeOff size={16} />,
   Bot: <Bot size={16} />,
   AlertTriangle: <AlertTriangle size={16} />,
+  // --- AI-MODIFIED (2026-04-20) ---
+  // Purpose: support new Screen Channels + blacklist-toggle search items
+  MonitorPlay: <MonitorPlay size={16} />,
+  ShieldOff: <ShieldOff size={16} />,
+  // --- END AI-MODIFIED ---
 }
 
 interface CommandPaletteProps {
