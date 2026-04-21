@@ -398,33 +398,30 @@ export default function FriendProfilePage() {
                             {pet.name}&apos;s Room
                           </span>
                         </div>
-                        <div className="flex justify-center overflow-x-auto">
-                          {(() => {
-                            const gbWidth = typeof window !== "undefined" && window.innerWidth < 500
-                              ? Math.min(340, window.innerWidth - 80)
-                              : 400
-                            // --- AI-MODIFIED (2026-03-24) ---
-                            // Purpose: Use flat API fields instead of nested petVisual
-                            return (
-                              <GameboyFrame
-                                isFullscreen={false}
-                                skinAssetPath={data.gameboySkinPath ?? undefined}
-                                width={gbWidth}
-                              >
-                                <RoomCanvas
-                                  roomPrefix={data.roomPrefix}
-                                  furniture={data.furniture}
-                                  layout={mergeLayout(data.roomLayout as any)}
-                                  equipment={data.equipment}
-                                  expression={pet.expression}
-                                  size={Math.round(gbWidth * (200 / 260))}
-                                  animated
-                                />
-                              </GameboyFrame>
-                            )
-                            // --- END AI-MODIFIED ---
-                          })()}
+                        {/* --- AI-REPLACED (2026-04-21) --- */}
+                        {/* Reason: window.innerWidth was read once at render and never updated
+                                    on resize. RoomCanvas size was tied to that stale width. */}
+                        {/* What the new code does better: container max-width drives sizing,
+                                    fluid RoomCanvas fills its parent automatically. */}
+                        <div className="flex justify-center w-full">
+                          <div className="w-full max-w-[400px]">
+                            <GameboyFrame
+                              isFullscreen={false}
+                              skinAssetPath={data.gameboySkinPath ?? undefined}
+                              width={400}
+                            >
+                              <RoomCanvas
+                                roomPrefix={data.roomPrefix}
+                                furniture={data.furniture}
+                                layout={mergeLayout(data.roomLayout as any)}
+                                equipment={data.equipment}
+                                expression={pet.expression}
+                                animated
+                              />
+                            </GameboyFrame>
+                          </div>
                         </div>
+                        {/* --- END AI-REPLACED --- */}
                       </PixelCard>
 
                       {/* Pet Info Card */}
@@ -770,26 +767,27 @@ export default function FriendProfilePage() {
 
                         {/* --- AI-MODIFIED (2026-03-24) --- */}
                         {/* Purpose: Use farmPlots and flat gameboySkinPath */}
+                        {/* --- AI-MODIFIED (2026-04-21) --- */}
+                        {/* Purpose: Responsive container instead of stale window.innerWidth read. */}
                         {data.farmPlots.length > 0 ? (
-                          <div className="flex justify-center overflow-x-auto">
-                            <GameboyFrame
-                              isFullscreen={false}
-                              skinAssetPath={data.gameboySkinPath ?? undefined}
-                              width={typeof window !== "undefined" && window.innerWidth < 500
-                                ? Math.min(340, window.innerWidth - 80)
-                                : 400
-                              }
-                            >
-                              <FarmScene
-                                plots={data.farmPlots}
-                                selectedPlot={null}
-                                onSelectPlot={(plotId) => {
-                                  if (isFriend && !wateredPlots.has(plotId)) {
-                                    handleWaterPlot(plotId)
-                                  }
-                                }}
-                              />
-                            </GameboyFrame>
+                          <div className="flex justify-center w-full">
+                            <div className="w-full max-w-[400px]">
+                              <GameboyFrame
+                                isFullscreen={false}
+                                skinAssetPath={data.gameboySkinPath ?? undefined}
+                                width={400}
+                              >
+                                <FarmScene
+                                  plots={data.farmPlots}
+                                  selectedPlot={null}
+                                  onSelectPlot={(plotId) => {
+                                    if (isFriend && !wateredPlots.has(plotId)) {
+                                      handleWaterPlot(plotId)
+                                    }
+                                  }}
+                                />
+                              </GameboyFrame>
+                            </div>
                           </div>
                         ) : (
                           <div className="py-8 text-center">
@@ -798,6 +796,7 @@ export default function FriendProfilePage() {
                             </p>
                           </div>
                         )}
+                        {/* --- END AI-MODIFIED (2026-04-21) --- */}
 
                         {/* --- END AI-MODIFIED --- */}
                         {isFriend && data.farmPlots.length > 0 && (

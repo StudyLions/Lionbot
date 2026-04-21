@@ -50,12 +50,46 @@ export const LION_CONSTRAINTS: ConstraintZone = {
   flippable: true,
 }
 
+// --- AI-REPLACED (2026-04-21) ---
+// Reason: clampOffset only rounded — items could be dragged completely off the
+//         canvas and "disappear", forcing users to use undo to recover them.
+// What the new code does better: Keeps at least ~20px of every furniture item
+//         on the visible canvas, while still allowing generous off-canvas drift
+//         for creative compositions. Lion has its own bounds (smaller sprite).
+// --- Original code (commented out for rollback) ---
+// export function clampOffset(
+//   offset: [number, number],
+//   _layer: string
+// ): [number, number] {
+//   return [Math.round(offset[0]), Math.round(offset[1])]
+// }
+// --- End original code ---
+const FURNITURE_OFFSET_MAX = CANVAS_SIZE - 20
+const LION_MAX_X = CANVAS_SIZE - 20
+const LION_MAX_Y = CANVAS_SIZE - 20
+const LION_MIN_X = -(LION_DISPLAY_SIZE - 20)
+const LION_MIN_Y = -(LION_DISPLAY_SIZE - 20)
+
 export function clampOffset(
   offset: [number, number],
-  _layer: string
+  layer: string
 ): [number, number] {
-  return [Math.round(offset[0]), Math.round(offset[1])]
+  const x = Math.round(offset[0])
+  const y = Math.round(offset[1])
+  if (layer === 'lion') {
+    return [
+      Math.max(LION_MIN_X, Math.min(LION_MAX_X, x)),
+      Math.max(LION_MIN_Y, Math.min(LION_MAX_Y, y)),
+    ]
+  }
+  const min = -FURNITURE_OFFSET_MAX
+  const max = FURNITURE_OFFSET_MAX
+  return [
+    Math.max(min, Math.min(max, x)),
+    Math.max(min, Math.min(max, y)),
+  ]
 }
+// --- END AI-REPLACED ---
 // --- END AI-MODIFIED ---
 
 export function isMovable(layer: string): boolean {
@@ -226,6 +260,38 @@ export const DEFAULT_LAYOUT: RoomLayout = {
   // --- END AI-MODIFIED ---
   activeSlot: 0,
 }
+
+// --- AI-MODIFIED (2026-04-21) ---
+// Purpose: Compute the "effective" draw order that includes any furniture keys
+//          missing from layoutOrder, inserted at their default ROOM_LAYERS
+//          position. This guarantees that newly equipped or previewed items
+//          render immediately even if the saved layoutOrder hasn't caught up
+//          (which previously caused the "click twice to see it" bug).
+export function buildEffectiveLayerOrder(
+  baseOrder: string[],
+  furnitureKeys: string[],
+): string[] {
+  const order = [...baseOrder]
+  const seen = new Set(order)
+  const ROOM_LAYERS_ARR = ROOM_LAYERS as unknown as string[]
+  for (const key of furnitureKeys) {
+    if (seen.has(key)) continue
+    const defaultIdx = ROOM_LAYERS_ARR.indexOf(key)
+    if (defaultIdx === -1) {
+      order.push(key)
+    } else {
+      let insertAt = order.length
+      for (let i = defaultIdx + 1; i < ROOM_LAYERS_ARR.length; i++) {
+        const pos = order.indexOf(ROOM_LAYERS_ARR[i])
+        if (pos !== -1) { insertAt = pos; break }
+      }
+      order.splice(insertAt, 0, key)
+    }
+    seen.add(key)
+  }
+  return order
+}
+// --- END AI-MODIFIED ---
 
 export function mergeLayout(saved: Partial<RoomLayout> & { equipmentOrder?: string[] }): RoomLayout {
   return {

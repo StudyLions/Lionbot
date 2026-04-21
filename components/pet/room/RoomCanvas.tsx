@@ -29,6 +29,7 @@ import {
   type RoomLayout,
   type RenderStep,
   buildRenderSequence,
+  buildEffectiveLayerOrder,
 } from '@/utils/roomConstraints'
 
 const BLOB_BASE = process.env.NEXT_PUBLIC_BLOB_URL || ''
@@ -283,6 +284,19 @@ export default function RoomCanvas({
   const renderSeqRef = useRef(activeRenderSequence)
   renderSeqRef.current = activeRenderSequence
 
+  // --- AI-MODIFIED (2026-04-21) ---
+  // Purpose: Build stable signature strings for furniture and equipment so the
+  //          imageUrls memo only recomputes when actual content changes (not
+  //          when parent passes a fresh object reference each render).
+  const furnitureSig = useMemo(
+    () => Object.entries(furniture).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v}`).join('|'),
+    [furniture]
+  )
+  const equipmentSig = useMemo(
+    () => Object.entries(equipment).sort(([a], [b]) => a.localeCompare(b)).map(([k, v]) => `${k}=${v.assetPath}:${v.category}`).join('|'),
+    [equipment]
+  )
+
   const imageUrls = useMemo(() => {
     const urls: Record<string, string> = {}
 
@@ -311,24 +325,70 @@ export default function RoomCanvas({
     }
 
     return urls
-  }, [roomPrefix, furniture, expression, equipment])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomPrefix, furnitureSig, expression, equipmentSig])
   // --- END AI-MODIFIED ---
 
+  // --- AI-REPLACED (2026-04-21) ---
+  // Reason: Old effect wiped the entire image cache and toggled imagesReady=false
+  //         every time the parent re-rendered (because furniture/equipment props are
+  //         fresh object references each render). That caused a blank-canvas flicker
+  //         on every interaction (drag, hover, color cycle, etc.) and made newly
+  //         placed items "disappear" until reloaded.
+  // What the new code does better: Loads images INCREMENTALLY -- only fetches URLs
+  //         that aren't already cached, evicts truly stale entries, and never
+  //         flips imagesReady back to false once the first batch has loaded.
+  //         Result: rock-steady canvas across all interactions.
+  // --- Original code (commented out for rollback) ---
+  // useEffect(() => {
+  //   let active = true
+  //   const cache = new Map<string, HTMLImageElement>()
+  //   imageCacheRef.current = cache
+  //   alphaCacheRef.current = new Map()
+  //   setImagesReady(false)
+  //   const entries = Object.entries(imageUrls)
+  //   if (entries.length === 0) { setImagesReady(true); return }
+  //   let remaining = entries.length
+  //   for (const [key, url] of entries) {
+  //     const img = new Image()
+  //     img.crossOrigin = 'anonymous'
+  //     const done = () => { if (!active) return; remaining--; if (remaining <= 0) setImagesReady(true) }
+  //     img.onload = () => { if (!active) return; cache.set(key, img); done() }
+  //     img.onerror = done
+  //     img.src = url
+  //   }
+  //   return () => { active = false }
+  // }, [imageUrls])
+  // --- End original code ---
   useEffect(() => {
     let active = true
-    const cache = new Map<string, HTMLImageElement>()
-    imageCacheRef.current = cache
-    alphaCacheRef.current = new Map()
-    setImagesReady(false)
-
+    const cache = imageCacheRef.current
+    const alphaCache = alphaCacheRef.current
     const entries = Object.entries(imageUrls)
-    if (entries.length === 0) {
-      setImagesReady(true)
+
+    const wantedKeys = new Set(entries.map(([k]) => k))
+    for (const key of Array.from(cache.keys())) {
+      if (!wantedKeys.has(key)) {
+        cache.delete(key)
+        alphaCache.delete(key)
+      }
+    }
+
+    const toLoad: Array<[string, string]> = []
+    for (const [key, url] of entries) {
+      const existing = cache.get(key)
+      if (!existing || existing.src !== url) toLoad.push([key, url])
+    }
+
+    if (toLoad.length === 0) {
+      if (entries.length > 0) setImagesReady(true)
       return
     }
 
-    let remaining = entries.length
-    for (const [key, url] of entries) {
+    if (cache.size === 0) setImagesReady(false)
+
+    let remaining = toLoad.length
+    for (const [key, url] of toLoad) {
       const img = new Image()
       img.crossOrigin = 'anonymous'
       const done = () => {
@@ -339,6 +399,7 @@ export default function RoomCanvas({
       img.onload = () => {
         if (!active) return
         cache.set(key, img)
+        alphaCache.delete(key)
         done()
       }
       img.onerror = done
@@ -347,6 +408,7 @@ export default function RoomCanvas({
 
     return () => { active = false }
   }, [imageUrls])
+  // --- END AI-REPLACED ---
 
   useEffect(() => {
     const os = document.createElement('canvas')
@@ -407,10 +469,16 @@ export default function RoomCanvas({
 
       osCtx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE)
 
-      // --- AI-MODIFIED (2026-03-20) ---
-      // Purpose: Use layout.layerOrder for draw order so user layer reordering
-      //          is respected. Falls back to ROOM_LAYERS if layerOrder is missing.
-      const drawOrder = curLayout.layerOrder ?? ROOM_LAYERS as unknown as string[]
+      // --- AI-MODIFIED (2026-04-21) ---
+      // Purpose: Augment draw order with any furniture currently in the cache
+      //          but missing from layerOrder, so newly equipped/previewed items
+      //          render on the FIRST update (no more "click twice to see it").
+      const baseOrder = curLayout.layerOrder ?? (ROOM_LAYERS as unknown as string[])
+      const cachedFurnitureKeys: string[] = []
+      for (const k of cache.keys()) {
+        if (k.startsWith('room_')) cachedFurnitureKeys.push(k.slice(5))
+      }
+      const drawOrder = buildEffectiveLayerOrder(baseOrder, cachedFurnitureKeys)
       for (const layer of drawOrder) {
         const img = cache.get(`room_${layer}`)
         if (!img) continue
@@ -586,9 +654,15 @@ export default function RoomCanvas({
       if (mx >= lx && mx < lx + ls && my >= ly && my < ly + ls) {
         return 'lion'
       }
-      // --- AI-MODIFIED (2026-03-20) ---
-      // Purpose: Use layerOrder for hit detection so clicks respect custom layer order
-      const hitLayers = curLayout.layerOrder ?? ROOM_LAYERS as unknown as string[]
+      // --- AI-MODIFIED (2026-04-21) ---
+      // Purpose: Use the same effective draw order for hit detection so previewed/
+      //          equipped items not yet in layerOrder are still clickable.
+      const baseOrder = curLayout.layerOrder ?? (ROOM_LAYERS as unknown as string[])
+      const cachedFurnitureKeys: string[] = []
+      for (const k of imageCacheRef.current.keys()) {
+        if (k.startsWith('room_')) cachedFurnitureKeys.push(k.slice(5))
+      }
+      const hitLayers = buildEffectiveLayerOrder(baseOrder, cachedFurnitureKeys)
       for (let i = hitLayers.length - 1; i >= 0; i--) {
         const layer = hitLayers[i]
         if (!imageCacheRef.current.has(`room_${layer}`)) continue
@@ -704,9 +778,14 @@ export default function RoomCanvas({
   )
   // --- END AI-MODIFIED ---
 
-  // --- AI-MODIFIED (2026-03-16) ---
-  // Purpose: Fixed 800x800 canvas, use CSS transform for zoom
-  const cssScale = (size ?? FIXED_DISPLAY) / FIXED_DISPLAY
+  // --- AI-MODIFIED (2026-04-21) ---
+  // Purpose: Support a "fluid" mode (size === 'fill' OR undefined when size<=0)
+  //          where the canvas fills its parent's width 100% with a 1:1 aspect
+  //          ratio. This lets parent containers (like GameboyFrame screen) drive
+  //          the size responsively without us hard-coding pixel values that
+  //          overflow on small viewports.
+  const fluid = size === undefined || size === null
+  const cssScale = !fluid ? (size as number) / FIXED_DISPLAY : 1
 
   return (
     <canvas
@@ -714,11 +793,21 @@ export default function RoomCanvas({
       width={FIXED_DISPLAY}
       height={FIXED_DISPLAY}
       className={className}
-      style={{
-        imageRendering: 'pixelated',
-        width: FIXED_DISPLAY * cssScale,
-        height: FIXED_DISPLAY * cssScale,
-      }}
+      style={
+        fluid
+          ? {
+              imageRendering: 'pixelated',
+              width: '100%',
+              height: 'auto',
+              aspectRatio: '1 / 1',
+              display: 'block',
+            }
+          : {
+              imageRendering: 'pixelated',
+              width: FIXED_DISPLAY * cssScale,
+              height: FIXED_DISPLAY * cssScale,
+            }
+      }
       onMouseMove={interactive ? handleMouseMove : undefined}
       onMouseLeave={interactive ? handleMouseLeave : undefined}
       onClick={interactive ? handleClick : undefined}

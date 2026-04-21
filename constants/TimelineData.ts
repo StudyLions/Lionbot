@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 21, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-21",
+    title: "Room Decorating: Smoother Drag, Matching Colors Everywhere, and a Mobile-Friendly Preview",
+    description:
+      "We tackled four bugs in the LionGotchi room editor that had been making decorating frustrating. First — and the biggest one — some wallpapers and furniture were showing up in completely different colors on the website than what your pet actually had on Discord (a 'bookcase wall' might look green in the editor but show up purple in the bot's profile cards). Under the hood, the website's image library on our CDN had drifted out of sync with the bot's local files over the past few months, so we wrote a sync tool and re-uploaded all 312 room asset images straight from the bot. Now whatever color you pick on the website is exactly what shows up on Discord. Second, when you placed or swapped a piece of furniture, you sometimes had to click it a second time before it would render — and the canvas would briefly flash blank while the new image loaded. We fixed both: images now load incrementally instead of being wiped and reloaded together, and items appear immediately on first equip even before they're added to your saved layout order. Third, the drag-to-position controls now keep at least 20 pixels of every decoration on-screen, so you can't accidentally fling a chair or rug into the void where you can't grab it back. Fourth, on phones, the room preview on the /pet overview and on friends' profiles was getting cut off by the Gameboy frame; the canvas and frame are now fully responsive and scale to whatever size your screen has. Decorating should feel a lot less janky now.",
+    category: "liongotchi",
+    area: "website",
+  },
   // ── April 20, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-20",
