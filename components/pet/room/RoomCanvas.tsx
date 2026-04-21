@@ -475,9 +475,9 @@ export default function RoomCanvas({
       //          render on the FIRST update (no more "click twice to see it").
       const baseOrder = curLayout.layerOrder ?? (ROOM_LAYERS as unknown as string[])
       const cachedFurnitureKeys: string[] = []
-      for (const k of cache.keys()) {
+      Array.from(cache.keys()).forEach((k) => {
         if (k.startsWith('room_')) cachedFurnitureKeys.push(k.slice(5))
-      }
+      })
       const drawOrder = buildEffectiveLayerOrder(baseOrder, cachedFurnitureKeys)
       for (const layer of drawOrder) {
         const img = cache.get(`room_${layer}`)
@@ -659,9 +659,9 @@ export default function RoomCanvas({
       //          equipped items not yet in layerOrder are still clickable.
       const baseOrder = curLayout.layerOrder ?? (ROOM_LAYERS as unknown as string[])
       const cachedFurnitureKeys: string[] = []
-      for (const k of imageCacheRef.current.keys()) {
+      Array.from(imageCacheRef.current.keys()).forEach((k) => {
         if (k.startsWith('room_')) cachedFurnitureKeys.push(k.slice(5))
-      }
+      })
       const hitLayers = buildEffectiveLayerOrder(baseOrder, cachedFurnitureKeys)
       for (let i = hitLayers.length - 1; i >= 0; i--) {
         const layer = hitLayers[i]
