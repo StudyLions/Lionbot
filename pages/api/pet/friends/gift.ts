@@ -138,6 +138,13 @@ export default apiHandler({
       if (!item.tradeable) {
         throw new ValidationError("This item cannot be traded", 400)
       }
+      // --- AI-MODIFIED (2026-04-23) ---
+      // Purpose: Block gifting locked / favorited items so users don't
+      // accidentally hand off something they explicitly protected.
+      if (item.is_locked) {
+        throw new ValidationError("This item is locked. Unlock it from your inventory before gifting.", 400)
+      }
+      // --- END AI-MODIFIED ---
 
       const equipped = await tx.lg_pet_equipment.findFirst({
         where: { userid: senderId, itemid: item.itemid },

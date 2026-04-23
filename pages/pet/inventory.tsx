@@ -40,10 +40,14 @@ import { toast } from "sonner"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Add favorites count to inventory data so the new "Favorites"
+// tab can show its badge. The API returns it alongside equipment/scrolls.
 interface InventoryData {
   items: InventoryItem[]
-  counts: { equipment: number; scrolls: number }
+  counts: { equipment: number; scrolls: number; favorites?: number }
 }
+// --- END AI-MODIFIED ---
 
 interface OverviewData {
   hasPet: boolean
@@ -72,12 +76,18 @@ const GLOW_BORDER: Record<GlowTier, string> = {
   gold: "#ffd700", diamond: "#64c8ff", celestial: "#c864ff",
 }
 
-type FilterTab = "equipment" | "scrolls"
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Add a "favorites" filter tab that shows only locked items
+// (regardless of category). Backed client-side because the count is
+// already returned by the inventory API.
+type FilterTab = "equipment" | "scrolls" | "favorites"
 
 const TABS: { key: FilterTab; label: string }[] = [
   { key: "equipment", label: "Equipment" },
   { key: "scrolls", label: "Scrolls" },
+  { key: "favorites", label: "Favorites" },
 ]
+// --- END AI-MODIFIED ---
 
 const EQUIP_SLOTS = ["HEAD", "FACE", "BODY", "BACK", "FEET"] as const
 const SLOT_ICONS: Record<string, string> = {
@@ -107,12 +117,27 @@ const SLOT_TO_CATEGORY: Record<string, string> = {
 export default function InventoryPage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [filter, setFilter] = useState<FilterTab>("equipment")
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Honor `?tab=favorites` deep-link from the sell page so the
+  // "X locked items hidden — manage in Inventory" notice routes correctly.
+  const initialFilter = ((): FilterTab => {
+    const t = (router.query.tab as string | undefined) ?? ""
+    return t === "scrolls" || t === "favorites" || t === "equipment"
+      ? (t as FilterTab)
+      : "equipment"
+  })()
+  const [filter, setFilter] = useState<FilterTab>(initialFilter)
+  // --- END AI-MODIFIED ---
   const [equipping, setEquipping] = useState<number | null>(null)
   // --- AI-MODIFIED (2026-04-10) ---
   // Purpose: State for Equip Best loading and Try On preview
   const [equipBestLoading, setEquipBestLoading] = useState(false)
   const [previewItem, setPreviewItem] = useState<InventoryItem | null>(null)
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Track which inventory row is mid-lock-toggle so we can disable
+  // the padlock button while the request is in flight (prevents double-fire).
+  const [lockToggling, setLockToggling] = useState<number | null>(null)
   // --- END AI-MODIFIED ---
 
   const { data: invData, error: invError, isLoading: invLoading, mutate: mutateInv } =
@@ -232,6 +257,57 @@ export default function InventoryPage() {
       setEquipping(null)
     }
   }, [equipping, invData, overview, mutateInv, mutateOverview])
+
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Toggle the lock / favorite state on an inventory row. Optimistic
+  // update flips `isLocked` immediately, then we POST and revalidate. If the
+  // server rejects, we fall back to the server's view via mutateInv() with
+  // revalidate.
+  const handleToggleLock = useCallback(async (inventoryId: number, nextLocked: boolean) => {
+    if (lockToggling) return
+    setLockToggling(inventoryId)
+
+    const optimisticInv = invData ? {
+      ...invData,
+      items: invData.items.map((i) =>
+        i.inventoryId === inventoryId ? { ...i, isLocked: nextLocked } : i
+      ),
+      counts: invData.counts ? {
+        ...invData.counts,
+        favorites: Math.max(
+          0,
+          (invData.counts.favorites ?? 0) + (nextLocked ? 1 : -1)
+        ),
+      } : invData.counts,
+    } : undefined
+
+    if (optimisticInv) mutateInv(optimisticInv, { revalidate: false })
+
+    try {
+      const res = await fetch("/api/pet/inventory/lock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inventoryId, locked: nextLocked }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        toast.error(body.error || "Failed to update lock")
+        mutateInv()
+        return
+      }
+      toast.success(nextLocked ? "Locked / favorited" : "Unlocked")
+    } catch {
+      toast.error("Something went wrong")
+      mutateInv()
+    } finally {
+      mutateInv()
+      invalidate("/api/pet/inventory?filter=equipment")
+      invalidate("/api/pet/inventory?filter=scrolls")
+      invalidate("/api/pet/inventory?filter=favorites")
+      setLockToggling(null)
+    }
+  }, [lockToggling, invData, mutateInv])
+  // --- END AI-MODIFIED ---
 
   const handleUnequipSlot = useCallback(async (slot: string) => {
     if (equipping) return
@@ -534,6 +610,11 @@ export default function InventoryPage() {
                           isPreviewing={previewItem?.inventoryId === inv.inventoryId}
                           isEquipmentTab={filter === "equipment"}
                           isScrollsTab={filter === "scrolls"}
+                          // --- AI-MODIFIED (2026-04-23) ---
+                          // Purpose: Wire the new lock/favorite toggle into each card.
+                          onToggleLock={handleToggleLock}
+                          lockToggling={lockToggling === inv.inventoryId}
+                          // --- END AI-MODIFIED ---
                         />
                       ))}
                     </div>
@@ -551,6 +632,9 @@ export default function InventoryPage() {
 
 // --- AI-MODIFIED (2026-04-10) ---
 // Purpose: Added onTryOn and isPreviewing props for Try On preview feature
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Added onToggleLock + lockToggling props so each card can render
+// a padlock toggle (top-left of image) and a persistent LOCKED badge.
 function InventoryItemCard({
   inv,
   equipping,
@@ -559,6 +643,8 @@ function InventoryItemCard({
   isPreviewing,
   isEquipmentTab,
   isScrollsTab,
+  onToggleLock,
+  lockToggling,
 }: {
   inv: InventoryItem
   equipping: number | null
@@ -567,7 +653,10 @@ function InventoryItemCard({
   isPreviewing: boolean
   isEquipmentTab: boolean
   isScrollsTab: boolean
+  onToggleLock: (id: number, nextLocked: boolean) => void
+  lockToggling: boolean
 }) {
+  // --- END AI-MODIFIED ---
   const router = useRouter()
   const bc = RARITY_BORDER[inv.item.rarity] || "#3a4a6c"
   const glowBc = inv.glowTier !== "none" ? GLOW_BORDER[inv.glowTier] : null
@@ -609,6 +698,36 @@ function InventoryItemCard({
                 EQP
               </span>
             )}
+            {/* --- AI-MODIFIED (2026-04-23) --- */}
+            {/* Purpose: Padlock toggle (top-left). Locked items get a solid gold
+                pill so the protection is unmistakable; unlocked items show a
+                subtle ghost button that only pops on hover, so the inventory
+                still reads at a glance. */}
+            <button
+              type="button"
+              aria-label={inv.isLocked ? "Unlock item" : "Lock / favorite item"}
+              title={
+                inv.isLocked
+                  ? "Locked / favorited — click to unlock\nLocked items can't be sold, gifted, or used to enhance."
+                  : "Lock / favorite this item\nLocked items can't be accidentally sold, gifted, or enhanced."
+              }
+              onClick={(e) => {
+                e.stopPropagation()
+                if (lockToggling) return
+                onToggleLock(inv.inventoryId, !inv.isLocked)
+              }}
+              disabled={lockToggling}
+              className={cn(
+                "absolute top-1 left-1 font-pixel text-[10px] leading-none px-1 py-0.5 border transition-all",
+                "disabled:opacity-50",
+                inv.isLocked
+                  ? "border-[var(--pet-gold,#f0c040)] text-[var(--pet-gold,#f0c040)] bg-[#f0c040]/15 hover:bg-[#f0c040]/25"
+                  : "border-[#3a4a6c]/60 text-[#5a6a7c] bg-[#0a0e1a]/70 opacity-0 group-hover:opacity-100 hover:text-[var(--pet-gold,#f0c040)] hover:border-[var(--pet-gold,#f0c040)]/60"
+              )}
+            >
+              {inv.isLocked ? "\u{1F512}" : "\u{1F513}"}
+            </button>
+            {/* --- END AI-MODIFIED --- */}
           </div>
 
           {/* Item Info */}
@@ -630,6 +749,18 @@ function InventoryItemCard({
                   {GLOW_LABELS[inv.glowTier]}
                 </span>
               )}
+              {/* --- AI-MODIFIED (2026-04-23) --- */}
+              {/* Purpose: Persistent "Locked" pill so the protection state is
+                  visible even without hover — mirrors the tooltip indicator. */}
+              {inv.isLocked && (
+                <span
+                  className="font-pixel text-[8px] px-1 py-0 border border-[var(--pet-gold,#f0c040)]/60 text-[var(--pet-gold,#f0c040)] bg-[#f0c040]/10"
+                  title="Locked — protected from sell / gift / enhance"
+                >
+                  Locked
+                </span>
+              )}
+              {/* --- END AI-MODIFIED --- */}
             </div>
             {inv.totalBonus > 0 && (
               <div className="mt-0.5">

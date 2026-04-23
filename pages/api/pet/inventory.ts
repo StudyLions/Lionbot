@@ -23,12 +23,19 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Materials filter removed (materials no longer exist)
+    // --- AI-MODIFIED (2026-04-23) ---
+    // Purpose: New "favorites" filter — returns only locked items regardless
+    // of category. Uses the (userid, is_locked) composite index from the
+    // 2026-04-23 migration so it's cheap even for large inventories.
     let categoryFilter: object | undefined
     if (filter === "equipment") {
       categoryFilter = { lg_items: { category: { in: EQUIPMENT_CATEGORIES as any } } }
     } else if (filter === "scrolls") {
       categoryFilter = { lg_items: { category: "SCROLL" as any } }
+    } else if (filter === "favorites") {
+      categoryFilter = { is_locked: true }
     }
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-19) ---
@@ -41,6 +48,10 @@ export default apiHandler({
         enhancement_level: true,
         source: true,
         acquired_at: true,
+        // --- AI-MODIFIED (2026-04-23) ---
+        // Purpose: Surface lock state so UI can show padlock badge & favorites tab
+        is_locked: true,
+        // --- END AI-MODIFIED ---
         lg_items: {
           select: {
             itemid: true,
@@ -120,6 +131,11 @@ export default apiHandler({
         glowTier: calcGlowTier(inv.enhancement_level, totalBonus),
         glowIntensity: calcGlowIntensity(inv.enhancement_level),
         slots,
+        // --- AI-MODIFIED (2026-04-23) ---
+        // Purpose: Expose lock state to the UI so it can render the padlock
+        // badge and the "Favorites" filter tab.
+        isLocked: inv.is_locked,
+        // --- END AI-MODIFIED ---
         item: {
           id: inv.lg_items.itemid,
           name: inv.lg_items.name,
@@ -138,6 +154,8 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Materials count removed (materials no longer exist)
+    // --- AI-MODIFIED (2026-04-23) ---
+    // Purpose: Add favorites (locked) count for the new favorites filter tab
     const counts = {
       equipment: await prisma.lg_user_inventory.count({
         where: { userid: userId, lg_items: { category: { in: EQUIPMENT_CATEGORIES as any } } },
@@ -145,7 +163,11 @@ export default apiHandler({
       scrolls: await prisma.lg_user_inventory.count({
         where: { userid: userId, lg_items: { category: "SCROLL" as any } },
       }),
+      favorites: await prisma.lg_user_inventory.count({
+        where: { userid: userId, is_locked: true },
+      }),
     }
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     return res.status(200).json({ items: result, counts })

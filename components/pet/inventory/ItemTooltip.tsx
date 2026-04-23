@@ -23,6 +23,10 @@ export interface EnhancementSlot {
   successRate: number | null
 }
 
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Add isLocked to expose the new lock / favorite state to the
+// inventory page (favorites filter tab, padlock badge, etc.) and to the
+// tooltip itself ("Locked" indicator near the rarity badge).
 export interface InventoryItem {
   inventoryId: number
   quantity: number
@@ -35,6 +39,7 @@ export interface InventoryItem {
   glowTier: GlowTier
   glowIntensity: number
   slots: EnhancementSlot[]
+  isLocked: boolean
   item: {
     id: number
     name: string
@@ -45,6 +50,7 @@ export interface InventoryItem {
     assetPath: string
   }
 }
+// --- END AI-MODIFIED ---
 
 const RARITY_BORDER: Record<string, string> = {
   COMMON: "#3a4a6c",
@@ -252,6 +258,18 @@ export default function ItemTooltip({ inv, children, className }: ItemTooltipPro
                         {GLOW_LABELS[inv.glowTier]}
                       </span>
                     )}
+                    {/* --- AI-MODIFIED (2026-04-23) --- */}
+                    {/* Purpose: Show a "Locked" indicator so users know this item is
+                        protected from sell / gift / enhance / family-bank flows. */}
+                    {inv.isLocked && (
+                      <span
+                        className="font-pixel text-[10px] px-1.5 py-0 border border-[var(--pet-gold,#f0c040)]/60 text-[var(--pet-gold,#f0c040)] bg-[#f0c040]/10"
+                        title="This item is locked / favorited"
+                      >
+                        {"\u{1F512}"} Locked
+                      </span>
+                    )}
+                    {/* --- END AI-MODIFIED --- */}
                   </div>
                 </div>
               </div>

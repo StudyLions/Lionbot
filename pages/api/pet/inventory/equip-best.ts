@@ -37,6 +37,12 @@ export default apiHandler({
       },
       select: {
         inventoryid: true,
+        // --- AI-MODIFIED (2026-04-23) ---
+        // Purpose: Need is_locked to (a) skip locked unequipped items as
+        // candidates and (b) detect when a locked item already occupies
+        // the slot and should not be replaced.
+        is_locked: true,
+        // --- END AI-MODIFIED ---
         lg_items: {
           select: { itemid: true, name: true, category: true, slot: true, rarity: true, asset_path: true },
         },
@@ -46,11 +52,34 @@ export default apiHandler({
       },
     })
 
+    // --- AI-MODIFIED (2026-04-23) ---
+    // Purpose: Determine which slots are currently occupied by a locked item.
+    // We skip those slots entirely so Equip Best never swaps a locked item out.
+    const currentEquipped = await prisma.lg_pet_equipment.findMany({
+      where: { userid: userId },
+      select: { slot: true, itemid: true },
+    })
+    const lockedItemIds = new Set(
+      invItems.filter((inv) => inv.is_locked).map((inv) => inv.lg_items.itemid)
+    )
+    const lockedSlots = new Set(
+      currentEquipped
+        .filter((e) => lockedItemIds.has(e.itemid))
+        .map((e) => String(e.slot))
+    )
+    // --- END AI-MODIFIED ---
+
     const bestBySlot: Record<string, { itemid: number; totalBonus: number; rarityRank: number }> = {}
 
     for (const inv of invItems) {
       const slot = inv.lg_items.slot || CATEGORY_TO_SLOT[inv.lg_items.category]
       if (!slot) continue
+      // --- AI-MODIFIED (2026-04-23) ---
+      // Purpose: Skip locked candidates (won't be auto-equipped) and skip
+      // any slot already occupied by a locked item (won't be replaced).
+      if (inv.is_locked) continue
+      if (lockedSlots.has(slot)) continue
+      // --- END AI-MODIFIED ---
 
       const totalBonus = inv.lg_enhancement_slots.reduce((sum, s) => sum + s.bonus_value, 0)
       const rarityRank = RARITY_ORDER[inv.lg_items.rarity] ?? 0
@@ -67,7 +96,14 @@ export default apiHandler({
 
     const slotsToEquip = Object.entries(bestBySlot)
     if (slotsToEquip.length === 0) {
-      return res.status(400).json({ error: "No equippable items found in inventory" })
+      // --- AI-MODIFIED (2026-04-23) ---
+      // Purpose: Slightly more helpful error when every candidate slot is
+      // already filled by a locked item.
+      const message = lockedSlots.size > 0
+        ? "No unlocked equipment to auto-equip — your locked items are protected."
+        : "No equippable items found in inventory"
+      return res.status(400).json({ error: message })
+      // --- END AI-MODIFIED ---
     }
 
     await prisma.$transaction(

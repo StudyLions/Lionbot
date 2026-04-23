@@ -22,11 +22,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: Added Trophy, Users, Shield icons for Social nav section
 // --- AI-MODIFIED (2026-03-24) ---
 // Purpose: Added GraduationCap icon for Tutorial nav link
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Added Settings icon for the new pet settings page
 import {
   PawPrint, Package, Hammer, Sparkles, Sprout, BookOpen,
   Store, Menu, ChevronLeft, Home, Palette, Volume2, VolumeX, Lock,
-  Trophy, Users, Shield, GraduationCap,
+  Trophy, Users, Shield, GraduationCap, Settings,
 } from "lucide-react"
+// --- END AI-MODIFIED -->
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -91,6 +94,15 @@ const sections: NavSection[] = [
       { href: "/pet/leaderboard", label: "Leaderboard", icon: <Trophy size={14} /> },
       { href: "/pet/friends", label: "Friends", icon: <Users size={14} />, requiresPet: true },
       { href: "/pet/family", label: "Family", icon: <Shield size={14} />, requiresPet: true },
+    ],
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Account section with Settings link (sound, theme, future prefs)
+  {
+    title: "ACCOUNT",
+    items: [
+      { href: "/pet/settings", label: "Settings", icon: <Settings size={14} /> },
     ],
   },
   // --- END AI-MODIFIED ---

@@ -1283,11 +1283,22 @@ model lg_user_inventory {
   source               lgitemsource           @default(SHOP)
   quantity             Int                    @default(1)
   enhancement_level    Int                    @default(0)
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: User-toggleable lock flag — when true the item is treated as
+  // a favorite and is hidden from the sell picker and blocked from gift /
+  // enhancement / other destructive actions. Migration:
+  // prisma/migrations/manual_2026_04_23_inventory_locked.sql
+  is_locked            Boolean                @default(false)
+  // --- END AI-MODIFIED ---
   lg_enhancement_slots lg_enhancement_slots[]
   lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
   user_config          user_config            @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([userid], map: "lg_user_inventory_user")
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Composite index for the Favorites filter tab (userid + is_locked)
+  @@index([userid, is_locked], map: "idx_lg_user_inventory_user_locked")
+  // --- END AI-MODIFIED ---
 }
 
 model lg_pet_equipment {

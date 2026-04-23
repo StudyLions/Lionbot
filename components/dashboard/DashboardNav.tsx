@@ -19,11 +19,15 @@ import { useDashboard } from "@/hooks/useDashboard"
 // Purpose: Added KanbanSquare icon for Boards nav item
 // --- AI-MODIFIED (2026-04-04) ---
 // Purpose: Added CalendarCheck icon for Scheduled Sessions nav item
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Add Settings icon for the new dedicated settings page
 import {
   BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
   Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare, CalendarCheck, Shield,
+  Settings,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { useUISound } from "@/lib/SoundContext"
@@ -93,6 +97,10 @@ const sections: NavSection[] = [
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Subscriptions management page link
       { href: "/dashboard/subscriptions", label: "Subscriptions", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-04-23) ---
+      // Purpose: Dedicated settings page (sound, theme, future prefs)
+      { href: "/dashboard/settings", label: "Settings", icon: <Settings size={16} /> },
       // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-04-07) ---
       // Purpose: GDPR privacy dashboard link
