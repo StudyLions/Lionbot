@@ -3,11 +3,33 @@
 // Created: 2026-03-15
 // Purpose: RPG shop-style seed selection for planting
 // ============================================================
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Show estimated voice-chat hours and nominal grow time on each
+//          seed card and in the purchase summary, so users know how long
+//          a sprout will take to grow before they spend gold on it.
+// --- END AI-MODIFIED ---
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { getFarmPlantImageUrl } from "@/utils/petAssets"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
+
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Convert growth points needed into approximate Discord voice-chat
+//          hours (1 growth point per voice minute -> 60 points per hour).
+function formatVoiceHours(growthPointsNeeded: number): string {
+  if (!growthPointsNeeded || growthPointsNeeded <= 0) return "?"
+  const hours = growthPointsNeeded / 60
+  if (hours < 1) {
+    const minutes = Math.max(1, Math.round(hours * 60))
+    return `${minutes}m`
+  }
+  if (hours < 10) {
+    return `${(Math.round(hours * 10) / 10).toFixed(1)}h`
+  }
+  return `${Math.round(hours)}h`
+}
+// --- END AI-MODIFIED ---
 
 interface Seed {
   id: number
@@ -96,6 +118,15 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
                   </p>
                   <GoldDisplay amount={seed.plantCost} size="sm"
                     className={affordable ? "" : "!text-[var(--pet-red,#e04040)]"} />
+                  {/* --- AI-MODIFIED (2026-04-23) --- */}
+                  {/* Purpose: Approx. voice-chat hours needed to grow this seed */}
+                  <span
+                    className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] w-full text-center"
+                    title={`Approx ${formatVoiceHours(seed.growthPointsNeeded)} of Discord voice chat (or about ${seed.growTimeHours}h nominal)`}
+                  >
+                    {"\u23F1"} ~{formatVoiceHours(seed.growthPointsNeeded)} voice
+                  </span>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               </button>
             )
@@ -121,12 +152,22 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
             <div className="flex items-center justify-between px-4 py-2.5">
               {/* --- AI-MODIFIED (2026-03-21) --- */}
               {/* Purpose: Add flex-wrap so purchase summary wraps on narrow screens */}
+              {/* --- AI-MODIFIED (2026-04-23) --- */}
+              {/* Purpose: Add grow-time stat (voice hours + nominal hours) so users
+                  know how long the sprout will take before they spend gold */}
               <div className="flex items-center gap-2 sm:gap-4 flex-wrap font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
-              {/* --- END AI-MODIFIED --- */}
                 <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
                 <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
-                <span>{selected.growthPointsNeeded} pts</span>
+                <span
+                  className="text-[var(--pet-blue,#4080f0)]"
+                  title={`Earned through Discord activity. Each voice minute = 1 growth point, each text message = 2 growth points. Total ${selected.growthPointsNeeded} points needed (~${selected.growTimeHours}h nominal).`}
+                >
+                  {"\u23F1"} ~{formatVoiceHours(selected.growthPointsNeeded)} voice
+                </span>
+                <span className="text-[10px] opacity-70">({selected.growthPointsNeeded} pts)</span>
               </div>
+              {/* --- END AI-MODIFIED --- */}
+              {/* --- END AI-MODIFIED --- */}
               <PixelButton variant="primary" size="md" onClick={handlePlant} loading={planting}>
                 Buy & Plant
               </PixelButton>

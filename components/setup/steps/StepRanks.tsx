@@ -14,11 +14,16 @@ import { getLeoMessage } from "../leoMessages"
 import { ChannelSelect } from "@/components/dashboard/ui"
 import Slider from "../Slider"
 
+// --- AI-MODIFIED (2026-04-19) ---
+// Purpose: Ticket #0020 — "Combined XP" with description "Counts both voice time and messages"
+// was wrong. The bot's XP rank type only counts text/word activity (TEXT_XP); no VOICE_XP exists.
+// Updated label and description so admins choose the correct rank type for their goals.
 const RANK_TYPES = [
-  { value: "XP", label: "Combined XP", description: "Counts both voice time and messages. Best for most servers.", icon: <Sparkles size={20} /> },
+  { value: "XP", label: "Text XP", description: "Word-weighted text activity. Members earn more XP for longer messages. Voice time is not counted.", icon: <Sparkles size={20} /> },
   { value: "VOICE", label: "Voice Time Only", description: "Only time spent in voice channels counts. Great for study servers.", icon: <Mic size={20} /> },
-  { value: "MESSAGE", label: "Messages Only", description: "Only text messages count. Best for text-heavy communities.", icon: <MessageSquare size={20} /> },
+  { value: "MESSAGE", label: "Messages Only", description: "Only number of text messages counts (not weighted by length). Best for text-heavy communities.", icon: <MessageSquare size={20} /> },
 ]
+// --- END AI-MODIFIED ---
 
 const SKINS = [
   { id: "obsidian", label: "Obsidian", file: "profile-obsidian.png" },

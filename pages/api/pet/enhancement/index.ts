@@ -134,6 +134,18 @@ export default apiHandler({
     const scrollProps = scrollInv.lg_items.lg_scroll_properties
     if (!scrollProps) return res.status(400).json({ error: "Item is not a scroll" })
 
+    // --- AI-MODIFIED (2026-04-23) ---
+    // Purpose: Block enhancement on locked / favorited items. Enhancing
+    // can destroy the equipment AND consumes the scroll, so we block both
+    // sides — if either is locked, the user clearly didn't intend to risk it.
+    if (equipInv.is_locked) {
+      return res.status(400).json({ error: "This equipment is locked. Unlock it from your inventory before enhancing." })
+    }
+    if (scrollInv.is_locked) {
+      return res.status(400).json({ error: "This scroll is locked. Unlock it from your inventory before using it to enhance." })
+    }
+    // --- END AI-MODIFIED ---
+
     const maxLevel = MAX_ENHANCEMENT_BY_RARITY[equipInv.lg_items.rarity] ?? 5
     if (equipInv.enhancement_level >= maxLevel) {
       return res.status(400).json({ error: "Item already at max enhancement" })

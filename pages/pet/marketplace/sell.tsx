@@ -20,6 +20,10 @@ import {
   Coins, Gem, Check, AlertCircle,
   TrendingUp, TrendingDown, Minus, ShoppingCart,
   BarChart2, Search,
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Lock icon for the "X locked items hidden" helper note
+  Lock,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
@@ -108,7 +112,12 @@ export default function SellPage() {
     selectedItem ? `/api/pet/marketplace/history?itemId=${selectedItem.item.id}&days=30` : null
   )
 
-  const tradeableItems = useMemo((): InventoryItem[] => {
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Map every tradeable+unequipped row first (so we can show how many
+  // we hid for being locked / favorited), then filter out locked items from
+  // the picker. Also propagate `isLocked` through to the InventoryItem so
+  // the shared ItemTooltip can render its "Locked" indicator.
+  const allTradeableItems = useMemo((): InventoryItem[] => {
     if (!invData?.items) return []
     return invData.items
       .filter((i: any) => i.item.tradeable !== false && !i.equipped)
@@ -124,6 +133,7 @@ export default function SellPage() {
         glowTier: i.glowTier ?? "none",
         glowIntensity: i.glowIntensity ?? 0,
         slots: i.slots ?? [],
+        isLocked: i.isLocked ?? false,
         item: {
           id: i.item.id,
           name: i.item.name,
@@ -135,6 +145,17 @@ export default function SellPage() {
         },
       }))
   }, [invData])
+
+  const tradeableItems = useMemo(
+    () => allTradeableItems.filter((i) => !i.isLocked),
+    [allTradeableItems]
+  )
+
+  const lockedHiddenCount = useMemo(
+    () => allTradeableItems.length - tradeableItems.length,
+    [allTradeableItems, tradeableItems]
+  )
+  // --- END AI-MODIFIED ---
 
   const filteredItems = useMemo(() => {
     let items = tradeableItems
@@ -253,6 +274,26 @@ export default function SellPage() {
                     />
                   </div>
                 </div>
+
+                {/* --- AI-MODIFIED (2026-04-23) --- */}
+                {/* Purpose: Subtle helper note when the user has locked /
+                    favorited items hidden from the sell picker, with a deep
+                    link straight to the Favorites tab in inventory so they can
+                    unlock if it was a mistake. */}
+                {lockedHiddenCount > 0 && (
+                  <div className="border-b-2 border-[#1a2a3c] px-3 py-1.5 flex items-center gap-2 bg-[#0a0e1a]">
+                    <Lock size={11} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
+                    <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)]">
+                      {lockedHiddenCount} locked item{lockedHiddenCount === 1 ? "" : "s"} hidden &mdash;{" "}
+                      <Link href="/pet/inventory?tab=favorites">
+                        <a className="text-[#80b0ff] hover:text-[#a0c0ff] underline underline-offset-2 transition-colors">
+                          manage favorites
+                        </a>
+                      </Link>
+                    </span>
+                  </div>
+                )}
+                {/* --- END AI-MODIFIED --- */}
 
                 {/* Item grid */}
                 <div className="p-3 max-h-[320px] overflow-y-auto">

@@ -50,6 +50,11 @@ interface Ticket {
   pardonedBy: string | null
   pardonedAt: string | null
   pardonedReason: string | null
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Surface STUDY_BAN/SCREEN_BAN escalation context inline.
+  offenseNumber: number | null
+  totalTiers: number | null
+  // --- END AI-MODIFIED ---
 }
 
 interface ModStats {
@@ -66,13 +71,18 @@ interface TicketsResponse {
   pagination: { page: number; pageSize: number; total: number; totalPages: number }
 }
 
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Add SCREEN_BAN type so the new screen-share blacklist ticket type
+//   gets a proper label/variant in the moderation list (was missing).
 const typeLabels: Record<string, { label: string; variant: "warning" | "info" | "error" | "purple" | "default" }> = {
   WARNING: { label: "Bot Warning", variant: "warning" },
   NOTE: { label: "Admin Note", variant: "info" },
   STUDY_BAN: { label: "Study Restriction", variant: "error" },
+  SCREEN_BAN: { label: "Screen Restriction", variant: "error" },
   MESSAGE_CENSOR: { label: "Message Censor", variant: "purple" },
   INVITE_CENSOR: { label: "Invite Censor", variant: "purple" },
 }
+// --- END AI-MODIFIED ---
 
 const stateLabels: Record<string, { label: string; variant: "success" | "warning" | "error" | "default" }> = {
   OPEN: { label: "Active", variant: "error" },
@@ -81,8 +91,12 @@ const stateLabels: Record<string, { label: string; variant: "success" | "warning
   PARDONED: { label: "Resolved", variant: "success" },
 }
 
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Add SCREEN_BAN to the resolve button + filter options for parity
+//   with STUDY_BAN.
 const resolveButtonLabels: Record<string, string> = {
   STUDY_BAN: "End Early",
+  SCREEN_BAN: "End Early",
   WARNING: "Dismiss",
   NOTE: "Archive",
 }
@@ -92,9 +106,11 @@ const TYPE_OPTIONS = [
   { value: "WARNING", label: "Bot Warnings" },
   { value: "NOTE", label: "Admin Notes" },
   { value: "STUDY_BAN", label: "Study Restrictions" },
+  { value: "SCREEN_BAN", label: "Screen Restrictions" },
   { value: "MESSAGE_CENSOR", label: "Message Censors" },
   { value: "INVITE_CENSOR", label: "Invite Censors" },
 ]
+// --- END AI-MODIFIED ---
 
 const STATE_OPTIONS = [
   { value: "", label: "All States" },
@@ -163,6 +179,11 @@ export default function ModerationPage() {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
 
   const [resolveTarget, setResolveTarget] = useState<number[] | null>(null)
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Bumped after pardons complete; passed to MemberDetailPanel so the
+  //          lazy-loaded Blacklist History tab can refetch its data.
+  const [panelRefreshNonce, setPanelRefreshNonce] = useState(0)
+  // --- END AI-MODIFIED ---
   const [actionLoading, setActionLoading] = useState(false)
   const [panelUserId, setPanelUserId] = useState<string | null>(null)
 
@@ -233,6 +254,12 @@ export default function ModerationPage() {
       if (!res.ok) throw new Error(data.error || "Failed to resolve")
       toast.success(data.message || "Resolved")
       refreshData()
+      // --- AI-MODIFIED (2026-04-17) ---
+      // Purpose: Notify the open MemberDetailPanel to refetch blacklist data
+      //          and invalidate the panel's records tab data so it stays fresh.
+      setPanelRefreshNonce((n) => n + 1)
+      if (panelDetailKey) invalidate(panelDetailKey)
+      // --- END AI-MODIFIED ---
       setSelectedIds(new Set())
     } catch (err: any) {
       toast.error(err.message || "Failed to resolve")
@@ -390,6 +417,17 @@ export default function ModerationPage() {
                             <Badge variant={tl.variant} size="sm">{tl.label}</Badge>
                             <Badge variant={sl.variant} size="sm" dot>{sl.label}</Badge>
                             {t.auto && <Badge variant="default" size="sm">Auto</Badge>}
+                            {/* --- AI-MODIFIED (2026-04-17) --- */}
+                            {/* Purpose: Show "Offense #N/M" badge so mods see the
+                                escalation tier without opening the record. */}
+                            {t.offenseNumber !== null && (
+                              <Badge variant="warning" size="sm">
+                                {t.totalTiers
+                                  ? `Offense #${t.offenseNumber}/${t.totalTiers}`
+                                  : `Offense #${t.offenseNumber}`}
+                              </Badge>
+                            )}
+                            {/* --- END AI-MODIFIED --- */}
                           </div>
 
                           {/* Content preview */}
@@ -489,6 +527,8 @@ export default function ModerationPage() {
         {/* --- END AI-REPLACED --- */}
 
         {/* Member Detail Panel */}
+        {/* --- AI-MODIFIED (2026-04-17) ---
+            Purpose: Wire onResolve so the new Blacklist History tab actions actually pardon */}
         <MemberDetailPanel
           open={!!panelUserId}
           onClose={() => setPanelUserId(null)}
@@ -497,9 +537,11 @@ export default function ModerationPage() {
           onWarn={() => {}}
           onNote={() => {}}
           onRestrict={() => {}}
-          onResolve={() => {}}
+          onResolve={(ticketIds) => setResolveTarget(ticketIds)}
           onAdjustCoins={() => {}}
+          refreshNonce={panelRefreshNonce}
         />
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Resolve Modal */}
         <ResolveModal

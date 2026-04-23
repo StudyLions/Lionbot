@@ -10,7 +10,7 @@ import PetShell from "@/components/pet/PetShell"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useSession } from "next-auth/react"
 import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
-import { useState, useCallback } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { useRouter } from "next/router"
 import Link from "next/link"
 import dynamic from "next/dynamic"
@@ -30,6 +30,12 @@ import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import ItemGlow from "@/components/pet/ui/ItemGlow"
+// --- AI-MODIFIED (2026-04-10) ---
+// Purpose: Import RoomCanvas, GameboyFrame, and layout utils for Try On preview
+import RoomCanvas from "@/components/pet/room/RoomCanvas"
+import GameboyFrame from "@/components/pet/GameboyFrame"
+import { mergeLayout } from "@/utils/roomConstraints"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-22) ---
 // Purpose: Import calcLevelPenalty for new diminishing-returns formula
 import {
@@ -97,6 +103,23 @@ const MARKETPLACE_FEE_PERCENT = 5
 const EQUIP_CATS = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"])
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-10) ---
+// Purpose: Slot resolution and overview type for Try On preview
+const CATEGORY_TO_SLOT: Record<string, string> = {
+  HAT: "HEAD", GLASSES: "FACE", COSTUME: "BODY",
+  SHIRT: "BODY", WINGS: "BACK", BOOTS: "FEET",
+}
+interface OverviewData {
+  hasPet: boolean
+  pet: { name: string; expression: string; level: number } | null
+  equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  roomPrefix?: string
+  furniture?: Record<string, string>
+  roomLayout?: any
+  gameboySkinPath?: string | null
+}
+// --- END AI-MODIFIED ---
+
 export default function ListingDetailPage() {
   const { data: session } = useSession()
   const router = useRouter()
@@ -120,6 +143,13 @@ export default function ListingDetailPage() {
   const [cancelling, setCancelling] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: Try On preview state
+  const [showTryOn, setShowTryOn] = useState(false)
+  const { data: tryOnOverview } = useDashboard<OverviewData>(
+    showTryOn && session ? "/api/pet/overview" : null
+  )
+  // --- END AI-MODIFIED ---
 
   const handleBuy = useCallback(async () => {
     setBuying(true); setError(""); setSuccess("")
@@ -172,6 +202,26 @@ export default function ListingDetailPage() {
   const avgPrice = listing?.currency === "GEMS"
     ? (historyData?.gemSummary?.avgPrice ?? historyData?.summary?.avgPrice ?? 0)
     : (historyData?.goldSummary?.avgPrice ?? historyData?.summary?.avgPrice ?? 0)
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-04-10) ---
+  // Purpose: Try On preview equipment computation
+  const itemSlot = listing ? (listing.item.slot || CATEGORY_TO_SLOT[listing.item.category] || null) : null
+  const canTryOn = !!itemSlot && EQUIP_CATS.has(listing?.item?.category ?? "")
+
+  const tryOnEquipment = useMemo(() => {
+    if (!showTryOn || !tryOnOverview || !listing || !itemSlot) return null
+    const merged = { ...tryOnOverview.equipment }
+    merged[itemSlot] = {
+      name: listing.item.name,
+      category: listing.item.category,
+      rarity: listing.item.rarity,
+      assetPath: listing.item.assetPath,
+      glowTier: calcGlowTier(listing.enhancementLevel, totalBonus),
+      glowIntensity: calcGlowIntensity(listing.enhancementLevel),
+    }
+    return merged
+  }, [showTryOn, tryOnOverview, listing, itemSlot, totalBonus])
   // --- END AI-MODIFIED ---
 
   return (
@@ -263,6 +313,56 @@ export default function ListingDetailPage() {
                             </Link>
                           </div>
                         </div>
+
+                        {/* --- AI-MODIFIED (2026-04-10) --- */}
+                        {/* Purpose: Try On preview panel in listing detail */}
+                        {canTryOn && (
+                          <div className="px-5 py-3 border-b border-[#1a2a3c]">
+                            <button
+                              onClick={() => setShowTryOn(!showTryOn)}
+                              className={cn(
+                                "w-full font-pixel text-[11px] py-2 border transition-all",
+                                showTryOn
+                                  ? "border-[#d060f0] text-[#e0a0ff] bg-[#d060f0]/15"
+                                  : "border-[#d060f0]/40 text-[#d060f0]/70 bg-[#d060f0]/5 hover:bg-[#d060f0]/10 hover:text-[#e0a0ff]"
+                              )}
+                            >
+                              {showTryOn ? "\u{1F457} Trying On — see how it looks!" : "\u{1F457} Try On This Item"}
+                            </button>
+                            {showTryOn && tryOnOverview?.hasPet && tryOnEquipment && (
+                              <div className="mt-3 flex justify-center">
+                                <GameboyFrame
+                                  isFullscreen={false}
+                                  skinAssetPath={tryOnOverview.gameboySkinPath ?? undefined}
+                                  width={260}
+                                >
+                                  <RoomCanvas
+                                    roomPrefix={tryOnOverview.roomPrefix ?? "rooms/default"}
+                                    furniture={tryOnOverview.furniture ?? {}}
+                                    layout={mergeLayout(tryOnOverview.roomLayout ?? {})}
+                                    equipment={Object.fromEntries(
+                                      Object.entries(tryOnEquipment).map(([slot, item]) => [
+                                        slot,
+                                        { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity },
+                                      ])
+                                    )}
+                                    expression={tryOnOverview.pet?.expression ?? "default"}
+                                    size={190}
+                                    animated
+                                  />
+                                </GameboyFrame>
+                              </div>
+                            )}
+                            {showTryOn && !tryOnOverview && (
+                              <div className="mt-3 flex justify-center">
+                                <div className="w-[190px] h-[190px] border border-[#2a3a5c] bg-[#080c18] flex items-center justify-center">
+                                  <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] animate-pulse">Loading pet...</span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        {/* --- END AI-MODIFIED --- */}
 
                         {/* Description */}
                         {listing.item.description && (

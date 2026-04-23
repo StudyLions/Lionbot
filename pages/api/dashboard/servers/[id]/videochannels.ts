@@ -22,7 +22,19 @@ export default apiHandler({
     const auth = await requireModerator(req, res, guildId)
     if (!auth) return
 
-    const [guildConfig, exemptRoles, studybanDurations, videoChannelsRaw] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-20) ---
+    // Purpose: Surface active STUDY_BAN ticket count alongside the rest of
+    //   the video-channels config so the dashboard can show "N members are
+    //   currently study-blacklisted" and gate the Clear All button on it.
+    //   Built for support ticket #0037 -- admins need an obvious way to
+    //   see (and undo) blacklists from the dashboard.
+    const [
+      guildConfig,
+      exemptRoles,
+      studybanDurations,
+      videoChannelsRaw,
+      activeBlacklistCount,
+    ] = await Promise.all([
       prisma.guild_config.findUnique({
         where: { guildid: guildId },
         select: { video_grace_period: true, studyban_role: true },
@@ -40,6 +52,13 @@ export default apiHandler({
       prisma.$queryRaw<{ channelid: bigint }[]>(
         Prisma.sql`SELECT channelid FROM video_channels WHERE guildid = ${guildId}`
       ),
+      prisma.tickets.count({
+        where: {
+          guildid: guildId,
+          ticket_type: "STUDY_BAN",
+          ticket_state: { in: ["OPEN", "EXPIRING"] },
+        },
+      }),
     ])
 
     if (!guildConfig) return res.status(404).json({ error: "Server not found" })
@@ -50,7 +69,9 @@ export default apiHandler({
       videoChannelIds: videoChannelsRaw.map((r) => r.channelid.toString()),
       exemptRoleIds: exemptRoles.map((r) => r.roleid.toString()),
       studybanDurations: studybanDurations.map((d) => ({ rowid: d.rowid, duration: d.duration })),
+      activeBlacklistCount,
     })
+    // --- END AI-MODIFIED ---
   },
   async PATCH(req, res) {
     const guildId = parseBigInt(req.query.id, "guild ID")

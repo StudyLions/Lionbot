@@ -57,11 +57,16 @@ const LOCALE_OPTIONS = [
   { value: "tr", label: "Turkish" },
 ]
 
+// --- AI-MODIFIED (2026-04-19) ---
+// Purpose: Ticket #0020 — "XP (Combined)" label was misleading. The bot's XP rank type
+// only counts text/message activity (TEXT_XP); there is no VOICE_XP being written by the bot.
+// Renamed to make the actual behavior clear so admins don't expect voice time to count.
 const RANK_TYPE_OPTIONS = [
-  { value: "XP", label: "XP (Combined)" },
+  { value: "XP", label: "Text XP (word-weighted)" },
   { value: "VOICE", label: "Voice Time" },
-  { value: "MESSAGE", label: "Messages" },
+  { value: "MESSAGE", label: "Message Count" },
 ]
+// --- END AI-MODIFIED ---
 
 const DEFAULTS: Record<string, any> = {
   study_hourly_reward: 100,
@@ -1046,7 +1051,7 @@ export default function ServerSettings() {
                         <SettingRow
                           label="Coins per 100 XP"
                           description="How many coins 100 XP is worth"
-                          tooltip="This sets the conversion rate between XP and coins. Higher values make coins easier to earn. XP is earned through voice study and text activity."
+                          tooltip="This sets the conversion rate between XP and coins. Higher values make coins easier to earn. XP is earned through text activity (sending messages); voice study time accrues separately and is not part of XP."
                           defaultBadge={String(DEFAULTS.coins_per_centixp)}
                           isModified={isModified("coins_per_centixp")}
                           onReset={() => resetField("coins_per_centixp")}
@@ -1179,15 +1184,19 @@ export default function ServerSettings() {
                   {filteredSections.includes("ranks") && (
                     <div id="ranks">
                       <SectionCard title="Ranks" description="Configure activity-based rank progression" icon={<Trophy size={18} />} {...badgeProps("ranks", modifiedCounts["ranks"])}>
-                        <SettingRow label="Rank Type" description="Which activity drives rank progression" tooltip="XP: combines voice and text activity. Voice: only study time counts. Messages: only text messages count." defaultBadge={DEFAULTS.rank_type} isModified={isModified("rank_type")} onReset={() => resetField("rank_type")} impactText={ctx.rankUpsThisWeek ? `${ctx.rankUpsThisWeek} members currently ranked` : undefined}>
+                        {/* --- AI-MODIFIED (2026-04-19) --- */}
+                        {/* Purpose: Ticket #0020 — corrected misleading rank type and XP per Period descriptions. */}
+                        {/* XP only counts text activity (no voice XP exists). XP per Period is text-active periods. */}
+                        <SettingRow label="Rank Type" description="Which activity drives rank progression" tooltip="Text XP: word-weighted text activity (uses XP per Word + XP per Period settings). Voice Time: voice study hours only. Message Count: number of messages sent. Voice time and text activity are tracked separately — there is no combined option." defaultBadge={DEFAULTS.rank_type} isModified={isModified("rank_type")} onReset={() => resetField("rank_type")} impactText={ctx.rankUpsThisWeek ? `${ctx.rankUpsThisWeek} members currently ranked` : undefined}>
                           <SearchSelect options={RANK_TYPE_OPTIONS} value={config.rank_type || null} onChange={(v) => set("rank_type", v)} placeholder="Select rank type" />
                         </SettingRow>
                         <SettingRow label="DM Rank-Up Notifications" description="Send members a DM when they reach a new rank" isModified={isModified("dm_ranks")} onReset={() => resetField("dm_ranks")}>
                           <Toggle checked={config.dm_ranks ?? true} onChange={(v) => set("dm_ranks", v)} />
                         </SettingRow>
-                        <SettingRow label="XP per Period" description="Voice XP earned per tracking interval" tooltip="Every few minutes in a voice channel, members earn this much XP." defaultBadge={String(DEFAULTS.xp_per_period)} isModified={isModified("xp_per_period")} onReset={() => resetField("xp_per_period")}>
+                        <SettingRow label="XP per Period" description="Text XP per 5-minute active period" tooltip="Every 5 minutes a member sends at least one message, they earn this much XP. This affects the Text XP rank type and the global Lion economy. It does not apply to voice time." defaultBadge={String(DEFAULTS.xp_per_period)} isModified={isModified("xp_per_period")} onReset={() => resetField("xp_per_period")}>
                           <NumberInput value={config.xp_per_period} onChange={(v) => set("xp_per_period", v)} unit="XP" min={0} defaultValue={DEFAULTS.xp_per_period} allowNull placeholder={`Default: ${DEFAULTS.xp_per_period}`} />
                         </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                         <SettingRow label="Rank-Up Channel" description="Fallback channel for rank-up announcements" tooltip="When DM notifications fail, rank-up messages are sent here instead.">
                           <ChannelSelect guildId={guildId} value={config.rank_channel ?? null} onChange={(v) => set("rank_channel", (v as string) || null)} channelTypes={[0, 5]} placeholder="Select rank-up channel" />
                         </SettingRow>
@@ -1328,23 +1337,30 @@ export default function ServerSettings() {
                   {/* Tracking (new) */}
                   {filteredSections.includes("tracking") && (
                     <div id="tracking">
-                      <SectionCard title="Tracking Exclusions" description="Channels excluded from study and XP tracking" icon={<EyeOff size={18} />} {...badgeProps("tracking", modifiedCounts["tracking"])}>
+                      <SectionCard title="Tracking Exclusions" description="Channels (or whole categories) excluded from study and XP tracking" icon={<EyeOff size={18} />} {...badgeProps("tracking", modifiedCounts["tracking"])}>
+                        {/* --- AI-MODIFIED (2026-04-19) --- */}
+                        {/* Purpose: Add category (type 4) support to both selectors so admins
+                            can untrack a whole category in one click instead of every child
+                            channel. The bot already supports this -- the dashboard was the
+                            limiting factor. Same change motivated the Anti-AFK bug fix shipped
+                            today: untracked categories now also auto-skip AFK checks. */}
                         <SettingRow
                           label="Untracked Voice Channels"
-                          description="Voice channels where study time is not counted"
-                          tooltip="Members in these channels won't earn coins or XP from studying. Useful for social/music channels."
+                          description="Voice channels (or whole categories) where study time is not counted"
+                          tooltip="Members in these channels won't earn coins or XP from studying, and the Anti-AFK system also skips them. You can pick individual voice/stage channels or a whole category to untrack everything inside it."
                           impactText={ctx.untrackedVoiceCount !== undefined ? `${ctx.untrackedVoiceCount} channel${ctx.untrackedVoiceCount !== 1 ? "s" : ""} currently excluded` : undefined}
                         >
-                          <ChannelSelect guildId={guildId} value={lists.untrackedVoiceChannels || []} onChange={(v) => setList("untrackedVoiceChannels", (v as string[]) || [])} channelTypes={[2, 13]} placeholder="Select channels to exclude" multiple />
+                          <ChannelSelect guildId={guildId} value={lists.untrackedVoiceChannels || []} onChange={(v) => setList("untrackedVoiceChannels", (v as string[]) || [])} channelTypes={[2, 13, 4]} placeholder="Select channels or categories to exclude" multiple />
                         </SettingRow>
                         <SettingRow
                           label="Untracked Text Channels"
-                          description="Text channels where message XP is not counted"
-                          tooltip="Messages in these channels won't earn XP. Useful for bot command channels or off-topic."
+                          description="Text channels (or whole categories) where message XP is not counted"
+                          tooltip="Messages in these channels won't earn XP. Useful for bot command channels or off-topic. Pick individual text channels or a whole category to untrack everything inside it."
                           impactText={ctx.untrackedTextCount !== undefined ? `${ctx.untrackedTextCount} channel${ctx.untrackedTextCount !== 1 ? "s" : ""} currently excluded` : undefined}
                         >
-                          <ChannelSelect guildId={guildId} value={lists.untrackedTextChannels || []} onChange={(v) => setList("untrackedTextChannels", (v as string[]) || [])} channelTypes={[0, 5, 15]} placeholder="Select channels to exclude" multiple />
+                          <ChannelSelect guildId={guildId} value={lists.untrackedTextChannels || []} onChange={(v) => setList("untrackedTextChannels", (v as string[]) || [])} channelTypes={[0, 5, 15, 4]} placeholder="Select channels or categories to exclude" multiple />
                         </SettingRow>
+                        {/* --- END AI-MODIFIED --- */}
                       </SectionCard>
                     </div>
                   )}

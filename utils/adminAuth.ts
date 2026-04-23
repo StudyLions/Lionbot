@@ -272,11 +272,15 @@ export async function getUserGuildRoles(guildId: bigint, userId: string): Promis
 // }
 // --- End original code ---
 
+// --- AI-MODIFIED (2026-04-08) ---
+// Purpose: Add afk_timeout to cached guild info for Anti-AFK conflict detection
 interface CachedGuildInfo {
   present: boolean
   afk_channel_id: string | null
+  afk_timeout: number
   expiresAt: number
 }
+// --- END AI-MODIFIED ---
 
 const guildInfoCache = new Map<string, CachedGuildInfo>()
 
@@ -288,7 +292,7 @@ async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
 
   const botToken = process.env.DISCORD_BOT_TOKEN
   if (!botToken) {
-    return { present: false, afk_channel_id: null, expiresAt: Date.now() + 60000 }
+    return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 }
   }
 
   try {
@@ -305,7 +309,7 @@ async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
       )
     }
     if (!res.ok) {
-      const info: CachedGuildInfo = { present: false, afk_channel_id: null, expiresAt: Date.now() + 300000 }
+      const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 300000 }
       guildInfoCache.set(guildId, info)
       return info
     }
@@ -313,12 +317,13 @@ async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
     const info: CachedGuildInfo = {
       present: true,
       afk_channel_id: guild.afk_channel_id || null,
+      afk_timeout: guild.afk_timeout || 0,
       expiresAt: Date.now() + 300000,
     }
     guildInfoCache.set(guildId, info)
     return info
   } catch {
-    return { present: false, afk_channel_id: null, expiresAt: Date.now() + 60000 }
+    return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 }
   }
 }
 
@@ -331,6 +336,14 @@ export async function getGuildHasAfkChannel(guildId: string): Promise<boolean> {
   const info = await fetchGuildInfo(guildId)
   return !!info.afk_channel_id
 }
+
+// --- AI-MODIFIED (2026-04-08) ---
+// Purpose: Expose Discord's AFK timeout so Anti-AFK page can warn about conflicts
+export async function getGuildAfkTimeout(guildId: string): Promise<number> {
+  const info = await fetchGuildInfo(guildId)
+  return info.afk_timeout
+}
+// --- END AI-MODIFIED ---
 // --- END AI-REPLACED ---
 // --- END AI-MODIFIED ---
 

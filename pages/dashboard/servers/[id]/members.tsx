@@ -23,6 +23,10 @@ import {
   WarnModal, NoteModal, RestrictModal, CoinAdjustModal,
   BulkActionModal, ResolveModal, RefundModal,
 } from "@/components/dashboard/MemberActionModals"
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Wire the new admin-only ResetMemberStatsModal into the Members page
+import ResetMemberStatsModal from "@/components/dashboard/ResetMemberStatsModal"
+// --- END AI-MODIFIED ---
 import { useDashboard, invalidate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
@@ -30,6 +34,10 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import {
   Users, Download, MoreHorizontal, AlertTriangle, Coins,
   Eye, Search, Filter, Ban, FileText,
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Icon for the new "Reset stats..." action in the row menu
+  RotateCcw,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -94,15 +102,16 @@ function formatRelativeTime(dateStr: string | null): string {
 }
 // --- END AI-REPLACED ---
 
-function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Added admin-only "Reset stats..." entry (and optional onReset prop)
+function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins, onReset, isAdmin }: {
   isOpen: boolean; onToggle: () => void; onClose: () => void
   onView: () => void; onWarn: () => void; onCoins: () => void
+  onReset?: () => void; isAdmin?: boolean
 }) {
   const btnRef = useRef<HTMLButtonElement>(null)
   const [pos, setPos] = useState({ top: 0, left: 0 })
 
-  // --- AI-MODIFIED (2026-03-21) ---
-  // Purpose: Clamp menu position to viewport so it doesn't drop off-screen on mobile
   useEffect(() => {
     if (isOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect()
@@ -113,7 +122,6 @@ function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
       })
     }
   }, [isOpen])
-  // --- END AI-MODIFIED ---
 
   return (
     <>
@@ -127,12 +135,19 @@ function ActionMenu({ isOpen, onToggle, onClose, onView, onWarn, onCoins }: {
             <button onClick={onView} className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-accent flex items-center gap-2"><Eye size={14} /> View Profile</button>
             <button onClick={onWarn} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><AlertTriangle size={14} /> Add Warning</button>
             <button onClick={onCoins} className="w-full text-left px-3 py-2 text-sm text-amber-400 hover:bg-accent flex items-center gap-2"><Coins size={14} /> Adjust Coins</button>
+            {isAdmin && onReset && (
+              <>
+                <div className="my-1 border-t border-border/50" />
+                <button onClick={onReset} className="w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-accent flex items-center gap-2"><RotateCcw size={14} /> Reset stats...</button>
+              </>
+            )}
           </div>
         </>
       )}
     </>
   )
 }
+// --- END AI-MODIFIED ---
 
 const filterOptions = [
   { value: "", label: "All Members" },
@@ -165,6 +180,11 @@ export default function MembersPage() {
   const [resolveTarget, setResolveTarget] = useState<{ userId: string; ticketIds: number[] } | null>(null)
   const [bulkOp, setBulkOp] = useState<"coins" | "warn" | null>(null)
   const [refundTarget, setRefundTarget] = useState<{ userId: string; transactionId: number; amount: number } | null>(null)
+  // --- AI-MODIFIED (2026-04-17) ---
+  // Purpose: Track which member (if any) is open in the Reset Stats modal
+  const [resetTarget, setResetTarget] = useState<{ userId: string; name: string } | null>(null)
+  const [resetLoading, setResetLoading] = useState(false)
+  // --- END AI-MODIFIED ---
   const [actionLoading, setActionLoading] = useState(false)
 
   const filterParam = filter ? `&filter=${filter}` : ""
@@ -412,6 +432,11 @@ export default function MembersPage() {
                                   onView={() => { openMemberPanel(m.userId); setActionMenuId(null) }}
                                   onWarn={() => { setWarnTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }}
                                   onCoins={() => { setCoinTarget({ userId: m.userId, name: m.displayName || m.userId, balance: m.coins }); setActionMenuId(null) }}
+                                  // --- AI-MODIFIED (2026-04-17) ---
+                                  // Purpose: Open the Reset Stats modal (admin-only entry)
+                                  isAdmin={isAdmin}
+                                  onReset={() => { setResetTarget({ userId: m.userId, name: m.displayName || m.userId }); setActionMenuId(null) }}
+                                  // --- END AI-MODIFIED ---
                                 />
                               </td>
                             </tr>
@@ -483,6 +508,11 @@ export default function MembersPage() {
               if (tx) setRefundTarget({ userId: (panelData as any).member.userId, transactionId, amount: tx.amount })
             }
           }}
+          // --- AI-MODIFIED (2026-04-17) ---
+          // Purpose: Pass admin flag + onReset hook so the Quick Actions block shows the new button
+          isAdmin={isAdmin}
+          onReset={() => { if (panelData) setResetTarget({ userId: (panelData as any).member.userId, name: (panelData as any).member.displayName || (panelData as any).member.userId }) }}
+          // --- END AI-MODIFIED ---
         />
 
         {/* Action Modals */}
@@ -493,6 +523,41 @@ export default function MembersPage() {
         <ResolveModal open={!!resolveTarget} onClose={() => setResolveTarget(null)} loading={actionLoading} ticketCount={resolveTarget?.ticketIds.length ?? 0} onConfirm={(reason) => { apiAction(`/api/dashboard/servers/${id}/members/${resolveTarget?.userId}/resolve`, "PATCH", { ticketIds: resolveTarget?.ticketIds, reason }).then(() => setResolveTarget(null)) }} />
         <BulkActionModal open={!!bulkOp} onClose={() => setBulkOp(null)} loading={actionLoading} selectedCount={selectedIds.size} operation={bulkOp || "coins"} onConfirm={(data) => { apiAction(`/api/dashboard/servers/${id}/members/bulk`, "PATCH", { userIds: Array.from(selectedIds), operation: bulkOp, ...data }).then(() => { setBulkOp(null); setSelectedIds(new Set()) }) }} />
         <RefundModal open={!!refundTarget} onClose={() => setRefundTarget(null)} loading={actionLoading} transactionAmount={refundTarget?.amount ?? 0} onConfirm={() => { apiAction(`/api/dashboard/servers/${id}/members/${refundTarget?.userId}/refund`, "POST", { transactionId: refundTarget?.transactionId }).then(() => setRefundTarget(null)) }} />
+        {/* --- AI-MODIFIED (2026-04-17) --- */}
+        {/* Purpose: Admin-only Reset Member Stats modal (selectable scope + time frame) */}
+        <ResetMemberStatsModal
+          open={!!resetTarget}
+          onClose={() => { if (!resetLoading) setResetTarget(null) }}
+          serverId={String(id || "")}
+          serverName={serverName}
+          memberUserId={resetTarget?.userId || ""}
+          memberName={resetTarget?.name || ""}
+          loading={resetLoading}
+          onConfirm={async ({ selections, timeFrame, reason }) => {
+            if (!resetTarget) return
+            setResetLoading(true)
+            try {
+              const res = await fetch(
+                `/api/dashboard/servers/${id}/members/${resetTarget.userId}/reset-stats`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ selections, timeFrame, reason }),
+                },
+              )
+              const data = await res.json()
+              if (!res.ok) throw new Error(data?.error || "Reset failed")
+              toast.success(data.message || "Stats reset successfully")
+              setResetTarget(null)
+              refreshData()
+            } catch (err: any) {
+              toast.error(err?.message || "Reset failed")
+            } finally {
+              setResetLoading(false)
+            }
+          }}
+        />
+        {/* --- END AI-MODIFIED --- */}
       </ServerGuard>
       </AdminGuard>
     </Layout>

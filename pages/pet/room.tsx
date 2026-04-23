@@ -308,22 +308,53 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     [dragState, clientToCanvas, moveLayer, getSnapResult, playSound]
   )
 
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Coalesce mouse/touch move events into one state update per frame
+  //          via requestAnimationFrame. Mobile touchmove can fire 100+ times/sec;
+  //          updating React state on every event caused jittery drags + lag,
+  //          especially on the 200x200 canvas where a single px in canvas-space
+  //          equals several screen px on a phone.
   useEffect(() => {
     if (!dragState) return
 
+    let rafId: number | null = null
+    let pendingPos: [number, number] | null = null
+
+    const flush = () => {
+      rafId = null
+      if (pendingPos) {
+        setDragCurrentPos(pendingPos)
+        pendingPos = null
+      }
+    }
+    const schedule = (pos: [number, number]) => {
+      pendingPos = pos
+      if (rafId === null) rafId = requestAnimationFrame(flush)
+    }
+
     const handleMouseMove = (e: MouseEvent) => {
-      setDragCurrentPos(mouseToCanvas(e))
+      schedule(mouseToCanvas(e))
     }
     const handleMouseUp = (e: MouseEvent) => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+        rafId = null
+        pendingPos = null
+      }
       finalizeDrag(e.clientX, e.clientY)
     }
     const handleTouchMove = (e: TouchEvent) => {
       e.preventDefault()
       if (e.touches.length > 0) {
-        setDragCurrentPos(clientToCanvas(e.touches[0].clientX, e.touches[0].clientY))
+        schedule(clientToCanvas(e.touches[0].clientX, e.touches[0].clientY))
       }
     }
     const handleTouchEnd = (e: TouchEvent) => {
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+        rafId = null
+        pendingPos = null
+      }
       const touch = e.changedTouches[0]
       if (touch) finalizeDrag(touch.clientX, touch.clientY)
     }
@@ -333,12 +364,14 @@ function RoomEditorContent({ data, mutate }: { data: RoomData; mutate: () => voi
     window.addEventListener("touchmove", handleTouchMove, { passive: false })
     window.addEventListener("touchend", handleTouchEnd)
     return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId)
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("mouseup", handleMouseUp)
       window.removeEventListener("touchmove", handleTouchMove)
       window.removeEventListener("touchend", handleTouchEnd)
     }
   }, [dragState, mouseToCanvas, clientToCanvas, finalizeDrag])
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
 
   const justDroppedRef = useRef(false)

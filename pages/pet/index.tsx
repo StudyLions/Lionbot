@@ -504,30 +504,51 @@ export default function PetOverview() {
                         </Link>
                       </div>
                     </div>
-                    {/* --- AI-MODIFIED (2026-03-21) --- */}
-                    {/* Purpose: Responsive GameboyFrame width to avoid forced horizontal scroll */}
+                    {/* --- AI-REPLACED (2026-04-21) --- */}
+                    {/* Reason: Old code measured window.innerWidth ONCE on render so the frame
+                                never reacted to viewport changes (rotate, resize). Worse, the
+                                inner RoomCanvas was hard-coded to 348px, which overflowed the
+                                Gameboy screen on phones (cropped/cut-off room display).
+                                The notification banner above this card also overlapped on tight viewports. */}
+                    {/* What the new code does better: GameboyFrame width is capped by the
+                                container's max-width (which already adapts to viewport) so
+                                the frame sizes itself responsively without JS. RoomCanvas
+                                runs in fluid mode (no `size` prop) so it always fills the
+                                Gameboy screen area exactly, no matter the rendered width. */}
+                    {/* --- Original code (commented out for rollback) ---
                     <div className="flex justify-center overflow-x-auto">
                       <GameboyFrame
                         isFullscreen={false}
                         skinAssetPath={data.gameboySkinPath ?? undefined}
                         width={typeof window !== 'undefined' && window.innerWidth < 500 ? Math.min(340, window.innerWidth - 80) : 453}
                       >
-                    {/* --- END AI-MODIFIED --- */}
-                        <RoomCanvas
-                          roomPrefix={data.roomPrefix ?? "rooms/default"}
-                          furniture={data.furniture ?? {}}
-                          layout={mergeLayout(data.roomLayout ?? {})}
-                          equipment={Object.fromEntries(
-                            Object.entries(equipment).map(([slot, item]) => [
-                              slot, { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity }
-                            ])
-                          )}
-                          expression={pet.expression}
-                          size={348}
-                          animated
-                        />
+                        <RoomCanvas ... size={348} animated />
                       </GameboyFrame>
                     </div>
+                    --- End original code --- */}
+                    <div className="flex justify-center w-full">
+                      <div className="w-full max-w-[453px]">
+                        <GameboyFrame
+                          isFullscreen={false}
+                          skinAssetPath={data.gameboySkinPath ?? undefined}
+                          width={453}
+                        >
+                          <RoomCanvas
+                            roomPrefix={data.roomPrefix ?? "rooms/default"}
+                            furniture={data.furniture ?? {}}
+                            layout={mergeLayout(data.roomLayout ?? {})}
+                            equipment={Object.fromEntries(
+                              Object.entries(equipment).map(([slot, item]) => [
+                                slot, { assetPath: item.assetPath, category: item.category, glowTier: item.glowTier, glowIntensity: item.glowIntensity }
+                              ])
+                            )}
+                            expression={pet.expression}
+                            animated
+                          />
+                        </GameboyFrame>
+                      </div>
+                    </div>
+                    {/* --- END AI-REPLACED --- */}
                   </PixelCard>
                   {/* --- END AI-MODIFIED --- */}
 

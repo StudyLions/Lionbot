@@ -19,14 +19,17 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: add DoorOpen icon for Private Rooms nav link + Search/X for sidebar search
 // --- AI-MODIFIED (2026-03-25) ---
 // Purpose: add Bug and MessageSquareWarning icons for Advanced section
+// --- AI-MODIFIED (2026-04-20) ---
+// Purpose: add MonitorPlay icon for new Screen Channels nav link
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
   Search, X, Clock, Bug, MessageSquareWarning, Type,
-  ShieldAlert,
+  ShieldAlert, MonitorPlay,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -121,6 +124,12 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         { href: "/schedule", label: "Schedule", icon: <Calendar size={16} /> },
         { href: "/pomodoro", label: "Pomodoro", icon: <Timer size={16} /> },
         { href: "/videochannels", label: "Video Channels", icon: <Video size={16} /> },
+        // --- AI-MODIFIED (2026-04-20) ---
+        // Purpose: New dashboard page for screen-share channel config
+        // (mirrors Video Channels). Built for support ticket #0037 so
+        // admins can disable auto-blacklisting without slash commands.
+        { href: "/screenchannels", label: "Screen Channels", icon: <MonitorPlay size={16} /> },
+        // --- END AI-MODIFIED ---
         { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
       ],
     })

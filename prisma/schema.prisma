@@ -560,6 +560,10 @@ model rented_rooms {
   // Purpose: Track last activity for inactivity auto-delete feature
   last_activity  DateTime?        @db.Timestamptz(6)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-13) ---
+  // Purpose: Per-room auto-extend preference set by room owner
+  owner_auto_extend Boolean?
+  // --- END AI-MODIFIED ---
   rented_members rented_members[]
   members        members          @relation(fields: [guildid, ownerid], references: [guildid, userid], onDelete: Cascade, onUpdate: NoAction)
   room_admin_log room_admin_log[]
@@ -1279,11 +1283,22 @@ model lg_user_inventory {
   source               lgitemsource           @default(SHOP)
   quantity             Int                    @default(1)
   enhancement_level    Int                    @default(0)
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: User-toggleable lock flag — when true the item is treated as
+  // a favorite and is hidden from the sell picker and blocked from gift /
+  // enhancement / other destructive actions. Migration:
+  // prisma/migrations/manual_2026_04_23_inventory_locked.sql
+  is_locked            Boolean                @default(false)
+  // --- END AI-MODIFIED ---
   lg_enhancement_slots lg_enhancement_slots[]
   lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
   user_config          user_config            @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
 
   @@index([userid], map: "lg_user_inventory_user")
+  // --- AI-MODIFIED (2026-04-23) ---
+  // Purpose: Composite index for the Favorites filter tab (userid + is_locked)
+  @@index([userid, is_locked], map: "idx_lg_user_inventory_user_locked")
+  // --- END AI-MODIFIED ---
 }
 
 model lg_pet_equipment {
@@ -1634,6 +1649,9 @@ model leaderboard_autopost_config {
   dm_template_title    String?
   dm_template_body     String?
   dm_stagger_seconds   Int                                 @default(2)
+  top1_dm_enabled      Boolean                             @default(false)
+  top1_dm_template_title String?                           @db.VarChar(256)
+  top1_dm_template_body  String?                           @db.VarChar(4096)
   notify_mod_log       Boolean                             @default(false)
   mod_log_channel      BigInt?
   skip_if_empty        Boolean                             @default(true)
@@ -2012,6 +2030,30 @@ model manual_session_log {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-17) ---
+// Purpose: Audit log for destructive admin actions on the dashboard
+//          (currently used by the "Reset member stats" feature). Captures
+//          who did what, to whom, in which guild, with what scope, why,
+//          and the exact rows affected. Insert happens inside the same
+//          transaction as the destructive operation so it is all-or-nothing.
+model dashboard_admin_audit {
+  auditid       BigInt   @id @default(autoincrement())
+  performed_at  DateTime @default(now()) @db.Timestamptz(6)
+  actor_userid  BigInt
+  guildid       BigInt
+  target_userid BigInt
+  action_type   String   @db.VarChar(64)
+  selections    Json
+  time_frame    Json?
+  reason        String
+  result        Json
+
+  @@index([guildid, target_userid], map: "idx_dashboard_admin_audit_guild_target")
+  @@index([actor_userid], map: "idx_dashboard_admin_audit_actor")
+  @@index([performed_at], map: "idx_dashboard_admin_audit_time")
+}
+// --- END AI-MODIFIED ---
+
 model shard_presence_stats {
   shard_id    Int      @id
   in_vc       Int      @default(0)
@@ -2115,6 +2157,9 @@ enum tickettype {
   MESSAGE_CENSOR
   INVITE_CENSOR
   WARNING
+  // Added 2026-04-17: live DB already has SCREEN_BAN (added by
+  // StudyLion/data/migration/v17-v18/migration.sql); Prisma schema was stale.
+  SCREEN_BAN
 }
 
 enum lgexpression {

@@ -23,6 +23,116 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 23, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-23",
+    title: "Mods Can Now Edit Pomodoro Timers They Created (Bug Report #0041)",
+    description:
+      "Spotted a frustrating inconsistency in how Pomodoro timer permissions worked: anyone with the 'Manage Channels' permission could create a brand-new Pomodoro timer in a voice channel using `/pomodoro create` (with any focus length, break length, voice alerts, custom name, etc.) — but the moment they tried to change one of those same settings later via `/pomodoro edit`, the bot would refuse with a 'You don't have permission' error. The fix is now live: for regular guild voice-channel timers (the kind a mod creates for the whole server to use), `/pomodoro edit` now uses the exact same permission check as `/pomodoro create`. If you can create the timer, you can edit it. Private study room timers — the kind tied to a specific room owner — keep their stricter rules: only the room owner or a server admin can change those, so random mods can't override what a room owner has set up. We also tightened up a tiny related gap where the 'Voice Alerts' button on the timer settings UI had no permission check at all (anyone with access to the menu could toggle it). Now it follows the same rules as everything else — same role gates as the matching slash command parameter. Thanks to the user who filed bug report #0041.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-04-23",
+    title: "Manage Your Subscription: Switch Plans, Currencies, and Add Tax IDs From Stripe",
+    description:
+      "We gave the 'Manage Subscription' page on Stripe a long-overdue tune-up so it actually reflects what you can subscribe to today. If you have a LionHeart subscription, the 'Change plan' option now shows the current pricing for all three tiers (LionHeart, LionHeart+, LionHeart++) in both USD and EUR — previously it was still showing the original launch prices from earlier this year. If your server has Server Premium, you can now switch between monthly and yearly plans (and between USD and EUR) right from the portal without having to cancel and re-subscribe — that flow used to be missing entirely, so admins had to email us to switch billing frequency. We also added the missing Privacy Policy and Terms of Service links to the portal footer (small thing, but Stripe was nagging us about it), and unlocked the ability to add a billing name, address, phone number, and tax ID to your account. The tax ID field in particular helps EU and UK customers get proper VAT-compliant invoices. None of this changes what you're charged or how your existing subscription works — it just gives you proper self-service over the parts of your subscription you should always have been able to control.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-23",
+    title: "Family 'Leave' Button Now Asks for Confirmation",
+    description:
+      "We had a few reports that members were tapping the 'Leave' button on the family hub by accident — usually meaning to tap one of the buttons next to it — and then getting stuck on the 7-day cooldown before they could rejoin or join another family. The button now opens a confirmation prompt first: a clear warning embed reminding you that you won't be able to join another family for 7 days, plus a red 'Yes, Leave' button and a grey 'Cancel' button. The leader-side 'Disband' button gets the same treatment, with extra wording that the bank items and treasury gold will be returned to you. Tapping the wrong button is now harmless — just hit Cancel and you're back to the family hub. Thanks to Sky for the suggestion.",
+    category: "improvement",
+    area: "bot",
+  },
+  {
+    date: "2026-04-23",
+    title: "Room Decorating: Drag Feels Smoother on Phones, and Items Can No Longer Hide Off-Screen",
+    description:
+      "Two follow-up tweaks to the LionGotchi room editor based on a bug report from a member of Comité des jeunes Lit Up. First, when you drag a piece of furniture on a phone, the movement now feels noticeably smoother — touchscreens fire 'finger moved' events extremely fast (over 100 times a second on most devices), and we were running a full re-render on every single one of those events, which made the chair you were dragging stutter behind your finger. The drag now updates at most once per screen refresh (60 times a second), which is what your eye can actually see anyway, so the chair sticks to your finger instead of trailing it. Second, we tightened the off-canvas guardrail. Most furniture sprites are 200x200 images where the actual visible chair, lamp, or rug only takes up a smaller portion of the middle — the corners are transparent. Our previous safety check looked at the full 200x200 image, so you could still accidentally drag a lamp far enough that the only thing 'on-canvas' was an invisible transparent corner, making the lamp seem to vanish. The new check uses each item's true visible area, so at least 24 pixels of the actual chair/lamp/rug stays on the canvas no matter how aggressively you drag. No more lost decorations.",
+    category: "liongotchi",
+    area: "website",
+  },
+  // ── April 21, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-21",
+    title: "Room Decorating: Smoother Drag, Matching Colors Everywhere, and a Mobile-Friendly Preview",
+    description:
+      "We tackled four bugs in the LionGotchi room editor that had been making decorating frustrating. First — and the biggest one — some wallpapers and furniture were showing up in completely different colors on the website than what your pet actually had on Discord (a 'bookcase wall' might look green in the editor but show up purple in the bot's profile cards). Under the hood, the website's image library on our CDN had drifted out of sync with the bot's local files over the past few months, so we wrote a sync tool and re-uploaded all 312 room asset images straight from the bot. Now whatever color you pick on the website is exactly what shows up on Discord. Second, when you placed or swapped a piece of furniture, you sometimes had to click it a second time before it would render — and the canvas would briefly flash blank while the new image loaded. We fixed both: images now load incrementally instead of being wiped and reloaded together, and items appear immediately on first equip even before they're added to your saved layout order. Third, the drag-to-position controls now keep at least 20 pixels of every decoration on-screen, so you can't accidentally fling a chair or rug into the void where you can't grab it back. Fourth, on phones, the room preview on the /pet overview and on friends' profiles was getting cut off by the Gameboy frame; the canvas and frame are now fully responsive and scale to whatever size your screen has. Decorating should feel a lot less janky now.",
+    category: "liongotchi",
+    area: "website",
+  },
+  // ── April 20, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-20",
+    title: "Disable Auto-Blacklisting (and Wipe Active Bans) From the Dashboard",
+    description:
+      "We heard from a few admins this week that when LionBot kicks a member from a camera-required or screen-share channel, it can also assign a 'blacklist' role for repeat offenders — and there was no obvious way to turn that off, or to clear out everyone who was already affected. Both problems are now solved on the dashboard. The Video Channels page now has a clearly labelled 'Auto-Blacklisting' card that shows whether the feature is ON or OFF in plain language, with a one-click 'Disable' button next to the role selector — clear it, save, and members will only ever be kicked, never auto-blacklisted again. We also built a brand-new Screen Channels page with the exact same controls (previously screen-share enforcement was only configurable via slash command). And if you've already accumulated a list of currently-blacklisted members, both pages now show how many are active and let you 'Clear All Active Blacklists' — which pardons every active record AND removes the role from each affected member in Discord, in one action, with a typed confirmation and an audit trail. Built in response to a support ticket from a Study Space admin asking exactly how to do this.",
+    category: "feature",
+    area: "website",
+  },
+  {
+    date: "2026-04-20",
+    title: "Pomodoro Voice Alerts Are Audible Again",
+    description:
+      "If you had voice alerts enabled on a Pomodoro timer, you may have noticed that lately the bot would join the channel for a few seconds each round but no chime would actually play (or, on some systems, you'd hear a faint click followed by silence). After digging into a stubborn report from a regular user whose timer had been silent for weeks, we found the root cause: the bot was sending the raw bytes of the alert sound files directly to Discord, but Discord's voice service expects the audio to be in a very specific format (48 kHz raw PCM). Our alert files were 44.1 kHz WAV files with a header on top, so what Discord actually received was a brief blip of header noise followed by audio it couldn't make sense of — which most ears interpret as silence. We now route the alert through ffmpeg, which decodes the WAV file and converts it to exactly the format Discord wants. Same alert sounds, same timing, same volume — just actually audible now. The fix mirrors how our SoundsBot has always played its rain/campfire/LoFi tracks, which is why those have been working perfectly.",
+    category: "bugfix",
+    area: "bot",
+  },
+  // ── April 19, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-19",
+    title: "Send a Partial Stack of Items to Friends",
+    description:
+      "When you gift an item to a friend on the website, you can now choose how many to send instead of being forced to ship the entire stack. Pick an item, type the quantity (or hit \"All\"), and the rest stays in your inventory. Stacks of 1 work the same as before — no extra tap. Enhanced or scrolled gear still has to be sent as the whole stack, since the bonuses are tied to the stack itself and can't be cleanly split. Requested by an admin who wanted to send a few scrolls to a friend without losing the rest of their own collection.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-19",
+    title: "/strikes Now Loads Instantly for High-Offense Users",
+    description:
+      "If a server had a long moderation history, the /strikes command would sometimes get stuck on \"thinking…\" when looking up a member with lots of past offenses. Under the hood the bot was scanning the entire guild's ticket history just to compute the per-guild ticket numbering for everyone before it could filter to one person. We rewrote that lookup to use three small targeted queries instead, so the command now responds in under a second regardless of how many tickets the server has — and it skips the heavy file attachment data it didn't actually need.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-04-19",
+    title: "Clearer Descriptions for the Rank Type Setting",
+    description:
+      "The dashboard previously labelled the \"XP\" rank type as \"Combined XP\" with a description that said it counted both voice time and messages. That was misleading — the bot's XP rank type only counts text/word activity (longer messages earn more); voice study time is its own separate metric. We've updated the labels and tooltips on the Settings page, the Ranks page, and the setup wizard so admins know exactly which activity each option counts. The setting itself didn't change — just the description of what it does.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-19",
+    title: "Anti-AFK Now Respects Untracked Channels (and Untrack Whole Categories from the Dashboard)",
+    description:
+      "Two related improvements. First, a bug fix: the Anti-AFK system was still sending activity check prompts in voice and stage channels that you'd marked as untracked in the Voice Tracker settings — including channels inside untracked categories like hangout or chat-only spaces. From now on, if a channel doesn't count toward study stats, Anti-AFK won't ping people there either. Second, you can now untrack a whole category in one click directly from the dashboard's Tracking Exclusions section (both for voice and text). Previously the dropdown only listed individual channels, so admins had to either pick every child channel one by one or use a slash command. Same goes for stage channels — they're properly handled across both improvements.",
+    category: "bugfix",
+    area: "both",
+  },
+  // ── April 17, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-17",
+    title: "Reset a Member's Tracked Stats from the Dashboard",
+    description:
+      "Server admins can now selectively wipe a single member's tracked study data from the dashboard — voice and text study time, voice and text XP, pomodoro milestones, season stats, and (optionally) coins — with an optional time-frame filter (last 24 hours, last 7 days, last 30 days, custom range, or all time). Every reset shows a live preview of exactly what will be deleted, requires a written reason, and asks you to type the member's name to confirm. Each action is logged with the admin who ran it, the scope, and the rows affected, so nothing happens silently. Only admins of that specific server can use this, and the tool is locked to the targeted member in the targeted server — it cannot accidentally touch anyone else's data.",
+    category: "feature",
+    area: "website",
+  },
+  // ── April 10, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-10",
+    title: "Inventory QoL — Equip Best, Try On, and Marketplace Links",
+    description:
+      "We added three quality-of-life features to the pet inventory based on community feedback: an 'Equip Best' button that auto-equips your strongest items across all slots with one click, a 'Try On' preview that lets you see how any item looks on your lion before equipping or buying, and convenient marketplace links throughout the inventory page so you can easily browse for new gear.",
+    category: "liongotchi",
+    area: "website",
+  },
   // ── April 7, 2026 ──────────────────────────────────────────
   {
     date: "2026-04-07",

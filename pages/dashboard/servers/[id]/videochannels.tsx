@@ -25,11 +25,20 @@ import {
   toast,
 } from "@/components/dashboard/ui"
 // --- END AI-MODIFIED ---
-import { useDashboard } from "@/hooks/useDashboard"
+// --- AI-MODIFIED (2026-04-20) ---
+// Purpose: Use the SWR `invalidate` helper so the page can refetch
+//   itself after the bulk Clear-All-Blacklists action completes.
+import { useDashboard, invalidate } from "@/hooks/useDashboard"
+// --- END AI-MODIFIED ---
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
-import { Video, ShieldAlert, Plus, X } from "lucide-react"
+// --- AI-MODIFIED (2026-04-20) ---
+// Purpose: Add icons used by the new "Auto-Blacklisting" SectionCard +
+//   "Clear All Active Blacklists" CTA. Built for support ticket #0037.
+import { Video, ShieldAlert, ShieldOff, Plus, X, AlertTriangle, CheckCircle2, Info } from "lucide-react"
+import ClearBlacklistsModal from "@/components/dashboard/ClearBlacklistsModal"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: add i18n imports for serverSideTranslations
 import { GetServerSideProps } from "next"
@@ -42,6 +51,12 @@ interface VideoChannelsData {
   videoChannelIds: string[]
   exemptRoleIds: string[]
   studybanDurations: { rowid: number; duration: number }[]
+  // --- AI-MODIFIED (2026-04-20) ---
+  // Purpose: Surface the count of currently active STUDY_BAN tickets
+  //   so the "Auto-Blacklisting" card can show how many members would
+  //   be cleared by the new bulk action. Exposed by videochannels GET.
+  activeBlacklistCount?: number
+  // --- END AI-MODIFIED ---
 }
 
 export default function VideoChannelsPage() {
@@ -71,6 +86,12 @@ export default function VideoChannelsPage() {
   }, [vcData, loading])
   // --- END AI-MODIFIED ---
   const [saving, setSaving] = useState(false)
+  // --- AI-MODIFIED (2026-04-20) ---
+  // Purpose: State for the new "Clear All Active Blacklists" modal
+  //   triggered from the Auto-Blacklisting card. Built for support
+  //   ticket #0037.
+  const [clearModalOpen, setClearModalOpen] = useState(false)
+  // --- END AI-MODIFIED ---
 
   const set = useCallback((updates: Partial<VideoChannelsData>) => {
     setData((prev) => (prev ? { ...prev, ...updates } : prev))
@@ -139,10 +160,14 @@ export default function VideoChannelsPage() {
             --- End original code --- */}
         <DashboardShell nav={<ServerNav serverId={guildId} serverName={serverName || "..."} isAdmin isMod />}>
         {/* --- END AI-REPLACED --- */}
+              {/* --- AI-MODIFIED (2026-04-20) --- */}
+              {/* Purpose: clarify that auto-blacklisting is a separate, opt-in
+                  layer on top of the kick — and is configured below. */}
               <PageHeader
                 title="Video Channels"
-                description="Configure which voice channels require members to have their camera on. Members without camera get a grace period before being disconnected. Exempt roles skip this requirement."
+                description="Set which voice channels require cameras on, who is exempt, and (optionally) whether repeat offenders get auto-blacklisted with a role."
               />
+              {/* --- END AI-MODIFIED --- */}
 
               <FirstTimeBanner
                 storageKey="videochannels-intro"
@@ -215,7 +240,7 @@ export default function VideoChannelsPage() {
 
                   <SectionCard
                     title="Enforcement"
-                    description="Grace period and study ban durations"
+                    description="How long members get to turn their camera on before being kicked"
                     icon={<ShieldAlert size={18} />}
                   >
                     <SettingRow
@@ -233,23 +258,99 @@ export default function VideoChannelsPage() {
                         allowNull
                       />
                     </SettingRow>
-                    {/* --- AI-MODIFIED (2026-03-13) --- */}
-                    {/* Purpose: added studyban role selector and editable durations */}
+                  </SectionCard>
+
+                  {/* --- AI-MODIFIED (2026-04-20) --- */}
+                  {/* Purpose: New Auto-Blacklisting card. Built for support
+                      ticket #0037 ("Study Space - How to completely remove
+                      blacklists?"). The previous UI buried the studyban-role
+                      selector in the Enforcement card with no indication of
+                      the on/off implications. This card:
+                        - shows a clear "ON" / "OFF" status banner driven by
+                          whether `studybanRole` is set
+                        - explains exactly what will happen in each state
+                        - shows how many members are currently auto-blacklisted
+                        - exposes a "Clear All Active Blacklists" CTA that
+                          calls /api/dashboard/servers/[id]/blacklists/clear-all
+                  */}
+                  <SectionCard
+                    title="Auto-Blacklisting"
+                    description="Optional: automatically punish repeat camera-rule offenders"
+                    icon={<ShieldOff size={18} />}
+                  >
+                    {data.studybanRole ? (
+                      <div className="rounded-lg bg-emerald-500/5 border border-emerald-500/20 p-3 mb-4 flex items-start gap-2.5">
+                        <CheckCircle2 size={16} className="text-emerald-400 mt-0.5 shrink-0" />
+                        <div className="text-xs text-emerald-200/90 leading-relaxed">
+                          <span className="font-semibold text-emerald-100">Auto-blacklisting is ON.</span>{" "}
+                          Repeat offenders will be assigned the role below for the configured duration. Want
+                          to disable it? Clear the role selector and save.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg bg-muted/40 border border-border/60 p-3 mb-4 flex items-start gap-2.5">
+                        <Info size={16} className="text-muted-foreground mt-0.5 shrink-0" />
+                        <div className="text-xs text-muted-foreground leading-relaxed">
+                          <span className="font-semibold text-foreground">Auto-blacklisting is OFF.</span>{" "}
+                          Members are still kicked from camera-required channels after the grace period, but
+                          no role is assigned. To enable, pick a role below.
+                        </div>
+                      </div>
+                    )}
+
+                    {(data.activeBlacklistCount ?? 0) > 0 && (
+                      <div className="rounded-lg bg-amber-500/5 border border-amber-500/20 p-3 mb-4 flex items-center justify-between gap-3 flex-wrap">
+                        <div className="flex items-start gap-2.5 min-w-0">
+                          <AlertTriangle size={16} className="text-amber-400 mt-0.5 shrink-0" />
+                          <div className="text-xs leading-relaxed">
+                            <div className="text-amber-100 font-semibold">
+                              {data.activeBlacklistCount} member
+                              {data.activeBlacklistCount === 1 ? " is" : "s are"} currently auto-blacklisted
+                            </div>
+                            <div className="text-amber-200/80">
+                              Pardon them all and remove the role from each member in one click.
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setClearModalOpen(true)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors shrink-0"
+                        >
+                          <ShieldOff size={14} />
+                          Clear all active blacklists
+                        </button>
+                      </div>
+                    )}
+
                     <SettingRow
-                      label="Study Ban Role"
-                      description="Role assigned to members who get study-banned"
-                      tooltip="When a member is study-banned for camera violations, they receive this role to restrict channel access."
+                      label="Blacklist Role"
+                      description="Role assigned to repeat offenders. Leave empty to disable auto-blacklisting entirely."
+                      tooltip="When a member is auto-blacklisted for camera violations, they receive this role to restrict channel access. Clear the selector to turn this feature off."
                     >
-                      <RoleSelect
-                        guildId={guildId}
-                        value={data.studybanRole}
-                        onChange={(v) => set({ studybanRole: (v as string) || null })}
-                        placeholder="Select studyban role"
-                      />
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex-1 min-w-[200px]">
+                          <RoleSelect
+                            guildId={guildId}
+                            value={data.studybanRole}
+                            onChange={(v) => set({ studybanRole: (v as string) || null })}
+                            placeholder="Select blacklist role (or leave empty to disable)"
+                          />
+                        </div>
+                        {data.studybanRole && (
+                          <button
+                            onClick={() => set({ studybanRole: null })}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-muted-foreground bg-muted hover:bg-accent hover:text-foreground rounded-lg transition-colors"
+                            title="Disable auto-blacklisting"
+                          >
+                            <X size={12} />
+                            Disable
+                          </button>
+                        )}
+                      </div>
                     </SettingRow>
                     <SettingRow
-                      label="Study Ban Durations"
-                      description="Ban durations for each successive violation (in seconds). First offense uses the first value, second offense uses the second, etc."
+                      label="Blacklist Durations"
+                      description="How long the role is held for each successive violation (in seconds). First offense uses the first value, second offense uses the second, etc."
                     >
                       <div className="space-y-2">
                         <div className="flex flex-wrap gap-2">
@@ -299,10 +400,29 @@ export default function VideoChannelsPage() {
                         </button>
                       </div>
                     </SettingRow>
-                    {/* --- END AI-MODIFIED --- */}
                   </SectionCard>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               )}
+
+              {/* --- AI-MODIFIED (2026-04-20) --- */}
+              {/* Purpose: Render the bulk Clear-All-Blacklists modal. */}
+              <ClearBlacklistsModal
+                open={clearModalOpen}
+                onClose={() => setClearModalOpen(false)}
+                serverId={guildId}
+                serverName={serverName}
+                defaultType="STUDY_BAN"
+                activeCounts={{
+                  STUDY_BAN: data?.activeBlacklistCount ?? 0,
+                  SCREEN_BAN: 0,
+                }}
+                onComplete={() => {
+                  mutate()
+                  invalidate(`/api/dashboard/servers/${id}/tickets`)
+                }}
+              />
+              {/* --- END AI-MODIFIED --- */}
 
               <SaveBar
                 show={!!hasChanges}

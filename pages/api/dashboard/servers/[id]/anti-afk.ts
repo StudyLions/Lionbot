@@ -6,9 +6,9 @@
 //          PATCH updates config (admin + premium only).
 // ============================================================
 import { prisma } from "@/utils/prisma"
-// --- AI-MODIFIED (2026-04-07) ---
-// Purpose: Import getGuildHasAfkChannel to validate move_afk action
-import { requireAdmin, getGuildHasAfkChannel } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-04-08) ---
+// Purpose: Import getGuildHasAfkChannel and getGuildAfkTimeout for AFK conflict detection
+import { requireAdmin, getGuildHasAfkChannel, getGuildAfkTimeout } from "@/utils/adminAuth"
 // --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
 
@@ -90,28 +90,30 @@ export default apiHandler({
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
-    // --- AI-MODIFIED (2026-04-07) ---
-    // Purpose: Also check if guild has an AFK channel so frontend can disable move_afk
-    const [config, isPremium, hasAfkChannel] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-08) ---
+    // Purpose: Also return AFK channel status and timeout for conflict warning on frontend
+    const [config, isPremium, hasAfkChannel, afkTimeout] = await Promise.all([
       prisma.anti_afk_config.findUnique({
         where: { guildid: guildId },
       }),
       isPremiumGuild(guildId),
       getGuildHasAfkChannel(guildId.toString()),
+      getGuildAfkTimeout(guildId.toString()),
     ])
 
+    const payload = {
+      isPremium,
+      hasAfkChannel,
+      afkTimeout,
+    }
+
     if (config) {
-      return res.status(200).json({
-        config: serializeConfig(config),
-        isPremium,
-        hasAfkChannel,
-      })
+      return res.status(200).json({ config: serializeConfig(config), ...payload })
     }
 
     return res.status(200).json({
       config: serializeConfig({ guildid: guildId, ...DEFAULT_CONFIG }),
-      isPremium,
-      hasAfkChannel,
+      ...payload,
     })
     // --- END AI-MODIFIED ---
   },

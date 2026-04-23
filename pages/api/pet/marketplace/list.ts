@@ -155,6 +155,14 @@ export default apiHandler({
         if (!inventoryRow || inventoryRow.quantity < quantity) {
           throw new HttpError(400, `You don't have enough of this item (have ${inventoryRow?.quantity ?? 0}, need ${quantity})`)
         }
+        // --- AI-MODIFIED (2026-04-23) ---
+        // Purpose: Block listing locked / favorited items so users don't
+        // accidentally sell something they explicitly protected. Unlock
+        // from the inventory page first.
+        if (inventoryRow.is_locked) {
+          throw new HttpError(400, "This item is locked. Unlock it from your inventory before selling.")
+        }
+        // --- END AI-MODIFIED ---
 
         // --- AI-MODIFIED (2026-03-21) ---
         // Purpose: Snapshot enhancement slots before removing inventory, so scroll
