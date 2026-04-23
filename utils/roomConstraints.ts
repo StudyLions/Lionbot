@@ -64,11 +64,33 @@ export const LION_CONSTRAINTS: ConstraintZone = {
 //   return [Math.round(offset[0]), Math.round(offset[1])]
 // }
 // --- End original code ---
-const FURNITURE_OFFSET_MAX = CANVAS_SIZE - 20
 const LION_MAX_X = CANVAS_SIZE - 20
 const LION_MAX_Y = CANVAS_SIZE - 20
 const LION_MIN_X = -(LION_DISPLAY_SIZE - 20)
 const LION_MIN_Y = -(LION_DISPLAY_SIZE - 20)
+
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Approximate opaque content bounds for each furniture sprite (in 200x200
+//          image-local coordinates). Used by clampOffset so users can never drag
+//          an item to a position where its visible content is fully off-canvas
+//          and the item appears "transparent / lost". Keep MIN_CONTENT_VISIBLE
+//          of the content rect on-canvas at all times.
+//
+//          Same numbers used by useSmartSnap.ITEM_CONTENT_BOUNDS — moved here so
+//          both modules stay in sync. If you tweak a sprite's content bounds,
+//          adjust the corresponding snap entry too.
+export const FURNITURE_CONTENT_BOUNDS: Record<string, { x: number; y: number; w: number; h: number }> = {
+  mat:     { x: 40, y: 140, w: 120, h: 40 },
+  table:   { x: 50, y: 100, w: 100, h: 50 },
+  chair:   { x: 70, y: 110, w: 60, h: 60 },
+  bed:     { x: 20, y: 100, w: 80, h: 70 },
+  lamp:    { x: 140, y: 60,  w: 40,  h: 120 },
+  picture: { x: 50, y: 10,   w: 60,  h: 50 },
+  window:  { x: 70, y: 5,    w: 60,  h: 55 },
+}
+
+const MIN_CONTENT_VISIBLE = 24
+const FURNITURE_OFFSET_FALLBACK = CANVAS_SIZE - 20
 
 export function clampOffset(
   offset: [number, number],
@@ -82,13 +104,25 @@ export function clampOffset(
       Math.max(LION_MIN_Y, Math.min(LION_MAX_Y, y)),
     ]
   }
-  const min = -FURNITURE_OFFSET_MAX
-  const max = FURNITURE_OFFSET_MAX
+  const bounds = FURNITURE_CONTENT_BOUNDS[layer]
+  if (bounds) {
+    const minX = MIN_CONTENT_VISIBLE - bounds.x - bounds.w
+    const maxX = CANVAS_SIZE - MIN_CONTENT_VISIBLE - bounds.x
+    const minY = MIN_CONTENT_VISIBLE - bounds.y - bounds.h
+    const maxY = CANVAS_SIZE - MIN_CONTENT_VISIBLE - bounds.y
+    return [
+      Math.max(minX, Math.min(maxX, x)),
+      Math.max(minY, Math.min(maxY, y)),
+    ]
+  }
+  const min = -FURNITURE_OFFSET_FALLBACK
+  const max = FURNITURE_OFFSET_FALLBACK
   return [
     Math.max(min, Math.min(max, x)),
     Math.max(min, Math.min(max, y)),
   ]
 }
+// --- END AI-MODIFIED ---
 // --- END AI-REPLACED ---
 // --- END AI-MODIFIED ---
 

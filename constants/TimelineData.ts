@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 23, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-23",
+    title: "Room Decorating: Drag Feels Smoother on Phones, and Items Can No Longer Hide Off-Screen",
+    description:
+      "Two follow-up tweaks to the LionGotchi room editor based on a bug report from a member of Comité des jeunes Lit Up. First, when you drag a piece of furniture on a phone, the movement now feels noticeably smoother — touchscreens fire 'finger moved' events extremely fast (over 100 times a second on most devices), and we were running a full re-render on every single one of those events, which made the chair you were dragging stutter behind your finger. The drag now updates at most once per screen refresh (60 times a second), which is what your eye can actually see anyway, so the chair sticks to your finger instead of trailing it. Second, we tightened the off-canvas guardrail. Most furniture sprites are 200x200 images where the actual visible chair, lamp, or rug only takes up a smaller portion of the middle — the corners are transparent. Our previous safety check looked at the full 200x200 image, so you could still accidentally drag a lamp far enough that the only thing 'on-canvas' was an invisible transparent corner, making the lamp seem to vanish. The new check uses each item's true visible area, so at least 24 pixels of the actual chair/lamp/rug stays on the canvas no matter how aggressively you drag. No more lost decorations.",
+    category: "liongotchi",
+    area: "website",
+  },
   // ── April 21, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-21",

@@ -6,7 +6,7 @@
 // ============================================================
 
 import { useCallback } from 'react'
-import { ROOM_LAYERS, CANVAS_SIZE, type RoomLayout } from '@/utils/roomConstraints'
+import { ROOM_LAYERS, CANVAS_SIZE, FURNITURE_CONTENT_BOUNDS, type RoomLayout } from '@/utils/roomConstraints'
 
 const SNAP_THRESHOLD = 5 // pixels in 200x200 space
 
@@ -24,16 +24,14 @@ interface SnapResult {
   guides: SnapGuide[]
 }
 
+// --- AI-MODIFIED (2026-04-23) ---
+// Purpose: Re-use FURNITURE_CONTENT_BOUNDS from roomConstraints so snap and
+//          clamp share a single source of truth. Lion content is its full sprite.
 const ITEM_CONTENT_BOUNDS: Record<string, { x: number; y: number; w: number; h: number }> = {
-  mat:     { x: 40, y: 140, w: 120, h: 40 },
-  table:   { x: 50, y: 100, w: 100, h: 50 },
-  chair:   { x: 70, y: 110, w: 60, h: 60 },
-  bed:     { x: 20, y: 100, w: 80, h: 70 },
-  lamp:    { x: 140, y: 60, w: 40, h: 120 },
-  picture: { x: 50, y: 10, w: 60, h: 50 },
-  window:  { x: 70, y: 5, w: 60, h: 55 },
-  lion:    { x: 0, y: 0, w: 80, h: 80 },
+  ...FURNITURE_CONTENT_BOUNDS,
+  lion: { x: 0, y: 0, w: 80, h: 80 },
 }
+// --- END AI-MODIFIED ---
 
 function getItemBounds(layer: string, offset: [number, number]): { cx: number; cy: number; left: number; right: number; top: number; bottom: number } | null {
   const bounds = ITEM_CONTENT_BOUNDS[layer]
