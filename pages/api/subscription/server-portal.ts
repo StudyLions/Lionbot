@@ -69,10 +69,31 @@ export default async function handler(
       process.env.NEXTAUTH_URL ||
       "https://lionbot-website.vercel.app"
 
-    const session = await stripe.billingPortal.sessions.create({
+    // --- AI-MODIFIED (2026-04-23) ---
+    // Purpose: Pin Server Premium portal sessions to a dedicated portal
+    //          configuration so customers can only switch between Server
+    //          Premium prices (monthly ↔ yearly, USD or EUR) and never
+    //          accidentally switch to a LionHeart price (which would
+    //          break the webhook because LionHeart subs live in
+    //          `user_subscriptions` while server premium subs live in
+    //          `server_premium_subscriptions`). The .replace/.trim chain
+    //          strips the literal CRLF that `vercel env pull` writes
+    //          into the env value.
+    const portalConfigId = (process.env.STRIPE_PORTAL_CONFIG_SERVER_PREMIUM ?? "")
+      .replace(/\\r/g, "")
+      .replace(/\\n/g, "")
+      .trim()
+
+    const sessionParams: Stripe.BillingPortal.SessionCreateParams = {
       customer: sub.stripe_customer_id,
       return_url: `${baseUrl}/dashboard/servers/${guildId}/settings?portal=returned`,
-    })
+    }
+    if (portalConfigId) {
+      sessionParams.configuration = portalConfigId
+    }
+
+    const session = await stripe.billingPortal.sessions.create(sessionParams)
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ url: session.url })
   } catch (err: any) {

@@ -26,6 +26,30 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 23, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-23",
+    title: "Mods Can Now Edit Pomodoro Timers They Created (Bug Report #0041)",
+    description:
+      "Spotted a frustrating inconsistency in how Pomodoro timer permissions worked: anyone with the 'Manage Channels' permission could create a brand-new Pomodoro timer in a voice channel using `/pomodoro create` (with any focus length, break length, voice alerts, custom name, etc.) — but the moment they tried to change one of those same settings later via `/pomodoro edit`, the bot would refuse with a 'You don't have permission' error. The fix is now live: for regular guild voice-channel timers (the kind a mod creates for the whole server to use), `/pomodoro edit` now uses the exact same permission check as `/pomodoro create`. If you can create the timer, you can edit it. Private study room timers — the kind tied to a specific room owner — keep their stricter rules: only the room owner or a server admin can change those, so random mods can't override what a room owner has set up. We also tightened up a tiny related gap where the 'Voice Alerts' button on the timer settings UI had no permission check at all (anyone with access to the menu could toggle it). Now it follows the same rules as everything else — same role gates as the matching slash command parameter. Thanks to the user who filed bug report #0041.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-04-23",
+    title: "Manage Your Subscription: Switch Plans, Currencies, and Add Tax IDs From Stripe",
+    description:
+      "We gave the 'Manage Subscription' page on Stripe a long-overdue tune-up so it actually reflects what you can subscribe to today. If you have a LionHeart subscription, the 'Change plan' option now shows the current pricing for all three tiers (LionHeart, LionHeart+, LionHeart++) in both USD and EUR — previously it was still showing the original launch prices from earlier this year. If your server has Server Premium, you can now switch between monthly and yearly plans (and between USD and EUR) right from the portal without having to cancel and re-subscribe — that flow used to be missing entirely, so admins had to email us to switch billing frequency. We also added the missing Privacy Policy and Terms of Service links to the portal footer (small thing, but Stripe was nagging us about it), and unlocked the ability to add a billing name, address, phone number, and tax ID to your account. The tax ID field in particular helps EU and UK customers get proper VAT-compliant invoices. None of this changes what you're charged or how your existing subscription works — it just gives you proper self-service over the parts of your subscription you should always have been able to control.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-23",
+    title: "Family 'Leave' Button Now Asks for Confirmation",
+    description:
+      "We had a few reports that members were tapping the 'Leave' button on the family hub by accident — usually meaning to tap one of the buttons next to it — and then getting stuck on the 7-day cooldown before they could rejoin or join another family. The button now opens a confirmation prompt first: a clear warning embed reminding you that you won't be able to join another family for 7 days, plus a red 'Yes, Leave' button and a grey 'Cancel' button. The leader-side 'Disband' button gets the same treatment, with extra wording that the bank items and treasury gold will be returned to you. Tapping the wrong button is now harmless — just hit Cancel and you're back to the family hub. Thanks to Sky for the suggestion.",
+    category: "improvement",
+    area: "bot",
+  },
+  {
+    date: "2026-04-23",
     title: "Room Decorating: Drag Feels Smoother on Phones, and Items Can No Longer Hide Off-Screen",
     description:
       "Two follow-up tweaks to the LionGotchi room editor based on a bug report from a member of Comité des jeunes Lit Up. First, when you drag a piece of furniture on a phone, the movement now feels noticeably smoother — touchscreens fire 'finger moved' events extremely fast (over 100 times a second on most devices), and we were running a full re-render on every single one of those events, which made the chair you were dragging stutter behind your finger. The drag now updates at most once per screen refresh (60 times a second), which is what your eye can actually see anyway, so the chair sticks to your finger instead of trailing it. Second, we tightened the off-canvas guardrail. Most furniture sprites are 200x200 images where the actual visible chair, lamp, or rug only takes up a smaller portion of the middle — the corners are transparent. Our previous safety check looked at the full 200x200 image, so you could still accidentally drag a lamp far enough that the only thing 'on-canvas' was an invisible transparent corner, making the lamp seem to vanish. The new check uses each item's true visible area, so at least 24 pixels of the actual chair/lamp/rug stays on the canvas no matter how aggressively you drag. No more lost decorations.",
