@@ -222,11 +222,11 @@ export default async function handler(
       limit: 100,
     });
 
-    async function upsert(
+    const upsert = async (
       scope: "lionheart" | "server_premium",
       payload: any,
       preferDefaultIfMissing: boolean,
-    ): Promise<any> {
+    ): Promise<any> => {
       const byMeta = existing.data.find(
         (c: any) => c.metadata?.scope === scope,
       );
@@ -246,7 +246,7 @@ export default async function handler(
         }
       }
       return await (stripe.billingPortal.configurations as any).create(payload);
-    }
+    };
 
     const lionHeartConfig = await upsert("lionheart", lionHeartPayload, true);
     const serverPremiumConfig = await upsert(
