@@ -1,58 +1,175 @@
 {
   "header": {
-    "title": "Support LionBot",
-    "subtitle": "Support the team and keep the project alive by getting some LionGems!",
-    "detail": "Purchase colored skins, gift LionGems to your loved ones, and unlock special perks for your server or yourself!",
-    "premiumPlans": "Premium Plans",
-    "getLionGems": "Get LionGems",
-    "browseSkins": "Browse Skins"
+    "eyebrow": "Premium",
+    "title": "Make your study time feel premium",
+    "subtitle": "LionHeart unlocks faster pet growth, monthly LionGems, animated profile cards, and the perks your community already loves.",
+    "ctaPrimary": "See plans",
+    "ctaSecondary": "Browse LionGems",
+    "trustLine": "Cancel anytime · Secure with Stripe · 30-second checkout"
   },
-  "perks": {
-    "title": "Perks",
-    "subtitle": "What you get with LionGems",
-    "coloredSkins": "Colored Skins",
-    "coloredSkinsDesc": "Customize your profile with unique colored skins.",
-    "premium": "Premium Subscription",
-    "premiumDesc": "Subscribe to Server Premium from the dashboard.",
-    "gifting": "Gift LionGems",
-    "giftingDesc": "Send LionGems to friends and other members.",
-    "bonuses": "XP Bonuses",
-    "bonusesDesc": "Boost your XP earnings with premium benefits."
+  "currency": {
+    "label": "Currency",
+    "eur": "EUR",
+    "usd": "USD"
   },
-  "premium": {
-    "title": "Premium Plans",
-    "subtitle": "Subscribe to Server Premium directly from your server dashboard.",
-    "monthly": "Monthly",
-    "threeMonths": "3 Months",
-    "oneYear": "1 Year",
-    "subscription": "Subscription",
-    "mostPopular": "Most Popular",
-    "managePremium": "Subscribe and manage your Server Premium from the server dashboard settings page.",
-    "getLionGems": "Get LionGems"
+  "audience": {
+    "personal": {
+      "title": "Personal premium",
+      "description": "Faster pet, monthly gems, animated cards.",
+      "cta": "View LionHeart"
+    },
+    "server": {
+      "title": "Server premium",
+      "description": "Custom branding & 10+ admin perks for your community.",
+      "cta": "View Server Premium"
+    },
+    "gems": {
+      "title": "One-time LionGems",
+      "description": "Top up gems for skins, gifts, and pet items.",
+      "cta": "View packages"
+    }
+  },
+  "pillars": {
+    "eyebrow": "Why upgrade",
+    "title": "Three reasons people stay subscribed",
+    "subtitle": "Every LionHeart tier delivers more rewards, a stronger pet, and exclusive style — month after month.",
+    "rewards": {
+      "title": "Get rewarded for everything",
+      "body": "Monthly gem drops, bigger top.gg vote bonuses, and higher drop rates on every action you take.",
+      "highlights": [
+        "Up to 1,500 gems / month",
+        "Up to 12 gems per vote",
+        "+75% drop-rate bonus"
+      ]
+    },
+    "pet": {
+      "title": "Master the LionGotchi",
+      "body": "Faster farm growth, longer water duration, gentler dry penalties — and on LionHeart++, plants that never die.",
+      "highlights": [
+        "Up to 2× growth speed",
+        "Up to 50% seed discount",
+        "Plants never die on ++"
+      ]
+    },
+    "style": {
+      "title": "Show off with style",
+      "body": "Animated profile cards, exclusive skins, and the LionHeart badge that follows you across every server.",
+      "highlights": [
+        "Live animated cards",
+        "Exclusive themes",
+        "Permanent LionHeart badge"
+      ]
+    }
+  },
+  "tiers": {
+    "eyebrow": "LionHeart Plans",
+    "title": "Pick the LionHeart that fits you",
+    "subtitle": "Three tiers. Real perks. Every plan pays you back in monthly LionGems.",
+    "perMonth": "/ month",
+    "popularBadge": "Most Popular",
+    "everythingIn": "Everything in {{tier}}, plus…",
+    "gemValueLine": "≈ {{value}} of LionGems / month",
+    "ctaStart": "Start with {{tier}}",
+    "ctaUnlock": "Unlock {{tier}}",
+    "ctaUpgrade": "Upgrade to {{tier}}",
+    "ctaDowngrade": "Switch to {{tier}}",
+    "ctaCurrent": "Your current plan",
+    "ctaSignIn": "Sign in to subscribe",
+    "riskReversal": "Cancel anytime · Secure with Stripe · Instant activation"
+  },
+  "comparison": {
+    "eyebrow": "Side-by-side",
+    "title": "Compare every perk, plan by plan",
+    "subtitle": "No hidden table. Everything you get on every tier — laid out clearly.",
+    "categories": {
+      "rewards": "Rewards",
+      "liongotchi": "LionGotchi",
+      "style": "Style & extras"
+    }
+  },
+  "lossAversion": {
+    "title": "Here's what you're giving up on Free",
+    "subtitle": "Every day on Free is a day of slower growth and missed rewards.",
+    "headerLoss": "On Free",
+    "headerGain": "With LionHeart"
+  },
+  "serverPremium": {
+    "eyebrow": "Admins · Server-wide",
+    "title": "Server Premium",
+    "subtitle": "10+ premium features that transform how your community studies, competes, and grows together.",
+    "footer": {
+      "label": "One server price",
+      "savePill": "Save 17%",
+      "selectorLabel": "Apply to server",
+      "monthlyButton": "Monthly · {{price}}",
+      "yearlyButton": "Yearly · {{price}}",
+      "saveBadge": "SAVE",
+      "riskReversal": "Cancel anytime · Secure with Stripe · Instant activation",
+      "signedOut": "Sign in with Discord to subscribe",
+      "signedOutHelp": "You'll select a server after signing in.",
+      "noAdmin": "You need to be an admin of a server with LionBot to subscribe.",
+      "addBot": "Add LionBot"
+    },
+    "active": {
+      "title": "My active Server Premiums",
+      "manage": "Manage"
+    }
   },
   "gems": {
-    "title": "LionGems",
-    "bonus": "+{{amount}} bonus",
-    "buyNow": "Buy Now"
+    "eyebrow": "One-time purchase",
+    "title": "LionGem Packages",
+    "subtitle": "Top up your gem stash anytime. Use them for profile skins, gifts, premium pet items, and more.",
+    "bonus": "+{{amount}} bonus gems",
+    "rate": "≈ {{count}} gems / {{symbol}}1",
+    "bestValue": "Best Value",
+    "popular": "Most Popular",
+    "buyNow": "Buy Now",
+    "sidebar": {
+      "title": "What gems unlock",
+      "skins": {
+        "title": "Profile skins",
+        "sub": "Animated cards, themes, frames"
+      },
+      "gift": {
+        "title": "Gift to friends",
+        "sub": "Send gems or skins as gifts"
+      },
+      "pet": {
+        "title": "Premium pet items",
+        "sub": "Rare seeds, food, decor"
+      },
+      "boosts": {
+        "title": "XP & coin boosts",
+        "sub": "Speed up your levels and farm"
+      },
+      "subscriberHint": "Subscribers earn up to 1,500 gems / month automatically.",
+      "ctaPlans": "See LionHeart plans"
+    }
   },
-  "gifting": {
-    "text": "Remember, LionGems can be used to purchase skins for yourself, and you can also gift them to other members!",
-    "giftCommand": "To gift LionGems, use the /gift command",
-    "browseSkins": "Browse Skins"
+  "trust": {
+    "stripe": "Powered by Stripe",
+    "stripeSub": "256-bit secure payments",
+    "cancel": "Cancel anytime",
+    "cancelSub": "Manage from your dashboard",
+    "support": "Live support on Discord",
+    "supportSub": "Real humans, fast replies",
+    "subscribers": "{{count}}+ active subscribers",
+    "subscribersSub": "Active LionHeart members"
   },
   "faq": {
-    "title": "FAQ",
+    "eyebrow": "Questions?",
+    "title": "Frequently Asked Questions",
     "q1": "How can I gift LionGems to my friends?",
-    "a1": "You can gift LionGems by using the /gift command on Discord. You can also add a note to your gift!",
+    "a1": "Use the /gift command on Discord — you can include a personal note with every gift.",
     "q2": "Can I transfer a skin to another account?",
-    "a2": "At the moment only LionGems are transferable. The skins are bound to a single account.",
+    "a2": "Skins are bound to a single account. Only LionGems are transferable between users via /gift.",
     "q3": "In how many Discord servers can I use my Gems?",
-    "a3": "You can use you gems in any server that uses LionBot.",
+    "a3": "Your gems and skins follow your account, so they work in every server that uses LionBot.",
     "q4": "Can I get an invoice for my payment?",
-    "a4": "To get an invoice please contact contact@arihoresh.com",
+    "a4": "Stripe sends a receipt automatically. For a custom invoice contact contact@arihoresh.com.",
     "q5": "What payment methods are supported?",
-    "a5": "Currently, we support only credit cards and debit cards.",
+    "a5": "All major credit and debit cards through Stripe, plus Apple Pay, Google Pay and SEPA where available.",
     "q6": "Is my payment secure?",
-    "a6": "Yes. We never have access to your debit/credit card information. Payments are handled through Stripe, a payment processor trusted by millions of companies worldwide and protected with state-of-the-art technologies."
+    "a6": "Yes. Payments are processed entirely by Stripe — we never see or store your card details. Stripe is PCI-DSS Level 1 certified and trusted by millions of businesses worldwide."
   }
 }

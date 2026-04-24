@@ -73,6 +73,9 @@ import { useCurrency, type Currency } from "@/hooks/useCurrency";
 import HeroShowcase from "@/components/donate/HeroShowcase";
 import AudienceChooser from "@/components/donate/AudienceChooser";
 import ValuePillars from "@/components/donate/ValuePillars";
+import ComparisonGrid from "@/components/donate/ComparisonGrid";
+import LossAversionStrip from "@/components/donate/LossAversionStrip";
+import TrustBand from "@/components/donate/TrustBand";
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
@@ -153,7 +156,7 @@ function PurchaseModal({
               objectFit="contain"
             />
           </div>
-          <h2 className="text-2xl font-bold text-white text-center flex items-center justify-center gap-2">
+          <h2 className="text-2xl font-bold text-foreground text-center flex items-center justify-center gap-2">
             <GemIcon className="h-6 w-6" />
             {numberWithCommas(item.tokens * quantity)} LionGems
           </h2>
@@ -170,20 +173,20 @@ function PurchaseModal({
             <div className="flex items-center gap-3 mt-2">
               <button
                 onClick={() => quantity > 1 && setQuantity(quantity - 1)}
-                className="w-10 h-10 rounded-lg border border-input text-white hover:bg-muted transition-colors font-medium"
+                className="w-10 h-10 rounded-lg border border-input text-foreground hover:bg-muted transition-colors font-medium"
               >
                 -
               </button>
-              <span className="w-12 text-center text-lg font-semibold text-white">
+              <span className="w-12 text-center text-lg font-semibold text-foreground">
                 {quantity}
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 rounded-lg border border-input text-white hover:bg-muted transition-colors font-medium"
+                className="w-10 h-10 rounded-lg border border-input text-foreground hover:bg-muted transition-colors font-medium"
               >
                 +
               </button>
-              <span className="ml-auto text-2xl font-bold text-white">
+              <span className="ml-auto text-2xl font-bold text-foreground">
                 {symbol}{(unitPrice * quantity).toFixed(2)}
               </span>
             </div>
@@ -249,7 +252,7 @@ function SubscriptionManagementBanner({
               <AlertTriangle className="h-5 w-5 text-yellow-400" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-white font-semibold">Payment Failed</h3>
+              <h3 className="text-foreground font-semibold">Payment Failed</h3>
               <p className="text-sm text-yellow-300/80 mt-0.5">
                 Your {subStatus.tierName || subStatus.tier} subscription payment
                 could not be processed. Update your payment method to keep your
@@ -286,7 +289,7 @@ function SubscriptionManagementBanner({
               <Crown className="h-5 w-5" style={{ color }} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-white font-semibold">
+              <h3 className="text-foreground font-semibold">
                 {subStatus.tierName || subStatus.tier}{" "}
                 <span className="text-orange-400 text-sm font-normal ml-1">
                   Cancelling
@@ -343,7 +346,7 @@ function SubscriptionManagementBanner({
               <Crown className="h-5 w-5" style={{ color }} />
             </div>
             <div className="min-w-0">
-              <h3 className="text-white font-semibold">
+              <h3 className="text-foreground font-semibold">
                 {subStatus.tierName || subStatus.tier}
                 <span
                   className="text-xs font-medium ml-2 px-2 py-0.5 rounded-full"
@@ -371,7 +374,7 @@ function SubscriptionManagementBanner({
             <button
               onClick={onManage}
               disabled={portalLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-foreground/85 font-medium hover:bg-card hover:text-white transition-colors whitespace-nowrap disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-foreground/85 font-medium hover:bg-card hover:text-foreground transition-colors whitespace-nowrap disabled:opacity-50"
             >
               {portalLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -855,6 +858,13 @@ function SubscriptionCard({
 // --- END AI-MODIFIED ---
 // --- END AI-REPLACED ---
 
+// --- AI-REPLACED (2026-04-24) ---
+// Reason: Replaced by always-visible ComparisonGrid component.
+// What the new code does better: Card grid layout instead of crammed
+// table, visible by default (no toggle), Most-Popular emphasis on
+// LionHeart+, category groupings, and color-coded check / cross / dash.
+// ComparisonTable kept here in case we want to roll back.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function ComparisonTable() {
   const rows = [
     {
@@ -989,6 +999,7 @@ function ComparisonTable() {
     </div>
   );
 }
+// --- END AI-REPLACED ---
 
 // --- AI-REPLACED (2026-04-01) ---
 // Reason: Complete redesign of Server Premium showcase section
@@ -1256,15 +1267,24 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
       `}</style>
 
       <div className="max-w-6xl mx-auto px-4 lg:px-6">
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Restyled Server Premium header with eyebrow + audience
+            label "Admins / Server-wide" so the audience switch is obvious;
+            heading + subline match the rest of the page's typography. */}
         <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-3">
-            <Server className="h-8 w-8 text-blue-400" />
-            <h2 className="text-3xl lg:text-4xl font-bold text-white">Server Premium</h2>
-          </div>
-          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto lg:text-lg">
-            10+ premium features that transform how your community studies, competes, and grows
+          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+            <Server className="h-3 w-3" />
+            Admins · Server-wide
+          </span>
+          <h2 className="mt-4 text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+            Server Premium
+          </h2>
+          <p className="text-muted-foreground mt-3 text-base lg:text-lg max-w-2xl mx-auto">
+            10+ premium features that transform how your community studies,
+            competes, and grows together.
           </p>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         <div
           className="rounded-2xl border border-border bg-card/50 overflow-hidden"
@@ -1292,7 +1312,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             <div className="p-6 lg:p-8 flex flex-col justify-center">
               {activeTab === "branding" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Custom Visual Branding</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Custom Visual Branding</h3>
                   <p className="text-muted-foreground mb-4 text-sm">Custom skins and colors for all 7 card types, applied server-wide to every member.</p>
                   <div className="space-y-2 text-sm">
                     {["Profile, Stats, Weekly, Monthly, Goals & Leaderboard cards",
@@ -1325,7 +1345,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
               {activeTab === "text" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Text Branding</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Text Branding</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
                     Rewrite any of the bot&apos;s 2,372 messages to match your community&apos;s voice.
                   </p>
@@ -1345,7 +1365,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
               {activeTab === "pomodoro" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Premium Pomodoro</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Premium Pomodoro</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
                     Advanced focus tools with themed timers, streaks, and analytics for your community.
                   </p>
@@ -1366,7 +1386,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
               {activeTab === "leaderboard" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Leaderboard Auto-Post</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Leaderboard Auto-Post</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
                     Scheduled leaderboard posts that keep your community competitive and engaged.
                   </p>
@@ -1389,7 +1409,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {/* Purpose: Updated to 10 bots, added LoFi mention and private room rental */}
               {activeTab === "sounds" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">Ambient Sound & LoFi Bots</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Ambient Sound & LoFi Bots</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
                     Background audio bots that create the perfect study atmosphere in voice channels.
                   </p>
@@ -1412,7 +1432,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
               {activeTab === "liongotchi" && (
                 <div>
-                  <h3 className="text-xl font-bold text-white mb-2">LionGotchi Bonuses</h3>
+                  <h3 className="text-xl font-bold text-foreground mb-2">LionGotchi Bonuses</h3>
                   <p className="text-muted-foreground mb-4 text-sm">
                     Boost the entire LionGotchi economy for every member in your server.
                   </p>
@@ -1535,7 +1555,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         className="transition-[stroke-dashoffset] duration-1000 ease-linear" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xl font-bold text-white font-mono tabular-nums">
+                      <span className="text-xl font-bold text-foreground font-mono tabular-nums">
                         {String(pomoMins).padStart(2, "0")}:{String(pomoSecs).padStart(2, "0")}
                       </span>
                       <span className="text-[9px] text-muted-foreground/70 mt-0.5">remaining</span>
@@ -1557,7 +1577,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                           <Zap className="h-3.5 w-3.5 text-orange-400" />
                         </div>
                         <div>
-                          <span className="text-lg font-bold text-white tabular-nums">{streakCount}</span>
+                          <span className="text-lg font-bold text-foreground tabular-nums">{streakCount}</span>
                           <span className="text-[9px] text-muted-foreground/70 block">Day Streak</span>
                         </div>
                       </div>
@@ -1566,7 +1586,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                           <Star className="h-3.5 w-3.5 text-yellow-400" />
                         </div>
                         <div>
-                          <span className="text-xs font-bold text-white">100 Sessions</span>
+                          <span className="text-xs font-bold text-foreground">100 Sessions</span>
                           <span className="text-[9px] text-muted-foreground/70 block">Milestone</span>
                         </div>
                       </div>
@@ -1660,7 +1680,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         style={{ animation: goldVisible ? "sp-pulse-gold 2s ease-in-out infinite" : "none" }}>
                         <Coins className="h-6 w-6 text-yellow-400" />
                       </div>
-                      <div className="text-2xl font-bold text-white tabular-nums">{goldCount}</div>
+                      <div className="text-2xl font-bold text-foreground tabular-nums">{goldCount}</div>
                       <div className="text-[10px] text-muted-foreground/70 mt-0.5">gold per session</div>
                       <div className="mt-2 inline-flex px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 text-[10px] font-bold">+15%</div>
                     </div>
@@ -1668,7 +1688,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       <div className="w-12 h-12 mx-auto rounded-full bg-purple-500/15 flex items-center justify-center mb-2">
                         <Sparkles className="h-6 w-6 text-purple-400" />
                       </div>
-                      <div className="text-2xl font-bold text-white">15%</div>
+                      <div className="text-2xl font-bold text-foreground">15%</div>
                       <div className="text-[10px] text-muted-foreground/70 mt-0.5">bonus drop rate</div>
                       <div className="mt-2 w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
                         <div className="h-full bg-purple-400 rounded-full transition-all duration-1000 ease-out" style={{ width: goldVisible ? "100%" : "0%" }} />
@@ -1694,7 +1714,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               <Pin className="h-4 w-4 text-green-400" />
             </div>
             <div>
-              <div className="text-sm font-medium text-white">Sticky Messages</div>
+              <div className="text-sm font-medium text-foreground">Sticky Messages</div>
               <div className="text-[11px] text-muted-foreground/70 mt-0.5">Persistent announcements pinned to the bottom of any channel</div>
             </div>
           </div>
@@ -1703,7 +1723,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               <Clock className="h-4 w-4 text-cyan-400" />
             </div>
             <div>
-              <div className="text-sm font-medium text-white">Voice Time Editor</div>
+              <div className="text-sm font-medium text-foreground">Voice Time Editor</div>
               <div className="text-[11px] text-muted-foreground/70 mt-0.5">Admin control to adjust member voice time stats</div>
             </div>
           </div>
@@ -1712,7 +1732,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               <EyeOff className="h-4 w-4 text-red-400" />
             </div>
             <div>
-              <div className="text-sm font-medium text-white">No Ads</div>
+              <div className="text-sm font-medium text-foreground">No Ads</div>
               <div className="text-[11px] text-muted-foreground/70 mt-0.5">Vote &amp; sponsor prompts removed from all bot messages</div>
             </div>
           </div>
@@ -1721,86 +1741,124 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               <MessageSquare className="h-4 w-4 text-amber-400" />
             </div>
             <div>
-              <div className="text-sm font-medium text-white">Priority Features</div>
+              <div className="text-sm font-medium text-foreground">Priority Features</div>
               <div className="text-[11px] text-muted-foreground/70 mt-0.5">Propose &amp; vote on what gets built next</div>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-border bg-gradient-to-r from-card/80 to-card/40 p-6 lg:p-8">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Restyled commerce footer with cleaner hierarchy:
+            - Top row: pricing + savings badge
+            - Bottom row: server selector + dual buttons in equal slots
+            - Risk-reversal microcopy under the buttons (matches LionHeart
+              tier cards: "Cancel anytime · Secure with Stripe · Instant
+              activation") for consistency. */}
+        <div className="mt-8 rounded-2xl border border-border bg-card/60 backdrop-blur-sm overflow-hidden">
+          <div className="p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-6 lg:gap-10 items-start">
             <div>
-              <div className="flex items-baseline gap-3 mb-1 flex-wrap">
-                <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
-                <span className="text-sm text-muted-foreground/70">/month</span>
-                <span className="text-muted-foreground/60 mx-1">or</span>
-                <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("YEARLY", currency)}</span>
-                <span className="text-sm text-muted-foreground/70">/year</span>
+              <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                One server price
               </div>
-              <p className="text-xs text-green-400/80">Yearly saves 17% &mdash; 2 months free</p>
+              <div className="flex items-baseline gap-2 flex-wrap">
+                <span className="text-4xl lg:text-5xl font-black text-foreground tracking-tight">
+                  {symbol}
+                  {getServerPremiumPrice("MONTHLY", currency)}
+                </span>
+                <span className="text-sm text-muted-foreground">/month</span>
+              </div>
+              <div className="mt-2 flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">or</span>
+                <span className="font-bold text-foreground">
+                  {symbol}{getServerPremiumPrice("YEARLY", currency)}/year
+                </span>
+                <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                  Save 17%
+                </span>
+              </div>
             </div>
-            <div className="flex-1 max-w-md">
+
+            <div className="lg:border-l lg:border-border/60 lg:pl-10">
               {!session ? (
-                <button onClick={() => signIn("discord")} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors">
-                  Sign in to Subscribe
-                </button>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => signIn("discord")}
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
+                  >
+                    Sign in with Discord to subscribe
+                  </button>
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    You'll select a server after signing in.
+                  </p>
+                </div>
               ) : serversLoading ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground/70 text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers...
+                <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
+                  <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers…
                 </div>
               ) : adminServers.length === 0 ? (
-                <p className="text-sm text-muted-foreground/70 text-center py-3">
-                  You need to be an admin of a server with LionBot to subscribe.{" "}
-                  <a href="/invite" className="text-blue-400 hover:underline">Add LionBot</a>
-                </p>
+                <div className="rounded-xl border border-border bg-background/60 p-4 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    You need to be an admin of a server with LionBot to subscribe.{" "}
+                    <a href="/invite" className="text-blue-400 hover:underline font-semibold">
+                      Add LionBot
+                    </a>
+                  </p>
+                </div>
               ) : (
                 <div className="space-y-3">
+                  <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
+                    Apply to server
+                  </label>
                   <select
                     value={selectedServer}
                     onChange={(e) => setSelectedServer(e.target.value)}
-                    className="w-full rounded-lg bg-background/80 border border-border text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
+                    className="w-full rounded-xl bg-background border border-border text-foreground text-sm px-3 py-3 focus:border-blue-500 focus:outline-none transition-colors"
                   >
                     {adminServers.map((s) => (
-                      <option key={s.guildId} value={s.guildId}>{s.guildName}</option>
+                      <option key={s.guildId} value={s.guildId}>
+                        {s.guildName}
+                      </option>
                     ))}
                   </select>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <button
                       onClick={() => handleServerCheckout("MONTHLY")}
                       disabled={checkingOut}
-                      className="flex-1 px-3 py-2.5 rounded-lg bg-background/80 border border-border hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                      className="px-3 py-3 rounded-xl bg-background border border-border hover:border-blue-500/50 hover:bg-card text-foreground text-sm font-bold transition-colors disabled:opacity-50"
                     >
-                      {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
+                      {checkingOut ? "…" : `Monthly · ${symbol}${getServerPremiumPrice("MONTHLY", currency)}`}
                     </button>
                     <button
                       onClick={() => handleServerCheckout("YEARLY")}
                       disabled={checkingOut}
-                      className="flex-1 px-3 py-2.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium transition-colors disabled:opacity-50 relative overflow-hidden"
+                      className="px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold transition-all disabled:opacity-50 relative overflow-hidden shadow-lg shadow-blue-500/20"
                     >
-                      {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("YEARLY", currency)}/yr`}
-                      <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
+                      {checkingOut ? "…" : `Yearly · ${symbol}${getServerPremiumPrice("YEARLY", currency)}`}
+                      <span className="absolute top-0 right-0 bg-emerald-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">
+                        SAVE
+                      </span>
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground/60 text-center">
-                    Auto-renews. Cancel anytime from your{" "}
-                    <a href="/dashboard" className="text-blue-400 hover:underline">dashboard</a>.
+                  <p className="text-[11px] text-muted-foreground text-center mt-1">
+                    Cancel anytime · Secure with Stripe · Instant activation
                   </p>
                 </div>
               )}
             </div>
           </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
 
       {session && !premiumsLoading && (myPaidSubs.filter(s => s.status === "ACTIVE" || s.status === "CANCELLING").length > 0 || myLhPremium) && (
-        <div className="max-w-6xl mx-auto px-4 lg:px-6 mt-8">
-          <div className="rounded-xl border border-border bg-card/60 p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <Crown className="h-5 w-5 text-yellow-400" />
-                My Server Premiums
+        <div className="max-w-6xl mx-auto px-4 lg:px-6 mt-6">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/[0.04] p-4 lg:p-5">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm lg:text-base font-bold text-foreground flex items-center gap-2">
+                <Crown className="h-4 w-4 text-amber-400" />
+                My active Server Premiums
               </h3>
-              <a href="/dashboard/subscriptions" className="text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+              <a href="/dashboard/subscriptions" className="text-xs lg:text-sm text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors font-semibold">
                 Manage <ArrowRight className="h-3.5 w-3.5" />
               </a>
             </div>
@@ -1814,7 +1872,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       <div className="flex items-center gap-3">
                         <Server className="h-4 w-4 text-blue-400 flex-shrink-0" />
                         <div>
-                          <div className="text-sm font-medium text-white">{serverName}</div>
+                          <div className="text-sm font-medium text-foreground">{serverName}</div>
                           <div className="text-xs text-muted-foreground/70">
                             {s.plan === "YEARLY" ? "Yearly" : "Monthly"} &middot;{" "}
                             {s.currentPeriodEnd ? `Renews ${new Date(s.currentPeriodEnd).toLocaleDateString()}` : ""}
@@ -1836,7 +1894,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   <div className="flex items-center gap-3">
                     <Crown className="h-4 w-4 text-yellow-400 flex-shrink-0" />
                     <div>
-                      <div className="text-sm font-medium text-white">
+                      <div className="text-sm font-medium text-foreground">
                         {myLhPremium.isApplied
                           ? allServers.find((sv) => sv.guildId === myLhPremium.guildId)?.guildName || `Server ${myLhPremium.guildId}`
                           : "Not applied yet"}
@@ -1876,7 +1934,6 @@ export default function Donate() {
   const [subscribing, setSubscribing] = useState(false);
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
-  const [showComparison, setShowComparison] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
 
   const fetchSubscriptionStatus = useCallback(async () => {
@@ -2236,99 +2293,232 @@ export default function Donate() {
               ))}
             </div>
 
-            {/* Comparison Toggle */}
-            <div className="mt-10 text-center">
-              <button
-                onClick={() => setShowComparison(!showComparison)}
-                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowRight
-                  className={`h-4 w-4 transition-transform ${
-                    showComparison ? "rotate-90" : ""
-                  }`}
-                />
-                {showComparison ? "Hide" : "View"} Full Comparison
-              </button>
-            </div>
-
-            {showComparison && (
-              <div className="mt-6 rounded-xl border border-border bg-card/50 p-6">
-                <ComparisonTable />
-              </div>
-            )}
           </div>
         </section>
+        {/* --- END AI-MODIFIED --- */}
+
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Replace hidden ComparisonTable with always-visible
+            ComparisonGrid + loss-aversion strip directly after, so the
+            user sees full feature parity AND the cost of staying on Free
+            in one continuous reading flow. */}
+        <ComparisonGrid currency={currency} symbol={symbol} />
+        <LossAversionStrip />
         {/* --- END AI-MODIFIED --- */}
 
         <ServerPremiumShowcase currency={currency} symbol={symbol} />
 
         {/* Gem Packages */}
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Redesigned gem packages section with:
+            - "What you can do with gems" sidebar (4 icons, removes "what
+              even are gems?" friction for non-LionHeart visitors)
+            - 2-column responsive grid for the packs (sidebar on lg, full
+              width below)
+            - "Best Value" badge on the 99.99 pack (highest gems/€ ratio)
+            - "Most Popular" badge on the 14.99 pack (sweet-spot price)
+            - Per-pack gems-per-currency-unit micro line so the value
+              comparison is obvious without doing math */}
         <section
           id="gems"
           className="py-16 lg:py-20 border-t border-border/60 scroll-mt-20"
         >
           <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-10">
-              <div className="flex items-center justify-center gap-3 mb-2">
-                <GemIcon className="h-8 w-8" />
-                <h2 className="text-3xl font-bold text-white">
-                  LionGem Packages
-                </h2>
-              </div>
-              <p className="text-muted-foreground mt-2">
-                One-time purchases &mdash; use gems for profile skins, gifts, and
-                more
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <GemIcon className="h-3 w-3" />
+                One-time purchase
+              </span>
+              <h2 className="mt-4 text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+                LionGem Packages
+              </h2>
+              <p className="text-muted-foreground mt-3 text-base lg:text-lg max-w-xl mx-auto">
+                Top up your gem stash anytime. Use them for profile skins, gifts,
+                premium pet items, and more.
               </p>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {DonationsData.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setSelectedItem(item)}
-                  className="rounded-xl border border-border bg-card/80 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5 hover:translate-y-[-2px] transition-all duration-200 p-5 text-left group"
-                >
-                  <div className="flex items-center justify-center h-36 mb-4">
-                    <Image
-                      src={item.image}
-                      alt={`${item.tokens} LionGems`}
-                      width={140}
-                      height={140}
-                      objectFit="contain"
-                    />
-                  </div>
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-blue-400">
-                      <GemIcon className="h-5 w-5" />
-                      {numberWithCommas(item.tokens)}
-                    </div>
-                    {item.tokens_bonus > 0 && (
-                      <div className="text-xs text-muted-foreground/70 mt-0.5">
-                        +{numberWithCommas(item.tokens_bonus)} bonus
+
+            <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6 lg:gap-8">
+              {/* Pack grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                {DonationsData.map((item, idx) => {
+                  const totalGems = item.tokens + item.tokens_bonus;
+                  const price = currency === "usd" ? item.amount_usd : item.amount;
+                  const gemsPerUnit = Math.round(totalGems / price);
+                  const isBestValue = idx === DonationsData.length - 1;
+                  const isPopular = idx === 2;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setSelectedItem(item)}
+                      className={`relative rounded-2xl border bg-card/60 backdrop-blur-sm transition-all duration-300 p-5 text-left group hover:-translate-y-1 ${
+                        isBestValue
+                          ? "border-emerald-500/40 hover:border-emerald-500/70 shadow-[0_0_30px_-12px] shadow-emerald-500/30"
+                          : isPopular
+                          ? "border-pink-500/40 hover:border-pink-500/70 shadow-[0_0_30px_-12px] shadow-pink-500/30"
+                          : "border-border hover:border-blue-500/40"
+                      }`}
+                    >
+                      {isBestValue && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-emerald-500/40 whitespace-nowrap">
+                          <Sparkles className="h-3 w-3" />
+                          Best Value
+                        </span>
+                      )}
+                      {isPopular && (
+                        <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white shadow-lg shadow-pink-500/40 whitespace-nowrap">
+                          Most Popular
+                        </span>
+                      )}
+                      <div className="flex items-center justify-center h-32 mb-3">
+                        <Image
+                          src={item.image}
+                          alt={`${item.tokens} LionGems`}
+                          width={120}
+                          height={120}
+                          objectFit="contain"
+                        />
                       </div>
-                    )}
-                    <div className="mt-2 text-lg font-semibold text-white">
-                      {symbol}{currency === "usd" ? item.amount_usd : item.amount}
-                    </div>
-                  </div>
-                </button>
-              ))}
+                      <div className="text-center">
+                        <div className="flex items-center justify-center gap-1.5 text-2xl font-bold text-blue-400">
+                          <GemIcon className="h-5 w-5" />
+                          {numberWithCommas(item.tokens)}
+                        </div>
+                        {item.tokens_bonus > 0 && (
+                          <div className="text-xs text-emerald-400/90 mt-0.5 font-semibold">
+                            +{numberWithCommas(item.tokens_bonus)} bonus gems
+                          </div>
+                        )}
+                        <div className="mt-3 text-2xl font-bold text-foreground">
+                          {symbol}
+                          {price.toFixed(2)}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground/80 mt-1">
+                          ≈ {gemsPerUnit.toLocaleString()} gems / {symbol}1
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* "What you can do with gems" sidebar */}
+              <aside className="lg:sticky lg:top-24 self-start rounded-2xl border border-border bg-gradient-to-br from-card via-card/80 to-blue-500/5 backdrop-blur-sm p-5 lg:p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/15 text-blue-400">
+                    <GemIcon className="h-5 w-5" />
+                  </span>
+                  <h3 className="text-lg font-bold text-foreground tracking-tight">
+                    What gems unlock
+                  </h3>
+                </div>
+                <ul className="space-y-3">
+                  {[
+                    {
+                      icon: Palette,
+                      title: "Profile skins",
+                      sub: "Animated cards, themes, frames",
+                      color: "text-pink-400",
+                      bg: "bg-pink-500/10",
+                    },
+                    {
+                      icon: Star,
+                      title: "Gift to friends",
+                      sub: "Send gems or skins as gifts",
+                      color: "text-amber-400",
+                      bg: "bg-amber-500/10",
+                    },
+                    {
+                      icon: Sprout,
+                      title: "Premium pet items",
+                      sub: "Rare seeds, food, decor",
+                      color: "text-emerald-400",
+                      bg: "bg-emerald-500/10",
+                    },
+                    {
+                      icon: TrendingUp,
+                      title: "XP & coin boosts",
+                      sub: "Speed up your levels and farm",
+                      color: "text-violet-400",
+                      bg: "bg-violet-500/10",
+                    },
+                  ].map((it, i) => {
+                    const Icon = it.icon;
+                    return (
+                      <li key={i} className="flex items-start gap-3">
+                        <span
+                          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg ${it.bg} ${it.color} flex-shrink-0`}
+                        >
+                          <Icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-semibold text-foreground leading-tight">
+                            {it.title}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-0.5">
+                            {it.sub}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="mt-5 pt-5 border-t border-border/60 text-center">
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Subscribers earn{" "}
+                    <span className="text-foreground font-semibold">
+                      up to 1,500 gems / month
+                    </span>{" "}
+                    automatically.
+                  </p>
+                  <a
+                    href="#tiers"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .getElementById("tiers")
+                        ?.scrollIntoView({ behavior: "smooth", block: "start" });
+                    }}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-pink-400 hover:text-pink-300 transition-colors"
+                  >
+                    See LionHeart plans
+                    <ArrowRight className="h-3 w-3" />
+                  </a>
+                </div>
+              </aside>
             </div>
           </div>
         </section>
+        {/* --- END AI-MODIFIED --- */}
+
+        <TrustBand />
 
         {/* FAQ */}
-        <section className="py-12 lg:py-16 border-t border-border/60">
-          <div className="max-w-2xl mx-auto px-4 lg:px-6">
-            <h2 className="text-2xl font-bold text-white text-center mb-8">
-              {t("faq.title")}
-            </h2>
-            <Accordion type="single" collapsible>
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Restyled FAQ header to match the rest of the page
+            (eyebrow + larger heading) and migrated text-white to
+            text-foreground for consistent theming. */}
+        <section id="faq" className="py-16 lg:py-20 border-t border-border/60 scroll-mt-20">
+          <div className="max-w-3xl mx-auto px-4 lg:px-6">
+            <div className="text-center mb-10">
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                Questions?
+              </span>
+              <h2 className="mt-4 text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+                {t("faq.title")}
+              </h2>
+            </div>
+            <Accordion type="single" collapsible className="space-y-2">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <AccordionItem key={i} value={`q${i}`}>
-                  <AccordionTrigger className="text-white">
+                <AccordionItem
+                  key={i}
+                  value={`q${i}`}
+                  className="rounded-xl border border-border bg-card/40 px-5 backdrop-blur-sm"
+                >
+                  <AccordionTrigger className="text-foreground font-semibold hover:no-underline">
                     {t(`faq.q${i}`)}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
+                  <AccordionContent className="text-muted-foreground leading-relaxed">
                     {t(`faq.a${i}`)}
                   </AccordionContent>
                 </AccordionItem>
@@ -2336,6 +2526,7 @@ export default function Donate() {
             </Accordion>
           </div>
         </section>
+        {/* --- END AI-MODIFIED --- */}
       </div>
 
       {selectedItem && (
