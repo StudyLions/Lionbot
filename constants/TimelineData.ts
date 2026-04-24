@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 24, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-24",
+    title: "Plant Your Whole Farm in One Click",
+    description:
+      "We added a 'Plant All' button to the toolbar on both the personal farm and the family farm in your LionGotchi dashboard, in response to a request from a member of one of our families. Previously, planting on a farm with 15 plots meant clicking each empty plot one-by-one, picking a seed, and confirming — and on a family with multiple farms, that turned into 50–150 separate clicks just to fill everything for a study session. Now, with at least one empty plot on the active farm, a green 'Plant All (N)' button appears next to the Water All / Harvest All buttons. Clicking it opens the same familiar seed shop, but every seed card shows the total batch cost upfront (e.g. '120G' with '10G x 12' beneath, instead of just '10G'), and the green action button reads 'Buy & Plant All (12)' so you can see exactly how many plots and how much gold you're committing before clicking. The server validates you can afford the full batch before any gold is spent — there's no 'partially planted' state. Each plot still rolls its own rarity independently, so you can absolutely still get a lucky LEGENDARY in the middle of a Plant All batch (and we'll tell you in the success toast: 'Planted 12 x Carrot for 120G — 1 RARE!'). Family farm planting respects the same plant_farm permission as single-plot planting, and the gold comes from the family treasury (clearly labelled in the dialog so members don't confuse it with their personal balance). Dead plants still need to be cleared with the existing 'Clear Dead' button before they count as empty — keeping that step explicit means no surprise gold drains. Thanks to Gaijin Yakuza for the suggestion.",
+    category: "liongotchi",
+    area: "website",
+  },
   // ── April 23, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-23",
