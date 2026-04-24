@@ -554,18 +554,21 @@ export default function AntiAfkPage() {
                       />
                     </div>
 
+                    {/* --- AI-MODIFIED (2026-04-24) --- */}
+                    {/* Purpose: Add category type (4) to channel selectors so
+                        admins can target/exclude entire categories at once */}
                     <div>
                       <label className="block text-sm font-medium text-gray-200 mb-1">
                         Target Channels
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Only check users in these channels. Leave empty to apply to all tracked voice channels.
+                        Only check users in these channels. Selecting a category applies to all voice channels in it. Leave empty to apply to all tracked voice channels.
                       </p>
                       <ChannelSelect
                         guildId={guildId}
                         value={config.target_channels}
                         onChange={(v) => update({ target_channels: (v as string[]) || [] })}
-                        channelTypes={[2, 13]}
+                        channelTypes={[2, 4, 13]}
                         multiple
                       />
                     </div>
@@ -575,16 +578,17 @@ export default function AntiAfkPage() {
                         Exclude Channels
                       </label>
                       <p className="text-xs text-gray-400 mb-2">
-                        Never check users in these channels, even if they're otherwise tracked.
+                        Never check users in these channels, even if they&apos;re otherwise tracked. Selecting a category excludes all voice channels in it.
                       </p>
                       <ChannelSelect
                         guildId={guildId}
                         value={config.exclude_channels}
                         onChange={(v) => update({ exclude_channels: (v as string[]) || [] })}
-                        channelTypes={[2, 13]}
+                        channelTypes={[2, 4, 13]}
                         multiple
                       />
                     </div>
+                    {/* --- END AI-MODIFIED --- */}
 
                     {/* --- AI-MODIFIED (2026-04-19) --- */}
                     {/* Purpose: Make it explicit that untracked channels (set in
