@@ -68,6 +68,12 @@ import {
 // Purpose: Import currency hook for EUR/USD toggle
 import { useCurrency, type Currency } from "@/hooks/useCurrency";
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Import new donate page components for the conversion-focused redesign
+import HeroShowcase from "@/components/donate/HeroShowcase";
+import AudienceChooser from "@/components/donate/AudienceChooser";
+import ValuePillars from "@/components/donate/ValuePillars";
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: LionGems icon from blob storage, replacing generic lucide Diamond
@@ -130,10 +136,10 @@ function PurchaseModal({
         className="fixed inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative z-50 w-full max-w-md rounded-xl border border-gray-700 bg-gray-800 shadow-2xl">
+      <div className="relative z-50 w-full max-w-md rounded-xl border border-border bg-card shadow-2xl">
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 p-1 rounded-md text-gray-400 hover:text-white transition-colors"
+          className="absolute right-4 top-4 p-1 rounded-md text-muted-foreground hover:text-white transition-colors"
         >
           <X className="h-4 w-4" />
         </button>
@@ -158,13 +164,13 @@ function PurchaseModal({
           )}
 
           <div className="mt-6">
-            <label className="text-sm font-medium text-gray-400">
+            <label className="text-sm font-medium text-muted-foreground">
               Quantity
             </label>
             <div className="flex items-center gap-3 mt-2">
               <button
                 onClick={() => quantity > 1 && setQuantity(quantity - 1)}
-                className="w-10 h-10 rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors font-medium"
+                className="w-10 h-10 rounded-lg border border-input text-white hover:bg-muted transition-colors font-medium"
               >
                 -
               </button>
@@ -173,7 +179,7 @@ function PurchaseModal({
               </span>
               <button
                 onClick={() => setQuantity(quantity + 1)}
-                className="w-10 h-10 rounded-lg border border-gray-600 text-white hover:bg-gray-700 transition-colors font-medium"
+                className="w-10 h-10 rounded-lg border border-input text-white hover:bg-muted transition-colors font-medium"
               >
                 +
               </button>
@@ -286,7 +292,7 @@ function SubscriptionManagementBanner({
                   Cancelling
                 </span>
               </h3>
-              <p className="text-sm text-gray-400 mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 Your subscription will end on{" "}
                 <span className="text-orange-300 font-medium">
                   {periodEnd?.toLocaleDateString(undefined, {
@@ -346,7 +352,7 @@ function SubscriptionManagementBanner({
                   Active
                 </span>
               </h3>
-              <p className="text-sm text-gray-400 mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {symbol}{subStatus.tierPrice}/month
                 {periodEnd && (
                   <>
@@ -365,7 +371,7 @@ function SubscriptionManagementBanner({
             <button
               onClick={onManage}
               disabled={portalLoading}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-gray-700 text-gray-300 font-medium hover:bg-gray-800 hover:text-white transition-colors whitespace-nowrap disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-border text-foreground/85 font-medium hover:bg-card hover:text-white transition-colors whitespace-nowrap disabled:opacity-50"
             >
               {portalLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -383,8 +389,163 @@ function SubscriptionManagementBanner({
   return null;
 }
 
-// --- AI-MODIFIED (2026-03-24) ---
-// Purpose: Accept currency/symbol props for dual-currency pricing display
+// --- AI-REPLACED (2026-04-24) ---
+// Reason: Conversion-focused redesign of subscription tier cards
+// What the new code does better:
+//   1. LionHeart+ "Most Popular" gets dominant treatment (animated gradient border, pulse halo, scale-up, raised z-index)
+//   2. Each card opens with an animated tier-themed mini-visual instead of a plain emoji
+//   3. "Everything in [previous tier], plus..." copy pattern with delta highlights instead of repeating perks
+//   4. Gem-equivalent value line ("Includes ~€X of gems / month") anchors monetary value
+//   5. Risk-reversal microcopy under every CTA ("Cancel anytime · Secure with Stripe · Instant activation")
+//   6. Action-and-outcome conversion micro-copy ("Start with LionHeart+", "Unlock LionHeart++")
+// --- Original code (commented out for rollback) ---
+// function SubscriptionCard({ tierId, subStatus, onSubscribe, onManage, featured, subscribing, portalLoading, currency, symbol })
+//   ... ~290 lines: standard card with emoji header, two gem stat boxes, full perk list per tier,
+//   shimmer animated card preview, optional server-premium-included block for LionHeart++,
+//   "Subscribe Now" / "Upgrade" / "Downgrade" / "Sign in to Subscribe" / "Current Plan" buttons.
+// --- End original code ---
+
+// Median gem-pack rate ((4500 + 600) gems for 14.99 EUR / 17.99 USD)
+// = ~2.94 EUR per 1000 gems / ~3.53 USD per 1000 gems.
+function gemValueInCurrency(gems: number, currency: Currency): number {
+  const ratePerGem = currency === "eur" ? 14.99 / 5100 : 17.99 / 5100;
+  return Math.round(gems * ratePerGem * 100) / 100;
+}
+
+// "Everything in X, plus..." delta perks per tier so we never repeat the same list 3 times.
+function getDeltaPerks(
+  tierId: SubscriptionTier
+): Array<{ label: string; icon: typeof TrendingUp; highlight?: boolean }> {
+  if (tierId === "LIONHEART") {
+    return [
+      { label: "500 LionGems every month", icon: Sparkles, highlight: true },
+      { label: "1.5x LionCoins from every vote", icon: TrendingUp },
+      { label: "+15% bonus drop rate on items", icon: Zap },
+      { label: "1.2x farm growth speed", icon: Sprout },
+      { label: "72h plant death timer (vs 48h)", icon: Shield },
+      { label: "Animated glowing profile card", icon: Sparkles },
+    ];
+  }
+  if (tierId === "LIONHEART_PLUS") {
+    return [
+      { label: "2.4x more gems (1,200/month)", icon: Sparkles, highlight: true },
+      { label: "1.75x vote boost (up from 1.5x)", icon: TrendingUp },
+      { label: "+25% drop rate (up from 15%)", icon: Zap },
+      { label: "1.35x farm growth", icon: Sprout },
+      { label: "2x water duration", icon: Shield },
+      { label: "8 Pomodoro themes (up from 5)", icon: Sparkles },
+    ];
+  }
+  return [
+    { label: "6x more gems (3,000/month)", icon: Sparkles, highlight: true },
+    { label: "Plants never die. Period.", icon: Shield, highlight: true },
+    { label: "1 free Server Premium slot", icon: Server, highlight: true },
+    { label: "2x vote boost (max tier)", icon: TrendingUp },
+    { label: "+50% drop rate", icon: Zap },
+    { label: "All 10 Pomodoro themes", icon: Sparkles },
+  ];
+}
+
+const TIER_TAGLINES: Record<SubscriptionTier, string> = {
+  LIONHEART: "Start enjoying real perks",
+  LIONHEART_PLUS: "Best balance of value & power",
+  LIONHEART_PLUS_PLUS: "Everything LionBot has to offer",
+};
+
+const TIER_PREVIOUS_NAME: Record<SubscriptionTier, string | null> = {
+  LIONHEART: null,
+  LIONHEART_PLUS: "LionHeart",
+  LIONHEART_PLUS_PLUS: "LionHeart+",
+};
+
+const TIER_CTA_COPY: Record<SubscriptionTier, string> = {
+  LIONHEART: "Start with LionHeart",
+  LIONHEART_PLUS: "Get LionHeart+",
+  LIONHEART_PLUS_PLUS: "Unlock LionHeart++",
+};
+
+function TierMiniVisual({ tierId, color }: { tierId: SubscriptionTier; color: string }) {
+  if (tierId === "LIONHEART_PLUS_PLUS") {
+    return (
+      <div className="relative h-16 w-16">
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{
+            background: `linear-gradient(135deg, ${color}, ${color}aa)`,
+            boxShadow: `0 12px 28px ${color}55, inset 0 0 18px ${color}80`,
+          }}
+        />
+        <div
+          className="absolute inset-1 rounded-xl flex items-center justify-center text-2xl"
+          style={{
+            background: `linear-gradient(180deg, ${color}cc, ${color}66)`,
+          }}
+        >
+          {"\u{1F451}"}
+        </div>
+        {[0, 1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="absolute h-1 w-1 rounded-full bg-yellow-200"
+            style={{
+              top: `${20 + Math.sin(i * 1.5) * 30}%`,
+              left: `${20 + Math.cos(i * 1.5) * 30}%`,
+              animation: `tier-sparkle 2s ease-in-out ${i * 0.4}s infinite`,
+              boxShadow: "0 0 8px rgba(255, 215, 0, 0.9)",
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+  if (tierId === "LIONHEART_PLUS") {
+    return (
+      <div className="relative h-16 w-16">
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{
+            background: `linear-gradient(135deg, ${color}, #a855f7)`,
+            boxShadow: `0 10px 24px ${color}55, inset 0 0 16px ${color}80`,
+          }}
+        />
+        <div
+          className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+          style={{
+            background: `linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.35) 50%, transparent 65%)`,
+            animation: "tier-shimmer 2.4s ease-in-out infinite",
+          }}
+        />
+        <div className="absolute inset-1 rounded-xl flex items-center justify-center text-2xl">
+          {"\u{2728}"}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="relative h-16 w-16">
+      <div
+        className="absolute inset-0 rounded-2xl"
+        style={{
+          background: `linear-gradient(135deg, ${color}, ${color}99)`,
+          boxShadow: `0 8px 20px ${color}45, inset 0 0 14px ${color}70`,
+        }}
+      />
+      <div
+        className="absolute -inset-0.5 rounded-2xl border opacity-50 pointer-events-none"
+        style={{
+          borderColor: color,
+          animation: "tier-pulse 2.6s ease-in-out infinite",
+        }}
+      />
+      <div className="absolute inset-1 rounded-xl flex items-center justify-center text-2xl">
+        {"\u{1F981}"}
+      </div>
+    </div>
+  );
+}
+
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Conversion-focused redesigned subscription card
 function SubscriptionCard({
   tierId,
   subStatus,
@@ -406,7 +567,6 @@ function SubscriptionCard({
   currency: Currency;
   symbol: string;
 }) {
-// --- END AI-MODIFIED ---
   const tier = SUBSCRIPTION_TIERS[tierId];
   const { data: session } = useSession();
 
@@ -426,44 +586,32 @@ function SubscriptionCard({
   const isUpgrade = hasActiveSub && thisTierIndex > currentTierIndex;
   const isDowngrade = hasActiveSub && thisTierIndex < currentTierIndex;
 
-  const tierIcons: Record<string, string> = {
-    LIONHEART: "\u{1F981}",
-    LIONHEART_PLUS: "\u{1F31F}",
-    LIONHEART_PLUS_PLUS: "\u{1F451}",
-  };
+  const previousTierName = TIER_PREVIOUS_NAME[tierId];
+  const deltaPerks = getDeltaPerks(tierId);
+  const tagline = TIER_TAGLINES[tierId];
+  const ctaCopy = TIER_CTA_COPY[tierId];
+  const gemValue = gemValueInCurrency(tier.monthlyGems, currency);
+  const tierPrice = getSubscriptionPrice(tierId, currency);
 
-  // --- AI-MODIFIED (2026-03-20) ---
-  // Purpose: Use GemIcon (blob asset) instead of lucide Diamond for gem stats
-  const heroStats = [
-    { value: numberWithCommas(tier.monthlyGems), label: "gems / month" },
-    { value: String(tier.gemsPerVote), label: "per vote" },
-  ];
-  // --- END AI-MODIFIED ---
-
-  // --- AI-MODIFIED (2026-03-23) ---
-  // Purpose: Add "1 Server Premium included" perk for LionHeart++
-  const perks = [
-    { label: `${tier.lionCoinBoost}x vote bonus`, icon: TrendingUp, highlight: false },
-    { label: `+${tier.dropRateBonus * 100}% drop rates`, icon: Sparkles, highlight: false },
-    { label: `${tier.farmGrowthSpeed}x farm growth`, icon: Sprout, highlight: false },
-    ...(tier.deathTimerHours === null
-      ? [{ label: "Plants never die!", icon: Shield, highlight: true }]
-      : [{ label: `${tier.deathTimerHours}h death timer`, icon: Shield, highlight: false }]),
-    { label: `${tier.uprootRefund * 100}% uproot refund`, icon: Zap, highlight: false },
-    ...(tier.includesServerPremium
-      ? [{ label: "1 Server Premium included", icon: Server, highlight: true }]
-      : []),
-  ];
-  // --- END AI-MODIFIED ---
+  const renderRiskReversal = () => (
+    <p className="mt-2.5 text-center text-[10.5px] leading-snug text-muted-foreground/80">
+      Cancel anytime &middot; Secure with Stripe &middot; Instant activation
+    </p>
+  );
 
   const renderButton = () => {
     if (isCurrentTier) {
       return (
         <div
-          className="w-full py-3 rounded-xl text-center font-semibold text-sm"
-          style={{ backgroundColor: `${tier.color}20`, color: tier.color }}
+          className="w-full py-3 rounded-xl text-center font-semibold text-sm border"
+          style={{
+            backgroundColor: `${tier.color}1a`,
+            color: tier.color,
+            borderColor: `${tier.color}40`,
+          }}
         >
-          Current Plan
+          <Check className="inline h-4 w-4 mr-1.5 -mt-0.5" />
+          You're on {tier.name}
         </div>
       );
     }
@@ -472,9 +620,9 @@ function SubscriptionCard({
       return (
         <button
           onClick={() => signIn("discord")}
-          className="w-full py-3 rounded-xl bg-[#5865F2] text-white font-semibold text-sm hover:bg-[#4752C4] transition-colors"
+          className="w-full py-3 rounded-xl bg-[#5865F2] text-white font-semibold text-sm hover:bg-[#4752C4] transition-colors flex items-center justify-center gap-2"
         >
-          Sign in to Subscribe
+          Sign in with Discord to subscribe
         </button>
       );
     }
@@ -484,9 +632,10 @@ function SubscriptionCard({
         <button
           onClick={onManage}
           disabled={portalLoading}
-          className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:brightness-110 flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:brightness-110 hover:translate-y-[-1px] flex items-center justify-center gap-2 disabled:opacity-50"
           style={{
             background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`,
+            boxShadow: `0 8px 20px ${tier.color}40`,
           }}
         >
           {portalLoading ? (
@@ -494,7 +643,7 @@ function SubscriptionCard({
           ) : (
             <ArrowUp className="h-4 w-4" />
           )}
-          Upgrade
+          Upgrade to {tier.name}
         </button>
       );
     }
@@ -504,14 +653,14 @@ function SubscriptionCard({
         <button
           onClick={onManage}
           disabled={portalLoading}
-          className="w-full py-3 rounded-xl font-semibold text-sm border border-gray-600 text-gray-300 hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          className="w-full py-3 rounded-xl font-semibold text-sm border border-input text-foreground/85 hover:bg-muted transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
         >
           {portalLoading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <ArrowDown className="h-4 w-4" />
           )}
-          Downgrade
+          Switch to {tier.name}
         </button>
       );
     }
@@ -520,164 +669,191 @@ function SubscriptionCard({
       <button
         onClick={() => onSubscribe(tierId)}
         disabled={subscribing}
-        className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:brightness-110 disabled:opacity-50"
+        className="w-full py-3 rounded-xl font-semibold text-sm text-white transition-all duration-200 hover:brightness-110 hover:translate-y-[-1px] disabled:opacity-50"
         style={{
           background: `linear-gradient(135deg, ${tier.color}, ${tier.color}cc)`,
+          boxShadow: `0 8px 20px ${tier.color}40`,
         }}
       >
-        {subscribing ? "Processing..." : "Subscribe Now"}
+        {subscribing ? (
+          <span className="inline-flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" /> Processing...
+          </span>
+        ) : (
+          ctaCopy
+        )}
       </button>
     );
   };
 
   return (
     <div
-      className={`relative rounded-2xl border p-6 flex flex-col transition-all duration-300 ${
-        featured
-          ? "border-pink-500/50 bg-gradient-to-b from-pink-500/10 to-gray-800 shadow-xl shadow-pink-500/10 scale-[1.02]"
-          : "border-gray-700 bg-gray-800/80 hover:border-gray-600"
+      className={`relative flex flex-col transition-all duration-300 ${
+        featured ? "lg:scale-[1.05] z-10" : "z-0"
       }`}
     >
       {featured && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span className="inline-flex items-center gap-1 px-4 py-1 rounded-full text-xs font-bold bg-pink-500 text-white uppercase tracking-wide">
-            <Star className="h-3 w-3" />
-            Most Popular
-          </span>
-        </div>
-      )}
-
-      <div className="text-center mb-6">
-        <span className="text-3xl">{tierIcons[tierId]}</span>
-        <h3 className="text-xl font-bold text-white mt-2">{tier.name}</h3>
-        <div className="mt-3">
-          <span className="text-4xl font-black text-white">{symbol}{getSubscriptionPrice(tierId, currency)}</span>
-          <span className="text-gray-400 text-sm ml-0.5">/month</span>
-        </div>
-      </div>
-
-      <div
-        className="w-full h-1 rounded-full mb-5"
-        style={{
-          background: `linear-gradient(90deg, ${tier.color}80, ${tier.color})`,
-        }}
-      />
-
-      {/* --- AI-MODIFIED (2026-03-20) --- */}
-      {/* Purpose: Use GemIcon instead of lucide Diamond for gem stat boxes */}
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        {heroStats.map((stat, i) => (
+        <>
           <div
-            key={i}
-            className="rounded-xl p-3 text-center"
+            className="absolute -inset-px rounded-[1.05rem] pointer-events-none"
             style={{
-              background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}0a)`,
-              border: `1px solid ${tier.color}15`,
-            }}
-          >
-            <GemIcon className="h-5 w-5 mx-auto mb-1.5 opacity-90" />
-            <div className="text-2xl font-black leading-tight" style={{ color: tier.color }}>
-              {stat.value}
-            </div>
-            <div className="text-[11px] text-gray-400 mt-1 uppercase tracking-wider font-medium">
-              {stat.label}
-            </div>
-          </div>
-        ))}
-      </div>
-      {/* --- END AI-MODIFIED --- */}
-
-      <ul className="space-y-2.5 flex-1 mb-5">
-        {perks.map((perk, i) => (
-          <li key={i} className="flex items-center gap-3 text-sm">
-            <div
-              className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: `${tier.color}20` }}
-            >
-              <Check className="h-3 w-3" style={{ color: tier.color }} />
-            </div>
-            <span className={perk.highlight ? "text-white font-semibold" : "text-gray-300"}>
-              {perk.label}
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div
-        className="relative rounded-xl p-3.5 mb-6 overflow-hidden"
-        style={{
-          background: `linear-gradient(135deg, ${tier.color}15, ${tier.color}08)`,
-          border: `1px solid ${tier.color}30`,
-          boxShadow: `0 0 20px ${tier.color}10, inset 0 0 20px ${tier.color}05`,
-        }}
-      >
-        <div
-          className="absolute inset-0 shimmer-sweep"
-          style={{
-            background: `linear-gradient(90deg, transparent 0%, ${tier.color}20 50%, transparent 100%)`,
-          }}
-        />
-        <div className="relative flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
-            style={{
-              background: `linear-gradient(135deg, ${tier.color}35, ${tier.color}15)`,
-              boxShadow: `0 0 12px ${tier.color}25`,
-            }}
-          >
-            <Sparkles className="h-4 w-4" style={{ color: tier.color }} />
-          </div>
-          <div>
-            <div className="text-sm font-semibold text-white">Animated glowing cards</div>
-            <div className="text-xs font-bold mt-0.5" style={{ color: tier.color }}>
-              {tier.name} glow
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* --- AI-MODIFIED (2026-03-23) --- */}
-      {/* Purpose: Highlighted Server Premium block for LionHeart++ */}
-      {tier.includesServerPremium && (
-        <div
-          className="relative rounded-xl p-3.5 mb-6 overflow-hidden"
-          style={{
-            background: `linear-gradient(135deg, #3B82F620, #3B82F610)`,
-            border: `1px solid #3B82F640`,
-            boxShadow: `0 0 20px #3B82F615, inset 0 0 20px #3B82F608`,
-          }}
-        >
-          <div
-            className="absolute inset-0 shimmer-sweep"
-            style={{
-              background: `linear-gradient(90deg, transparent 0%, #3B82F625 50%, transparent 100%)`,
+              background:
+                "linear-gradient(135deg, #f472b6, #a855f7, #f59e0b, #f472b6)",
+              backgroundSize: "300% 300%",
+              animation: "tier-border 6s ease-in-out infinite",
+              padding: "2px",
+              WebkitMask:
+                "linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)",
+              WebkitMaskComposite: "xor",
+              maskComposite: "exclude",
             }}
           />
-          <div className="relative flex items-center gap-3">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+          <div
+            className="absolute -inset-6 -z-10 rounded-[2rem] blur-3xl pointer-events-none opacity-60"
+            style={{
+              background:
+                "radial-gradient(circle, rgba(244, 114, 182, 0.45) 0%, transparent 65%)",
+              animation: "tier-halo 4s ease-in-out infinite",
+            }}
+          />
+        </>
+      )}
+
+      <div
+        className={`relative rounded-2xl p-6 flex flex-col h-full ${
+          featured
+            ? "bg-gradient-to-b from-pink-500/[0.08] via-card to-card shadow-2xl shadow-pink-500/20"
+            : "border border-border bg-card/80 hover:border-input transition-colors"
+        }`}
+      >
+        {featured && (
+          <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+            <span
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[11px] font-black text-white uppercase tracking-widest"
               style={{
-                background: `linear-gradient(135deg, #3B82F640, #3B82F620)`,
-                boxShadow: `0 0 12px #3B82F630`,
+                background:
+                  "linear-gradient(135deg, #f472b6, #a855f7)",
+                boxShadow:
+                  "0 8px 20px rgba(244, 114, 182, 0.5), 0 0 0 1px rgba(244, 114, 182, 0.6)",
               }}
             >
-              <Server className="h-4 w-4 text-blue-400" />
+              <Star className="h-3 w-3 fill-white" />
+              Most Popular
+            </span>
+          </div>
+        )}
+
+        <div className="flex items-start gap-4 mb-5">
+          <TierMiniVisual tierId={tierId} color={tier.color} />
+          <div className="min-w-0 flex-1 pt-1">
+            <h3
+              className={`font-bold text-foreground ${
+                featured ? "text-2xl" : "text-xl"
+              }`}
+            >
+              {tier.name}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5 leading-tight">
+              {tagline}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-baseline gap-1 mb-1">
+          <span
+            className={`font-black text-foreground ${
+              featured ? "text-5xl" : "text-4xl"
+            }`}
+          >
+            {symbol}
+            {tierPrice}
+          </span>
+          <span className="text-muted-foreground text-sm">/month</span>
+        </div>
+        <p className="text-[11.5px] text-muted-foreground/80 mb-5">
+          Includes <span className="text-foreground/90 font-semibold">~{symbol}{gemValue.toFixed(2)}</span> of LionGems every month
+        </p>
+
+        <div
+          className="rounded-xl p-3 mb-4 flex items-center gap-2.5"
+          style={{
+            background: `linear-gradient(135deg, ${tier.color}18, ${tier.color}06)`,
+            border: `1px solid ${tier.color}30`,
+          }}
+        >
+          <GemIcon className="h-5 w-5 flex-shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="text-base font-black text-foreground tabular-nums leading-none">
+              {numberWithCommas(tier.monthlyGems)} gems
+              <span
+                className="ml-1 text-xs font-semibold"
+                style={{ color: tier.color }}
+              >
+                / month
+              </span>
             </div>
-            <div>
-              <div className="text-sm font-semibold text-white">Server Premium included</div>
-              <div className="text-xs font-bold mt-0.5 text-blue-400">
-                Apply to any server
-              </div>
+            <div className="text-[10.5px] text-muted-foreground mt-0.5">
+              Plus {tier.gemsPerVote} gems every Top.gg vote
             </div>
           </div>
         </div>
-      )}
-      {/* --- END AI-MODIFIED --- */}
 
-      {renderButton()}
+        {previousTierName ? (
+          <p className="text-xs font-semibold text-foreground/80 mb-3">
+            Everything in{" "}
+            <span style={{ color: tier.color }}>{previousTierName}</span>, plus:
+          </p>
+        ) : (
+          <p className="text-xs font-semibold text-foreground/80 mb-3">
+            Your starter pack of premium perks:
+          </p>
+        )}
+
+        <ul className="space-y-2.5 flex-1 mb-5">
+          {deltaPerks.map((perk, i) => {
+            const Icon = perk.icon;
+            return (
+              <li
+                key={i}
+                className={`flex items-start gap-2.5 text-sm ${
+                  perk.highlight ? "" : ""
+                }`}
+              >
+                <span
+                  className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-md mt-px"
+                  style={{
+                    background: perk.highlight
+                      ? `linear-gradient(135deg, ${tier.color}, ${tier.color}aa)`
+                      : `${tier.color}1f`,
+                  }}
+                >
+                  <Icon
+                    className="h-3 w-3"
+                    style={{ color: perk.highlight ? "#fff" : tier.color }}
+                  />
+                </span>
+                <span
+                  className={
+                    perk.highlight
+                      ? "text-foreground font-semibold"
+                      : "text-foreground/85"
+                  }
+                >
+                  {perk.label}
+                </span>
+              </li>
+            );
+          })}
+        </ul>
+
+        {renderButton()}
+        {renderRiskReversal()}
+      </div>
     </div>
   );
 }
+// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 function ComparisonTable() {
   const rows = [
@@ -767,11 +943,11 @@ function ComparisonTable() {
     <div className="overflow-x-auto -mx-4 px-4">
       <table className="w-full text-sm border-collapse min-w-[600px]">
         <thead>
-          <tr className="border-b border-gray-700">
-            <th className="text-left py-3 px-4 text-gray-400 font-medium">
+          <tr className="border-b border-border">
+            <th className="text-left py-3 px-4 text-muted-foreground font-medium">
               Perk
             </th>
-            <th className="py-3 px-3 text-gray-400 font-medium text-center">
+            <th className="py-3 px-3 text-muted-foreground font-medium text-center">
               Free
             </th>
             {TIER_ORDER.map((tierId) => (
@@ -789,12 +965,12 @@ function ComparisonTable() {
           {rows.map((row, i) => (
             <tr
               key={i}
-              className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors"
+              className="border-b border-border/60 hover:bg-card/50 transition-colors"
             >
-              <td className="py-3 px-4 text-gray-300 font-medium">
+              <td className="py-3 px-4 text-foreground/85 font-medium">
                 {row.label}
               </td>
-              <td className="py-3 px-3 text-gray-500 text-center">
+              <td className="py-3 px-3 text-muted-foreground/70 text-center">
                 {row.free}
               </td>
               {TIER_ORDER.map((tierId) => (
@@ -1071,7 +1247,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
   }, [goldVisible]);
 
   return (
-    <section className="py-16 lg:py-24 border-t border-gray-800" id="server-premium">
+    <section className="py-16 lg:py-24 border-t border-border/60" id="server-premium">
       <style>{`
         @keyframes sp-eq { 0%,100%{height:4px} 50%{height:var(--eq-h)} }
         @keyframes sp-marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
@@ -1085,17 +1261,17 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             <Server className="h-8 w-8 text-blue-400" />
             <h2 className="text-3xl lg:text-4xl font-bold text-white">Server Premium</h2>
           </div>
-          <p className="text-gray-400 mt-2 max-w-2xl mx-auto lg:text-lg">
+          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto lg:text-lg">
             10+ premium features that transform how your community studies, competes, and grows
           </p>
         </div>
 
         <div
-          className="rounded-2xl border border-gray-700 bg-gray-800/50 overflow-hidden"
+          className="rounded-2xl border border-border bg-card/50 overflow-hidden"
           onMouseEnter={() => setTabPaused(true)}
           onMouseLeave={() => setTabPaused(false)}
         >
-          <div className="flex overflow-x-auto border-b border-gray-700 bg-gray-900/40 scrollbar-none">
+          <div className="flex overflow-x-auto border-b border-border bg-background/40 scrollbar-none">
             {PREMIUM_TABS.map((tab) => (
               <button
                 key={tab.id}
@@ -1103,7 +1279,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                 className={`flex items-center gap-2 px-3 lg:px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${
                   activeTab === tab.id
                     ? "text-blue-400 border-blue-400 bg-blue-500/5"
-                    : "text-gray-500 border-transparent hover:text-gray-300 hover:bg-gray-800/50"
+                    : "text-muted-foreground/70 border-transparent hover:text-foreground/85 hover:bg-card/50"
                 }`}
               >
                 <tab.Icon className="h-4 w-4" />
@@ -1117,14 +1293,14 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "branding" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Custom Visual Branding</h3>
-                  <p className="text-gray-400 mb-4 text-sm">Custom skins and colors for all 7 card types, applied server-wide to every member.</p>
+                  <p className="text-muted-foreground mb-4 text-sm">Custom skins and colors for all 7 card types, applied server-wide to every member.</p>
                   <div className="space-y-2 text-sm">
                     {["Profile, Stats, Weekly, Monthly, Goals & Leaderboard cards",
                       "7 premium base skins to choose from",
                       "Custom color overrides for every element",
                       "Applies automatically to all members",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1137,7 +1313,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all border ${
                           activeCardType === i
                             ? "bg-white/10 text-white border-white/20"
-                            : "text-gray-500 border-transparent hover:text-gray-300 hover:border-gray-700"
+                            : "text-muted-foreground/70 border-transparent hover:text-foreground/85 hover:border-border"
                         }`}
                       >
                         {ct.charAt(0).toUpperCase() + ct.slice(1)}
@@ -1150,7 +1326,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "text" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Text Branding</h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Rewrite any of the bot&apos;s 2,372 messages to match your community&apos;s voice.
                   </p>
                   <div className="space-y-2 text-sm">
@@ -1159,7 +1335,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       "Smart placeholders for dynamic content",
                       "Up to 10,000 overrides (vs 3 for free)",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1170,7 +1346,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "pomodoro" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Premium Pomodoro</h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Advanced focus tools with themed timers, streaks, and analytics for your community.
                   </p>
                   <div className="space-y-2 text-sm">
@@ -1180,7 +1356,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       "Session summaries & golden hour",
                       "Analytics dashboard with heatmaps",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1191,7 +1367,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "leaderboard" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Leaderboard Auto-Post</h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Scheduled leaderboard posts that keep your community competitive and engaged.
                   </p>
                   <div className="space-y-2 text-sm">
@@ -1201,7 +1377,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       "Custom announcement text & channel",
                       "Include rendered leaderboard images",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1214,7 +1390,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "sounds" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">Ambient Sound & LoFi Bots</h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Background audio bots that create the perfect study atmosphere in voice channels.
                   </p>
                   <div className="space-y-2 text-sm">
@@ -1225,7 +1401,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       "Members can rent bots for private rooms",
                       "Managed from the dashboard",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1237,7 +1413,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "liongotchi" && (
                 <div>
                   <h3 className="text-xl font-bold text-white mb-2">LionGotchi Bonuses</h3>
-                  <p className="text-gray-400 mb-4 text-sm">
+                  <p className="text-muted-foreground mb-4 text-sm">
                     Boost the entire LionGotchi economy for every member in your server.
                   </p>
                   <div className="space-y-2 text-sm">
@@ -1246,7 +1422,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       "Stacks with personal LionHeart bonuses",
                       "Applies automatically \u2014 no member action needed",
                     ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-gray-300">
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
                         <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
                       </div>
                     ))}
@@ -1255,7 +1431,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               )}
             </div>
 
-            <div className="relative bg-gray-900/60 border-t lg:border-t-0 lg:border-l border-gray-700 flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
+            <div className="relative bg-background/60 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
               {activeTab === "branding" && (
                 <div className="relative w-full h-full flex items-center justify-center min-h-[320px]">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />
@@ -1276,14 +1452,14 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                     />
                   ))}
                   {hasError && (
-                    <div className="text-center text-gray-500">
+                    <div className="text-center text-muted-foreground/70">
                       <Shield className="h-12 w-12 mx-auto mb-3 opacity-30" />
                       <p className="text-sm">Card preview temporarily unavailable</p>
                     </div>
                   )}
                   {!imagesReady && !hasError && (
-                    <div className="w-[240px] h-[310px] rounded-lg bg-gray-700/30 animate-pulse flex items-center justify-center">
-                      <Loader2 className="h-5 w-5 text-gray-500 animate-spin" />
+                    <div className="w-[240px] h-[310px] rounded-lg bg-muted/30 animate-pulse flex items-center justify-center">
+                      <Loader2 className="h-5 w-5 text-muted-foreground/70 animate-spin" />
                     </div>
                   )}
                   <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3">
@@ -1294,7 +1470,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         </button>
                       ))}
                     </div>
-                    <span className="text-[10px] text-gray-600">Rendered by LionBot</span>
+                    <span className="text-[10px] text-muted-foreground/60">Rendered by LionBot</span>
                   </div>
                 </div>
               )}
@@ -1304,11 +1480,11 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   <div className="flex gap-1.5 mb-3">
                     <button
                       onClick={() => setShowCustomText(false)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${!showCustomText ? "bg-blue-500/20 text-blue-400" : "text-gray-500 hover:text-gray-300"}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${!showCustomText ? "bg-blue-500/20 text-blue-400" : "text-muted-foreground/70 hover:text-foreground/85"}`}
                     >Default</button>
                     <button
                       onClick={() => setShowCustomText(true)}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${showCustomText ? "bg-amber-500/20 text-amber-400" : "text-gray-500 hover:text-gray-300"}`}
+                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${showCustomText ? "bg-amber-500/20 text-amber-400" : "text-muted-foreground/70 hover:text-foreground/85"}`}
                     >Your Server</button>
                   </div>
                   <div className="rounded-lg border border-[#2b2d31] bg-[#313338] overflow-hidden">
@@ -1335,15 +1511,15 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                     </div>
                   </div>
                   <div className="overflow-hidden mt-4 relative">
-                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-gray-900/60 to-transparent z-10 pointer-events-none" />
-                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-gray-900/60 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background/60 to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background/60 to-transparent z-10 pointer-events-none" />
                     <div className="flex gap-2" style={{ animation: "sp-marquee 25s linear infinite" }}>
                       {[...FEATURE_GROUP_TAGS, ...FEATURE_GROUP_TAGS].map((tag, i) => (
-                        <span key={i} className="px-2.5 py-1 rounded-full bg-gray-800 text-gray-400 text-[10px] whitespace-nowrap border border-gray-700/60">{tag}</span>
+                        <span key={i} className="px-2.5 py-1 rounded-full bg-card text-muted-foreground text-[10px] whitespace-nowrap border border-border/80">{tag}</span>
                       ))}
                     </div>
                   </div>
-                  <p className="text-center text-[10px] text-gray-600 mt-2">2,372 strings across 35 categories</p>
+                  <p className="text-center text-[10px] text-muted-foreground/60 mt-2">2,372 strings across 35 categories</p>
                 </div>
               )}
 
@@ -1352,7 +1528,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   <div className="relative">
                     <div className="absolute inset-0 rounded-full blur-xl transition-all duration-700" style={{ background: `radial-gradient(circle, ${currentPomoTheme.glow} 0%, transparent 70%)` }} />
                     <svg viewBox="0 0 100 100" className="w-28 h-28 -rotate-90 relative">
-                      <circle cx="50" cy="50" r={POMO_RING_R} fill="none" strokeWidth="3" className="stroke-gray-800" />
+                      <circle cx="50" cy="50" r={POMO_RING_R} fill="none" strokeWidth="3" className="stroke-border" />
                       <circle cx="50" cy="50" r={POMO_RING_R} fill="none" strokeWidth="3.5" strokeLinecap="round"
                         stroke={currentPomoTheme.color}
                         strokeDasharray={POMO_RING_C} strokeDashoffset={pomoDashOffset}
@@ -1362,7 +1538,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       <span className="text-xl font-bold text-white font-mono tabular-nums">
                         {String(pomoMins).padStart(2, "0")}:{String(pomoSecs).padStart(2, "0")}
                       </span>
-                      <span className="text-[9px] text-gray-500 mt-0.5">remaining</span>
+                      <span className="text-[9px] text-muted-foreground/70 mt-0.5">remaining</span>
                     </div>
                   </div>
                   <div className="flex gap-1.5">
@@ -1373,8 +1549,8 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       />
                     ))}
                   </div>
-                  <div className="w-full rounded-lg bg-gray-800/80 border border-gray-700/60 p-3">
-                    <p className="text-[9px] text-gray-500 uppercase tracking-wider mb-2 font-medium">Premium Analytics</p>
+                  <div className="w-full rounded-lg bg-card/80 border border-border/80 p-3">
+                    <p className="text-[9px] text-muted-foreground/70 uppercase tracking-wider mb-2 font-medium">Premium Analytics</p>
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <div className="w-7 h-7 rounded-lg bg-orange-500/15 flex items-center justify-center">
@@ -1382,7 +1558,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         </div>
                         <div>
                           <span className="text-lg font-bold text-white tabular-nums">{streakCount}</span>
-                          <span className="text-[9px] text-gray-500 block">Day Streak</span>
+                          <span className="text-[9px] text-muted-foreground/70 block">Day Streak</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1391,7 +1567,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                         </div>
                         <div>
                           <span className="text-xs font-bold text-white">100 Sessions</span>
-                          <span className="text-[9px] text-gray-500 block">Milestone</span>
+                          <span className="text-[9px] text-muted-foreground/70 block">Milestone</span>
                         </div>
                       </div>
                     </div>
@@ -1403,7 +1579,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                     </div>
                     <div className="flex justify-between mt-1">
                       {["M", "T", "W", "T", "F", "S", "S"].map((d, i) => (
-                        <span key={i} className="flex-1 text-center text-[8px] text-gray-600">{d}</span>
+                        <span key={i} className="flex-1 text-center text-[8px] text-muted-foreground/60">{d}</span>
                       ))}
                     </div>
                   </div>
@@ -1452,11 +1628,11 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                           className={`relative flex flex-col items-center gap-2 p-4 rounded-xl border transition-all ${
                             isActive
                               ? "bg-blue-500/10 border-blue-500/30 shadow-lg shadow-blue-500/5"
-                              : "bg-gray-800/50 border-gray-700/50 hover:border-gray-600"
+                              : "bg-card/50 border-border/60 hover:border-input"
                           }`}
                         >
-                          <sound.Icon className={`h-6 w-6 transition-colors ${isActive ? "text-blue-400" : "text-gray-500"}`} />
-                          <span className={`text-[10px] font-medium transition-colors ${isActive ? "text-blue-300" : "text-gray-500"}`}>{sound.name}</span>
+                          <sound.Icon className={`h-6 w-6 transition-colors ${isActive ? "text-blue-400" : "text-muted-foreground/70"}`} />
+                          <span className={`text-[10px] font-medium transition-colors ${isActive ? "text-blue-300" : "text-muted-foreground/70"}`}>{sound.name}</span>
                           {isActive && (
                             <div className="absolute top-2 right-2 flex items-end gap-px h-3">
                               {[10, 14, 8, 12].map((h, j) => (
@@ -1469,7 +1645,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       );
                     })}
                   </div>
-                  <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-gray-500">
+                  <div className="mt-3 flex items-center justify-center gap-2 text-[10px] text-muted-foreground/70">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                     Playing in #study-lounge
                   </div>
@@ -1479,22 +1655,22 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {activeTab === "liongotchi" && (
                 <div className="flex flex-col items-center gap-6 w-full max-w-xs" ref={goldRef}>
                   <div className="flex gap-4 w-full">
-                    <div className="flex-1 rounded-xl bg-gray-800/80 border border-yellow-500/20 p-4 text-center">
+                    <div className="flex-1 rounded-xl bg-card/80 border border-yellow-500/20 p-4 text-center">
                       <div className="w-12 h-12 mx-auto rounded-full bg-yellow-500/15 flex items-center justify-center mb-2"
                         style={{ animation: goldVisible ? "sp-pulse-gold 2s ease-in-out infinite" : "none" }}>
                         <Coins className="h-6 w-6 text-yellow-400" />
                       </div>
                       <div className="text-2xl font-bold text-white tabular-nums">{goldCount}</div>
-                      <div className="text-[10px] text-gray-500 mt-0.5">gold per session</div>
+                      <div className="text-[10px] text-muted-foreground/70 mt-0.5">gold per session</div>
                       <div className="mt-2 inline-flex px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 text-[10px] font-bold">+15%</div>
                     </div>
-                    <div className="flex-1 rounded-xl bg-gray-800/80 border border-purple-500/20 p-4 text-center relative overflow-hidden">
+                    <div className="flex-1 rounded-xl bg-card/80 border border-purple-500/20 p-4 text-center relative overflow-hidden">
                       <div className="w-12 h-12 mx-auto rounded-full bg-purple-500/15 flex items-center justify-center mb-2">
                         <Sparkles className="h-6 w-6 text-purple-400" />
                       </div>
                       <div className="text-2xl font-bold text-white">15%</div>
-                      <div className="text-[10px] text-gray-500 mt-0.5">bonus drop rate</div>
-                      <div className="mt-2 w-full bg-gray-700/50 rounded-full h-1.5 overflow-hidden">
+                      <div className="text-[10px] text-muted-foreground/70 mt-0.5">bonus drop rate</div>
+                      <div className="mt-2 w-full bg-muted/50 rounded-full h-1.5 overflow-hidden">
                         <div className="h-full bg-purple-400 rounded-full transition-all duration-1000 ease-out" style={{ width: goldVisible ? "100%" : "0%" }} />
                       </div>
                       {goldVisible && [0, 1, 2].map((j) => (
@@ -1505,7 +1681,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       ))}
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 text-center">Applied to every member automatically</p>
+                  <p className="text-[10px] text-muted-foreground/70 text-center">Applied to every member automatically</p>
                 </div>
               )}
             </div>
@@ -1513,53 +1689,53 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-6">
-          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+          <div className="rounded-xl bg-card/50 border border-border/60 p-4 flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center flex-shrink-0">
               <Pin className="h-4 w-4 text-green-400" />
             </div>
             <div>
               <div className="text-sm font-medium text-white">Sticky Messages</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Persistent announcements pinned to the bottom of any channel</div>
+              <div className="text-[11px] text-muted-foreground/70 mt-0.5">Persistent announcements pinned to the bottom of any channel</div>
             </div>
           </div>
-          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+          <div className="rounded-xl bg-card/50 border border-border/60 p-4 flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center flex-shrink-0">
               <Clock className="h-4 w-4 text-cyan-400" />
             </div>
             <div>
               <div className="text-sm font-medium text-white">Voice Time Editor</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Admin control to adjust member voice time stats</div>
+              <div className="text-[11px] text-muted-foreground/70 mt-0.5">Admin control to adjust member voice time stats</div>
             </div>
           </div>
-          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+          <div className="rounded-xl bg-card/50 border border-border/60 p-4 flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
               <EyeOff className="h-4 w-4 text-red-400" />
             </div>
             <div>
               <div className="text-sm font-medium text-white">No Ads</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Vote &amp; sponsor prompts removed from all bot messages</div>
+              <div className="text-[11px] text-muted-foreground/70 mt-0.5">Vote &amp; sponsor prompts removed from all bot messages</div>
             </div>
           </div>
-          <div className="rounded-xl bg-gray-800/50 border border-gray-700/50 p-4 flex items-start gap-3">
+          <div className="rounded-xl bg-card/50 border border-border/60 p-4 flex items-start gap-3">
             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center flex-shrink-0">
               <MessageSquare className="h-4 w-4 text-amber-400" />
             </div>
             <div>
               <div className="text-sm font-medium text-white">Priority Features</div>
-              <div className="text-[11px] text-gray-500 mt-0.5">Propose &amp; vote on what gets built next</div>
+              <div className="text-[11px] text-muted-foreground/70 mt-0.5">Propose &amp; vote on what gets built next</div>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 rounded-xl border border-gray-700 bg-gradient-to-r from-gray-800/80 to-gray-800/50 p-6 lg:p-8">
+        <div className="mt-6 rounded-xl border border-border bg-gradient-to-r from-card/80 to-card/40 p-6 lg:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <div className="flex items-baseline gap-3 mb-1 flex-wrap">
                 <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("MONTHLY", currency)}</span>
-                <span className="text-sm text-gray-500">/month</span>
-                <span className="text-gray-600 mx-1">or</span>
+                <span className="text-sm text-muted-foreground/70">/month</span>
+                <span className="text-muted-foreground/60 mx-1">or</span>
                 <span className="text-3xl font-black text-white">{symbol}{getServerPremiumPrice("YEARLY", currency)}</span>
-                <span className="text-sm text-gray-500">/year</span>
+                <span className="text-sm text-muted-foreground/70">/year</span>
               </div>
               <p className="text-xs text-green-400/80">Yearly saves 17% &mdash; 2 months free</p>
             </div>
@@ -1569,11 +1745,11 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   Sign in to Subscribe
                 </button>
               ) : serversLoading ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-gray-500 text-sm">
+                <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground/70 text-sm">
                   <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers...
                 </div>
               ) : adminServers.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-3">
+                <p className="text-sm text-muted-foreground/70 text-center py-3">
                   You need to be an admin of a server with LionBot to subscribe.{" "}
                   <a href="/invite" className="text-blue-400 hover:underline">Add LionBot</a>
                 </p>
@@ -1582,7 +1758,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   <select
                     value={selectedServer}
                     onChange={(e) => setSelectedServer(e.target.value)}
-                    className="w-full rounded-lg bg-gray-900/80 border border-gray-700 text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
+                    className="w-full rounded-lg bg-background/80 border border-border text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none transition-colors"
                   >
                     {adminServers.map((s) => (
                       <option key={s.guildId} value={s.guildId}>{s.guildName}</option>
@@ -1592,7 +1768,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                     <button
                       onClick={() => handleServerCheckout("MONTHLY")}
                       disabled={checkingOut}
-                      className="flex-1 px-3 py-2.5 rounded-lg bg-gray-900/80 border border-gray-700 hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
+                      className="flex-1 px-3 py-2.5 rounded-lg bg-background/80 border border-border hover:border-blue-500/50 text-white text-sm font-medium transition-colors disabled:opacity-50"
                     >
                       {checkingOut ? "..." : `${symbol}${getServerPremiumPrice("MONTHLY", currency)}/mo`}
                     </button>
@@ -1605,7 +1781,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                       <span className="absolute top-0 right-0 bg-green-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">SAVE 17%</span>
                     </button>
                   </div>
-                  <p className="text-[11px] text-gray-600 text-center">
+                  <p className="text-[11px] text-muted-foreground/60 text-center">
                     Auto-renews. Cancel anytime from your{" "}
                     <a href="/dashboard" className="text-blue-400 hover:underline">dashboard</a>.
                   </p>
@@ -1618,7 +1794,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
       {session && !premiumsLoading && (myPaidSubs.filter(s => s.status === "ACTIVE" || s.status === "CANCELLING").length > 0 || myLhPremium) && (
         <div className="max-w-6xl mx-auto px-4 lg:px-6 mt-8">
-          <div className="rounded-xl border border-gray-700 bg-gray-800/60 p-5">
+          <div className="rounded-xl border border-border bg-card/60 p-5">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Crown className="h-5 w-5 text-yellow-400" />
@@ -1634,12 +1810,12 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                 .map((s) => {
                   const serverName = allServers.find((sv) => sv.guildId === s.guildId)?.guildName || `Server ${s.guildId}`;
                   return (
-                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-gray-700/50">
+                    <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-border/60">
                       <div className="flex items-center gap-3">
                         <Server className="h-4 w-4 text-blue-400 flex-shrink-0" />
                         <div>
                           <div className="text-sm font-medium text-white">{serverName}</div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-muted-foreground/70">
                             {s.plan === "YEARLY" ? "Yearly" : "Monthly"} &middot;{" "}
                             {s.currentPeriodEnd ? `Renews ${new Date(s.currentPeriodEnd).toLocaleDateString()}` : ""}
                           </div>
@@ -1656,7 +1832,7 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   );
                 })}
               {myLhPremium && (
-                <div className="flex items-center justify-between p-3 rounded-lg bg-gray-900/50 border border-blue-500/30">
+                <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 border border-blue-500/30">
                   <div className="flex items-center gap-3">
                     <Crown className="h-4 w-4 text-yellow-400 flex-shrink-0" />
                     <div>
@@ -1800,7 +1976,7 @@ export default function Donate() {
 
   return (
     <Layout SEO={DonationSEO}>
-      <div className="bg-gray-900 min-h-screen">
+      <div className="bg-background min-h-screen">
         <style>{`
           @keyframes shimmerSweep {
             0%, 100% { transform: translateX(-100%); }
@@ -1809,71 +1985,173 @@ export default function Donate() {
           .shimmer-sweep {
             animation: shimmerSweep 4s ease-in-out infinite;
           }
+          @keyframes tier-border {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+          @keyframes tier-halo {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(1.05); }
+          }
+          @keyframes tier-shimmer {
+            0%, 100% { transform: translateX(-120%) skewX(-15deg); }
+            50% { transform: translateX(120%) skewX(-15deg); }
+          }
+          @keyframes tier-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.08); opacity: 0.85; }
+          }
+          @keyframes tier-sparkle {
+            0%, 100% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 1; transform: scale(1.2); }
+          }
         `}</style>
 
-        {/* --- AI-MODIFIED (2026-03-25) --- */}
-        {/* Purpose: Sticky floating currency toggle, always visible near pricing */}
-        <div className="fixed bottom-6 right-6 z-50">
-          <div className="inline-flex rounded-full bg-gray-800/95 backdrop-blur-sm border border-gray-600 p-1 shadow-lg shadow-black/40">
-            <button
-              onClick={() => setCurrency("eur")}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                currency === "eur"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              &euro; EUR
-            </button>
-            <button
-              onClick={() => setCurrency("usd")}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-semibold transition-all ${
-                currency === "usd"
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "text-gray-400 hover:text-white"
-              }`}
-            >
-              $ USD
-            </button>
-          </div>
-        </div>
-        {/* --- END AI-MODIFIED --- */}
-        {/* Hero */}
-        <section className="relative pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(91,141,239,0.08),_transparent_50%)]" />
+        {/* --- AI-MODIFIED (2026-04-24) --- */}
+        {/* Purpose: Redesigned hero -- split layout, animated showcase on the right,
+            inline currency toggle (no more floating pill that overlapped content on mobile),
+            micro-trust line under CTAs.
+            --- Original code (commented out for rollback) ---
+            // <div className="fixed bottom-6 right-6 z-50"> ... sticky floating EUR/USD pill ... </div>
+            // <section className="relative pt-16 pb-12 lg:pt-24 lg:pb-16 overflow-hidden">
+            //   <div className="text-center">
+            //     <h1>Support LionBot</h1>
+            //     <p>Become a LionHeart supporter to unlock exclusive perks...</p>
+            //     <div>View Plans / Buy LionGems</div>
+            //   </div>
+            // </section>
+            --- End original code --- */}
+        <section className="relative pt-12 pb-16 lg:pt-20 lg:pb-20 overflow-hidden">
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(ellipse 800px 500px at 30% 20%, rgba(244, 114, 182, 0.10), transparent 60%), radial-gradient(ellipse 700px 500px at 80% 60%, rgba(59, 130, 246, 0.08), transparent 60%), radial-gradient(ellipse 600px 400px at 60% 90%, rgba(168, 85, 247, 0.06), transparent 70%)",
+            }}
+          />
+          <div
+            className="absolute inset-0 opacity-[0.025] pointer-events-none"
+            style={{
+              backgroundImage:
+                "radial-gradient(circle, rgba(255,255,255,0.6) 1px, transparent 1px)",
+              backgroundSize: "32px 32px",
+            }}
+          />
+
           <div className="relative max-w-6xl mx-auto px-4 lg:px-6">
-            <div className="text-center">
-              <h1 className="text-4xl sm:text-5xl font-bold text-white">
-                Support{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-pink-400 to-yellow-400">
-                  LionBot
+            <div className="grid grid-cols-1 lg:grid-cols-[1.1fr,1fr] items-center gap-10 lg:gap-12">
+              <div className="text-center lg:text-left">
+                <span className="inline-flex items-center gap-2 rounded-full border border-pink-500/30 bg-pink-500/10 px-3 py-1 text-[11px] font-bold uppercase tracking-widest text-pink-300">
+                  <Crown className="h-3 w-3" />
+                  Premium that pays you back
                 </span>
-              </h1>
-              <p className="mt-4 text-lg text-gray-400 max-w-2xl mx-auto">
-                Become a LionHeart supporter to unlock exclusive perks, boost
-                your farm, and get animated glowing profile cards!
-              </p>
-              <div className="flex flex-wrap items-center gap-3 mt-8 justify-center">
-                <a
-                  href="#tiers"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:brightness-110 transition-all shadow-lg shadow-blue-500/25"
-                >
-                  <Crown className="h-4 w-4" />
-                  View Plans
-                </a>
-                <a
-                  href="#gems"
-                  className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-700 text-white font-semibold hover:bg-gray-800 transition-colors"
-                >
-                  <GemIcon className="h-5 w-5" />
-                  Buy LionGems
-                </a>
+                <h1 className="mt-4 text-4xl sm:text-5xl lg:text-[3.5rem] font-black text-foreground tracking-tight leading-[1.05]">
+                  Make your community feel{" "}
+                  <span
+                    className="text-transparent bg-clip-text"
+                    style={{
+                      backgroundImage:
+                        "linear-gradient(135deg, #f472b6, #a855f7 50%, #f59e0b)",
+                    }}
+                  >
+                    premium
+                  </span>
+                </h1>
+                <p className="mt-5 text-base lg:text-lg text-muted-foreground max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                  LionHeart unlocks animated glowing profile cards, monthly LionGems, faster farms, and bonuses on everything you already do. Cancel anytime.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3 mt-7 justify-center lg:justify-start">
+                  <a
+                    href="#tiers"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .querySelector("#tiers")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="group inline-flex items-center gap-2 px-6 py-3.5 rounded-xl text-white font-semibold transition-all hover:translate-y-[-1px]"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #f472b6, #a855f7)",
+                      boxShadow:
+                        "0 12px 32px rgba(244, 114, 182, 0.45), inset 0 -2px 0 rgba(0,0,0,0.15)",
+                    }}
+                  >
+                    <Crown className="h-4 w-4" />
+                    See LionHeart plans
+                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </a>
+                  <a
+                    href="#gems"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      document
+                        .querySelector("#gems")
+                        ?.scrollIntoView({ behavior: "smooth" });
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl border border-border bg-card/40 text-foreground font-semibold hover:bg-card hover:border-input transition-colors"
+                  >
+                    <GemIcon className="h-5 w-5" />
+                    Buy LionGems
+                  </a>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 justify-center lg:justify-start text-[12px] text-muted-foreground">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Shield className="h-3.5 w-3.5 text-green-400" />
+                    Cancel anytime
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <CreditCard className="h-3.5 w-3.5 text-blue-400" />
+                    Secure with Stripe
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Zap className="h-3.5 w-3.5 text-yellow-400" />
+                    30-second checkout
+                  </span>
+                </div>
+
+                <div className="mt-6 flex items-center gap-2 justify-center lg:justify-start">
+                  <span className="text-[11px] text-muted-foreground/80 uppercase tracking-wider font-semibold">
+                    Currency
+                  </span>
+                  <div className="inline-flex rounded-full border border-border bg-card/60 backdrop-blur-sm p-0.5">
+                    <button
+                      onClick={() => setCurrency("eur")}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        currency === "eur"
+                          ? "bg-foreground text-background shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      &euro; EUR
+                    </button>
+                    <button
+                      onClick={() => setCurrency("usd")}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
+                        currency === "usd"
+                          ? "bg-foreground text-background shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      $ USD
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              {/* Currency toggle moved to sticky floating pill */}
+              <div className="relative w-full max-w-[480px] mx-auto lg:max-w-none">
+                <HeroShowcase />
+              </div>
             </div>
           </div>
         </section>
+
+        <AudienceChooser />
+
+        <ValuePillars />
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Success banner */}
         {showSuccess && (
@@ -1910,20 +2188,28 @@ export default function Donate() {
         )}
 
         {/* Subscription Tiers */}
-        <section id="tiers" className="py-16 lg:py-20 scroll-mt-20">
-          <div className="max-w-5xl mx-auto px-4 lg:px-6">
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Refreshed tiers section header, wider grid container so the featured
+            LionHeart+ card has visual room to breathe at scale-1.05 on lg screens, larger
+            gap so the animated halo doesn't bleed into neighbouring cards. */}
+        <section id="tiers" className="relative py-16 lg:py-20 scroll-mt-20">
+          <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-12">
-              <h2 className="text-3xl font-bold text-white">
-                LionHeart Subscriptions
+              <span className="inline-flex items-center gap-2 rounded-full border border-border bg-card/60 px-3 py-1 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                <Crown className="h-3 w-3" />
+                LionHeart Plans
+              </span>
+              <h2 className="mt-4 text-3xl lg:text-4xl font-bold text-foreground tracking-tight">
+                Pick the LionHeart that fits you
               </h2>
-              <p className="text-gray-400 mt-2">
-                Choose the plan that fits you best
+              <p className="text-muted-foreground mt-3 text-base lg:text-lg max-w-xl mx-auto">
+                Three tiers. Real perks. Every plan pays you back in monthly LionGems.
               </p>
             </div>
 
             {/* Subscription management banner */}
             {hasActiveSub && subStatus && (
-              <div className="mb-8">
+              <div className="mb-10">
                 <SubscriptionManagementBanner
                   subStatus={subStatus}
                   onManage={handleManageSubscription}
@@ -1933,7 +2219,7 @@ export default function Donate() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {TIER_ORDER.map((tierId) => (
                 <SubscriptionCard
                   key={tierId}
@@ -1954,7 +2240,7 @@ export default function Donate() {
             <div className="mt-10 text-center">
               <button
                 onClick={() => setShowComparison(!showComparison)}
-                className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ArrowRight
                   className={`h-4 w-4 transition-transform ${
@@ -1966,19 +2252,20 @@ export default function Donate() {
             </div>
 
             {showComparison && (
-              <div className="mt-6 rounded-xl border border-gray-700 bg-gray-800/50 p-6">
+              <div className="mt-6 rounded-xl border border-border bg-card/50 p-6">
                 <ComparisonTable />
               </div>
             )}
           </div>
         </section>
+        {/* --- END AI-MODIFIED --- */}
 
         <ServerPremiumShowcase currency={currency} symbol={symbol} />
 
         {/* Gem Packages */}
         <section
           id="gems"
-          className="py-16 lg:py-20 border-t border-gray-800 scroll-mt-20"
+          className="py-16 lg:py-20 border-t border-border/60 scroll-mt-20"
         >
           <div className="max-w-6xl mx-auto px-4 lg:px-6">
             <div className="text-center mb-10">
@@ -1988,7 +2275,7 @@ export default function Donate() {
                   LionGem Packages
                 </h2>
               </div>
-              <p className="text-gray-400 mt-2">
+              <p className="text-muted-foreground mt-2">
                 One-time purchases &mdash; use gems for profile skins, gifts, and
                 more
               </p>
@@ -1998,7 +2285,7 @@ export default function Donate() {
                 <button
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="rounded-xl border border-gray-700 bg-gray-800/80 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5 hover:translate-y-[-2px] transition-all duration-200 p-5 text-left group"
+                  className="rounded-xl border border-border bg-card/80 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-500/5 hover:translate-y-[-2px] transition-all duration-200 p-5 text-left group"
                 >
                   <div className="flex items-center justify-center h-36 mb-4">
                     <Image
@@ -2015,7 +2302,7 @@ export default function Donate() {
                       {numberWithCommas(item.tokens)}
                     </div>
                     {item.tokens_bonus > 0 && (
-                      <div className="text-xs text-gray-500 mt-0.5">
+                      <div className="text-xs text-muted-foreground/70 mt-0.5">
                         +{numberWithCommas(item.tokens_bonus)} bonus
                       </div>
                     )}
@@ -2030,7 +2317,7 @@ export default function Donate() {
         </section>
 
         {/* FAQ */}
-        <section className="py-12 lg:py-16 border-t border-gray-800">
+        <section className="py-12 lg:py-16 border-t border-border/60">
           <div className="max-w-2xl mx-auto px-4 lg:px-6">
             <h2 className="text-2xl font-bold text-white text-center mb-8">
               {t("faq.title")}
@@ -2041,7 +2328,7 @@ export default function Donate() {
                   <AccordionTrigger className="text-white">
                     {t(`faq.q${i}`)}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-400">
+                  <AccordionContent className="text-muted-foreground">
                     {t(`faq.a${i}`)}
                   </AccordionContent>
                 </AccordionItem>
