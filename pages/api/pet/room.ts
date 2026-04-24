@@ -41,7 +41,12 @@ export default apiHandler({
 
     const userId = BigInt(auth.discordId)
 
-    const [pet, userConfig, allRooms, ownedRooms, equipmentRows] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Fetch the cosmetic overlay rows and the master cosmetics_enabled
+    // flag alongside the equipment so the visual map sent to RoomCanvas
+    // matches what the bot renders. Stats are not surfaced by this route, so
+    // we pre-merge cosmetics over equipment per slot when enabled.
+    const [pet, userConfig, allRooms, ownedRooms, equipmentRows, cosmeticRows] = await Promise.all([
       prisma.lg_pets.findUnique({
         where: { userid: userId },
         select: {
@@ -49,6 +54,7 @@ export default apiHandler({
           expression: true,
           level: true,
           active_room_id: true,
+          cosmetics_enabled: true,
         },
       }),
       prisma.user_config.findUnique({
@@ -77,7 +83,15 @@ export default apiHandler({
           lg_items: { select: { name: true, category: true, rarity: true, asset_path: true } },
         },
       }),
+      prisma.lg_pet_cosmetics.findMany({
+        where: { userid: userId },
+        select: {
+          slot: true,
+          lg_items: { select: { name: true, category: true, rarity: true, asset_path: true } },
+        },
+      }),
     ])
+    // --- END AI-MODIFIED ---
 
     let activeRoom: { roomId: number; name: string; assetPrefix: string } | null = null
     if (pet?.active_room_id) {
@@ -151,12 +165,40 @@ export default apiHandler({
       }
     }
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Apply cosmetic overlay on top of equipment per slot when the
+    // pet's cosmetics_enabled toggle is on, then expose the merged map as
+    // `equipment` for RoomCanvas. Also expose the raw `cosmetics` map and
+    // `cosmeticsEnabled` for any future UI that wants to label the merge.
+    const cosmeticsEnabled = pet?.cosmetics_enabled !== false
+    const cosmetics: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
+    for (const c of cosmeticRows) {
+      cosmetics[c.slot] = {
+        name: c.lg_items.name,
+        category: c.lg_items.category,
+        rarity: c.lg_items.rarity,
+        assetPath: c.lg_items.asset_path,
+      }
+    }
+    const renderedEquipment = cosmeticsEnabled
+      ? { ...equipment, ...cosmetics }
+      : equipment
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       activeRoom,
       furniture,
       layout,
       rooms,
-      equipment,
+      // --- AI-MODIFIED (2026-04-24) ---
+      // Purpose: `equipment` here is the renderer-facing merge. Raw maps are
+      // also returned for any future UI that needs to differentiate stats
+      // from visuals.
+      equipment: renderedEquipment,
+      equipmentRaw: equipment,
+      cosmetics,
+      cosmeticsEnabled,
+      // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-03-16) ---
       // Purpose: Lowercase expression to match blob asset paths (DB stores UPPERCASE)
       pet: pet

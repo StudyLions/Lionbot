@@ -26,6 +26,10 @@ export async function fetchPetVisualData(userId: bigint) {
         active_gameboy_skin_id: true,
         fullscreen_mode: true,
         created_at: true,
+        // --- AI-MODIFIED (2026-04-24) ---
+        // Purpose: Used to gate the cosmetic-overlay merge below.
+        cosmetics_enabled: true,
+        // --- END AI-MODIFIED ---
       },
     }),
     prisma.user_config.findUnique({
@@ -43,7 +47,11 @@ export async function fetchPetVisualData(userId: bigint) {
       })
     : null
 
-  const [equipmentRows, room, furnitureRows, layoutRows, farmRows] = await Promise.all([
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Also fetch cosmetic overlay rows so the returned `equipment`
+  // map matches what the bot renders -- cosmetics layered over real
+  // equipment per slot when the pet's cosmetics_enabled flag is on.
+  const [equipmentRows, cosmeticRows, room, furnitureRows, layoutRows, farmRows] = await Promise.all([
     prisma.lg_pet_equipment.findMany({
       where: { userid: userId },
       select: {
@@ -51,6 +59,14 @@ export async function fetchPetVisualData(userId: bigint) {
         lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } },
       },
     }),
+    prisma.lg_pet_cosmetics.findMany({
+      where: { userid: userId },
+      select: {
+        slot: true,
+        lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } },
+      },
+    }),
+    // --- END AI-MODIFIED ---
     pet.active_room_id
       ? prisma.lg_rooms.findUnique({
           where: { room_id: pet.active_room_id },
@@ -125,6 +141,26 @@ export async function fetchPetVisualData(userId: bigint) {
       glowIntensity: calcGlowIntensity(lvl),
     }
   }
+
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Apply cosmetic overlay over the equipment map per slot when
+  // the pet's master cosmetics_enabled flag is on. Cosmetics deliberately
+  // get glowTier "none" so the visual overlay never fakes stat bling --
+  // the actual glow follows whatever item is equipped for stats.
+  const cosmeticsEnabled = pet.cosmetics_enabled !== false
+  if (cosmeticsEnabled) {
+    for (const c of cosmeticRows) {
+      equipment[c.slot] = {
+        name: c.lg_items.name,
+        category: c.lg_items.category,
+        rarity: c.lg_items.rarity,
+        assetPath: c.lg_items.asset_path,
+        glowTier: "none",
+        glowIntensity: 0,
+      }
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   const roomPrefixStr = room?.asset_prefix ?? "rooms/default"
   const furnitureMap: Record<string, string> = getRoomDefaults(roomPrefixStr)

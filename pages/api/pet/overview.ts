@@ -35,6 +35,12 @@ export default apiHandler({
           active_gameboy_skin_id: true,
           fullscreen_mode: true,
           created_at: true,
+          // --- AI-MODIFIED (2026-04-24) ---
+          // Purpose: Master cosmetic-overlay toggle for the pet. The
+          // renderer-facing equipment map merges cosmetics on top of
+          // equipment when this is TRUE.
+          cosmetics_enabled: true,
+          // --- END AI-MODIFIED ---
         },
       }),
       prisma.user_config.findUnique({
@@ -59,7 +65,12 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Also fetch active room, user furniture, and room layout for room preview
-    const [equipmentRows, inventoryCount, farmPlots, room, furnitureRows, layoutRows] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Also fetch cosmetic overlay rows alongside equipment so the
+    // returned payload can drive both the stats summary (equipment) AND the
+    // renderer (cosmetics merged over equipment per slot). The stats engine
+    // never uses cosmetics -- only the visual layer does.
+    const [equipmentRows, cosmeticRows, inventoryCount, farmPlots, room, furnitureRows, layoutRows] = await Promise.all([
       prisma.lg_pet_equipment.findMany({
         where: { userid: userId },
         select: {
@@ -70,6 +81,14 @@ export default apiHandler({
           // --- END AI-MODIFIED ---
         },
       }),
+      prisma.lg_pet_cosmetics.findMany({
+        where: { userid: userId },
+        select: {
+          slot: true,
+          lg_items: { select: { itemid: true, name: true, category: true, rarity: true, asset_path: true } },
+        },
+      }),
+      // --- END AI-MODIFIED ---
       prisma.lg_user_inventory.count({ where: { userid: userId } }),
       prisma.lg_user_farm.count({
         where: { userid: userId, seed_id: { not: null } },
@@ -122,6 +141,23 @@ export default apiHandler({
         glowIntensity: calcGlowIntensity(lvl),
       }
     }
+    // --- END AI-MODIFIED ---
+
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Build the cosmetics map. Visual-only, no enhancement / glow
+    // tier lookup -- cosmetics deliberately don't carry stat bling. The
+    // frontend merges this on top of `equipment` per slot when
+    // `cosmeticsEnabled` is true to produce the renderer-facing map.
+    const cosmetics: Record<string, { name: string; category: string; rarity: string; assetPath: string }> = {}
+    for (const c of cosmeticRows) {
+      cosmetics[c.slot] = {
+        name: c.lg_items.name,
+        category: c.lg_items.category,
+        rarity: c.lg_items.rarity,
+        assetPath: c.lg_items.asset_path,
+      }
+    }
+    const cosmeticsEnabled = pet.cosmetics_enabled !== false
     // --- END AI-MODIFIED ---
 
     // --- AI-REPLACED (2026-03-22) ---
@@ -205,6 +241,15 @@ export default apiHandler({
       nextDecayAt: nextDecayAt.toISOString(),
       // --- END AI-MODIFIED ---
       equipment,
+      // --- AI-MODIFIED (2026-04-24) ---
+      // Purpose: Cosmetic overlay map + master enable flag. The frontend
+      // merges `cosmetics` on top of `equipment` per slot when
+      // `cosmeticsEnabled` is true to produce the visual layer that
+      // RoomCanvas consumes. Stats summaries should KEEP using
+      // `equipment` directly so bonuses stay tied to the real gear.
+      cosmetics,
+      cosmeticsEnabled,
+      // --- END AI-MODIFIED ---
       inventoryCount,
       activeFarmPlots: farmPlots,
       gold: (userConfig?.gold ?? BigInt(0)).toString(),

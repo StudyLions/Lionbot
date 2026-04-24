@@ -102,6 +102,17 @@ export default apiHandler({
     })
     const equippedItemIds = new Set(equipped.map((e) => e.itemid))
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Same lookup but for the cosmetic overlay layer. Drives the
+    // `equippedAsCosmetic` flag on each inventory row so the UI can show
+    // the right Set/Remove cosmetic button label.
+    const cosmetic = await prisma.lg_pet_cosmetics.findMany({
+      where: { userid: userId },
+      select: { slot: true, itemid: true },
+    })
+    const cosmeticItemIds = new Set(cosmetic.map((c) => c.itemid))
+    // --- END AI-MODIFIED ---
+
     // --- AI-MODIFIED (2026-03-19) ---
     // Purpose: Include full scroll trace, glow tier, max level, and scroll success rates
     const result = items.map((inv) => {
@@ -127,6 +138,12 @@ export default apiHandler({
         source: inv.source,
         acquiredAt: inv.acquired_at.toISOString(),
         equipped: equippedItemIds.has(inv.lg_items.itemid),
+        // --- AI-MODIFIED (2026-04-24) ---
+        // Purpose: True when this item is currently set as the cosmetic
+        // overlay for its slot. Independent from `equipped` -- a single
+        // item can be one, the other, both, or neither.
+        equippedAsCosmetic: cosmeticItemIds.has(inv.lg_items.itemid),
+        // --- END AI-MODIFIED ---
         totalBonus,
         glowTier: calcGlowTier(inv.enhancement_level, totalBonus),
         glowIntensity: calcGlowIntensity(inv.enhancement_level),

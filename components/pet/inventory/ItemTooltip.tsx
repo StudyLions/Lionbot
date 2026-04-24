@@ -35,6 +35,12 @@ export interface InventoryItem {
   source: string
   acquiredAt: string
   equipped: boolean
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: True when this item is currently set as the cosmetic overlay
+  // for its slot. Independent from `equipped` -- a single item can be
+  // equipped, set as cosmetic, both, or neither.
+  equippedAsCosmetic?: boolean
+  // --- END AI-MODIFIED ---
   totalBonus: number
   glowTier: GlowTier
   glowIntensity: number

@@ -245,6 +245,15 @@ export default apiHandler({
       await prisma.lg_pet_equipment.deleteMany({
         where: { userid: userId, itemid: equipInv.lg_items.itemid },
       })
+      // --- AI-MODIFIED (2026-04-24) ---
+      // Purpose: Cosmetic overlay rows reference lg_items.itemid; if a
+      // failed enhancement destroys the underlying inventory copy, also
+      // drop any cosmetic overlay tied to it so the renderer doesn't try
+      // to load a now-missing item the user no longer owns.
+      await prisma.lg_pet_cosmetics.deleteMany({
+        where: { userid: userId, itemid: equipInv.lg_items.itemid },
+      })
+      // --- END AI-MODIFIED ---
       await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
 
       // --- AI-MODIFIED (2026-03-23) ---
