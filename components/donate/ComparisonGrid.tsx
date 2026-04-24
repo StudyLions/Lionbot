@@ -228,7 +228,7 @@ export default function ComparisonGrid({ symbol = "€", currency = "eur" }: Com
             {TIER_ORDER.map((tierId) => {
               const t = SUBSCRIPTION_TIERS[tierId];
               const isFeatured = tierId === "LIONHEART_PLUS";
-              const price = currency === "eur" ? t.priceMonthly : t.priceMonthlyUSD;
+              const price = currency === "eur" ? t.price : t.priceUsd;
               return (
                 <div
                   key={tierId}

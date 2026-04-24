@@ -32,7 +32,7 @@ export default function StickyPricingBar({
   const [dismissed, setDismissed] = useState(false);
 
   const tier = SUBSCRIPTION_TIERS[recommendedTierId];
-  const price = currency === "eur" ? tier.priceMonthly : tier.priceMonthlyUSD;
+  const price = currency === "eur" ? tier.price : tier.priceUsd;
 
   useEffect(() => {
     const tiers = document.getElementById("tiers");

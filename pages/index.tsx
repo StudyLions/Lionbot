@@ -4,6 +4,13 @@
 // Purpose: Live stats from database via /api/public-stats (replaces hardcoded counters)
 // --- AI-MODIFIED (2026-03-16) ---
 // Purpose: Add LionGotchi showcase sections (Pet Room, Farm, Marketplace) + framer-motion
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Bold creative overhaul -- redesigned hero with floating live-activity card,
+//          compact trust strip below hero, consolidated LionGotchi sub-tabbed section,
+//          new PremiumTeaser bridge to /donate, illustrated how-it-works steps with
+//          tiny mockups, bolder gradient final-CTA banner. Reorders sections to a
+//          tighter narrative: Hero -> Trust -> Features -> LionGotchi -> Live counters
+//          -> Trailer -> Premium teaser -> How it works -> Final CTA.
 import React, { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +28,12 @@ import {
   ArrowRight,
   Sparkles,
   Play,
+  Crown,
+  Users,
+  Settings,
+  TrendingUp,
+  CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { HomepageSEO } from "@/constants/SeoData";
@@ -31,11 +44,8 @@ import {
   PomodoroDemo,
   EconomyDemo,
 } from "@/components/homepage/FeatureDemos";
-import {
-  LionGotchiHeroSection,
-  FarmShowcaseSection,
-  MarketplaceShowcaseSection,
-} from "@/components/homepage/LionGotchiShowcase";
+import LionGotchiTabbedSection from "@/components/homepage/LionGotchiTabbedSection";
+import PremiumTeaser from "@/components/homepage/PremiumTeaser";
 
 const INVITE_URL =
   "https://discordapp.com/api/oauth2/authorize?client_id=889078613817831495&permissions=8&scope=bot";
@@ -167,13 +177,124 @@ function StatCounter({
   );
 }
 
-// --- AI-MODIFIED (2026-03-14) ---
-// Purpose: Hero image now spans full section as background with gradient overlay for readability
-function HeroSection({ guildCount }: { guildCount?: number }) {
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Compact "live activity card" overlay used in the redesigned hero.
+//          Sits as a floating mock to the right of the headline. Shows three
+//          live numbers (studying, voice, lifetime sessions) with a pulse dot
+//          to give the hero immediate "this is real, right now" energy.
+function LiveActivityCard({ stats, loading }: { stats?: PublicStats; loading: boolean }) {
   const { t } = useTranslation("homepage");
+
+  const sessionsFmt = stats ? formatLargeNumber(stats.sessions) : { display: 0, suffix: "m", decimals: 1 };
+
+  return (
+    <div className="relative">
+      <style>{`
+        @keyframes hero-card-float {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-6px); }
+        }
+        @keyframes hero-card-glow {
+          0%, 100% { opacity: 0.35; }
+          50% { opacity: 0.55; }
+        }
+      `}</style>
+      <div
+        className="absolute -inset-6 rounded-3xl pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle, rgba(56, 189, 248, 0.25), transparent 70%)",
+          animation: "hero-card-glow 4s ease-in-out infinite",
+        }}
+      />
+      <div
+        className="relative rounded-2xl border border-border bg-card/85 backdrop-blur-md shadow-2xl shadow-primary/10 overflow-hidden"
+        style={{ animation: "hero-card-float 6s ease-in-out infinite" }}
+      >
+        <div className="flex items-center gap-2 px-5 pt-4 pb-3 border-b border-border/60">
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+          </span>
+          <span className="text-xs font-bold uppercase tracking-widest text-foreground">
+            {t("hero.liveCardTitle")}
+          </span>
+        </div>
+
+        <div className="px-5 py-4 space-y-3 min-w-[260px]">
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-3xl font-bold text-foreground tabular-nums">
+              {loading ? (
+                <span className="inline-block w-16 h-8 bg-muted rounded animate-pulse" />
+              ) : (
+                (stats?.studyingNow ?? 0).toLocaleString()
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">{t("hero.liveCardStudying")}</div>
+          </div>
+
+          <div className="flex items-baseline justify-between gap-3">
+            <div className="text-2xl font-bold text-foreground tabular-nums">
+              {loading ? (
+                <span className="inline-block w-12 h-6 bg-muted rounded animate-pulse" />
+              ) : (
+                (stats?.activeTimers ?? 0).toLocaleString()
+              )}
+            </div>
+            <div className="text-xs text-muted-foreground">{t("hero.liveCardActive")}</div>
+          </div>
+
+          <div className="pt-3 border-t border-border/60">
+            <div className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+              {t("hero.liveCardSessions")}
+            </div>
+            <div className="text-xl font-bold text-primary tabular-nums">
+              {loading ? (
+                <span className="inline-block w-16 h-6 bg-primary/10 rounded animate-pulse" />
+              ) : (
+                <>
+                  {sessionsFmt.decimals > 0 ? sessionsFmt.display.toFixed(sessionsFmt.decimals) : sessionsFmt.display.toLocaleString()}
+                  {sessionsFmt.suffix}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex -space-x-2 pt-2">
+            {Servers_list.slice(0, 5).map((server, i) => (
+              <div
+                key={i}
+                className="relative w-7 h-7 rounded-full overflow-hidden border-2 border-card"
+              >
+                <Image
+                  src={server.img.src}
+                  alt={server.img.alt}
+                  width={28}
+                  height={28}
+                />
+              </div>
+            ))}
+            <div className="relative w-7 h-7 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[9px] font-bold text-muted-foreground">
+              +10k
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: New hero with floating live-activity card on the right and a
+//          compact trust micro-bar under the CTAs (Top.gg verified · servers
+//          · Free forever). Replaces the single-column variant with a
+//          two-column split that gives the page immediate visual depth.
+function HeroSection({ stats, loading }: { stats?: PublicStats; loading: boolean }) {
+  const { t } = useTranslation("homepage");
+  const guildCount = stats?.guilds;
   const displayGuilds = guildCount ? formatGuildCount(guildCount) : "10,700";
   return (
-    <section className="relative overflow-hidden min-h-[480px] lg:min-h-[560px]">
+    <section className="relative overflow-hidden min-h-[480px] lg:min-h-[640px]">
       {/* Full-bleed background image */}
       <div className="absolute inset-0">
         <Image
@@ -183,42 +304,158 @@ function HeroSection({ guildCount }: { guildCount?: number }) {
           objectFit="cover"
           objectPosition="right center"
           priority
-          className="opacity-30 lg:opacity-40"
+          className="opacity-25 lg:opacity-30"
         />
         {/* Gradient overlays for text readability */}
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/40 lg:to-background/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/95 to-background/40 lg:to-background/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-background/80" />
         <div className="absolute inset-0 bg-gradient-to-b from-primary/8 via-primary/4 to-transparent" />
       </div>
 
       {/* Content */}
       <div className="relative max-w-6xl mx-auto px-4 pt-20 pb-16 lg:px-6 lg:pt-32 lg:pb-28">
-        <div className="max-w-2xl">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 backdrop-blur-sm">
-            <Sparkles className="h-3.5 w-3.5" />
-            Trusted by {displayGuilds}+ servers
-          </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] tracking-tight">
-            {t("hero.title")}
-          </h1>
-          <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
-            {t("hero.subtitle")}
-          </p>
-          <div className="flex flex-col sm:flex-row items-center gap-3 mt-10">
-            <a
-              href={INVITE_URL}
-              target="_blank"
-              rel="noreferrer"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-            >
-              {t("hero.addToDiscord")}
-              <ArrowRight className="h-4 w-4" />
-            </a>
-            <Link href="/dashboard">
-              <a className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border/80 text-foreground font-medium hover:bg-accent/80 hover:border-primary/30 transition-all duration-200 backdrop-blur-sm">
-                {t("hero.viewDashboard")}
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-12 lg:gap-16 items-center">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8 backdrop-blur-sm">
+              <Sparkles className="h-3.5 w-3.5" />
+              Trusted by {displayGuilds}+ servers
+            </div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground leading-[1.1] tracking-tight">
+              {t("hero.title")}
+            </h1>
+            <p className="mt-6 text-base sm:text-lg text-muted-foreground max-w-xl leading-relaxed">
+              {t("hero.subtitle")}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center gap-3 mt-10">
+              <a
+                href={INVITE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+              >
+                {t("hero.addToDiscord")}
+                <ArrowRight className="h-4 w-4" />
               </a>
-            </Link>
+              <Link href="/dashboard">
+                <a className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border/80 text-foreground font-medium hover:bg-accent/80 hover:border-primary/30 transition-all duration-200 backdrop-blur-sm">
+                  {t("hero.viewDashboard")}
+                </a>
+              </Link>
+            </div>
+
+            {/* Trust micro-bar under CTAs */}
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+                Top.gg verified
+              </span>
+              <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-muted-foreground/40" />
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                {displayGuilds}+ servers
+              </span>
+              <span className="hidden sm:inline-block w-1 h-1 rounded-full bg-muted-foreground/40" />
+              <span className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                Free forever
+              </span>
+            </div>
+          </div>
+
+          <div className="hidden lg:flex justify-end">
+            <LiveActivityCard stats={stats} loading={loading} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Compact horizontal trust strip placed right below the hero. Single
+//          row of server logos (sized down) + 3 key stats. Acts as immediate
+//          social proof above the fold without rebuilding SocialProofSection.
+function TrustStrip({ stats }: { stats?: PublicStats }) {
+  const { t } = useTranslation("homepage");
+  const loading = !stats;
+  const sessionsFmt = stats ? formatLargeNumber(stats.sessions) : { display: 0, suffix: "m", decimals: 1 };
+  const usersFmt = stats ? formatLargeNumber(stats.users) : { display: 0, suffix: "k", decimals: 0 };
+  const guildsFmt = stats ? formatLargeNumber(stats.guilds) : { display: 0, suffix: "k", decimals: 1 };
+
+  return (
+    <section className="relative border-y border-border/50 bg-card/30 backdrop-blur-sm">
+      <div className="max-w-6xl mx-auto px-4 lg:px-6 py-6 lg:py-7">
+        <div className="flex flex-col lg:flex-row items-center gap-5 lg:gap-8">
+          <div className="flex-shrink-0 flex items-center gap-3">
+            <span className="hidden lg:inline-block text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              {t("trustStrip.label")}
+            </span>
+            <div className="flex items-center gap-1.5">
+              {Servers_list.slice(0, 8).map((server, i) => (
+                <div
+                  key={i}
+                  className="w-8 h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden border-2 border-border bg-background"
+                  title={server.img.alt}
+                >
+                  <Image
+                    src={server.img.src}
+                    alt={server.img.alt}
+                    width={36}
+                    height={36}
+                    className="rounded-full"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 grid grid-cols-3 gap-3 lg:gap-6 w-full">
+            <div className="text-center lg:text-left">
+              <div className="text-lg sm:text-xl font-bold text-foreground tabular-nums">
+                {loading ? (
+                  <span className="inline-block w-12 h-5 bg-muted rounded animate-pulse" />
+                ) : (
+                  <>
+                    {guildsFmt.decimals > 0 ? guildsFmt.display.toFixed(guildsFmt.decimals) : guildsFmt.display.toLocaleString()}
+                    {guildsFmt.suffix}
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
+                {t("trustStrip.stat1Label")}
+              </div>
+            </div>
+            <div className="text-center lg:text-left">
+              <div className="text-lg sm:text-xl font-bold text-foreground tabular-nums">
+                {loading ? (
+                  <span className="inline-block w-12 h-5 bg-muted rounded animate-pulse" />
+                ) : (
+                  <>
+                    {usersFmt.decimals > 0 ? usersFmt.display.toFixed(usersFmt.decimals) : usersFmt.display.toLocaleString()}
+                    {usersFmt.suffix}
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
+                {t("trustStrip.stat2Label")}
+              </div>
+            </div>
+            <div className="text-center lg:text-left">
+              <div className="text-lg sm:text-xl font-bold text-foreground tabular-nums">
+                {loading ? (
+                  <span className="inline-block w-12 h-5 bg-muted rounded animate-pulse" />
+                ) : (
+                  <>
+                    {sessionsFmt.decimals > 0 ? sessionsFmt.display.toFixed(sessionsFmt.decimals) : sessionsFmt.display.toLocaleString()}
+                    {sessionsFmt.suffix}
+                  </>
+                )}
+              </div>
+              <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider">
+                {t("trustStrip.stat3Label")}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -398,55 +635,19 @@ function FeaturesSection() {
   );
 }
 
-function SocialProofSection({ stats }: { stats?: PublicStats }) {
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Slimmed-down "studying right now" interlude. The previous
+//          SocialProofSection's server-logo row + counters moved to the
+//          TrustStrip below the hero. This now keeps only the live counters
+//          as a midpage moment of social proof between content sections.
+function LiveStudyingInterlude({ stats }: { stats?: PublicStats }) {
   const { t } = useTranslation("homepage");
   const loading = !stats;
-  const displayGuilds = stats ? formatGuildCount(stats.guilds) : "10,700";
-
-  const sessionsFmt = stats ? formatLargeNumber(stats.sessions) : { display: 0, suffix: "m", decimals: 1 };
-  const usersFmt = stats ? formatLargeNumber(stats.users) : { display: 0, suffix: "k", decimals: 0 };
 
   return (
-    <section className="py-20 lg:py-28 border-t border-border/50 bg-card/20">
-      <div className="max-w-6xl mx-auto px-4 lg:px-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center mb-10">
-          {String(t("socialProof.title", { count: displayGuilds } as any))}
-        </h2>
-
-        {/* Server logos */}
-        <div className="flex items-center justify-center gap-4 sm:gap-6 lg:gap-8 mb-14 overflow-x-auto scrollbar-hide py-2">
-          {Servers_list.map((server, i) => (
-            <div
-              key={i}
-              className="flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden border-2 border-border bg-background hover:border-primary/40 transition-colors"
-            >
-              <Image
-                src={server.img.src}
-                alt={server.img.alt}
-                width={64}
-                height={64}
-                className="rounded-full"
-              />
-            </div>
-          ))}
-        </div>
-
-        {/* Live Counters */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCounter
-            value={sessionsFmt.display}
-            suffix={sessionsFmt.suffix}
-            label={t("socialProof.sessions")}
-            decimals={sessionsFmt.decimals}
-            loading={loading}
-          />
-          <StatCounter
-            value={usersFmt.display}
-            suffix={usersFmt.suffix}
-            label={t("socialProof.users")}
-            decimals={usersFmt.decimals}
-            loading={loading}
-          />
+    <section className="py-16 lg:py-20 border-t border-border/50 bg-card/20">
+      <div className="max-w-4xl mx-auto px-4 lg:px-6">
+        <div className="grid grid-cols-2 gap-4 lg:gap-8">
           <StatCounter
             value={stats?.studyingNow ?? 0}
             suffix=""
@@ -466,92 +667,295 @@ function SocialProofSection({ stats }: { stats?: PublicStats }) {
     </section>
   );
 }
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Replace generic numbered circles with three illustrated steps that
+//          actually show what each step looks like (invite button mock,
+//          dashboard tile mock, live stats tile mock). Makes the path from
+//          "add to Discord" to "live community" feel concrete instead of
+//          abstract.
 function HowItWorksSection() {
   const { t } = useTranslation("homepage");
-  const steps = [
-    { num: "1", key: "step1" },
-    { num: "2", key: "step2" },
-    { num: "3", key: "step3" },
-  ];
+
   return (
-    <section className="py-20 lg:py-28">
-      <div className="max-w-6xl mx-auto px-4 lg:px-6">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground text-center mb-14">
-          {t("howItWorks.title")}
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {steps.map((step) => (
-            <div key={step.num} className="text-center group">
-              <div className="inline-flex items-center justify-center w-14 h-14 rounded-full bg-primary text-primary-foreground font-bold text-lg mb-5 shadow-lg shadow-primary/20 group-hover:shadow-primary/30 transition-shadow">
-                {step.num}
+    <section className="py-20 lg:py-28 border-t border-border/50 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(700px_circle_at_50%_30%,_rgba(59,130,246,0.05),_transparent_70%)]" />
+
+      <div className="relative max-w-6xl mx-auto px-4 lg:px-6">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+        >
+          <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
+            {t("howItWorks.title")}
+          </h2>
+          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
+            {t("howItWorks.subtitle")}
+          </p>
+        </motion.div>
+
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8"
+          variants={featureStagger}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          {/* Step 1 -- invite button mock */}
+          <motion.div variants={featureFadeUp} className="group">
+            <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-sm p-6 h-full hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between mb-5">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/15 text-primary text-sm font-bold">
+                  1
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Step
+                </span>
               </div>
-              <h3 className="font-semibold text-foreground text-lg mb-2">
-                {t(`howItWorks.${step.key}.title`)}
+
+              {/* Mini invite button mockup */}
+              <div className="rounded-xl border border-border bg-background/60 p-4 mb-5">
+                <div className="flex items-center justify-center">
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs font-bold shadow-lg shadow-primary/20">
+                    <ArrowRight className="h-3 w-3" />
+                    Add to Discord
+                  </div>
+                </div>
+                <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground justify-center">
+                  <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+                  Authorized in 1 click
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-foreground text-base mb-1.5">
+                {t("howItWorks.step1.title")}
               </h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                {t(`howItWorks.${step.key}.description`)}
+                {t("howItWorks.step1.description")}
               </p>
             </div>
-          ))}
-        </div>
+          </motion.div>
+
+          {/* Step 2 -- dashboard tile mock */}
+          <motion.div variants={featureFadeUp} className="group">
+            <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-sm p-6 h-full hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between mb-5">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-violet-500/15 text-violet-300 text-sm font-bold">
+                  2
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Step
+                </span>
+              </div>
+
+              {/* Mini dashboard mockup */}
+              <div className="rounded-xl border border-border bg-background/60 p-3 mb-5 space-y-2">
+                <div className="flex items-center gap-2 pb-2 border-b border-border/40">
+                  <Settings className="h-3 w-3 text-violet-300" />
+                  <span className="text-[10px] font-semibold text-foreground">
+                    Server settings
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">
+                    Voice tracking
+                  </span>
+                  <div className="w-6 h-3 rounded-full bg-emerald-500/30 relative">
+                    <div className="absolute right-0.5 top-0.5 w-2 h-2 rounded-full bg-emerald-400" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">
+                    Pomodoro timers
+                  </span>
+                  <div className="w-6 h-3 rounded-full bg-emerald-500/30 relative">
+                    <div className="absolute right-0.5 top-0.5 w-2 h-2 rounded-full bg-emerald-400" />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-[9px] text-muted-foreground">
+                    Role rewards
+                  </span>
+                  <div className="w-6 h-3 rounded-full bg-emerald-500/30 relative">
+                    <div className="absolute right-0.5 top-0.5 w-2 h-2 rounded-full bg-emerald-400" />
+                  </div>
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-foreground text-base mb-1.5">
+                {t("howItWorks.step2.title")}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {t("howItWorks.step2.description")}
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Step 3 -- live stats tile mock */}
+          <motion.div variants={featureFadeUp} className="group">
+            <div className="rounded-2xl border border-border bg-card/40 backdrop-blur-sm p-6 h-full hover:border-primary/30 transition-colors">
+              <div className="flex items-center justify-between mb-5">
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-300 text-sm font-bold">
+                  3
+                </span>
+                <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                  Step
+                </span>
+              </div>
+
+              {/* Mini live stats mockup */}
+              <div className="rounded-xl border border-border bg-background/60 p-3 mb-5 space-y-2">
+                <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                  <div className="flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500" />
+                    </span>
+                    <span className="text-[10px] font-semibold text-foreground">
+                      Live activity
+                    </span>
+                  </div>
+                  <TrendingUp className="h-3 w-3 text-emerald-300" />
+                </div>
+                <div>
+                  <div className="text-base font-bold text-foreground tabular-nums">
+                    142
+                  </div>
+                  <div className="text-[9px] text-muted-foreground">
+                    studying right now
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Users className="h-2.5 w-2.5 text-muted-foreground" />
+                  <div className="flex -space-x-1">
+                    {[0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-3.5 h-3.5 rounded-full bg-gradient-to-br from-emerald-400 to-blue-500 border border-card"
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[9px] text-muted-foreground">
+                    +138 more
+                  </span>
+                </div>
+              </div>
+
+              <h3 className="font-semibold text-foreground text-base mb-1.5">
+                {t("howItWorks.step3.title")}
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                {t("howItWorks.step3.description")}
+              </p>
+            </div>
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );
 }
+// --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Bolder full-width gradient banner with three CTAs
+//          (Add to Discord / View Premium / Join Discord) replacing the
+//          previous small radial-gradient block. Final visual punctuation
+//          before the footer that ties homepage and donate page together.
 function FinalCTASection() {
   const { t } = useTranslation("homepage");
   return (
-    <section className="py-20 lg:py-28 border-t border-border/50 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(600px_circle_at_50%_50%,_rgba(59,130,246,0.06),_transparent_70%)]" />
-      <div className="relative max-w-3xl mx-auto px-4 lg:px-6 text-center">
-        <h2 className="text-2xl sm:text-3xl font-bold text-foreground">
-          {t("finalCta.title")}
-        </h2>
-        <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-          {t("finalCta.subtitle")}
-        </p>
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-10">
-          <a
-            href={INVITE_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
-          >
-            {t("finalCta.addToDiscord")}
-            <ArrowRight className="h-4 w-4" />
-          </a>
-          <a
-            href={DISCORD_SERVER}
-            target="_blank"
-            rel="noreferrer"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border text-foreground font-medium hover:bg-accent hover:border-primary/30 transition-all duration-200"
-          >
-            {t("finalCta.joinDiscord")}
-          </a>
+    <section className="relative py-20 lg:py-28 border-t border-border/50 overflow-hidden">
+      <style>{`
+        @keyframes final-cta-shimmer {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+      `}</style>
+      <div
+        className="absolute inset-0 opacity-50"
+        style={{
+          background:
+            "radial-gradient(900px circle at 30% 50%, rgba(244, 114, 182, 0.10), transparent 60%), radial-gradient(700px circle at 80% 60%, rgba(245, 158, 11, 0.08), transparent 60%)",
+        }}
+      />
+      <div className="relative max-w-5xl mx-auto px-4 lg:px-6">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-card/40 backdrop-blur-sm">
+          <div
+            className="absolute inset-0 opacity-40 pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(244, 114, 182, 0.12), rgba(168, 85, 247, 0.08), rgba(245, 158, 11, 0.10), rgba(244, 114, 182, 0.12))",
+              backgroundSize: "200% 200%",
+              animation: "final-cta-shimmer 12s ease-in-out infinite",
+            }}
+          />
+          <div className="relative px-6 py-12 lg:py-16 text-center">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight max-w-2xl mx-auto leading-[1.1]">
+              {t("finalCta.title")}
+            </h2>
+            <p className="mt-5 text-base lg:text-lg text-muted-foreground max-w-xl mx-auto">
+              {t("finalCta.subtitle")}
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-9">
+              <a
+                href={INVITE_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25 transition-all duration-200"
+              >
+                {t("finalCta.addToDiscord")}
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <Link href="/donate">
+                <a className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg text-white font-medium hover:brightness-110 transition-all duration-200"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, #f472b6, #a855f7, #f59e0b)",
+                    boxShadow:
+                      "0 10px 30px -10px rgba(244, 114, 182, 0.5)",
+                  }}>
+                  <Crown className="h-4 w-4" />
+                  {t("finalCta.viewPremium")}
+                </a>
+              </Link>
+              <a
+                href={DISCORD_SERVER}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-lg border border-border text-foreground font-medium hover:bg-accent hover:border-primary/30 transition-all duration-200"
+              >
+                {t("finalCta.joinDiscord")}
+              </a>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
+// --- END AI-MODIFIED ---
 
 export default function HomePage() {
   const { data: stats } = useSWR<PublicStats>("/api/public-stats", statsFetcher, {
     refreshInterval: 60_000,
     revalidateOnFocus: true,
   });
+  const loading = !stats;
 
   return (
     <Layout SEO={HomepageSEO}>
       <div className="bg-background min-h-screen">
-        <HeroSection guildCount={stats?.guilds} />
-        <TrailerSection />
-        <LionGotchiHeroSection />
-        <FarmShowcaseSection />
-        <MarketplaceShowcaseSection />
+        <HeroSection stats={stats} loading={loading} />
+        <TrustStrip stats={stats} />
         <FeaturesSection />
-        <SocialProofSection stats={stats} />
+        <LionGotchiTabbedSection />
+        <LiveStudyingInterlude stats={stats} />
+        <TrailerSection />
+        <PremiumTeaser />
         <HowItWorksSection />
         <FinalCTASection />
       </div>
