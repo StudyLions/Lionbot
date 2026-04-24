@@ -4,7 +4,10 @@
 // Purpose: Board member management API (add, remove, role change)
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Import parseBigInt for safe user ID validation (fixes 500 on invalid input)
+import { apiHandler, parseBigInt } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 import { requireBoardMember, requireBoardEditor, requireBoardOwner, BOARD_LIMITS } from "@/utils/boardAuth"
 import { requireAuth } from "@/utils/adminAuth"
 
@@ -51,12 +54,17 @@ export default apiHandler({
     const ctx = await requireBoardEditor(req, res, listId)
     if (!ctx) return
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Use parseBigInt for safe validation — returns 400 instead of crashing with 500
     const { userId, role } = req.body
-    if (!userId) return res.status(400).json({ error: "userId required" })
+    if (!userId || typeof userId !== "string" || !userId.trim()) {
+      return res.status(400).json({ error: "Please enter a Discord User ID (a number like 123456789012345678)" })
+    }
     const validRoles = ["editor", "viewer"]
     const targetRole = validRoles.includes(role) ? role : "viewer"
 
-    const targetUserId = BigInt(userId)
+    const targetUserId = parseBigInt(userId.trim(), "User ID")
+    // --- END AI-MODIFIED ---
 
     const existing = await prisma.shared_tasklist_member.findUnique({
       where: { listid_userid: { listid: listId, userid: targetUserId } },
@@ -74,23 +82,35 @@ export default apiHandler({
       return res.status(400).json({ error: `Board can have up to ${BOARD_LIMITS.MAX_MEMBERS_PER_BOARD} members` })
     }
 
-    await prisma.shared_tasklist_member.create({
-      data: {
-        listid: listId,
-        userid: targetUserId,
-        role: targetRole,
-        invited_by: ctx.auth.userId,
-      },
-    })
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Add verbose error logging to help diagnose 500s on member invite
+    try {
+      await prisma.shared_tasklist_member.create({
+        data: {
+          listid: listId,
+          userid: targetUserId,
+          role: targetRole,
+          invited_by: ctx.auth.userId,
+        },
+      })
+    } catch (err: any) {
+      console.error(`Board member create failed: listId=${listId}, target=${targetUserId}, inviter=${ctx.auth.userId}`, err?.message)
+      throw err
+    }
 
-    await prisma.shared_task_history.create({
-      data: {
-        listid: listId,
-        userid: ctx.auth.userId,
-        action: "member_added",
-        details: { targetUserId: userId, role: targetRole },
-      },
-    })
+    try {
+      await prisma.shared_task_history.create({
+        data: {
+          listid: listId,
+          userid: ctx.auth.userId,
+          action: "member_added",
+          details: { targetUserId: userId, role: targetRole },
+        },
+      })
+    } catch (err: any) {
+      console.error(`Board history create failed: listId=${listId}, action=member_added`, err?.message)
+    }
+    // --- END AI-MODIFIED ---
 
     res.status(201).json({ success: true })
   },
@@ -102,13 +122,16 @@ export default apiHandler({
     const ctx = await requireBoardOwner(req, res, listId)
     if (!ctx) return
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Use parseBigInt for safe validation
     const { userId, role } = req.body
     if (!userId || !role) return res.status(400).json({ error: "userId and role required" })
 
     const validRoles = ["owner", "editor", "viewer"]
     if (!validRoles.includes(role)) return res.status(400).json({ error: "Invalid role" })
 
-    const targetUserId = BigInt(userId)
+    const targetUserId = parseBigInt(userId, "User ID")
+    // --- END AI-MODIFIED ---
     if (targetUserId === ctx.auth.userId) {
       return res.status(400).json({ error: "Cannot change your own role" })
     }
@@ -157,8 +180,11 @@ export default apiHandler({
     const auth = await requireAuth(req, res)
     if (!auth) return
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Use parseBigInt for safe validation
     const { userId } = req.body
-    const targetUserId = userId ? BigInt(userId) : auth.userId
+    const targetUserId = userId ? parseBigInt(userId, "User ID") : auth.userId
+    // --- END AI-MODIFIED ---
     const isSelfLeave = targetUserId === auth.userId
 
     if (isSelfLeave) {
