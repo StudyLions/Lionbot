@@ -76,6 +76,8 @@ import ValuePillars from "@/components/donate/ValuePillars";
 import ComparisonGrid from "@/components/donate/ComparisonGrid";
 import LossAversionStrip from "@/components/donate/LossAversionStrip";
 import TrustBand from "@/components/donate/TrustBand";
+import TierCarousel from "@/components/donate/TierCarousel";
+import StickyPricingBar from "@/components/donate/StickyPricingBar";
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
@@ -192,23 +194,34 @@ function PurchaseModal({
             </div>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-6 space-y-2">
             {session ? (
               <button
                 onClick={handlePurchase}
                 disabled={loading}
-                className="w-full py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-500 transition-colors disabled:opacity-50"
+                className="w-full py-3 rounded-lg bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors disabled:opacity-50 inline-flex items-center justify-center gap-2"
               >
-                {loading ? "Processing..." : "Confirm Purchase"}
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" /> Processing…
+                  </>
+                ) : (
+                  <>
+                    Pay {symbol}{(unitPrice * quantity).toFixed(2)} with Stripe
+                  </>
+                )}
               </button>
             ) : (
               <button
                 onClick={() => signIn("discord")}
-                className="w-full py-3 rounded-lg bg-[#5865F2] text-white font-medium hover:bg-[#4752C4] transition-colors"
+                className="w-full py-3 rounded-lg bg-[#5865F2] text-white font-bold hover:bg-[#4752C4] transition-colors"
               >
-                Sign in to Purchase
+                Sign in with Discord to checkout
               </button>
             )}
+            <p className="text-[11px] text-muted-foreground text-center">
+              Cancel anytime · Secure with Stripe · Instant gem delivery
+            </p>
           </div>
         </div>
       </div>
@@ -2033,6 +2046,19 @@ export default function Donate() {
 
   return (
     <Layout SEO={DonationSEO}>
+      {/* --- AI-MODIFIED (2026-04-24) ---
+          Purpose: Sticky pricing CTA bar slides in once the user has
+          scrolled past the tier cards section. Removes the "I have to
+          scroll back up to buy" friction and recovers conversion at
+          the bottom of the page. */}
+      <StickyPricingBar
+        recommendedTierId="LIONHEART_PLUS"
+        currency={currency}
+        symbol={symbol}
+        onSubscribe={(tierId) => handleSubscribe(tierId)}
+        isCurrent={hasActiveSub && subStatus?.tier === "LIONHEART_PLUS"}
+      />
+      {/* --- END AI-MODIFIED --- */}
       <div className="bg-background min-h-screen">
         <style>{`
           @keyframes shimmerSweep {
@@ -2276,7 +2302,12 @@ export default function Donate() {
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
+            {/* --- AI-MODIFIED (2026-04-24) ---
+                Purpose: Desktop = 3-column grid (md+). Mobile = horizontal
+                snap-scroll carousel via TierCarousel so LionHeart+ is
+                centered on first paint instead of hidden between two
+                stacked cards. Recovers mobile conversion. */}
+            <div className="hidden md:grid grid-cols-3 gap-6 lg:gap-8 items-stretch">
               {TIER_ORDER.map((tierId) => (
                 <SubscriptionCard
                   key={tierId}
@@ -2292,6 +2323,28 @@ export default function Donate() {
                 />
               ))}
             </div>
+            <div className="md:hidden">
+              <TierCarousel
+                centerIndex={TIER_ORDER.indexOf("LIONHEART_PLUS")}
+                ariaLabel="LionHeart subscription tiers"
+              >
+                {TIER_ORDER.map((tierId) => (
+                  <SubscriptionCard
+                    key={tierId}
+                    tierId={tierId}
+                    subStatus={subStatus}
+                    onSubscribe={handleSubscribe}
+                    onManage={handleManageSubscription}
+                    featured={tierId === "LIONHEART_PLUS"}
+                    subscribing={subscribing}
+                    portalLoading={portalLoading}
+                    currency={currency}
+                    symbol={symbol}
+                  />
+                ))}
+              </TierCarousel>
+            </div>
+            {/* --- END AI-MODIFIED --- */}
 
           </div>
         </section>
