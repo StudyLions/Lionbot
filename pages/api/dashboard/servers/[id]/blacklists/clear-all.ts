@@ -316,13 +316,23 @@ export default apiHandler({
       console.warn("[blacklists/clear-all] failed to backfill audit result", e)
     }
 
+    // --- AI-MODIFIED (2026-04-25) ---
+    // Purpose: Convert auditid (BigInt) to string before sending in JSON.
+    //          JSON.stringify throws TypeError on BigInt values, which made
+    //          this endpoint return 500 "Internal server error" to admins
+    //          even though the destructive work + audit insert had already
+    //          succeeded. The frontend dialog showed the generic error
+    //          message and admins kept retrying, producing duplicate audit
+    //          rows (no real harm, but a confusing experience). Mirrors the
+    //          pattern already used in reset-stats.ts.
     return res.status(200).json({
       success: true,
-      auditId: auditRow.auditid,
+      auditId: auditRow.auditid.toString(),
       perType,
       totalUniqueMembers,
       failures: failures.slice(0, 50),
       failuresTruncated: failures.length > 50,
     })
+    // --- END AI-MODIFIED ---
   },
 })
