@@ -80,22 +80,43 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
 
   return (
     <>
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: Premium polish -- scope inline keyframes inside                    */}
+      {/* prefers-reduced-motion: no-preference so the gold gradient shift, sparkle  */}
+      {/* particles, button shimmer sweep, and crown glow pulse all stop running for */}
+      {/* users who opted into reduced motion. The PremiumGate stays visually        */}
+      {/* premium (gold gradient + crown still render statically) but no longer      */}
+      {/* triggers a constant 60fps repaint loop for a11y users.                     */}
       <style>{`
-        @keyframes pg-gradient-shift {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        @keyframes pg-sparkle {
-          0%, 100% { opacity: 0; transform: scale(0); }
-          50% { opacity: 1; transform: scale(1); }
-        }
-        @keyframes pg-shimmer-sweep {
-          0% { transform: translateX(-100%) rotate(25deg); }
-          100% { transform: translateX(100%) rotate(25deg); }
-        }
-        @keyframes pg-glow-pulse {
-          0%, 100% { opacity: 0.6; }
-          50% { opacity: 1; }
+        @media (prefers-reduced-motion: no-preference) {
+          @keyframes pg-gradient-shift {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+          }
+          @keyframes pg-sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+          }
+          @keyframes pg-shimmer-sweep {
+            0% { transform: translateX(-100%) rotate(25deg); }
+            100% { transform: translateX(100%) rotate(25deg); }
+          }
+          @keyframes pg-glow-pulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+          }
+          .pg-border {
+            animation: pg-gradient-shift 6s ease-in-out infinite;
+          }
+          .pg-sparkle-dot {
+            animation: pg-sparkle ease-in-out infinite;
+          }
+          .pg-btn-shimmer::after {
+            animation: pg-shimmer-sweep 3.5s ease-in-out infinite;
+          }
+          .pg-crown-glow {
+            animation: pg-glow-pulse 3s ease-in-out infinite;
+          }
         }
         .pg-border {
           background: linear-gradient(
@@ -107,7 +128,6 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
             rgba(245,158,11,0.35)
           );
           background-size: 300% 300%;
-          animation: pg-gradient-shift 6s ease-in-out infinite;
         }
         .pg-sparkle-dot {
           position: absolute;
@@ -116,7 +136,6 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
           border-radius: 50%;
           background: radial-gradient(circle, rgba(251,191,36,0.9) 0%, transparent 70%);
           pointer-events: none;
-          animation: pg-sparkle ease-in-out infinite;
         }
         .pg-gold-text {
           background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 40%, #fde68a 60%, #fbbf24 80%, #f59e0b 100%);
@@ -143,15 +162,15 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
             rgba(255,255,255,0.08) 60%,
             transparent 100%
           );
-          animation: pg-shimmer-sweep 3.5s ease-in-out infinite;
-        }
-        .pg-crown-glow {
-          animation: pg-glow-pulse 3s ease-in-out infinite;
         }
       `}</style>
+      {/* --- END AI-MODIFIED --- */}
 
       <div className="pg-border rounded-2xl p-[1px]">
-        <div className="relative rounded-2xl bg-gray-900 overflow-hidden">
+        {/* --- AI-MODIFIED (2026-04-25) --- */}
+        {/* Purpose: Use semantic bg-card token instead of hardcoded bg-gray-900 */}
+        <div className="relative rounded-2xl bg-card overflow-hidden">
+        {/* --- END AI-MODIFIED --- */}
           {/* Ambient radial glow */}
           <div
             className="absolute inset-0 pointer-events-none"
@@ -186,12 +205,15 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
                   Premium Feature
                 </span>
               </div>
+              {/* --- AI-MODIFIED (2026-04-25) --- */}
+              {/* Purpose: Semantic muted-foreground token for subtitle */}
               <h2 className="text-2xl sm:text-3xl font-bold pg-gold-text mb-3">
                 {title}
               </h2>
-              <p className="text-gray-400 max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
+              <p className="text-muted-foreground max-w-lg mx-auto text-sm sm:text-base leading-relaxed">
                 {subtitle}
               </p>
+              {/* --- END AI-MODIFIED --- */}
             </div>
 
             {/* Page-specific demo content */}
@@ -218,25 +240,38 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
 
             {/* --- AI-MODIFIED (2026-03-24) --- */}
             {/* Purpose: Currency toggle + dynamic pricing for dual-currency checkout */}
+            {/* --- AI-MODIFIED (2026-04-25) --- */}
+            {/* Purpose: Premium polish -- semantic tokens (bg-card / border-border /  */}
+            {/* muted-foreground), role="group" + aria-label on currency switcher,    */}
+            {/* aria-pressed on each segment, type=button + focus-visible ring on all  */}
+            {/* buttons including the checkout CTAs.                                   */}
             <div className="mt-8">
               <div className="flex items-center justify-center mb-4">
-                <div className="inline-flex rounded-full bg-gray-800 border border-gray-700 p-0.5">
+                <div
+                  role="group"
+                  aria-label="Billing currency"
+                  className="inline-flex rounded-full bg-muted/50 border border-border p-0.5"
+                >
                   <button
+                    type="button"
+                    aria-pressed={currency === "eur"}
                     onClick={() => setCurrency("eur")}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                       currency === "eur"
                         ? "bg-amber-500/20 text-amber-300"
-                        : "text-gray-400 hover:text-white"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     &euro; EUR
                   </button>
                   <button
+                    type="button"
+                    aria-pressed={currency === "usd"}
                     onClick={() => setCurrency("usd")}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
+                    className={`px-3 py-1 rounded-full text-xs font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                       currency === "usd"
                         ? "bg-amber-500/20 text-amber-300"
-                        : "text-gray-400 hover:text-white"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                   >
                     $ USD
@@ -246,10 +281,12 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 {PLAN_IDS.map((plan) => (
                   <button
+                    type="button"
                     key={plan.id}
                     onClick={() => handleCheckout(plan.id)}
                     disabled={!serverId || loading !== null}
-                    className="pg-btn-shimmer relative inline-flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white rounded-xl text-sm font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed"
+                    aria-busy={loading === plan.id}
+                    className="pg-btn-shimmer relative inline-flex items-center gap-2.5 px-8 py-3.5 bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-500 text-white rounded-xl text-sm font-bold hover:from-amber-600 hover:via-yellow-600 hover:to-amber-600 transition-all shadow-lg shadow-amber-500/25 hover:shadow-amber-500/40 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Crown size={16} />
                     {loading === plan.id ? "Redirecting..." : `${symbol}${getServerPremiumPrice(plan.id, currency)}${plan.period}`}
@@ -261,10 +298,11 @@ export default function PremiumGate({ title, subtitle, children }: PremiumGatePr
                   </button>
                 ))}
               </div>
-              <p className="text-center text-xs text-gray-500 mt-3">
+              <p className="text-center text-xs text-muted-foreground/70 mt-3">
                 Subscription auto-renews. Cancel anytime from your server settings.
               </p>
             </div>
+            {/* --- END AI-MODIFIED (2026-04-25) --- */}
             {/* --- END AI-MODIFIED --- */}
           </div>
         </div>

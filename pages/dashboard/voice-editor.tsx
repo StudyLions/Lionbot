@@ -372,7 +372,10 @@ export default function VoiceEditorPage() {
     (d: Date) => {
       if (pendingEdits.size > 0) {
         setPendingEdits(new Map())
-        toast("Unsaved changes discarded")
+        // --- AI-MODIFIED (2026-04-25) ---
+        // Purpose: Use toast.info for neutral non-success notifications
+        toast.info("Unsaved changes discarded")
+        // --- END AI-MODIFIED ---
       }
       setWeekMonday(d)
     },
@@ -383,7 +386,10 @@ export default function VoiceEditorPage() {
     (guildId: string) => {
       if (pendingEdits.size > 0) {
         setPendingEdits(new Map())
-        toast("Unsaved changes discarded")
+        // --- AI-MODIFIED (2026-04-25) ---
+        // Purpose: Use toast.info for neutral non-success notifications
+        toast.info("Unsaved changes discarded")
+        // --- END AI-MODIFIED ---
       }
       setSelectedGuild(guildId)
       setShowServerDropdown(false)

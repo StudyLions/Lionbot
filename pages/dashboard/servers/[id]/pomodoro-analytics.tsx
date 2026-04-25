@@ -267,11 +267,15 @@ export default function PomodoroAnalyticsPage() {
                                     </span>
                                   </div>
                                 </td>
+                                {/* --- AI-MODIFIED (2026-04-25) --- */}
+                                {/* Purpose: Replace 🔥 emoji with Lucide Flame for consistent rendering across OS */}
                                 <td className="py-2.5 px-2 text-right">
-                                  <span className="font-bold text-orange-400">
-                                    {user.current_daily_streak} 🔥
+                                  <span className="font-bold text-orange-400 inline-flex items-center justify-end gap-1">
+                                    {user.current_daily_streak}
+                                    <Flame size={13} className="text-orange-400" aria-hidden="true" />
                                   </span>
                                 </td>
+                                {/* --- END AI-MODIFIED --- */}
                                 <td className="py-2.5 px-2 text-right text-muted-foreground hidden sm:table-cell">
                                   {user.longest_daily_streak}
                                 </td>

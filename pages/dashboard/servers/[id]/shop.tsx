@@ -285,9 +285,12 @@ export default function ShopPage() {
                     </div>
                     // --- END AI-MODIFIED ---
                   ) : (
+                    // --- AI-MODIFIED (2026-04-25) ---
+                    // Purpose: Subtle hover-lift on shop item rows for a more tactile feel
                     <div className="grid grid-cols-1 gap-3">
                       {colourItems.filter((i) => i.purchasable).map((item) => (
-                        <div key={item.itemId} className="bg-card/50 border border-border rounded-xl p-4 flex items-center gap-4">
+                        <div key={item.itemId} className="bg-card/50 border border-border rounded-xl p-4 flex items-center gap-4 transition-all motion-safe:hover:-translate-y-0.5 hover:border-border/80 hover:shadow-md">
+                    {/* --- END AI-MODIFIED --- */}
                           <div
                             className="w-8 h-8 rounded-full flex-shrink-0 border border-border/50"
                             style={{ backgroundColor: item.roleId ? getRoleColor(item.roleId) : "#99aab5" }}

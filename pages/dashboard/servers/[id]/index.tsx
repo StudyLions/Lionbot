@@ -204,11 +204,22 @@ function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse bg-muted/50 rounded-lg ${className}`} />
 }
 
-function StatCard({ icon, label, value, color, href, sub }: {
-  icon: React.ReactNode; label: string; value: string | number; color: string; href?: string; sub?: string
+function StatCard({ icon, label, value, color, href, sub, index = 0 }: {
+  icon: React.ReactNode; label: string; value: string | number; color: string; href?: string; sub?: string;
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Optional index for stagger entrance on overview pages
+  index?: number;
+  // --- END AI-MODIFIED ---
 }) {
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- stagger entrance (50ms × index, capped at 6),
+  // motion-safe hover-lift on clickable variants, focus-visible ring on link
+  const delay = `${Math.min(index, 5) * 50}ms`
   const content = (
-    <div className={`bg-card rounded-2xl p-4 border border-border/50 ${href ? "hover:border-primary/30 transition-colors cursor-pointer group" : ""}`}>
+    <div
+      className={`bg-card rounded-2xl p-4 border border-border/50 motion-safe:animate-fade-in ${href ? "hover:border-primary/30 transition-all cursor-pointer group motion-safe:hover:-translate-y-0.5 hover:shadow-md" : "transition-colors"}`}
+      style={{ animationDelay: delay, animationFillMode: "backwards" }}
+    >
       <div className={`flex items-center gap-2 ${color} mb-1`}>
         {icon}
         <span className="text-[10px] uppercase tracking-wider font-medium">{label}</span>
@@ -217,8 +228,15 @@ function StatCard({ icon, label, value, color, href, sub }: {
       {sub && <p className="text-[10px] text-muted-foreground mt-0.5">{sub}</p>}
     </div>
   )
-  if (href) return <Link href={href}>{content}</Link>
+  if (href) return (
+    <Link href={href}>
+      <a className="block rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
+        {content}
+      </a>
+    </Link>
+  )
   return content
+  // --- END AI-MODIFIED ---
 }
 
 function ServerIcon({ name, iconUrl, size = "lg" }: { name: string; iconUrl: string | null; size?: "sm" | "lg" }) {
@@ -752,21 +770,25 @@ export default function ServerDetail() {
 
                       {/* ====== MEMBER HUB SECTIONS ====== */}
 
+                      {/* --- AI-MODIFIED (2026-04-25) --- */}
+                      {/* Purpose: Stagger entrance via index prop on each StatCard */}
                       {/* Stats Grid */}
                       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-                        <StatCard icon={<Clock size={14} />} label="Study Time" value={`${data.you.trackedTimeHours}h`} color="text-emerald-400/70" sub={serverStats ? `${formatMinutes(serverStats.studyTime.thisWeekMinutes)} this week` : undefined} />
-                        <StatCard icon={<Coins size={14} />} label="Coins" value={memberData?.economy.coins ?? data.you.coins} color="text-warning/70" sub={memberData?.economy.rewardRate ? `${memberData.economy.rewardRate} coins/hr` : undefined} />
+                        <StatCard index={0} icon={<Clock size={14} />} label="Study Time" value={`${data.you.trackedTimeHours}h`} color="text-emerald-400/70" sub={serverStats ? `${formatMinutes(serverStats.studyTime.thisWeekMinutes)} this week` : undefined} />
+                        <StatCard index={1} icon={<Coins size={14} />} label="Coins" value={memberData?.economy.coins ?? data.you.coins} color="text-warning/70" sub={memberData?.economy.rewardRate ? `${memberData.economy.rewardRate} coins/hr` : undefined} />
                         <StatCard
+                          index={2}
                           icon={<Trophy size={14} />}
                           label="Leaderboard"
                           value={userRank ? `#${userRank.rank}` : "--"}
                           color={userRank && userRank.rank <= 3 ? "text-amber-400/70" : "text-cyan-400/70"}
                           sub={userRank ? `of ${userRank.total} members` : undefined}
                         />
-                        <StatCard icon={<MessageSquare size={14} />} label="Messages" value={memberData?.messages.totalMessages ?? 0} color="text-blue-400/70" sub={memberData?.messages.thisWeekMessages ? `${memberData.messages.thisWeekMessages} this week` : undefined} />
-                        <StatCard icon={<Dumbbell size={14} />} label="Workouts" value={data.you.workoutCount || 0} color="text-purple-400/70" />
+                        <StatCard index={3} icon={<MessageSquare size={14} />} label="Messages" value={memberData?.messages.totalMessages ?? 0} color="text-blue-400/70" sub={memberData?.messages.thisWeekMessages ? `${memberData.messages.thisWeekMessages} this week` : undefined} />
+                        <StatCard index={4} icon={<Dumbbell size={14} />} label="Workouts" value={data.you.workoutCount || 0} color="text-purple-400/70" />
                         {data.you.firstJoined && (
                           <StatCard
+                            index={5}
                             icon={<Calendar size={14} />}
                             label="Member Since"
                             value={new Date(data.you.firstJoined).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
@@ -774,6 +796,7 @@ export default function ServerDetail() {
                           />
                         )}
                       </div>
+                      {/* --- END AI-MODIFIED --- */}
 
                       {/* Rank Progress */}
                       {memberData?.rankProgress ? (
