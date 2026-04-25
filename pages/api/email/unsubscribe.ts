@@ -37,12 +37,12 @@ function renderConfirmation(scopeLabel: string, manageUrl: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Unsubscribed — ${escapeHtml(brand.name)}</title>
 <style>
-  body { margin:0; padding:48px 16px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Rubik,sans-serif; background:${brand.colors.background}; color:${brand.colors.text}; }
-  .card { max-width:520px; margin:0 auto; background:${brand.colors.surface}; border:1px solid ${brand.colors.border}; border-radius:16px; padding:36px 32px; box-shadow:0 2px 12px rgba(46,76,112,0.06); }
-  h1 { margin:0 0 12px; font-size:22px; color:${brand.colors.headline}; }
-  p { margin:0 0 16px; font-size:15px; line-height:1.6; }
-  a.btn { display:inline-block; padding:11px 20px; border-radius:10px; background:${brand.colors.primary}; color:#fff; text-decoration:none; font-weight:600; }
-  a.muted { color:${brand.colors.headingAccent}; text-decoration:underline; font-size:13px; }
+  body { margin:0; padding:48px 16px; font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Rubik,sans-serif; background:${brand.colors.page}; color:${brand.colors.text}; }
+  .card { max-width:520px; margin:0 auto; background:${brand.colors.background}; border:1px solid ${brand.colors.border}; border-radius:18px; padding:36px 32px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.65); }
+  h1 { margin:0 0 12px; font-size:24px; font-weight:800; color:${brand.colors.headline}; letter-spacing:-0.01em; }
+  p { margin:0 0 14px; font-size:15px; line-height:1.65; }
+  a.btn { display:inline-block; padding:12px 22px; border-radius:12px; background:${brand.colors.primary}; color:#fff; text-decoration:none; font-weight:700; box-shadow:0 12px 28px -12px rgba(59,130,246,0.6); }
+  a.muted { color:${brand.colors.textMuted}; text-decoration:underline; font-size:13px; }
 </style>
 </head><body>
 <div class="card">
@@ -62,11 +62,11 @@ function renderError(message: string): string {
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Unsubscribe — ${escapeHtml(brand.name)}</title>
 <style>
-  body { margin:0; padding:48px 16px; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Rubik,sans-serif; background:${brand.colors.background}; color:${brand.colors.text}; }
-  .card { max-width:520px; margin:0 auto; background:${brand.colors.surface}; border:1px solid ${brand.colors.border}; border-radius:16px; padding:36px 32px; box-shadow:0 2px 12px rgba(46,76,112,0.06); }
-  h1 { margin:0 0 12px; font-size:22px; color:${brand.colors.danger}; }
-  p { margin:0 0 16px; font-size:15px; line-height:1.6; }
-  a.muted { color:${brand.colors.headingAccent}; text-decoration:underline; font-size:13px; }
+  body { margin:0; padding:48px 16px; font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Rubik,sans-serif; background:${brand.colors.page}; color:${brand.colors.text}; }
+  .card { max-width:520px; margin:0 auto; background:${brand.colors.background}; border:1px solid ${brand.colors.border}; border-radius:18px; padding:36px 32px; box-shadow:0 30px 60px -30px rgba(0,0,0,0.65); }
+  h1 { margin:0 0 12px; font-size:22px; font-weight:800; color:${brand.colors.danger}; letter-spacing:-0.01em; }
+  p { margin:0 0 14px; font-size:15px; line-height:1.65; }
+  a.muted { color:${brand.colors.textMuted}; text-decoration:underline; font-size:13px; }
 </style>
 </head><body>
 <div class="card">

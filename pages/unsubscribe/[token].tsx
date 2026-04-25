@@ -44,33 +44,32 @@ export default function UnsubscribePage(props: Props) {
         style={{
           minHeight: "100vh",
           padding: "48px 16px",
-          background: brand.colors.background,
+          background: brand.colors.page,
           color: brand.colors.text,
-          fontFamily:
-            "-apple-system,BlinkMacSystemFont,'Segoe UI',Rubik,sans-serif",
+          fontFamily: brand.fontStack,
         }}
       >
         <div
           style={{
             maxWidth: "560px",
             margin: "0 auto",
-            background: brand.colors.surface,
+            background: brand.colors.background,
             border: `1px solid ${brand.colors.border}`,
-            borderRadius: "16px",
+            borderRadius: "20px",
             padding: "36px 32px",
-            boxShadow: "0 4px 18px rgba(46,76,112,0.08)",
+            boxShadow: "0 30px 60px -30px rgba(0,0,0,0.65)",
           }}
         >
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "22px" }}>
             <img
               src={brand.logoUrl}
               alt={brand.name}
               width={40}
               height={40}
-              style={{ borderRadius: "10px", border: `1px solid ${brand.colors.border}` }}
+              style={{ borderRadius: "10px", border: `1px solid ${brand.colors.border}`, background: brand.colors.background }}
             />
-            <div style={{ fontWeight: 700, color: brand.colors.headingAccent, letterSpacing: "0.05em" }}>
-              {brand.name.toUpperCase()}
+            <div style={{ fontWeight: 800, color: brand.colors.headline, letterSpacing: "-0.01em", fontSize: "16px" }}>
+              {brand.name}
             </div>
           </div>
 
@@ -114,13 +113,13 @@ export default function UnsubscribePage(props: Props) {
                   style={{
                     display: "inline-block",
                     padding: "11px 20px",
-                    borderRadius: "10px",
+                    borderRadius: "12px",
                     background: "transparent",
-                    color: brand.colors.headingAccent,
-                    fontWeight: 600,
+                    color: brand.colors.headline,
+                    fontWeight: 700,
                     textDecoration: "none",
                     fontSize: "14px",
-                    border: `1px solid ${brand.colors.border}`,
+                    border: `1px solid ${brand.colors.borderStrong}`,
                   }}
                 >
                   Back to {brand.name}
