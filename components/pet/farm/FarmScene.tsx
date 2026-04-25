@@ -91,6 +91,23 @@ interface FarmSceneProps {
   isFullscreen?: boolean
 }
 
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Format farm countdowns as H:MM:SS once they reach an hour, instead of
+// minute-only counts like "383:35" which are unreadable for long grow timers
+// (Phoenix Bloom is 28h, so the water countdown spends most of its life > 1h).
+// Falls back to M:SS for sub-hour timers so short waits still look natural.
+export function formatFarmCountdown(totalSeconds: number): string {
+  const safe = Math.max(0, Math.floor(totalSeconds))
+  const h = Math.floor(safe / 3600)
+  const m = Math.floor((safe % 3600) / 60)
+  const s = safe % 60
+  if (h > 0) {
+    return `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+  }
+  return `${m}:${String(s).padStart(2, "0")}`
+}
+// --- END AI-MODIFIED ---
+
 function WaterTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
   const [remaining, setRemaining] = useState<number | null>(null)
 
@@ -106,9 +123,15 @@ function WaterTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
   }, [nextWaterAt])
 
   if (remaining === null || remaining <= 0) return null
-  const m = Math.floor(remaining / 60)
-  const s = remaining % 60
-  return <span className="text-[9px] text-[#4080f0]">{m}:{String(s).padStart(2, "0")}</span>
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Use the shared H:MM:SS / M:SS formatter (see formatFarmCountdown above).
+  // --- Original code (commented out for rollback) ---
+  // const m = Math.floor(remaining / 60)
+  // const s = remaining % 60
+  // return <span className="text-[9px] text-[#4080f0]">{m}:{String(s).padStart(2, "0")}</span>
+  // --- End original code ---
+  return <span className="text-[9px] text-[#4080f0]">{formatFarmCountdown(remaining)}</span>
+  // --- END AI-MODIFIED ---
 }
 
 export default function FarmScene({ plots, selectedPlot, onSelectPlot, justWatered }: FarmSceneProps) {

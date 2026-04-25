@@ -26,6 +26,14 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 25, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-25",
+    title: "Farm Timers Now Show Hours When You Have Hours Left",
+    description:
+      "Quick quality-of-life fix for the LionGotchi farm. The water countdown on each plot — both the little floating tooltip you see when you hover a plot in the farm scene, and the bigger \"Water in\" line in the plot detail panel on the right — used to format itself as minutes:seconds no matter how long the timer was. That worked fine for short waits like \"5:42\", but anything past an hour turned into an unreadable wall of minutes — for example, a freshly watered Phoenix Bloom would tick down from \"480:00\" instead of the much friendlier \"8:00:00\". Now, as soon as a timer hits an hour or more, it switches to hours:minutes:seconds (like \"6:23:35\"), and drops back to plain minutes:seconds once it's under an hour. Suggested by Lucky in the support server.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-25",
     title: "Fixed: Clearing Active Blacklists Showed \"Internal Server Error\" Even Though It Worked",
     description:
       "If you tried to use the new \"Clear all active blacklists\" admin tool on your server's Video Channels or Screen Channels page in the last few days, you might have seen a red \"Internal server error\" appear under the confirmation field after typing CLEAR — and naturally clicked the button again, and seen the same error again. We are sorry about that. The action was actually working every time: every record was being pardoned, every blacklist role was being removed from the affected members in Discord, and the audit row was being written. The error message you saw was caused by a bug in the very last step where the page formats its success response for your browser — the response included a numeric ID that was too large for the standard JSON format we use, which made the server crash on the way out the door even though the destructive work had already finished. We patched the response to convert that one number to text before sending, which is the same pattern we already use on the older \"Reset member stats\" admin tool. If you saw the error and clicked Clear multiple times, do not worry — the second and third clicks were no-ops because there was nothing left to clear by then; you will only see one set of pardons in your moderation history (the first one), not three.",
