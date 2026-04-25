@@ -8,6 +8,10 @@ import { prisma } from '../../../utils/prisma';
 // Purpose: send Discord webhook on login
 import { notifyLogin } from '../../../utils/surveyWebhook';
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: trigger the one-time welcome email on first sign-in
+import { maybeSendWelcomeEmail } from '../../../utils/email/triggers/welcome';
+// --- END AI-MODIFIED ---
 
 // For more information on each option (and a full list of options) go to
 // https://next-auth.js.org/configuration/options
@@ -162,6 +166,17 @@ export default NextAuth({
             create: { userid: BigInt(discordId), email, email_verified: verified },
           });
           notifyLogin({ discordId, email, emailVerified: verified }).catch((e) => console.error('[NextAuth] notifyLogin failed:', e));
+          // --- AI-MODIFIED (2026-04-25) ---
+          // Purpose: fire the welcome email (idempotent + capped at 4s) so
+          //          a slow send never blocks the OAuth round-trip.
+          maybeSendWelcomeEmail({
+            discordId,
+            email,
+            emailVerified: verified,
+            accessToken: account.access_token,
+            displayName: profile?.global_name || profile?.username || user?.name,
+          }).catch((e) => console.error('[NextAuth] welcome email failed:', e));
+          // --- END AI-MODIFIED ---
         } catch (e) {
           console.error('[NextAuth] Failed to save user email:', e);
         }

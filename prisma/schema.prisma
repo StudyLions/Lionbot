@@ -953,6 +953,17 @@ model user_config {
   gold                                                                     BigInt                        @default(0)
   email                                                                    String?
   email_verified                                                           Boolean?
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: email system preferences and onboarding state
+  email_welcomed_at                                                        DateTime?                     @db.Timestamptz(6)
+  email_pref_welcome                                                       Boolean                       @default(true)
+  email_pref_weekly_digest                                                 Boolean                       @default(true)
+  email_pref_lifecycle                                                     Boolean                       @default(true)
+  email_pref_announcements                                                 Boolean                       @default(true)
+  email_pref_premium                                                       Boolean                       @default(true)
+  email_unsubscribed_all                                                   Boolean                       @default(false)
+  email_log                                                                email_log[]
+  // --- END AI-MODIFIED ---
   lg_blocks_lg_blocks_blocked_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocked_useridTouser_config")
   lg_blocks_lg_blocks_blocker_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocker_useridTouser_config")
   lg_families                                                              lg_families[]
@@ -1004,6 +1015,30 @@ model user_survey {
   dismissed_at    DateTime?   @db.Timestamptz(6)
   created_at      DateTime?   @default(now()) @db.Timestamptz(6)
   user_config     user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+// ============================================================
+// AI-GENERATED MODEL
+// Created: 2026-04-25
+// Purpose: Delivery log for the email system. Records every send
+//          attempt (success/skip/fail) for idempotency, debugging,
+//          and analytics. Skipped sends are logged so we can see
+//          why a user did not receive a given email.
+// ============================================================
+model email_log {
+  id          BigInt      @id @default(autoincrement())
+  userid      BigInt
+  email       String
+  template    String
+  subject     String
+  status      String
+  resend_id   String?
+  error       String?
+  sent_at     DateTime    @default(now()) @db.Timestamptz(6)
+  user_config user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid, sent_at])
+  @@index([template, sent_at])
 }
 
 model user_experience {
