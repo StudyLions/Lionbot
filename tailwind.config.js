@@ -87,12 +87,39 @@ module.exports = {
           "100%": { transform: "scale(1)" },
         },
         // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-04-25) ---
+        // Purpose: Premium polish keyframes -- save bar slide-up, modal scale-in, value pop, shimmer
+        "slide-up": {
+          from: { opacity: "0", transform: "translateY(12px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          from: { opacity: "0", transform: "scale(0.96)" },
+          to: { opacity: "1", transform: "scale(1)" },
+        },
+        "value-pop": {
+          "0%": { transform: "scale(1)" },
+          "30%": { transform: "scale(1.15)" },
+          "100%": { transform: "scale(1)" },
+        },
+        shimmer: {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
+        // --- END AI-MODIFIED ---
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.3s ease-out",
         "check-pop": "check-pop 0.3s ease-out",
+        // --- AI-MODIFIED (2026-04-25) ---
+        // Purpose: Premium polish animation utilities
+        "slide-up": "slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+        "scale-in": "scale-in 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+        "value-pop": "value-pop 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+        shimmer: "shimmer 2.5s linear infinite",
+        // --- END AI-MODIFIED ---
       },
     },
     screens: {

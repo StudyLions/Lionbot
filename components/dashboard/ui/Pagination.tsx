@@ -18,26 +18,40 @@ interface PaginationProps {
 export default function Pagination({ page, totalPages, onChange, showLabel = true, className }: PaginationProps) {
   if (totalPages <= 1) return null
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- ensure 40px+ touch targets on mobile,
+  // proper focus-visible rings for keyboard users, smoother transitions
+  const buttonClass = cn(
+    "inline-flex items-center justify-center min-h-10 min-w-10 sm:min-h-9 sm:min-w-9 rounded-lg",
+    "text-muted-foreground hover:text-foreground hover:bg-accent",
+    "disabled:opacity-40 disabled:pointer-events-none",
+    "transition-colors duration-150",
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+  )
+  // --- END AI-MODIFIED ---
+
   return (
-    <div className={cn("flex items-center justify-center gap-2", className)}>
+    <div className={cn("flex items-center justify-center gap-1.5", className)}>
       <button
         onClick={() => onChange(page - 1)}
         disabled={page <= 1}
-        className="p-2 rounded-lg hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+        className={buttonClass}
         aria-label="Previous page"
+        type="button"
       >
         <ChevronLeft size={16} />
       </button>
       {showLabel && (
         <span className="text-xs text-muted-foreground tabular-nums min-w-[80px] text-center">
-          Page {page} of {totalPages}
+          Page <span className="text-foreground font-medium">{page}</span> of {totalPages}
         </span>
       )}
       <button
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages}
-        className="p-2 rounded-lg hover:bg-accent disabled:opacity-40 disabled:pointer-events-none transition-colors"
+        className={buttonClass}
         aria-label="Next page"
+        type="button"
       >
         <ChevronRight size={16} />
       </button>
