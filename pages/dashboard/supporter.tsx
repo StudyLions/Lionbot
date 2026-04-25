@@ -1,1201 +1,478 @@
 // ============================================================
-// AI-GENERATED FILE
-// Created: 2026-03-17
-// Modified: 2026-03-20
-// Purpose: LionHeart supporter dashboard page -- subscription
-//          status, perks grid, and full-featured card effects
-//          customization studio with per-effect toggles, color
-//          pickers, particle styles, intensity, speed, border
-//          styles, bio text, seasonal effects, and live preview.
+// AI-REPLACED FILE (2026-04-25)
+// Reason: The previous 1,200-line vertical settings form felt
+//         "AI sloppy". This rewrite ships the LionHeart Studio
+//         redesign: tier-colored hero with animated boost shelf,
+//         a sticky Discord-mock live preview pane, debounced
+//         auto-render + auto-save (no Save button), tabbed
+//         controls (Looks / Colors / Motion / Frame / Profile),
+//         curated card looks with one-click apply, and a mini
+//         delta-highlighted upgrade carousel + thank-you card.
+// What the new code does better:
+//   - Replaces 6 ColorSection + 14-swatch grids with a single
+//     palette node graph + HSL sliders + harmony auto-fill.
+//   - Sticky live preview means users see effects in real time
+//     without scrolling between editor and preview.
+//   - Auto-debounced save and render mean no Save / Refresh
+//     Preview button hunting.
+//   - Compare mode side-by-sides saved vs draft.
+//   - Curated "Looks" gallery is the gateway for non-power users.
+// Original 1,200-line file lives in git history under hash on
+// the staging branch, ref: pages/dashboard/supporter.tsx@HEAD~1.
+// --- END AI-REPLACED ---
 // ============================================================
-import Layout from "@/components/Layout/Layout"
-import AdminGuard from "@/components/dashboard/AdminGuard"
-import DashboardNav from "@/components/dashboard/DashboardNav"
-import { PageHeader, Toggle, toast, DashboardShell } from "@/components/dashboard/ui"
-import { useSession } from "next-auth/react"
-import { useState, useCallback, useEffect, useRef } from "react"
-import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GetServerSideProps } from "next";
+import { useSession } from "next-auth/react";
+import { serverSideTranslations } from "next-i18next/serverSideTranslations";
+import { Sparkles, Palette, CircleDot, Frame, User } from "lucide-react";
+
+import Layout from "@/components/Layout/Layout";
+import AdminGuard from "@/components/dashboard/AdminGuard";
+import DashboardNav from "@/components/dashboard/DashboardNav";
+import { DashboardShell, TabBar, toast } from "@/components/dashboard/ui";
+import { useDashboard, dashboardMutate } from "@/hooks/useDashboard";
+
+import StudioHero from "@/components/dashboard/supporter/StudioHero";
+import StickyPreview, { SaveStatus } from "@/components/dashboard/supporter/StickyPreview";
+import LooksGallery from "@/components/dashboard/supporter/LooksGallery";
+import ColorsTab from "@/components/dashboard/supporter/ColorsTab";
+import MotionTab from "@/components/dashboard/supporter/MotionTab";
+import FrameTab from "@/components/dashboard/supporter/FrameTab";
+import ProfileTab from "@/components/dashboard/supporter/ProfileTab";
+import UpgradeMiniCarousel from "@/components/dashboard/supporter/UpgradeMiniCarousel";
+
 import {
-  COLOR_PRESETS,
-  PARTICLE_STYLES,
-  EFFECT_INTENSITIES,
-  ANIMATION_SPEEDS,
-  BORDER_STYLES,
-} from "@/constants/CardEffectPresets"
-import {
-  SUBSCRIPTION_TIERS,
-  TIER_ORDER,
-  FREE_TIER,
-  getSubscriptionPrice,
-  type SubscriptionTier,
-} from "@/constants/SubscriptionData"
-// --- AI-MODIFIED (2026-03-25) ---
-// Purpose: Import currency hook for dynamic pricing across supporter page
-import { useCurrency } from "@/hooks/useCurrency"
-// --- END AI-MODIFIED ---
-import { cn } from "@/lib/utils"
-import {
-  Crown,
-  Heart,
-  Gem,
-  Sparkles,
-  Shield,
-  Sprout,
-  Droplets,
-  Coins,
-  Lock,
-  ExternalLink,
-  RefreshCw,
-  Check,
-  AlertTriangle,
-  ChevronRight,
-  Timer,
-  Palette,
-  ImageOff,
-  Zap,
-  CircleDot,
-  Frame,
-  Type,
-  Snowflake,
-  Gauge,
-} from "lucide-react"
-import { HexColorPicker } from "react-colorful"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import { GetServerSideProps } from "next"
-import { serverSideTranslations } from "next-i18next/serverSideTranslations"
+  DEFAULT_CARD_PREFS,
+  DEFAULT_TIMER_PREFS,
+  type CardPreferences,
+  type SubscriptionData,
+  type TimerPreferences,
+  tierPalette,
+} from "@/components/dashboard/supporter/types";
+import { CARD_LOOKS, randomLook, type CardLook } from "@/constants/CardLookPresets";
 
-interface SubscriptionData {
-  tier: string
-  status: string
-  tierName: string | null
-  tierPrice: number | null
-  tierColor: string | null
-  monthlyGems: number | null
-  gemsPerVote: number | null
-  lionCoinBoost: number | null
-  lgGoldBoost: number | null
-  dropRateBonus: number | null
-  farmGrowthSpeed: number | null
-  seedCostDiscount: number | null
-  harvestGoldBonus: number | null
-  uprootRefund: number | null
-  currentPeriodStart: string | null
-  currentPeriodEnd: string | null
-  cancelAtPeriodEnd: boolean
-  stripeCustomerId: string | null
+const RENDER_DEBOUNCE_MS = 800;
+const SAVE_DEBOUNCE_MS = 600;
+const SAVED_PILL_TTL_MS = 1800;
+
+type StudioTab = "looks" | "colors" | "motion" | "frame" | "profile";
+
+const TAB_DEFS: Array<{ key: StudioTab; label: string; icon: React.ReactNode }> = [
+  { key: "looks", label: "Looks", icon: <Sparkles size={14} /> },
+  { key: "colors", label: "Colors", icon: <Palette size={14} /> },
+  { key: "motion", label: "Motion", icon: <CircleDot size={14} /> },
+  { key: "frame", label: "Frame", icon: <Frame size={14} /> },
+  { key: "profile", label: "Profile", icon: <User size={14} /> },
+];
+
+/**
+ * Strip transient/local-only keys before comparing two pref
+ * objects for equality. Currently no-op but keeps a stable
+ * comparison helper as the schema grows.
+ */
+function prefsEqual(a: CardPreferences, b: CardPreferences): boolean {
+  const keys = Object.keys(DEFAULT_CARD_PREFS) as Array<keyof CardPreferences>;
+  for (const k of keys) {
+    if ((a[k] ?? null) !== (b[k] ?? null)) return false;
+  }
+  return true;
 }
 
-interface CardPreferences {
-  effects_enabled: boolean
-  sparkle_color: string | null
-  ring_color: string | null
-  sparkles_enabled: boolean
-  ring_enabled: boolean
-  edge_glow_enabled: boolean
-  particles_enabled: boolean
-  effect_intensity: string
-  edge_glow_color: string | null
-  particle_color: string | null
-  particle_style: string
-  animation_speed: string
-  username_color: string | null
-  bio_text: string | null
-  border_style: string
-  seasonal_effects: boolean
-  embed_color: string | null
-}
-
-interface TimerPreferences {
-  theme: string
-  custom_accent_color: string | null
-  focus_label: string | null
-  break_label: string | null
-  session_label: string | null
-}
-
-const DEFAULT_PREFS: CardPreferences = {
-  effects_enabled: true,
-  sparkle_color: null,
-  ring_color: null,
-  sparkles_enabled: true,
-  ring_enabled: true,
-  edge_glow_enabled: true,
-  particles_enabled: true,
-  effect_intensity: "normal",
-  edge_glow_color: null,
-  particle_color: null,
-  particle_style: "stars",
-  animation_speed: "normal",
-  username_color: null,
-  bio_text: null,
-  border_style: "clean",
-  seasonal_effects: false,
-  embed_color: null,
-}
-
-const DEFAULT_TIMER_PREFS: TimerPreferences = {
-  theme: "classic",
-  custom_accent_color: null,
-  focus_label: null,
-  break_label: null,
-  session_label: null,
-}
-
-const PERK_CARDS = [
-  { key: "monthlyGems", label: "Monthly Gems", icon: <Gem size={18} />, format: (v: number) => `${v.toLocaleString()} gems/month`, freeValue: 0 },
-  { key: "gemsPerVote", label: "Gems per Vote", icon: <Heart size={18} />, format: (v: number) => `${v} gems`, freeValue: FREE_TIER.gemsPerVote },
-  { key: "lionCoinBoost", label: "LionCoin Boost", icon: <Coins size={18} />, format: (v: number) => `${v}x multiplier`, freeValue: FREE_TIER.lionCoinBoost },
-  { key: "lgGoldBoost", label: "LionGotchi Gold", icon: <Coins size={18} />, format: (v: number) => `${v}x bonus`, freeValue: FREE_TIER.lgGoldBoost },
-  { key: "dropRateBonus", label: "Drop Rate Bonus", icon: <Sparkles size={18} />, format: (v: number) => `+${Math.round(v * 100)}%`, freeValue: FREE_TIER.dropRateBonus },
-  { key: "farmGrowthSpeed", label: "Farm Growth", icon: <Sprout size={18} />, format: (v: number) => `${v}x speed`, freeValue: FREE_TIER.farmGrowthSpeed },
-  { key: "seedCostDiscount", label: "Seed Discount", icon: <Sprout size={18} />, format: (v: number) => `${Math.round(v * 100)}% off`, freeValue: FREE_TIER.seedCostDiscount },
-  { key: "harvestGoldBonus", label: "Harvest Bonus", icon: <Droplets size={18} />, format: (v: number) => `+${Math.round(v * 100)}%`, freeValue: FREE_TIER.harvestGoldBonus },
-  { key: "uprootRefund", label: "Uproot Refund", icon: <Shield size={18} />, format: (v: number) => `${Math.round(v * 100)}%`, freeValue: FREE_TIER.uprootRefund },
-]
-
-function ColorPickerPopover({
-  color,
-  onChange,
-  disabled,
-}: {
-  color: string | null
-  onChange: (color: string | null) => void
-  disabled?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const [tempColor, setTempColor] = useState(color || "#5B8DEF")
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (color) setTempColor(color)
-  }, [color])
-
-  useEffect(() => {
-    if (!open) return
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener("mousedown", handleClick)
-    return () => document.removeEventListener("mousedown", handleClick)
-  }, [open])
-
+function timerEqual(a: TimerPreferences, b: TimerPreferences): boolean {
   return (
-    <div className="relative" ref={ref}>
-      <button
-        onClick={() => !disabled && setOpen(!open)}
-        disabled={disabled}
-        className={cn(
-          "w-7 h-7 rounded-full border-2 border-border hover:border-primary/50 transition-all",
-          disabled && "opacity-40 cursor-not-allowed"
-        )}
-        style={{ backgroundColor: color || "#5B8DEF" }}
-        title="Open color picker"
-      />
-      {open && (
-        <div className="absolute z-50 top-full mt-2 left-0 bg-card border border-border rounded-xl p-3 shadow-xl">
-          <HexColorPicker color={tempColor} onChange={setTempColor} />
-          <div className="flex items-center gap-2 mt-2">
-            <input
-              type="text"
-              value={tempColor}
-              onChange={(e) => setTempColor(e.target.value)}
-              className="flex-1 bg-background border border-border rounded px-2 py-1 text-xs text-foreground font-mono"
-              maxLength={7}
-            />
-            <Button
-              size="sm"
-              className="text-xs h-7"
-              onClick={() => { onChange(tempColor); setOpen(false) }}
-            >
-              Apply
-            </Button>
-          </div>
-          <button
-            onClick={() => { onChange(null); setOpen(false) }}
-            className="text-[10px] text-muted-foreground hover:text-foreground mt-1 block"
-          >
-            Reset to Default
-          </button>
-        </div>
-      )}
-    </div>
-  )
+    a.theme === b.theme &&
+    (a.custom_accent_color ?? null) === (b.custom_accent_color ?? null) &&
+    (a.focus_label ?? null) === (b.focus_label ?? null) &&
+    (a.break_label ?? null) === (b.break_label ?? null) &&
+    (a.session_label ?? null) === (b.session_label ?? null)
+  );
 }
 
-function ColorSwatch({
-  hex,
-  name,
-  selected,
-  disabled,
-  onClick,
-}: {
-  hex: string | null
-  name: string
-  selected: boolean
-  disabled?: boolean
-  onClick: () => void
-}) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={cn(
-        "flex flex-col items-center gap-1 p-1.5 rounded-lg transition-all",
-        selected
-          ? "bg-primary/15 ring-2 ring-primary"
-          : "hover:bg-accent/50",
-        disabled && "opacity-40 cursor-not-allowed"
-      )}
-    >
-      <div
-        className={cn(
-          "w-7 h-7 rounded-full border-2 transition-transform",
-          selected ? "border-primary scale-110" : "border-border"
-        )}
-        style={hex ? { backgroundColor: hex } : undefined}
-      >
-        {!hex && (
-          <div className="w-full h-full rounded-full bg-gradient-to-br from-gray-500 to-gray-700 flex items-center justify-center">
-            <span className="text-[8px] font-bold text-white">DEF</span>
-          </div>
-        )}
-        {selected && hex && (
-          <div className="w-full h-full rounded-full flex items-center justify-center">
-            <Check size={12} className="text-white drop-shadow-md" />
-          </div>
-        )}
-      </div>
-      <span className="text-[9px] text-muted-foreground truncate max-w-[50px]">{name}</span>
-    </button>
-  )
+function buildPreviewQuery(prefs: CardPreferences): string {
+  const params = new URLSearchParams();
+  params.set("effects_enabled", String(prefs.effects_enabled));
+  params.set("sparkles_enabled", String(prefs.sparkles_enabled));
+  params.set("ring_enabled", String(prefs.ring_enabled));
+  params.set("edge_glow_enabled", String(prefs.edge_glow_enabled));
+  params.set("particles_enabled", String(prefs.particles_enabled));
+  params.set("effect_intensity", prefs.effect_intensity);
+  params.set("particle_style", prefs.particle_style);
+  params.set("animation_speed", prefs.animation_speed);
+  params.set("border_style", prefs.border_style);
+  params.set("seasonal_effects", String(prefs.seasonal_effects));
+  if (prefs.sparkle_color) params.set("sparkle_color", prefs.sparkle_color);
+  if (prefs.ring_color) params.set("ring_color", prefs.ring_color);
+  if (prefs.edge_glow_color) params.set("edge_glow_color", prefs.edge_glow_color);
+  if (prefs.particle_color) params.set("particle_color", prefs.particle_color);
+  return params.toString();
 }
 
-function ColorSection({
-  label,
-  value,
-  onChange,
-  disabled,
-}: {
-  label: string
-  value: string | null
-  onChange: (v: string | null) => void
-  disabled?: boolean
-}) {
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <ColorPickerPopover color={value} onChange={onChange} disabled={disabled} />
-      </div>
-      <div className="flex flex-wrap gap-0.5">
-        <ColorSwatch
-          hex={null}
-          name="Default"
-          selected={value === null}
-          disabled={disabled}
-          onClick={() => onChange(null)}
-        />
-        {COLOR_PRESETS.map((preset) => (
-          <ColorSwatch
-            key={preset.id}
-            hex={preset.hex}
-            name={preset.name}
-            selected={value === preset.hex}
-            disabled={disabled}
-            onClick={() => onChange(preset.hex)}
-          />
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function OptionSelector<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  disabled,
-  renderOption,
-}: {
-  label: string
-  options: readonly { id: T; name: string; icon?: string }[]
-  value: T
-  onChange: (v: T) => void
-  disabled?: boolean
-  renderOption?: (opt: { id: T; name: string; icon?: string }, selected: boolean) => React.ReactNode
-}) {
-  return (
-    <div>
-      <p className="text-sm font-medium text-foreground mb-2">{label}</p>
-      <div className="flex flex-wrap gap-2">
-        {options.map((opt) => {
-          const selected = value === opt.id
-          if (renderOption) return <div key={opt.id}>{renderOption(opt, selected)}</div>
-          return (
-            <button
-              key={opt.id}
-              onClick={() => !disabled && onChange(opt.id)}
-              disabled={disabled}
-              className={cn(
-                "px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
-                selected
-                  ? "bg-primary/15 border-primary text-primary"
-                  : "bg-card border-border text-muted-foreground hover:text-foreground hover:border-primary/30",
-                disabled && "opacity-40 cursor-not-allowed"
-              )}
-            >
-              {opt.icon && <span className="mr-1.5">{opt.icon}</span>}
-              {opt.name}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// --- AI-MODIFIED (2026-03-25) ---
-// Purpose: Accept currency/symbol props for dynamic pricing display
-function SubscriptionBanner({ sub, symbol, currency }: { sub: SubscriptionData; symbol: string; currency: string }) {
-// --- END AI-MODIFIED ---
-  const [portalLoading, setPortalLoading] = useState(false)
-
-  const openPortal = async () => {
-    setPortalLoading(true)
-    try {
-      const result = await dashboardMutate("POST", "/api/subscription/portal")
-      if (result.url) window.open(result.url, "_blank")
-    } catch (e: unknown) {
-      const msg = (e as Error)?.message || "Failed to open subscription management"
-      if (msg.includes("test mode")) {
-        toast.error("Subscription management is only available in production.")
-      } else {
-        toast.error(msg)
+/**
+ * Detect which curated look (if any) a prefs object exactly
+ * matches. Used to render the active dot in the Looks gallery.
+ */
+function detectActiveLook(prefs: CardPreferences): string | null {
+  for (const look of CARD_LOOKS) {
+    let matches = true;
+    for (const k of Object.keys(look.prefs) as Array<keyof typeof look.prefs>) {
+      if ((look.prefs[k] ?? null) !== (prefs[k] ?? null)) {
+        matches = false;
+        break;
       }
     }
-    setPortalLoading(false)
+    if (matches) return look.id;
   }
-
-  if (sub.status === "INACTIVE" || sub.tier === "NONE") {
-    return (
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600/20 via-purple-600/20 to-pink-600/20 border border-indigo-500/20 p-8">
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/5 via-transparent to-pink-500/5" />
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/25">
-            <Crown size={28} className="text-white" />
-          </div>
-          <div className="flex-1">
-            <h2 className="text-xl font-bold text-foreground mb-1">
-              Become a LionHeart Supporter
-            </h2>
-            <p className="text-sm text-muted-foreground max-w-lg">
-              Unlock animated profile effects, monthly gems, farm boosts, and much more.
-              Support LionBot&apos;s development while getting awesome perks.
-            </p>
-          </div>
-          <Link href="/donate">
-            <Button className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-500/25">
-              View Plans
-              <ChevronRight size={16} className="ml-1" />
-            </Button>
-          </Link>
-        </div>
-      </div>
-    )
-  }
-
-  const tierColor = sub.tierColor || "#5B8DEF"
-  const renewalDate = sub.currentPeriodEnd
-    ? new Date(sub.currentPeriodEnd).toLocaleDateString("en-US", {
-        year: "numeric", month: "long", day: "numeric",
-      })
-    : null
-
-  return (
-    <div className="rounded-2xl border p-6" style={{ borderColor: `${tierColor}40` }}>
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center"
-          style={{ backgroundColor: `${tierColor}20` }}
-        >
-          <Crown size={24} style={{ color: tierColor }} />
-        </div>
-        <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <span
-              className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white"
-              style={{ backgroundColor: tierColor }}
-            >
-              {sub.tierName}
-            </span>
-            {sub.cancelAtPeriodEnd && (
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-500/20 text-amber-400 flex items-center gap-1">
-                <AlertTriangle size={12} />
-                Cancelling
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {sub.cancelAtPeriodEnd
-              ? `Access until ${renewalDate}`
-              : renewalDate
-                ? `Renews ${renewalDate}`
-                : "Active subscription"
-            }
-            {/* --- AI-MODIFIED (2026-03-25) --- */}
-            {/* Purpose: Use dynamic currency symbol instead of hardcoded $ */}
-            {sub.tier && sub.tier !== "NONE" && ` · ${symbol}${getSubscriptionPrice(sub.tier as SubscriptionTier, currency as "eur" | "usd")}/month`}
-            {/* --- END AI-MODIFIED --- */}
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={openPortal}
-          disabled={portalLoading}
-        >
-          <ExternalLink size={14} className="mr-2" />
-          {portalLoading ? "Opening..." : "Manage Subscription"}
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function PerksGrid({ sub }: { sub: SubscriptionData }) {
-  const tierConfig = sub.tier in SUBSCRIPTION_TIERS
-    ? SUBSCRIPTION_TIERS[sub.tier as SubscriptionTier]
-    : null
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-foreground mb-4">Your Perks</h3>
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        {PERK_CARDS.map((perk) => {
-          const value = (sub as unknown as Record<string, unknown>)[perk.key] as number | null
-          if (value == null || value === 0) return null
-          const isUpgraded = perk.freeValue !== undefined && value > perk.freeValue
-          return (
-            <div key={perk.key} className="bg-card rounded-xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-primary/70">{perk.icon}</span>
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  {perk.label}
-                </span>
-              </div>
-              <p className="text-lg font-bold text-foreground">{perk.format(value)}</p>
-              {isUpgraded && perk.freeValue > 0 && (
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  Free: {perk.format(perk.freeValue)}
-                </p>
-              )}
-            </div>
-          )
-        })}
-        {tierConfig && (
-          <div className="bg-card rounded-xl p-4 border border-border">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-primary/70"><Timer size={18} /></span>
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                Timer Themes
-              </span>
-            </div>
-            <p className="text-lg font-bold text-foreground">{tierConfig.timerThemes} unlocked</p>
-          </div>
-        )}
-        <div className="bg-card rounded-xl p-4 border border-border">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-primary/70"><Palette size={18} /></span>
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-              Card Effects
-            </span>
-          </div>
-          <p className="text-lg font-bold text-foreground">Full Studio</p>
-          <p className="text-[10px] text-muted-foreground mt-1">Sparkles, glow, particles, borders &amp; more</p>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function EffectsEditor({
-  prefs,
-  onPrefsChange,
-  onSave,
-  saving,
-  isSupporter,
-  previewUrl,
-  previewError,
-  onRefreshPreview,
-  previewLoading,
-}: {
-  prefs: CardPreferences
-  onPrefsChange: (p: CardPreferences) => void
-  onSave: () => void
-  saving: boolean
-  isSupporter: boolean
-  previewUrl: string | null
-  previewError: string | null
-  onRefreshPreview: () => void
-  previewLoading: boolean
-}) {
-  const disabled = !isSupporter
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Sparkles size={20} className="text-primary" />
-        Profile Card Effects Studio
-      </h3>
-
-      <div className="relative">
-        {!isSupporter && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center rounded-2xl bg-background/60 backdrop-blur-sm">
-            <Lock size={32} className="text-muted-foreground mb-3" />
-            <p className="text-sm font-medium text-foreground mb-1">Supporter Exclusive</p>
-            <p className="text-xs text-muted-foreground mb-4 text-center max-w-xs">
-              Animated sparkles, glowing effects, custom particles, border styles, and more for your profile card.
-            </p>
-            <Link href="/donate">
-              <Button size="sm" className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white">
-                Unlock with LionHeart
-              </Button>
-            </Link>
-          </div>
-        )}
-
-        <div className={cn(
-          "bg-card rounded-2xl border border-border p-6 space-y-8",
-          !isSupporter && "pointer-events-none select-none"
-        )}>
-          {/* Master Toggle */}
-          <div className="flex items-center justify-between pb-4 border-b border-border">
-            <div>
-              <p className="text-sm font-medium text-foreground">Animated Effects</p>
-              <p className="text-xs text-muted-foreground">
-                Master toggle for all card animation effects
-              </p>
-            </div>
-            <Toggle
-              checked={prefs.effects_enabled}
-              onChange={(v) => onPrefsChange({ ...prefs, effects_enabled: v })}
-              id="effects-toggle"
-            />
-          </div>
-
-          {/* Effect Toggles */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Zap size={14} className="text-primary" />
-              Individual Effects
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {([
-                { key: "sparkles_enabled" as const, label: "Sparkles", desc: "Twinkling star particles" },
-                { key: "ring_enabled" as const, label: "Avatar Ring", desc: "Pulsing avatar border" },
-                { key: "edge_glow_enabled" as const, label: "Edge Glow", desc: "Card border glow" },
-                { key: "particles_enabled" as const, label: "Rising Particles", desc: "Floating particles" },
-              ]).map(({ key, label, desc }) => (
-                <div
-                  key={key}
-                  className={cn(
-                    "rounded-xl border p-3 transition-all cursor-pointer",
-                    prefs[key]
-                      ? "border-primary/40 bg-primary/5"
-                      : "border-border bg-card hover:border-primary/20"
-                  )}
-                  onClick={() => !disabled && onPrefsChange({ ...prefs, [key]: !prefs[key] })}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-medium text-foreground">{label}</span>
-                    <div className={cn(
-                      "w-4 h-4 rounded-full border-2 transition-all flex items-center justify-center",
-                      prefs[key] ? "border-primary bg-primary" : "border-border"
-                    )}>
-                      {prefs[key] && <Check size={10} className="text-white" />}
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-muted-foreground">{desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Colors */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Palette size={14} className="text-primary" />
-              Colors
-            </p>
-            <p className="text-[10px] text-muted-foreground mb-4">
-              Pick a preset or click the circle on the right to open a full color picker with any hex color.
-            </p>
-            <div className="space-y-5">
-              <ColorSection
-                label="Sparkle Color"
-                value={prefs.sparkle_color}
-                onChange={(v) => onPrefsChange({ ...prefs, sparkle_color: v })}
-                disabled={disabled}
-              />
-              <ColorSection
-                label="Avatar Ring Color"
-                value={prefs.ring_color}
-                onChange={(v) => onPrefsChange({ ...prefs, ring_color: v })}
-                disabled={disabled}
-              />
-              <ColorSection
-                label="Edge Glow Color"
-                value={prefs.edge_glow_color}
-                onChange={(v) => onPrefsChange({ ...prefs, edge_glow_color: v })}
-                disabled={disabled}
-              />
-              <ColorSection
-                label="Rising Particle Color"
-                value={prefs.particle_color}
-                onChange={(v) => onPrefsChange({ ...prefs, particle_color: v })}
-                disabled={disabled}
-              />
-              <ColorSection
-                label="Username Color"
-                value={prefs.username_color}
-                onChange={(v) => onPrefsChange({ ...prefs, username_color: v })}
-                disabled={disabled}
-              />
-              <ColorSection
-                label="Embed Accent Color"
-                value={prefs.embed_color}
-                onChange={(v) => onPrefsChange({ ...prefs, embed_color: v })}
-                disabled={disabled}
-              />
-              <p className="text-[10px] text-muted-foreground -mt-3">
-                Custom color for bot embeds (reminders, study summaries, etc.)
-              </p>
-            </div>
-          </div>
-
-          {/* Style & Motion */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <CircleDot size={14} className="text-primary" />
-              Style &amp; Motion
-            </p>
-            <div className="space-y-5">
-              <OptionSelector
-                label="Particle Style"
-                options={PARTICLE_STYLES}
-                value={prefs.particle_style as typeof PARTICLE_STYLES[number]["id"]}
-                onChange={(v) => onPrefsChange({ ...prefs, particle_style: v })}
-                disabled={disabled}
-              />
-              <OptionSelector
-                label="Effect Intensity"
-                options={EFFECT_INTENSITIES}
-                value={prefs.effect_intensity as typeof EFFECT_INTENSITIES[number]["id"]}
-                onChange={(v) => onPrefsChange({ ...prefs, effect_intensity: v })}
-                disabled={disabled}
-              />
-              <OptionSelector
-                label="Animation Speed"
-                options={ANIMATION_SPEEDS}
-                value={prefs.animation_speed as typeof ANIMATION_SPEEDS[number]["id"]}
-                onChange={(v) => onPrefsChange({ ...prefs, animation_speed: v })}
-                disabled={disabled}
-              />
-            </div>
-          </div>
-
-          {/* Border Style */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Frame size={14} className="text-primary" />
-              Card Border
-            </p>
-            <OptionSelector
-              label=""
-              options={BORDER_STYLES}
-              value={prefs.border_style as typeof BORDER_STYLES[number]["id"]}
-              onChange={(v) => onPrefsChange({ ...prefs, border_style: v })}
-              disabled={disabled}
-            />
-          </div>
-
-          {/* Personalization */}
-          <div>
-            <p className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Type size={14} className="text-primary" />
-              Personalization
-            </p>
-            <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground block mb-1.5">
-                  Bio / Status Text (50 chars max)
-                </label>
-                <input
-                  type="text"
-                  value={prefs.bio_text || ""}
-                  onChange={(e) => onPrefsChange({ ...prefs, bio_text: e.target.value.slice(0, 50) || null })}
-                  placeholder="e.g. Grinding for finals..."
-                  maxLength={50}
-                  disabled={disabled}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:opacity-40"
-                />
-                <p className="text-[10px] text-muted-foreground mt-1">
-                  {(prefs.bio_text || "").length}/50 characters
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
-                    <Snowflake size={12} className="text-primary" />
-                    Seasonal Effects
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    Auto-switch particle style by season (snowflakes in winter, hearts on Valentine&apos;s, etc.)
-                  </p>
-                </div>
-                <Toggle
-                  checked={prefs.seasonal_effects}
-                  onChange={(v) => onPrefsChange({ ...prefs, seasonal_effects: v })}
-                  id="seasonal-toggle"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Save & Preview */}
-          {isSupporter && (
-            <div className="pt-4 border-t border-border">
-              <div className="flex gap-3 mb-6">
-                <Button onClick={onSave} disabled={saving} size="sm">
-                  {saving ? "Saving..." : "Save Preferences"}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={onRefreshPreview}
-                  disabled={previewLoading}
-                >
-                  <RefreshCw size={14} className={cn("mr-2", previewLoading && "animate-spin")} />
-                  Refresh Preview
-                </Button>
-              </div>
-
-              <div>
-                <p className="text-xs text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Gauge size={12} />
-                  Live Preview (using your current skin)
-                </p>
-                <div className="rounded-xl overflow-hidden bg-[#313338] border border-border max-w-[540px]">
-                  {previewLoading ? (
-                    <div className="w-full aspect-[2.17/1] flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <RefreshCw size={24} className="text-muted-foreground animate-spin" />
-                        <span className="text-xs text-muted-foreground">Rendering card...</span>
-                      </div>
-                    </div>
-                  ) : previewError ? (
-                    <div className="w-full aspect-[2.17/1] flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2 px-4 text-center">
-                        <ImageOff size={24} className="text-muted-foreground" />
-                        <span className="text-xs text-muted-foreground">{previewError}</span>
-                        <Button variant="ghost" size="sm" onClick={onRefreshPreview} className="mt-1">
-                          <RefreshCw size={12} className="mr-1" /> Try Again
-                        </Button>
-                      </div>
-                    </div>
-                  ) : previewUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={previewUrl}
-                      alt="Profile card preview"
-                      className="w-full"
-                    />
-                  ) : (
-                    <div className="w-full aspect-[2.17/1] flex items-center justify-center">
-                      <div className="flex flex-col items-center gap-2">
-                        <RefreshCw size={24} className="text-muted-foreground animate-spin" />
-                        <span className="text-xs text-muted-foreground">Loading preview...</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function TimerPersonalization({
-  prefs,
-  onPrefsChange,
-  onSave,
-  saving,
-  isSupporter,
-}: {
-  prefs: TimerPreferences
-  onPrefsChange: (p: TimerPreferences) => void
-  onSave: () => void
-  saving: boolean
-  isSupporter: boolean
-}) {
-  const disabled = !isSupporter
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-        <Timer size={20} className="text-primary" />
-        Timer Personalization
-      </h3>
-
-      <div className={cn(
-        "bg-card rounded-2xl border border-border p-6 space-y-6",
-        !isSupporter && "opacity-50 pointer-events-none"
-      )}>
-        <div>
-          <p className="text-sm font-medium text-foreground mb-2">Custom Timer Accent Color</p>
-          <p className="text-[10px] text-muted-foreground mb-3">
-            Override the timer ring and glow color with your own choice.
-          </p>
-          <div className="flex items-center gap-3">
-            <ColorPickerPopover
-              color={prefs.custom_accent_color}
-              onChange={(v) => onPrefsChange({ ...prefs, custom_accent_color: v })}
-              disabled={disabled}
-            />
-            <span className="text-xs text-muted-foreground">
-              {prefs.custom_accent_color || "Using theme default"}
-            </span>
-            {prefs.custom_accent_color && (
-              <button
-                onClick={() => onPrefsChange({ ...prefs, custom_accent_color: null })}
-                className="text-[10px] text-muted-foreground hover:text-foreground underline"
-              >
-                Reset
-              </button>
-            )}
-          </div>
-        </div>
-
-        <div>
-          <p className="text-sm font-medium text-foreground mb-3">Custom Stage Labels</p>
-          <p className="text-[10px] text-muted-foreground mb-3">
-            Replace the default &quot;FOCUS&quot;, &quot;BREAK&quot;, and &quot;SESSION&quot; labels with your own text (max 20 chars each).
-          </p>
-          {/* --- AI-MODIFIED (2026-03-21) --- */}
-          {/* Purpose: Stack timer labels on mobile */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {/* --- END AI-MODIFIED --- */}
-            {([
-              { key: "focus_label" as const, placeholder: "FOCUS", defaultLabel: "Focus" },
-              { key: "break_label" as const, placeholder: "BREAK", defaultLabel: "Break" },
-              { key: "session_label" as const, placeholder: "SESSION", defaultLabel: "Session" },
-            ]).map(({ key, placeholder, defaultLabel }) => (
-              <div key={key}>
-                <label className="text-[10px] font-medium text-muted-foreground block mb-1">
-                  {defaultLabel} Label
-                </label>
-                <input
-                  type="text"
-                  value={prefs[key] || ""}
-                  onChange={(e) => onPrefsChange({ ...prefs, [key]: e.target.value.slice(0, 20) || null })}
-                  placeholder={placeholder}
-                  maxLength={20}
-                  disabled={disabled}
-                  className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring/40 disabled:opacity-40"
-                />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {isSupporter && (
-          <Button onClick={onSave} disabled={saving} size="sm">
-            {saving ? "Saving..." : "Save Timer Settings"}
-          </Button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// --- AI-MODIFIED (2026-03-25) ---
-// Purpose: Accept currency/symbol props for dynamic pricing display
-function TierComparison({ currentTier, symbol, currency }: { currentTier: string; symbol: string; currency: string }) {
-// --- END AI-MODIFIED ---
-  const tiersToShow = currentTier === "NONE"
-    ? TIER_ORDER
-    : TIER_ORDER.filter(
-        (t) => SUBSCRIPTION_TIERS[t].price > (SUBSCRIPTION_TIERS[currentTier as SubscriptionTier]?.price ?? 0)
-      )
-
-  if (tiersToShow.length === 0) return null
-
-  return (
-    <div>
-      <h3 className="text-lg font-semibold text-foreground mb-4">
-        {currentTier === "NONE" ? "Choose Your Plan" : "Upgrade Your Tier"}
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {tiersToShow.map((tierId) => {
-          const tier = SUBSCRIPTION_TIERS[tierId]
-          return (
-            <div
-              key={tierId}
-              className="bg-card rounded-2xl border border-border p-5 flex flex-col"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: `${tier.color}20` }}
-                >
-                  <Crown size={16} style={{ color: tier.color }} />
-                </div>
-                <span className="font-bold text-foreground">{tier.name}</span>
-              </div>
-              {/* --- AI-MODIFIED (2026-03-25) --- */}
-              {/* Purpose: Dynamic pricing based on user's currency preference */}
-              <p className="text-2xl font-bold text-foreground mb-1">
-                {symbol}{getSubscriptionPrice(tierId, currency as "eur" | "usd")}
-                <span className="text-sm font-normal text-muted-foreground">/month</span>
-              </p>
-              {/* --- END AI-MODIFIED --- */}
-              <ul className="text-xs text-muted-foreground space-y-1.5 mt-3 mb-4 flex-1">
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  {tier.monthlyGems.toLocaleString()} gems/month
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  {tier.gemsPerVote} gems per vote
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  {tier.lionCoinBoost}x LionCoin boost
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  +{Math.round(tier.dropRateBonus * 100)}% drop rates
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  {tier.farmGrowthSpeed}x farm growth
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  {tier.timerThemes} timer themes
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Check size={12} className="text-primary flex-shrink-0" />
-                  Full card effects studio
-                </li>
-              </ul>
-              <Link href="/donate">
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  size="sm"
-                  style={{ borderColor: `${tier.color}40`, color: tier.color }}
-                >
-                  {currentTier === "NONE" ? "Subscribe" : "Upgrade"}
-                </Button>
-              </Link>
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
+  return null;
 }
 
 export default function SupporterPage() {
-  const { data: session } = useSession()
-  // --- AI-MODIFIED (2026-03-25) ---
-  // Purpose: Currency hook for dynamic pricing across supporter page
-  const { currency, symbol } = useCurrency()
-  // --- END AI-MODIFIED ---
+  const { data: session } = useSession();
 
   const { data: sub, isLoading: subLoading } = useDashboard<SubscriptionData>(
     session ? "/api/dashboard/subscription" : null
-  )
+  );
   const { data: prefsData, isLoading: prefsLoading } = useDashboard<CardPreferences>(
     session ? "/api/dashboard/card-preferences" : null
-  )
-
+  );
   const { data: timerPrefsData } = useDashboard<TimerPreferences>(
     session ? "/api/dashboard/focus-preferences" : null
-  )
+  );
 
-  const [prefs, setPrefs] = useState<CardPreferences>(DEFAULT_PREFS)
-  const [timerPrefs, setTimerPrefs] = useState<TimerPreferences>(DEFAULT_TIMER_PREFS)
-  const [saving, setSaving] = useState(false)
-  const [timerSaving, setTimerSaving] = useState(false)
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [previewError, setPreviewError] = useState<string | null>(null)
-  const [previewLoading, setPreviewLoading] = useState(false)
-  const initialPreviewDone = useRef(false)
+  const [prefs, setPrefs] = useState<CardPreferences>(DEFAULT_CARD_PREFS);
+  const [savedPrefs, setSavedPrefs] = useState<CardPreferences>(DEFAULT_CARD_PREFS);
+  const [timerPrefs, setTimerPrefs] = useState<TimerPreferences>(DEFAULT_TIMER_PREFS);
+  const [savedTimerPrefs, setSavedTimerPrefs] = useState<TimerPreferences>(DEFAULT_TIMER_PREFS);
 
+  const [tab, setTab] = useState<StudioTab>("looks");
+
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [savedPreviewUrl, setSavedPreviewUrl] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+
+  // Keep refs to latest state to avoid re-creating debounce timers on every change.
+  const prefsRef = useRef(prefs);
+  prefsRef.current = prefs;
+  const timerPrefsRef = useRef(timerPrefs);
+  timerPrefsRef.current = timerPrefs;
+
+  const renderTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const saveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const savedPillTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const renderAbortRef = useRef<AbortController | null>(null);
+  const savedPreviewAbortRef = useRef<AbortController | null>(null);
+  const initialPreviewDone = useRef(false);
+  const initialSavedPreviewDone = useRef(false);
+
+  const isSupporter = sub?.status === "ACTIVE" && sub?.tier !== "NONE";
+  const palette = tierPalette(sub?.tier);
+  const defaultEffectColor = palette.hex;
+  const activeLookId = useMemo(() => detectActiveLook(prefs), [prefs]);
+  const hasUnsavedDraft = !prefsEqual(prefs, savedPrefs);
+
+  // --- Sync server-fetched prefs into local draft state ----------------------
   useEffect(() => {
     if (prefsData) {
-      setPrefs({ ...DEFAULT_PREFS, ...prefsData })
+      const next = { ...DEFAULT_CARD_PREFS, ...prefsData };
+      setPrefs(next);
+      setSavedPrefs(next);
     }
-  }, [prefsData])
+  }, [prefsData]);
 
   useEffect(() => {
     if (timerPrefsData) {
-      setTimerPrefs({ ...DEFAULT_TIMER_PREFS, ...timerPrefsData })
+      const next = { ...DEFAULT_TIMER_PREFS, ...timerPrefsData };
+      setTimerPrefs(next);
+      setSavedTimerPrefs(next);
     }
-  }, [timerPrefsData])
+  }, [timerPrefsData]);
 
-  const isSupporter = sub?.status === "ACTIVE" && sub?.tier !== "NONE"
-
-  const renderPreview = useCallback(async (prefsToRender: CardPreferences) => {
-    setPreviewLoading(true)
-    setPreviewError(null)
-    try {
-      const params = new URLSearchParams()
-      params.set("effects_enabled", String(prefsToRender.effects_enabled))
-      params.set("sparkles_enabled", String(prefsToRender.sparkles_enabled))
-      params.set("ring_enabled", String(prefsToRender.ring_enabled))
-      params.set("edge_glow_enabled", String(prefsToRender.edge_glow_enabled))
-      params.set("particles_enabled", String(prefsToRender.particles_enabled))
-      params.set("effect_intensity", prefsToRender.effect_intensity)
-      params.set("particle_style", prefsToRender.particle_style)
-      params.set("animation_speed", prefsToRender.animation_speed)
-      params.set("border_style", prefsToRender.border_style)
-      params.set("seasonal_effects", String(prefsToRender.seasonal_effects))
-
-      if (prefsToRender.sparkle_color) params.set("sparkle_color", prefsToRender.sparkle_color)
-      if (prefsToRender.ring_color) params.set("ring_color", prefsToRender.ring_color)
-      if (prefsToRender.edge_glow_color) params.set("edge_glow_color", prefsToRender.edge_glow_color)
-      if (prefsToRender.particle_color) params.set("particle_color", prefsToRender.particle_color)
-
-      const url = `/api/dashboard/supporter-preview?${params}`
-      const res = await fetch(url)
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}))
-        throw new Error(body.error || `Render failed (${res.status})`)
+  // --- Render preview (debounced, abortable, in-flight dedup) ---------------
+  const renderPreviewFor = useCallback(
+    async (prefsToRender: CardPreferences, target: "draft" | "saved" = "draft") => {
+      if (target === "draft") {
+        renderAbortRef.current?.abort();
+      } else {
+        savedPreviewAbortRef.current?.abort();
+      }
+      const ac = new AbortController();
+      if (target === "draft") {
+        renderAbortRef.current = ac;
+        setPreviewLoading(true);
+        setPreviewError(null);
+      } else {
+        savedPreviewAbortRef.current = ac;
       }
 
-      const blob = await res.blob()
-      const objectUrl = URL.createObjectURL(blob)
-      setPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev)
-        return objectUrl
-      })
-    } catch (e: unknown) {
-      const msg = (e as Error)?.message || "Card rendering service unavailable"
-      setPreviewError(msg)
-    }
-    setPreviewLoading(false)
-  }, [])
+      try {
+        const url = `/api/dashboard/supporter-preview?${buildPreviewQuery(prefsToRender)}`;
+        const res = await fetch(url, { signal: ac.signal });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          throw new Error(body.error || `Render failed (${res.status})`);
+        }
+        const blob = await res.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        if (target === "draft") {
+          setPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return objectUrl;
+          });
+        } else {
+          setSavedPreviewUrl((prev) => {
+            if (prev) URL.revokeObjectURL(prev);
+            return objectUrl;
+          });
+        }
+      } catch (e: unknown) {
+        if ((e as { name?: string })?.name === "AbortError") return;
+        if (target === "draft") {
+          const msg = (e as Error)?.message || "Card rendering service unavailable";
+          setPreviewError(msg);
+        }
+      } finally {
+        if (target === "draft") setPreviewLoading(false);
+      }
+    },
+    []
+  );
 
+  // First render: kick off both the draft preview and the saved-snapshot baseline.
   useEffect(() => {
     if (isSupporter && prefsData && !initialPreviewDone.current) {
-      initialPreviewDone.current = true
-      renderPreview({ ...DEFAULT_PREFS, ...prefsData })
+      initialPreviewDone.current = true;
+      renderPreviewFor({ ...DEFAULT_CARD_PREFS, ...prefsData }, "draft");
     }
-  }, [isSupporter, prefsData, renderPreview])
+  }, [isSupporter, prefsData, renderPreviewFor]);
 
-  const handleSave = useCallback(async () => {
-    setSaving(true)
-    try {
-      const result = await dashboardMutate("PATCH", "/api/dashboard/card-preferences", prefs)
-      toast.success("Preferences saved")
-      renderPreview(result || prefs)
-    } catch {
-      toast.error("Failed to save preferences")
+  useEffect(() => {
+    if (isSupporter && prefsData && !initialSavedPreviewDone.current) {
+      initialSavedPreviewDone.current = true;
+      renderPreviewFor({ ...DEFAULT_CARD_PREFS, ...prefsData }, "saved");
     }
-    setSaving(false)
-  }, [prefs, renderPreview])
+  }, [isSupporter, prefsData, renderPreviewFor]);
 
-  const handleRefreshPreview = useCallback(() => {
-    renderPreview(prefs)
-  }, [prefs, renderPreview])
+  // --- Auto-debounced render on prefs change --------------------------------
+  useEffect(() => {
+    if (!isSupporter || !initialPreviewDone.current) return;
+    if (renderTimerRef.current) clearTimeout(renderTimerRef.current);
+    renderTimerRef.current = setTimeout(() => {
+      renderPreviewFor(prefsRef.current, "draft");
+    }, RENDER_DEBOUNCE_MS);
+    return () => {
+      if (renderTimerRef.current) clearTimeout(renderTimerRef.current);
+    };
+  }, [prefs, isSupporter, renderPreviewFor]);
 
-  const handleTimerSave = useCallback(async () => {
-    setTimerSaving(true)
-    try {
-      await dashboardMutate("PATCH", "/api/dashboard/focus-preferences", timerPrefs)
-      toast.success("Timer settings saved")
-    } catch {
-      toast.error("Failed to save timer settings")
-    }
-    setTimerSaving(false)
-  }, [timerPrefs])
+  // --- Auto-debounced save (PATCH) ------------------------------------------
+  useEffect(() => {
+    if (!isSupporter || !initialPreviewDone.current) return;
+    if (prefsEqual(prefs, savedPrefs)) return;
 
-  const loading = subLoading || prefsLoading
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(async () => {
+      setSaveStatus("saving");
+      const snapshot = prefsRef.current;
+      try {
+        const result = await dashboardMutate(
+          "PATCH",
+          "/api/dashboard/card-preferences",
+          snapshot
+        );
+        const merged = { ...DEFAULT_CARD_PREFS, ...(result || snapshot) };
+        setSavedPrefs(merged);
+        renderPreviewFor(merged, "saved");
+        setSaveStatus("saved");
+        if (savedPillTimerRef.current) clearTimeout(savedPillTimerRef.current);
+        savedPillTimerRef.current = setTimeout(() => setSaveStatus("idle"), SAVED_PILL_TTL_MS);
+      } catch {
+        setSaveStatus("error");
+        toast.error("Couldn't save your changes \u2014 will retry on next edit");
+      }
+    }, SAVE_DEBOUNCE_MS);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [prefs, savedPrefs, isSupporter, renderPreviewFor]);
+
+  // --- Auto-debounced save for timer prefs (separate endpoint) --------------
+  useEffect(() => {
+    if (!isSupporter) return;
+    if (timerEqual(timerPrefs, savedTimerPrefs)) return;
+    if (timerSaveTimerRef.current) clearTimeout(timerSaveTimerRef.current);
+    timerSaveTimerRef.current = setTimeout(async () => {
+      try {
+        await dashboardMutate("PATCH", "/api/dashboard/focus-preferences", timerPrefsRef.current);
+        setSavedTimerPrefs(timerPrefsRef.current);
+      } catch {
+        toast.error("Couldn't save timer settings");
+      }
+    }, SAVE_DEBOUNCE_MS);
+    return () => {
+      if (timerSaveTimerRef.current) clearTimeout(timerSaveTimerRef.current);
+    };
+  }, [timerPrefs, savedTimerPrefs, isSupporter]);
+
+  // --- Cleanup blob URLs on unmount -----------------------------------------
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      if (savedPreviewUrl) URL.revokeObjectURL(savedPreviewUrl);
+      renderAbortRef.current?.abort();
+      savedPreviewAbortRef.current?.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const patchPrefs = useCallback((patch: Partial<CardPreferences>) => {
+    setPrefs((p) => ({ ...p, ...patch }));
+  }, []);
+
+  const patchTimer = useCallback((patch: Partial<TimerPreferences>) => {
+    setTimerPrefs((p) => ({ ...p, ...patch }));
+  }, []);
+
+  const applyLook = useCallback(
+    (look: CardLook) => {
+      if (!isSupporter) return;
+      setPrefs((p) => ({ ...p, ...look.prefs }));
+      toast.success(`Applied "${look.name}"`);
+      setTab("colors");
+    },
+    [isSupporter]
+  );
+
+  const onSurpriseMe = useCallback(() => {
+    if (!isSupporter) return;
+    const look = randomLook();
+    setPrefs((p) => ({ ...p, ...look.prefs }));
+    toast.success(`Surprise look: "${look.name}"`);
+  }, [isSupporter]);
+
+  const onResetAll = useCallback(() => {
+    if (!isSupporter) return;
+    setPrefs(DEFAULT_CARD_PREFS);
+    toast.success("All card effects reset to defaults");
+  }, [isSupporter]);
+
+  const onManualRefresh = useCallback(() => {
+    renderPreviewFor(prefsRef.current, "draft");
+  }, [renderPreviewFor]);
+
+  const loading = subLoading || prefsLoading;
 
   return (
     <Layout
       SEO={{
-        title: "LionHeart - LionBot Dashboard",
-        description: "Manage your LionHeart subscription and card effects",
+        title: "LionHeart Studio - LionBot Dashboard",
+        description: "Customize your animated profile card and manage your LionHeart subscription.",
       }}
     >
       <AdminGuard>
-        {/* --- AI-REPLACED (2026-03-24) --- */}
-        {/* Reason: Migrated to DashboardShell layout wrapper */}
-        {/* Original: <div className="min-h-screen ..."><div className="max-w-6xl ..."><DashboardNav /><div className="flex-1 min-w-0 space-y-8"> */}
-        <DashboardShell nav={<DashboardNav />} className="space-y-8">
-              <PageHeader
-                title="LionHeart"
-                description="Manage your supporter subscription and customize your animated profile card effects."
-                breadcrumbs={[
-                  { label: "Dashboard", href: "/dashboard" },
-                  { label: "LionHeart" },
-                ]}
+        <DashboardShell nav={<DashboardNav />} className="space-y-7" wide>
+          {loading || !sub ? (
+            <div className="space-y-6">
+              <div className="bg-card/50 rounded-3xl h-48 animate-pulse" />
+              <div className="grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-6">
+                <div className="bg-card/50 rounded-2xl h-80 animate-pulse" />
+                <div className="bg-card/50 rounded-2xl h-96 animate-pulse" />
+              </div>
+            </div>
+          ) : (
+            <>
+              <StudioHero
+                sub={sub}
+                isSupporter={!!isSupporter}
+                onSurpriseMe={onSurpriseMe}
+                onReset={onResetAll}
               />
 
-              {loading ? (
-                <div className="space-y-6">
-                  <div className="bg-card rounded-2xl h-24 animate-pulse" />
-                  <div className="bg-card rounded-2xl h-64 animate-pulse" />
-                  <div className="bg-card rounded-2xl h-80 animate-pulse" />
+              <div className="grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-6">
+                <StickyPreview
+                  sub={sub}
+                  isSupporter={!!isSupporter}
+                  previewUrl={previewUrl}
+                  savedPreviewUrl={savedPreviewUrl}
+                  previewLoading={previewLoading}
+                  previewError={previewError}
+                  saveStatus={saveStatus}
+                  onRefresh={onManualRefresh}
+                  hasUnsavedDraft={hasUnsavedDraft}
+                />
+
+                <div className="space-y-5 min-w-0">
+                  <TabBar
+                    tabs={TAB_DEFS}
+                    active={tab}
+                    onChange={(k) => setTab(k as StudioTab)}
+                    variant="pills"
+                  />
+
+                  <div
+                    className={
+                      isSupporter
+                        ? ""
+                        : "relative pointer-events-none opacity-60 select-none"
+                    }
+                  >
+                    {tab === "looks" && (
+                      <LooksGallery
+                        activeLookId={activeLookId}
+                        onPick={applyLook}
+                        onSurprise={onSurpriseMe}
+                        isSupporter={!!isSupporter}
+                      />
+                    )}
+                    {tab === "colors" && (
+                      <ColorsTab
+                        prefs={prefs}
+                        onChange={patchPrefs}
+                        defaultColor={defaultEffectColor}
+                      />
+                    )}
+                    {tab === "motion" && (
+                      <MotionTab
+                        prefs={prefs}
+                        onChange={patchPrefs}
+                        defaultParticleColor={defaultEffectColor}
+                      />
+                    )}
+                    {tab === "frame" && (
+                      <FrameTab
+                        prefs={prefs}
+                        onChange={patchPrefs}
+                        defaultBorderColor={defaultEffectColor}
+                      />
+                    )}
+                    {tab === "profile" && (
+                      <ProfileTab
+                        prefs={prefs}
+                        onPrefsChange={patchPrefs}
+                        timerPrefs={timerPrefs}
+                        onTimerChange={patchTimer}
+                        defaultEmbedColor={defaultEffectColor}
+                      />
+                    )}
+                  </div>
                 </div>
-              ) : (
-                <>
-                  <SubscriptionBanner sub={sub!} symbol={symbol} currency={currency} />
+              </div>
 
-                  {isSupporter && <PerksGrid sub={sub!} />}
-
-                  <EffectsEditor
-                    prefs={prefs}
-                    onPrefsChange={setPrefs}
-                    onSave={handleSave}
-                    saving={saving}
-                    isSupporter={!!isSupporter}
-                    previewUrl={previewUrl}
-                    previewError={previewError}
-                    onRefreshPreview={handleRefreshPreview}
-                    previewLoading={previewLoading}
-                  />
-
-                  <TimerPersonalization
-                    prefs={timerPrefs}
-                    onPrefsChange={setTimerPrefs}
-                    onSave={handleTimerSave}
-                    saving={timerSaving}
-                    isSupporter={!!isSupporter}
-                  />
-
-                  <TierComparison currentTier={sub?.tier ?? "NONE"} symbol={symbol} currency={currency} />
-                </>
-              )}
+              <UpgradeMiniCarousel currentTier={sub.tier ?? "NONE"} />
+            </>
+          )}
         </DashboardShell>
-        {/* --- END AI-REPLACED --- */}
       </AdminGuard>
     </Layout>
-  )
+  );
 }
 
 export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
   props: {
     ...(await serverSideTranslations(locale ?? "en", ["common", "dashboard"])),
   },
-})
+});

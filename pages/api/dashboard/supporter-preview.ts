@@ -1,12 +1,14 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-03-17
-// Modified: 2026-03-20
+// Modified: 2026-03-20, 2026-04-25
 // Purpose: Proxy to bot render API for supporter card effect
 //          previews. Passes all customization preferences
 //          (per-effect toggles, colors, particle style, intensity,
 //          speed, border style, seasonal effects).
-//          Rate limited to 1 request per 5 seconds per user.
+//          Rate limited per-user: 1.5s for active supporters
+//          (so the LionHeart Studio's debounced auto-render
+//          feels instant) and 5s for everyone else (anti-abuse).
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next";
 import { requireAuth } from "@/utils/adminAuth";
@@ -22,8 +24,22 @@ const BOT_RENDER_URL = process.env.BOT_RENDER_URL;
 // --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || "";
 
+// --- AI-REPLACED (2026-04-25) ---
+// Reason: The flat 5s rate limit was the single biggest bottleneck of the
+//         old supporter dashboard -- a paid subscriber tweaking sliders had
+//         to wait 5 full seconds between every preview render. The new
+//         LionHeart Studio debounces previews on the client and only fires
+//         when the user pauses for 800ms, so a 1.5s server-side floor is
+//         plenty of safety margin for active supporters while still keeping
+//         a generous 5s gate for anonymous/inactive users (anti-abuse).
+// --- Original code (commented out for rollback) ---
+// const lastRequestMap = new Map<string, number>();
+// const RATE_LIMIT_MS = 5000;
+// --- End original code ---
 const lastRequestMap = new Map<string, number>();
-const RATE_LIMIT_MS = 5000;
+const SUPPORTER_RATE_LIMIT_MS = 1500;
+const NON_SUPPORTER_RATE_LIMIT_MS = 5000;
+// --- END AI-REPLACED ---
 
 const COLOR_FIELDS = ["sparkle_color", "ring_color", "edge_glow_color", "particle_color"] as const;
 const STRING_FIELDS = ["effects_enabled", "sparkles_enabled", "ring_enabled",
@@ -42,13 +58,6 @@ export default async function handler(
   const auth = await requireAuth(req, res);
   if (!auth) return;
 
-  const now = Date.now();
-  const lastReq = lastRequestMap.get(auth.discordId);
-  if (lastReq && now - lastReq < RATE_LIMIT_MS) {
-    return res.status(429).json({ error: "Please wait a few seconds before refreshing" });
-  }
-  lastRequestMap.set(auth.discordId, now);
-
   try {
     const sub = await prisma.user_subscriptions.findUnique({
       where: { userid: auth.userId },
@@ -59,6 +68,26 @@ export default async function handler(
       sub && sub.status === "ACTIVE" && sub.tier !== "NONE"
         ? sub.tier
         : null;
+
+    // --- AI-MODIFIED (2026-04-25) ---
+    // Purpose: Apply a tighter (1.5s) rate limit window for active supporters
+    //          so the LionHeart Studio's debounced auto-render flows naturally,
+    //          and a generous (5s) window for everyone else as anti-abuse.
+    const now = Date.now();
+    const lastReq = lastRequestMap.get(auth.discordId);
+    const limitMs = supporterTier ? SUPPORTER_RATE_LIMIT_MS : NON_SUPPORTER_RATE_LIMIT_MS;
+    if (lastReq && now - lastReq < limitMs) {
+      const retryAfter = Math.ceil((limitMs - (now - lastReq)) / 1000);
+      res.setHeader("Retry-After", String(retryAfter));
+      return res.status(429).json({
+        error: supporterTier
+          ? "Slow down a touch \u2014 try again in a moment"
+          : "Please wait a few seconds before refreshing",
+        retryAfter,
+      });
+    }
+    lastRequestMap.set(auth.discordId, now);
+    // --- END AI-MODIFIED ---
 
     const query = req.query as Record<string, string | undefined>;
 
