@@ -21,6 +21,11 @@ import { useState, useCallback } from "react"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
 import dynamic from "next/dynamic"
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Used by the new "Plant All" toolbar button (sparkle animation matches
+// the personal farm's bulk-plant icon for consistency).
+import { getFarmAnimationUrl } from "@/utils/petAssets"
+// --- END AI-MODIFIED ---
 import type { FarmPlot as BaseFarmPlot } from "@/components/pet/farm/FarmScene"
 
 interface FamilyFarmPlot extends BaseFarmPlot {
@@ -63,6 +68,10 @@ export default function FamilyFarmPage() {
   const [farmIndex, setFarmIndex] = useState(0)
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null)
   const [showSeedSelector, setShowSeedSelector] = useState(false)
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Bulk-plant mode for filling all empty plots on the active family farm.
+  const [showBulkPlanter, setShowBulkPlanter] = useState(false)
+  // --- END AI-MODIFIED ---
   const [justWatered, setJustWatered] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
 
@@ -91,6 +100,12 @@ export default function FamilyFarmPage() {
   const hasPlanted = farmData?.plots.some(p => !p.empty && !p.dead)
   const hasHarvestable = farmData?.plots.some(p => p.readyToHarvest && !p.dead)
   const hasDead = farmData?.plots.some(p => p.dead)
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Empty-plot count for the bulk-plant button (only truly empty plots,
+  //          dead plots must be cleared via Clear Dead first).
+  const emptyPlotCount = farmData?.plots.filter(p => p.empty && !p.dead).length ?? 0
+  const hasEmpty = emptyPlotCount > 0
+  // --- END AI-MODIFIED ---
 
   const showMessage = useCallback((text: string, type: "success" | "error") => {
     setMessage({ text, type })
@@ -208,6 +223,39 @@ export default function FamilyFarmPage() {
       showMessage("Network error", "error")
     }
   }, [farmIndex, mutate, showMessage, canHarvest])
+
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Bulk-plant the same seed across every empty plot on the active
+  //          family farm. Uses family treasury and stamps planted_by with the
+  //          acting user (server-side). Permission gated on plant_farm.
+  const handlePlantAll = useCallback(async (_plotId: number, seedId: number) => {
+    if (!canPlant) { toast.error("No permission to plant"); return }
+    try {
+      const res = await fetch("/api/pet/family/farm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ farmIndex, action: "plantAll", seedId }),
+      })
+      const body = await res.json()
+      if (!res.ok) { showMessage(body.error || "Bulk plant failed", "error"); return }
+
+      const counts = body.rarityCounts ?? {}
+      const rarityHits = (["LEGENDARY", "EPIC", "RARE", "UNCOMMON"] as const)
+        .filter((r) => counts[r] > 0)
+        .map((r) => `${counts[r]} ${r}`)
+        .join(", ")
+      const tail = rarityHits ? ` -- ${rarityHits}!` : ""
+      toast.success(
+        `Planted ${body.count} x ${body.seedName} for ${body.totalCost}G${tail}`,
+      )
+
+      setShowBulkPlanter(false)
+      mutate()
+    } catch {
+      showMessage("Network error", "error")
+    }
+  }, [farmIndex, mutate, showMessage, canPlant])
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-04-03) ---
   // Purpose: Use bulk clearAll API instead of N sequential requests per dead plot
@@ -373,6 +421,26 @@ export default function FamilyFarmPage() {
                           className="flex items-center justify-center flex-wrap gap-1 py-1 border-x-[3px] border-b-[3px] border-[#2a3a5c] bg-[#0c1020]/90"
                           style={{ boxShadow: "3px 3px 0 #060810" }}
                         >
+                          {/* --- AI-MODIFIED (2026-04-24) --- */}
+                          {/* Purpose: "Plant All" -- fills every empty plot from the family treasury.
+                              Permission-gated on plant_farm; only shown when at least one plot is
+                              truly empty. Mirrors the personal farm's bulk-plant button. */}
+                          {hasEmpty && canPlant && (
+                            <ToolbarButton
+                              iconUrl={getFarmAnimationUrl("sparkle", 1)}
+                              label={`Plant All (${emptyPlotCount})`}
+                              onClick={() => {
+                                setSelectedPlot(null)
+                                setShowSeedSelector(false)
+                                setShowBulkPlanter(true)
+                              }}
+                              color="#40d870"
+                            />
+                          )}
+                          {hasEmpty && canPlant && (hasPlanted || hasHarvestable || hasDead) && (
+                            <div className="w-px h-10 bg-[#1a2a3c]" />
+                          )}
+                          {/* --- END AI-MODIFIED --- */}
                           {hasPlanted && canPlant && (
                             <ToolbarButton
                               iconUrl={getUiIconUrl("liongotchi_greenpot")}
@@ -416,7 +484,7 @@ export default function FamilyFarmPage() {
                       )}
 
                       {/* Plot Detail */}
-                      {selectedPlotData && !showSeedSelector && (
+                      {selectedPlotData && !showSeedSelector && !showBulkPlanter && (
                         <div className="space-y-2">
                           {selectedPlotData.plantedBy && (
                             <div className="px-3 py-1.5 border border-[#2a3a5c] bg-[#0a0e1a]">
@@ -447,7 +515,7 @@ export default function FamilyFarmPage() {
                       )}
 
                       {/* Seed Selector */}
-                      {showSeedSelector && selectedPlot !== null && farmData.availableSeeds && (
+                      {showSeedSelector && selectedPlot !== null && farmData.availableSeeds && !showBulkPlanter && (
                         <SeedSelector
                           seeds={farmData.availableSeeds}
                           gold={farmData.gold}
@@ -456,6 +524,23 @@ export default function FamilyFarmPage() {
                           onCancel={() => setShowSeedSelector(false)}
                         />
                       )}
+
+                      {/* --- AI-MODIFIED (2026-04-24) --- */}
+                      {/* Purpose: Bulk-plant SeedSelector for the family farm. Spends from
+                          family treasury (goldLabel makes that explicit so members don't
+                          mistake it for their personal gold balance). */}
+                      {showBulkPlanter && farmData.availableSeeds && (
+                        <SeedSelector
+                          seeds={farmData.availableSeeds}
+                          gold={farmData.gold}
+                          plotId={-1}
+                          bulkCount={emptyPlotCount}
+                          goldLabel="Family treasury"
+                          onPlant={handlePlantAll}
+                          onCancel={() => setShowBulkPlanter(false)}
+                        />
+                      )}
+                      {/* --- END AI-MODIFIED --- */}
 
                       {selectedPlot === null && !hasPlanted && (
                         <div className="text-center py-3">

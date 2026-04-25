@@ -14,11 +14,21 @@ import {
   PageHeader,
   DashboardShell,
   Toggle,
+  toast,
 } from "@/components/dashboard/ui"
 import { useTheme } from "next-themes"
 import { useEffect, useState } from "react"
 import { useUISound } from "@/lib/SoundContext"
-import { Volume2, VolumeX, Palette, Check, Play, Settings as SettingsIcon } from "lucide-react"
+import {
+  Volume2,
+  VolumeX,
+  Palette,
+  Check,
+  Play,
+  Settings as SettingsIcon,
+  Mail,
+  AlertTriangle,
+} from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { cn } from "@/lib/utils"
@@ -188,19 +198,237 @@ function ThemeCard() {
   )
 }
 
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Email notification preferences card. Loads /api/email/preferences
+//          on mount, persists changes via PATCH, and includes a master
+//          "Unsubscribe from all" red button.
+
+interface EmailPrefsResponse {
+  email: string | null
+  emailVerified: boolean | null
+  unsubscribedAll: boolean
+  preferences: Record<string, boolean>
+  descriptions: Record<string, { label: string; description: string }>
+  sendingEnabled?: boolean
+}
+
+const EMAIL_PREF_KEYS = [
+  "email_pref_welcome",
+  "email_pref_weekly_digest",
+  "email_pref_lifecycle",
+  "email_pref_premium",
+  "email_pref_announcements",
+] as const
+
+function EmailNotificationsCard() {
+  const [data, setData] = useState<EmailPrefsResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [savingKey, setSavingKey] = useState<string | null>(null)
+  const [confirmingUnsubAll, setConfirmingUnsubAll] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+    fetch("/api/email/preferences")
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.statusText)))
+      .then((d: EmailPrefsResponse) => {
+        if (alive) setData(d)
+      })
+      .catch(() => {
+        if (alive) toast.error("Could not load email preferences")
+      })
+      .finally(() => alive && setLoading(false))
+    return () => {
+      alive = false
+    }
+  }, [])
+
+  async function patch(body: Record<string, boolean>, savingHint: string) {
+    setSavingKey(savingHint)
+    try {
+      const res = await fetch("/api/email/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) throw new Error("PATCH failed")
+      const updated = await res.json()
+      setData((prev) =>
+        prev
+          ? {
+              ...prev,
+              preferences: updated.preferences,
+              unsubscribedAll: updated.unsubscribedAll,
+            }
+          : prev
+      )
+      toast.success("Preferences saved")
+    } catch {
+      toast.error("Could not save your preferences")
+    } finally {
+      setSavingKey(null)
+    }
+  }
+
+  return (
+    <SettingCard
+      icon={<Mail size={18} />}
+      title="Email notifications"
+      description="Choose what we email you about. Each kind has its own switch — and there is always an unsubscribe link in every message."
+    >
+      <div id="email" className="pt-3 space-y-3">
+        {loading ? (
+          <div className="text-xs text-muted-foreground py-3">
+            Loading your preferences…
+          </div>
+        ) : !data ? (
+          <div className="text-xs text-destructive py-3">
+            Could not load preferences. Please refresh the page.
+          </div>
+        ) : (
+          <>
+            {data.sendingEnabled === false ? (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-200">
+                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                <div className="text-xs leading-relaxed">
+                  Email notifications are coming soon — we are not sending
+                  anything yet. Your preferences below are saved and will
+                  apply automatically the moment we turn this on.
+                </div>
+              </div>
+            ) : null}
+
+            <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5">
+              <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Sending to
+              </span>
+              <span className="text-sm text-foreground break-all">
+                {data.email ?? (
+                  <span className="text-muted-foreground">
+                    No email on file. Sign in with Discord again to share it.
+                  </span>
+                )}
+              </span>
+              {data.email && data.emailVerified === false ? (
+                <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-amber-500">
+                  <AlertTriangle size={11} /> This address is not verified on
+                  Discord — verify it there to receive emails.
+                </span>
+              ) : null}
+            </div>
+
+            {EMAIL_PREF_KEYS.map((key) => {
+              const meta = data.descriptions[key]
+              const value = data.preferences[key] ?? true
+              const disabledByMaster = data.unsubscribedAll
+              return (
+                <div
+                  key={key}
+                  className={cn(
+                    "flex items-start gap-3 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5",
+                    disabledByMaster && "opacity-60"
+                  )}
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-foreground">
+                      {meta?.label ?? key}
+                    </div>
+                    <div className="mt-0.5 text-xs text-muted-foreground leading-snug">
+                      {meta?.description ?? ""}
+                    </div>
+                  </div>
+                  <div className="pt-0.5">
+                    <Toggle
+                      checked={!disabledByMaster && value}
+                      disabled={disabledByMaster || savingKey === key}
+                      onChange={(next) =>
+                        patch({ [key]: next }, key)
+                      }
+                    />
+                  </div>
+                </div>
+              )
+            })}
+
+            <div className="pt-2">
+              {data.unsubscribedAll ? (
+                <button
+                  type="button"
+                  disabled={savingKey === "all"}
+                  onClick={() =>
+                    patch(
+                      {
+                        unsubscribedAll: false,
+                        email_pref_welcome: true,
+                        email_pref_weekly_digest: true,
+                        email_pref_lifecycle: true,
+                        email_pref_premium: true,
+                        email_pref_announcements: true,
+                      },
+                      "all"
+                    )
+                  }
+                  className="w-full sm:w-auto px-4 py-2 rounded-md text-sm font-medium bg-primary/15 text-primary hover:bg-primary/25 disabled:opacity-50 transition-colors"
+                >
+                  Resubscribe to LionBot emails
+                </button>
+              ) : confirmingUnsubAll ? (
+                <div className="flex flex-col sm:flex-row gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3">
+                  <span className="flex-1 text-xs text-foreground">
+                    Stop sending you any LionBot email? You can resubscribe at
+                    any time from this page.
+                  </span>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setConfirmingUnsubAll(false)}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingKey === "all"}
+                      onClick={async () => {
+                        await patch({ unsubscribedAll: true }, "all")
+                        setConfirmingUnsubAll(false)
+                      }}
+                      className="px-3 py-1.5 rounded-md text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
+                    >
+                      Yes, unsubscribe from all
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirmingUnsubAll(true)}
+                  className="text-xs font-medium text-destructive hover:underline"
+                >
+                  Unsubscribe from all LionBot emails
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </SettingCard>
+  )
+}
+// --- END AI-MODIFIED ---
+
 export default function SettingsPage() {
   return (
     <Layout
       SEO={{
         title: "Settings - LionBot Dashboard",
-        description: "Manage your UI preferences, theme, and sound settings.",
+        description: "Manage your UI preferences, theme, and email settings.",
       }}
     >
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />}>
           <PageHeader
             title="Settings"
-            description="Personalize the dashboard. These preferences are saved to your browser, not your account."
+            description="Personalize the dashboard. UI preferences are saved to your browser; email preferences are saved to your account."
             breadcrumbs={[
               { label: "Dashboard", href: "/dashboard" },
               { label: "Settings" },
@@ -210,6 +438,9 @@ export default function SettingsPage() {
           <div className="space-y-4">
             <SoundCard />
             <ThemeCard />
+            {/* --- AI-MODIFIED (2026-04-25): email notifications card --- */}
+            <EmailNotificationsCard />
+            {/* --- END AI-MODIFIED --- */}
 
             <div className="bg-muted/30 border border-dashed border-border rounded-xl px-4 py-3 flex items-start gap-3 text-xs text-muted-foreground">
               <SettingsIcon size={14} className="mt-0.5 flex-shrink-0" />

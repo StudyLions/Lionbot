@@ -275,6 +275,94 @@ export default apiHandler({
       // --- END AI-MODIFIED ---
     }
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Bulk-plant the same seed in every empty plot of the active family farm.
+    //          Quality-of-life feature; uses family treasury gold and stamps planted_by
+    //          with the acting user. Validates total cost atomically and rolls rarity
+    //          per-plot so the lottery thrill is preserved.
+    if (action === "plantAll") {
+      if (!hasPermission(membership.role, "plant_farm", family.role_permissions)) {
+        return res.status(403).json({ error: "You don't have permission to plant" })
+      }
+      if (!seedId) return res.status(400).json({ error: "seedId required" })
+
+      const [allPlots, seed] = await Promise.all([
+        prisma.lg_family_farm_plots.findMany({
+          where: { family_id: family.family_id, farm_index: farmIndex },
+          select: { plot_id: true, seed_id: true, dead: true },
+        }),
+        prisma.lg_farm_seeds.findUnique({ where: { seed_id: seedId } }),
+      ])
+
+      if (!seed) return res.status(404).json({ error: "Seed not found" })
+
+      const emptyPlots = allPlots.filter((p) => !p.seed_id && !p.dead)
+      if (emptyPlots.length === 0) {
+        return res.status(400).json({ error: "No empty plots to plant in" })
+      }
+
+      const totalCost = seed.plant_cost * emptyPlots.length
+      if (family.gold < BigInt(totalCost)) {
+        return res.status(400).json({
+          error: `Not enough gold in treasury. Need ${totalCost}G for ${emptyPlots.length} plots`,
+        })
+      }
+
+      const now = new Date()
+      const rarityCounts: Record<string, number> = {}
+      const ops: any[] = emptyPlots.map((p) => {
+        const rarity = rollRarity()
+        rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1
+        return prisma.lg_family_farm_plots.update({
+          where: {
+            family_id_farm_index_plot_id: {
+              family_id: family.family_id,
+              farm_index: farmIndex,
+              plot_id: p.plot_id,
+            },
+          },
+          data: {
+            seed_id: seedId,
+            planted_at: now,
+            planted_by: userId,
+            last_watered: now,
+            growth_stage: 1,
+            dead: false,
+            growth_points: 0,
+            gold_invested: seed.plant_cost,
+            rarity,
+          },
+        })
+      })
+
+      ops.push(
+        prisma.lg_families.update({
+          where: { family_id: family.family_id },
+          data: { gold: { decrement: totalCost } },
+        }),
+        prisma.lg_family_gold_log.create({
+          data: {
+            family_id: family.family_id,
+            userid: userId,
+            amount: -totalCost,
+            action: "FARM_PLANT",
+            description: `Bulk planted ${emptyPlots.length} x ${seed.name}`,
+          },
+        })
+      )
+      await prisma.$transaction(ops)
+
+      return res.status(200).json({
+        success: true,
+        action: "plantedAll",
+        count: emptyPlots.length,
+        totalCost,
+        seedName: seed.name,
+        rarityCounts,
+      })
+    }
+    // --- END AI-MODIFIED ---
+
     // --- AI-MODIFIED (2026-04-03) ---
     // Purpose: Bulk clear all dead plots in one request (was N sequential requests from frontend)
     if (action === "clearAll") {

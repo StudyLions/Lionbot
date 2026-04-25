@@ -34,7 +34,12 @@ export default apiHandler({
 
     const userIds = members.map((m) => m.userid)
 
-    const [pets, userConfigs, allEquipment] = await Promise.all([
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Also fetch cosmetics_enabled per pet and the cosmetic overlay
+    // rows so family portraits show the same merged visuals each member sees
+    // on their own pet card. Stats are not surfaced in this view, so we
+    // pre-merge cosmetics over equipment per slot for each member.
+    const [pets, userConfigs, allEquipment, allCosmetics] = await Promise.all([
       prisma.lg_pets.findMany({
         where: { userid: { in: userIds } },
         select: {
@@ -44,6 +49,7 @@ export default apiHandler({
           expression: true,
           active_room_id: true,
           active_gameboy_skin_id: true,
+          cosmetics_enabled: true,
         },
       }),
       prisma.user_config.findMany({
@@ -60,7 +66,18 @@ export default apiHandler({
           },
         },
       }),
+      prisma.lg_pet_cosmetics.findMany({
+        where: { userid: { in: userIds } },
+        select: {
+          userid: true,
+          slot: true,
+          lg_items: {
+            select: { itemid: true, name: true, category: true, rarity: true, asset_path: true },
+          },
+        },
+      }),
     ])
+    // --- END AI-MODIFIED ---
 
     const petMap = new Map(pets.map((p) => [p.userid.toString(), p]))
     const userMap = new Map(userConfigs.map((u) => [u.userid.toString(), u]))
@@ -97,6 +114,23 @@ export default apiHandler({
         category: e.lg_items.category,
       }
     }
+
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Cosmetic overlay per user. Applied per slot on top of the
+    // equipment map only when the owning pet's cosmetics_enabled flag is on.
+    const cosmeticPerUser = new Map<
+      string,
+      Record<string, { assetPath: string; category: string }>
+    >()
+    for (const c of allCosmetics) {
+      const key = c.userid.toString()
+      if (!cosmeticPerUser.has(key)) cosmeticPerUser.set(key, {})
+      cosmeticPerUser.get(key)![c.slot] = {
+        assetPath: c.lg_items.asset_path,
+        category: c.lg_items.category,
+      }
+    }
+    // --- END AI-MODIFIED ---
 
     let allFurniture: { userid: bigint; slot: string; asset_path: string }[] = []
     let allLayouts: { userid: bigint; layout: unknown }[] = []
@@ -144,6 +178,18 @@ export default apiHandler({
       const userFurn = furniturePerUser.get(uid) ?? {}
       const furniture = { ...defaults, ...userFurn }
 
+      // --- AI-MODIFIED (2026-04-24) ---
+      // Purpose: Pre-merge cosmetic overlay over equipment when this pet
+      // has cosmetics_enabled. Family portraits should match what the pet
+      // owner sees on their own card.
+      const baseEquipment = equipPerUser.get(uid) ?? {}
+      const userCosmetics = cosmeticPerUser.get(uid) ?? {}
+      const showCosmetics = pet?.cosmetics_enabled !== false
+      const renderedEquipment = showCosmetics
+        ? { ...baseEquipment, ...userCosmetics }
+        : baseEquipment
+      // --- END AI-MODIFIED ---
+
       return {
         discordId: uid,
         discordName: user?.name ?? "Unknown",
@@ -157,7 +203,7 @@ export default apiHandler({
           roomPrefix,
           furniture,
           roomLayout: layoutPerUser.get(uid) ?? {},
-          equipment: equipPerUser.get(uid) ?? {},
+          equipment: renderedEquipment,
           expression: (pet?.expression ?? "default").toLowerCase(),
           skinPath,
         },

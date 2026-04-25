@@ -80,6 +80,11 @@ export default function FarmPage() {
   // --- END AI-MODIFIED ---
   const [selectedPlot, setSelectedPlot] = useState<number | null>(null)
   const [showSeedSelector, setShowSeedSelector] = useState(false)
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Bulk-plant mode -- when active, the SeedSelector renders in batch
+  //          mode (no plot id, costs multiplied by empty-plot count).
+  const [showBulkPlanter, setShowBulkPlanter] = useState(false)
+  // --- END AI-MODIFIED ---
   const [justWatered, setJustWatered] = useState(false)
   const [harvestResult, setHarvestResult] = useState<HarvestResult | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -106,6 +111,12 @@ export default function FarmPage() {
   const hasPlanted = data?.plots.some(p => !p.empty && !p.dead)
   const hasHarvestable = data?.plots.some(p => p.readyToHarvest && !p.dead)
   const hasDead = data?.plots.some(p => p.dead)
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Count of empty (truly empty, not dead) plots so we can show
+  //          the "Plant All" button only when there's something to fill.
+  const emptyPlotCount = data?.plots.filter(p => p.empty && !p.dead).length ?? 0
+  const hasEmpty = emptyPlotCount > 0
+  // --- END AI-MODIFIED ---
 
   const showMessage = useCallback((text: string, type: "success" | "error") => {
     setMessage({ text, type })
@@ -242,6 +253,37 @@ export default function FarmPage() {
     mutate()
   }, [data, mutate, showMessage])
 
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Bulk-plant the same seed in every empty plot. Triggered from
+  //          SeedSelector when in bulk mode (plotId is ignored, server fills
+  //          all empty plots atomically).
+  const handlePlantAll = useCallback(async (_plotId: number, seedId: number) => {
+    try {
+      const res = await fetch("/api/pet/farm", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "plantAll", seedId }),
+      })
+      const body = await res.json()
+      if (!res.ok) { showMessage(body.error || "Bulk plant failed", "error"); return }
+
+      const counts = body.rarityCounts ?? {}
+      const rarityHits = (["LEGENDARY", "EPIC", "RARE", "UNCOMMON"] as const)
+        .filter((r) => counts[r] > 0)
+        .map((r) => `${counts[r]} ${r}`)
+        .join(", ")
+      const tail = rarityHits ? ` -- ${rarityHits}!` : ""
+      showMessage(
+        `Planted ${body.count} x ${body.seedName} for ${body.totalCost}G${tail}`,
+        "success",
+      )
+
+      setShowBulkPlanter(false)
+      mutate()
+      invalidate("/api/pet/overview")
+    } catch { showMessage("Network error", "error") }
+  }, [mutate, showMessage])
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-16) ---
   // Purpose: Fullscreen toggle syncs to database via API instead of localStorage only
   const toggleFullscreen = useCallback(async () => {
@@ -364,6 +406,26 @@ export default function FarmPage() {
                       className="flex items-center justify-center flex-wrap gap-1 py-1 border-x-[3px] border-b-[3px] border-[#2a3a5c] bg-[#0c1020]/90"
                       style={{ boxShadow: "3px 3px 0 #060810" }}
                     >
+                      {/* --- AI-MODIFIED (2026-04-24) --- */}
+                      {/* Purpose: "Plant All" -- fills every empty plot with the same seed.
+                          Lives next to Water/Harvest/Clear so it follows the existing toolbar
+                          pattern. Only shown when there's at least one truly empty plot. */}
+                      {hasEmpty && (
+                        <ToolbarButton
+                          iconUrl={getFarmAnimationUrl("sparkle", 1)}
+                          label={`Plant All (${emptyPlotCount})`}
+                          onClick={() => {
+                            setSelectedPlot(null)
+                            setShowSeedSelector(false)
+                            setShowBulkPlanter(true)
+                          }}
+                          color="#40d870"
+                        />
+                      )}
+                      {hasEmpty && (hasPlanted || hasHarvestable || hasDead) && (
+                        <div className="w-px h-10 bg-[#1a2a3c]" />
+                      )}
+                      {/* --- END AI-MODIFIED --- */}
                       {hasPlanted && (
                         <ToolbarButton
                           iconUrl={getUiIconUrl("liongotchi_greenpot")}
@@ -390,7 +452,7 @@ export default function FarmPage() {
                           color="#e04040"
                         />
                       )}
-                      {(hasPlanted || hasHarvestable || hasDead) && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                      {(hasPlanted || hasHarvestable || hasDead || hasEmpty) && <div className="w-px h-10 bg-[#1a2a3c]" />}
                       <ToolbarButton
                         iconUrl={getUiIconUrl(isFullscreen ? "liongotchi_heart" : "liongotchi_greenpot")}
                         label={isFullscreen ? "Compact" : "Fullscreen"}
@@ -406,7 +468,7 @@ export default function FarmPage() {
                   {/* --- AI-MODIFIED (2026-03-22) --- */}
                   {/* Purpose: Wrap PlotDetail/SeedSelector in a div with ref for auto-scroll */}
                   <div ref={plotDetailRef}>
-                  {selectedPlotData && !showSeedSelector && (
+                  {selectedPlotData && !showSeedSelector && !showBulkPlanter && (
                     <PlotDetail
                       plot={selectedPlotData}
                       onAction={handleAction}
@@ -415,7 +477,7 @@ export default function FarmPage() {
                     />
                   )}
 
-                  {showSeedSelector && selectedPlot !== null && (
+                  {showSeedSelector && selectedPlot !== null && !showBulkPlanter && (
                     <SeedSelector
                       seeds={data.availableSeeds}
                       gold={data.gold}
@@ -424,6 +486,22 @@ export default function FarmPage() {
                       onCancel={() => setShowSeedSelector(false)}
                     />
                   )}
+
+                  {/* --- AI-MODIFIED (2026-04-24) --- */}
+                  {/* Purpose: Bulk-plant SeedSelector. Shown when "Plant All" is clicked.
+                      Reuses SeedSelector with bulkCount = empty-plot count, so cards
+                      display total batch cost and the action button reads "Buy & Plant All". */}
+                  {showBulkPlanter && (
+                    <SeedSelector
+                      seeds={data.availableSeeds}
+                      gold={data.gold}
+                      plotId={-1}
+                      bulkCount={emptyPlotCount}
+                      onPlant={handlePlantAll}
+                      onCancel={() => setShowBulkPlanter(false)}
+                    />
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   </div>
                   {/* --- END AI-MODIFIED --- */}

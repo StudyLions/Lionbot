@@ -44,17 +44,40 @@ interface Seed {
   typeId: number
 }
 
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Add bulk-plant mode. When `bulkCount` is provided (>0) the selector
+//          plants the same seed in N empty plots at once. Affordability is
+//          checked against the total batch cost; the title bar, seed cards,
+//          and purchase summary all switch to bulk-aware text. Bulk mode uses
+//          plotId=-1 sentinel because there's no single plot involved.
 interface SeedSelectorProps {
   seeds: Seed[]
   gold: number
   plotId: number
   onPlant: (plotId: number, seedId: number) => Promise<void>
   onCancel: () => void
+  bulkCount?: number
+  goldLabel?: string
 }
+// --- END AI-MODIFIED ---
 
-export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }: SeedSelectorProps) {
+export default function SeedSelector({
+  seeds, gold, plotId, onPlant, onCancel,
+  // --- AI-MODIFIED (2026-04-24) ---
+  bulkCount, goldLabel,
+  // --- END AI-MODIFIED ---
+}: SeedSelectorProps) {
   const [selectedSeed, setSelectedSeed] = useState<number | null>(null)
   const [planting, setPlanting] = useState(false)
+
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Helpers for bulk vs single mode (cost, title, button label).
+  const isBulk = (bulkCount ?? 0) > 0
+  const multiplier = isBulk ? bulkCount! : 1
+  const titleText = isBulk
+    ? `PLANT ALL EMPTY PLOTS (${bulkCount})`
+    : `SEED SHOP - Plot #${plotId + 1}`
+  // --- END AI-MODIFIED ---
 
   async function handlePlant() {
     if (!selectedSeed || planting) return
@@ -64,6 +87,10 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
   }
 
   const selected = seeds.find((s) => s.id === selectedSeed)
+  // --- AI-MODIFIED (2026-04-24) ---
+  const selectedTotalCost = selected ? selected.plantCost * multiplier : 0
+  const selectedTotalHarvest = selected ? selected.harvestGold * multiplier : 0
+  // --- END AI-MODIFIED ---
 
   return (
     <div
@@ -73,19 +100,32 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
       <div className="border-2 border-[#40d870]/30 bg-[#0c1020]">
         {/* Title bar */}
         <div className="flex items-center justify-between px-4 py-2.5 bg-[#1a3020] border-b-2 border-[#40d870]/30">
+          {/* --- AI-MODIFIED (2026-04-24) --- */}
+          {/* Purpose: Title + gold label switch between single-plot and bulk modes */}
           <span className="font-pixel text-sm text-[#40d870]">
-            SEED SHOP - Plot #{plotId + 1}
+            {titleText}
           </span>
           <div className="flex items-center gap-3">
+            {goldLabel && (
+              <span className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] hidden sm:inline">
+                {goldLabel}
+              </span>
+            )}
             <GoldDisplay amount={gold} size="sm" />
             <PixelButton variant="ghost" size="sm" onClick={onCancel}>X</PixelButton>
           </div>
+          {/* --- END AI-MODIFIED --- */}
         </div>
 
         {/* Seed grid */}
         <div className="p-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
           {seeds.map((seed) => {
-            const affordable = gold >= seed.plantCost
+            // --- AI-MODIFIED (2026-04-24) ---
+            // Purpose: In bulk mode, affordability + displayed cost are calculated
+            //          against the full batch (count x plant cost), not per plot.
+            const totalSeedCost = seed.plantCost * multiplier
+            const affordable = gold >= totalSeedCost
+            // --- END AI-MODIFIED ---
             const isSelected = selectedSeed === seed.id
             const imgUrl = getFarmPlantImageUrl(seed.assetPrefix, seed.plantType, seed.typeId, 5)
 
@@ -116,8 +156,16 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
                   <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate w-full text-center">
                     {seed.name}
                   </p>
-                  <GoldDisplay amount={seed.plantCost} size="sm"
+                  {/* --- AI-MODIFIED (2026-04-24) --- */}
+                  {/* Purpose: Show per-plot cost + total batch cost when in bulk mode */}
+                  <GoldDisplay amount={totalSeedCost} size="sm"
                     className={affordable ? "" : "!text-[var(--pet-red,#e04040)]"} />
+                  {isBulk && (
+                    <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] w-full text-center">
+                      {seed.plantCost}G x {bulkCount}
+                    </span>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
                   {/* --- AI-MODIFIED (2026-04-23) --- */}
                   {/* Purpose: Approx. voice-chat hours needed to grow this seed */}
                   <span
@@ -155,9 +203,21 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
               {/* --- AI-MODIFIED (2026-04-23) --- */}
               {/* Purpose: Add grow-time stat (voice hours + nominal hours) so users
                   know how long the sprout will take before they spend gold */}
+              {/* --- AI-MODIFIED (2026-04-24) --- */}
+              {/* Purpose: Show batch totals (count x harvest, total cost) in bulk mode
+                  so users see exactly what they're committing to before clicking. */}
               <div className="flex items-center gap-2 sm:gap-4 flex-wrap font-pixel text-[13px] text-[var(--pet-text-dim,#8899aa)]">
-                <span className="text-[var(--pet-text,#e2e8f0)]">{selected.name}</span>
-                <span>Harvest: <GoldDisplay amount={selected.harvestGold} size="sm" /></span>
+                <span className="text-[var(--pet-text,#e2e8f0)]">
+                  {isBulk ? `${bulkCount} x ${selected.name}` : selected.name}
+                </span>
+                {isBulk && (
+                  <span className="text-[var(--pet-red,#e04040)]">
+                    Cost: <GoldDisplay amount={selectedTotalCost} size="sm" />
+                  </span>
+                )}
+                <span>
+                  Harvest: <GoldDisplay amount={isBulk ? selectedTotalHarvest : selected.harvestGold} size="sm" />
+                </span>
                 <span
                   className="text-[var(--pet-blue,#4080f0)]"
                   title={`Earned through Discord activity. Each voice minute = 1 growth point, each text message = 2 growth points. Total ${selected.growthPointsNeeded} points needed (~${selected.growTimeHours}h nominal).`}
@@ -168,8 +228,11 @@ export default function SeedSelector({ seeds, gold, plotId, onPlant, onCancel }:
               </div>
               {/* --- END AI-MODIFIED --- */}
               {/* --- END AI-MODIFIED --- */}
+              {/* --- END AI-MODIFIED --- */}
               <PixelButton variant="primary" size="md" onClick={handlePlant} loading={planting}>
-                Buy & Plant
+                {/* --- AI-MODIFIED (2026-04-24) --- */}
+                {isBulk ? `Buy & Plant All (${bulkCount})` : "Buy & Plant"}
+                {/* --- END AI-MODIFIED --- */}
               </PixelButton>
             </div>
           </div>

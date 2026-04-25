@@ -953,6 +953,17 @@ model user_config {
   gold                                                                     BigInt                        @default(0)
   email                                                                    String?
   email_verified                                                           Boolean?
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: email system preferences and onboarding state
+  email_welcomed_at                                                        DateTime?                     @db.Timestamptz(6)
+  email_pref_welcome                                                       Boolean                       @default(true)
+  email_pref_weekly_digest                                                 Boolean                       @default(true)
+  email_pref_lifecycle                                                     Boolean                       @default(true)
+  email_pref_announcements                                                 Boolean                       @default(true)
+  email_pref_premium                                                       Boolean                       @default(true)
+  email_unsubscribed_all                                                   Boolean                       @default(false)
+  email_log                                                                email_log[]
+  // --- END AI-MODIFIED ---
   lg_blocks_lg_blocks_blocked_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocked_useridTouser_config")
   lg_blocks_lg_blocks_blocker_useridTouser_config                          lg_blocks[]                   @relation("lg_blocks_blocker_useridTouser_config")
   lg_families                                                              lg_families[]
@@ -1004,6 +1015,30 @@ model user_survey {
   dismissed_at    DateTime?   @db.Timestamptz(6)
   created_at      DateTime?   @default(now()) @db.Timestamptz(6)
   user_config     user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+}
+
+// ============================================================
+// AI-GENERATED MODEL
+// Created: 2026-04-25
+// Purpose: Delivery log for the email system. Records every send
+//          attempt (success/skip/fail) for idempotency, debugging,
+//          and analytics. Skipped sends are logged so we can see
+//          why a user did not receive a given email.
+// ============================================================
+model email_log {
+  id          BigInt      @id @default(autoincrement())
+  userid      BigInt
+  email       String
+  template    String
+  subject     String
+  status      String
+  resend_id   String?
+  error       String?
+  sent_at     DateTime    @default(now()) @db.Timestamptz(6)
+  user_config user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid, sent_at])
+  @@index([template, sent_at])
 }
 
 model user_experience {
@@ -1216,6 +1251,15 @@ model lg_pets {
   created_at             DateTime           @default(now()) @db.Timestamptz(6)
   fullscreen_mode        Boolean            @default(false)
   drop_notif             String             @default("ALL")
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Per-pet master toggle for the cosmetic overlay layer. When TRUE
+  // the renderer overlays lg_pet_cosmetics rows on top of lg_pet_equipment;
+  // when FALSE the cosmetics are kept but ignored (revert to "true equipment
+  // view"). Default TRUE so once a user sets a cosmetic it just works.
+  // Migration: prisma/migrations/manual_2026_04_24_pet_cosmetics.sql
+  cosmetics_enabled      Boolean            @default(true)
+  lg_pet_cosmetics       lg_pet_cosmetics[]
+  // --- END AI-MODIFIED ---
   lg_pet_equipment       lg_pet_equipment[]
   user_config            user_config        @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
   lg_user_farm           lg_user_farm[]
@@ -1259,6 +1303,10 @@ model lg_items {
   lg_marketplace_listings lg_marketplace_listings[]
   lg_marketplace_sales    lg_marketplace_sales[]
   lg_pet_equipment        lg_pet_equipment[]
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Back-relation for the cosmetic overlay table (visual-only).
+  lg_pet_cosmetics        lg_pet_cosmetics[]
+  // --- END AI-MODIFIED ---
   lg_recipe_ingredients   lg_recipe_ingredients[]
   lg_scroll_properties    lg_scroll_properties?
   lg_user_inventory       lg_user_inventory[]
@@ -1309,6 +1357,28 @@ model lg_pet_equipment {
   lg_pets  lg_pets         @relation(fields: [userid], references: [userid], onDelete: NoAction, onUpdate: NoAction)
 
   @@id([userid, slot])
+}
+
+// ============================================================
+// AI-GENERATED MODEL
+// Created: 2026-04-24
+// Purpose: Parallel "cosmetic" equipment layer. Mirrors lg_pet_equipment
+//          in shape but is read ONLY by the renderer (overlay on top of
+//          lg_pet_equipment, per slot). Stats engine NEVER joins this
+//          table — bonuses still come exclusively from lg_pet_equipment +
+//          lg_user_inventory + lg_enhancement_slots.
+// Migration: prisma/migrations/manual_2026_04_24_pet_cosmetics.sql
+// ============================================================
+model lg_pet_cosmetics {
+  userid   BigInt
+  slot     lgequipmentslot
+  itemid   Int
+  set_at   DateTime        @default(now()) @db.Timestamptz(6)
+  lg_items lg_items        @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
+  lg_pets  lg_pets         @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userid, slot])
+  @@index([userid], map: "idx_lg_pet_cosmetics_user")
 }
 
 model lg_rooms {

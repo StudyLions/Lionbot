@@ -165,18 +165,88 @@ export const FREE_TIER = {
 
 export const TIER_ORDER: SubscriptionTier[] = ["LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"];
 
-// --- AI-REPLACED (2026-03-24) ---
-// Reason: Match against both USD and EUR price IDs
-// What the new code does better: finds tier regardless of which currency's price ID is used
+// --- AI-REPLACED (2026-04-25) ---
+// Reason: The previous version only checked NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_*
+//         and NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_*_EUR env vars (via the static
+//         stripePriceId / stripePriceIdEur fields on TierConfig). But on Vercel
+//         we only set the EUR-flavored values into NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_*
+//         (with the *_EUR vars unset), and the actual Stripe Checkout flow uses
+//         a totally different family of server-side env vars: STRIPE_PRICE_LIONHEART_*_USD,
+//         STRIPE_PRICE_LIONHEART_*_EUR, and STRIPE_PRICE_LIONHEART_*. As a result
+//         every USD subscriber (and any EUR subscriber on a price ID not matching
+//         the legacy NEXT_PUBLIC_* values) had their webhook resolve to tier=NONE,
+//         which silently denied them gems, server premium, and tier-boosted vote
+//         rewards while still showing them as ACTIVE subscribers in the dashboard.
+//
+// What the new code does better:
+//   - Builds a single price-ID -> tier map from ALL known env vars (NEXT_PUBLIC_*,
+//     STRIPE_PRICE_*, STRIPE_PRICE_*_EUR, STRIPE_PRICE_*_USD)
+//   - Trims each value (some Vercel env vars contain trailing \r\n)
+//   - Falls back to the static fields for safety if the env var is unset
+//   - Adds a one-time console.warn when an unknown price ID arrives so the next
+//     time a new Stripe Price is added we will notice in production logs instead
+//     of silently downgrading the user
 // --- Original code (commented out for rollback) ---
 // export function getTierByPriceId(priceId: string): TierConfig | undefined {
-//   return Object.values(SUBSCRIPTION_TIERS).find((t) => t.stripePriceId === priceId);
+//   return Object.values(SUBSCRIPTION_TIERS).find(
+//     (t) => t.stripePriceId === priceId || t.stripePriceIdEur === priceId
+//   );
 // }
 // --- End original code ---
+function buildPriceIdTierMap(): Record<string, SubscriptionTier> {
+  const map: Record<string, SubscriptionTier> = {};
+  const add = (raw: string | undefined, tier: SubscriptionTier) => {
+    const trimmed = (raw ?? "").trim();
+    if (trimmed) map[trimmed] = tier;
+  };
+
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART, "LIONHEART");
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS, "LIONHEART_PLUS");
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS_PLUS, "LIONHEART_PLUS_PLUS");
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_EUR, "LIONHEART");
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS_EUR, "LIONHEART_PLUS");
+  add(process.env.NEXT_PUBLIC_STRIPE_PRICE_LIONHEART_PLUS_PLUS_EUR, "LIONHEART_PLUS_PLUS");
+
+  add(process.env.STRIPE_PRICE_LIONHEART, "LIONHEART");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS, "LIONHEART_PLUS");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS, "LIONHEART_PLUS_PLUS");
+
+  add(process.env.STRIPE_PRICE_LIONHEART_EUR, "LIONHEART");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS_EUR, "LIONHEART_PLUS");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_EUR, "LIONHEART_PLUS_PLUS");
+
+  add(process.env.STRIPE_PRICE_LIONHEART_USD, "LIONHEART");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS_USD, "LIONHEART_PLUS");
+  add(process.env.STRIPE_PRICE_LIONHEART_PLUS_PLUS_USD, "LIONHEART_PLUS_PLUS");
+
+  return map;
+}
+
+let _priceIdTierMap: Record<string, SubscriptionTier> | null = null;
+function getPriceIdTierMap(): Record<string, SubscriptionTier> {
+  if (!_priceIdTierMap) _priceIdTierMap = buildPriceIdTierMap();
+  return _priceIdTierMap;
+}
+
 export function getTierByPriceId(priceId: string): TierConfig | undefined {
-  return Object.values(SUBSCRIPTION_TIERS).find(
-    (t) => t.stripePriceId === priceId || t.stripePriceIdEur === priceId
+  if (!priceId) return undefined;
+  const cleaned = priceId.trim();
+
+  const map = getPriceIdTierMap();
+  const tierId = map[cleaned];
+  if (tierId) return SUBSCRIPTION_TIERS[tierId];
+
+  const staticMatch = Object.values(SUBSCRIPTION_TIERS).find(
+    (t) => t.stripePriceId.trim() === cleaned || t.stripePriceIdEur.trim() === cleaned
   );
+  if (staticMatch) return staticMatch;
+
+  console.warn(
+    `[SubscriptionData] getTierByPriceId: unknown Stripe price id ${cleaned} ` +
+      `-- this user will be recorded as tier=NONE and miss gems / premium. ` +
+      `Add the env var mapping for this price ID and redeploy.`
+  );
+  return undefined;
 }
 // --- END AI-REPLACED ---
 

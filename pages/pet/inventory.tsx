@@ -49,6 +49,10 @@ interface InventoryData {
 }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Add cosmetic overlay shape (`cosmetics` per slot + master
+// `cosmeticsEnabled` flag) so the inventory page can both render the
+// merged visual layer AND surface stats-vs-visuals UI affordances.
 interface OverviewData {
   hasPet: boolean
   pet: {
@@ -60,11 +64,16 @@ interface OverviewData {
     name: string; category: string; rarity: string; assetPath: string
     glowTier?: string; glowIntensity?: number
   }>
+  cosmetics?: Record<string, {
+    name: string; category: string; rarity: string; assetPath: string
+  }>
+  cosmeticsEnabled?: boolean
   roomPrefix?: string
   furniture?: Record<string, string>
   roomLayout?: any
   gameboySkinPath?: string | null
 }
+// --- END AI-MODIFIED ---
 
 const RARITY_BORDER: Record<string, string> = {
   COMMON: "#3a4a6c", UNCOMMON: "#4080f0", RARE: "#e04040",
@@ -139,6 +148,13 @@ export default function InventoryPage() {
   // the padlock button while the request is in flight (prevents double-fire).
   const [lockToggling, setLockToggling] = useState<number | null>(null)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Mid-cosmetic-toggle inventory id (mirrors `equipping` /
+  // `lockToggling` patterns) plus mid-master-toggle flag for the global
+  // "Show cosmetics" switch.
+  const [cosmeticToggling, setCosmeticToggling] = useState<number | null>(null)
+  const [cosmeticsMasterPending, setCosmeticsMasterPending] = useState(false)
+  // --- END AI-MODIFIED ---
 
   const { data: invData, error: invError, isLoading: invLoading, mutate: mutateInv } =
     useDashboard<InventoryData>(session ? `/api/pet/inventory?filter=${filter}` : null)
@@ -175,12 +191,32 @@ export default function InventoryPage() {
   }, [equipBestLoading, mutateInv, mutateOverview])
 
   // Purpose: Compute preview equipment map for Try On feature
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Try On now layers on top of the cosmetic-merged base when the
+  // pet has cosmetics enabled, so previewing one slot doesn't accidentally
+  // strip cosmetics out of the other slots.
   const previewEquipment = useMemo(() => {
     if (!previewItem || !overview) return null
     const slot = resolveSlot(previewItem.item)
     if (!slot) return null
-    const merged = { ...overview.equipment }
-    merged[slot] = {
+    const showCosmetics = overview.cosmeticsEnabled ?? true
+    const base: Record<string, {
+      name: string; category: string; rarity: string; assetPath: string
+      glowTier?: string; glowIntensity?: number
+    }> = { ...overview.equipment }
+    if (showCosmetics && overview.cosmetics) {
+      for (const [s, item] of Object.entries(overview.cosmetics)) {
+        base[s] = {
+          name: item.name,
+          category: item.category,
+          rarity: item.rarity,
+          assetPath: item.assetPath,
+          glowTier: "none",
+          glowIntensity: 0,
+        }
+      }
+    }
+    base[slot] = {
       name: previewItem.item.name,
       category: previewItem.item.category,
       rarity: previewItem.item.rarity,
@@ -188,8 +224,9 @@ export default function InventoryPage() {
       glowTier: previewItem.glowTier,
       glowIntensity: previewItem.glowIntensity,
     }
-    return merged
+    return base
   }, [previewItem, overview])
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-20) ---
@@ -257,6 +294,110 @@ export default function InventoryPage() {
       setEquipping(null)
     }
   }, [equipping, invData, overview, mutateInv, mutateOverview])
+
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Cosmetic overlay handlers.
+  //   - handleCosmeticToggle sets/clears an item as the visual override
+  //     for its slot via /api/pet/inventory/cosmetic. Stats stay tied to
+  //     whatever is in lg_pet_equipment.
+  //   - handleCosmeticsMasterToggle flips the per-pet cosmetics_enabled
+  //     flag via /api/pet/cosmetics-toggle so users can quickly preview
+  //     their "true equipment view" without losing their picks.
+  const handleCosmeticToggle = useCallback(
+    async (inventoryId: number, action: "set" | "clear") => {
+      if (cosmeticToggling) return
+      setCosmeticToggling(inventoryId)
+
+      const targetItem = invData?.items.find((i) => i.inventoryId === inventoryId)
+      const targetSlot = targetItem ? resolveSlot(targetItem.item) : null
+
+      const optimisticInv = invData ? {
+        ...invData,
+        items: invData.items.map((i) => {
+          if (i.inventoryId === inventoryId) return { ...i, equippedAsCosmetic: action === "set" }
+          if (action === "set" && targetSlot && resolveSlot(i.item) === targetSlot && i.equippedAsCosmetic) {
+            return { ...i, equippedAsCosmetic: false }
+          }
+          return i
+        }),
+      } : undefined
+
+      const optimisticOverview = overview && targetItem && targetSlot ? (() => {
+        const newCos = { ...(overview.cosmetics ?? {}) }
+        if (action === "set") {
+          newCos[targetSlot] = {
+            name: targetItem.item.name,
+            category: targetItem.item.category,
+            rarity: targetItem.item.rarity,
+            assetPath: targetItem.item.assetPath,
+          }
+        } else {
+          delete newCos[targetSlot]
+        }
+        return { ...overview, cosmetics: newCos }
+      })() : undefined
+
+      if (optimisticInv) mutateInv(optimisticInv, { revalidate: false })
+      if (optimisticOverview) mutateOverview(optimisticOverview, { revalidate: false })
+
+      try {
+        const res = await fetch("/api/pet/inventory/cosmetic", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ inventoryId, action }),
+        })
+        const body = await res.json()
+        if (!res.ok) {
+          toast.error(body.error || "Failed to update cosmetic")
+          mutateInv()
+          mutateOverview()
+          return
+        }
+        toast.success(action === "set" ? "Cosmetic set" : "Cosmetic cleared")
+      } catch {
+        toast.error("Something went wrong")
+      } finally {
+        mutateInv()
+        mutateOverview()
+        invalidate("/api/pet/inventory?filter=equipment")
+        invalidate("/api/pet/inventory?filter=scrolls")
+        invalidate("/api/pet/inventory?filter=favorites")
+        setCosmeticToggling(null)
+      }
+    },
+    [cosmeticToggling, invData, overview, mutateInv, mutateOverview]
+  )
+
+  const handleCosmeticsMasterToggle = useCallback(async () => {
+    if (cosmeticsMasterPending) return
+    setCosmeticsMasterPending(true)
+    const next = !(overview?.cosmeticsEnabled ?? true)
+
+    const optimisticOverview = overview ? { ...overview, cosmeticsEnabled: next } : undefined
+    if (optimisticOverview) mutateOverview(optimisticOverview, { revalidate: false })
+
+    try {
+      const res = await fetch("/api/pet/cosmetics-toggle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: next }),
+      })
+      const body = await res.json()
+      if (!res.ok) {
+        toast.error(body.error || "Failed to update toggle")
+        mutateOverview()
+        return
+      }
+      toast.success(next ? "Showing cosmetics" : "Showing real equipment")
+    } catch {
+      toast.error("Something went wrong")
+      mutateOverview()
+    } finally {
+      mutateOverview()
+      setCosmeticsMasterPending(false)
+    }
+  }, [cosmeticsMasterPending, overview, mutateOverview])
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-04-23) ---
   // Purpose: Toggle the lock / favorite state on an inventory row. Optimistic
@@ -357,9 +498,39 @@ export default function InventoryPage() {
   // --- END AI-MODIFIED ---
 
   const equipment = overview?.equipment ?? {}
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Merge cosmetic overlay rows on top of equipment per slot when
+  // the master cosmetics_enabled flag is on. This produces the visual layer
+  // RoomCanvas consumes -- stats summaries should keep using `equipment`
+  // directly so bonuses stay tied to the real gear (BonusSummary already
+  // does this via `i.equipped`).
+  const cosmeticsEnabled = overview?.cosmeticsEnabled ?? true
+  const cosmetics = overview?.cosmetics ?? {}
+  const renderedEquipment = useMemo(() => {
+    if (!cosmeticsEnabled) return equipment
+    const merged: typeof equipment = { ...equipment }
+    for (const [slot, item] of Object.entries(cosmetics)) {
+      merged[slot] = {
+        name: item.name,
+        category: item.category,
+        rarity: item.rarity,
+        assetPath: item.assetPath,
+        glowTier: "none",
+        glowIntensity: 0,
+      }
+    }
+    return merged
+  }, [equipment, cosmetics, cosmeticsEnabled])
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-04-10) ---
   // Purpose: When Try On preview is active, use merged equipment for the lion render
-  const displayEquipment = previewEquipment ?? equipment
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Try On preview takes priority, then cosmetic-merged equipment,
+  // then bare equipment. Order matters: previewEquipment is computed off
+  // `equipment` and adds the trial item; cosmetic overlay then sits on top
+  // of whatever's left in slots the preview didn't touch.
+  const displayEquipment = previewEquipment ?? renderedEquipment
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   const pet = overview?.pet
 
@@ -475,6 +646,57 @@ export default function InventoryPage() {
                         </span>
                       )}
                     </div>
+                    {/* --- AI-MODIFIED (2026-04-24) ---
+                        Purpose: Master "Show cosmetics" toggle. Mirrors the
+                        bot's per-pet `cosmetics_enabled` flag so users can
+                        quickly flip between "true equipment view" (what
+                        actually has stats) and "cosmetic overlay view"
+                        (what they want to look like) without losing their
+                        cosmetic picks. Only shown when at least one
+                        cosmetic exists, so we never put a confusing toggle
+                        in front of users who haven't opted in. */}
+                    {Object.keys(cosmetics).length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleCosmeticsMasterToggle}
+                        disabled={cosmeticsMasterPending}
+                        className={cn(
+                          "w-full flex items-center justify-between gap-2 mb-2 px-2 py-1.5 border transition-colors",
+                          "disabled:opacity-50",
+                          cosmeticsEnabled
+                            ? "border-[#d060f0]/40 bg-[#d060f0]/10 hover:bg-[#d060f0]/15"
+                            : "border-[#3a4a6c] bg-[#0a0e1a] hover:bg-[#101830]"
+                        )}
+                        title={
+                          cosmeticsEnabled
+                            ? "Cosmetics are showing — click to hide and see your real equipped gear"
+                            : "Cosmetics are hidden — click to show your cosmetic overlays"
+                        }
+                      >
+                        <span
+                          className={cn(
+                            "font-pixel text-[10px] truncate",
+                            cosmeticsEnabled ? "text-[#e0a0ff]" : "text-[var(--pet-text-dim,#8899aa)]"
+                          )}
+                        >
+                          {"\u2728"} Show cosmetics
+                          <span className="ml-1 opacity-70">
+                            ({Object.keys(cosmetics).length})
+                          </span>
+                        </span>
+                        <span
+                          className={cn(
+                            "font-pixel text-[9px] px-1.5 py-0.5 border flex-shrink-0",
+                            cosmeticsEnabled
+                              ? "border-[#d060f0] text-[#e0a0ff] bg-[#d060f0]/15"
+                              : "border-[#3a4a6c] text-[var(--pet-text-dim,#8899aa)] bg-[#0a0e1a]"
+                          )}
+                        >
+                          {cosmeticsMasterPending ? "..." : cosmeticsEnabled ? "ON" : "OFF"}
+                        </span>
+                      </button>
+                    )}
+                    {/* --- END AI-MODIFIED --- */}
                     {/* --- AI-MODIFIED (2026-04-10) --- */}
                     {/* Purpose: Try On preview banner above the lion render */}
                     {previewItem && (
@@ -529,8 +751,17 @@ export default function InventoryPage() {
                   {/* --- AI-MODIFIED (2026-03-20) --- */}
                   {/* Purpose: Full render stack panel replacing the simple equipped list. Shows
                       interleaved lion layers + equipment with drag reorder and position offsets. */}
+                  {/* --- AI-MODIFIED (2026-04-24) ---
+                      Purpose: Pass renderedEquipment (cosmetic-merged) so the
+                      panel rows match what's actually rendered on the lion,
+                      plus cosmetics + equipmentRaw so each row can show a
+                      "this slot is showing a cosmetic" badge with a tooltip
+                      revealing both the visual and the stat-bearing item. */}
                   <RenderStackPanel
-                    equipment={equipment}
+                    equipment={renderedEquipment}
+                    equipmentRaw={equipment}
+                    cosmetics={cosmetics}
+                    cosmeticsEnabled={cosmeticsEnabled}
                     renderSequence={activeSequence}
                     equipmentOffsets={activeOffsets}
                     selectedSlot={selectedEquipSlot}
@@ -540,6 +771,7 @@ export default function InventoryPage() {
                     onOffsetChange={handleOffsetChange}
                     onUnequipSlot={handleUnequipSlot}
                   />
+                  {/* --- END AI-MODIFIED --- */}
                   {/* --- END AI-MODIFIED --- */}
 
                   {/* Bonus Summary */}
@@ -615,6 +847,14 @@ export default function InventoryPage() {
                           onToggleLock={handleToggleLock}
                           lockToggling={lockToggling === inv.inventoryId}
                           // --- END AI-MODIFIED ---
+                          // --- AI-MODIFIED (2026-04-24) ---
+                          // Purpose: Wire the new cosmetic-overlay toggle. The card
+                          // shows a Set-as-cosmetic / Remove-cosmetic button in the
+                          // equipment tab, plus a small badge when cosmetic is on.
+                          onToggleCosmetic={handleCosmeticToggle}
+                          cosmeticToggling={cosmeticToggling === inv.inventoryId}
+                          cosmeticsEnabled={cosmeticsEnabled}
+                          // --- END AI-MODIFIED ---
                         />
                       ))}
                     </div>
@@ -635,6 +875,11 @@ export default function InventoryPage() {
 // --- AI-MODIFIED (2026-04-23) ---
 // Purpose: Added onToggleLock + lockToggling props so each card can render
 // a padlock toggle (top-left of image) and a persistent LOCKED badge.
+// --- AI-MODIFIED (2026-04-24) ---
+// Purpose: Added onToggleCosmetic / cosmeticToggling / cosmeticsEnabled
+// props so each equippable item can be set as the visual cosmetic overlay
+// without changing the stat-bearing equipped item. The cosmetic action is
+// only meaningful for equippable items, so it's gated to isEquipmentTab.
 function InventoryItemCard({
   inv,
   equipping,
@@ -645,6 +890,9 @@ function InventoryItemCard({
   isScrollsTab,
   onToggleLock,
   lockToggling,
+  onToggleCosmetic,
+  cosmeticToggling,
+  cosmeticsEnabled,
 }: {
   inv: InventoryItem
   equipping: number | null
@@ -655,7 +903,11 @@ function InventoryItemCard({
   isScrollsTab: boolean
   onToggleLock: (id: number, nextLocked: boolean) => void
   lockToggling: boolean
+  onToggleCosmetic: (id: number, action: "set" | "clear") => void
+  cosmeticToggling: boolean
+  cosmeticsEnabled: boolean
 }) {
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   const router = useRouter()
   const bc = RARITY_BORDER[inv.item.rarity] || "#3a4a6c"
@@ -698,6 +950,31 @@ function InventoryItemCard({
                 EQP
               </span>
             )}
+            {/* --- AI-MODIFIED (2026-04-24) ---
+                Purpose: Persistent COS badge whenever this item is the
+                cosmetic overlay for its slot. Sits just below the EQP pill
+                so users can see at a glance that the same row has both
+                roles or only one. Visually distinct (purple) so it never
+                gets confused with the green "really equipped" pill. */}
+            {inv.equippedAsCosmetic && (
+              <span
+                className={cn(
+                  "absolute right-1 font-pixel text-[8px] px-1 py-0.5 border bg-[#2a1a3c]/90",
+                  inv.equipped ? "top-[1.1rem]" : "top-1",
+                  cosmeticsEnabled
+                    ? "border-[#d060f0] text-[#e0a0ff]"
+                    : "border-[#d060f0]/40 text-[#d060f0]/60"
+                )}
+                title={
+                  cosmeticsEnabled
+                    ? "Showing as cosmetic overlay (visual only)"
+                    : "Set as cosmetic but display is OFF — toggle 'Show cosmetics' to see it"
+                }
+              >
+                COS
+              </span>
+            )}
+            {/* --- END AI-MODIFIED --- */}
             {/* --- AI-MODIFIED (2026-04-23) --- */}
             {/* Purpose: Padlock toggle (top-left). Locked items get a solid gold
                 pill so the protection is unmistakable; unlocked items show a
@@ -808,6 +1085,43 @@ function InventoryItemCard({
                   {isPreviewing ? "\u{1F457} Trying On..." : "\u{1F457} Try On"}
                 </button>
               )}
+              {/* --- AI-MODIFIED (2026-04-24) ---
+                  Purpose: Cosmetic overlay action — set this item as the
+                  visual layer for its slot (or clear it if it already is).
+                  Visually distinct sparkle/purple styling so it never gets
+                  confused with the green Equip / red Unequip stat actions.
+                  Independent of equip state by design (a user can set a
+                  cosmetic for a slot they have nothing equipped in). */}
+              <button
+                className={cn(
+                  "w-full font-pixel text-[9px] py-1 border transition-all",
+                  "hover:brightness-125 active:translate-y-px disabled:opacity-40",
+                  inv.equippedAsCosmetic
+                    ? "border-[#d060f0] text-[#e0a0ff] bg-[#d060f0]/15 hover:bg-[#d060f0]/25"
+                    : "border-[#d060f0]/40 text-[#d060f0]/80 bg-[#d060f0]/5 hover:bg-[#d060f0]/10 hover:text-[#e0a0ff]"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  if (cosmeticToggling) return
+                  onToggleCosmetic(
+                    inv.inventoryId,
+                    inv.equippedAsCosmetic ? "clear" : "set",
+                  )
+                }}
+                disabled={cosmeticToggling}
+                title={
+                  inv.equippedAsCosmetic
+                    ? "Remove as cosmetic — slot will show your equipped item again"
+                    : "Set as cosmetic — slot will show this item visually while keeping your equipped item's stats"
+                }
+              >
+                {cosmeticToggling
+                  ? "..."
+                  : inv.equippedAsCosmetic
+                    ? "\u2728 Remove Cosmetic"
+                    : `\u2728 Set as Cosmetic \u2192 ${slot}`}
+              </button>
+              {/* --- END AI-MODIFIED --- */}
             </div>
           )}
           {/* --- END AI-MODIFIED --- */}
@@ -851,6 +1165,15 @@ const RARITY_ACCENT: Record<string, string> = {
 
 function RenderStackPanel({
   equipment,
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Cosmetic overlay support — `equipment` is the merged display
+  // map, `equipmentRaw` is the actual stat-bearing equipment, and
+  // `cosmetics` is the per-slot visual override. `cosmeticsEnabled` mirrors
+  // the per-pet master toggle.
+  equipmentRaw,
+  cosmetics,
+  cosmeticsEnabled,
+  // --- END AI-MODIFIED ---
   renderSequence,
   equipmentOffsets,
   selectedSlot,
@@ -861,6 +1184,11 @@ function RenderStackPanel({
   onUnequipSlot,
 }: {
   equipment: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  // --- AI-MODIFIED (2026-04-24) ---
+  equipmentRaw?: Record<string, { name: string; category: string; rarity: string; assetPath: string; glowTier?: string; glowIntensity?: number }>
+  cosmetics?: Record<string, { name: string; category: string; rarity: string; assetPath: string }>
+  cosmeticsEnabled?: boolean
+  // --- END AI-MODIFIED ---
   renderSequence: RenderStep[]
   equipmentOffsets: Record<string, [number, number]>
   selectedSlot: string | null
@@ -946,6 +1274,9 @@ function RenderStackPanel({
               <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] uppercase mb-0.5 flex items-center gap-1">
                 <span>{"\u{1F512}"}</span> Behind Lion
               </p>
+              {/* --- AI-MODIFIED (2026-04-24) ---
+                  Purpose: Surface cosmetic overlay state on the BACK slot
+                  too, since back items are the most visually prominent. */}
               <RenderStackRow
                 slot="BACK"
                 item={backItem}
@@ -955,7 +1286,10 @@ function RenderStackPanel({
                 locked
                 onClick={() => onSelectSlot(selectedSlot === "BACK" ? null : "BACK")}
                 onUnequip={() => onUnequipSlot("BACK")}
+                isCosmetic={!!(cosmeticsEnabled && cosmetics?.["BACK"])}
+                statItemName={equipmentRaw?.["BACK"]?.name}
               />
+              {/* --- END AI-MODIFIED --- */}
             </div>
           )}
 
@@ -1008,6 +1342,13 @@ function RenderStackPanel({
                   onDrop={(e) => handleDrop(e, idx)}
                   onDragEnd={() => { setDragIdx(null); setOverIdx(null) }}
                 >
+                  {/* --- AI-MODIFIED (2026-04-24) ---
+                      Purpose: Per-slot cosmetic indicator. The slot is
+                      "showing a cosmetic" only if the master toggle is on
+                      AND there's a cosmetic row for this slot. We pass
+                      both flags so the row can render a small purple
+                      sparkle badge with a tooltip explaining what's
+                      visible vs what's giving stats. */}
                   <RenderStackRow
                     slot={slot}
                     item={item}
@@ -1016,7 +1357,10 @@ function RenderStackPanel({
                     isOver={overIdx === idx && dragIdx !== idx}
                     onClick={() => onSelectSlot(selectedSlot === slot ? null : slot)}
                     onUnequip={() => onUnequipSlot(slot)}
+                    isCosmetic={!!(cosmeticsEnabled && cosmetics?.[slot])}
+                    statItemName={equipmentRaw?.[slot]?.name}
                   />
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               )
             })}
@@ -1110,6 +1454,14 @@ function RenderStackRow({
   locked,
   onClick,
   onUnequip,
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Cosmetic overlay indicator support. `isCosmetic` is true when
+  // this slot's currently-rendered item comes from lg_pet_cosmetics rather
+  // than lg_pet_equipment. `statItemName` is the underlying stat-bearing
+  // item (if any) so the tooltip can spell out the visual-vs-stat split.
+  isCosmetic,
+  statItemName,
+  // --- END AI-MODIFIED ---
 }: {
   slot: string
   item: { name: string; category: string; rarity: string; assetPath: string }
@@ -1119,9 +1471,22 @@ function RenderStackRow({
   locked?: boolean
   onClick: () => void
   onUnequip: () => void
+  // --- AI-MODIFIED (2026-04-24) ---
+  isCosmetic?: boolean
+  statItemName?: string
+  // --- END AI-MODIFIED ---
 }) {
   const imgUrl = getItemImageUrl(item.assetPath, item.category)
   const accent = RARITY_ACCENT[item.rarity] || RARITY_ACCENT.COMMON
+  // --- AI-MODIFIED (2026-04-24) ---
+  // Purpose: Pre-compute the tooltip text so the JSX stays clean. Two
+  // variants: stat slot is empty vs stat slot has a different item.
+  const cosmeticTooltip = isCosmetic
+    ? statItemName && statItemName !== item.name
+      ? `Showing cosmetic: ${item.name}\nStats from: ${statItemName}`
+      : `Showing cosmetic: ${item.name}\nNo stat item equipped in this slot`
+    : undefined
+  // --- END AI-MODIFIED ---
 
   return (
     <div
@@ -1140,20 +1505,58 @@ function RenderStackRow({
       onClick={onClick}
     >
       <div className="w-1 self-stretch flex-shrink-0" style={{ backgroundColor: accent }} />
-      <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center my-0.5">
+      <div className="w-7 h-7 flex-shrink-0 flex items-center justify-center my-0.5 relative">
         {imgUrl ? (
           <CroppedItemImage src={imgUrl} alt={item.name} className="w-full h-full object-contain" />
         ) : (
           <span className="text-xs">{SLOT_ICONS[slot] || "\u{1F4E6}"}</span>
         )}
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: Tiny purple sparkle in the corner of the slot portrait
+            so users can see at a glance which slots are wearing a cosmetic
+            instead of their stat gear. The full text is on the row title
+            below so screen readers don't repeat it. */}
+        {isCosmetic && (
+          <span
+            className="absolute -top-0.5 -right-0.5 font-pixel text-[8px] text-[#e0a0ff] leading-none drop-shadow-[0_0_2px_rgba(208,96,240,0.8)] pointer-events-none"
+            aria-hidden
+          >
+            {"\u2728"}
+          </span>
+        )}
+        {/* --- END AI-MODIFIED --- */}
       </div>
-      <div className="flex-1 min-w-0 py-1 pr-1">
+      <div className="flex-1 min-w-0 py-1 pr-1" title={cosmeticTooltip}>
         <div className="flex items-center gap-1">
           <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">{SLOT_ICONS[slot]}</span>
           <span className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] uppercase">{slot}</span>
+          {/* --- AI-MODIFIED (2026-04-24) ---
+              Purpose: Inline COS pill on cosmetic-overlaid slots. Sits
+              before the rarity badge so the visual-vs-stat split is the
+              first thing the user sees on this row. */}
+          {isCosmetic && (
+            <span
+              className="font-pixel text-[7px] px-1 py-0 border border-[#d060f0]/60 text-[#e0a0ff] bg-[#d060f0]/10"
+              title={cosmeticTooltip}
+            >
+              COS
+            </span>
+          )}
+          {/* --- END AI-MODIFIED --- */}
           <PixelBadge rarity={item.rarity} className="text-[7px] px-0.5 py-0 ml-auto" />
         </div>
         <p className="font-pixel text-[10px] text-[var(--pet-text,#e2e8f0)] truncate">{item.name}</p>
+        {/* --- AI-MODIFIED (2026-04-24) ---
+            Purpose: When showing a cosmetic that's hiding a different
+            stat item, surface the stat item name underneath in a dim
+            font so users always know what's actually giving them stats
+            without having to hover for the tooltip. */}
+        {isCosmetic && statItemName && statItemName !== item.name && (
+          <p className="font-pixel text-[8px] text-[var(--pet-text-dim,#8899aa)] truncate">
+            stats: {statItemName}
+          </p>
+        )}
+        {/* --- END AI-MODIFIED --- */}
       </div>
       {!locked && (
         <button

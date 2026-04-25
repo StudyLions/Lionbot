@@ -3,7 +3,37 @@
     "title": "The Ultimate Discord Productivity Bot",
     "subtitle": "Activity tracking, economy, leaderboards, productivity tools, and so much more. The all-in-one solution every Discord community needs.",
     "addToDiscord": "Add to Discord",
-    "viewDashboard": "View Dashboard"
+    "viewDashboard": "View Dashboard",
+    "trustBar": "Top.gg verified · {{count}}+ servers · Free forever",
+    "liveCardTitle": "Live right now",
+    "liveCardStudying": "studying",
+    "liveCardActive": "in voice rooms",
+    "liveCardSessions": "sessions tracked all-time"
+  },
+  "trustStrip": {
+    "label": "Powering communities like",
+    "stat1Label": "active servers",
+    "stat2Label": "members tracked",
+    "stat3Label": "study sessions"
+  },
+  "liongotchiTabs": {
+    "eyebrow": "LionGotchi · Premium-ready ecosystem",
+    "title": "Adopt, raise, and play — together",
+    "subtitle": "A complete in-Discord pet, farm, and player marketplace, all powered by your community's activity."
+  },
+  "premiumTeaser": {
+    "eyebrow": "LionHeart Premium",
+    "title": "Take it further",
+    "subtitle": "Unlock monthly LionGems, faster pet growth, exclusive animated cards, and the perks your community already loves — from €4.99/mo.",
+    "perk1Title": "Up to 1,500 gems / month",
+    "perk1Body": "Drops automatically — no quests required.",
+    "perk2Title": "2× LionGotchi growth",
+    "perk2Body": "Plants that never die, faster harvests, more gold.",
+    "perk3Title": "Animated profile cards",
+    "perk3Body": "Live shimmer, exclusive skins, LionHeart badge.",
+    "ctaPlans": "View LionHeart plans",
+    "ctaCompare": "Compare tiers",
+    "trust": "Cancel anytime · Secure with Stripe · 30-second checkout"
   },
   "liongotchi": {
     "title": "Meet Your LionGotchi",
@@ -91,6 +121,7 @@
   },
   "howItWorks": {
     "title": "Get Started in Minutes",
+    "subtitle": "Three steps from invite to a productive, engaged community.",
     "step1": {
       "title": "Add to Discord",
       "description": "Click the invite link to add Leo to your server."
@@ -106,8 +137,9 @@
   },
   "finalCta": {
     "title": "Ready to Boost Your Server?",
-    "subtitle": "Join thousands of communities already using LionBot.",
+    "subtitle": "Join thousands of communities already using LionBot — free forever, premium when you want more.",
     "addToDiscord": "Add to Discord",
+    "viewPremium": "View Premium",
     "joinDiscord": "Join Our Discord"
   }
 }

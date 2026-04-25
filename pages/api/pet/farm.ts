@@ -277,6 +277,91 @@ export default apiHandler({
       return res.status(200).json({ success: true, action: "wateredAll", count: result.count })
     }
 
+    // --- AI-MODIFIED (2026-04-24) ---
+    // Purpose: Bulk-plant the same seed in every empty plot on the personal farm.
+    //          Quality-of-life feature requested by users who found planting
+    //          one-plot-at-a-time tedious. Atomic: validates total cost up front,
+    //          rolls rarity per-plot independently (preserves the lottery feel).
+    if (action === "plantAll") {
+      if (!seedId) return res.status(400).json({ error: "seedId required" })
+
+      const [allPlots, seed, userConfig] = await Promise.all([
+        prisma.lg_user_farm.findMany({
+          where: { userid: userId },
+          select: { plot_id: true, seed_id: true, dead: true },
+        }),
+        prisma.lg_farm_seeds.findUnique({ where: { seed_id: seedId } }),
+        prisma.user_config.findUnique({
+          where: { userid: userId },
+          select: { gold: true },
+        }),
+      ])
+
+      if (!seed) return res.status(404).json({ error: "Seed not found" })
+
+      const emptyPlots = allPlots.filter((p) => !p.seed_id && !p.dead)
+      if (emptyPlots.length === 0) {
+        return res.status(400).json({ error: "No empty plots to plant in" })
+      }
+
+      const totalCost = seed.plant_cost * emptyPlots.length
+      const currentGold = Number(userConfig?.gold ?? 0)
+      if (currentGold < totalCost) {
+        return res.status(400).json({
+          error: `Not enough gold. Need ${totalCost}G for ${emptyPlots.length} plots (have ${currentGold}G)`,
+        })
+      }
+
+      const now = new Date()
+      const rarityCounts: Record<string, number> = {}
+      const ops = emptyPlots.map((p) => {
+        const rarity = rollRarity()
+        rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1
+        return prisma.lg_user_farm.update({
+          where: { userid_plot_id: { userid: userId, plot_id: p.plot_id } },
+          data: {
+            seed_id: seedId,
+            planted_at: now,
+            last_watered: now,
+            growth_stage: 1,
+            dead: false,
+            growth_points: 0,
+            gold_invested: seed.plant_cost,
+            voice_minutes_earned: 0,
+            messages_earned: 0,
+            rarity,
+          },
+        })
+      })
+
+      await prisma.$transaction([
+        ...ops,
+        prisma.user_config.update({
+          where: { userid: userId },
+          data: { gold: { decrement: totalCost } },
+        }),
+        prisma.lg_gold_transactions.create({
+          data: {
+            transaction_type: "FARM_PLANT",
+            actorid: userId,
+            from_account: userId,
+            amount: totalCost,
+            description: `Bulk planted ${emptyPlots.length} x ${seed.name}`,
+          },
+        }),
+      ])
+
+      return res.status(200).json({
+        success: true,
+        action: "plantedAll",
+        count: emptyPlots.length,
+        totalCost,
+        seedName: seed.name,
+        rarityCounts,
+      })
+    }
+    // --- END AI-MODIFIED ---
+
     // --- AI-MODIFIED (2026-04-01) ---
     // Purpose: Fix harvestAll using raw growth_points check (required 100%) instead of
     // computeProgress() which marks readyToHarvest at stage 5 (80%). This mismatch
