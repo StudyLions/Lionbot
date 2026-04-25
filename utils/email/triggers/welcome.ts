@@ -22,7 +22,7 @@ import WelcomeAdmin, {
   AdminGuildSummary,
 } from "../../../emails/WelcomeAdmin"
 
-const ADMINISTRATOR = 0x8n
+const ADMINISTRATOR = BigInt(0x8)
 
 interface DiscordPartialGuild {
   id: string
