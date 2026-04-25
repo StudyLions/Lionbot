@@ -273,9 +273,17 @@ export default function ShopPage() {
                     Colour Roles
                   </h2>
                   {colourItems.length === 0 ? (
-                    <div className="bg-card/30 border border-border/50 rounded-xl p-6 text-center">
-                      <p className="text-sm text-muted-foreground">No colour roles in this shop yet.</p>
+                    // --- AI-MODIFIED (2026-04-25) ---
+                    // Purpose: Use shared EmptyState for consistent zero-state look
+                    <div className="bg-card/30 border border-border/50 rounded-xl">
+                      <EmptyState
+                        compact
+                        icon={<Palette size={36} strokeWidth={1.25} />}
+                        title="No colour roles yet"
+                        description="Add some colour role items so members can buy a vibe."
+                      />
                     </div>
+                    // --- END AI-MODIFIED ---
                   ) : (
                     <div className="grid grid-cols-1 gap-3">
                       {colourItems.filter((i) => i.purchasable).map((item) => (

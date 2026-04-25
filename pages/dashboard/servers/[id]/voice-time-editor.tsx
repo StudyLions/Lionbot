@@ -128,18 +128,21 @@ export default function VoiceTimeEditorAdminPage() {
                       title="Voice Time Editor"
                       subtitle="Let your members add missed study sessions, edit durations, and recover lost streaks — all with full audit logging and monthly limits you control."
                     >
+                      {/* --- AI-MODIFIED (2026-04-25) --- */}
+                      {/* Purpose: Map hardcoded greys to semantic tokens for theme + contrast parity */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
                         {FEATURE_CARDS.map(f => (
                           <div
                             key={f.label}
-                            className="p-4 rounded-xl bg-gray-800/60 border border-gray-700/50 hover:border-amber-500/20 transition-colors"
+                            className="p-4 rounded-xl bg-card border border-border hover:border-amber-500/20 transition-colors"
                           >
                             <div className="text-amber-400/80 mb-2"><f.icon size={18} /></div>
-                            <p className="text-sm font-semibold text-gray-200">{f.label}</p>
-                            <p className="text-xs text-gray-500 mt-1 leading-relaxed">{f.desc}</p>
+                            <p className="text-sm font-semibold text-foreground">{f.label}</p>
+                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{f.desc}</p>
                           </div>
                         ))}
                       </div>
+                      {/* --- END AI-MODIFIED --- */}
                     </PremiumGate>
                   ) : (
                     <>

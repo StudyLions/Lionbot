@@ -10,6 +10,10 @@
 import Layout from "@/components/Layout/Layout"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import { DashboardShell, PageHeader } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared EmptyState for consistent empty UI across overview cards
+import EmptyState from "@/components/dashboard/ui/EmptyState"
+// --- END AI-MODIFIED ---
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -680,9 +684,15 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent>
                         {(!meData?.recentSessions || meData.recentSessions.length === 0) ? (
-                          <p className="text-sm text-muted-foreground py-4 text-center">
-                            No recent sessions. Start studying in any voice channel!
-                          </p>
+                          // --- AI-MODIFIED (2026-04-25) ---
+                          // Purpose: Replace plain <p> with EmptyState for consistent look + a11y
+                          <EmptyState
+                            compact
+                            icon={<Clock size={36} strokeWidth={1.25} />}
+                            title="No recent sessions"
+                            description="Join any voice channel in a server with LionBot to start studying."
+                          />
+                          // --- END AI-MODIFIED ---
                         ) : (
                           <div className="space-y-2">
                             {meData.recentSessions.slice(0, 5).map((s) => {
@@ -737,9 +747,15 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent>
                         {servers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground py-4 text-center">
-                            No servers found. Join a server with LionBot!
-                          </p>
+                          // --- AI-MODIFIED (2026-04-25) ---
+                          // Purpose: Consistent EmptyState in place of plain text
+                          <EmptyState
+                            compact
+                            icon={<Server size={36} strokeWidth={1.25} />}
+                            title="No servers yet"
+                            description="Add LionBot to a Discord server to see it here."
+                          />
+                          // --- END AI-MODIFIED ---
                         ) : (
                           <div className="space-y-2">
                             {servers.slice(0, 4).map((sv) => {

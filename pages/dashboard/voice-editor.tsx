@@ -31,6 +31,10 @@ import {
 import VoiceEditorWeekNav from "@/components/dashboard/voice-editor/VoiceEditorWeekNav"
 import DayTimelineRow from "@/components/dashboard/voice-editor/DayTimelineRow"
 import SessionEditSheet from "@/components/dashboard/voice-editor/SessionEditSheet"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton primitive for loading states
+import { Skeleton } from "@/components/ui/skeleton"
+// --- END AI-MODIFIED ---
 import type { VoiceEditorSession } from "@/lib/voiceEditorTimeline"
 import type { PendingEdit } from "@/lib/voiceEditorTimeline"
 import {
@@ -463,7 +467,9 @@ export default function VoiceEditorPage() {
               </div>
 
               {isLoading && !servers.length ? (
-                <div className="h-12 bg-card/50 rounded-lg animate-pulse" />
+                // --- AI-MODIFIED (2026-04-25) ---
+                <Skeleton className="h-12 rounded-lg" />
+                // --- END AI-MODIFIED ---
               ) : servers.length === 0 ? (
                 <EmptyState
                   icon={<Server size={24} />}
@@ -582,11 +588,14 @@ export default function VoiceEditorPage() {
                   )}
 
                   {isLoading ? (
-                    <div className="space-y-3 mt-4">
+                    // --- AI-MODIFIED (2026-04-25) ---
+                    // Purpose: Shared Skeleton primitive for week loading state
+                    <div className="space-y-3 mt-4" aria-busy="true" aria-live="polite" aria-label="Loading sessions">
                       {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                        <div key={i} className="h-20 bg-card/50 rounded-lg animate-pulse" />
+                        <Skeleton key={i} className="h-20 rounded-lg" />
                       ))}
                     </div>
+                    // --- END AI-MODIFIED ---
                   ) : (
                     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
                       <div className="mt-2 space-y-2 rounded-xl border border-border bg-card/30 p-3 sm:p-4">

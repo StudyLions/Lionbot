@@ -131,10 +131,17 @@ function ServerPicker({
 
   return (
     <div ref={ref} className="relative">
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: Add type=button + aria-haspopup/aria-expanded + focus-visible ring */}
       <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={current ? `Server: ${current.name}` : "Select server"}
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-all w-full sm:w-auto sm:min-w-[240px]"
+        className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card border border-border hover:border-primary/40 transition-all w-full sm:w-auto sm:min-w-[240px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       >
+      {/* --- END AI-MODIFIED --- */}
         {current?.iconUrl ? (
           <img src={current.iconUrl} alt="" className="w-7 h-7 rounded-full" />
         ) : (
@@ -159,16 +166,21 @@ function ServerPicker({
         />
       </button>
       {open && (
-        <div className="absolute top-full left-0 mt-1 w-full min-w-[280px] bg-card border border-border rounded-xl shadow-xl z-50 py-1 max-h-64 overflow-auto">
+        <div role="listbox" className="absolute top-full left-0 mt-1 w-full min-w-[280px] bg-card border border-border rounded-xl shadow-xl z-50 py-1 max-h-64 overflow-auto">
+          {/* --- AI-MODIFIED (2026-04-25) --- */}
+          {/* Purpose: role=option + focus-visible + type=button on each picker row */}
           {servers.map((s) => (
             <button
+              type="button"
+              role="option"
+              aria-selected={s.id === selected}
               key={s.id}
               onClick={() => {
                 onChange(s.id)
                 setOpen(false)
               }}
               className={cn(
-                "flex items-center gap-3 px-4 py-2.5 w-full hover:bg-muted/50 transition-colors",
+                "flex items-center gap-3 px-4 py-2.5 w-full hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:bg-muted/50 focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-ring",
                 s.id === selected && "bg-primary/10"
               )}
             >
@@ -187,6 +199,7 @@ function ServerPicker({
               </span>
             </button>
           ))}
+          {/* --- END AI-MODIFIED --- */}
         </div>
       )}
     </div>

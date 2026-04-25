@@ -1024,11 +1024,14 @@ export default function RemindersPage() {
                       }}
                     />
                   ) : filteredReminders.length === 0 ? (
-                    <div className="text-center py-16">
-                      <Search size={40} strokeWidth={1} className="text-muted-foreground mx-auto mb-3" />
-                      <p className="text-foreground font-medium">No matching reminders</p>
-                      <p className="text-sm text-muted-foreground mt-1">Try adjusting your search or filters</p>
-                    </div>
+                    // --- AI-MODIFIED (2026-04-25) ---
+                    // Purpose: Use shared EmptyState for "no matches" state
+                    <EmptyState
+                      icon={<Search size={48} strokeWidth={1} />}
+                      title="No matching reminders"
+                      description="Try adjusting your search or filters."
+                    />
+                    // --- END AI-MODIFIED ---
                   ) : (
                     <div className="space-y-6">
                       {bucketOrder.map((bucket) => {

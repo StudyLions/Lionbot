@@ -397,11 +397,14 @@ export default function ScheduledSessionsPage() {
                   )}
 
                   {calendarData?.sessions.length === 0 && (
+                    // --- AI-MODIFIED (2026-04-25) ---
+                    // Purpose: Bump empty-state icon to size=48 strokeWidth=1 to match other dashboard EmptyStates
                     <EmptyState
-                      icon={<Calendar size={32} />}
+                      icon={<Calendar size={48} strokeWidth={1} />}
                       title="No sessions found"
                       description="Book a scheduled session in any server to see it here."
                     />
+                    // --- END AI-MODIFIED ---
                   )}
                 </>
               )}

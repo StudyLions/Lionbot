@@ -32,6 +32,10 @@ import RoomList from "@/components/dashboard/rooms/RoomList"
 import RoomDetail from "@/components/dashboard/rooms/RoomDetail"
 import RentRoomModal from "@/components/dashboard/rooms/RentRoomModal"
 import type { RoomsData } from "@/components/dashboard/rooms/types"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton primitive for consistent loading shapes across dashboard
+import { Skeleton } from "@/components/ui/skeleton"
+// --- END AI-MODIFIED ---
 
 export default function RoomsPage() {
   const { data: session } = useSession()
@@ -138,29 +142,34 @@ export default function RoomsPage() {
   )
 }
 
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- replace ad-hoc animate-pulse divs with shared
+// Skeleton primitive so loading shape matches the real content (room cards
+// + detail panel) and pulse timing is consistent with the rest of the app
 function LoadingSkeleton() {
   return (
-    <div className="flex gap-5">
+    <div className="flex gap-5" aria-busy="true" aria-live="polite" aria-label="Loading rooms">
       <div className="w-full lg:w-[380px] space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="p-4 rounded-xl bg-card/50 border border-border/50 animate-pulse">
-            <div className="h-4 bg-muted rounded w-2/5 mb-3" />
-            <div className="h-3 bg-muted rounded w-3/5 mb-2" />
-            <div className="h-1.5 bg-muted rounded w-full" />
+          <div key={i} className="p-4 rounded-xl bg-card/50 border border-border/50">
+            <Skeleton className="h-4 w-2/5 mb-3" />
+            <Skeleton className="h-3 w-3/5 mb-2" />
+            <Skeleton className="h-1.5 w-full" />
           </div>
         ))}
       </div>
       <div className="hidden lg:block flex-1">
-        <div className="p-6 rounded-xl bg-card/30 border border-border/50 animate-pulse">
-          <div className="h-5 bg-muted rounded w-1/3 mb-4" />
-          <div className="h-3 bg-muted rounded w-2/3 mb-3" />
-          <div className="h-2 bg-muted rounded w-full mb-6" />
-          <div className="h-24 bg-muted rounded w-full" />
+        <div className="p-6 rounded-xl bg-card/30 border border-border/50">
+          <Skeleton className="h-5 w-1/3 mb-4" />
+          <Skeleton className="h-3 w-2/3 mb-3" />
+          <Skeleton className="h-2 w-full mb-6" />
+          <Skeleton className="h-24 w-full" />
         </div>
       </div>
     </div>
   )
 }
+// --- END AI-MODIFIED ---
 
 function EmptyState({ onRentClick }: { onRentClick: () => void }) {
   return (

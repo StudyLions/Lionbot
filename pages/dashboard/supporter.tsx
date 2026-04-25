@@ -51,6 +51,10 @@ import {
   tierPalette,
 } from "@/components/dashboard/supporter/types";
 import { CARD_LOOKS, randomLook, type CardLook } from "@/constants/CardLookPresets";
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton primitive for consistent loading states
+import { Skeleton } from "@/components/ui/skeleton";
+// --- END AI-MODIFIED ---
 
 const RENDER_DEBOUNCE_MS = 800;
 const SAVE_DEBOUNCE_MS = 600;
@@ -376,13 +380,16 @@ export default function SupporterPage() {
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />} className="space-y-7" wide>
           {loading || !sub ? (
-            <div className="space-y-6">
-              <div className="bg-card/50 rounded-3xl h-48 animate-pulse" />
+            // --- AI-MODIFIED (2026-04-25) ---
+            // Purpose: Use shared Skeleton primitive for consistent loading shapes
+            <div className="space-y-6" aria-busy="true" aria-live="polite" aria-label="Loading LionHeart Studio">
+              <Skeleton className="rounded-3xl h-48" />
               <div className="grid lg:grid-cols-[minmax(320px,400px)_1fr] gap-6">
-                <div className="bg-card/50 rounded-2xl h-80 animate-pulse" />
-                <div className="bg-card/50 rounded-2xl h-96 animate-pulse" />
+                <Skeleton className="rounded-2xl h-80" />
+                <Skeleton className="rounded-2xl h-96" />
               </div>
             </div>
+            // --- END AI-MODIFIED ---
           ) : (
             <>
               <StudioHero

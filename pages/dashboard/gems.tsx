@@ -26,6 +26,10 @@ import { useSession } from "next-auth/react"
 import { useDashboard } from "@/hooks/useDashboard"
 import Link from "next/link"
 import { Gem, Star, CreditCard, Gift } from "lucide-react"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton for consistent loading shape
+import { Skeleton } from "@/components/ui/skeleton"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: add i18n imports for serverSideTranslations
 import { GetServerSideProps } from "next"
@@ -143,11 +147,14 @@ export default function GemsPage() {
               />
 
               {loading ? (
-                <div className="space-y-6">
-                  <div className="bg-card rounded-xl p-8 animate-pulse h-32" />
-                  <div className="bg-card rounded-xl p-6 animate-pulse h-48" />
-                  <div className="bg-card rounded-xl p-6 animate-pulse h-64" />
+                // --- AI-MODIFIED (2026-04-25) ---
+                // Purpose: Shared Skeleton primitive for consistent pulse + shapes
+                <div className="space-y-6" aria-busy="true" aria-live="polite" aria-label="Loading LionGems">
+                  <Skeleton className="rounded-xl h-32" />
+                  <Skeleton className="rounded-xl h-48" />
+                  <Skeleton className="rounded-xl h-64" />
                 </div>
+                // --- END AI-MODIFIED ---
               ) : error ? (
                 <div className="flex flex-col items-center justify-center py-16 gap-4">
                   <p className="text-destructive">{error.message}</p>
@@ -172,12 +179,15 @@ export default function GemsPage() {
                           </p>
                         </div>
                       </div>
+                      {/* --- AI-MODIFIED (2026-04-25) --- */}
+                      {/* Purpose: Add focus-visible ring to top CTA */}
                       <Link href="/donate">
-                        <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium bg-amber-500/30 text-amber-100 hover:bg-amber-500/40 border border-amber-400/40 transition-colors shrink-0">
+                        <a className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-medium bg-amber-500/30 text-amber-100 hover:bg-amber-500/40 border border-amber-400/40 transition-colors shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                           <CreditCard size={20} />
                           Get more gems
                         </a>
                       </Link>
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   </div>
 
@@ -185,15 +195,18 @@ export default function GemsPage() {
                   <div className="mb-8">
                     <h3 className="text-base font-semibold text-foreground mb-3">Quick buy</h3>
                     <div className="flex flex-wrap gap-3">
+                      {/* --- AI-MODIFIED (2026-04-25) --- */}
+                      {/* Purpose: focus-visible ring + hover-lift for quick-buy cards */}
                       {QUICK_BUY_PACKS.map((pack) => (
                         <Link key={pack.gems} href="/donate">
-                          <a className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+                          <a className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-card border border-border hover:border-amber-500/50 hover:bg-amber-500/5 transition-all motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                             <Gem size={18} className="text-amber-500" />
                             <span className="font-medium text-foreground">{pack.label}</span>
                             <span className="text-sm text-muted-foreground">Buy</span>
                           </a>
                         </Link>
                       ))}
+                      {/* --- END AI-MODIFIED --- */}
                     </div>
                   </div>
 
@@ -218,11 +231,13 @@ export default function GemsPage() {
                         Unlock exclusive profile card customizations
                       </li>
                     </ul>
+                    {/* --- AI-MODIFIED (2026-04-25) --- */}
                     <Link href="/donate">
-                      <a className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors">
+                      <a className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-primary hover:bg-primary/90 text-foreground text-sm font-medium rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                         <CreditCard size={16} />
                         Purchase gems
                       </a>
+                    {/* --- END AI-MODIFIED --- */}
                     </Link>
                   </SectionCard>
 

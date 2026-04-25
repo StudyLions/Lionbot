@@ -399,9 +399,16 @@ export default function TasksPage() {
                 <div className="relative overflow-hidden rounded-xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-500/15 to-orange-500/10 p-3 flex items-center gap-3 animate-in slide-in-from-top-2">
                   <Sparkles size={18} className="text-amber-400 flex-shrink-0" />
                   <p className="text-sm font-medium text-foreground flex-1">{milestoneMsg}</p>
-                  <button onClick={() => setMilestoneMsg(null)} className="text-muted-foreground hover:text-foreground p-1">
+                  {/* --- AI-MODIFIED (2026-04-25) --- */}
+                  <button
+                    type="button"
+                    aria-label="Dismiss milestone"
+                    onClick={() => setMilestoneMsg(null)}
+                    className="text-muted-foreground hover:text-foreground p-1 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                  >
                     <X size={14} />
                   </button>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
               )}
 
@@ -500,14 +507,18 @@ export default function TasksPage() {
                   )}>
                     {newTask.length}/100
                   </span>
+                  {/* --- AI-MODIFIED (2026-04-25) --- */}
+                  {/* Purpose: Add type=button + focus-visible ring for keyboard a11y */}
                   <button
+                    type="button"
                     onClick={addTask}
                     disabled={!newTask.trim() || adding}
-                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 flex-shrink-0"
+                    className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-muted disabled:text-muted-foreground text-white rounded-lg text-xs font-medium transition-colors flex items-center gap-1 flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                   >
                     <Plus size={14} />
                     {adding ? "..." : "Add"}
                   </button>
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
                 {/* Parent selector for subtask creation */}
                 {rootTasks.length > 0 && (
