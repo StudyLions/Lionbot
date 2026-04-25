@@ -1,242 +1,173 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-25
-// Purpose: Metric primitives for the weekly digest.
-//          - <HeroStat> a single big tile that opens the digest.
-//          - <StatCard> small tile with label, value, optional delta.
-//          - <StatRow> 2-up grid with table layout for Outlook safety.
+// Purpose: Quiet metric primitives for the weekly digest.
+//          - <BigStat> a single, generous number opening the email.
+//          - <StatGrid> a 4-up row of small metrics rendered as plain
+//            type, no card chrome.
+//          The whole digest uses one accent color (blue), with the
+//          delta line picking up green/red only when there is real
+//          movement to report.
 // ============================================================
 import * as React from "react"
 import { Text } from "@react-email/components"
 import { brand } from "../../utils/email/brand"
 
-type Accent = "primary" | "amber" | "success" | "violet" | "pink"
-
-interface StatCardProps {
-  label: string
-  value: string | number
-  unit?: string
-  delta?: { direction: "up" | "down" | "flat"; text: string }
-  accent?: Accent
-}
-
-const accentColors: Record<Accent, string> = {
-  primary: brand.colors.primary,
-  amber: brand.colors.amber,
-  success: brand.colors.success,
-  violet: brand.colors.violet,
-  pink: brand.colors.pink,
-}
-
-export function StatCard({
-  label,
-  value,
-  unit,
-  delta,
-  accent = "primary",
-}: StatCardProps) {
-  const accentColor = accentColors[accent]
-  return (
-    <div style={{ ...cardStyle, borderTopColor: accentColor }}>
-      <Text style={labelStyle}>{label}</Text>
-      <Text style={valueStyle}>
-        <span style={{ color: brand.colors.headline }}>{value}</span>
-        {unit ? <span style={unitStyle}>{` ${unit}`}</span> : null}
-      </Text>
-      {delta ? (
-        <Text
-          style={{
-            ...deltaStyle,
-            color:
-              delta.direction === "up"
-                ? brand.colors.success
-                : delta.direction === "down"
-                ? brand.colors.danger
-                : brand.colors.textMuted,
-          }}
-        >
-          {delta.direction === "up" ? "▲" : delta.direction === "down" ? "▼" : "—"}{" "}
-          {delta.text}
-        </Text>
-      ) : null}
-    </div>
-  )
-}
-
-interface HeroStatProps {
+interface BigStatProps {
   label: string
   value: string
   unit?: string
   delta?: { direction: "up" | "down" | "flat"; text: string }
-  caption?: string
-  accent?: Accent
 }
 
-// Big opener tile for the weekly digest. Uses an inline gradient bar
-// for visual punch instead of the small accent stripe used by StatCard.
-export function HeroStat({
-  label,
-  value,
-  unit,
-  delta,
-  caption,
-  accent = "primary",
-}: HeroStatProps) {
-  const color = accentColors[accent]
+export function BigStat({ label, value, unit, delta }: BigStatProps) {
+  const deltaColor =
+    delta?.direction === "up"
+      ? brand.colors.success
+      : delta?.direction === "down"
+      ? brand.colors.danger
+      : brand.colors.textMuted
+
   return (
-    <div style={heroCardStyle}>
-      <div
-        style={{
-          ...heroAccentBar,
-          background: `linear-gradient(90deg, ${color}, transparent)`,
-        }}
-      />
-      <Text style={{ ...labelStyle, color: brand.colors.textMuted }}>
-        {label}
-      </Text>
-      <Text style={heroValueStyle}>
-        <span style={{ color: brand.colors.headline }}>{value}</span>
-        {unit ? <span style={heroUnitStyle}>{` ${unit}`}</span> : null}
+    <div style={bigWrap}>
+      <Text style={bigLabel}>{label}</Text>
+      <Text style={bigValue}>
+        <span>{value}</span>
+        {unit ? <span style={bigUnit}>{` ${unit}`}</span> : null}
       </Text>
       {delta ? (
-        <Text
-          style={{
-            ...deltaStyle,
-            fontSize: "13px",
-            color:
-              delta.direction === "up"
-                ? brand.colors.success
-                : delta.direction === "down"
-                ? brand.colors.danger
-                : brand.colors.textMuted,
-          }}
-        >
-          {delta.direction === "up" ? "▲" : delta.direction === "down" ? "▼" : "—"}{" "}
-          {delta.text}
-        </Text>
+        <Text style={{ ...bigDelta, color: deltaColor }}>{delta.text}</Text>
       ) : null}
-      {caption ? <Text style={captionStyle}>{caption}</Text> : null}
     </div>
   )
 }
 
-// 2-up grid using table layout (Outlook-safe).
-export function StatRow({ children }: { children: React.ReactNode[] }) {
-  const cells = React.Children.toArray(children)
+interface StatItem {
+  label: string
+  value: string | number
+  unit?: string
+}
+
+// 2-up grid (renders as a single 2-column table on every email client).
+// Two rows of two stats each -- four small metrics laid out as plain
+// type. No backgrounds, no border accents, no rotating colors.
+export function StatGrid({ items }: { items: StatItem[] }) {
+  const rows: StatItem[][] = []
+  for (let i = 0; i < items.length; i += 2) {
+    rows.push(items.slice(i, i + 2))
+  }
   return (
     <table
       role="presentation"
       width="100%"
       cellPadding={0}
       cellSpacing={0}
-      style={{
-        borderCollapse: "separate",
-        borderSpacing: "10px 0",
-        margin: "0 -10px",
-      }}
+      style={gridTable}
     >
       <tbody>
-        <tr>
-          {cells.map((c, i) => (
-            <td
-              key={i}
-              style={{
-                verticalAlign: "top",
-                width: `${100 / cells.length}%`,
-              }}
-            >
-              {c}
-            </td>
-          ))}
-        </tr>
+        {rows.map((row, rIdx) => (
+          <tr key={rIdx}>
+            {row.map((item, cIdx) => (
+              <td
+                key={cIdx}
+                style={{
+                  ...gridCell,
+                  paddingRight: cIdx === 0 ? "16px" : 0,
+                  paddingLeft: cIdx === 1 ? "16px" : 0,
+                  borderTop:
+                    rIdx > 0 ? `1px solid ${brand.colors.border}` : "none",
+                  paddingTop: rIdx === 0 ? "12px" : "16px",
+                  paddingBottom: "16px",
+                }}
+              >
+                <Text style={gridLabel}>{item.label}</Text>
+                <Text style={gridValue}>
+                  <span>{item.value}</span>
+                  {item.unit ? <span style={gridUnit}>{` ${item.unit}`}</span> : null}
+                </Text>
+              </td>
+            ))}
+            {row.length === 1 ? <td style={{ width: "50%" }} /> : null}
+          </tr>
+        ))}
       </tbody>
     </table>
   )
 }
 
-const cardStyle: React.CSSProperties = {
-  backgroundColor: brand.colors.surface,
-  borderRadius: "14px",
-  padding: "16px 16px 14px",
-  borderTop: "3px solid",
-  border: `1px solid ${brand.colors.border}`,
-  borderTopWidth: "3px",
-  marginBottom: "10px",
-  fontFamily: brand.fontStack,
-}
-
-const heroCardStyle: React.CSSProperties = {
-  backgroundColor: brand.colors.surface,
-  borderRadius: "18px",
-  padding: "22px 24px 20px",
-  border: `1px solid ${brand.colors.border}`,
-  marginBottom: "14px",
-  position: "relative",
-  overflow: "hidden",
-  fontFamily: brand.fontStack,
-}
-
-const heroAccentBar: React.CSSProperties = {
-  position: "absolute",
-  top: 0,
-  left: 0,
-  right: 0,
-  height: "3px",
-}
-
-const labelStyle: React.CSSProperties = {
-  margin: 0,
-  fontSize: "11px",
-  fontWeight: 700,
-  textTransform: "uppercase",
-  letterSpacing: "0.12em",
-  color: brand.colors.textMuted,
-  fontFamily: brand.fontStack,
-}
-
-const valueStyle: React.CSSProperties = {
-  margin: "6px 0 0",
-  fontSize: "24px",
-  fontWeight: 800,
-  lineHeight: "1.15",
-  color: brand.colors.headline,
-  fontFamily: brand.fontStack,
-  letterSpacing: "-0.01em",
-}
-
-const heroValueStyle: React.CSSProperties = {
+const bigWrap: React.CSSProperties = {
   margin: "8px 0 4px",
+  fontFamily: brand.fontStack,
+}
+
+const bigLabel: React.CSSProperties = {
+  margin: 0,
+  fontSize: "12.5px",
+  fontWeight: 600,
+  color: brand.colors.textMuted,
+  letterSpacing: "0.02em",
+  fontFamily: brand.fontStack,
+}
+
+const bigValue: React.CSSProperties = {
+  margin: "4px 0 2px",
   fontSize: "44px",
-  fontWeight: 800,
+  fontWeight: 700,
   lineHeight: "1.05",
   color: brand.colors.headline,
+  letterSpacing: "-0.025em",
   fontFamily: brand.fontStack,
-  letterSpacing: "-0.02em",
 }
 
-const unitStyle: React.CSSProperties = {
+const bigUnit: React.CSSProperties = {
+  fontSize: "20px",
+  fontWeight: 600,
+  color: brand.colors.textMuted,
+  marginLeft: "2px",
+}
+
+const bigDelta: React.CSSProperties = {
+  margin: "4px 0 0",
   fontSize: "13px",
   fontWeight: 600,
-  color: brand.colors.textMuted,
+  fontFamily: brand.fontStack,
 }
 
-const heroUnitStyle: React.CSSProperties = {
-  fontSize: "18px",
+const gridTable: React.CSSProperties = {
+  margin: "16px 0 4px",
+  borderTop: `1px solid ${brand.colors.border}`,
+  borderBottom: `1px solid ${brand.colors.border}`,
+  borderCollapse: "collapse",
+}
+
+const gridCell: React.CSSProperties = {
+  verticalAlign: "top",
+  width: "50%",
+}
+
+const gridLabel: React.CSSProperties = {
+  margin: 0,
+  fontSize: "11.5px",
   fontWeight: 600,
   color: brand.colors.textMuted,
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+  fontFamily: brand.fontStack,
 }
 
-const deltaStyle: React.CSSProperties = {
-  margin: "6px 0 0",
-  fontSize: "12px",
+const gridValue: React.CSSProperties = {
+  margin: "4px 0 0",
+  fontSize: "20px",
   fontWeight: 700,
+  color: brand.colors.headline,
+  letterSpacing: "-0.01em",
   fontFamily: brand.fontStack,
+  lineHeight: "1.2",
 }
 
-const captionStyle: React.CSSProperties = {
-  margin: "10px 0 0",
+const gridUnit: React.CSSProperties = {
   fontSize: "13px",
-  lineHeight: "1.55",
-  color: brand.colors.text,
-  fontFamily: brand.fontStack,
+  fontWeight: 500,
+  color: brand.colors.textMuted,
+  marginLeft: "2px",
 }

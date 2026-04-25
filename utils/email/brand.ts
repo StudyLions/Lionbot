@@ -30,42 +30,24 @@ export const brand = {
   discordInvite: "https://discord.gg/studylions",
   topggUrl: "https://top.gg/bot/889078613817831495/vote",
 
-  // Dark palette pulled from the live site (`--background`, `--card`,
-  // `--primary` and the pink/violet/amber gradient used on /donate).
-  // Using literal hex values (not hsl-vars) because email clients can't
-  // resolve CSS custom properties. Premium accent matches the homepage
-  // "View Premium" button so paid CTAs feel like one continuous brand.
+  // Dark palette pulled from the live site -- literal hex values
+  // because email clients can't resolve CSS custom properties.
+  // We deliberately use ONE accent (primary blue) almost everywhere;
+  // success/danger only appear in delta arrows, premiumGold in the
+  // single thin top-line of the LionHeart card. Restraint is the point.
   colors: {
     page: "#05060A",          // outer body
     background: "#0B0F1A",    // card background
-    surface: "#111827",       // inset blocks (steps, callouts)
-    surfaceMuted: "#0E1422",  // subtle alt fill
+    surface: "#111827",       // inset blocks (callouts, premium card)
     border: "#1F2A3D",        // hairlines / outlines
-    borderStrong: "#324663",  // hover / accent borders
+    borderStrong: "#324663",  // secondary button outline
     headline: "#F8FAFC",      // primary text
     text: "#E2E8F0",          // body copy
-    textMuted: "#94A3B8",     // captions / footer
+    textMuted: "#94A3B8",     // captions / footer / labels
     primary: "#3B82F6",       // brand blue, matches Tailwind --primary
-    primaryHover: "#2563EB",
-    primarySoft: "rgba(59,130,246,0.16)",
-    success: "#22C55E",
-    danger: "#F87171",
-    pink: "#F472B6",
-    violet: "#A855F7",
-    amber: "#F59E0B",
-    premiumGold: "#FCD34D",
-  },
-
-  // Reused gradient stops so callers don't hand-build the string.
-  gradients: {
-    premium:
-      "linear-gradient(135deg, #f472b6 0%, #a855f7 50%, #f59e0b 100%)",
-    primary:
-      "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
-    heroGlow:
-      "radial-gradient(ellipse at top, rgba(59,130,246,0.35), transparent 60%)",
-    digestHeader:
-      "linear-gradient(135deg, rgba(59,130,246,0.22), rgba(168,85,247,0.18) 60%, rgba(245,158,11,0.18))",
+    success: "#22C55E",       // up-arrow delta only
+    danger: "#F87171",        // down-arrow delta only
+    premiumGold: "#FCD34D",   // single accent line on premium card
   },
 
   fontStack:

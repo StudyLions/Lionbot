@@ -1,18 +1,17 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-25
-// Purpose: Weekly progress recap. Hero band with the headline focus
-//          number, then a row of supporting metrics, the top-server
-//          highlight, and the tier-aware premium card.
+// Purpose: Weekly progress recap. Conversational opener that mentions
+//          the personal highlight, one big focus number, a small grid
+//          of supporting metrics, an optional top-server line, the
+//          premium card, and a personal sign-off.
 // ============================================================
 import * as React from "react"
-import { Section, Text } from "@react-email/components"
 import { brand } from "../utils/email/brand"
 import { EmailLayout } from "./components/EmailLayout"
-import { Hero } from "./components/Hero"
 import { Button } from "./components/Button"
-import { Callout, H2, Paragraph } from "./components/Section"
-import { HeroStat, StatCard, StatRow } from "./components/StatCard"
+import { Callout, H1, Paragraph, SignOff } from "./components/Section"
+import { BigStat, StatGrid } from "./components/StatCard"
 import { PremiumPromo, PromoTier } from "./components/PremiumPromo"
 
 export interface WeeklyDigestProps {
@@ -48,15 +47,16 @@ function deltaText(current: number, prev: number) {
     const fmt = formatMinutes(current)
     return {
       direction: "up" as const,
-      text: `+${fmt.value} ${fmt.unit} vs last week`,
+      text: `+${fmt.value} ${fmt.unit} versus last week`,
     }
   }
   const diff = current - prev
   const pct = Math.round((diff / prev) * 100)
-  if (Math.abs(pct) < 3) return { direction: "flat" as const, text: "About the same" }
+  if (Math.abs(pct) < 3)
+    return { direction: "flat" as const, text: "About the same as last week" }
   return diff >= 0
-    ? { direction: "up" as const, text: `+${pct}% vs last week` }
-    : { direction: "down" as const, text: `${pct}% vs last week` }
+    ? { direction: "up" as const, text: `+${pct}% versus last week` }
+    : { direction: "down" as const, text: `${pct}% versus last week` }
 }
 
 export default function WeeklyDigest({
@@ -78,121 +78,85 @@ export default function WeeklyDigest({
   const studyFmt = formatMinutes(studyMinutesThisWeek)
   const studyDelta = deltaText(studyMinutesThisWeek, studyMinutesLastWeek)
   const previewText = highlight
-    ? `${highlight} — your ${brand.name} weekly recap is ready.`
-    : `${studyFmt.value} ${studyFmt.unit} of focus this week. Here is your ${brand.name} recap.`
+    ? `${highlight} — your week in focus.`
+    : `${studyFmt.value} ${studyFmt.unit} of focus this week — your ${brand.name} recap.`
+
+  const opener = highlight
+    ? highlight
+    : studyMinutesThisWeek === 0
+      ? "Quiet week — no voice study tracked. Even a 25-minute session this week gets the streak going again."
+      : "Here is how your last seven days looked across LionBot."
 
   return (
     <EmailLayout
       previewText={previewText}
       unsubscribeUrl={unsubscribeUrl}
       preferencesUrl={preferencesUrl}
-      hero={
-        <Hero
-          eyebrow={`Weekly recap · ${weekStartLabel} – ${weekEndLabel}`}
-          title={
-            <>
-              Your week in focus,<br />
-              {firstName}
-            </>
-          }
-          subtitle={
-            highlight ||
-            "Here is what your last seven days looked like across LionBot — voice study, streak, and the rest."
-          }
-          background="digest"
-        >
-          <div style={{ marginTop: "20px" }}>
-            <Button href={`${brand.siteUrl}/dashboard`} variant="primary">
-              See the full breakdown
-            </Button>
-          </div>
-        </Hero>
-      }
     >
-      <HeroStat
+      <H1>Your week in focus, {firstName}.</H1>
+      <Paragraph muted small>
+        {weekStartLabel} – {weekEndLabel}
+      </Paragraph>
+      <Paragraph>{opener}</Paragraph>
+
+      <BigStat
         label="Total focus this week"
         value={studyFmt.value}
         unit={studyFmt.unit}
         delta={studyDelta}
-        accent="primary"
-        caption={
-          studyMinutesThisWeek === 0
-            ? "No voice study tracked this week — even 25 minutes gets the streak going again."
-            : "Counts every voice channel session in any LionBot server you joined."
-        }
       />
 
-      <H2>The supporting cast</H2>
-
-      <StatRow>
-        <StatCard
-          label="Current streak"
-          value={currentStreak}
-          unit={currentStreak === 1 ? "day" : "days"}
-          accent="amber"
-          delta={
-            streakExtended
-              ? { direction: "up", text: "Extended this week" }
-              : currentStreak > 0
-              ? { direction: "flat", text: "Keep it alive" }
-              : { direction: "down", text: "Start a new one" }
-          }
-        />
-        <StatCard
-          label="Tasks completed"
-          value={tasksCompleted}
-          accent="success"
-        />
-      </StatRow>
-
-      <StatRow>
-        <StatCard
-          label="LionGems earned"
-          value={gemsEarned}
-          accent="violet"
-        />
-        <StatCard
-          label="Top server time"
-          value={
-            topServer ? formatMinutes(topServer.minutes).value : "—"
-          }
-          unit={topServer ? formatMinutes(topServer.minutes).unit : undefined}
-          accent="pink"
-        />
-      </StatRow>
+      <StatGrid
+        items={[
+          {
+            label: "Streak",
+            value: currentStreak,
+            unit: currentStreak === 1 ? "day" : "days",
+          },
+          {
+            label: "Tasks done",
+            value: tasksCompleted,
+          },
+          {
+            label: "LionGems earned",
+            value: gemsEarned,
+          },
+          {
+            label: "Top server",
+            value: topServer ? formatMinutes(topServer.minutes).value : "—",
+            unit: topServer
+              ? formatMinutes(topServer.minutes).unit
+              : undefined,
+          },
+        ]}
+      />
 
       {topServer ? (
-        <Callout title="Most focused with" tone="primary">
-          You spent the most voice study time in{" "}
-          <strong>{topServer.name}</strong> this week —{" "}
-          {formatMinutes(topServer.minutes).value}{" "}
+        <Callout>
+          You spent the most focus time in <strong>{topServer.name}</strong>{" "}
+          this week — {formatMinutes(topServer.minutes).value}{" "}
           {formatMinutes(topServer.minutes).unit} alongside that community.
         </Callout>
       ) : null}
 
-      <Section style={{ margin: "20px 0 8px" }}>
+      {streakExtended && currentStreak > 0 ? (
         <Paragraph muted small>
-          Drilldowns for sessions, ranks, achievements and your LionGotchi are
-          all live in the{" "}
-          <a
-            href={`${brand.siteUrl}/dashboard`}
-            style={inlineLink}
-          >
-            dashboard
-          </a>
-          .
+          Your streak is alive at {currentStreak}{" "}
+          {currentStreak === 1 ? "day" : "days"} — nicely done.
         </Paragraph>
-      </Section>
+      ) : null}
 
-      <PremiumPromo tier={premiumTier} variant="footer" />
+      <div style={{ marginTop: "16px", marginBottom: "4px" }}>
+        <Button href={`${brand.siteUrl}/dashboard`} variant="secondary">
+          See the full breakdown
+        </Button>
+      </div>
+
+      <PremiumPromo tier={premiumTier} />
+
+      <SignOff />
     </EmailLayout>
   )
-}
-
-const inlineLink: React.CSSProperties = {
-  color: brand.colors.primary,
-  fontWeight: 700,
-  textDecoration: "none",
 }
 
 export const WeeklyDigestMockProps: WeeklyDigestProps = {
@@ -206,6 +170,6 @@ export const WeeklyDigestMockProps: WeeklyDigestProps = {
   streakExtended: true,
   topServer: { name: "Study Lions", minutes: 410 },
   gemsEarned: 85,
-  highlight: "New personal best — over 10 hours of focus this week!",
+  highlight: "New personal best — over ten hours of focus this week.",
   premiumTier: "free",
 }

@@ -1,14 +1,11 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-25
-// Purpose: Outer wrapper used by every email template. Dark theme
-//          that mirrors lionbot.org with a glowing logo halo at the
-//          top, generous side padding so the inner card breathes,
-//          and a footer with social row + legal info.
-//
-//          Templates pass a hero band (optional) and a body. The
-//          hero lets each template own its first impression while
-//          the wrapper keeps brand consistency.
+// Purpose: Outer wrapper for every email. Restraint-first design:
+//          a single quiet card, a small lion mark in the top-left,
+//          generous padding, and a utilitarian footer. No hero band,
+//          no halo, no social chip row -- the brand is the typography
+//          and the lion. Inspired by how Linear/Vercel/Resend send.
 // ============================================================
 import * as React from "react"
 import {
@@ -29,7 +26,6 @@ interface EmailLayoutProps {
   previewText: string
   unsubscribeUrl?: string
   preferencesUrl?: string
-  hero?: React.ReactNode
   children: React.ReactNode
 }
 
@@ -37,7 +33,6 @@ export function EmailLayout({
   previewText,
   unsubscribeUrl,
   preferencesUrl,
-  hero,
   children,
 }: EmailLayoutProps) {
   const prefsHref = preferencesUrl || `${brand.siteUrl}/dashboard/settings#email`
@@ -49,10 +44,7 @@ export function EmailLayout({
         <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
         <meta name="color-scheme" content="dark only" />
         <meta name="supported-color-schemes" content="dark only" />
-        <link
-          rel="preconnect"
-          href="https://fonts.googleapis.com"
-        />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
           rel="stylesheet"
@@ -61,7 +53,7 @@ export function EmailLayout({
       <Preview>{previewText}</Preview>
       <Body style={bodyStyle}>
         <Container style={outerContainer}>
-          <Section style={topBrandRow}>
+          <Section style={brandRow}>
             <table
               role="presentation"
               cellPadding={0}
@@ -70,40 +62,18 @@ export function EmailLayout({
             >
               <tbody>
                 <tr>
-                  <td style={topBrandLeft}>
-                    <table
-                      role="presentation"
-                      cellPadding={0}
-                      cellSpacing={0}
-                    >
-                      <tbody>
-                        <tr>
-                          <td style={{ verticalAlign: "middle" }}>
-                            <div style={logoHalo}>
-                              <Img
-                                src={brand.logoUrl}
-                                alt={brand.name}
-                                width="40"
-                                height="40"
-                                style={logoStyle}
-                              />
-                            </div>
-                          </td>
-                          <td
-                            style={{
-                              verticalAlign: "middle",
-                              paddingLeft: "12px",
-                            }}
-                          >
-                            <Text style={brandWordmark}>{brand.name}</Text>
-                            <Text style={brandSub}>{brand.tagline}</Text>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <td style={brandCell}>
+                    <Img
+                      src={brand.logoUrl}
+                      alt={brand.name}
+                      width="28"
+                      height="28"
+                      style={logoStyle}
+                    />
+                    <span style={wordmark}>{brand.name}</span>
                   </td>
-                  <td style={topBrandRight}>
-                    <Link href={brand.siteUrl} style={topNavLink}>
+                  <td style={brandLinkCell}>
+                    <Link href={brand.siteUrl} style={topLink}>
                       lionbot.org
                     </Link>
                   </td>
@@ -113,48 +83,10 @@ export function EmailLayout({
           </Section>
 
           <Container style={cardStyle}>
-            {hero ? <div style={heroSlot}>{hero}</div> : null}
-            <div style={bodySlot}>{children}</div>
+            <div style={bodyPad}>{children}</div>
           </Container>
 
-          <Section style={socialRow}>
-            <table
-              role="presentation"
-              cellPadding={0}
-              cellSpacing={0}
-              align="center"
-            >
-              <tbody>
-                <tr>
-                  <td style={socialCell}>
-                    <Link href={brand.discordInvite} style={socialChip}>
-                      Discord
-                    </Link>
-                  </td>
-                  <td style={socialCell}>
-                    <Link
-                      href={`${brand.siteUrl}/dashboard`}
-                      style={socialChip}
-                    >
-                      Dashboard
-                    </Link>
-                  </td>
-                  <td style={socialCell}>
-                    <Link href={`${brand.siteUrl}/donate`} style={socialChip}>
-                      Premium
-                    </Link>
-                  </td>
-                  <td style={socialCell}>
-                    <Link href={brand.topggUrl} style={socialChip}>
-                      Vote
-                    </Link>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </Section>
-
-          <Section style={footerSection}>
+          <Section style={footer}>
             <Text style={footerText}>
               You are receiving this because you signed in to{" "}
               <Link href={brand.siteUrl} style={footerLink}>
@@ -168,7 +100,7 @@ export function EmailLayout({
               </Link>
               {unsubscribeUrl ? (
                 <>
-                  {"  ·  "}
+                  <span style={footerSeparator}>·</span>
                   <Link href={unsubscribeUrl} style={footerLink}>
                     Unsubscribe
                   </Link>
@@ -178,8 +110,8 @@ export function EmailLayout({
             <Hr style={footerHr} />
             <Text style={addressText}>{brand.postalAddress}</Text>
             <Text style={addressText}>
-              &copy; {new Date().getFullYear()} {brand.name}. Built by the
-              StudyLions team for focused communities.
+              &copy; {new Date().getFullYear()} {brand.name} · Built by the
+              StudyLions team.
             </Text>
           </Section>
         </Container>
@@ -201,119 +133,75 @@ const bodyStyle: React.CSSProperties = {
 
 const outerContainer: React.CSSProperties = {
   width: "100%",
-  maxWidth: "640px",
+  maxWidth: "560px",
   margin: "0 auto",
-  padding: "28px 16px 28px",
+  padding: "32px 16px 32px",
 }
 
-const topBrandRow: React.CSSProperties = {
-  marginBottom: "16px",
+const brandRow: React.CSSProperties = {
+  marginBottom: "18px",
 }
 
-const topBrandLeft: React.CSSProperties = {
+const brandCell: React.CSSProperties = {
   textAlign: "left",
   verticalAlign: "middle",
+  whiteSpace: "nowrap",
 }
 
-const topBrandRight: React.CSSProperties = {
+const brandLinkCell: React.CSSProperties = {
   textAlign: "right",
   verticalAlign: "middle",
 }
 
-const logoHalo: React.CSSProperties = {
-  display: "inline-block",
-  padding: "4px",
-  borderRadius: "14px",
-  background:
-    "linear-gradient(135deg, rgba(59,130,246,0.45), rgba(168,85,247,0.35))",
-  boxShadow: "0 12px 36px -12px rgba(59,130,246,0.55)",
-}
-
 const logoStyle: React.CSSProperties = {
-  display: "block",
-  borderRadius: "10px",
-  border: "2px solid #0B0F1A",
-  background: "#0B0F1A",
+  display: "inline-block",
+  verticalAlign: "middle",
+  borderRadius: "8px",
+  border: `1px solid ${brand.colors.border}`,
+  background: brand.colors.background,
 }
 
-const brandWordmark: React.CSSProperties = {
-  margin: 0,
-  fontSize: "16px",
-  fontWeight: 800,
+const wordmark: React.CSSProperties = {
+  display: "inline-block",
+  verticalAlign: "middle",
+  marginLeft: "10px",
+  fontSize: "15px",
+  fontWeight: 700,
   color: brand.colors.headline,
-  letterSpacing: "-0.01em",
+  letterSpacing: "-0.005em",
   fontFamily: brand.fontStack,
 }
 
-const brandSub: React.CSSProperties = {
-  margin: "2px 0 0",
-  fontSize: "11px",
+const topLink: React.CSSProperties = {
+  fontSize: "12.5px",
   fontWeight: 500,
   color: brand.colors.textMuted,
-  letterSpacing: "0.04em",
-  textTransform: "uppercase",
-  fontFamily: brand.fontStack,
-}
-
-const topNavLink: React.CSSProperties = {
-  fontSize: "12px",
-  fontWeight: 600,
-  color: brand.colors.textMuted,
   textDecoration: "none",
-  letterSpacing: "0.02em",
+  letterSpacing: "0.01em",
   fontFamily: brand.fontStack,
 }
 
 const cardStyle: React.CSSProperties = {
   width: "100%",
-  maxWidth: "640px",
+  maxWidth: "560px",
   backgroundColor: brand.colors.background,
-  borderRadius: "20px",
+  borderRadius: "14px",
   border: `1px solid ${brand.colors.border}`,
-  overflow: "hidden",
-  boxShadow:
-    "0 30px 60px -30px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255,255,255,0.02) inset",
 }
 
-const heroSlot: React.CSSProperties = {
-  width: "100%",
-}
-
-const bodySlot: React.CSSProperties = {
+const bodyPad: React.CSSProperties = {
   padding: "32px 32px 28px",
 }
 
-const socialRow: React.CSSProperties = {
+const footer: React.CSSProperties = {
   marginTop: "20px",
-  textAlign: "center",
-}
-
-const socialCell: React.CSSProperties = {
-  padding: "0 4px",
-}
-
-const socialChip: React.CSSProperties = {
-  display: "inline-block",
-  padding: "8px 14px",
-  fontSize: "12px",
-  fontWeight: 600,
-  color: brand.colors.text,
-  textDecoration: "none",
-  borderRadius: "999px",
-  border: `1px solid ${brand.colors.border}`,
-  backgroundColor: brand.colors.background,
-  fontFamily: brand.fontStack,
-}
-
-const footerSection: React.CSSProperties = {
-  marginTop: "16px",
   textAlign: "center",
   padding: "0 12px",
 }
 
 const footerText: React.CSSProperties = {
   margin: "4px 0",
-  fontSize: "12px",
+  fontSize: "12.5px",
   lineHeight: "1.6",
   color: brand.colors.textMuted,
   fontFamily: brand.fontStack,
@@ -322,7 +210,12 @@ const footerText: React.CSSProperties = {
 const footerLink: React.CSSProperties = {
   color: brand.colors.text,
   textDecoration: "underline",
-  textDecorationColor: "rgba(148,163,184,0.4)",
+  textDecorationColor: "rgba(148,163,184,0.35)",
+}
+
+const footerSeparator: React.CSSProperties = {
+  margin: "0 8px",
+  color: brand.colors.textMuted,
 }
 
 const footerHr: React.CSSProperties = {
