@@ -23,6 +23,15 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 25, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-25",
+    title: "Email — Welcomes, Weekly Recaps, and Full Control Over What Lands in Your Inbox",
+    description:
+      "We launched our first proper email program this week. The moment you sign in with Discord for the first time, you now get a warm welcome email with a short list of things to try — and if you happen to own or moderate one of the servers running LionBot, you get a different version of that email with a 5-step setup checklist that deep-links straight into your server's dashboard (greetings, ranks, shop, role menus, pomodoro). It is one-time and idempotent — signing in a second time will not double-send. Every Sunday evening (18:00 UTC), if you have studied at all that week, you will get a weekly recap with your focus time vs. last week, your current streak, tasks completed, your top server, LionGems earned, and a personalised highlight (\"Beat last week by 3.2 hours\", \"First 10-hour week!\", that kind of thing). The numbers come from the same place as your dashboard so they will always match. Every email is fully on-brand — same blues, same warm cream background, same font feel as the dashboard — with a logo header and a clean footer with one-click unsubscribe and a link to manage preferences. Speaking of: there is a brand-new Email Notifications card on /dashboard/settings where you can toggle each category individually (welcome, weekly digest, lifecycle, premium, announcements) or hit the big red 'Unsubscribe from all' button if you want a clean break — and there is a public unsubscribe page that works without you having to be signed in at all. Gmail and Outlook will also show their native unsubscribe button on every message because we added the proper RFC 8058 List-Unsubscribe headers. Every marketing email closes with a small premium block that adapts to your tier — free users see what they would unlock with LionHeart, LionHeart users see why LionHeart+ is worth it, top supporters get a thank-you instead of a pitch.",
+    category: "feature",
+    area: "website",
+  },
   // ── April 24, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-24",
