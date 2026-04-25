@@ -4,10 +4,21 @@
 // Purpose: Action modals for member management with LionBot-specific
 //          terminology and impact statements to avoid Discord confusion
 // ============================================================
-import { useState } from "react"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- give every member-action modal the same baseline
+// dialog a11y as ConfirmModal:
+//   - role="dialog" + aria-modal="true" + aria-labelledby
+//   - Esc closes, Tab cycles focus inside the modal (focus trap)
+//   - body scroll lock while open (prevents page scroll behind backdrop)
+//   - entrance fade + scale animation (motion-safe; reduced-motion users get
+//     an instant appearance)
+//   - close X gets aria-label, focus-visible ring, type="button"
+//   - backdrop gets aria-hidden so screen readers don't announce it
+import { useEffect, useId, useRef, useState } from "react"
 import {
   AlertTriangle, FileText, Ban, Coins, X, Check, XCircle, Users, RotateCcw,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 
 interface ModalBaseProps {
   open: boolean
@@ -15,9 +26,47 @@ interface ModalBaseProps {
   loading: boolean
 }
 
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- ModalShell now matches ConfirmModal's a11y
+// implementation (see top-of-file comment for the full list of additions).
 function ModalShell({
   open, onClose, children, title, icon, variant,
 }: ModalBaseProps & { children: React.ReactNode; title: string; icon: React.ReactNode; variant: "danger" | "warning" | "info" }) {
+  const dialogRef = useRef<HTMLDivElement>(null)
+  const titleId = useId()
+
+  useEffect(() => {
+    if (!open) return
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose()
+    }
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab" || !dialogRef.current) return
+      const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener("keydown", handleEsc)
+    document.addEventListener("keydown", handleTab)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", handleEsc)
+      document.removeEventListener("keydown", handleTab)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [open, onClose])
+
   if (!open) return null
   const colors = {
     danger: { bg: "bg-red-500/10", border: "border-red-500/30", icon: "text-red-400" },
@@ -27,13 +76,30 @@ function ModalShell({
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative w-full max-w-md ${colors.bg} border ${colors.border} rounded-xl shadow-2xl`}>
-        <button onClick={onClose} className="absolute top-3 right-3 text-muted-foreground hover:text-foreground transition-colors"><X size={18} /></button>
+      <div
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm motion-safe:animate-fade-in"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        className={`relative w-full max-w-md ${colors.bg} border ${colors.border} rounded-xl shadow-2xl motion-safe:animate-scale-in`}
+      >
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close dialog"
+          className="absolute top-3 right-3 inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <X size={16} />
+        </button>
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className={`p-2 rounded-lg ${colors.bg} ${colors.icon}`}>{icon}</div>
-            <h3 className="text-base font-semibold text-foreground">{title}</h3>
+            <div className={`p-2 rounded-lg ${colors.bg} ${colors.icon}`} aria-hidden="true">{icon}</div>
+            <h3 id={titleId} className="text-base font-semibold text-foreground">{title}</h3>
           </div>
           {children}
         </div>
@@ -41,6 +107,7 @@ function ModalShell({
     </div>
   )
 }
+// --- END AI-MODIFIED ---
 
 function ImpactList({ items }: { items: Array<{ text: string; positive: boolean }> }) {
   return (

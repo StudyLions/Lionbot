@@ -9,7 +9,10 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { EmptyState, SaveBar, toast, DashboardShell, PageHeader } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Migrate inline delete-confirm modal to shared ConfirmModal
+import { EmptyState, SaveBar, toast, DashboardShell, PageHeader, ConfirmModal } from "@/components/dashboard/ui"
+// --- END AI-MODIFIED ---
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useState, useEffect, useMemo, useCallback } from "react"
@@ -633,29 +636,21 @@ export default function VoiceEditorPage() {
                 </>
               )}
 
-              {deletingId !== null && (
-                <div
-                  className="fixed inset-0 z-[80] flex items-center justify-center p-4 bg-black/50"
-                  onClick={() => setDeletingId(null)}
-                >
-                  <div className="bg-card border border-border rounded-xl p-6 shadow-xl max-w-sm w-full" onClick={(e) => e.stopPropagation()}>
-                    <h3 className="text-lg font-semibold text-foreground mb-2">Delete session?</h3>
-                    <p className="text-sm text-muted-foreground mb-5">This removes this manual session from your stats.</p>
-                    <div className="flex gap-2 justify-end">
-                      <button type="button" onClick={() => setDeletingId(null)} className="px-4 py-2 rounded-lg text-sm text-muted-foreground">
-                        Cancel
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDelete(deletingId)}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-destructive text-destructive-foreground"
-                      >
-                        Delete
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* --- AI-MODIFIED (2026-04-25) --- */}
+              {/* Purpose: Migrate ad-hoc delete confirm modal to shared ConfirmModal  */}
+              {/* so it gets focus trap, Esc, scroll lock, dialog semantics, and the   */}
+              {/* same scale-in entrance animation as the rest of the dashboard.       */}
+              <ConfirmModal
+                open={deletingId !== null}
+                onCancel={() => setDeletingId(null)}
+                onConfirm={() => { if (deletingId !== null) handleDelete(deletingId) }}
+                title="Delete session?"
+                message="This removes this manual session from your stats."
+                confirmLabel="Delete"
+                cancelLabel="Cancel"
+                variant="danger"
+              />
+              {/* --- END AI-MODIFIED --- */}
 
               {selectedServer && usage && sheetOpen && (
                 <SessionEditSheet

@@ -15,7 +15,10 @@ import { NextSeo } from "next-seo"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import ServerGuard from "@/components/dashboard/ServerGuard"
 import { useDashboard } from "@/hooks/useDashboard"
-import { toast } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Replace native confirm() with in-app ConfirmModal for skip-wizard
+import { toast, ConfirmModal } from "@/components/dashboard/ui"
+// --- END AI-MODIFIED ---
 import { WizardNavDesktop, WizardNavMobile, WIZARD_STEPS } from "@/components/setup/WizardNav"
 
 import StepWelcome from "@/components/setup/steps/StepWelcome"
@@ -68,6 +71,10 @@ function SetupWizardInner() {
   const [lgConfig, setLgConfig] = useState<Record<string, any>>({})
   const [saving, setSaving] = useState(false)
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set())
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Replace native confirm() with in-app ConfirmModal
+  const [showSkipConfirm, setShowSkipConfirm] = useState(false)
+  // --- END AI-MODIFIED ---
 
   const { data: configData, mutate } = useDashboard<Record<string, any>>(
     id ? `/api/dashboard/servers/${id}/config` : null
@@ -235,12 +242,26 @@ function SetupWizardInner() {
   }, [step])
   // --- END AI-MODIFIED ---
 
-  const handleSkipWizard = async () => {
-    if (confirm("Skip the setup wizard? You can always access it from your server's navigation menu.")) {
-      await dismissWizard()
-      router.push(`/dashboard/servers/${guildId}`)
-    }
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Trigger in-app ConfirmModal instead of native browser confirm()
+  // Reason: native confirm() blocks the JS thread, can't be styled, and is
+  // dismissed by browser-level controls that don't match the rest of the
+  // setup wizard's polished UX. The actual skip work moved to confirmSkipWizard.
+  // --- Original code (commented out for rollback) ---
+  // const handleSkipWizard = async () => {
+  //   if (confirm("Skip the setup wizard? You can always access it from your server's navigation menu.")) {
+  //     await dismissWizard()
+  //     router.push(`/dashboard/servers/${guildId}`)
+  //   }
+  // }
+  // --- End original code ---
+  const handleSkipWizard = () => setShowSkipConfirm(true)
+  const confirmSkipWizard = async () => {
+    setShowSkipConfirm(false)
+    await dismissWizard()
+    router.push(`/dashboard/servers/${guildId}`)
   }
+  // --- END AI-MODIFIED ---
 
   const handleFinish = async () => {
     await dismissWizard()
@@ -483,6 +504,20 @@ function SetupWizardInner() {
           onStepClick={goTo}
         />
       </div>
+
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: In-app skip-wizard confirmation, replacing native confirm() */}
+      <ConfirmModal
+        open={showSkipConfirm}
+        onCancel={() => setShowSkipConfirm(false)}
+        onConfirm={confirmSkipWizard}
+        title="Skip the setup wizard?"
+        message="You can always access it from your server's navigation menu."
+        confirmLabel="Skip wizard"
+        cancelLabel="Keep going"
+        variant="warning"
+      />
+      {/* --- END AI-MODIFIED --- */}
     </>
   )
 }
