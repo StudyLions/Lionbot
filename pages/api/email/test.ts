@@ -141,16 +141,33 @@ export default apiHandler({
   },
 
   async POST(req: NextApiRequest, res: NextApiResponse) {
-    const discordId = await getDiscordId(req)
-    if (!discordId) return unauthorized(res)
-    if (!isAllowed(discordId)) {
-      return res.status(403).json({ error: "Not in EMAIL_TEST_ALLOWLIST" })
+    // Two valid auth paths:
+    //   1. Discord session whose discordId is in EMAIL_TEST_ALLOWLIST
+    //      (normal admin use from the dashboard / browser).
+    //   2. Authorization: Bearer ${CRON_SECRET} for ops / CI use.
+    //      Required because the QA flow needs to be drivable from the
+    //      CLI without an OAuth session cookie. Cron secret is treated
+    //      as a separate trust dimension; if it leaks we have bigger
+    //      problems than test emails.
+    const cronSecret = process.env.CRON_SECRET
+    const opsAuth =
+      cronSecret &&
+      req.headers.authorization === `Bearer ${cronSecret}`
+
+    let discordId: string | null = null
+    if (!opsAuth) {
+      discordId = await getDiscordId(req)
+      if (!discordId) return unauthorized(res)
+      if (!isAllowed(discordId)) {
+        return res.status(403).json({ error: "Not in EMAIL_TEST_ALLOWLIST" })
+      }
     }
 
     const body = (req.body ?? {}) as {
       template?: string
       to?: string
       useRealData?: boolean
+      asUserId?: string
     }
     const template = body.template as TestTemplate | undefined
     if (!template || !ALLOWED_TEMPLATES.includes(template)) {
@@ -159,7 +176,30 @@ export default apiHandler({
       })
     }
 
-    const userid = BigInt(discordId)
+    // Ops auth requires an explicit `to` address and may pass `asUserId`
+    // to render the template against a specific user's data. Without
+    // either we'd have no way to target a recipient and useRealData
+    // would have nothing to load.
+    if (opsAuth && !body.to) {
+      return res.status(400).json({
+        error: "Ops auth requires `to` in the body so we never send to a surprise address.",
+      })
+    }
+
+    const useridStr = discordId ?? body.asUserId
+    if (!useridStr) {
+      return res.status(400).json({
+        error: "Provide `asUserId` in the body when authenticating with the ops bearer token.",
+      })
+    }
+
+    let userid: bigint
+    try {
+      userid = BigInt(useridStr)
+    } catch {
+      return res.status(400).json({ error: "Invalid Discord user ID format" })
+    }
+
     const user = await prisma.user_config.findUnique({
       where: { userid },
       select: { email: true, name: true },
