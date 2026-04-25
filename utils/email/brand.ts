@@ -5,6 +5,9 @@
 //          (colors, fonts, URLs, copy snippets). Templates and
 //          shared components import from here so a redesign is
 //          a one-file change.
+//
+//          Mirrors the dark theme used at lionbot.org so emails
+//          feel like the same product, not a generic template.
 // ============================================================
 
 export const SITE_URL =
@@ -27,27 +30,46 @@ export const brand = {
   discordInvite: "https://discord.gg/studylions",
   topggUrl: "https://top.gg/bot/889078613817831495/vote",
 
+  // Dark palette pulled from the live site (`--background`, `--card`,
+  // `--primary` and the pink/violet/amber gradient used on /donate).
+  // Using literal hex values (not hsl-vars) because email clients can't
+  // resolve CSS custom properties. Premium accent matches the homepage
+  // "View Premium" button so paid CTAs feel like one continuous brand.
   colors: {
-    background: "#F8F7F4",
-    surface: "#FFFFFF",
-    surfaceMuted: "#F1EDE5",
-    border: "#E5DFD2",
-    headline: "#1F2937",
-    headingAccent: "#2E4C70",
-    text: "#3F4756",
-    textMuted: "#6B7280",
-    primary: "#3B82F6",
+    page: "#05060A",          // outer body
+    background: "#0B0F1A",    // card background
+    surface: "#111827",       // inset blocks (steps, callouts)
+    surfaceMuted: "#0E1422",  // subtle alt fill
+    border: "#1F2A3D",        // hairlines / outlines
+    borderStrong: "#324663",  // hover / accent borders
+    headline: "#F8FAFC",      // primary text
+    text: "#E2E8F0",          // body copy
+    textMuted: "#94A3B8",     // captions / footer
+    primary: "#3B82F6",       // brand blue, matches Tailwind --primary
     primaryHover: "#2563EB",
-    warmAccent: "#E7A627",
-    success: "#16A34A",
-    danger: "#DC2626",
-    premiumGold: "#FFD700",
-    premiumPink: "#FF69B4",
-    premiumBlue: "#5B8DEF",
+    primarySoft: "rgba(59,130,246,0.16)",
+    success: "#22C55E",
+    danger: "#F87171",
+    pink: "#F472B6",
+    violet: "#A855F7",
+    amber: "#F59E0B",
+    premiumGold: "#FCD34D",
+  },
+
+  // Reused gradient stops so callers don't hand-build the string.
+  gradients: {
+    premium:
+      "linear-gradient(135deg, #f472b6 0%, #a855f7 50%, #f59e0b 100%)",
+    primary:
+      "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+    heroGlow:
+      "radial-gradient(ellipse at top, rgba(59,130,246,0.35), transparent 60%)",
+    digestHeader:
+      "linear-gradient(135deg, rgba(59,130,246,0.22), rgba(168,85,247,0.18) 60%, rgba(245,158,11,0.18))",
   },
 
   fontStack:
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Rubik, 'Helvetica Neue', Helvetica, Arial, sans-serif",
+    "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Rubik, 'Helvetica Neue', Helvetica, Arial, sans-serif",
 } as const
 
 // Email template identifiers used in pref checks, log records, and

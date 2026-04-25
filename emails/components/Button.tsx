@@ -2,13 +2,19 @@
 // AI-GENERATED FILE
 // Created: 2026-04-25
 // Purpose: Branded CTA button. Variants: primary (blue, default),
-//          secondary (outlined), and warm (golden accent).
+//          secondary (outlined glass), and premium (pink-violet-amber
+//          gradient that mirrors the homepage "View Premium" CTA).
+//
+//          Email clients are inconsistent about background-image on
+//          buttons; we use solid background + border for the primary
+//          variant and only opt into a gradient on the dedicated
+//          premium variant where the visual payoff is worth it.
 // ============================================================
 import * as React from "react"
 import { Button as REButton } from "@react-email/components"
 import { brand } from "../../utils/email/brand"
 
-type Variant = "primary" | "secondary" | "warm"
+type Variant = "primary" | "secondary" | "premium"
 
 interface EmailButtonProps {
   href: string
@@ -41,13 +47,13 @@ export function Button({
 
 const baseStyle: React.CSSProperties = {
   display: "inline-block",
-  padding: "13px 24px",
-  borderRadius: "10px",
+  padding: "14px 26px",
+  borderRadius: "12px",
   fontSize: "15px",
-  fontWeight: 600,
+  fontWeight: 700,
   textDecoration: "none",
   fontFamily: brand.fontStack,
-  letterSpacing: "0.01em",
+  letterSpacing: "0.005em",
   lineHeight: "1.2",
 }
 
@@ -56,16 +62,19 @@ const variantStyles: Record<Variant, React.CSSProperties> = {
     backgroundColor: brand.colors.primary,
     color: "#FFFFFF",
     border: `1px solid ${brand.colors.primary}`,
+    boxShadow: "0 12px 28px -12px rgba(59,130,246,0.6)",
   },
   secondary: {
-    backgroundColor: "#FFFFFF",
-    color: brand.colors.headingAccent,
-    border: `1px solid ${brand.colors.border}`,
+    backgroundColor: "transparent",
+    color: brand.colors.headline,
+    border: `1px solid ${brand.colors.borderStrong}`,
   },
-  warm: {
-    backgroundColor: brand.colors.warmAccent,
-    color: "#1F2937",
-    border: `1px solid ${brand.colors.warmAccent}`,
+  premium: {
+    backgroundImage: brand.gradients.premium,
+    backgroundColor: brand.colors.violet,
+    color: "#FFFFFF",
+    border: "1px solid rgba(255,255,255,0.18)",
+    boxShadow: "0 14px 32px -14px rgba(244,114,182,0.55)",
   },
 }
 

@@ -1,18 +1,18 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-25
-// Purpose: Weekly progress recap. Shows minutes studied this week
-//          vs last week, current streak, tasks completed, top
-//          server and a personalised highlight. Closes with the
-//          tier-aware premium promo.
+// Purpose: Weekly progress recap. Hero band with the headline focus
+//          number, then a row of supporting metrics, the top-server
+//          highlight, and the tier-aware premium card.
 // ============================================================
 import * as React from "react"
-import { Section } from "@react-email/components"
+import { Section, Text } from "@react-email/components"
 import { brand } from "../utils/email/brand"
 import { EmailLayout } from "./components/EmailLayout"
+import { Hero } from "./components/Hero"
 import { Button } from "./components/Button"
-import { Callout, H1, H2, Paragraph } from "./components/Section"
-import { StatCard, StatRow } from "./components/StatCard"
+import { Callout, H2, Paragraph } from "./components/Section"
+import { HeroStat, StatCard, StatRow } from "./components/StatCard"
 import { PremiumPromo, PromoTier } from "./components/PremiumPromo"
 
 export interface WeeklyDigestProps {
@@ -45,9 +45,10 @@ function deltaText(current: number, prev: number) {
     return { direction: "flat" as const, text: "Same as last week" }
   }
   if (prev === 0) {
+    const fmt = formatMinutes(current)
     return {
       direction: "up" as const,
-      text: `+${formatMinutes(current).value} ${formatMinutes(current).unit} vs last week`,
+      text: `+${fmt.value} ${fmt.unit} vs last week`,
     }
   }
   const diff = current - prev
@@ -85,79 +86,113 @@ export default function WeeklyDigest({
       previewText={previewText}
       unsubscribeUrl={unsubscribeUrl}
       preferencesUrl={preferencesUrl}
+      hero={
+        <Hero
+          eyebrow={`Weekly recap · ${weekStartLabel} – ${weekEndLabel}`}
+          title={
+            <>
+              Your week in focus,<br />
+              {firstName}
+            </>
+          }
+          subtitle={
+            highlight ||
+            "Here is what your last seven days looked like across LionBot — voice study, streak, and the rest."
+          }
+          background="digest"
+        >
+          <div style={{ marginTop: "20px" }}>
+            <Button href={`${brand.siteUrl}/dashboard`} variant="primary">
+              See the full breakdown
+            </Button>
+          </div>
+        </Hero>
+      }
     >
-      <Paragraph muted small>
-        Weekly recap · {weekStartLabel} – {weekEndLabel}
-      </Paragraph>
-      <H1>Your week in focus, {firstName}</H1>
+      <HeroStat
+        label="Total focus this week"
+        value={studyFmt.value}
+        unit={studyFmt.unit}
+        delta={studyDelta}
+        accent="primary"
+        caption={
+          studyMinutesThisWeek === 0
+            ? "No voice study tracked this week — even 25 minutes gets the streak going again."
+            : "Counts every voice channel session in any LionBot server you joined."
+        }
+      />
 
-      {highlight ? (
-        <Callout title="Highlight of the week" tone="warm">
-          {highlight}
-        </Callout>
-      ) : null}
-
-      <H2>The numbers</H2>
+      <H2>The supporting cast</H2>
 
       <StatRow>
-        <StatCard
-          label="Focus time"
-          value={studyFmt.value}
-          unit={studyFmt.unit}
-          accent="primary"
-          delta={studyDelta}
-        />
         <StatCard
           label="Current streak"
           value={currentStreak}
           unit={currentStreak === 1 ? "day" : "days"}
-          accent="warm"
+          accent="amber"
           delta={
             streakExtended
               ? { direction: "up", text: "Extended this week" }
               : currentStreak > 0
-              ? { direction: "flat", text: "Keep it alive!" }
-              : { direction: "down", text: "Time to start a new one" }
+              ? { direction: "flat", text: "Keep it alive" }
+              : { direction: "down", text: "Start a new one" }
           }
         />
-      </StatRow>
-
-      <StatRow>
         <StatCard
           label="Tasks completed"
           value={tasksCompleted}
           accent="success"
         />
+      </StatRow>
+
+      <StatRow>
         <StatCard
           label="LionGems earned"
           value={gemsEarned}
-          accent="warm"
+          accent="violet"
+        />
+        <StatCard
+          label="Top server time"
+          value={
+            topServer ? formatMinutes(topServer.minutes).value : "—"
+          }
+          unit={topServer ? formatMinutes(topServer.minutes).unit : undefined}
+          accent="pink"
         />
       </StatRow>
 
       {topServer ? (
-        <Callout title="Top server" tone="neutral">
-          You spent the most focus time in <strong>{topServer.name}</strong> this
-          week — {formatMinutes(topServer.minutes).value}{" "}
-          {formatMinutes(topServer.minutes).unit} of voice study with the
-          community there.
+        <Callout title="Most focused with" tone="primary">
+          You spent the most voice study time in{" "}
+          <strong>{topServer.name}</strong> this week —{" "}
+          {formatMinutes(topServer.minutes).value}{" "}
+          {formatMinutes(topServer.minutes).unit} alongside that community.
         </Callout>
       ) : null}
 
-      <Section style={{ margin: "20px 0 8px", textAlign: "center" }}>
-        <Button href={`${brand.siteUrl}/dashboard`} variant="primary">
-          See the full breakdown
-        </Button>
+      <Section style={{ margin: "20px 0 8px" }}>
+        <Paragraph muted small>
+          Drilldowns for sessions, ranks, achievements and your LionGotchi are
+          all live in the{" "}
+          <a
+            href={`${brand.siteUrl}/dashboard`}
+            style={inlineLink}
+          >
+            dashboard
+          </a>
+          .
+        </Paragraph>
       </Section>
-
-      <Paragraph muted small>
-        Drilldowns for sessions, ranks, achievements, and your LionGotchi are
-        all live in the dashboard.
-      </Paragraph>
 
       <PremiumPromo tier={premiumTier} variant="footer" />
     </EmailLayout>
   )
+}
+
+const inlineLink: React.CSSProperties = {
+  color: brand.colors.primary,
+  fontWeight: 700,
+  textDecoration: "none",
 }
 
 export const WeeklyDigestMockProps: WeeklyDigestProps = {

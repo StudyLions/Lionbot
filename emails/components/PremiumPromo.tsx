@@ -1,17 +1,20 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-25
-// Purpose: Tier-aware premium promotion block. Renders a different
-//          card depending on whether the user is on Free, LionHeart,
-//          LionHeart+, or LionHeart++ — each one nudges them toward
-//          the next step (upgrade / gift / renew).
+// Purpose: Tier-aware premium promotion block. Renders a dark gradient
+//          card with the same pink-violet-amber palette as the homepage
+//          /donate banner so the email feels like a continuation of
+//          the product, not a separate marketing template.
 // ============================================================
 import * as React from "react"
-import { Img, Section, Text } from "@react-email/components"
+import { Section, Text } from "@react-email/components"
 import { brand } from "../../utils/email/brand"
-import { Button } from "./Button"
 
-export type PromoTier = "free" | "lionheart" | "lionheart_plus" | "lionheart_plus_plus"
+export type PromoTier =
+  | "free"
+  | "lionheart"
+  | "lionheart_plus"
+  | "lionheart_plus_plus"
 
 interface PremiumPromoProps {
   tier: PromoTier
@@ -20,7 +23,6 @@ interface PremiumPromoProps {
 
 interface PromoContent {
   badge: string
-  badgeColor: string
   title: string
   body: string
   ctaLabel: string
@@ -30,26 +32,24 @@ interface PromoContent {
 
 const PROMO_CONTENT: Record<PromoTier, PromoContent> = {
   free: {
-    badge: "LIONHEART",
-    badgeColor: brand.colors.premiumBlue,
+    badge: "LionHeart Premium",
     title: "Unlock the next level of LionBot",
     body:
-      "LionHeart members get monthly gems, faster LionGotchi growth, focus-timer themes, and a stack of economy boosts. Pricing starts at €4.99/month.",
+      "LionHeart members get monthly LionGems, faster pet growth, focus-timer themes and a stack of economy boosts. Pricing starts at €4.99/month.",
     ctaLabel: "See LionHeart plans",
     ctaHref: `${brand.siteUrl}/donate`,
     perks: [
       "500–3,000 LionGems every month",
       "Up to 2× study coin boost across every server",
-      "LionGotchi farm boosts and bonus drop rates",
+      "Farm boosts and bonus drop rates",
       "Custom focus-timer themes",
     ],
   },
   lionheart: {
-    badge: "LIONHEART+",
-    badgeColor: brand.colors.premiumPink,
+    badge: "Upgrade to LionHeart+",
     title: "Already loving LionHeart? LionHeart+ is the upgrade",
     body:
-      "More than 2× the monthly gems, bigger farm boosts, and longer water duration for your LionGotchi. €9.99/month.",
+      "More than 2× the monthly gems, bigger farm boosts and longer water duration for your LionGotchi. €9.99/month.",
     ctaLabel: "Upgrade to LionHeart+",
     ctaHref: `${brand.siteUrl}/donate`,
     perks: [
@@ -60,11 +60,10 @@ const PROMO_CONTENT: Record<PromoTier, PromoContent> = {
     ],
   },
   lionheart_plus: {
-    badge: "LIONHEART++",
-    badgeColor: brand.colors.premiumGold,
+    badge: "Top tier — LionHeart++",
     title: "Go all-in with LionHeart++",
     body:
-      "The top tier includes a free Server Premium slot for one of your servers, 3,000 monthly gems, and the maximum farm and gold boosts.",
+      "The top tier includes a free Server Premium slot for one of your servers, 3,000 monthly gems and the maximum farm and gold boosts.",
     ctaLabel: "Upgrade to LionHeart++",
     ctaHref: `${brand.siteUrl}/donate`,
     perks: [
@@ -75,9 +74,8 @@ const PROMO_CONTENT: Record<PromoTier, PromoContent> = {
     ],
   },
   lionheart_plus_plus: {
-    badge: "THANK YOU",
-    badgeColor: brand.colors.premiumGold,
-    title: "You are at the top tier — thank you!",
+    badge: "You are at the top tier",
+    title: "Thank you for going all-in",
     body:
       "Want to spread the love? You can gift LionHeart to a friend or upgrade another one of your servers to Server Premium.",
     ctaLabel: "Open the LionHeart store",
@@ -95,85 +93,168 @@ export function PremiumPromo({ tier, variant = "block" }: PremiumPromoProps) {
   const isFooter = variant === "footer"
 
   return (
-    <Section
-      style={{
-        ...wrapperStyle,
-        backgroundColor: isFooter ? brand.colors.surfaceMuted : "#FFF9DA",
-        borderColor: isFooter ? brand.colors.border : content.badgeColor,
-      }}
-    >
-      <Text
-        style={{
-          ...badgeStyle,
-          backgroundColor: content.badgeColor,
-        }}
+    <Section style={wrapperOuter}>
+      <table
+        role="presentation"
+        width="100%"
+        cellPadding={0}
+        cellSpacing={0}
+        style={gradientCardTable}
       >
-        {content.badge}
-      </Text>
-      <Text style={titleStyle}>{content.title}</Text>
-      <Text style={bodyStyle}>{content.body}</Text>
-      {!isFooter ? (
-        <ul style={listStyle}>
-          {content.perks.map((perk) => (
-            <li key={perk} style={listItemStyle}>
-              {perk}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-      <div style={{ marginTop: "12px" }}>
-        <Button href={content.ctaHref} variant="primary">
-          {content.ctaLabel}
-        </Button>
-      </div>
+        <tbody>
+          <tr>
+            <td style={gradientCardCell}>
+              <Text style={badgeStyle}>{content.badge}</Text>
+              <Text style={titleStyle}>{content.title}</Text>
+              <Text style={bodyStyle}>{content.body}</Text>
+
+              {!isFooter ? (
+                <table
+                  role="presentation"
+                  cellPadding={0}
+                  cellSpacing={0}
+                  style={perksTable}
+                >
+                  <tbody>
+                    {content.perks.map((perk) => (
+                      <tr key={perk}>
+                        <td style={perkBulletCell}>
+                          <span style={perkBullet}>★</span>
+                        </td>
+                        <td style={perkTextCell}>{perk}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
+
+              <table
+                role="presentation"
+                cellPadding={0}
+                cellSpacing={0}
+                style={{ marginTop: "16px" }}
+              >
+                <tbody>
+                  <tr>
+                    <td>
+                      <a href={content.ctaHref} style={ctaButtonStyle}>
+                        {content.ctaLabel} →
+                      </a>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </Section>
   )
 }
 
 export default PremiumPromo
 
-const wrapperStyle: React.CSSProperties = {
-  border: "1px solid",
-  borderRadius: "14px",
-  padding: "20px 22px",
-  margin: "24px 0 8px",
+const wrapperOuter: React.CSSProperties = {
+  margin: "26px 0 8px",
+}
+
+// Outer table acts as the gradient frame. Inner cell holds the dark
+// inset so the gradient feels like a glowing border, not a flat block.
+const gradientCardTable: React.CSSProperties = {
+  borderCollapse: "separate",
+  borderSpacing: 0,
+  borderRadius: "20px",
+  backgroundImage: brand.gradients.premium,
+  backgroundColor: brand.colors.violet,
+  padding: "1.5px",
+  width: "100%",
+}
+
+const gradientCardCell: React.CSSProperties = {
+  borderRadius: "19px",
+  padding: "22px 24px 20px",
+  background:
+    "linear-gradient(180deg, #0F0A1F 0%, #0B0F1A 100%)",
+  fontFamily: brand.fontStack,
 }
 
 const badgeStyle: React.CSSProperties = {
   display: "inline-block",
-  margin: "0 0 8px",
-  padding: "4px 10px",
+  margin: "0 0 10px",
+  padding: "5px 11px",
   borderRadius: "999px",
-  fontSize: "11px",
-  fontWeight: 700,
-  letterSpacing: "0.1em",
+  fontSize: "10.5px",
+  fontWeight: 800,
+  letterSpacing: "0.14em",
   textTransform: "uppercase",
   color: "#FFFFFF",
+  backgroundImage: brand.gradients.premium,
+  backgroundColor: brand.colors.pink,
+  fontFamily: brand.fontStack,
 }
 
 const titleStyle: React.CSSProperties = {
-  margin: "0 0 6px",
-  fontSize: "17px",
-  fontWeight: 700,
+  margin: "0 0 8px",
+  fontSize: "20px",
+  fontWeight: 800,
   color: brand.colors.headline,
-  lineHeight: "1.3",
+  lineHeight: "1.25",
+  letterSpacing: "-0.01em",
+  fontFamily: brand.fontStack,
 }
 
 const bodyStyle: React.CSSProperties = {
-  margin: "0 0 8px",
-  fontSize: "14px",
+  margin: "0 0 4px",
+  fontSize: "14.5px",
+  lineHeight: "1.6",
+  color: brand.colors.text,
+  fontFamily: brand.fontStack,
+}
+
+const perksTable: React.CSSProperties = {
+  margin: "14px 0 4px",
+  borderCollapse: "separate",
+  borderSpacing: 0,
+}
+
+const perkBulletCell: React.CSSProperties = {
+  width: "20px",
+  verticalAlign: "top",
+  paddingTop: "5px",
+  paddingRight: "8px",
+}
+
+const perkBullet: React.CSSProperties = {
+  display: "inline-block",
+  width: "16px",
+  height: "16px",
+  lineHeight: "16px",
+  textAlign: "center",
+  fontSize: "11px",
+  color: "#FFFFFF",
+  borderRadius: "999px",
+  backgroundImage: brand.gradients.premium,
+  backgroundColor: brand.colors.pink,
+}
+
+const perkTextCell: React.CSSProperties = {
+  fontSize: "13.5px",
   lineHeight: "1.55",
   color: brand.colors.text,
+  paddingBottom: "6px",
+  fontFamily: brand.fontStack,
 }
 
-const listStyle: React.CSSProperties = {
-  margin: "10px 0 4px",
-  paddingLeft: "20px",
-}
-
-const listItemStyle: React.CSSProperties = {
-  margin: "4px 0",
-  fontSize: "13.5px",
-  lineHeight: "1.5",
-  color: brand.colors.text,
+const ctaButtonStyle: React.CSSProperties = {
+  display: "inline-block",
+  padding: "12px 22px",
+  borderRadius: "12px",
+  fontSize: "14.5px",
+  fontWeight: 700,
+  textDecoration: "none",
+  color: "#FFFFFF",
+  backgroundImage: brand.gradients.premium,
+  backgroundColor: brand.colors.pink,
+  border: "1px solid rgba(255,255,255,0.18)",
+  fontFamily: brand.fontStack,
 }
