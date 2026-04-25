@@ -36,6 +36,10 @@ export interface SendEmailArgs {
   // Categorize for the unsubscribe header. Defaults to the template's
   // pref key, falling back to "all".
   unsubscribeScope?: UnsubscribeScope
+  // Bypass the EMAIL_SEND_ENABLED kill switch. Only the admin /test
+  // endpoint should ever set this -- it lets us preview templates in
+  // a real inbox while the system is otherwise dormant in production.
+  bypassFeatureFlag?: boolean
 }
 
 export type SendStatus =
@@ -43,8 +47,17 @@ export type SendStatus =
   | "skipped_unsubscribed"
   | "skipped_no_email"
   | "skipped_pref"
+  | "skipped_disabled"
   | "failed"
   | "skipped_not_configured"
+
+// Master kill switch. Defaults to OFF -- the entire email system is
+// dormant until EMAIL_SEND_ENABLED=true is set in the environment.
+// Lets us ship the code to production without any real email going
+// out, then enable in a single env var flip when we are ready.
+export function isEmailSendingEnabled(): boolean {
+  return process.env.EMAIL_SEND_ENABLED === "true"
+}
 
 export interface SendEmailResult {
   status: SendStatus
@@ -88,7 +101,16 @@ export async function sendEmail(args: SendEmailArgs): Promise<SendEmailResult> {
     skipPrefCheck = false,
     marketing = true,
     unsubscribeScope,
+    bypassFeatureFlag = false,
   } = args
+
+  // Kill switch first -- before any DB read, render, or Resend call.
+  // We deliberately do not write an email_log row here: when the
+  // system is disabled it is the caller's job to no-op, not ours to
+  // record millions of "skipped" rows for every weekly cron tick.
+  if (!isEmailSendingEnabled() && !bypassFeatureFlag) {
+    return { status: "skipped_disabled" }
+  }
 
   if (!isResendConfigured()) {
     console.warn(

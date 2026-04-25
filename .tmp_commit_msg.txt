@@ -1,0 +1,18 @@
+[AI] email: add EMAIL_SEND_ENABLED kill switch (defaults off)
+
+The email system is fully built and tested but Ari wants it dormant
+until production rollout. Adds a master env-var gate so:
+
+- sendEmail() short-circuits to "skipped_disabled" before any DB read
+  or render when EMAIL_SEND_ENABLED != "true"
+- maybeSendWelcomeEmail() bails before the Discord guilds API call,
+  keeping NextAuth signIn fast
+- The weekly-digest cron handler returns 200 immediately without
+  enumerating recipients
+- /api/email/test bypasses the flag (admins can still preview templates
+  in their inbox while the system is dormant)
+- /api/email/preferences exposes sendingEnabled so the settings card
+  shows an honest "coming soon" banner; users can still set their
+  preferences ahead of time
+
+To enable later: set EMAIL_SEND_ENABLED=true on Vercel (one-line flip).

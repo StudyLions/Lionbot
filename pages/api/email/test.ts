@@ -22,7 +22,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { apiHandler } from "@/utils/apiHandler"
 import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
 import { prisma } from "@/utils/prisma"
-import { sendEmail } from "@/utils/email/send"
+import { sendEmail, isEmailSendingEnabled } from "@/utils/email/send"
 import type { EmailTemplate } from "@/utils/email/brand"
 import { getPromoTierForUser } from "@/utils/email/tier"
 import { buildWeeklyDigest } from "@/utils/email/digest"
@@ -129,6 +129,10 @@ export default apiHandler({
   async GET(_req: NextApiRequest, res: NextApiResponse) {
     return res.status(200).json({
       templates: ALLOWED_TEMPLATES,
+      emailSendingEnabled: isEmailSendingEnabled(),
+      note: isEmailSendingEnabled()
+        ? "Email sending is ENABLED. Welcome trigger and weekly digest cron will fire."
+        : "Email sending is DISABLED globally. /api/email/test still works (it bypasses the kill switch). Set EMAIL_SEND_ENABLED=true in Vercel to enable everything else.",
       usage: {
         method: "POST",
         body: {
@@ -231,6 +235,9 @@ export default apiHandler({
       // QA mode: ignore prefs / unsub flags so the test always lands.
       skipPrefCheck: true,
       marketing: true,
+      // Bypass the EMAIL_SEND_ENABLED kill switch so admins can still
+      // preview templates while the system is dormant in production.
+      bypassFeatureFlag: true,
     })
 
     return res.status(200).json({

@@ -15,7 +15,7 @@
 import * as React from "react"
 import { prisma } from "../../prisma"
 import { isResendConfigured } from "../resend"
-import { sendEmail } from "../send"
+import { sendEmail, isEmailSendingEnabled } from "../send"
 import { getPromoTierForUser } from "../tier"
 import WelcomeMember from "../../../emails/WelcomeMember"
 import WelcomeAdmin, {
@@ -98,6 +98,10 @@ interface SendWelcomeArgs {
 export async function maybeSendWelcomeEmail(args: SendWelcomeArgs): Promise<void> {
   const { discordId, email, emailVerified, accessToken, displayName } = args
   if (!discordId || !email || emailVerified === false) return
+  // Master kill switch: bail out before we make any Discord API or DB
+  // calls. Means the sign-in handler stays a fast path while the email
+  // system is dormant.
+  if (!isEmailSendingEnabled()) return
   if (!isResendConfigured()) return
 
   let userid: bigint

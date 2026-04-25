@@ -18,7 +18,7 @@ import {
   getDigestRecipients,
   type DigestEligibleUser,
 } from "../../../../utils/email/digest"
-import { sendEmail } from "../../../../utils/email/send"
+import { sendEmail, isEmailSendingEnabled } from "../../../../utils/email/send"
 import WeeklyDigest from "../../../../emails/WeeklyDigest"
 
 // Vercel Pro: max 5 minutes. The default 10s is way too short for a fan-out.
@@ -47,6 +47,17 @@ export default async function handler(
 ) {
   if (!isAuthorized(req)) {
     return res.status(401).json({ error: "Unauthorized" })
+  }
+
+  // Master kill switch -- the cron is wired up in vercel.json but the
+  // handler returns immediately while EMAIL_SEND_ENABLED is unset.
+  // Flip the env var (in Vercel) to let the digest start firing.
+  if (!isEmailSendingEnabled()) {
+    return res.status(200).json({
+      ok: true,
+      disabled: true,
+      message: "Email sending disabled (set EMAIL_SEND_ENABLED=true to enable)",
+    })
   }
 
   // Optional ?dryRun=1&limit=N for safe rollout testing.

@@ -209,6 +209,7 @@ interface EmailPrefsResponse {
   unsubscribedAll: boolean
   preferences: Record<string, boolean>
   descriptions: Record<string, { label: string; description: string }>
+  sendingEnabled?: boolean
 }
 
 const EMAIL_PREF_KEYS = [
@@ -285,6 +286,17 @@ function EmailNotificationsCard() {
           </div>
         ) : (
           <>
+            {data.sendingEnabled === false ? (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-200">
+                <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
+                <div className="text-xs leading-relaxed">
+                  Email notifications are coming soon — we are not sending
+                  anything yet. Your preferences below are saved and will
+                  apply automatically the moment we turn this on.
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex flex-col gap-1 rounded-lg border border-border/60 bg-background/40 px-3 py-2.5">
               <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                 Sending to

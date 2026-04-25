@@ -9,6 +9,7 @@ import { prisma } from "@/utils/prisma"
 import { getDiscordId, unauthorized } from "@/utils/dashboardAuth"
 import { apiHandler } from "@/utils/apiHandler"
 import { PREF_DESCRIPTIONS, type EmailPrefKey } from "@/utils/email/brand"
+import { isEmailSendingEnabled } from "@/utils/email/send"
 
 const PREF_KEYS: EmailPrefKey[] = [
   "email_pref_welcome",
@@ -47,6 +48,10 @@ export default apiHandler({
         return acc
       }, {} as Record<EmailPrefKey, boolean>),
       descriptions: PREF_DESCRIPTIONS,
+      // When false, the dashboard renders an honest banner so users
+      // understand that their saved preferences will only take effect
+      // once we turn email on for real.
+      sendingEnabled: isEmailSendingEnabled(),
     })
   },
 
