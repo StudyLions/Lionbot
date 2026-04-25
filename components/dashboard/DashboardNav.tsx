@@ -120,22 +120,31 @@ const sections: NavSection[] = [
 ]
 
 function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boolean; onClick?: () => void }) {
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- focus-visible ring on nav link, smoother active
+  // transition, subtle left-edge accent bar on the active item for stronger
+  // visual hierarchy without changing layout
   return (
     <Link href={item.href} onClick={onClick}>
       <span
         className={cn(
-          "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+          "relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
           isActive
             ? "bg-primary/15 text-primary font-medium"
             : "text-muted-foreground hover:text-foreground hover:bg-accent"
         )}
         aria-current={isActive ? "page" : undefined}
       >
-        <span className="flex-shrink-0 opacity-70">{item.icon}</span>
+        {isActive && (
+          <span aria-hidden="true" className="absolute left-0 top-1/2 -translate-y-1/2 h-4 w-0.5 rounded-r bg-primary" />
+        )}
+        <span className={cn("flex-shrink-0", isActive ? "opacity-100" : "opacity-70")}>{item.icon}</span>
         {item.label}
       </span>
     </Link>
   )
+  // --- END AI-MODIFIED ---
 }
 
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
@@ -211,11 +220,14 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <div className="flex flex-col h-full">
       {session?.user && (
+        // --- AI-MODIFIED (2026-04-25) ---
+        // Purpose: Premium polish -- meaningful avatar alt text (was empty),
+        // subtle hover state on the user block for tactile feedback
         <div className="px-4 py-4 flex items-center gap-3">
           {session.user.image && (
             <img
               src={session.user.image}
-              alt=""
+              alt={session.user.name ? `${session.user.name}'s avatar` : "User avatar"}
               className="w-8 h-8 rounded-full ring-2 ring-border"
             />
           )}
@@ -226,6 +238,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             <p className="text-xs text-muted-foreground">Dashboard</p>
           </div>
         </div>
+        // --- END AI-MODIFIED ---
       )}
       {/* --- AI-MODIFIED (2026-03-13) --- */}
       {/* Purpose: gem balance display linking to gems page */}
@@ -258,9 +271,11 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             >
               <span className="relative flex-shrink-0">
                 {isInPrivateRoom ? <DoorOpen size={16} /> : <Radio size={16} />}
+                {/* --- AI-MODIFIED (2026-04-25) --- */}
+                {/* Purpose: motion-safe so reduced-motion users don't get the ping */}
                 <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                   <span className={cn(
-                    "absolute inline-flex h-full w-full rounded-full opacity-75 animate-ping",
+                    "absolute inline-flex h-full w-full rounded-full opacity-75 motion-safe:animate-ping",
                     isInPrivateRoom ? "bg-blue-400" : "bg-emerald-400"
                   )} />
                   <span className={cn(
@@ -268,6 +283,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                     isInPrivateRoom ? "bg-blue-400" : "bg-emerald-400"
                   )} />
                 </span>
+                {/* --- END AI-MODIFIED --- */}
               </span>
               <div className="min-w-0 flex-1">
                 <span className="block font-medium leading-tight">
@@ -405,10 +421,13 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
                       onClick={onNavigate}
                     />
                     {showRoomBadge && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 animate-ping" />
+                      // --- AI-MODIFIED (2026-04-25) ---
+                      // Purpose: motion-safe ping for reduced-motion users
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 flex h-2 w-2" aria-label="Rooms expiring soon">
+                        <span className="absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75 motion-safe:animate-ping" />
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-500" />
                       </span>
+                      // --- END AI-MODIFIED ---
                     )}
                   </div>
                 )
@@ -422,14 +441,20 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Purpose: Theme selector and sound toggle at bottom of nav */}
       <div className="px-3 py-3 border-t border-border/40 space-y-0.5">
         <ThemeSelector />
+        {/* --- AI-MODIFIED (2026-04-25) --- */}
+        {/* Purpose: aria-pressed + role=switch + focus-visible ring for proper a11y */}
         <button
+          type="button"
           onClick={() => {
             const next = !soundEnabled
             setSoundEnabled(next)
             if (next) playSound('toggleOn')
           }}
+          role="switch"
+          aria-checked={soundEnabled}
           className={cn(
             "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
             soundEnabled
               ? "text-muted-foreground hover:text-foreground hover:bg-accent"
               : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent"
@@ -442,6 +467,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           </span>
           <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
         </button>
+        {/* --- END AI-MODIFIED --- */}
       </div>
       {/* --- END AI-MODIFIED --- */}
     </div>

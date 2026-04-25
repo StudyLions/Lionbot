@@ -253,30 +253,39 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
             )}
           </div>
         ) : subData && !subData.isPremium ? (
+          // --- AI-MODIFIED (2026-04-25) ---
+          // Purpose: Premium polish -- focus-visible ring on Get Premium link
           <Link href={`/dashboard/servers/${serverId}/settings`}>
-            <a className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border hover:border-amber-500/30 transition-colors cursor-pointer">
+            <a className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded-md bg-card border border-border hover:border-amber-500/30 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background">
               <Crown size={11} className="text-muted-foreground" />
               <span className="text-[10px] font-medium text-muted-foreground hover:text-amber-400 transition-colors">Get Premium</span>
             </a>
           </Link>
+          // --- END AI-MODIFIED ---
         ) : null}
         {/* --- END AI-MODIFIED --- */}
       </div>
       <div className="px-3 pb-1">
-        <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+        {/* --- AI-MODIFIED (2026-04-25) --- */}
+        {/* Purpose: Premium polish -- bigger search input (py-2 instead of 1.5) for
+            comfortable touch targets, focus-color icon, focus-visible rings on
+            both the input and the inline buttons, aria-label on Ctrl+K shortcut */}
+        <div className="relative group">
+          <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within:text-primary" />
           <input
             type="text"
             value={sidebarQuery}
             onChange={(e) => setSidebarQuery(e.target.value)}
             placeholder="Find settings..."
-            className="w-full bg-accent/30 border border-border/40 text-foreground text-xs rounded-md pl-8 pr-16 py-1.5 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-1 focus:ring-ring/50 focus:bg-accent/50 transition-colors"
+            aria-label="Find settings in this server"
+            className="w-full bg-accent/30 border border-border/40 text-foreground text-xs rounded-md pl-8 pr-16 py-2 placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-ring focus:bg-accent/50 transition-[box-shadow,background-color]"
           />
           {isSearching ? (
             <button
               type="button"
               onClick={() => setSidebarQuery("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground/40 hover:text-muted-foreground"
+              aria-label="Clear search"
+              className="absolute right-2 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-5 w-5 rounded text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <X size={12} />
             </button>
@@ -284,13 +293,15 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
             <button
               type="button"
               onClick={onOpenPalette}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-mono text-muted-foreground/35 bg-accent/50 border border-border/30 rounded px-1 py-0.5 hover:text-muted-foreground/60 hover:bg-accent/80 transition-colors"
+              aria-label="Open command palette (Ctrl+K)"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[9px] font-mono text-muted-foreground/35 bg-accent/50 border border-border/30 rounded px-1 py-0.5 hover:text-muted-foreground/60 hover:bg-accent/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title="Open command palette"
             >
               Ctrl+K
             </button>
           )}
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
       <Separator />
       <ScrollArea className="flex-1 px-3 py-3">
@@ -344,8 +355,11 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
                 const isActive = isExternal ? false : link.href === ""
                   ? router.asPath === fullPath || router.asPath === fullPath + "/"
                   : router.asPath.startsWith(fullPath)
+                // --- AI-MODIFIED (2026-04-25) ---
+                // Purpose: Premium polish -- focus-visible ring + inset accent bar on active items
                 const linkClassName = cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                  "relative flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors duration-150",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
                   isActive
                     ? link.supporterPerk
                       ? "bg-amber-500/15 text-amber-400 font-medium"
@@ -354,6 +368,7 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
                       ? "text-amber-400/70 hover:text-amber-400 hover:bg-amber-500/10"
                       : "text-muted-foreground hover:text-foreground hover:bg-accent"
                 )
+                // --- END AI-MODIFIED ---
                 if (isExternal) {
                   return (
                     <a key={link.href} href={fullPath} target="_blank" rel="noopener noreferrer" className={linkClassName}>
@@ -388,9 +403,16 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
       </ScrollArea>
       {/* --- AI-MODIFIED (2026-04-03) --- */}
       {/* Purpose: Theme selector and sound toggle at bottom of server nav */}
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: Premium polish -- aria-label + role=switch on sound toggle for screen readers,
+          focus-visible ring, type=button to avoid form submit edge cases */}
       <div className="px-3 py-3 border-t border-border/40 space-y-0.5">
         <ThemeSelector />
         <button
+          type="button"
+          role="switch"
+          aria-checked={soundEnabled}
+          aria-label={soundEnabled ? "Mute UI sounds" : "Enable UI sounds"}
           onClick={() => {
             const next = !soundEnabled
             setSoundEnabled(next)
@@ -398,6 +420,7 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
           }}
           className={cn(
             "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
             soundEnabled
               ? "text-muted-foreground hover:text-foreground hover:bg-accent"
               : "text-muted-foreground/50 hover:text-muted-foreground hover:bg-accent"
@@ -410,6 +433,7 @@ function NavContent({ serverId, serverName, sections, isAdmin, isMod, onNavigate
           <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
         </button>
       </div>
+      {/* --- END AI-MODIFIED --- */}
       {/* --- END AI-MODIFIED --- */}
     </div>
   )

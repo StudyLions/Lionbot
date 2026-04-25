@@ -79,32 +79,61 @@ export default function MiniSessionTimer() {
 
   const stageLabel = stage === "focus" ? "Focus" : stage === "break" ? "Break" : "Session"
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- main pill is now a real <button> for keyboard
+  // a11y (was a div with onClick), the X dismiss is a sibling button outside
+  // the main pill (no invalid nested-interactive), with a proper 32px hit area
+  // (was 11px icon in p-0.5). Motion-safe on hover-scale and animate-ping so
+  // reduced-motion users don't get surprised, focus-visible rings on both
+  // buttons, safe-area inset for iOS notched bottoms.
+  const pillColor = stage === "focus"
+    ? "bg-amber-950/90 border border-amber-500/30 text-amber-200"
+    : stage === "break"
+      ? "bg-cyan-950/90 border border-cyan-500/30 text-cyan-200"
+      : "bg-card/90 border border-border text-foreground"
+
   return (
     <div
-      className={cn(
-        "fixed bottom-6 sm:bottom-4 right-4 z-50 flex items-center gap-2.5 px-3.5 py-2 rounded-full",
-        "shadow-lg backdrop-blur cursor-pointer transition-all hover:scale-105",
-        "animate-in slide-in-from-bottom-4 fade-in duration-300",
-        stage === "focus"
-          ? "bg-amber-950/90 border border-amber-500/30 text-amber-200"
-          : stage === "break"
-            ? "bg-cyan-950/90 border border-cyan-500/30 text-cyan-200"
-            : "bg-gray-900/90 border border-gray-700 text-gray-200"
-      )}
-      onClick={() => router.push("/dashboard/session")}
+      className="fixed z-50 flex items-center gap-1"
+      style={{
+        bottom: "max(1rem, env(safe-area-inset-bottom))",
+        right: "max(1rem, env(safe-area-inset-right))",
+      }}
     >
-      <span className="relative flex h-2 w-2 flex-shrink-0">
-        <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-        <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-      </span>
-      <span className="text-xs font-medium">{stageLabel}</span>
-      <span className="font-mono text-sm font-bold tabular-nums">{timerText}</span>
       <button
-        onClick={(e) => { e.stopPropagation(); setDismissed(true) }}
-        className="ml-0.5 p-0.5 rounded-full hover:bg-white/10 transition-colors text-current opacity-50 hover:opacity-100"
+        type="button"
+        onClick={() => router.push("/dashboard/session")}
+        aria-label={`${stageLabel} -- ${timerText}. Open session view`}
+        className={cn(
+          "flex items-center gap-2.5 pl-3.5 pr-3 py-2 rounded-full",
+          "shadow-lg backdrop-blur transition-all duration-200",
+          "motion-safe:hover:scale-105 motion-safe:animate-fade-in",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          pillColor,
+        )}
       >
-        <X size={11} />
+        <span className="relative flex h-2 w-2 flex-shrink-0" aria-hidden="true">
+          <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 motion-safe:animate-ping" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+        </span>
+        <span className="text-xs font-medium">{stageLabel}</span>
+        <span className="font-mono text-sm font-bold tabular-nums">{timerText}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => setDismissed(true)}
+        aria-label="Dismiss session timer"
+        className={cn(
+          "inline-flex items-center justify-center h-8 w-8 rounded-full",
+          "shadow-lg backdrop-blur transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "opacity-70 hover:opacity-100",
+          pillColor,
+        )}
+      >
+        <X size={13} aria-hidden="true" />
       </button>
     </div>
   )
+  // --- END AI-MODIFIED ---
 }

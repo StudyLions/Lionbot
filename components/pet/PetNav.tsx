@@ -135,12 +135,18 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
 
   // --- AI-MODIFIED (2026-03-24) ---
   // Purpose: Badge indicator for pending friend requests
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- focus-visible ring on nav items (matches PixelButton),
+  // motion-safe animate-pulse on badge so reduced-motion users don't get the throb,
+  // aria-label includes badge count for SR users
   const hasBadge = item.badge != null && item.badge > 0
+  const ariaLabel = hasBadge ? `${item.label} (${item.badge} pending)` : undefined
   return (
     <Link href={item.href} onClick={onClick}>
       <span
         className={cn(
           "font-pixel flex items-center gap-2.5 px-3 py-2 text-sm transition-all border-l-2",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-inset",
           isActive
             ? "border-l-[#f0c040] bg-[#f0c040]/8 text-[#f0c040]"
             : hasBadge
@@ -148,17 +154,19 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
               : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
         )}
         aria-current={isActive ? "page" : undefined}
+        aria-label={ariaLabel}
       >
         <span className="opacity-70">{item.icon}</span>
         {item.label}
         {hasBadge && (
-          <span className="ml-auto font-pixel text-[10px] text-[#0a0e1a] bg-[#f0c040] px-1.5 py-0.5 min-w-[18px] text-center leading-none animate-pulse">
+          <span className="ml-auto font-pixel text-[10px] text-[#0a0e1a] bg-[#f0c040] px-1.5 py-0.5 min-w-[18px] text-center leading-none motion-safe:animate-pulse" aria-hidden="true">
             {item.badge}
           </span>
         )}
       </span>
     </Link>
   )
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
 }
 // --- END AI-MODIFIED ---
@@ -194,12 +202,15 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
         <div className="px-4 py-4 flex flex-col gap-2 border-b-2 border-[var(--pet-border,#2a3a5c)]">
           <div className="flex items-center gap-3">
             {session.user.image && (
+              // --- AI-MODIFIED (2026-04-25) ---
+              // Purpose: Meaningful avatar alt text (was empty)
               <img
                 src={session.user.image}
-                alt=""
+                alt={session.user.name ? `${session.user.name}'s avatar` : "User avatar"}
                 className="w-8 h-8 border-2 border-[var(--pet-border,#2a3a5c)]"
                 style={{ imageRendering: "pixelated" }}
               />
+              // --- END AI-MODIFIED ---
             )}
             <div className="min-w-0">
               <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
@@ -222,21 +233,26 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
       )}
 
       <div className="px-3 py-3">
+        {/* --- AI-MODIFIED (2026-04-25) --- */}
+        {/* Purpose: motion-safe wraps the press transform so reduced-motion users
+            don't get the translate, focus-visible ring on the back-to-dashboard button */}
         <Link href="/dashboard" onClick={onNavigate}>
           <span
             className={cn(
               "font-pixel flex items-center gap-2 px-3 py-2.5 text-sm",
               "bg-[#1a2050] border-2 border-[#4060c0] text-[#8090d0]",
               "shadow-[2px_2px_0_#060810]",
-              "hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px",
-              "active:shadow-none active:translate-x-0.5 active:translate-y-0.5",
-              "transition-all cursor-pointer"
+              "motion-safe:hover:shadow-[1px_1px_0_#060810] motion-safe:hover:translate-x-px motion-safe:hover:translate-y-px",
+              "motion-safe:active:shadow-none motion-safe:active:translate-x-0.5 motion-safe:active:translate-y-0.5",
+              "transition-all cursor-pointer",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4060c0] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]"
             )}
           >
             <ChevronLeft size={14} />
             Dashboard
           </span>
         </Link>
+        {/* --- END AI-MODIFIED --- */}
       </div>
 
       <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide">
@@ -280,8 +296,14 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
       </div>
       {/* --- AI-MODIFIED (2026-03-20) --- */}
       {/* Purpose: Sound toggle matching pixel art style */}
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: Premium polish -- role=switch + aria-checked for proper SR semantics
+          (matches DashboardNav/ServerNav), focus-visible ring, type=button */}
       <div className="px-3 py-3 border-t-2 border-[var(--pet-border,#2a3a5c)]">
         <button
+          type="button"
+          role="switch"
+          aria-checked={soundEnabled}
           onClick={() => {
             const next = !soundEnabled
             setSoundEnabled(next)
@@ -289,6 +311,7 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
           }}
           className={cn(
             "font-pixel flex items-center gap-2.5 w-full px-3 py-2 text-sm transition-all border-l-2",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-inset",
             soundEnabled
               ? "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438]"
               : "border-l-transparent text-[#4a5568] hover:text-[#8899aa] hover:bg-[#1a2438]"
@@ -302,6 +325,7 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
           <span>{soundEnabled ? "Sounds on" : "Sounds off"}</span>
         </button>
       </div>
+      {/* --- END AI-MODIFIED --- */}
       {/* --- END AI-MODIFIED --- */}
     </div>
   )
