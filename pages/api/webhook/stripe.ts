@@ -492,6 +492,21 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
     ? new Date(subscription.current_period_end * 1000)
     : null;
 
+  // --- AI-MODIFIED (2026-04-26) ---
+  // Purpose: Read the old tier / subscription id BEFORE the upsert so we can
+  //          detect a mid-cycle tier upgrade and credit the gem delta. The
+  //          legacy "previousSub" fetch below used to happen AFTER the upsert,
+  //          which meant it always returned the already-updated NEW tier and
+  //          was effectively dead code.
+  const userIdBig = BigInt(discordId);
+  const previousDbRow = await prisma.user_subscriptions.findUnique({
+    where: { userid: userIdBig },
+    select: { tier: true, stripe_subscription_id: true },
+  });
+  const oldTier: string = previousDbRow?.tier ?? "NONE";
+  const sameSubscription = previousDbRow?.stripe_subscription_id === subscription.id;
+  // --- END AI-MODIFIED ---
+
   await prisma.user_subscriptions.upsert({
     where: { userid: BigInt(discordId) },
     create: {
@@ -514,14 +529,96 @@ async function handleSubscriptionCreatedOrUpdated(subscription: Stripe.Subscript
     },
   });
 
+  // --- AI-MODIFIED (2026-04-26) ---
+  // Purpose: Mid-cycle tier upgrade gem top-up. When a user upgrades (e.g. LH+
+  //          -> LH++) mid-cycle, Stripe charges the prorated difference
+  //          immediately (portal is configured with proration_behavior:
+  //          "always_invoice"), but the proration invoice fires with
+  //          billing_reason="subscription_update" which we now skip in
+  //          handleInvoicePaymentSucceeded. So the gem top-up must happen
+  //          here instead. We only credit when:
+  //            - The subscription id is the same (not a brand-new sub after
+  //              cancellation, which handleInvoicePaymentSucceeded already covers)
+  //            - Status is ACTIVE or CANCELLING (payment succeeded -- if the
+  //              card declined the sub is PAST_DUE/INCOMPLETE and no gems)
+  //            - The new tier's monthly allowance is strictly greater than the
+  //              old tier's (upgrade, not downgrade -- downgrades keep gems)
+  //          Idempotency is per (subscription, period_start, old_tier, new_tier)
+  //          so duplicate webhook deliveries don't double-credit, and a user
+  //          who upgrades again in a later cycle gets a fresh credit.
+  const effectiveTier = status === "CANCELLED" ? "NONE" : tier;
+  const oldAllowance = MONTHLY_GEM_ALLOWANCE[oldTier] ?? 0;
+  const newAllowance = MONTHLY_GEM_ALLOWANCE[effectiveTier] ?? 0;
+  const isActiveLike = status === "ACTIVE" || status === "CANCELLING";
+  const isUpgrade =
+    sameSubscription &&
+    isActiveLike &&
+    oldTier !== effectiveTier &&
+    newAllowance > oldAllowance;
+
+  if (isUpgrade) {
+    const gemDelta = newAllowance - oldAllowance;
+    const periodStartKey = periodStart
+      ? periodStart.toISOString().slice(0, 10)
+      : "unknown";
+    const upgradeReference = `sub_upgrade_gems_${subscription.id}_${periodStartKey}_${oldTier}_to_${effectiveTier}`;
+
+    const existing = await prisma.gem_transactions.findFirst({
+      where: { reference: upgradeReference },
+    });
+
+    if (!existing) {
+      await prisma.$transaction(async (tx) => {
+        await tx.user_config.upsert({
+          where: { userid: userIdBig },
+          create: { userid: userIdBig, gems: 0 },
+          update: {},
+        });
+
+        await tx.$executeRaw`
+          UPDATE user_config
+          SET gems = COALESCE(gems, 0) + ${gemDelta}
+          WHERE userid = ${userIdBig}
+        `;
+
+        await tx.gem_transactions.create({
+          data: {
+            transaction_type: "AUTOMATIC",
+            actorid: userIdBig,
+            from_account: null,
+            to_account: userIdBig,
+            amount: gemDelta,
+            description: `LionHeart upgrade gem top-up: ${gemDelta} gems (${oldTier} -> ${effectiveTier})`,
+            reference: upgradeReference,
+            note: `Subscription: ${subscription.id}`,
+          },
+        });
+      });
+
+      console.log(
+        `Stripe webhook: credited ${gemDelta} upgrade-delta gems to user ${discordId} (${oldTier} -> ${effectiveTier})`
+      );
+
+      sendGemAuditLog({
+        transactionType: "AUTOMATIC",
+        amount: gemDelta,
+        actorId: discordId,
+        fromAccount: null,
+        toAccount: discordId,
+        description: `LionHeart upgrade gem top-up: ${gemDelta} gems (${oldTier} -> ${effectiveTier})`,
+        note: `Subscription: ${subscription.id}`,
+        reference: upgradeReference,
+      });
+    } else {
+      console.log(
+        `Stripe webhook: upgrade gem top-up already credited for ${upgradeReference}, skipping`
+      );
+    }
+  }
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Manage LionHeart++ included server premium lifecycle on tier changes
-  const userIdBig = BigInt(discordId);
-  const previousSub = await prisma.user_subscriptions.findUnique({
-    where: { userid: userIdBig },
-    select: { tier: true },
-  });
-  const effectiveTier = status === "CANCELLED" ? "NONE" : tier;
 
   if (effectiveTier === "LIONHEART_PLUS_PLUS") {
     const existingGrant = await prisma.lionheart_server_premium.findUnique({
@@ -642,6 +739,27 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   if (!invoice.subscription) return;
+
+  // --- AI-MODIFIED (2026-04-26) ---
+  // Purpose: Skip the full monthly gem allowance for upgrade-proration invoices
+  //          (billing_reason === "subscription_update"). With the Stripe portal
+  //          configured to proration_behavior: "always_invoice", a mid-cycle
+  //          tier upgrade generates an immediate invoice whose payment_succeeded
+  //          event would otherwise double-credit gems on top of the tier-delta
+  //          credit that handleSubscriptionCreatedOrUpdated already applies.
+  //          Only the initial invoice (subscription_create) and monthly / yearly
+  //          renewals (subscription_cycle) should grant the full allowance.
+  const billingReason = invoice.billing_reason;
+  const isRenewalLike =
+    billingReason === "subscription_create" ||
+    billingReason === "subscription_cycle";
+  if (!isRenewalLike) {
+    console.log(
+      `Stripe webhook: skipping monthly gem allowance for invoice ${invoice.id} (billing_reason=${billingReason})`
+    );
+    return;
+  }
+  // --- END AI-MODIFIED ---
 
   const customerId = typeof invoice.customer === "string"
     ? invoice.customer

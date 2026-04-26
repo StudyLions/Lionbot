@@ -135,6 +135,44 @@ const COMMON_CANCEL = {
   },
 };
 
+// --- AI-MODIFIED (2026-04-26) ---
+// Purpose: Switch LionHeart subscription_update from "create_prorations" (defer
+//          proration to the next invoice) to "always_invoice" (charge the
+//          prorated delta IMMEDIATELY on tier change).
+//
+//          Why: the previous behavior let users exploit the gem system -- they
+//          could subscribe to LionHeart ($5.99), upgrade to LionHeart++ (the
+//          webhook credits the +2500 gem tier delta), then cancel before the
+//          next invoice and walk away with 2500 gems for $5.99. With
+//          "always_invoice", Stripe generates and charges the proration
+//          invoice at upgrade time, so if the card declines the subscription
+//          goes past_due and handleSubscriptionCreatedOrUpdated declines to
+//          credit the gem delta (status != ACTIVE).
+//
+//          After deploying this change, run POST /api/admin/setup-stripe-portal
+//          to push the new configuration to Stripe. Existing deferred-proration
+//          line items on in-flight subscriptions are unaffected -- they will
+//          still appear on the next invoice as scheduled.
+// --- Original code (commented out for rollback) ---
+// const lionHeartPayload: any = {
+//   business_profile: {
+//     headline: "LionBot — Manage your LionHeart subscription",
+//     ...COMMON_BUSINESS_PROFILE,
+//   },
+//   default_return_url: `${SITE_URL}/donate?portal=returned`,
+//   features: {
+//     ...COMMON_FEATURES,
+//     subscription_cancel: COMMON_CANCEL,
+//     subscription_update: {
+//       enabled: true,
+//       default_allowed_updates: ["price"],
+//       proration_behavior: "create_prorations",
+//       products: LIONHEART_PRODUCTS,
+//     },
+//   },
+//   metadata: { managed_by: "lionbot-website", scope: "lionheart" },
+// };
+// --- End original code ---
 const lionHeartPayload: any = {
   business_profile: {
     headline: "LionBot — Manage your LionHeart subscription",
@@ -147,12 +185,13 @@ const lionHeartPayload: any = {
     subscription_update: {
       enabled: true,
       default_allowed_updates: ["price"],
-      proration_behavior: "create_prorations",
+      proration_behavior: "always_invoice",
       products: LIONHEART_PRODUCTS,
     },
   },
   metadata: { managed_by: "lionbot-website", scope: "lionheart" },
 };
+// --- END AI-MODIFIED ---
 
 const serverPremiumPayload: any = {
   business_profile: {
