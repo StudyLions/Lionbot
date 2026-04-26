@@ -37,6 +37,27 @@ function isDead(lastWatered: Date | null, plantedAt: Date | null): boolean {
   return elapsed > 48 * 3600
 }
 
+// --- AI-MODIFIED (2026-04-26) ---
+// Purpose: Bug fix -- plants were not rendering on the family farm because the
+// shared FarmScene / PlotDetail components read assetPrefix / plantType / typeId
+// / nextWaterAt / goldInvested / growthPointsNeeded at the TOP LEVEL of each
+// plot, but this endpoint only exposed assetPrefix nested inside `seed`. So the
+// "if (!plot.assetPrefix) return null" guard in Layer 4 of FarmScene skipped
+// every planted plot, and the floating tooltip (which uses seed.name directly)
+// was the only visible evidence a crop was there. Reported by Fire in the
+// support server.
+function parseAssetPrefix(prefix: string): { plantType: string; typeId: number } {
+  const [plantType, idStr] = prefix.split(":")
+  return { plantType, typeId: parseInt(idStr, 10) || 1 }
+}
+
+function nextWaterAt(lastWatered: Date | null, waterIntervalHours: number): string | null {
+  if (!lastWatered) return null
+  const interval = waterIntervalHours * 3600 * 1000
+  return new Date(lastWatered.getTime() + interval).toISOString()
+}
+// --- END AI-MODIFIED ---
+
 export default apiHandler({
   async GET(req, res) {
     const auth = await requireAuth(req, res)
@@ -98,6 +119,15 @@ export default apiHandler({
       : []
     const planterMap = new Map(planterPets.map((p) => [p.userid.toString(), p.pet_name]))
 
+    // --- AI-MODIFIED (2026-04-26) ---
+    // Purpose: Expose the same top-level fields as the personal /api/pet/farm
+    //          endpoint so the shared FarmScene / PlotDetail components can
+    //          actually render the planted crops (bug: plants invisible on the
+    //          family farm). Adds assetPrefix / plantType / typeId at the top
+    //          level, plus goldInvested / growthPointsNeeded / nextWaterAt /
+    //          estimatedSecondsRemaining / growTimeHours. Keeps the nested
+    //          `seed` object for backwards compat with anything still reading
+    //          it (e.g. the "Planted by" attribution block + tooltips).
     const result = plots.map((plot) => {
       const seed = plot.lg_farm_seeds
       if (!seed || !plot.planted_at) {
@@ -113,6 +143,15 @@ export default apiHandler({
           isWatered: false,
           rarity: "COMMON",
           growthPoints: 0,
+          growthPointsNeeded: 0,
+          goldInvested: 0,
+          assetPrefix: null,
+          plantType: null,
+          typeId: null,
+          nextWaterAt: null,
+          estimatedSecondsRemaining: null,
+          plantedAt: null,
+          lastWatered: null,
           plantedBy: null,
           plantedByName: null,
         }
@@ -121,6 +160,7 @@ export default apiHandler({
       const dead = plot.dead || isDead(plot.last_watered, plot.planted_at)
       const growth = computeProgress(plot.growth_points, seed.growth_points_needed)
       const watered = isWatered(plot.last_watered, seed.water_interval_hours)
+      const { plantType, typeId } = parseAssetPrefix(seed.asset_prefix)
 
       return {
         plotId: plot.plot_id,
@@ -131,6 +171,7 @@ export default apiHandler({
           name: seed.name,
           plantType: seed.plant_type,
           harvestGold: seed.harvest_gold,
+          growTimeHours: seed.grow_time_hours,
           waterIntervalHours: seed.water_interval_hours,
           growthPointsNeeded: seed.growth_points_needed,
           assetPrefix: seed.asset_prefix,
@@ -142,12 +183,20 @@ export default apiHandler({
         isWatered: watered,
         rarity: plot.rarity || "COMMON",
         growthPoints: plot.growth_points,
+        growthPointsNeeded: seed.growth_points_needed,
+        goldInvested: plot.gold_invested ?? 0,
+        assetPrefix: seed.asset_prefix,
+        plantType,
+        typeId,
+        nextWaterAt: nextWaterAt(plot.last_watered, seed.water_interval_hours),
+        estimatedSecondsRemaining: null,
         plantedBy: plot.planted_by?.toString() ?? null,
         plantedByName: plot.planted_by ? planterMap.get(plot.planted_by.toString()) ?? "Unknown" : null,
         plantedAt: plot.planted_at.toISOString(),
         lastWatered: plot.last_watered?.toISOString() ?? null,
       }
     })
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-24) ---
     // Purpose: Include family gold balance in response for seed cost display

@@ -23,6 +23,16 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 26, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-26",
+    title: "Fixed: Crops Were Invisible on the Family Farm",
+    description:
+      "If you've walked into your family farm in the last few weeks and found yourself staring at tilled soil with no plants on it, even though the tooltip that popped up when you hovered a plot clearly said something like \"Phoenix Bloom — Budding 79%\", the crops were there the whole time — your family's gold was being invested correctly, the plants were growing on schedule in the database, and harvests still paid out — but the family-farm page was failing to draw the plant sprite on top of the soil, so the whole scene looked empty. The personal farm page was not affected; only the shared family farm was. The cause was that the shared farm scene (the same component that renders both your personal plot layout and your family's) needs a few identifying fields about each planted crop to pick the right sprite, and the family farm's data endpoint was quietly serving them in a slightly different shape than the personal one. The render step checked for those fields at the top level, found nothing, and skipped drawing the plant — but the tooltip drew fine because it reads a different field, which is why you could see the name and growth stage floating over the empty-looking dirt. We lined the two endpoints up so they return the exact same shape, and your plants now show up in the scene again. Reported by Fire in the support server. Nothing was lost, nothing needs to be replanted — the next time you open the page, the sprites will just be there.",
+    category: "bugfix",
+    area: "website",
+  },
+
   // ── April 25, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-25",
