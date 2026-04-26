@@ -68,17 +68,33 @@ export default function CountdownRing({
 
   const fontSize = size < 80 ? "text-base" : size < 140 ? "text-2xl" : "text-3xl"
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- aria-label communicates current stage + remaining
+  // time to screen readers, decorative track ring is aria-hidden, glow + urgent
+  // pulse wrapped in motion-safe so reduced-motion users don't get the throb,
+  // STOPPED label uses semantic muted-foreground (was already), kept the amber
+  // brand color (Pomodoro convention) rather than swapping to --primary
+  const stageWord = stage === "focus" ? "Focus" : stage === "break" ? "Break" : "Stopped"
+  const ariaLabel = stage
+    ? `${stageWord} timer: ${minutes} minutes ${seconds} seconds remaining`
+    : `Pomodoro timer stopped`
+
   return (
-    <div className={cn("relative inline-flex flex-col items-center gap-1.5", className)}>
+    <div
+      className={cn("relative inline-flex flex-col items-center gap-1.5", className)}
+      role="timer"
+      aria-live="off"
+      aria-label={ariaLabel}
+    >
       <div
-        className={cn("relative", transitioning && "animate-[pulse_0.6s_ease-in-out]")}
+        className={cn("relative", transitioning && "motion-safe:animate-[pulse_0.6s_ease-in-out]")}
         style={{
           width: size,
           height: size,
           filter: stage ? `drop-shadow(0 0 ${size * 0.08}px ${c.glow})` : undefined,
         }}
       >
-        <svg width={size} height={size} className="transform -rotate-90">
+        <svg width={size} height={size} className="transform -rotate-90" aria-hidden="true">
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             stroke={c.bg} strokeWidth={strokeWidth} fill="none"
@@ -91,7 +107,7 @@ export default function CountdownRing({
             strokeDashoffset={strokeDashoffset}
             className={cn(
               "transition-[stroke-dashoffset] duration-1000 ease-linear",
-              urgentThreshold && stage && "animate-[pulse_1s_ease-in-out_infinite]"
+              urgentThreshold && stage && "motion-safe:animate-[pulse_1s_ease-in-out_infinite]"
             )}
           />
         </svg>
@@ -105,10 +121,11 @@ export default function CountdownRing({
         </div>
       </div>
       {showLabel && stage && (
-        <span className={cn("text-[11px] font-bold uppercase tracking-widest", c.text)}>
+        <span className={cn("text-[11px] font-bold uppercase tracking-widest", c.text)} aria-hidden="true">
           {stage}
         </span>
       )}
     </div>
   )
+  // --- END AI-MODIFIED ---
 }

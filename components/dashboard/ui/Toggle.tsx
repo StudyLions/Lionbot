@@ -30,6 +30,9 @@ export default function Toggle({ checked, onChange, label, disabled = false, id,
   }
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- thumb scale on press for tactility, smoother
+  // ring transition (focus-visible only), motion-safe respect
   return (
     <div className="flex items-center gap-3">
       <button
@@ -40,24 +43,27 @@ export default function Toggle({ checked, onChange, label, disabled = false, id,
         disabled={disabled}
         onClick={handleClick}
         className={`
-          relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out
-          focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 focus:ring-offset-background
+          group relative inline-flex h-6 w-11 shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background
           ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
           ${checked ? "bg-primary" : "bg-muted"}
         `}
       >
         <span
           className={`
-            pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-lg transform transition duration-200 ease-in-out
+            pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-md
+            transform motion-safe:transition-transform motion-safe:duration-200 ease-out
+            group-active:motion-safe:scale-90
             ${checked ? "translate-x-5" : "translate-x-0"}
           `}
         />
       </button>
       {label && (
-        <label htmlFor={toggleId} className={`text-sm ${disabled ? "text-muted-foreground" : "text-muted-foreground cursor-pointer"}`}>
+        <label htmlFor={toggleId} className={`text-sm select-none ${disabled ? "text-muted-foreground" : "text-muted-foreground cursor-pointer"}`}>
           {label}
         </label>
       )}
     </div>
   )
+  // --- END AI-MODIFIED ---
 }

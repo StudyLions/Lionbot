@@ -14,7 +14,10 @@ import DashboardNav from "@/components/dashboard/DashboardNav"
 import { PageHeader, SectionCard, toast, DashboardShell } from "@/components/dashboard/ui"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
-import { useState, useEffect, useCallback } from "react"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- add useId/useRef for Transfer modal a11y treatment
+import { useState, useEffect, useCallback, useId, useRef } from "react"
+// --- END AI-MODIFIED ---
 import {
   Crown,
   Server,
@@ -78,6 +81,44 @@ export default function SubscriptionsPage() {
   const [transferModalSub, setTransferModalSub] = useState<ServerPremiumSub | null>(null)
   const [transferTarget, setTransferTarget] = useState("")
   const [transferring, setTransferring] = useState(false)
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- Transfer modal a11y (focus trap + Esc + scroll lock)
+  const transferDialogRef = useRef<HTMLDivElement>(null)
+  const transferTitleId = useId()
+  const transferDescId = useId()
+
+  useEffect(() => {
+    if (!transferModalSub) return
+    function handleEsc(e: KeyboardEvent) {
+      if (e.key === "Escape") setTransferModalSub(null)
+    }
+    function handleTab(e: KeyboardEvent) {
+      if (e.key !== "Tab" || !transferDialogRef.current) return
+      const focusables = transferDialogRef.current.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )
+      if (focusables.length === 0) return
+      const first = focusables[0]
+      const last = focusables[focusables.length - 1]
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault()
+        last.focus()
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault()
+        first.focus()
+      }
+    }
+    document.addEventListener("keydown", handleEsc)
+    document.addEventListener("keydown", handleTab)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      document.removeEventListener("keydown", handleEsc)
+      document.removeEventListener("keydown", handleTab)
+      document.body.style.overflow = prevOverflow
+    }
+  }, [transferModalSub])
+  // --- END AI-MODIFIED ---
 
   const [lhApplyTarget, setLhApplyTarget] = useState("")
   const [lhApplying, setLhApplying] = useState(false)
@@ -580,15 +621,35 @@ export default function SubscriptionsPage() {
         {/* --- END AI-REPLACED --- */}
 
         {/* Transfer Modal */}
+        {/* --- AI-MODIFIED (2026-04-25) --- */}
+        {/* Purpose: Premium polish -- proper dialog a11y                             */}
+        {/*   - role="dialog" + aria-modal + aria-labelledby + aria-describedby      */}
+        {/*   - Backdrop click cancels (was missing entirely before)                  */}
+        {/*   - Backdrop aria-hidden so screen readers don't announce it             */}
+        {/*   - Entrance fade + scale animation (motion-safe)                         */}
+        {/*   - All buttons get type="button" + focus-visible ring                    */}
+        {/*   - Focus trap + Esc + scroll lock handled by useEffect above            */}
         {transferModalSub && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div className="bg-muted border border-border rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
-              <h3 className="text-lg font-bold text-foreground mb-1">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <div
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm motion-safe:animate-fade-in"
+              onClick={() => setTransferModalSub(null)}
+              aria-hidden="true"
+            />
+            <div
+              ref={transferDialogRef}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby={transferTitleId}
+              aria-describedby={transferDescId}
+              className="relative bg-muted border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl motion-safe:animate-scale-in"
+            >
+              <h3 id={transferTitleId} className="text-lg font-bold text-foreground mb-1">
                 Transfer Server Premium
               </h3>
-              <p className="text-sm text-muted-foreground mb-5">
+              <p id={transferDescId} className="text-sm text-muted-foreground mb-5">
                 Move your premium subscription from{" "}
-                <span className="text-white font-medium">
+                <span className="text-foreground font-medium">
                   {getServerName(transferModalSub.guildId)}
                 </span>{" "}
                 to another server. The old server will lose premium access immediately.
@@ -599,7 +660,7 @@ export default function SubscriptionsPage() {
                 if (targets.length === 0) {
                   return (
                     <div className="text-sm text-yellow-400 flex items-center gap-2 mb-4">
-                      <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                      <AlertTriangle className="h-4 w-4 flex-shrink-0" aria-hidden="true" />
                       No available servers. You need to be an admin of a server
                       with LionBot that doesn&apos;t already have premium.
                     </div>
@@ -613,7 +674,7 @@ export default function SubscriptionsPage() {
                     <select
                       value={transferTarget}
                       onChange={(e) => setTransferTarget(e.target.value)}
-                      className="w-full rounded-lg bg-card border border-border text-white text-sm px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                      className="w-full rounded-lg bg-card border border-border text-foreground text-sm px-3 py-2.5 focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
                       {targets.map((s) => (
                         <option key={s.guildId} value={s.guildId}>
@@ -627,24 +688,27 @@ export default function SubscriptionsPage() {
 
               <div className="flex gap-3">
                 <button
+                  type="button"
                   onClick={() => setTransferModalSub(null)}
-                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   Cancel
                 </button>
                 <button
+                  type="button"
                   onClick={handleTransfer}
                   disabled={
                     transferring ||
                     !transferTarget ||
                     availableTransferTargets(transferModalSub.guildId).length === 0
                   }
-                  className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  aria-busy={transferring}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                 >
                   {transferring ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
                   ) : (
-                    <ArrowRightLeft className="h-4 w-4" />
+                    <ArrowRightLeft className="h-4 w-4" aria-hidden="true" />
                   )}
                   Transfer
                 </button>
@@ -656,6 +720,7 @@ export default function SubscriptionsPage() {
             </div>
           </div>
         )}
+        {/* --- END AI-MODIFIED --- */}
 
         {/* LH++ Apply/Transfer Modal */}
         {showLhApply && (

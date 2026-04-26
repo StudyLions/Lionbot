@@ -49,22 +49,28 @@ function Section({ title, icon, badge, defaultOpen = true, children }: {
   defaultOpen?: boolean; children: React.ReactNode
 }) {
   const [open, setOpen] = useState(defaultOpen)
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- accordion now uses semantic tokens instead of
+  // hardcoded greys, has aria-expanded, type=button, and a focus-visible ring
   return (
-    <div className="bg-gray-800/50 rounded-lg border border-gray-700/50 overflow-hidden">
+    <div className="bg-card rounded-lg border border-border overflow-hidden">
       <button
+        type="button"
+        aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-gray-700/30 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
-        {open ? <ChevronDown size={16} className="text-gray-400 shrink-0" /> : <ChevronRight size={16} className="text-gray-400 shrink-0" />}
-        <span className="text-gray-400">{icon}</span>
-        <span className="font-medium text-gray-100">{title}</span>
+        {open ? <ChevronDown size={16} className="text-muted-foreground shrink-0" /> : <ChevronRight size={16} className="text-muted-foreground shrink-0" />}
+        <span className="text-muted-foreground">{icon}</span>
+        <span className="font-medium text-foreground">{title}</span>
         {badge !== undefined && (
-          <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-gray-700 text-gray-300">{badge}</span>
+          <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{badge}</span>
         )}
       </button>
-      {open && <div className="px-4 pb-4 space-y-2 border-t border-gray-700/30">{children}</div>}
+      {open && <div className="px-4 pb-4 space-y-2 border-t border-border/60">{children}</div>}
     </div>
   )
+  // --- END AI-MODIFIED ---
 }
 
 function Row({ label, value, mono, error, warn }: {
@@ -72,9 +78,9 @@ function Row({ label, value, mono, error, warn }: {
 }) {
   return (
     <div className={`flex items-start gap-2 py-1.5 ${error ? "bg-red-900/20 -mx-2 px-2 rounded" : warn ? "bg-amber-900/20 -mx-2 px-2 rounded" : ""}`}>
-      <span className="text-gray-400 text-sm min-w-[160px] shrink-0">{label}</span>
-      <span className={`text-sm ${mono ? "font-mono" : ""} ${error ? "text-red-300" : warn ? "text-amber-300" : "text-gray-200"}`}>
-        {value ?? <span className="text-gray-500 italic">Not set</span>}
+      <span className="text-muted-foreground text-sm min-w-[160px] shrink-0">{label}</span>
+      <span className={`text-sm ${mono ? "font-mono" : ""} ${error ? "text-red-300" : warn ? "text-amber-300" : "text-foreground"}`}>
+        {value ?? <span className="text-muted-foreground/70 italic">Not set</span>}
       </span>
     </div>
   )
@@ -383,7 +389,7 @@ export default function DebugInfoPage() {
             {isLoading ? (
               <div className="space-y-3">
                 {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="bg-gray-800/50 rounded-lg border border-gray-700/50 h-16 animate-pulse" />
+                  <div key={i} className="bg-card rounded-lg border border-border h-16 animate-pulse" />
                 ))}
               </div>
             ) : d ? (

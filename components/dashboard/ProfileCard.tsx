@@ -269,14 +269,26 @@ export default function ProfileCard({
         })}
       </div>
 
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: Premium polish -- replace emoji with Lucide icons so they tint     */}
+      {/* with the active skin's accent colour and render at consistent weight       */}
+      {/* across all OS emoji fonts. Keeps the same visual meaning (flame=streak,    */}
+      {/* thumbs-up=votes) but colours align with the rest of the card.              */}
       {/* Streak + Votes row */}
       <div
         className="flex gap-4 px-6 mb-4 text-sm"
         style={{ color: `${colors.textColor}99` }}
       >
-        <span>🔥 {data.currentStreak} day streak</span>
-        <span>👍 {data.voteCount} votes</span>
+        <span className="inline-flex items-center gap-1.5">
+          <Flame size={14} style={{ color: colors.accentColor }} aria-hidden="true" />
+          {data.currentStreak} day streak
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <ThumbsUp size={14} style={{ color: colors.accentColor }} aria-hidden="true" />
+          {data.voteCount} votes
+        </span>
       </div>
+      {/* --- END AI-MODIFIED --- */}
 
       {/* Rank progress bar */}
       {data.rankProgress != null && (

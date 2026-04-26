@@ -18,7 +18,12 @@ import {
 import { useDashboard, dashboardMutate } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
-import { useEffect, useState, useCallback, useMemo } from "react"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Add useRef for the keydown/beforeunload handler ref pattern
+// (lets us add empty dep arrays so listeners only bind once instead of
+// every render -- previous code re-bound on every state change.)
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-03-24) ---
 // Purpose: Removed unused Hash import (dead code cleanup)
 import {
@@ -80,27 +85,64 @@ export default function LionGotchiSettings() {
     }
   }, [configData, loading])
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- fix perf bug where these two effects had no dep
+  // array, so they re-bound a global keydown + beforeunload listener on EVERY
+  // render. With dozens of inputs in this page that's hundreds of unnecessary
+  // add/removeEventListener calls. The ref pattern lets us always read the
+  // latest hasChanges/handleSave from inside the handler while only binding
+  // the listener once on mount. The actual ref assignment happens further
+  // down (after hasChanges/handleSave are declared) to avoid TDZ issues.
+  // --- Original code (commented out for rollback) ---
+  // useEffect(() => {
+  //   function handleKeyDown(e: KeyboardEvent) {
+  //     if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+  //       e.preventDefault()
+  //       if (hasChanges) handleSave()
+  //     }
+  //   }
+  //   document.addEventListener("keydown", handleKeyDown)
+  //   return () => document.removeEventListener("keydown", handleKeyDown)
+  // })
+  //
+  // useEffect(() => {
+  //   function handleBeforeUnload(e: BeforeUnloadEvent) {
+  //     if (hasChanges) {
+  //       e.preventDefault()
+  //       e.returnValue = ""
+  //     }
+  //   }
+  //   window.addEventListener("beforeunload", handleBeforeUnload)
+  //   return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  // })
+  // --- End original code ---
+  const liveSaveRef = useRef<{ hasChanges: boolean; handleSave: () => void }>({
+    hasChanges: false,
+    handleSave: () => {},
+  })
+
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault()
-        if (hasChanges) handleSave()
+        if (liveSaveRef.current.hasChanges) liveSaveRef.current.handleSave()
       }
     }
     document.addEventListener("keydown", handleKeyDown)
     return () => document.removeEventListener("keydown", handleKeyDown)
-  })
+  }, [])
 
   useEffect(() => {
     function handleBeforeUnload(e: BeforeUnloadEvent) {
-      if (hasChanges) {
+      if (liveSaveRef.current.hasChanges) {
         e.preventDefault()
         e.returnValue = ""
       }
     }
     window.addEventListener("beforeunload", handleBeforeUnload)
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
-  })
+  }, [])
+  // --- END AI-MODIFIED ---
 
   const set = useCallback(<K extends keyof LGConfig>(key: K, value: LGConfig[K]) => {
     setConfig((prev) => (prev ? { ...prev, [key]: value } : prev))
@@ -149,6 +191,13 @@ export default function LionGotchiSettings() {
     }
     setSaving(false)
   }
+
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Sync the latest hasChanges + handleSave into the ref used by the
+  // mounted-once keydown / beforeunload handlers above. This runs every render
+  // (cheap -- two property writes), but the listeners themselves only bind once.
+  liveSaveRef.current = { hasChanges: !!hasChanges, handleSave }
+  // --- END AI-MODIFIED ---
 
   const handleReset = () => {
     if (original) setConfig({ ...original })

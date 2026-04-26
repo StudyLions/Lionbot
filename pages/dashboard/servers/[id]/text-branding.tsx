@@ -276,11 +276,16 @@ function StringEditor({
 
   return (
     <div className={`border-b border-border/30 last:border-b-0 transition-colors ${expanded ? "bg-card/30" : "hover:bg-card/20"}`}>
+      {/* --- AI-MODIFIED (2026-04-25) --- */}
+      {/* Purpose: type=button + aria-expanded + focus-visible ring on collapsible row */}
       {/* Collapsed row */}
       <button
+        type="button"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
-        className="w-full text-left px-4 py-3 flex items-start gap-3"
+        className="w-full text-left px-4 py-3 flex items-start gap-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
       >
+      {/* --- END AI-MODIFIED --- */}
         <div className="pt-0.5 flex-shrink-0">
           {expanded ? <ChevronDown size={14} className="text-muted-foreground" /> : <ChevronRight size={14} className="text-muted-foreground" />}
         </div>

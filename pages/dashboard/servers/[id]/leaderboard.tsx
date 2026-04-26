@@ -151,11 +151,15 @@ export default function LeaderboardConfigPage() {
                   ))}
                 </div>
               ) : !data ? (
+                // --- AI-MODIFIED (2026-04-25) ---
+                // Purpose: This page requires admin (see ServerGuard requiredLevel="admin"
+                // on line 115); the previous copy said "moderator" which was incorrect.
                 <div className="text-center py-20">
                   <p className="text-muted-foreground">
-                    Unable to load leaderboard settings. You may not have moderator permissions.
+                    Unable to load leaderboard settings. You may not have administrator permissions.
                   </p>
                 </div>
+                // --- END AI-MODIFIED ---
               ) : (
                 <div className="space-y-4">
                   <SectionCard

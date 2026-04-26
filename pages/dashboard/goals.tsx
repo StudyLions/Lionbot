@@ -439,13 +439,15 @@ export default function GoalsPage() {
                         {isEditing ? (
                           <div className="space-y-3 mb-4">
                             <div className="grid grid-cols-3 gap-3">
+                              {/* --- AI-MODIFIED (2026-04-25) --- */}
+                              {/* Purpose: Add focus-visible ring on all goal inputs for keyboard a11y */}
                               <div>
                                 <label className="text-[10px] text-muted-foreground block mb-1">Study hours</label>
                                 <input
                                   type="number" min="0" step="1"
                                   value={editValues.study}
                                   onChange={e => setEditValues(v => ({ ...v, study: e.target.value }))}
-                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   placeholder="0"
                                 />
                               </div>
@@ -455,7 +457,7 @@ export default function GoalsPage() {
                                   type="number" min="0" step="1"
                                   value={editValues.task}
                                   onChange={e => setEditValues(v => ({ ...v, task: e.target.value }))}
-                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   placeholder="0"
                                 />
                               </div>
@@ -465,10 +467,11 @@ export default function GoalsPage() {
                                   type="number" min="0" step="1"
                                   value={editValues.message}
                                   onChange={e => setEditValues(v => ({ ...v, message: e.target.value }))}
-                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary"
+                                  className="w-full bg-muted/30 border border-border rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:border-primary focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                                   placeholder="0"
                                 />
                               </div>
+                              {/* --- END AI-MODIFIED --- */}
                             </div>
                             <div className="flex gap-2 justify-end">
                               <button

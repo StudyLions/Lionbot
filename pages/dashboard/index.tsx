@@ -10,6 +10,10 @@
 import Layout from "@/components/Layout/Layout"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import { DashboardShell, PageHeader } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared EmptyState for consistent empty UI across overview cards
+import EmptyState from "@/components/dashboard/ui/EmptyState"
+// --- END AI-MODIFIED ---
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -55,6 +59,10 @@ import {
   Shield,
   Crown,
   Check,
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Differentiate "All Time" stat card icon for premium feel
+  Infinity as InfinityIcon,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -221,14 +229,27 @@ function StatCard({
   value,
   icon: Icon,
   trend,
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Optional index for stagger entrance + accent for icon halo
+  index = 0,
+  // --- END AI-MODIFIED ---
 }: {
   label: string
   value: string
   icon: React.ElementType
   trend?: { pct: number; direction: "up" | "down" | "flat" }
+  index?: number
 }) {
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Premium polish -- stagger entrance (50ms × index, capped at 6 cards
+  // per plan), motion-safe hover-lift, and respects reduced-motion automatically
+  // because animate-fade-in uses transform which we kill globally on reduce.
+  const delay = `${Math.min(index, 5) * 50}ms`
   return (
-    <Card className="border-border bg-card hover:shadow-md hover:border-primary/20 transition-all group">
+    <Card
+      className="border-border bg-card hover:shadow-md hover:border-primary/20 transition-all group motion-safe:hover:-translate-y-0.5 motion-safe:animate-fade-in"
+      style={{ animationDelay: delay, animationFillMode: "backwards" }}
+    >
       <CardContent className="pt-5 pb-4 px-4">
         <div className="flex items-center justify-between mb-2">
           <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
@@ -237,6 +258,7 @@ function StatCard({
           </div>
         </div>
         <p className="text-2xl font-bold text-foreground">{value}</p>
+        {/* --- END AI-MODIFIED --- */}
         {trend && trend.direction !== "flat" && (
           <div className={cn(
             "flex items-center gap-1 mt-1.5 text-xs font-medium",
@@ -507,32 +529,41 @@ export default function Dashboard() {
                   />
                   {/* --- END AI-REPLACED --- */}
 
+                  {/* --- AI-MODIFIED (2026-04-25) --- */}
+                  {/* Purpose: Premium polish -- icon variety per period (per plan:    */}
+                  {/* Today=Sun / Week=CalendarRange / Month=Calendar / All Time=∞),  */}
+                  {/* plus stagger entrance via animation-delay (motion-safe).        */}
                   {/* Stats Cards */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                     <StatCard
+                      index={0}
                       label="Today"
                       value={formatMinutes(stats?.studyTime.todayMinutes ?? 0)}
                       icon={Sun}
                       trend={todayTrend}
                     />
                     <StatCard
+                      index={1}
                       label="This Week"
                       value={formatMinutes(stats?.studyTime.thisWeekMinutes ?? 0)}
-                      icon={Calendar}
+                      icon={CalendarRange}
                       trend={weekTrend}
                     />
                     <StatCard
+                      index={2}
                       label="This Month"
                       value={formatMinutes(stats?.studyTime.thisMonthMinutes ?? 0)}
-                      icon={CalendarRange}
+                      icon={Calendar}
                       trend={monthTrend}
                     />
                     <StatCard
+                      index={3}
                       label="All Time"
                       value={formatMinutes(stats?.studyTime.allTimeMinutes ?? 0)}
-                      icon={Clock}
+                      icon={InfinityIcon}
                     />
                   </div>
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Weekly Insight */}
                   {stats && <WeeklyInsight stats={stats} pomStats={pomStats ?? null} />}
@@ -680,9 +711,15 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent>
                         {(!meData?.recentSessions || meData.recentSessions.length === 0) ? (
-                          <p className="text-sm text-muted-foreground py-4 text-center">
-                            No recent sessions. Start studying in any voice channel!
-                          </p>
+                          // --- AI-MODIFIED (2026-04-25) ---
+                          // Purpose: Replace plain <p> with EmptyState for consistent look + a11y
+                          <EmptyState
+                            compact
+                            icon={<Clock size={36} strokeWidth={1.25} />}
+                            title="No recent sessions"
+                            description="Join any voice channel in a server with LionBot to start studying."
+                          />
+                          // --- END AI-MODIFIED ---
                         ) : (
                           <div className="space-y-2">
                             {meData.recentSessions.slice(0, 5).map((s) => {
@@ -737,9 +774,15 @@ export default function Dashboard() {
                       </CardHeader>
                       <CardContent>
                         {servers.length === 0 ? (
-                          <p className="text-sm text-muted-foreground py-4 text-center">
-                            No servers found. Join a server with LionBot!
-                          </p>
+                          // --- AI-MODIFIED (2026-04-25) ---
+                          // Purpose: Consistent EmptyState in place of plain text
+                          <EmptyState
+                            compact
+                            icon={<Server size={36} strokeWidth={1.25} />}
+                            title="No servers yet"
+                            description="Add LionBot to a Discord server to see it here."
+                          />
+                          // --- END AI-MODIFIED ---
                         ) : (
                           <div className="space-y-2">
                             {servers.slice(0, 4).map((sv) => {

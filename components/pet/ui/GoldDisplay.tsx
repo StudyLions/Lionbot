@@ -5,6 +5,11 @@
 // ============================================================
 import { cn } from "@/lib/utils"
 import { getUiIconUrl } from "@/utils/petAssets"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- subtle scale animation when amount changes
+// (visible feedback for purchases/sales/income)
+import { useEffect, useRef, useState } from "react"
+// --- END AI-MODIFIED ---
 
 interface GoldDisplayProps {
   amount: number
@@ -12,6 +17,10 @@ interface GoldDisplayProps {
   className?: string
   type?: "gold" | "gem"
   showSign?: boolean
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Allow opting out of pop animation (e.g. for static labels)
+  animate?: boolean
+  // --- END AI-MODIFIED ---
 }
 
 // --- AI-MODIFIED (2026-03-16) ---
@@ -24,14 +33,38 @@ const sizeMap = {
 }
 // --- END AI-MODIFIED ---
 
-export default function GoldDisplay({ amount, size = "md", className, type = "gold", showSign }: GoldDisplayProps) {
+export default function GoldDisplay({ amount, size = "md", className, type = "gold", showSign, animate = true }: GoldDisplayProps) {
   const s = sizeMap[size]
   const color = type === "gold" ? "text-[var(--pet-gold,#f0c040)]" : "text-[#a855f7]"
   const icon = type === "gold" ? "coin" : "gem"
   const sign = showSign && amount > 0 ? "+" : showSign && amount < 0 ? "" : ""
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Trigger a one-shot value-pop animation each time the amount changes
+  // (skipped on first mount so we don't flash on initial load)
+  const prevAmount = useRef(amount)
+  const [popping, setPopping] = useState(false)
+
+  useEffect(() => {
+    if (!animate) return
+    if (prevAmount.current === amount) return
+    prevAmount.current = amount
+    setPopping(true)
+    const id = setTimeout(() => setPopping(false), 400)
+    return () => clearTimeout(id)
+  }, [amount, animate])
+  // --- END AI-MODIFIED ---
+
   return (
-    <span className={cn("inline-flex items-center gap-0.5 font-pixel", color, s.text, className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-0.5 font-pixel",
+        color,
+        s.text,
+        popping && "motion-safe:animate-value-pop",
+        className,
+      )}
+    >
       <img
         src={getUiIconUrl(icon)}
         alt=""

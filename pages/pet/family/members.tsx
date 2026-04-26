@@ -276,7 +276,10 @@ function InvitePanel({ familyId }: { familyId: number }) {
       }
       const data = await res.json()
       setResults(data.results ?? [])
-      if (!data.results?.length) toast("No users found")
+      // --- AI-MODIFIED (2026-04-25) ---
+      // Purpose: Use toast.info for neutral "no results" notification
+      if (!data.results?.length) toast.info("No users found")
+      // --- END AI-MODIFIED ---
     } catch {
       toast.error("Search failed")
     } finally {

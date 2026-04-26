@@ -19,6 +19,10 @@ import SearchInput from "@/components/dashboard/ui/SearchInput"
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 import Pagination from "@/components/dashboard/ui/Pagination"
 import MemberDetailPanel from "@/components/dashboard/MemberDetailPanel"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton primitive
+import { Skeleton } from "@/components/ui/skeleton"
+// --- END AI-MODIFIED ---
 import {
   WarnModal, NoteModal, RestrictModal, CoinAdjustModal,
   BulkActionModal, ResolveModal, RefundModal,
@@ -342,11 +346,14 @@ export default function MembersPage() {
 
               {/* Members Table */}
               {loading ? (
-                <div className="space-y-2">
+                // --- AI-MODIFIED (2026-04-25) ---
+                // Purpose: Shared Skeleton primitive matching member-row height
+                <div className="space-y-2" aria-busy="true" aria-live="polite" aria-label="Loading members">
                   {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="bg-card border border-border rounded-xl p-4 animate-pulse h-14" />
+                    <Skeleton key={i} className="rounded-xl h-14" />
                   ))}
                 </div>
+                // --- END AI-MODIFIED ---
               ) : error ? (
                 <div className="text-center py-12 text-destructive">{error.message || "Failed to load members"}</div>
               ) : (

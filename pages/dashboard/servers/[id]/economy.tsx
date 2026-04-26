@@ -184,8 +184,11 @@ function StatCard({ icon, label, value, subtitle, delta, color }: {
 
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Use semantic tokens (bg-card / border-border) so chart tooltip
+  // matches the rest of the dashboard surface palette + theme switches
   return (
-    <div className="bg-gray-900 border border-gray-700 rounded-lg p-3 text-sm shadow-xl">
+    <div className="bg-card border border-border rounded-lg p-3 text-sm shadow-xl">
       <p className="text-muted-foreground text-xs mb-1">{label}</p>
       {payload.map((p: any, i: number) => (
         <p key={i} style={{ color: p.color }} className="font-medium">
@@ -194,6 +197,7 @@ function ChartTooltip({ active, payload, label }: any) {
       ))}
     </div>
   )
+  // --- END AI-MODIFIED ---
 }
 
 // --- AI-MODIFIED (2026-03-30) ---
@@ -1020,11 +1024,15 @@ export default function EconomyPage() {
                       </p>
                     )}
 
+                    {/* --- AI-MODIFIED (2026-04-25) --- */}
+                    {/* Purpose: type=button + focus-visible ring on bulk-action CTA */}
                     <button
+                      type="button"
                       onClick={() => setBulkConfirmOpen(true)}
                       disabled={bulkOp !== "reset" && (!bulkAmount || parseInt(bulkAmount) <= 0)}
-                      className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                      className="bg-amber-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                     >
+                    {/* --- END AI-MODIFIED --- */}
                       {bulkOp === "give" && `Give ${bulkAmount || "..."} Coins`}
                       {bulkOp === "take" && `Take ${bulkAmount || "..."} Coins`}
                       {bulkOp === "set" && `Set Balance to ${bulkAmount || "..."}`}

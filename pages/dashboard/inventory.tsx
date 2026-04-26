@@ -43,6 +43,10 @@ import {
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import TabBar from "@/components/dashboard/ui/TabBar"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Use shared Skeleton primitive for consistent loading states
+import { Skeleton } from "@/components/ui/skeleton"
+// --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { SKIN_CATALOG, SKIN_MAP, type SkinDef } from "@/constants/SkinCatalog"
@@ -330,12 +334,15 @@ export default function InventoryPage() {
                     Wearing: <span className="text-foreground font-medium">{equippedCatalog?.name || "Default"}</span>
                   </span>
                 </div>
+                {/* --- AI-MODIFIED (2026-04-25) --- */}
+                {/* Purpose: Add focus-visible ring + rounded shape for keyboard a11y */}
                 <Link href="/dashboard/gems">
-                  <a className="text-sm text-primary hover:underline font-medium flex items-center gap-1.5 whitespace-nowrap">
+                  <a className="text-sm text-primary hover:underline font-medium flex items-center gap-1.5 whitespace-nowrap rounded-md px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background">
                     <Gem size={14} />
                     Get more gems
                   </a>
                 </Link>
+                {/* --- END AI-MODIFIED --- */}
               </div>
 
               {/* ============ SKIN DETAIL PANEL ============ */}
@@ -507,16 +514,20 @@ export default function InventoryPage() {
                     const equipped = equippedSkinName === shopSkin.id
                     const isSelected = selectedSkin?.id === shopSkin.id
                     return (
+                      /* --- AI-MODIFIED (2026-04-25) --- */
+                      /* Purpose: type=button + focus-visible ring + motion-safe hover-lift */
                       <button
+                        type="button"
                         key={shopSkin.id}
                         onClick={() => openDetail(shopSkin)}
                         className={cn(
-                          "bg-card rounded-xl border overflow-hidden transition-all text-left group",
+                          "bg-card rounded-xl border overflow-hidden transition-all text-left group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background motion-safe:hover:-translate-y-0.5",
                           isSelected
                             ? "border-primary ring-2 ring-primary/20 shadow-lg"
                             : "border-border hover:border-primary/40 hover:shadow-md"
                         )}
                       >
+                      /* --- END AI-MODIFIED --- */
                         {/* Live preview thumbnail */}
                         <div className="relative bg-gray-950/30 overflow-hidden">
                           <SkinPreviewImage
@@ -561,11 +572,14 @@ export default function InventoryPage() {
               {/* ============ MY SKINS ============ */}
               <SectionCard title="My Skins" defaultOpen={true}>
                 {loadingInv ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
+                  // --- AI-MODIFIED (2026-04-25) ---
+                  // Purpose: Shared Skeleton primitive for consistent loading look
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4" aria-busy="true" aria-live="polite">
                     {[1, 2, 3].map((i) => (
-                      <div key={i} className="bg-muted/30 rounded-xl h-20 animate-pulse" />
+                      <Skeleton key={i} className="rounded-xl h-20" />
                     ))}
                   </div>
+                  // --- END AI-MODIFIED ---
                 ) : error ? (
                   <div className="flex flex-col items-center justify-center py-8 gap-4">
                     <p className="text-destructive">{error.message}</p>

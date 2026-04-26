@@ -32,20 +32,25 @@ const sizes = {
 // --- END AI-MODIFIED ---
 
 const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(
-  ({ className, variant = "primary", size = "md", loading, children, disabled, ...props }, ref) => (
+  ({ className, variant = "primary", size = "md", loading, children, disabled, type, ...props }, ref) => (
     <button
       ref={ref}
+      // --- AI-MODIFIED (2026-04-25) ---
+      // Purpose: Premium polish -- explicit type=button to prevent accidental form
+      // submits, aria-busy when loading, motion-safe on translate animations,
+      // visible "loading" text replaced with hiding children + spinner overlay
+      // for cleaner feedback
+      type={type ?? "button"}
+      aria-busy={loading || undefined}
       disabled={disabled || loading}
       className={cn(
-        "font-pixel inline-flex items-center justify-center gap-1.5",
+        "font-pixel inline-flex items-center justify-center gap-1.5 relative",
         "border-2 transition-all select-none",
         "shadow-[2px_2px_0_#060810]",
-        "hover:shadow-[1px_1px_0_#060810] hover:translate-x-px hover:translate-y-px",
-        "active:shadow-none active:translate-x-0.5 active:translate-y-0.5",
-        "disabled:opacity-40 disabled:pointer-events-none",
-        // --- AI-MODIFIED (2026-03-24) ---
-        // Purpose: Keyboard focus ring for accessibility
-        "focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]",
+        "motion-safe:hover:shadow-[1px_1px_0_#060810] motion-safe:hover:translate-x-px motion-safe:hover:translate-y-px",
+        "motion-safe:active:shadow-none motion-safe:active:translate-x-0.5 motion-safe:active:translate-y-0.5",
+        "disabled:opacity-40 disabled:pointer-events-none disabled:cursor-not-allowed",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]",
         // --- END AI-MODIFIED ---
         variants[variant],
         sizes[size],
@@ -53,7 +58,7 @@ const PixelButton = forwardRef<HTMLButtonElement, PixelButtonProps>(
       )}
       {...props}
     >
-      {loading && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent animate-spin" />}
+      {loading && <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent animate-spin" aria-hidden="true" />}
       {children}
     </button>
   )

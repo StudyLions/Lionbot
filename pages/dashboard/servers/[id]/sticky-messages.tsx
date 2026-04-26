@@ -100,20 +100,25 @@ function EmbedPreview({ form }: { form: StickyForm }) {
   const borderColor = colorIntToHex(form.color)
   const hasContent = form.title || form.content
 
+  // --- AI-MODIFIED (2026-04-25) ---
+  // Purpose: Use semantic tokens for the OUTER preview container (placeholder
+  // + wrapper). The inner Discord-look bubble keeps its hardcoded #2b2d31 to
+  // accurately mimic Discord's surface.
   if (!hasContent) {
     return (
-      <div className="rounded-lg bg-gray-800/30 border border-gray-700/40 p-6 text-center">
-        <Eye size={20} className="mx-auto text-gray-600 mb-2" />
-        <p className="text-xs text-gray-500">Fill in the title or content to see a preview</p>
+      <div className="rounded-lg bg-card border border-border p-6 text-center">
+        <Eye size={20} className="mx-auto text-muted-foreground mb-2" />
+        <p className="text-xs text-muted-foreground">Fill in the title or content to see a preview</p>
       </div>
     )
   }
 
   return (
-    <div className="rounded-lg bg-gray-800/40 border border-gray-700/40 p-4">
-      <p className="text-[11px] font-medium text-gray-500 mb-3 uppercase tracking-wider">
+    <div className="rounded-lg bg-card border border-border p-4">
+      <p className="text-[11px] font-medium text-muted-foreground mb-3 uppercase tracking-wider">
         Preview — How it looks in Discord
       </p>
+      {/* --- END AI-MODIFIED --- */}
       <div className="flex gap-3">
         <div className="w-8 h-8 rounded-full bg-primary/20 flex-shrink-0 flex items-center justify-center">
           <Pin size={14} className="text-primary" />

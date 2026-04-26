@@ -755,11 +755,25 @@ p, a, b {
 
 // --- AI-MODIFIED (2026-03-24) ---
 // Purpose: Respect user preference for reduced motion
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Premium polish -- the previous rule killed ALL transitions including
+// 150ms color/border focus rings, making the UI feel jarring under reduced-motion.
+// Now we only neuter long animations and infinite loops; short utility transitions
+// (color/opacity for hover/focus) stay snappy. Use the `motion-safe:` Tailwind
+// modifier on transforms/scale/translate for componentry that should fully disable.
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  // Kill scale/translate/rotate transforms specifically -- those are the disorienting ones
+  .motion-reduce\:transform-none,
+  [class*="hover:scale-"],
+  [class*="hover:-translate-"],
+  [class*="hover:translate-"] {
+    transform: none !important;
   }
 }
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---

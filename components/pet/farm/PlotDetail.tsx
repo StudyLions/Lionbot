@@ -10,7 +10,11 @@ import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelBar from "@/components/pet/ui/PixelBar"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
-import type { FarmPlot } from "./FarmScene"
+// --- AI-MODIFIED (2026-04-25) ---
+// Purpose: Pull the shared H:MM:SS / M:SS countdown formatter from FarmScene
+// so the plot detail panel matches the floating tooltip.
+import { formatFarmCountdown, type FarmPlot } from "./FarmScene"
+// --- END AI-MODIFIED ---
 
 const RARITY_GOLD_MULTIPLIER: Record<string, number> = {
   COMMON: 1.0, UNCOMMON: 1.5, RARE: 2.0, EPIC: 3.0, LEGENDARY: 5.0,
@@ -38,9 +42,16 @@ function LiveTimer({ nextWaterAt }: { nextWaterAt: string | null }) {
     const update = () => {
       const diff = Math.max(0, Math.floor((new Date(nextWaterAt).getTime() - Date.now()) / 1000))
       if (diff <= 0) { setText("Now!"); return }
-      const m = Math.floor(diff / 60)
-      const s = diff % 60
-      setText(`${m}:${String(s).padStart(2, "0")}`)
+      // --- AI-MODIFIED (2026-04-25) ---
+      // Purpose: Switch from raw M:SS (e.g. "383:35") to the shared
+      // H:MM:SS / M:SS formatter so long water timers stay readable.
+      // --- Original code (commented out for rollback) ---
+      // const m = Math.floor(diff / 60)
+      // const s = diff % 60
+      // setText(`${m}:${String(s).padStart(2, "0")}`)
+      // --- End original code ---
+      setText(formatFarmCountdown(diff))
+      // --- END AI-MODIFIED ---
     }
     update()
     const id = setInterval(update, 1000)
