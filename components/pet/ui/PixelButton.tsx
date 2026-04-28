@@ -6,13 +6,31 @@
 import { ButtonHTMLAttributes, forwardRef } from "react"
 import { cn } from "@/lib/utils"
 
+// --- AI-MODIFIED (2026-04-28) ---
+// Purpose: Lock the action color palette to a documented 5-ink rule, plus
+// `ghost` for subtle inline links. Adding `cosmetic` (purple) so cosmetic
+// overlay actions get their own ink and stop sharing purple with the
+// (conceptually different) "Try On" preview action.
+//
+// THE 5-INK RULE (use these consistently across the /pet section):
+//   gold     -> primary CTAs ("Equip Best", "Adopt", "Buy", "Save")
+//   info     -> navigation/secondary links ("Marketplace", "Customize", "View")
+//   primary  -> positive state confirmation ("Equipped", "Confirm", "Success")
+//   danger   -> destructive actions ("Unequip", "Sell", "Delete", "Reset")
+//   cosmetic -> cosmetic overlay actions ONLY ("Set as Cosmetic", "Show cosmetics")
+//   ghost    -> subtle inline / secondary actions, no ink commitment
+//
+// Anything outside this palette in the /pet section should be flagged in
+// review. Off-palette buttons add visual noise and break the read.
 const variants = {
-  primary: "bg-[#2a7a3a] border-[#40d870] text-[#d0ffd8] hover:bg-[#338844]",
-  danger: "bg-[#7a2a2a] border-[#e04040] text-[#ffd0d0] hover:bg-[#883333]",
-  info: "bg-[#2a3a7a] border-[#4080f0] text-[#d0e0ff] hover:bg-[#334488]",
-  gold: "bg-[#6a5a1a] border-[#f0c040] text-[#fff4d0] hover:bg-[#786622]",
-  ghost: "bg-transparent border-[#3a4a6c] text-[#8899aa] hover:bg-[#1a2438] hover:text-[#c0d0e0]",
+  primary:  "bg-[#2a7a3a] border-[#40d870] text-[#d0ffd8] hover:bg-[#338844]",
+  danger:   "bg-[#7a2a2a] border-[#e04040] text-[#ffd0d0] hover:bg-[#883333]",
+  info:     "bg-[#2a3a7a] border-[#4080f0] text-[#d0e0ff] hover:bg-[#334488]",
+  gold:     "bg-[#6a5a1a] border-[#f0c040] text-[#fff4d0] hover:bg-[#786622]",
+  cosmetic: "bg-[#3a1a5c] border-[#d060f0] text-[#f0d0ff] hover:bg-[#4a226e]",
+  ghost:    "bg-transparent border-[#3a4a6c] text-[#8899aa] hover:bg-[#1a2438] hover:text-[#c0d0e0]",
 } as const
+// --- END AI-MODIFIED ---
 
 type PixelButtonVariant = keyof typeof variants
 

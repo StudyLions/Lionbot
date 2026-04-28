@@ -348,7 +348,22 @@ p, a, b {
   --pet-text-dim: #8899aa;
   --pet-shadow: #060810;
 
-  background: var(--pet-bg);
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Repaint the page background so it doesn't feel dead. The flat
+  // #0a0e1a was lifeless and the old .pet-scanline overlay was at 3% alpha
+  // (invisible). Now the body has 3 layered effects:
+  //   1. A subtle 1.5%-alpha dot grid on an 8px tile (texture)
+  //   2. A faint radial vignette from top so the page isn't uniform (depth)
+  //   3. Solid base color underneath (color)
+  // The scanline overlay (.pet-scanline) is bumped to 8% alpha + 4px stripes
+  // below so it's actually visible like a CRT.
+  background-color: var(--pet-bg);
+  background-image:
+    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% -10%, rgba(64, 128, 240, 0.05), transparent 60%);
+  background-size: 8px 8px, 100% 100%;
+  background-attachment: fixed, fixed;
+  // --- END AI-MODIFIED ---
   color: var(--pet-text);
   font-family: 'ChunkyDunk', monospace;
   -webkit-font-smoothing: none;
@@ -357,6 +372,16 @@ p, a, b {
   *, *::before, *::after {
     border-radius: 0 !important;
   }
+
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Pixel-treat all Lucide vector icons inside /pet so they stop
+  // clashing with the pixel-art sprites and ChunkyDunk font. shape-rendering
+  // disables SVG anti-aliasing, image-rendering hints to the GPU. Reversible.
+  svg.lucide {
+    shape-rendering: crispEdges;
+    image-rendering: pixelated;
+  }
+  // --- END AI-MODIFIED ---
 }
 
 .pet-scanline {
@@ -366,13 +391,17 @@ p, a, b {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    // --- AI-MODIFIED (2026-04-28) ---
+    // Purpose: Make the scanline actually visible. Was 3% alpha on 2px stripes
+    // which rendered as nothing. Now 8% alpha on 4px stripes for a real CRT feel.
     background: repeating-linear-gradient(
       0deg,
       transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
+      transparent 3px,
+      rgba(0, 0, 0, 0.08) 3px,
+      rgba(0, 0, 0, 0.08) 4px
     );
+    // --- END AI-MODIFIED ---
     z-index: 1;
   }
 }
@@ -479,33 +508,49 @@ p, a, b {
 .animate-coin-bob { animation: coin-bob 1.5s ease-in-out infinite; }
 // --- END AI-MODIFIED ---
 
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Scale all pet section text by 35% for better readability
+// --- AI-REPLACED (2026-04-28) ---
+// Reason: The 35% text upscale was breaking the ChunkyDunk pixel font's grid.
+// Pixel fonts MUST render at integer multiples of their base pixel size or
+// they smudge. Multiplying every Tailwind text class by 1.35 made the entire
+// /pet section look fuzzy, oversized, and inconsistent.
+// What the new code does better: Lets pixel-art text classes render at their
+// native size so the font is crisp. Where a page genuinely needs bigger text,
+// it should use a bigger explicit Tailwind class (e.g. text-3xl) at the call
+// site rather than rely on a global multiplier. Custom bracket sizes
+// (text-[10px], etc.) get a small targeted bump so they remain legible
+// without triggering sub-pixel rendering.
+// --- Original code (commented out for rollback) ---
+// .pet-section {
+//   --pet-text-scale: 1.35;
+//   & p, & a, & b { font-size: calc(18px * var(--pet-text-scale)) !important; }
+//   & .text-xs   { font-size: calc(0.75rem  * var(--pet-text-scale)) !important; line-height: calc(1rem    * var(--pet-text-scale)) !important; }
+//   & .text-sm   { font-size: calc(0.875rem * var(--pet-text-scale)) !important; line-height: calc(1.25rem * var(--pet-text-scale)) !important; }
+//   & .text-base { font-size: calc(1rem     * var(--pet-text-scale)) !important; line-height: calc(1.5rem  * var(--pet-text-scale)) !important; }
+//   & .text-lg   { font-size: calc(1.125rem * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+//   & .text-xl   { font-size: calc(1.25rem  * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+//   & .text-2xl  { font-size: calc(1.5rem   * var(--pet-text-scale)) !important; line-height: calc(2rem    * var(--pet-text-scale)) !important; }
+//   & .text-3xl  { font-size: calc(1.875rem * var(--pet-text-scale)) !important; line-height: calc(2.25rem * var(--pet-text-scale)) !important; }
+//   & .text-5xl  { font-size: calc(3rem     * var(--pet-text-scale)) !important; }
+//   & .text-\[5px\]  { font-size: 7px  !important; }
+//   & .text-\[7px\]  { font-size: 9px  !important; }
+//   & .text-\[8px\]  { font-size: 11px !important; }
+//   & .text-\[9px\]  { font-size: 12px !important; }
+//   & .text-\[10px\] { font-size: 14px !important; }
+//   & .text-\[11px\] { font-size: 15px !important; }
+//   & .text-\[12px\] { font-size: 16px !important; }
+//   & .text-\[13px\] { font-size: 18px !important; }
+//   & .text-\[14px\] { font-size: 19px !important; }
+// }
+// --- End original code ---
 .pet-section {
-  --pet-text-scale: 1.35;
-
-  & p, & a, & b { font-size: calc(18px * var(--pet-text-scale)) !important; }
-
-  & .text-xs   { font-size: calc(0.75rem  * var(--pet-text-scale)) !important; line-height: calc(1rem    * var(--pet-text-scale)) !important; }
-  & .text-sm   { font-size: calc(0.875rem * var(--pet-text-scale)) !important; line-height: calc(1.25rem * var(--pet-text-scale)) !important; }
-  & .text-base { font-size: calc(1rem     * var(--pet-text-scale)) !important; line-height: calc(1.5rem  * var(--pet-text-scale)) !important; }
-  & .text-lg   { font-size: calc(1.125rem * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
-  & .text-xl   { font-size: calc(1.25rem  * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
-  & .text-2xl  { font-size: calc(1.5rem   * var(--pet-text-scale)) !important; line-height: calc(2rem    * var(--pet-text-scale)) !important; }
-  & .text-3xl  { font-size: calc(1.875rem * var(--pet-text-scale)) !important; line-height: calc(2.25rem * var(--pet-text-scale)) !important; }
-  & .text-5xl  { font-size: calc(3rem     * var(--pet-text-scale)) !important; }
-
+  // Tailwind text classes inside /pet now render at their native sizes.
+  // Only the very small custom bracket sizes get a tiny bump for legibility.
   & .text-\[5px\]  { font-size: 7px  !important; }
-  & .text-\[7px\]  { font-size: 9px  !important; }
-  & .text-\[8px\]  { font-size: 11px !important; }
-  & .text-\[9px\]  { font-size: 12px !important; }
-  & .text-\[10px\] { font-size: 14px !important; }
-  & .text-\[11px\] { font-size: 15px !important; }
-  & .text-\[12px\] { font-size: 16px !important; }
-  & .text-\[13px\] { font-size: 18px !important; }
-  & .text-\[14px\] { font-size: 19px !important; }
+  & .text-\[7px\]  { font-size: 8px  !important; }
+  & .text-\[8px\]  { font-size: 9px  !important; }
+  & .text-\[9px\]  { font-size: 10px !important; }
 }
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Rarity-based item card glow and sparkle particle animations
