@@ -552,6 +552,14 @@ export default function ServerDetail() {
                         </div>
                       </div>
                       {/* --- END AI-REPLACED --- */}
+                      {/* --- AI-REPLACED (2026-04-29) --- */}
+                      {/* Reason: Removed the legacy "Setup Wizard" header CTA. It pointed
+                          at the deprecated /setup page and competed with the new
+                          Setup Checklist widget mounted directly below this row,
+                          which was confusing admins who clicked the wizard button
+                          instead of the checklist. The checklist widget is now the
+                          single primary onboarding surface.
+                          --- Original code (commented out for rollback) ---
                       {perms.isAdmin && (
                         <Link href={`/dashboard/servers/${id}/setup`}>
                           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors whitespace-nowrap">
@@ -560,8 +568,24 @@ export default function ServerDetail() {
                           </span>
                         </Link>
                       )}
+                          --- End original code ---
+                      */}
+                      {/* --- END AI-REPLACED --- */}
                     </div>
                   </div>
+
+                  {/* --- AI-MODIFIED (2026-04-29) --- */}
+                  {/* Purpose: Mount Setup Checklist widget ABOVE the tabs so it's
+                      the first thing a new admin sees on the overview, regardless
+                      of which tab is active. The widget self-hides (returns null
+                      or shows a tiny "all set" card with a Hide button) once every
+                      task is done or skipped, so established admins don't see
+                      clutter. Previous mount inside the Overview tab is now
+                      removed below to avoid duplication. */}
+                  {(perms.isAdmin || permsLoading) && (
+                    <SetupChecklist guildId={id as string} />
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
 
                   {/* Tabs */}
                   {/* --- AI-REPLACED (2026-03-24) ---
@@ -1122,41 +1146,16 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* --- AI-REPLACED (2026-04-29) --- */}
-                      {/* Reason: Replaced the static 4-row Setup status card with the new
-                          dashboard-resident Setup Checklist widget. The widget covers
-                          all 8 onboarding tasks, supports skip/done state, mobile drawers,
-                          and bot-permission preflight. The old card duplicated info that
-                          the widget now owns and only linked to power-user editors,
-                          which moved into the widget's PowerUserSection. */}
-                      {/* --- Original code (commented out for rollback) --- */}
-                      {/* {(perms.isAdmin || permsLoading) && (
-                        <div className="bg-card rounded-2xl border border-border overflow-hidden">
-                          <div className="p-5 border-b border-border">
-                            <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                              <Settings size={18} />
-                              Server Setup
-                            </h3>
-                          </div>
-                          {!setupStatus ? (
-                            <div className="p-5 space-y-3">
-                              {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-14" />)}
-                            </div>
-                          ) : (
-                            <div className="divide-y divide-border/50">
-                              <SetupCheckItem configured={setupStatus.settings} label="Settings" detail={setupStatus.settings ? "Configured" : "Not configured"} href={`/dashboard/servers/${id}/settings`} />
-                              <SetupCheckItem configured={setupStatus.ranksCount > 0} label="Ranks" detail={setupStatus.ranksCount > 0 ? `${setupStatus.ranksCount} tiers` : "Not set up"} href={`/dashboard/servers/${id}/ranks`} />
-                              <SetupCheckItem configured={setupStatus.shopCount > 0} label="Shop" detail={setupStatus.shopCount > 0 ? `${setupStatus.shopCount} items` : "Empty"} href={`/dashboard/servers/${id}/shop`} />
-                              <SetupCheckItem configured={setupStatus.roleMenusCount > 0} label="Role Menus" detail={setupStatus.roleMenusCount > 0 ? `${setupStatus.roleMenusCount} menus` : "None"} href={`/dashboard/servers/${id}/rolemenus`} />
-                            </div>
-                          )}
-                        </div>
-                      )} */}
-                      {/* --- End original code --- */}
-                      {(perms.isAdmin || permsLoading) && (
-                        <SetupChecklist guildId={id as string} />
-                      )}
-                      {/* --- END AI-REPLACED --- */}
+                      {/* --- AI-MODIFIED (2026-04-29) --- */}
+                      {/* Setup Checklist widget moved up to render BEFORE the tabs
+                          (see mount above the TabBar). The original location here
+                          buried it under several other widgets, which meant new
+                          admins didn't see it until they scrolled. The widget now
+                          renders once at the top of the page, regardless of which
+                          tab is active.
+                          The original 4-row "Server Setup" static card it replaced
+                          earlier today is preserved in this file's git history. */}
+                      {/* --- END AI-MODIFIED --- */}
 
                       {/* Quick Admin Actions */}
                       {(isMod || permsLoading) && (
