@@ -39,13 +39,17 @@ const TOTAL_STEPS = WIZARD_STEPS.length
 // --- AI-MODIFIED (2026-03-23) ---
 // Purpose: Default values per step to detect which steps have pre-existing config
 const STEP_DEFAULTS: Record<number, Record<string, any>> = {
-  1: { rank_type: "XP", dm_ranks: true, xp_per_period: 5, xp_per_centiword: 1, rank_channel: null },
+  1: { rank_type: "XP", dm_ranks: true, xp_per_period: 100, xp_per_centiword: 1, rank_channel: null },  // AI-MODIFIED (2026-04-29): xp_per_period default 5→100 to match bot reality (was 5% of bot factory default 101)
   3: { study_hourly_reward: 100, study_hourly_live_bonus: 25, daily_study_cap: null, starting_funds: 0, allow_transfers: true, coins_per_centixp: 50 },
   4: { max_tasks: 5, task_reward: 50, task_reward_limit: 5, min_workout_length: 15, workout_reward: 100 },
   5: { pomodoro_channel: null },
   6: { accountability_price: 50, accountability_reward: 100, accountability_bonus: 25, accountability_category: null, accountability_lobby: null },
   7: { greeting_message: null, returning_message: null, greeting_channel: null, admin_role: null, mod_role: null, event_log_channel: null, mod_log_channel: null, force_locale: false },
-  8: { renting_price: 100, renting_cap: 10, renting_visible: true, renting_category: null, renting_max_per_user: 1, renting_name_limit: 32, renting_min_deposit: 0, renting_auto_extend: false, renting_cooldown: 0, renting_sync_perms: false, video_studyban: false, persist_roles: false },
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Reason: renting_visible was true; bot defaults to false (StudyLion/src/modules/rooms/settings.py line 162).
+  // Mismatch silently exposed every new server's private rooms to @everyone.
+  8: { renting_price: 100, renting_cap: 10, renting_visible: false, renting_category: null, renting_max_per_user: 1, renting_name_limit: 32, renting_min_deposit: 0, renting_auto_extend: false, renting_cooldown: 0, renting_sync_perms: false, video_studyban: false, persist_roles: false },
+  // --- END AI-MODIFIED ---
 }
 
 function hasNonDefaultValues(config: Record<string, any> | null, stepIndex: number): boolean {

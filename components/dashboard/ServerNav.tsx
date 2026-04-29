@@ -21,14 +21,17 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: add Bug and MessageSquareWarning icons for Advanced section
 // --- AI-MODIFIED (2026-04-20) ---
 // Purpose: add MonitorPlay icon for new Screen Channels nav link
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: add CheckSquare icon for the renamed "Setup Checklist" nav entry
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
   Search, X, Clock, Bug, MessageSquareWarning, Type,
-  ShieldAlert, MonitorPlay,
+  ShieldAlert, MonitorPlay, CheckSquare,
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -130,7 +133,15 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // admins can disable auto-blacklisting without slash commands.
         { href: "/screenchannels", label: "Screen Channels", icon: <MonitorPlay size={16} /> },
         // --- END AI-MODIFIED ---
-        { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
+        // --- AI-REPLACED (2026-04-29) ---
+        // Reason: Old wizard moved to deprecated "Guided tour" mode. Primary
+        //         setup flow is now the Setup Checklist widget on the overview.
+        //         Deep-linking with ?setup=open auto-expands the checklist UI.
+        // --- Original code (commented out for rollback) ---
+        // { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
+        // --- End original code ---
+        { href: "?setup=open", label: "Setup Checklist", icon: <CheckSquare size={16} /> },
+        // --- END AI-REPLACED ---
       ],
     })
     // --- AI-MODIFIED (2026-03-22) ---

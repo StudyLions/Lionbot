@@ -274,6 +274,13 @@ model guild_config {
   renting_inactivity_days         Int?
   // --- END AI-MODIFIED ---
   setup_wizard_dismissed_at       DateTime?                      @db.Timestamptz(6)
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Setup Checklist redesign -- per-task status JSON keyed by task id.
+  // Shape: { essentials: "done"|"skipped", ranks: "done"|"skipped", rewards: ..., welcome: ..., notifications: ..., focus: ..., schedule: ..., pet: ... }
+  // Missing keys = task is "pending". Migration auto-marks all 8 tasks as "skipped"
+  // for any guild with setup_wizard_dismissed_at IS NOT NULL.
+  setup_checklist_state           Json?                          @db.JsonB
+  // --- END AI-MODIFIED ---
   leaderboard_role_filter_enabled Boolean?                       @default(false)
   // --- AI-MODIFIED (2026-03-25) ---
   // Purpose: Toggle for "Great session" leave summary messages in pomodoro channels

@@ -200,17 +200,47 @@ const PAGE_ITEMS: SearchItem[] = [
     requiredLevel: "admin",
   },
   // --- END AI-MODIFIED ---
+  // --- AI-REPLACED (2026-04-29) ---
+  // Reason: Setup Wizard rebranded to "Setup Checklist" living on the overview.
+  //         The old /setup wizard route still exists as the deprecated guided tour
+  //         (kept in the registry below for power users) but the primary search hit
+  //         points at the new checklist via ?setup=open.
+  // --- Original code (commented out for rollback) ---
+  // {
+  //   id: "page-setup",
+  //   title: "Setup Wizard",
+  //   description: "Guided server setup walkthrough",
+  //   category: "page",
+  //   page: "Features",
+  //   route: "/setup",
+  //   keywords: ["setup", "wizard", "onboarding", "getting started", "configure"],
+  //   iconName: "Wand2",
+  //   requiredLevel: "admin",
+  // },
+  // --- End original code ---
   {
-    id: "page-setup",
-    title: "Setup Wizard",
-    description: "Guided server setup walkthrough",
+    id: "page-setup-checklist",
+    title: "Setup Checklist",
+    description: "Step-by-step server setup with mobile-friendly drawers",
+    category: "page",
+    page: "Overview",
+    route: "?setup=open",
+    keywords: ["setup", "checklist", "onboarding", "getting started", "configure", "wizard", "tasks"],
+    iconName: "CheckSquare",
+    requiredLevel: "admin",
+  },
+  {
+    id: "page-setup-guided-tour",
+    title: "Guided tour (legacy wizard)",
+    description: "Original 12-step setup walkthrough — kept for power users",
     category: "page",
     page: "Features",
     route: "/setup",
-    keywords: ["setup", "wizard", "onboarding", "getting started", "configure"],
+    keywords: ["wizard", "guided", "tour", "setup", "legacy", "advanced"],
     iconName: "Wand2",
     requiredLevel: "admin",
   },
+  // --- END AI-REPLACED ---
   {
     id: "page-branding",
     // --- AI-MODIFIED (2026-04-01) ---

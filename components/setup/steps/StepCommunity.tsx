@@ -162,7 +162,10 @@ export default function StepCommunity({
             <div className="flex items-center gap-3">
               <input
                 type="checkbox"
-                checked={config.renting_visible ?? true}
+                /* --- AI-MODIFIED (2026-04-29) ---
+                   Reason: Bot default is false (rooms/settings.py line 162). Was true here. */
+                checked={config.renting_visible ?? false}
+                /* --- END AI-MODIFIED --- */
                 onChange={(e) => onUpdate("renting_visible", e.target.checked)}
                 className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
               />

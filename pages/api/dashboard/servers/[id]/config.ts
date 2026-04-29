@@ -14,11 +14,20 @@ import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 // --- AI-MODIFIED (2026-03-13) ---
 // Purpose: added missing settings fields (channels, roles, season, rooms, XP per word)
+// --- AI-MODIFIED (2026-04-29) ---
+// Dead-column audit (do NOT surface these in any new dashboard UI):
+//   - max_tasks, min_workout_length, workout_reward, video_studyban
+//   These columns exist on guild_config but no bot cog ever reads them.
+//   They're left in EDITABLE_FIELDS so the existing legacy wizard pages don't
+//   throw on POST, but writes are no-ops in-game. Verified 2026-04-29 against
+//   StudyLion/src/modules/ — zero references outside core/data.py declarations.
+//   See docs/setup-copy.md for the new checklist's allow-list.
+// --- END AI-MODIFIED ---
 const EDITABLE_FIELDS = [
   'timezone', 'locale', 'force_locale',
   'study_hourly_reward', 'study_hourly_live_bonus', 'daily_study_cap',
   'starting_funds', 'allow_transfers', 'coins_per_centixp',
-  'max_tasks', 'task_reward', 'task_reward_limit',
+  'max_tasks', 'task_reward', 'task_reward_limit', // max_tasks: dead column (see audit comment above)
   'renting_price', 'renting_cap', 'renting_visible',
   'renting_category', 'renting_sync_perms', 'renting_role', // AI-MODIFIED (2026-04-01): room moderator role
   // --- AI-MODIFIED (2026-03-22) ---
@@ -37,9 +46,9 @@ const EDITABLE_FIELDS = [
   'rank_type', 'dm_ranks', 'xp_per_period', 'xp_per_centiword',
   'rank_channel', 'pomodoro_channel', // AI-MODIFIED (2026-03-13): guild default pomodoro notification channel
   'session_leave_summary', // AI-MODIFIED (2026-03-25): pomodoro leave summary toggle
-  'video_studyban', 'video_grace_period', 'persist_roles',
+  'video_studyban', 'video_grace_period', 'persist_roles', // video_studyban: dead column
   'greeting_message', 'returning_message', 'greeting_channel',
-  'min_workout_length', 'workout_reward',
+  'min_workout_length', 'workout_reward', // both dead columns (see audit comment above)
   'event_log_channel', 'mod_log_channel', 'alert_channel',
   'admin_role', 'mod_role',
   'season_start',
@@ -49,7 +58,14 @@ const BIGINT_FIELDS = new Set([
   'event_log_channel', 'mod_log_channel', 'alert_channel',
   'greeting_channel', 'rank_channel', 'pomodoro_channel', 'renting_category', // AI-MODIFIED: pomodoro_channel
   'admin_role', 'mod_role', 'renting_role', // AI-MODIFIED (2026-04-01): room moderator role
-  'accountability_category', 'accountability_lobby', // AI-MODIFIED (2026-03-23): setup wizard accountability channels
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: accountability_category/lobby are now routed via SCHEDULE_CONFIG_FIELDS
+  // (to the columns the bot actually reads). They MUST NOT write to guild_config
+  // any more or both copies will silently disagree. Kept the comment for git blame.
+  // --- Original code (commented out for rollback) ---
+  // 'accountability_category', 'accountability_lobby', // AI-MODIFIED (2026-03-23): setup wizard accountability channels
+  // --- End original code ---
+  // --- END AI-MODIFIED ---
 ])
 // --- END AI-MODIFIED ---
 
@@ -66,11 +82,21 @@ const HOURS_TO_SECONDS_FIELDS: Record<string, number> = {
 // Purpose: Bot reads accountability settings from schedule_guild_config (not guild_config).
 // Map dashboard field names → schedule_guild_config column names so the API
 // reads/writes to the table the bot actually uses.
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Setup checklist redesign -- also route accountability_lobby/category
+// to schedule_guild_config (lobby_channel/room_channel) so the schedule cog
+// actually picks them up. Previously they were written to dead columns on
+// guild_config and silently ignored by the bot.
 const SCHEDULE_CONFIG_FIELDS: Record<string, string> = {
   accountability_price: 'schedule_cost',
   accountability_reward: 'reward',
   accountability_bonus: 'bonus_reward',
+  accountability_lobby: 'lobby_channel',
+  accountability_category: 'room_channel',
 }
+// schedule_guild_config bigint columns -- converted from string IDs on write
+const SCHEDULE_BIGINT_FIELDS = new Set(['lobby_channel', 'room_channel'])
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-13) ---
@@ -115,11 +141,19 @@ export default apiHandler({
     for (const field of EDITABLE_FIELDS) {
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Read accountability fields from schedule_guild_config instead of guild_config
+      // --- AI-MODIFIED (2026-04-29) ---
+      // Purpose: Serialize bigint schedule columns (lobby_channel/room_channel) to strings
       if (field in SCHEDULE_CONFIG_FIELDS) {
         const schedCol = SCHEDULE_CONFIG_FIELDS[field]
-        safeConfig[field] = scheduleConfig ? (scheduleConfig as any)[schedCol] : null
+        const schedVal = scheduleConfig ? (scheduleConfig as any)[schedCol] : null
+        if (SCHEDULE_BIGINT_FIELDS.has(schedCol) && schedVal != null) {
+          safeConfig[field] = schedVal.toString()
+        } else {
+          safeConfig[field] = schedVal
+        }
         continue
       }
+      // --- END AI-MODIFIED ---
       // --- END AI-MODIFIED ---
       const val = (config as any)[field]
       if (BIGINT_FIELDS.has(field) && val != null) {
@@ -187,9 +221,16 @@ export default apiHandler({
         const val = body[field]
         // --- AI-MODIFIED (2026-03-23) ---
         // Purpose: Write accountability fields to schedule_guild_config (the table the bot reads)
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Convert bigint schedule columns (lobby_channel/room_channel) from string IDs
         if (field in SCHEDULE_CONFIG_FIELDS) {
           const schedCol = SCHEDULE_CONFIG_FIELDS[field]
-          scheduleUpdates[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+          if (SCHEDULE_BIGINT_FIELDS.has(schedCol)) {
+            scheduleUpdates[schedCol] = val ? parseBigInt(val, field) : null
+          } else {
+            scheduleUpdates[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+          }
+        // --- END AI-MODIFIED ---
         // --- END AI-MODIFIED ---
         } else if (BIGINT_FIELDS.has(field)) {
           updates[field] = val ? parseBigInt(val, field) : null
@@ -247,9 +288,16 @@ export default apiHandler({
         const val = body[field]
         // --- AI-MODIFIED (2026-03-23) ---
         // Purpose: Write accountability fields to schedule_guild_config on import
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Convert bigint schedule columns from string IDs on import as well
         if (field in SCHEDULE_CONFIG_FIELDS) {
           const schedCol = SCHEDULE_CONFIG_FIELDS[field]
-          scheduleImports[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+          if (SCHEDULE_BIGINT_FIELDS.has(schedCol)) {
+            scheduleImports[schedCol] = val ? parseBigInt(val, field) : null
+          } else {
+            scheduleImports[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+          }
+        // --- END AI-MODIFIED ---
         // --- END AI-MODIFIED ---
         } else if (BIGINT_FIELDS.has(field)) {
           configUpdates[field] = val ? parseBigInt(val, field) : null

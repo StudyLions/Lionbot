@@ -17,6 +17,11 @@ import ServerNav from "@/components/dashboard/ServerNav"
 import DashboardShell from "@/components/dashboard/ui/DashboardShell"
 // --- END AI-MODIFIED ---
 import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Setup Checklist redesign -- mount the new dashboard-resident widget
+// in place of the old auto-redirect-to-wizard flow. See plan and docs/setup-copy.md.
+import SetupChecklist from "@/components/dashboard/setupChecklist/SetupChecklist"
+// --- END AI-MODIFIED ---
 import Pagination from "@/components/dashboard/ui/Pagination"
 // --- AI-REPLACED (2026-03-24) ---
 // Reason: Migrating from Radix Tabs to shared TabBar component
@@ -1117,8 +1122,15 @@ export default function ServerDetail() {
                         </div>
                       )}
 
-                      {/* Setup Checklist (admin only) */}
-                      {(perms.isAdmin || permsLoading) && (
+                      {/* --- AI-REPLACED (2026-04-29) --- */}
+                      {/* Reason: Replaced the static 4-row Setup status card with the new
+                          dashboard-resident Setup Checklist widget. The widget covers
+                          all 8 onboarding tasks, supports skip/done state, mobile drawers,
+                          and bot-permission preflight. The old card duplicated info that
+                          the widget now owns and only linked to power-user editors,
+                          which moved into the widget's PowerUserSection. */}
+                      {/* --- Original code (commented out for rollback) --- */}
+                      {/* {(perms.isAdmin || permsLoading) && (
                         <div className="bg-card rounded-2xl border border-border overflow-hidden">
                           <div className="p-5 border-b border-border">
                             <h3 className="text-base font-bold text-foreground flex items-center gap-2">
@@ -1139,7 +1151,12 @@ export default function ServerDetail() {
                             </div>
                           )}
                         </div>
+                      )} */}
+                      {/* --- End original code --- */}
+                      {(perms.isAdmin || permsLoading) && (
+                        <SetupChecklist guildId={id as string} />
                       )}
+                      {/* --- END AI-REPLACED --- */}
 
                       {/* Quick Admin Actions */}
                       {(isMod || permsLoading) && (
