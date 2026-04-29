@@ -23,8 +23,49 @@ import AdminGuard from "@/components/dashboard/AdminGuard"
 import { useDashboard } from "@/hooks/useDashboard"
 import { Skeleton } from "@/components/ui/skeleton"
 import PixelCard from "@/components/pet/ui/PixelCard"
-import PixelButton from "@/components/pet/ui/PixelButton"
 import StoreCustomizer, { type MeApiResponse } from "@/components/pet/store/StoreCustomizer"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: cn for the inline button-styled anchors below.
+import { cn } from "@/lib/utils"
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 polish -- the previous version wrapped a
+// PixelButton inside <Link><a>...</a></Link>, producing <a><button>
+// HTML which the button swallowed in some browsers, so the click never
+// navigated. Use a flat styled anchor instead -- behaves identically
+// to PixelButton visually but is a real link.
+function PixelLinkButton({
+  href, variant = "ghost", className, children,
+}: {
+  href: string
+  variant?: "primary" | "ghost"
+  className?: string
+  children: React.ReactNode
+}) {
+  const variants = {
+    primary: "bg-[#2a7a3a] border-[#40d870] text-[#d0ffd8] hover:bg-[#338844]",
+    ghost:   "bg-transparent border-[#3a4a6c] text-[#8899aa] hover:bg-[#1a2438] hover:text-[#c0d0e0]",
+  } as const
+  return (
+    <Link href={href}>
+      <a
+        className={cn(
+          "font-pixel inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-[13px]",
+          "border-2 transition-all select-none no-underline",
+          "shadow-[2px_2px_0_#060810]",
+          "motion-safe:hover:shadow-[1px_1px_0_#060810] motion-safe:hover:translate-x-px motion-safe:hover:translate-y-px",
+          "motion-safe:active:shadow-none motion-safe:active:translate-x-0.5 motion-safe:active:translate-y-0.5",
+          variants[variant],
+          className,
+        )}
+      >
+        {children}
+      </a>
+    </Link>
+  )
+}
+// --- END AI-MODIFIED ---
 
 interface OwnStorePreview {
   seller: { discordId: string; discordName: string }
@@ -73,9 +114,9 @@ function CustomizeInner() {
           <p className="font-pixel text-sm text-[var(--pet-red,#e04040)] mb-3">
             {isAuthError ? "Sign in to customize your store." : (meError as Error).message}
           </p>
-          <Link href="/pet/marketplace">
-            <PixelButton variant="ghost" size="sm">Back to Marketplace</PixelButton>
-          </Link>
+          <PixelLinkButton href="/pet/marketplace">
+            <ChevronLeft size={12} /> Back to Marketplace
+          </PixelLinkButton>
         </PixelCard>
       </PetShell>
     )
@@ -105,13 +146,9 @@ function CustomizeInner() {
               <ChevronLeft size={14} /> Back to Marketplace
             </a>
           </Link>
-          <Link href={previewHref}>
-            <a>
-              <PixelButton variant="ghost" size="sm">
-                <Eye size={12} className="mr-1" /> View live store
-              </PixelButton>
-            </a>
-          </Link>
+          <PixelLinkButton href={previewHref} variant="ghost">
+            <Eye size={12} /> View live store
+          </PixelLinkButton>
         </div>
 
         {/* Title */}

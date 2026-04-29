@@ -66,6 +66,16 @@ interface StoreCanvasProps {
    * layer; this just maps the id to the right CSS class).
    */
   animationId?: StoreAnimationId
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 polish -- when callers render their own
+  // SpeechBubble in the surrounding layout (e.g. the public store hero
+  // uses a flex column for the bubble so it doesn't overlap the listings
+  // grid), suppress the internal absolute-positioned bubble. Default
+  // false to preserve the customizer preview behavior.
+  hideSpeechBubble?: boolean
+  /** Optional caption beneath the lion. Defaults to "{pet name} · tended by {shopkeeper}" */
+  showCaption?: boolean
+  // --- END AI-MODIFIED ---
 }
 
 export default function StoreCanvas({
@@ -78,6 +88,10 @@ export default function StoreCanvas({
   animated = true,
   themeId = "default",
   animationId = "none",
+  // --- AI-MODIFIED (2026-04-29) ---
+  hideSpeechBubble = false,
+  showCaption = true,
+  // --- END AI-MODIFIED ---
 }: StoreCanvasProps) {
   const theme = STORE_THEMES[themeId] ?? STORE_THEMES.default
   const anim = STORE_ANIMATIONS[animationId] ?? STORE_ANIMATIONS.none
@@ -118,8 +132,8 @@ export default function StoreCanvas({
           />
         </GameboyFrame>
 
-        {speechBubble ? (
-          <div className="hidden lg:block absolute top-4 left-full ml-4 z-10">
+        {speechBubble && !hideSpeechBubble ? (
+          <div className="hidden lg:block absolute top-4 left-full ml-4 z-10 w-[280px]">
             <SpeechBubble tailSide="left" accentColor={effectiveAccent}>
               {speechBubble}
             </SpeechBubble>
@@ -127,7 +141,7 @@ export default function StoreCanvas({
         ) : null}
       </div>
 
-      {speechBubble ? (
+      {speechBubble && !hideSpeechBubble ? (
         <div className="block lg:hidden w-full max-w-sm">
           <SpeechBubble tailSide="bottom" accentColor={effectiveAccent} className="mx-auto">
             {speechBubble}
@@ -135,16 +149,16 @@ export default function StoreCanvas({
         </div>
       ) : null}
 
-      {shopkeeperName ? (
-        <p className="font-pixel text-[12px]" style={{ color: theme.textDim }}>
+      {showCaption && (shopkeeperName ? (
+        <p className="font-pixel text-[12px] text-center" style={{ color: theme.textDim }}>
           {pet.name} <span style={{ color: `${theme.textDim}99` }}>&middot;</span>{" "}
           <span>tended by {shopkeeperName}</span>
         </p>
       ) : (
-        <p className="font-pixel text-[12px]" style={{ color: theme.textDim }}>
+        <p className="font-pixel text-[12px] text-center" style={{ color: theme.textDim }}>
           {pet.name}
         </p>
-      )}
+      ))}
 
       {/* Phantom animation tag so consumers don't have to wire it up
           themselves -- the actual class is also applied to the page wrapper
