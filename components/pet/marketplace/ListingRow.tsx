@@ -12,7 +12,10 @@ import ItemGlow from "@/components/pet/ui/ItemGlow"
 import ListingTooltip, { type ListingForTooltip } from "./ListingTooltip"
 import { calcGlowTier, calcGlowIntensity, GLOW_TEXT_COLORS, GLOW_LABELS } from "@/utils/gameConstants"
 import { cn } from "@/lib/utils"
-import { Clock, User, ScrollText } from "lucide-react"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- Sparkles icon for the FEATURED badge.
+import { Clock, ScrollText, Sparkles } from "lucide-react"
+// --- END AI-MODIFIED ---
 import type { ListingData } from "./ListingCard"
 
 const RARITY_TEXT: Record<string, string> = {
@@ -53,9 +56,22 @@ export default function ListingRow({ listing, onBuy }: Props) {
     scrollData, totalBonus,
   }
 
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- featured rows use the same animated
+  // gradient frame as featured cards. The wrapper sits 2px outside the row
+  // so the colored halo reads regardless of the row's rarity border.
+  const featured = listing.isFeatured === true
+  // --- END AI-MODIFIED ---
+
   return (
     <ListingTooltip listing={tooltipListing}>
-      <div className="flex items-center gap-3 px-3 py-2 border-2 border-[#1a2a3c] bg-[#0c1020] hover:bg-[#0f1628] transition-colors group">
+      <div className={cn("relative", featured && "lg-featured-frame p-[2px]")}>
+        {featured && (
+          <div className="absolute -top-[2px] left-3 z-10 px-1.5 py-px bg-gradient-to-r from-[#f0c040] via-[#ff6b9d] to-[#a855f7] text-[#0a0a0a] font-pixel text-[7px] flex items-center gap-1 shadow-[1px_1px_0_#060810]">
+            <Sparkles size={7} /> FEATURED
+          </div>
+        )}
+        <div className={cn("flex items-center gap-3 px-3 py-2 border-2 border-[#1a2a3c] bg-[#0c1020] hover:bg-[#0f1628] transition-colors group", featured && "pt-3.5")}>
         {/* Image */}
         <Link href={`/pet/marketplace/${listing.listingId}`}>
           <a className="flex-shrink-0">
@@ -118,9 +134,25 @@ export default function ListingRow({ listing, onBuy }: Props) {
         </span>
 
         {/* Seller */}
-        <span className="font-pixel text-[9px] text-[#3a4a60] w-20 truncate flex-shrink-0 hidden md:block">
-          {listing.sellerName}
-        </span>
+        {/* --- AI-MODIFIED (2026-04-29) --- */}
+        {/* Purpose: Marketplace 2.0 -- seller name links to their personal
+            store front when sellerId is available; falls back to plain text
+            so legacy callers without sellerId don't break. */}
+        {listing.sellerId ? (
+          <Link href={`/pet/marketplace/store/${listing.sellerId}`}>
+            <a
+              onClick={(e) => e.stopPropagation()}
+              className="font-pixel text-[9px] text-[#3a4a60] hover:text-[var(--pet-gold,#f0c040)] w-20 truncate flex-shrink-0 hidden md:block transition-colors"
+            >
+              {listing.sellerName}
+            </a>
+          </Link>
+        ) : (
+          <span className="font-pixel text-[9px] text-[#3a4a60] w-20 truncate flex-shrink-0 hidden md:block">
+            {listing.sellerName}
+          </span>
+        )}
+        {/* --- END AI-MODIFIED --- */}
 
         {/* Buy */}
         <button
@@ -129,6 +161,7 @@ export default function ListingRow({ listing, onBuy }: Props) {
         >
           BUY
         </button>
+        </div>
       </div>
     </ListingTooltip>
   )

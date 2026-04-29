@@ -12,7 +12,10 @@
 import Link from "next/link"
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
-import { Clock, User, ScrollText, ExternalLink } from "lucide-react"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- Sparkles icon for the FEATURED badge.
+import { Clock, User, ScrollText, ExternalLink, Sparkles } from "lucide-react"
+// --- END AI-MODIFIED ---
 import PixelCard from "@/components/pet/ui/PixelCard"
 import PixelBadge from "@/components/pet/ui/PixelBadge"
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
@@ -39,6 +42,11 @@ function timeLeft(expiresAt: string): string {
   return `${d}d ${h % 24}h`
 }
 
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- carry sellerId so the seller name can link
+// to the seller's personal store front (/pet/marketplace/store/{sellerId}).
+// Optional so legacy callers that don't supply it just don't render the
+// link (graceful degradation).
 export interface ListingData {
   listingId: number
   item: { id: number; name: string; category: string; rarity: string; assetPath: string; slot: string | null; description?: string }
@@ -47,10 +55,18 @@ export interface ListingData {
   pricePerUnit: number
   currency: string
   sellerName: string
+  sellerId?: string
   expiresAt: string
   scrollData?: ScrollSlot[] | null
   totalBonus?: number
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- featured listings show an animated
+  // gradient border + FEATURED badge. Optional so non-marketplace callers
+  // (e.g. legacy admin code) can omit it without ts errors.
+  isFeatured?: boolean
+  // --- END AI-MODIFIED ---
 }
+// --- END AI-MODIFIED ---
 
 interface Props {
   listing: ListingData
@@ -76,14 +92,36 @@ export default function ListingCard({ listing, onBuy }: Props) {
     scrollData, totalBonus,
   }
 
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- when listing.isFeatured is true,
+  // wrap the card in a glowing animated gradient frame and stamp a FEATURED
+  // badge in the top-left corner. The gradient is a 4-color animated
+  // background (`lg-featured-border` keyframes are in globals.css) and the
+  // inner card sits 2px inside it, so it reads as a halo rather than
+  // overpowering the rarity color.
+  const featured = listing.isFeatured === true
+  // --- END AI-MODIFIED ---
+
   return (
     <ListingTooltip listing={tooltipListing}>
       {/* --- AI-MODIFIED (2026-03-24) --- */}
       {/* Purpose: min-h for consistent card heights in browse grid */}
-      <PixelCard
-        borderColor={borderColor}
-        className="p-3 flex flex-col gap-2 group hover:brightness-110 active:brightness-110 transition-all h-full min-h-[240px]"
-      >
+      {/* --- AI-MODIFIED (2026-04-29) --- */}
+      {/* Purpose: Marketplace 2.0 Phase 3 -- featured wrapper. */}
+      <div className={cn("relative h-full", featured && "lg-featured-frame p-[2px]")}>
+        {featured && (
+          <div className="absolute -top-[2px] left-2 z-10 px-2 py-0.5 bg-gradient-to-r from-[#f0c040] via-[#ff6b9d] to-[#a855f7] text-[#0a0a0a] font-pixel text-[8px] flex items-center gap-1 shadow-[2px_2px_0_#060810]">
+            <Sparkles size={8} /> FEATURED
+          </div>
+        )}
+        <PixelCard
+          borderColor={borderColor}
+          className={cn(
+            "p-3 flex flex-col gap-2 group hover:brightness-110 active:brightness-110 transition-all h-full min-h-[240px]",
+            featured && "pt-4",
+          )}
+        >
+      {/* --- END AI-MODIFIED --- */}
       {/* --- END AI-MODIFIED --- */}
         {/* Item image + link to detail page */}
         <Link href={`/pet/marketplace/${listing.listingId}`}>
@@ -152,16 +190,33 @@ export default function ListingCard({ listing, onBuy }: Props) {
         {/* Seller */}
         {/* --- AI-MODIFIED (2026-03-24) --- */}
         {/* Purpose: Improved contrast for seller/link text (was #3a4a60) */}
+        {/* --- AI-MODIFIED (2026-04-29) --- */}
+        {/* Purpose: Marketplace 2.0 -- seller name now links to the seller's
+            personal store page when sellerId is available. Free fallback
+            (no link) preserves legacy behavior for callers that don't
+            propagate sellerId yet. */}
         <div className="flex items-center justify-between">
-          <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] flex items-center gap-0.5 truncate">
-            <User size={9} /> {listing.sellerName}
-          </span>
+          {listing.sellerId ? (
+            <Link href={`/pet/marketplace/store/${listing.sellerId}`}>
+              <a
+                onClick={(e) => e.stopPropagation()}
+                className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] hover:text-[var(--pet-gold,#f0c040)] flex items-center gap-0.5 truncate transition-colors"
+              >
+                <User size={9} /> {listing.sellerName}
+              </a>
+            </Link>
+          ) : (
+            <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] flex items-center gap-0.5 truncate">
+              <User size={9} /> {listing.sellerName}
+            </span>
+          )}
           <Link href={`/pet/wiki/${item.id}`}>
             <a className="text-[var(--pet-text-dim,#7a8a9a)] hover:text-[#80b0ff] transition-colors" onClick={(e) => e.stopPropagation()}>
               <ExternalLink size={9} />
             </a>
           </Link>
         </div>
+        {/* --- END AI-MODIFIED --- */}
         {/* --- END AI-MODIFIED --- */}
 
         {/* Buy button */}
@@ -171,7 +226,8 @@ export default function ListingCard({ listing, onBuy }: Props) {
         >
           BUY
         </button>
-      </PixelCard>
+        </PixelCard>
+      </div>
     </ListingTooltip>
   )
 }

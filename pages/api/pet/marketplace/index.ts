@@ -52,15 +52,36 @@ export default apiHandler({
     if (hasScrolls) listingWhere.scroll_data = { not: null }
     if (minBonus > 0) listingWhere.total_bonus = { gte: minBonus }
     // --- END AI-MODIFIED ---
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 Phase 3 -- "Featured only" filter, opt-in
+    // via ?featured=true (the default behavior is still to merely sort
+    // featured ones to the top via orderBy below).
+    if (req.query.featured === "true") {
+      listingWhere.is_featured = true
+    }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-21) ---
     // Purpose: Add enhancement_desc and bonus_desc sort options
-    const orderBy: any = sort === "price_asc" ? { price_per_unit: "asc" }
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 Phase 3 -- featured listings always sort to
+    // the top of the page (within the user's chosen sort). Implemented as
+    // an array of orderBy clauses so featured/non-featured is the primary
+    // key and the user's sort is the tiebreaker. is_featured DESC means
+    // true-rows-first; featured_at DESC then orders the featured group by
+    // most-recently-promoted.
+    const userSort: any = sort === "price_asc" ? { price_per_unit: "asc" }
       : sort === "price_desc" ? { price_per_unit: "desc" }
       : sort === "ending_soon" ? { expires_at: "asc" }
       : sort === "enhancement_desc" ? { enhancement_level: "desc" }
       : sort === "bonus_desc" ? { total_bonus: "desc" }
       : { created_at: "desc" }
+    const orderBy: any[] = [
+      { is_featured: "desc" },
+      { featured_at: "desc" },
+      userSort,
+    ]
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     const [listings, total] = await Promise.all([
@@ -84,6 +105,11 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-21) ---
     // Purpose: Include scroll_data, totalBonus, and item description in browse response
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 -- expose sellerId so ListingCard / ListingRow
+    // can link the seller name to that user's personal store front. We
+    // already have the snowflake from seller_userid; just need to stringify
+    // it so JSON doesn't choke on the BigInt.
     const result = listings.map((l) => ({
       listingId: l.listingid,
       item: {
@@ -96,12 +122,19 @@ export default apiHandler({
       quantityListed: l.quantity_listed,
       pricePerUnit: l.price_per_unit,
       currency: l.currency,
+      sellerId: l.seller_userid.toString(),
       sellerName: sellerMap[l.seller_userid.toString()] ?? "Unknown",
       createdAt: l.created_at.toISOString(),
       expiresAt: l.expires_at.toISOString(),
       scrollData: l.scroll_data ?? null,
       totalBonus: l.total_bonus ?? 0,
+      // --- AI-MODIFIED (2026-04-29) ---
+      // Purpose: Marketplace 2.0 Phase 3 -- expose is_featured so ListingCard
+      // / ListingRow can render the FEATURED badge + animated border.
+      isFeatured: l.is_featured ?? false,
+      // --- END AI-MODIFIED ---
     }))
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     return res.status(200).json({

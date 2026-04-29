@@ -16,6 +16,12 @@ import { apiHandler } from "@/utils/apiHandler"
 // Purpose: Use debounced expireListings to avoid running full expiry scan on every request
 import { expireListingsDebounced } from "@/utils/marketplace"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- attach the seller's tier + featured-slot
+// quota to the my-listings response so the seller dashboard can render
+// "feature this listing" toggles with a live "X / Y slots used" counter.
+import { getUserTier, getFeaturedListingSlots } from "@/utils/subscription"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -63,6 +69,13 @@ export default apiHandler({
     const buyerMap: Record<string, string> = {}
     for (const b of buyers) buyerMap[b.userid.toString()] = b.name ? b.name.slice(0, 4) + "***" : `P${b.userid.toString().slice(-4)}`
 
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 Phase 3 -- compute featured slots usage.
+    const tier = await getUserTier(userId)
+    const featuredSlots = getFeaturedListingSlots(tier)
+    const featuredUsed = activeListings.filter((l) => l.is_featured).length
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       // --- AI-MODIFIED (2026-03-21) ---
       // Purpose: Include scroll_data and totalBonus in seller dashboard listing data
@@ -74,6 +87,10 @@ export default apiHandler({
         pricePerUnit: l.price_per_unit, currency: l.currency,
         createdAt: l.created_at.toISOString(), expiresAt: l.expires_at.toISOString(),
         scrollData: l.scroll_data ?? null, totalBonus: l.total_bonus ?? 0,
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Marketplace 2.0 Phase 3 -- expose featured flag.
+        isFeatured: l.is_featured ?? false,
+        // --- END AI-MODIFIED ---
       })),
       past: pastListings.map((l) => ({
         listingId: l.listingid,
@@ -95,6 +112,17 @@ export default apiHandler({
         totalGems: gemRevenue._sum.total_price ?? 0,
         totalSales: sales.length,
       },
+      // --- AI-MODIFIED (2026-04-29) ---
+      // Purpose: Marketplace 2.0 Phase 3 -- attach featured-slot quota +
+      // current usage so the seller dashboard can render a "feature this"
+      // toggle on each active listing along with a "Featured X of Y"
+      // header indicator.
+      featured: {
+        used: featuredUsed,
+        total: featuredSlots,
+        tier,
+      },
+      // --- END AI-MODIFIED ---
     })
   },
 })

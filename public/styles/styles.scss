@@ -879,3 +879,31 @@ p, a, b {
 }
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- featured listing animated frame.
+// Renders an animated 4-stop gradient as the wrapper background; the
+// inner card sits 2px inside it (via padding on .lg-featured-frame),
+// so the gradient reads as a glowing halo around the card. The frame
+// also ships a soft outer drop-shadow that pulses with the gradient
+// to add depth without jitter.
+.lg-featured-frame {
+  position: relative;
+  background: linear-gradient(135deg, #f0c040 0%, #ff6b9d 25%, #a855f7 50%, #4dc4ff 75%, #f0c040 100%);
+  background-size: 300% 300%;
+  animation: lg-featured-shimmer 6s ease-in-out infinite;
+  box-shadow:
+    0 0 12px rgba(240, 192, 64, 0.18),
+    0 0 28px rgba(168, 85, 247, 0.12);
+}
+
+@keyframes lg-featured-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+// prefers-reduced-motion is already handled by the global rule above
+// (it sets animation-duration to 0.01ms), so the frame still renders
+// the gradient -- it just stops shimmering.
+// --- END AI-MODIFIED ---

@@ -988,6 +988,10 @@ model user_config {
   lg_friends_lg_friends_userid1Touser_config                               lg_friends[]                  @relation("lg_friends_userid1Touser_config")
   lg_friends_lg_friends_userid2Touser_config                               lg_friends[]                  @relation("lg_friends_userid2Touser_config")
   lg_pets                                                                  lg_pets?
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 -- back-relation for per-user store config (lg_user_stores)
+  lg_user_stores                                                           lg_user_stores?
+  // --- END AI-MODIFIED ---
   lg_user_furniture                                                        lg_user_furniture[]
   lg_user_gameboy_skins                                                    lg_user_gameboy_skins[]
   lg_user_inventory                                                        lg_user_inventory[]
@@ -1530,6 +1534,14 @@ model lg_marketplace_listings {
   expires_at           DateTime               @db.Timestamptz(6)
   scroll_data          Json?
   total_bonus          Float                  @default(0) @db.Real
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- featured listings. is_featured is the
+  // toggle, featured_at is the timestamp the listing was promoted (used for
+  // "newest featured first" ordering when several listings are featured).
+  // Both default to safe values so existing listings are unaffected.
+  is_featured          Boolean                @default(false)
+  featured_at          DateTime?              @db.Timestamptz(6)
+  // --- END AI-MODIFIED ---
   lg_items             lg_items               @relation(fields: [itemid], references: [itemid], onDelete: NoAction, onUpdate: NoAction)
   lg_marketplace_sales lg_marketplace_sales[]
 
@@ -1537,6 +1549,11 @@ model lg_marketplace_listings {
   @@index([itemid], map: "idx_mp_listings_itemid")
   @@index([seller_userid], map: "idx_mp_listings_seller")
   @@index([expires_at], map: "idx_mp_listings_expires")
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Speed up the "featured first" sort + the per-seller featured
+  // count we use to enforce the slot cap on /api/pet/marketplace/feature.
+  @@index([is_featured, featured_at], map: "idx_mp_listings_featured")
+  // --- END AI-MODIFIED ---
 }
 
 model lg_marketplace_sales {
@@ -1560,6 +1577,44 @@ model lg_marketplace_sales {
   @@index([buyer_userid], map: "idx_mp_sales_buyer")
   @@index([seller_userid], map: "idx_mp_sales_seller")
   @@index([sold_at], map: "idx_mp_sales_sold_at")
+}
+
+// ============================================================
+// AI-GENERATED MODEL
+// Created: 2026-04-29
+// Purpose: Marketplace 2.0 -- per-user store front configuration.
+//          Holds the customizable fields for a seller's "personal
+//          shop" page: display name, speech bubble shown next to
+//          their lion shopkeeper, lion pose, theme, accent color,
+//          and background animation. Most premium fields are no-ops
+//          in Phase 1 (theme_id, accent_color, background_animation
+//          all default to safe values) and become live in Phase 2's
+//          theme/customization studio. The slug column is added in
+//          Phase 3 for vanity store URLs (`/store/{slug}`).
+//
+//          Safe, additive table -- existing sellers without a row
+//          get default behavior (Discord username + default theme +
+//          default speech bubble). NEVER touches lg_marketplace_listings.
+// ============================================================
+model lg_user_stores {
+  userid               BigInt      @id
+  display_name         String?     @db.VarChar(40)
+  speech_bubble        String?     @db.VarChar(500)
+  lion_pose            String      @default("idle") @db.VarChar(32)
+  theme_id             String      @default("default") @db.VarChar(32)
+  accent_color         String?     @db.VarChar(9)
+  background_animation String      @default("none") @db.VarChar(32)
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- vanity store URL. Lower-cased,
+  // hyphen-and-underscore-only, 3..30 chars. Validated server-side
+  // against a reserved-word + profanity blocklist before being saved
+  // (see utils/storeSlug.ts). Unique so /store/{slug} resolves to a
+  // single seller.
+  slug                 String?     @unique @db.VarChar(30)
+  // --- END AI-MODIFIED ---
+  created_at           DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime    @default(now()) @db.Timestamptz(6)
+  user_config          user_config @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model server_premium_subscriptions {

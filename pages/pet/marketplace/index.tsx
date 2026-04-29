@@ -48,6 +48,9 @@ export default function MarketplacePage() {
   const router = useRouter()
 
   const q = router.query
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- featuredOnly default false, parsed
+  // from `?featured=true` query string so the filter is shareable / bookmarkable.
   const [filters, setFilters] = useState<FilterState>({
     search: (q.q as string) || "",
     category: (q.cat as string) || "",
@@ -55,7 +58,9 @@ export default function MarketplacePage() {
     currency: (q.currency as string) || "",
     minEnhancement: parseInt(q.minEnh as string) || 0,
     hasScrolls: q.scrolls === "true",
+    featuredOnly: q.featured === "true",
   })
+  // --- END AI-MODIFIED ---
   const [sort, setSort] = useState((q.sort as string) || "newest")
   const [page, setPage] = useState(parseInt(q.page as string) || 1)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
@@ -67,7 +72,14 @@ export default function MarketplacePage() {
   }, [])
 
   const clearFilters = useCallback(() => {
-    setFilters({ search: "", category: "", rarities: new Set(), currency: "", minEnhancement: 0, hasScrolls: false })
+    setFilters({
+      search: "", category: "", rarities: new Set(), currency: "",
+      minEnhancement: 0, hasScrolls: false,
+      // --- AI-MODIFIED (2026-04-29) ---
+      // Purpose: Marketplace 2.0 Phase 3 -- include in CLEAR ALL.
+      featuredOnly: false,
+      // --- END AI-MODIFIED ---
+    })
     setPage(1)
   }, [])
 
@@ -79,6 +91,10 @@ export default function MarketplacePage() {
     if (filters.currency) p.set("currency", filters.currency)
     if (filters.minEnhancement > 0) p.set("minEnhancement", String(filters.minEnhancement))
     if (filters.hasScrolls) p.set("hasScrolls", "true")
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 Phase 3 -- propagate to API.
+    if (filters.featuredOnly) p.set("featured", "true")
+    // --- END AI-MODIFIED ---
     p.set("sort", sort)
     p.set("page", String(page))
     return p.toString()

@@ -43,6 +43,10 @@ import {
   Radio,
   Music,
   Coins,
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 -- icon for the new store / marketplace perks.
+  Store,
+  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -429,12 +433,21 @@ function gemValueInCurrency(gems: number, currency: Currency): number {
 }
 
 // "Everything in X, plus..." delta perks per tier so we never repeat the same list 3 times.
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 1 -- add the new marketplace / personal-store
+// perks per tier so the donate page advertises them. Numbers are mirrored
+// from utils/subscription.ts and StudyLion's marketplace_perks.py.
 function getDeltaPerks(
   tierId: SubscriptionTier
 ): Array<{ label: string; icon: typeof TrendingUp; highlight?: boolean }> {
   if (tierId === "LIONHEART") {
     return [
       { label: "500 LionGems every month", icon: Sparkles, highlight: true },
+      { label: "Custom marketplace store name + longer speech bubble", icon: Store, highlight: true },
+      { label: "Custom store URL + 1 featured listing slot", icon: Store, highlight: true },
+      { label: "Premium store themes & background animations", icon: Store },
+      { label: "Marketplace fee 5% \u2192 4%", icon: Coins },
+      { label: "Listings last 14 days (vs 7) and up to 50 active", icon: Store },
       { label: "1.5x LionCoins from every vote", icon: TrendingUp },
       { label: "+15% bonus drop rate on items", icon: Zap },
       { label: "1.2x farm growth speed", icon: Sprout },
@@ -445,6 +458,8 @@ function getDeltaPerks(
   if (tierId === "LIONHEART_PLUS") {
     return [
       { label: "2.4x more gems (1,200/month)", icon: Sparkles, highlight: true },
+      { label: "Marketplace fee just 3% and 21-day listings", icon: Coins, highlight: true },
+      { label: "Up to 75 active listings + 3 featured listing slots", icon: Store, highlight: true },
       { label: "1.75x vote boost (up from 1.5x)", icon: TrendingUp },
       { label: "+25% drop rate (up from 15%)", icon: Zap },
       { label: "1.35x farm growth", icon: Sprout },
@@ -456,11 +471,14 @@ function getDeltaPerks(
     { label: "6x more gems (3,000/month)", icon: Sparkles, highlight: true },
     { label: "Plants never die. Period.", icon: Shield, highlight: true },
     { label: "1 free Server Premium slot", icon: Server, highlight: true },
+    { label: "Marketplace fee just 2% and 30-day listings", icon: Coins, highlight: true },
+    { label: "Up to 100 active listings + 10 featured listing slots", icon: Store, highlight: true },
     { label: "2x vote boost (max tier)", icon: TrendingUp },
     { label: "+50% drop rate", icon: Zap },
     { label: "All 10 Pomodoro themes", icon: Sparkles },
   ];
 }
+// --- END AI-MODIFIED ---
 
 const TIER_TAGLINES: Record<SubscriptionTier, string> = {
   LIONHEART: "Start enjoying real perks",

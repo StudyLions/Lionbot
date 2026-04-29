@@ -17,8 +17,17 @@ import { useDashboard, invalidatePrefix } from "@/hooks/useDashboard"
 import { useState } from "react"
 import Link from "next/link"
 import {
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- icons for the FEATURED toggle.
   Coins, Gem, Clock, CheckCircle, XCircle, AlertTriangle, ScrollText,
+  Sparkles, Lock,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- toast feedback for the FEATURED toggle.
+import { toast } from "sonner"
+import { LION_HEART_TIER_LABELS, type LionHeartTier } from "@/utils/subscription"
+// --- END AI-MODIFIED ---
 import { getItemImageUrl, getCategoryPlaceholder } from "@/utils/petAssets"
 import CroppedItemImage from "@/components/pet/ui/CroppedItemImage"
 import { GetServerSideProps } from "next"
@@ -67,6 +76,11 @@ export default function MyListingsPage() {
   const { data: session } = useSession()
   const [tab, setTab] = useState<DashTab>("active")
   const [cancelling, setCancelling] = useState<number | null>(null)
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- track in-flight feature toggle so we
+  // can disable just the row that's loading.
+  const [featuring, setFeaturing] = useState<number | null>(null)
+  // --- END AI-MODIFIED ---
   const [pastSort, setPastSort] = useState<"date" | "status" | "price">("date")
 
   const { data, isLoading, mutate } = useDashboard<any>(session ? "/api/pet/marketplace/my-listings" : null)
@@ -87,6 +101,31 @@ export default function MyListingsPage() {
       setCancelling(null)
     }
   }
+
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- toggle feature/unfeature; on PREMIUM_REQUIRED
+  // or FEATURED_SLOTS_FULL we surface the structured error message from the API.
+  async function handleToggleFeatured(listingId: number, nextFeatured: boolean) {
+    setFeaturing(listingId)
+    try {
+      const res = await fetch("/api/pet/marketplace/feature", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listingId, featured: nextFeatured }),
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        toast.error(json.error || "Failed to toggle feature")
+      } else {
+        toast.success(nextFeatured ? "Listing featured! It'll show first in the marketplace." : "Listing unfeatured.")
+        invalidatePrefix("/api/pet/marketplace")
+        mutate()
+      }
+    } finally {
+      setFeaturing(null)
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   const sortedPast = (data?.past ?? []).slice().sort((a: any, b: any) => {
     if (pastSort === "status") return a.status.localeCompare(b.status)
@@ -122,6 +161,20 @@ export default function MyListingsPage() {
                     <span className="text-[var(--pet-gold,#f0c040)]">&#x2756;</span>
                   </h1>
                   <div className="h-[2px] bg-gradient-to-r from-transparent via-[var(--pet-gold,#f0c040)] to-transparent mt-1" />
+                  {/* --- AI-MODIFIED (2026-04-29) --- */}
+                  {/* Purpose: Marketplace 2.0 Phase 3 -- featured slots indicator */}
+                  {data?.featured && (
+                    <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#7a8a9a)] mt-1.5 inline-flex items-center gap-1.5">
+                      <Sparkles size={10} className="text-[var(--pet-gold,#f0c040)]" />
+                      Featured {data.featured.used}/{data.featured.total}
+                      {data.featured.total === 0 ? (
+                        <Link href="/donate"><a className="text-[var(--pet-gold,#f0c040)] hover:underline">Unlock with LionHeart</a></Link>
+                      ) : (
+                        <span className="text-[#3a4a5c]">&middot; {LION_HEART_TIER_LABELS[(data.featured.tier ?? "FREE") as LionHeartTier]}</span>
+                      )}
+                    </p>
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
                 </div>
                 <Link href="/pet/marketplace/sell">
                   <PixelButton variant="primary" size="sm">+ SELL MORE</PixelButton>
@@ -243,10 +296,51 @@ export default function MyListingsPage() {
                                   </div>
                                   <PixelBar value={sold} max={l.quantityListed} segments={8} color="green" showText={false} className="max-w-[10rem]" />
                                 </div>
-                                <PixelButton onClick={() => handleCancel(l.listingId)} disabled={cancelling === l.listingId}
-                                  loading={cancelling === l.listingId} variant="danger" size="sm" className="self-center flex-shrink-0">
-                                  CANCEL
-                                </PixelButton>
+                                <div className="flex flex-col gap-1 self-center flex-shrink-0">
+                                  {/* --- AI-MODIFIED (2026-04-29) --- */}
+                                  {/* Purpose: Marketplace 2.0 Phase 3 -- per-listing FEATURED toggle */}
+                                  {(() => {
+                                    const slotsTotal = data?.featured?.total ?? 0
+                                    const slotsUsed = data?.featured?.used ?? 0
+                                    const isFeatured = !!l.isFeatured
+                                    const isFull = !isFeatured && slotsTotal > 0 && slotsUsed >= slotsTotal
+                                    const noSlots = slotsTotal === 0
+                                    return (
+                                      <button
+                                        onClick={() => handleToggleFeatured(l.listingId, !isFeatured)}
+                                        disabled={featuring === l.listingId || (!isFeatured && (noSlots || isFull))}
+                                        title={
+                                          noSlots
+                                            ? "Featured listings are a LionHeart perk -- click anyway to see the upgrade prompt."
+                                            : isFull
+                                              ? `All ${slotsTotal} featured slots in use -- unfeature one to free up space.`
+                                              : isFeatured
+                                                ? "Click to unfeature."
+                                                : "Promote this listing to the top of the marketplace."
+                                        }
+                                        className={cn(
+                                          "font-pixel text-[10px] px-2 py-1.5 border-2 transition-all flex items-center justify-center gap-1 min-w-[88px]",
+                                          isFeatured
+                                            ? "border-[#f0c040] bg-[#f0c040]/15 text-[#ffe080] shadow-[1px_1px_0_#060810]"
+                                            : noSlots
+                                              ? "border-[#3a4a5c] bg-[#0a0e1a] text-[#5a6a7a] cursor-not-allowed"
+                                              : isFull
+                                                ? "border-[#3a4a5c] bg-[#0a0e1a] text-[#5a6a7a] cursor-not-allowed"
+                                                : "border-[#f0c040] bg-[#0a0e1a] text-[#ffe080] hover:bg-[#f0c040]/10",
+                                          featuring === l.listingId && "opacity-60",
+                                        )}
+                                      >
+                                        {noSlots ? <Lock size={9} /> : <Sparkles size={9} />}
+                                        {isFeatured ? "UNFEATURE" : noSlots ? "FEATURE" : "FEATURE"}
+                                      </button>
+                                    )
+                                  })()}
+                                  {/* --- END AI-MODIFIED --- */}
+                                  <PixelButton onClick={() => handleCancel(l.listingId)} disabled={cancelling === l.listingId}
+                                    loading={cancelling === l.listingId} variant="danger" size="sm">
+                                    CANCEL
+                                  </PixelButton>
+                                </div>
                               </div>
                             )
                           })}

@@ -6,7 +6,11 @@
 //          enhancement, and scroll filters. Mobile slide-in drawer.
 // ============================================================
 import { useState, useCallback } from "react"
-import { Search, X, SlidersHorizontal, ScrollText, Coins, Gem, RotateCcw } from "lucide-react"
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- Sparkles icon for the
+// "Featured first" filter toggle.
+import { Search, X, SlidersHorizontal, ScrollText, Coins, Gem, RotateCcw, Sparkles } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { cn } from "@/lib/utils"
 import { getCategoryPlaceholder } from "@/utils/petAssets"
 
@@ -27,6 +31,13 @@ export interface FilterState {
   currency: string
   minEnhancement: number
   hasScrolls: boolean
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- "Featured only" filter so buyers
+  // can browse the curated section without manually searching. Featured
+  // listings are ALWAYS sorted to the top by the API; this toggle lets a
+  // user filter to ONLY featured.
+  featuredOnly: boolean
+  // --- END AI-MODIFIED ---
 }
 
 interface CategoryCount { category: string; count: number }
@@ -55,7 +66,7 @@ function FilterContent({ filters, onChange, onClear, categories }: Props) {
   }, [filters.rarities, onChange])
 
   const hasAnyFilter = filters.search || filters.category || filters.rarities.size > 0 ||
-    filters.currency || filters.minEnhancement > 0 || filters.hasScrolls
+    filters.currency || filters.minEnhancement > 0 || filters.hasScrolls || filters.featuredOnly
 
   return (
     <div className="space-y-4">
@@ -71,6 +82,23 @@ function FilterContent({ filters, onChange, onClear, categories }: Props) {
           />
         </div>
       </SidebarSection>
+
+      {/* --- AI-MODIFIED (2026-04-29) --- */}
+      {/* Purpose: Marketplace 2.0 Phase 3 -- "Featured only" pill toggle */}
+      <SidebarSection label="Highlights">
+        <button
+          onClick={() => onChange({ featuredOnly: !filters.featuredOnly })}
+          className={cn(
+            "font-pixel text-[10px] w-full px-2.5 py-1.5 border-2 flex items-center gap-1.5 transition-all",
+            filters.featuredOnly
+              ? "border-[#f0c040] bg-[#f0c040]/15 text-[#ffe080] shadow-[0_0_6px_#f0c04030]"
+              : "border-[#2a3a5c] bg-[#0a0e1a] text-[#4a5a6a] hover:text-[#ffe080]"
+          )}
+        >
+          <Sparkles size={11} /> Featured only
+        </button>
+      </SidebarSection>
+      {/* --- END AI-MODIFIED --- */}
 
       {/* Category */}
       <SidebarSection label="Category">
