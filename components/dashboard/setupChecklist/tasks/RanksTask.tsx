@@ -165,7 +165,7 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
       )}
       {enabledCount > 1 && (
         <p className="mb-4 text-xs text-muted-foreground bg-muted/40 rounded-md px-3 py-2">
-          Members will appear on {enabledCount} separate ladders \u2014 one per type you enabled.
+          Members will appear on {enabledCount} separate ladders — one per type you enabled.
         </p>
       )}
 
@@ -180,19 +180,19 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
       <SettingRow
         label="Where to announce rank-ups"
         jargon="channel"
-        help="Pick a text channel \u2014 leave blank to disable announcements."
+        help="Pick a text channel — leave blank to disable announcements."
       >
         <ChannelSelect
           guildId={guildId}
           value={draft.channel}
           onChange={(v) => update("channel", typeof v === "string" ? v : null)}
           channelTypes={[0, 5]}
-          placeholder="None \u2014 silent"
+          placeholder="None — silent"
           disabled={saving}
         />
         {!draft.dm && !draft.channel && enabledCount > 0 && (
           <p className="mt-1.5 text-[11px] text-amber-400">
-            DMs are off and no channel is picked \u2014 members won't see rank-up notifications anywhere.
+            DMs are off and no channel is picked — members won't see rank-up notifications anywhere.
           </p>
         )}
       </SettingRow>

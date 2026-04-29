@@ -154,7 +154,7 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
       <SettingRow
         label="Channel to post greetings"
         jargon="channel"
-        help="Pick a text channel \u2014 usually #welcome or #general."
+        help="Pick a text channel — usually #welcome or #general."
       >
         <ChannelSelect
           guildId={guildId}
@@ -221,7 +221,7 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
 
       <SettingRow
         label="Message for returning members"
-        help="Optional \u2014 shown when someone re-joins your server."
+        help="Optional — shown when someone re-joins your server."
       >
         <textarea
           value={draft.returning_message ?? ""}

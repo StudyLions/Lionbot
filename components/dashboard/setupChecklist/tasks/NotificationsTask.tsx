@@ -130,7 +130,7 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
       }
     >
       <p className="text-sm text-muted-foreground mb-4">
-        Each of these is optional \u2014 leave any channel blank to silence that feature.
+        Each of these is optional — leave any channel blank to silence that feature.
       </p>
 
       {topPerm === "warning" && (
@@ -159,7 +159,7 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
             value={draft[f.key]}
             onChange={(v) => update(f.key, typeof v === "string" ? v : null)}
             channelTypes={[0, 5]}
-            placeholder="None \u2014 silent"
+            placeholder="None — silent"
             disabled={saving}
           />
         </SettingRow>

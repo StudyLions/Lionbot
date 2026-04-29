@@ -102,7 +102,7 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
       <SettingRow
         label="Coins per hour of study"
         jargon="lioncoin"
-        help="A standard rate is 50\u2013150."
+        help="A standard rate is 50–150."
         recommended={
           <RecommendedPill
             value={RECOMMENDED.hourly}

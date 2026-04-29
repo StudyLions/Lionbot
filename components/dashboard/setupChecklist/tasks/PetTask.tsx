@@ -86,7 +86,7 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
       }
     >
       <p className="text-sm text-muted-foreground mb-4">
-        Adds a fun gamified loop on top of ranks. Off by default \u2014 turn on if your community likes games.
+        Adds a fun gamified loop on top of ranks. Off by default — turn on if your community likes games.
       </p>
 
       <SettingRow
@@ -108,7 +108,7 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
               value={draft.lg_drop_channel}
               onChange={(v) => update("lg_drop_channel", typeof v === "string" ? v : null)}
               channelTypes={[0, 5]}
-              placeholder="None \u2014 silent drops"
+              placeholder="None — silent drops"
               disabled={saving}
             />
           </SettingRow>

@@ -147,7 +147,7 @@ export default function FocusTask({ guildId, open, onClose, onComplete, onSkip }
       </SettingRow>
 
       <div className="mt-3 text-xs text-muted-foreground bg-muted/30 rounded-md px-3 py-2">
-        The Pomodoro channel itself is set in <strong className="text-foreground/80">Notification channels</strong> above \u2014
+        The Pomodoro channel itself is set in <strong className="text-foreground/80">Notification channels</strong> above —
         leave it blank to keep the focus timer DM-only.
       </div>
     </TaskDrawer>

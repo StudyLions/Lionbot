@@ -109,7 +109,7 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
           guildId={guildId}
           value={draft.admin_role}
           onChange={(v) => update("admin_role", typeof v === "string" ? v : null)}
-          placeholder="None \u2014 Discord owners only"
+          placeholder="None — Discord owners only"
           disabled={saving}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -126,7 +126,7 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
           guildId={guildId}
           value={draft.mod_role}
           onChange={(v) => update("mod_role", typeof v === "string" ? v : null)}
-          placeholder="None \u2014 admins only"
+          placeholder="None — admins only"
           disabled={saving}
         />
         <p className="mt-1.5 text-[11px] text-muted-foreground">
@@ -146,10 +146,23 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
             disabled={saving}
             className="text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
           >
-            These look right \u2014 mark as done
+            These look right — mark as done
           </button>
         </div>
       )}
+
+      {/* --- AI-MODIFIED (2026-04-29) ---
+          Purpose: Fill the empty space at the bottom of the drawer with a
+          reassuring note. Without this the panel reads as "is this broken?"
+          when the form is short. Doubles as a trust signal: nothing here
+          is permanent. */}
+      <div className="mt-8 pt-5 border-t border-border/30 text-[12px] text-muted-foreground/80 leading-relaxed">
+        <p>
+          You can change all of these any time from <strong className="font-medium text-foreground/80">Settings</strong>.
+          Nothing here is permanent — feel free to skip a field and come back to it later.
+        </p>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
     </TaskDrawer>
   )
 }
