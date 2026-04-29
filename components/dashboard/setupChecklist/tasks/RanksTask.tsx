@@ -74,11 +74,22 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
     try {
       // Two endpoints: ranks PUT for the enable flags, config PATCH for
       // dm_ranks + rank_channel. Run both, fail fast if either fails.
+      // dashboardMutate's signature only types POST/PATCH/DELETE so we hit
+      // /ranks via raw fetch (it's a one-off PUT endpoint).
       await Promise.all([
-        dashboardMutate("PUT", ranksKey, {
-          voiceRanksEnabled: draft.voice,
-          msgRanksEnabled: draft.msg,
-          xpRanksEnabled: draft.xp,
+        fetch(ranksKey, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            voiceRanksEnabled: draft.voice,
+            msgRanksEnabled: draft.msg,
+            xpRanksEnabled: draft.xp,
+          }),
+        }).then(async (res) => {
+          if (!res.ok) {
+            const body = await res.json().catch(() => null)
+            throw new Error(body?.error || `Failed to save ranks (HTTP ${res.status})`)
+          }
         }),
         dashboardMutate("PATCH", configKey, {
           dm_ranks: draft.dm,

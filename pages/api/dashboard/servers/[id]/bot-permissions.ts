@@ -37,21 +37,23 @@ import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
 const BOT_USER_ID = process.env.DISCORD_CLIENT_ID
 
-// Discord permission bit constants (raw values, not bit shifts, for readability)
+// Discord permission bit constants. Use BigInt(string) constructor instead of
+// BigInt literal syntax (0x...n) -- tsconfig targets older than ES2020 so
+// the literal form fails type-check. Hex strings are equally readable.
 const PERMS = {
-  view_channel:     0x0000000000000400n,
-  send_messages:    0x0000000000000800n,
-  embed_links:      0x0000000000004000n,
-  attach_files:     0x0000000000008000n,
-  mention_everyone: 0x0000000000020000n,
-  manage_webhooks:  0x0000000020000000n,
-  manage_roles:     0x0000000010000000n,
-  manage_channels:  0x0000000000000010n,
-  manage_messages:  0x0000000000002000n,
-  move_members:     0x0000000001000000n,
-  connect:          0x0000000000100000n,
-  speak:            0x0000000000200000n,
-  administrator:    0x0000000000000008n,
+  view_channel:     BigInt("0x0000000000000400"),
+  send_messages:    BigInt("0x0000000000000800"),
+  embed_links:      BigInt("0x0000000000004000"),
+  attach_files:     BigInt("0x0000000000008000"),
+  mention_everyone: BigInt("0x0000000000020000"),
+  manage_webhooks:  BigInt("0x0000000020000000"),
+  manage_roles:     BigInt("0x0000000010000000"),
+  manage_channels:  BigInt("0x0000000000000010"),
+  manage_messages:  BigInt("0x0000000000002000"),
+  move_members:     BigInt("0x0000000001000000"),
+  connect:          BigInt("0x0000000000100000"),
+  speak:            BigInt("0x0000000000200000"),
+  administrator:    BigInt("0x0000000000000008"),
 }
 
 interface CachedResult {
@@ -118,7 +120,7 @@ export default apiHandler({
 
     // 3. Effective bot perms = OR of @everyone + all bot's own roles.
     const botRoleIds = new Set([guildId.toString(), ...memberData.roles])
-    let effective = 0n
+    let effective = BigInt(0)
     for (const role of allRoles) {
       if (botRoleIds.has(role.id)) {
         effective |= BigInt(role.permissions)
