@@ -536,8 +536,36 @@ export default function SetupPage() {
   )
 }
 
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
-  props: {
-    ...(await serverSideTranslations(locale ?? "en", ["common"])),
-  },
-})
+// --- AI-REPLACED (2026-04-29) ---
+// Reason: The legacy 12-step wizard has been superseded by the dashboard
+//         Setup Checklist widget on /dashboard/servers/[id]. Anyone who
+//         lands on /setup (bookmarks, old DMs, manually typed URL) is
+//         redirected to the new flow with the checklist auto-opened.
+//         The component code above is intentionally left in place so the
+//         redirect can be removed later if we want to bring the wizard
+//         back -- but in normal operation, nothing below this point ever
+//         renders because the SSR redirect short-circuits the request.
+// What the new code does better: One single onboarding surface. No more
+//         "two paths, which one is current?" confusion for admins.
+// --- Original code (kept for rollback by reverting this getServerSideProps) ---
+// export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
+//   props: {
+//     ...(await serverSideTranslations(locale ?? "en", ["common"])),
+//   },
+// })
+// --- End original code ---
+export const getServerSideProps: GetServerSideProps = async ({ params }) => {
+  const id = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params!.id[0] : ""
+  if (!id) {
+    return { notFound: true }
+  }
+  return {
+    redirect: {
+      destination: `/dashboard/servers/${id}?setup=open`,
+      // 307: temporary. We may un-deprecate the wizard at some point and
+      // we don't want browsers/CDNs to cache this as a permanent redirect.
+      permanent: false,
+    },
+  }
+}
+// --- END AI-REPLACED ---

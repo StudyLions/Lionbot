@@ -103,6 +103,14 @@ export default function SetupChecklist({ guildId }: Props) {
   //          having to navigate back to the progress bar each time.
   const [liveAnnouncement, setLiveAnnouncement] = useState("")
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Inline confirmation for the "I've already set this up" bulk-skip
+  //          action. Two clicks instead of one so a slipped finger doesn't
+  //          dismiss the entire checklist. The widget collapses to the
+  //          "all done" state once the request resolves.
+  const [confirmDismissAll, setConfirmDismissAll] = useState(false)
+  const [bulkSkipping, setBulkSkipping] = useState(false)
+  // --- END AI-MODIFIED ---
 
   // Auto-scroll to the widget + open the first pending task when the bot DM
   // links here with ?setup=open. Only runs once per page load.
@@ -155,6 +163,34 @@ export default function SetupChecklist({ guildId }: Props) {
       toast.error(err?.message || "Couldn't save \u2014 try again.")
     }
   }
+
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Bulk-skip every still-pending task. Used by the "I've already
+  // set this up" escape hatch in the header. Fires PATCH requests in
+  // parallel so the round-trip is one network frame, not eight. The widget
+  // self-collapses to the all-done state on the next render.
+  async function bulkSkipAllPending() {
+    if (!data) return
+    const pending = TASKS.filter((t) => (data.tasks[t.id]?.status ?? "pending") === "pending")
+    if (pending.length === 0) return
+    setBulkSkipping(true)
+    try {
+      await Promise.all(
+        pending.map((t) =>
+          dashboardMutate("PATCH", apiKey, { task: t.id, status: "skipped" }),
+        ),
+      )
+      invalidate(apiKey)
+      setLiveAnnouncement(`Marked ${pending.length} remaining tasks as set up.`)
+      toast.success("Hidden — re-open from the sidebar any time.")
+      setConfirmDismissAll(false)
+    } catch (err: any) {
+      toast.error(err?.message || "Couldn't dismiss the checklist — try again.")
+    } finally {
+      setBulkSkipping(false)
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   function statusIcon(status: TaskStatus, configured: boolean) {
     if (status === "done") {
@@ -292,8 +328,8 @@ export default function SetupChecklist({ guildId }: Props) {
               </h2>
               <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                 {data.completed_count === 0 && data.skipped_count === 0
-                  ? "A short list of things to set up. Skip anything you don't need \u2014 you can change all of it later."
-                  : `Nice \u2014 keep going. ${data.completed_count + data.skipped_count} of ${data.total} done.`}
+                  ? "A short list of things to set up. Skip anything you don't need — you can change all of it later."
+                  : `Nice — keep going. ${data.completed_count + data.skipped_count} of ${data.total} done.`}
               </p>
             </div>
           </div>
@@ -311,9 +347,47 @@ export default function SetupChecklist({ guildId }: Props) {
               style={{ width: `${progressPct}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>{remaining} left</span>
-            <span className="tabular-nums">{progressPct}%</span>
+          <div className="mt-2 flex items-center justify-between gap-3 text-[11px] text-muted-foreground">
+            <span className="tabular-nums">
+              {remaining} left · {progressPct}%
+            </span>
+            {/* --- AI-MODIFIED (2026-04-29) ---
+                Purpose: Escape hatch for established admins. The widget
+                otherwise lingers forever for servers configured before this
+                feature shipped (their setup_checklist_state JSON is empty).
+                Two-step confirm so a slipped finger doesn't dismiss it.
+                Lives in the progress footer row -- discoverable but not
+                competing with the title for attention. */}
+            {!confirmDismissAll ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDismissAll(true)}
+                disabled={bulkSkipping}
+                className="shrink-0 inline-flex items-center min-h-[32px] px-2 -mr-2 text-[11px] text-muted-foreground/90 hover:text-foreground/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md whitespace-nowrap"
+              >
+                I've already set this up
+              </button>
+            ) : (
+              <div className="shrink-0 flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setConfirmDismissAll(false)}
+                  disabled={bulkSkipping}
+                  className="inline-flex items-center min-h-[32px] px-2 text-[11px] text-muted-foreground hover:text-foreground/80 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={bulkSkipAllPending}
+                  disabled={bulkSkipping}
+                  className="inline-flex items-center min-h-[32px] px-2.5 text-[11px] font-medium text-primary-foreground bg-primary hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md whitespace-nowrap disabled:opacity-60"
+                >
+                  {bulkSkipping ? "Hiding…" : "Yes, hide it"}
+                </button>
+              </div>
+            )}
+            {/* --- END AI-MODIFIED --- */}
           </div>
         </header>
 
