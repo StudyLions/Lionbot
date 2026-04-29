@@ -23,6 +23,16 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 29, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-29",
+    title: "New Setup Checklist: Friendlier Onboarding That Works on Your Phone",
+    description:
+      "We rebuilt server setup from scratch. The old 12-step wizard was overwhelming for admins who don't speak Discord-fluent — too much jargon, no obvious skip path, the bot's mascot kept butting in, and on a phone half the controls were impossible to tap. We replaced the whole thing with a Setup Checklist that lives right on your server's dashboard overview. Eight clear tasks (server essentials, ranks, member rewards, welcome message, notification channels, focus timer, accountability sessions, pet game), each opens its own focused panel — a slide-in on desktop, a full-screen sheet on mobile so it never feels cramped on a phone. Every task is skippable, the optional ones (accountability + pet) are clearly labelled, and you can come back any time. We added plain-English tooltips for the technical terms (\"voice channel\", \"DM\", \"webhook\", and so on), so you don't have to know what those mean to use the dashboard. The bot also checks its own permissions before you save — if it can't actually do what you're enabling (e.g. send greetings without Manage Webhooks), the panel tells you exactly which permission is missing instead of just failing silently. Two long-standing bugs got fixed along the way: rank XP-per-check-in defaulted to 5% of what the bot actually ships with (so admins thought they had a slow ranking system but the slider was just badly scaled), and accountability session channels were being saved to the wrong place in the database so the bot quietly ignored them. Both are now correct. The old wizard still exists as a \"Guided Tour\" mode for power users who liked the multi-page layout — you can find it in the dashboard search.",
+    category: "improvement",
+    area: "website",
+  },
+
   // ── April 26, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-26",
