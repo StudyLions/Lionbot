@@ -54,12 +54,13 @@ export default apiHandler({
       // The admin opted out of every stats section -- don't leak
       // anything we'd otherwise show. We still 200 so the client
       // can cleanly hide the panel without a stack trace.
-      return res.status(200).json({
+      const empty: StatsResponse = {
         tracked_members: 0,
         studied_minutes_30d: 0,
         active_voice_sessions: 0,
         generated_at: new Date().toISOString(),
-      } satisfies StatsResponse)
+      }
+      return res.status(200).json(empty)
     }
 
     const guildId = listing.guildid
