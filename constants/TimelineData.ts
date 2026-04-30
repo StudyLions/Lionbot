@@ -25,8 +25,16 @@ export interface TimelineEntry {
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 30, 2026 ─────────────────────────────────────────
   // --- AI-MODIFIED (2026-04-30) ---
-  // Purpose: Timeline entries for the Setup Checklist Phase 1 bug fixes
-  // and Phase 2 Premium features section.
+  // Purpose: Editorial redesign of the "Feature Your Server" feature.
+  {
+    date: "2026-04-30",
+    title: "Feature Your Server: Magazine-Style Redesign",
+    description:
+      "Rebuilt every server profile page to look like a hand-curated magazine feature instead of a stack of generic dashboard cards. There are now five real visual themes — Atlantic (warm ivory paper, drop caps), Wired (matte black with neon accents), Kinfolk (cream and Garamond, monochrome photos), Vogue (oversized Playfair display with double rules), and Frieze (vast negative space, very large display, very small body). Each theme picks its own serif/sans pair, surface colour, cover-blend recipe, and rule style — they actually look different from each other now. The /servers directory got the same treatment: a serif masthead, a single Featured-this-week cover story, and a hairline-separated table-of-contents listing instead of a card grid. The dashboard editor was reorganised content-first so admins write before they decorate, and the live preview now takes 60% of the screen.",
+    category: "improvement",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   {
     date: "2026-04-30",
     title: "Setup Checklist: Premium Features Section",
