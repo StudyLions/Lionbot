@@ -11,15 +11,25 @@
 // invalid `<Link><a><PixelButton>` nesting which the button swallowed
 // in some browsers, so the click never navigated.
 //
-// The redesigned page:
-//   - drops PetShell entirely; renders directly under <Layout>, so the
-//     theme background paints the full viewport
-//   - hero: GameBoy frame on the left, speech bubble in its OWN flex
-//     column on the right (no absolute positioning -- so no overlap)
-//   - listings: full-width responsive grid below the hero (up to 6 cols
-//     on xl screens)
-//   - customize button: real <a> styled like a button, no nested
-//     interactive elements
+// 2026-04-30 (rev 3): sidebar layout. Rev 2 still used a single hero
+// row stacked above a listings grid, which left ~380px of dead space
+// to the right of the speech bubble at xl, and ate ~530px of vertical
+// space before the first listing on mobile (lion + identity stacked).
+//
+// Rev 3 turns the page into a CSS grid:
+//   - lg+ : sticky LEFT sidebar (~320px) with the lion + identity +
+//           speech bubble + owner action; listings flow into a
+//           full-width RIGHT column. The lion stays in view while
+//           the buyer scrolls the listings.
+//   - <lg : the same sidebar block becomes a horizontal banner --
+//           lion 140px on the left, identity inline on the right,
+//           speech bubble + owner action below the row at full
+//           width. Listings sit under the banner in a tight 2/3
+//           col grid.
+//
+// We render TWO StoreCanvas instances (mobile 140px / desktop 260px)
+// with hidden/lg:block toggles, identical otherwise. This avoids
+// touching the StoreCanvas component just to add a responsive width.
 // ============================================================
 import { useCallback, useState } from "react"
 import { useRouter } from "next/router"
@@ -157,15 +167,21 @@ function StoreInner() {
   if (isLoading || !id) {
     return (
       <FullBleedShell>
-        <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* --- AI-MODIFIED (2026-04-30) ---
+            Reason: skeleton mirrors the new sidebar + listings grid so the
+            page doesn't reflow when data lands. */}
+        <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
           <Skeleton className="h-10 w-48" />
-          <Skeleton className="h-[420px] w-full" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 gap-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-[240px]" />
-            ))}
+          <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+            <Skeleton className="h-[420px] w-full" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <Skeleton key={i} className="h-[240px]" />
+              ))}
+            </div>
           </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </FullBleedShell>
     )
   }
@@ -198,6 +214,23 @@ function StoreInner() {
   const animation = resolveAnimationForRender(store.backgroundAnimation, seller.tier)
   const accent = store.accentColor ?? theme.accent
 
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Reason: shared StoreCanvas props between the mobile + desktop instances
+  // so the two renders stay in sync. The lion is stamped twice (different
+  // widths) with hidden/lg:block toggles -- see file header for why.
+  const canvasProps = {
+    pet,
+    speechBubble: null,
+    shopkeeperName: undefined,
+    hideSpeechBubble: true,
+    showCaption: false,
+    accentColor: store.accentColor,
+    themeId: theme.id as StoreThemeId,
+    animationId: animation.id as StoreAnimationId,
+    animated: true,
+  } as const
+  // --- END AI-MODIFIED ---
+
   return (
     <FullBleedShell
       themeId={theme.id as StoreThemeId}
@@ -205,9 +238,13 @@ function StoreInner() {
       pageBackground={theme.pageBackground}
       textColor={theme.textColor}
     >
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      {/* --- AI-MODIFIED (2026-04-30) ---
+          Reason: page width raised from max-w-7xl (1280px) to max-w-[1600px]
+          so the listings grid has room to breathe at 2xl when the sidebar
+          docks on the left. */}
+      <div className="max-w-[1600px] mx-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {/* Top nav */}
-        <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center justify-between gap-2 sm:gap-4 flex-wrap">
           <Link href="/pet/marketplace">
             <a
               className="font-pixel text-[12px] inline-flex items-center gap-1.5 transition-colors no-underline px-3 py-1.5 border-2 border-transparent hover:border-[#3a4a6c] hover:bg-black/20"
@@ -224,44 +261,45 @@ function StoreInner() {
           )}
         </div>
 
-        {/* Hero: lion shopkeeper + speech bubble + store identity */}
-        <PixelCard
-          className="p-5 md:p-6"
-          corners
-          borderColor={isPremiumSeller ? tierColors.border : undefined}
-        >
-          <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-center lg:items-start">
-            {/* Lion on the left */}
-            <div className="flex-shrink-0">
-              <StoreCanvas
-                pet={pet}
-                speechBubble={null}
-                shopkeeperName={undefined}
-                hideSpeechBubble
-                showCaption={false}
-                accentColor={store.accentColor}
-                themeId={theme.id as StoreThemeId}
-                animationId={animation.id as StoreAnimationId}
-                width={300}
-                animated
-              />
-            </div>
+        {/* --- AI-MODIFIED (2026-04-30) ---
+            Reason: 2-column CSS grid -- sidebar (lion + identity + bubble)
+            on the left, listings grid on the right. On <lg the grid
+            collapses to a single column and the sidebar becomes a
+            horizontal banner. */}
+        <div className="grid lg:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+          {/* SIDEBAR (lg+) / BANNER (<lg) */}
+          <aside className="lg:sticky lg:top-4 self-start min-w-0">
+            <PixelCard
+              className="p-4 lg:p-5"
+              corners
+              borderColor={isPremiumSeller ? tierColors.border : undefined}
+            >
+              {/* Top row: lion (left on mobile, top on lg) + identity */}
+              <div className="flex flex-row lg:flex-col gap-4 items-start lg:items-stretch">
+                {/* Lion canvas -- two instances toggled by breakpoint */}
+                <div className="flex-shrink-0 lg:self-center">
+                  <div className="lg:hidden">
+                    <StoreCanvas {...canvasProps} width={140} />
+                  </div>
+                  <div className="hidden lg:block">
+                    <StoreCanvas {...canvasProps} width={260} />
+                  </div>
+                </div>
 
-            {/* Identity + bubble on the right */}
-            <div className="flex-1 min-w-0 w-full space-y-4">
-              {/* Title row */}
-              <div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Store size={20} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
-                  <h1
-                    className="font-pixel text-2xl leading-tight break-words"
-                    style={{ color: theme.textColor }}
-                  >
-                    {store.effectiveName}
-                  </h1>
+                {/* Identity */}
+                <div className="flex-1 min-w-0 w-full space-y-2">
+                  <div className="flex items-start gap-2 flex-wrap">
+                    <Store size={18} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0 mt-0.5" />
+                    <h1
+                      className="font-pixel text-lg sm:text-xl lg:text-[22px] leading-tight break-words flex-1 min-w-0"
+                      style={{ color: theme.textColor }}
+                    >
+                      {store.effectiveName}
+                    </h1>
+                  </div>
                   {isPremiumSeller && (
                     <span
-                      className="font-pixel text-[10px] px-2 py-1 border-2 inline-flex items-center gap-1 flex-shrink-0"
+                      className="font-pixel text-[10px] px-2 py-1 border-2 inline-flex items-center gap-1"
                       style={{
                         borderColor: tierColors.border,
                         background: tierColors.bg,
@@ -271,25 +309,28 @@ function StoreInner() {
                       <Heart size={10} /> {seller.tierLabel}
                     </span>
                   )}
-                </div>
-                <p
-                  className="font-pixel text-[12px] mt-2"
-                  style={{ color: theme.textDim }}
-                >
-                  {store.displayName ? (
-                    <>shopkeeper: <span style={{ color: theme.textColor }}>{seller.discordName}</span></>
-                  ) : (
-                    <><span style={{ color: theme.textColor }}>{seller.discordName}</span>&apos;s personal store</>
-                  )}
-                  <span className="mx-2 opacity-50">&middot;</span>
-                  <span className="inline-flex items-center gap-1">
+                  <p
+                    className="font-pixel text-[11px] leading-relaxed"
+                    style={{ color: theme.textDim }}
+                  >
+                    {store.displayName ? (
+                      <>shopkeeper{" "}
+                        <span style={{ color: theme.textColor }}>{seller.discordName}</span>
+                      </>
+                    ) : (
+                      <>by <span style={{ color: theme.textColor }}>{seller.discordName}</span></>
+                    )}
+                  </p>
+                  <p
+                    className="font-pixel text-[11px] inline-flex items-center gap-1"
+                    style={{ color: theme.textDim }}
+                  >
                     <ShoppingBag size={11} /> {listings.length} active listing{listings.length === 1 ? "" : "s"}
-                  </span>
+                  </p>
                   {store.slug ? (
-                    <>
-                      <span className="mx-2 opacity-50">&middot;</span>
+                    <p>
                       <code
-                        className="text-[10px] px-1.5 py-0.5 border"
+                        className="font-pixel text-[10px] px-1.5 py-0.5 border inline-block break-all"
                         style={{
                           color: accent,
                           borderColor: `${accent}55`,
@@ -298,91 +339,120 @@ function StoreInner() {
                       >
                         /store/{store.slug}
                       </code>
-                    </>
+                    </p>
                   ) : null}
-                </p>
+                  {pet ? (
+                    <p
+                      className="font-pixel text-[11px] leading-relaxed hidden lg:block"
+                      style={{ color: `${theme.textDim}cc` }}
+                    >
+                      Tended by <span style={{ color: theme.textColor }}>{pet.name}</span>,
+                      a level {pet.level} LionGotchi.
+                    </p>
+                  ) : null}
+                </div>
               </div>
 
-              {/* Speech bubble -- now in its own flex column, no absolute */}
+              {/* Mobile-only "tended by" -- kept on its own line below the row
+                  so the identity column above stays compact on narrow phones. */}
+              {pet ? (
+                <p
+                  className="font-pixel text-[11px] leading-relaxed mt-3 lg:hidden"
+                  style={{ color: `${theme.textDim}cc` }}
+                >
+                  Tended by <span style={{ color: theme.textColor }}>{pet.name}</span>,
+                  a level {pet.level} LionGotchi.
+                </p>
+              ) : null}
+
+              {/* Speech bubble -- full-width row below the lion+identity */}
               {store.speechBubble ? (
-                <div className="max-w-xl">
-                  <SpeechBubble tailSide="left" accentColor={accent}>
+                <div className="mt-4">
+                  <SpeechBubble
+                    tailSide="left"
+                    accentColor={accent}
+                    className="max-w-none"
+                  >
                     {store.speechBubble}
                   </SpeechBubble>
                 </div>
               ) : null}
 
-              {/* Lion + shopkeeper caption (was previously inside StoreCanvas) */}
-              {pet ? (
-                <p
-                  className="font-pixel text-[11px]"
-                  style={{ color: `${theme.textDim}cc` }}
-                >
-                  Tended by <span style={{ color: theme.textColor }}>{pet.name}</span>,
-                  who is a level {pet.level} LionGotchi.
-                </p>
-              ) : null}
-            </div>
-          </div>
-        </PixelCard>
-
-        {/* Listings -- full-width grid below the hero */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h2
-              className="font-pixel text-base inline-flex items-center gap-2"
-              style={{ color: theme.textColor }}
-            >
-              <ShoppingBag size={16} className="text-[var(--pet-gold,#f0c040)]" />
-              On sale
-            </h2>
-            {isOwner && (
-              <PixelLinkButton href="/pet/marketplace/sell" variant="primary">
-                + List a new item
-              </PixelLinkButton>
-            )}
-          </div>
-
-          {listings.length === 0 ? (
-            <PixelCard className="p-12 text-center" corners>
-              <ShoppingBag size={32} className="mx-auto text-[var(--pet-text-dim,#8899aa)] mb-3 opacity-50" />
-              <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)] mb-4">
-                {isOwner
-                  ? "Your shop is empty -- list an item to start selling!"
-                  : `${seller.discordName} hasn't listed anything yet. Check back soon!`}
-              </p>
+              {/* Owner action -- list a new item, full-width inside the sidebar */}
               {isOwner && (
-                <PixelLinkButton href="/pet/marketplace/sell" variant="primary">
-                  + List your first item
-                </PixelLinkButton>
+                <div className="mt-4">
+                  <PixelLinkButton
+                    href="/pet/marketplace/sell"
+                    variant="primary"
+                    className="w-full"
+                  >
+                    + List a new item
+                  </PixelLinkButton>
+                </div>
               )}
             </PixelCard>
-          ) : (
-            <div
-              className={cn(
-                "grid gap-3",
-                "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
-              )}
-            >
-              {listings.map((listing) => (
-                <ListingCard
-                  key={listing.listingId}
-                  listing={listing}
-                  onBuy={(l) => {
-                    if (!session) {
-                      toast.error("Sign in to buy items.")
-                      return
-                    }
-                    if (isOwner) {
-                      toast.message("That's your own listing -- visitors will buy it from here.")
-                      return
-                    }
-                    setBuyTarget(l)
-                  }}
-                />
-              ))}
+          </aside>
+          {/* --- END AI-MODIFIED --- */}
+
+          {/* LISTINGS COLUMN -- right side on lg+, full-width below banner on <lg */}
+          <section className="space-y-3 min-w-0">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <h2
+                className="font-pixel text-base inline-flex items-center gap-2"
+                style={{ color: theme.textColor }}
+              >
+                <ShoppingBag size={16} className="text-[var(--pet-gold,#f0c040)]" />
+                On sale
+              </h2>
             </div>
-          )}
+
+            {listings.length === 0 ? (
+              <PixelCard className="p-8 sm:p-12 text-center" corners>
+                <ShoppingBag size={32} className="mx-auto text-[var(--pet-text-dim,#8899aa)] mb-3 opacity-50" />
+                <p className="font-pixel text-sm text-[var(--pet-text-dim,#8899aa)] mb-4">
+                  {isOwner
+                    ? "Your shop is empty -- list an item to start selling!"
+                    : `${seller.discordName} hasn't listed anything yet. Check back soon!`}
+                </p>
+                {isOwner && (
+                  <PixelLinkButton href="/pet/marketplace/sell" variant="primary">
+                    + List your first item
+                  </PixelLinkButton>
+                )}
+              </PixelCard>
+            ) : (
+              // --- AI-MODIFIED (2026-04-30) ---
+              // Reason: grid density rebalanced for the sidebar layout.
+              // The previous 2/3/4/5/6 progression assumed full page width;
+              // now that the sidebar eats ~320px from lg+, lg drops to 3
+              // cols (each ~220px) and 2xl pushes to 5 (each ~210px).
+              <div
+                className={cn(
+                  "grid gap-3",
+                  "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5",
+                )}
+              >
+                {listings.map((listing) => (
+                  <ListingCard
+                    key={listing.listingId}
+                    listing={listing}
+                    onBuy={(l) => {
+                      if (!session) {
+                        toast.error("Sign in to buy items.")
+                        return
+                      }
+                      if (isOwner) {
+                        toast.message("That's your own listing -- visitors will buy it from here.")
+                        return
+                      }
+                      setBuyTarget(l)
+                    }}
+                  />
+                ))}
+              </div>
+              // --- END AI-MODIFIED ---
+            )}
+          </section>
         </div>
       </div>
 

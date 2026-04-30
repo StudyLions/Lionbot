@@ -89,7 +89,19 @@ interface OwnStorePreview {
 
 function CustomizeInner() {
   const { data: session } = useSession()
-  const myDiscordId = session?.user ? (session as any).user?.id : null
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Reason: NextAuth's session callback (pages/api/auth/[...nextauth].js)
+  // exposes the Discord ID at `session.discordId`, NOT `session.user.id`.
+  // The previous read produced `null` for every signed-in user, which made
+  // the preview useDashboard hook key `null`, which kept `previewLoading`
+  // permanently `true` (SWR returns `isLoading: !data && !error` and with
+  // a null key it never fetches). Result: page stuck on the skeleton
+  // forever. Match the convention used in components/boards/MemberPanel.tsx.
+  // --- Original code (commented out for rollback) ---
+  // const myDiscordId = session?.user ? (session as any).user?.id : null
+  // --- End original code ---
+  const myDiscordId = (session as any)?.discordId ?? null
+  // --- END AI-MODIFIED ---
 
   const { data: meData, isLoading: meLoading, error: meError, mutate } = useDashboard<MeApiResponse>(
     session ? "/api/pet/marketplace/store/me" : null,
@@ -98,9 +110,15 @@ function CustomizeInner() {
   // We re-use the public store endpoint for our own ID -- it already returns
   // pet visual data + the seller's display name in exactly the shape the
   // customizer's preview wants.
-  const { data: previewData, isLoading: previewLoading } = useDashboard<OwnStorePreview>(
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Reason: previewLoading no longer blocks the page render -- the customizer
+  // already passes `pet={previewData?.pet ?? null}` so it can render with no
+  // pet preview while the SWR fetch resolves in the background. This makes
+  // the page resilient if the preview API ever 404s or 500s.
+  const { data: previewData } = useDashboard<OwnStorePreview>(
     myDiscordId ? `/api/pet/marketplace/store/${myDiscordId}` : null,
   )
+  // --- END AI-MODIFIED ---
 
   const previewHref = myDiscordId
     ? `/pet/marketplace/store/${myDiscordId}`
@@ -122,7 +140,13 @@ function CustomizeInner() {
     )
   }
 
-  if (meLoading || !meData || previewLoading) {
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Reason: dropped `previewLoading` from the blocking condition (see above).
+  // --- Original code (commented out for rollback) ---
+  // if (meLoading || !meData || previewLoading) {
+  // --- End original code ---
+  if (meLoading || !meData) {
+  // --- END AI-MODIFIED ---
     return (
       <PetShell wide>
         <Skeleton className="h-12 w-48 mb-4" />
