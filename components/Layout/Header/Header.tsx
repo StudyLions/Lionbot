@@ -29,6 +29,10 @@ import {
   // --- END AI-MODIFIED ---
   Sparkles,
   ChevronDown,
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Compass icon for new "Servers" directory link
+  Compass,
+  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -74,9 +78,30 @@ type NavLink = {
   children?: { label: string; href: string; icon: React.ElementType; external?: boolean }[];
 };
 
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Top-level "Features" link replaced by "Servers" (premium directory).
+//   Features moved into the Guides dropdown so existing /features content
+//   remains discoverable without taking up scarce header real estate.
+// --- Original code (commented out for rollback) ---
+// const NAV_LINKS: NavLink[] = [
+//   { label: "Home", href: "/", icon: Home, matchExact: true },
+//   { label: "Features", href: "/features", icon: Sparkles },
+//   {
+//     label: "Guides",
+//     href: "/guides",
+//     icon: BookOpen,
+//     children: [
+//       { label: "How to Use", href: "/tutorials", icon: GraduationCap },
+//       { label: "Articles", href: "/guides", icon: BookOpen },
+//     ],
+//   },
+//   { label: "Updates", href: "/timeline", icon: Sparkles },
+//   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
+// ];
+// --- End original code ---
 const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
-  { label: "Features", href: "/features", icon: Sparkles },
+  { label: "Servers", href: "/servers", icon: Compass },
   {
     label: "Guides",
     href: "/guides",
@@ -84,11 +109,13 @@ const NAV_LINKS: NavLink[] = [
     children: [
       { label: "How to Use", href: "/tutorials", icon: GraduationCap },
       { label: "Articles", href: "/guides", icon: BookOpen },
+      { label: "Features", href: "/features", icon: Sparkles },
     ],
   },
   { label: "Updates", href: "/timeline", icon: Sparkles },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 
@@ -149,9 +176,13 @@ export default function Header() {
                     <button
                       className={cn(
                         "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1 outline-none",
-                        isActive("/guides") || isActive("/tutorials")
+                        // --- AI-MODIFIED (2026-04-30) ---
+                        // Purpose: include /features in the Guides dropdown
+                        // active-state since Features is now nested there.
+                        isActive("/guides") || isActive("/tutorials") || isActive("/features")
                           ? "text-foreground bg-accent"
                           : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                        // --- END AI-MODIFIED ---
                       )}
                     >
                       {link.label}

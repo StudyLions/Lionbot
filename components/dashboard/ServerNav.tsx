@@ -30,6 +30,10 @@ import {
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
   Search, X, Clock, Bug, MessageSquareWarning, Type,
   ShieldAlert, MonitorPlay, CheckSquare,
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Globe icon for "Feature Your Server" listing nav link
+  Globe,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -168,6 +172,11 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // --- AI-MODIFIED (2026-04-06) ---
         // Purpose: Anti AFK System premium feature nav link
         { href: "/anti-afk", label: "Anti AFK System", icon: <ShieldAlert size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-04-30) ---
+        // Purpose: "Feature Your Server" premium feature nav link -- sets up the
+        // public profile page at /servers/[slug]
+        { href: "/listing", label: "Feature Your Server", icon: <Globe size={16} />, supporterPerk: true },
         // --- END AI-MODIFIED ---
       ],
     })

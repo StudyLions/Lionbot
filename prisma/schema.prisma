@@ -321,6 +321,10 @@ model guild_config {
   // Purpose: Anti AFK System reverse relation
   anti_afk_config                 anti_afk_config?
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: "Feature Your Server" public profile reverse relation
+  server_listing                  server_listings?
+  // --- END AI-MODIFIED ---
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -2576,5 +2580,89 @@ model anti_afk_config {
   max_actions_per_hour Int          @default(100)
 
   guild_config         guild_config @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+}
+// --- END AI-GENERATED ---
+
+// --- AI-GENERATED (2026-04-30) ---
+// Purpose: "Feature Your Server" -- premium-only public profile pages at
+// /servers/[slug]. One row per guild that has opted in. Approval is
+// SQL-direct (no admin dashboard); see prisma/migrations/manual_2026_04_30_server_listings.sql
+// for column definitions. The sections_enabled JSON lets server admins
+// individually toggle every panel on their public page (verified stats,
+// gallery, DoFollow link, etc.) so the page feels truly customised.
+enum ListingStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+  ARCHIVED
+}
+
+model server_listings {
+  guildid              BigInt        @id
+  slug                 String        @unique
+  status               ListingStatus @default(DRAFT)
+
+  display_name         String
+  tagline              String?
+  description          String        @db.Text
+  cover_image_url      String?
+  guild_icon_url       String?
+  gallery_images       Json?
+
+  category             String
+  secondary_tags       String[]      @default([])
+  is_study_server      Boolean       @default(false)
+  primary_country      String?
+  primary_language     String?
+  audience_age         String?
+
+  theme_preset         String        @default("midnight")
+  accent_color         String?
+  font_family          String?
+  cover_blend_mode     String?       @default("fade")
+
+  invite_code          String?
+  invite_managed       Boolean       @default(true)
+  invite_last_rotated  DateTime?     @db.Timestamptz(6)
+
+  external_link_url    String?
+  external_link_label  String?
+
+  sections_enabled     Json
+  nsfw_confirmed       Boolean       @default(false)
+
+  submitted_at         DateTime?     @db.Timestamptz(6)
+  approved_at          DateTime?     @db.Timestamptz(6)
+  approved_by          BigInt?
+  rejection_reason     String?
+  pending_changes      Json?
+  notification_sent_at DateTime?     @db.Timestamptz(6)
+
+  view_count           Int           @default(0)
+  invite_click_count   Int           @default(0)
+  promoted_until       DateTime?     @db.Timestamptz(6)
+
+  created_at           DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at           DateTime      @default(now()) @db.Timestamptz(6)
+
+  guild_config         guild_config  @relation(fields: [guildid], references: [guildid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([status, approved_at], map: "idx_server_listings_status_approved")
+  @@index([category], map: "idx_server_listings_category")
+  @@index([promoted_until], map: "idx_server_listings_promoted")
+}
+
+model server_listing_analytics {
+  id          BigInt   @id @default(autoincrement())
+  guildid     BigInt
+  event_type  String
+  referrer    String?
+  country     String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([guildid, created_at], map: "idx_listing_analytics_guild_time")
+  @@index([guildid, event_type, created_at], map: "idx_listing_analytics_guild_event_time")
 }
 // --- END AI-GENERATED ---

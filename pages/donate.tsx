@@ -47,6 +47,12 @@ import {
   // Purpose: Marketplace 2.0 -- icon for the new store / marketplace perks.
   Store,
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Icons for "Feature Your Server" tab and feature highlights.
+  Compass,
+  Globe,
+  Link2,
+  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -1085,7 +1091,21 @@ const FEATURE_GROUP_TAGS = [
   "LionGotchi Pet", "Button Labels", "Goals Cards",
 ];
 
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Added "Feature Your Server" as a new premium tab on /donate.
+//   Lives at the front so it's the first thing prospective subscribers see.
+// --- Original code (commented out for rollback) ---
+// const PREMIUM_TABS = [
+//   { id: "branding", label: "Visual Branding", Icon: Palette },
+//   { id: "text", label: "Text Branding", Icon: Type },
+//   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
+//   { id: "leaderboard", label: "Leaderboards", Icon: Trophy },
+//   { id: "sounds", label: "Sounds", Icon: Volume2 },
+//   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
+// ] as const;
+// --- End original code ---
 const PREMIUM_TABS = [
+  { id: "feature_server", label: "Feature Your Server", Icon: Compass },
   { id: "branding", label: "Visual Branding", Icon: Palette },
   { id: "text", label: "Text Branding", Icon: Type },
   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
@@ -1093,6 +1113,7 @@ const PREMIUM_TABS = [
   { id: "sounds", label: "Sounds", Icon: Volume2 },
   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
 ] as const;
+// --- END AI-MODIFIED ---
 
 type PremiumTabId = typeof PREMIUM_TABS[number]["id"];
 
@@ -1341,6 +1362,36 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px]">
             <div className="p-6 lg:p-8 flex flex-col justify-center">
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: New "Feature Your Server" tab content -- the marquee */}
+              {/* selling point of Server Premium for community owners. */}
+              {activeTab === "feature_server" && (
+                <div>
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-3">
+                    <Sparkles className="h-3 w-3" /> New
+                  </span>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Feature Your Server</h3>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Get your community on <span className="text-foreground font-medium">lionbot.org/servers</span> &mdash; a public, SEO-friendly directory of premium Discord servers.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {[
+                      "Beautiful, fully customisable profile page with your own theme & cover",
+                      "1 DoFollow link to your website (real SEO juice, not just a redirect)",
+                      "Bot-managed Discord invite link, rotated on demand",
+                      "Searchable & filterable directory ranked by activity",
+                      "Optional Verified-by-Leo live stats and study session counts",
+                      "Auto-generated social preview cards for shares & posts",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {activeTab === "branding" && (
                 <div>
                   <h3 className="text-xl font-bold text-foreground mb-2">Custom Visual Branding</h3>
@@ -1483,6 +1534,92 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             </div>
 
             <div className="relative bg-background/60 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: Static preview for "Feature Your Server" tab. */}
+              {/* Mocks a server-listing card so visitors see exactly what */}
+              {/* their server's public profile will look like. */}
+              {activeTab === "feature_server" && (
+                <div className="relative w-full max-w-sm">
+                  <div className="absolute -inset-6 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.10),_transparent_70%)] pointer-events-none" />
+                  <div className="relative rounded-2xl border border-border bg-card/80 overflow-hidden shadow-xl shadow-black/30">
+                    <div
+                      className="h-24 relative"
+                      style={{
+                        background:
+                          "linear-gradient(135deg,#1e293b 0%,#312e81 50%,#7c3aed 100%)",
+                      }}
+                    >
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.18),transparent_60%)]" />
+                      <div className="absolute -bottom-7 left-5 h-14 w-14 rounded-2xl border-4 border-card bg-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-lg">
+                        SH
+                      </div>
+                      <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300 backdrop-blur">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Verified by Leo
+                      </span>
+                    </div>
+                    <div className="px-5 pt-10 pb-5">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-base font-bold text-foreground">Study Haven</h4>
+                        <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-blue-300 uppercase tracking-wider">
+                          Study
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                        Daily co-working pomodoros, active mods, and a wholesome community of 12k learners.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {["Languages", "STEM", "Pomodoro", "Beginners"].map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center rounded-full bg-muted/60 text-[10px] text-muted-foreground px-2 py-0.5"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                        <div className="rounded-md bg-muted/40 py-1.5">
+                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Members</div>
+                          <div className="text-sm font-bold text-foreground">12.4k</div>
+                        </div>
+                        <div className="rounded-md bg-muted/40 py-1.5">
+                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Live</div>
+                          <div className="text-sm font-bold text-emerald-400">87</div>
+                        </div>
+                        <div className="rounded-md bg-muted/40 py-1.5">
+                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Studied</div>
+                          <div className="text-sm font-bold text-foreground">4.2M</div>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-2">
+                        <button
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 transition-colors"
+                          type="button"
+                          tabIndex={-1}
+                          aria-hidden
+                        >
+                          <Compass className="h-3.5 w-3.5" /> Join Discord
+                        </button>
+                        <button
+                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
+                          type="button"
+                          tabIndex={-1}
+                          aria-hidden
+                        >
+                          <Link2 className="h-3.5 w-3.5" />
+                          Website
+                        </button>
+                      </div>
+                      <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
+                        <Globe className="h-3 w-3" />
+                        lionbot.org/servers/study-haven
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {activeTab === "branding" && (
                 <div className="relative w-full h-full flex items-center justify-center min-h-[320px]">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />
