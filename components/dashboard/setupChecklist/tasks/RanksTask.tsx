@@ -129,6 +129,13 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: hasValue once at least one rank type is enabled. With
+          // all three off the validation in save() would also block, so this
+          // matches the same logic for the no-write completion path.
+          onComplete={onComplete}
+          hasValue={enabledCount > 0}
+          // --- END AI-MODIFIED ---
         />
       }
     >

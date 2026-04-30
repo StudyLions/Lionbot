@@ -27,7 +27,8 @@
 //                move_members:    boolean,
 //                connect:         boolean,
 //                speak:           boolean,
-//              }
+//              },
+//              cached_at: number,           // ms since epoch (AI-MODIFIED 2026-04-30)
 //            }
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
@@ -61,9 +62,26 @@ interface CachedResult {
   expiresAt: number
 }
 const cache = new Map<string, CachedResult>()
-// 60s TTL is plenty for setup; admins typically tweak Discord roles in a
-// separate tab and re-check after ~10 seconds anyway.
-const CACHE_TTL_MS = 60_000
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Split the cache TTL into success (60s) vs failure (5s).
+// Reason: We previously cached negative `bot_present: false` payloads for
+//         the same 60s as success. Discord transiently 404s the bot member
+//         lookup in several real-world cases (admin opens dashboard before
+//         re-inviting the bot, regional gateway lag right after a fresh
+//         join, brief Discord eventual-consistency hiccups). Once the 404
+//         was cached, the dashboard told the admin "the bot isn't in this
+//         server" for a full minute even after they verified it was.
+//         5s on negative results is short enough that "wait a moment and
+//         try again" actually works, while still preventing a per-keystroke
+//         hammering of the Discord members API.
+// --- Original code (commented out for rollback) ---
+// // 60s TTL is plenty for setup; admins typically tweak Discord roles in a
+// // separate tab and re-check after ~10 seconds anyway.
+// const CACHE_TTL_MS = 60_000
+// --- End original code ---
+const CACHE_TTL_MS_OK = 60_000
+const CACHE_TTL_MS_FAIL = 5_000
+// --- END AI-MODIFIED ---
 
 async function discordGet(url: string): Promise<Response> {
   let res = await fetch(url, { headers: { Authorization: `Bot ${BOT_TOKEN}` } })
@@ -98,8 +116,19 @@ export default apiHandler({
       `https://discord.com/api/v10/guilds/${guildId}/members/${BOT_USER_ID}`,
     )
     if (memberRes.status === 404) {
-      const payload = { bot_present: false, raw_bitfield: "0", is_administrator: false, perms: {} }
-      cache.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS })
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: Negative results get the SHORT TTL (CACHE_TTL_MS_FAIL = 5s)
+      //          plus a `cached_at` timestamp so the client can decide whether
+      //          showing a "Try again" link is worth the user's attention.
+      const payload = {
+        bot_present: false,
+        raw_bitfield: "0",
+        is_administrator: false,
+        perms: {},
+        cached_at: Date.now(),
+      }
+      cache.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS_FAIL })
+      // --- END AI-MODIFIED ---
       return res.status(200).json(payload)
     }
     if (!memberRes.ok) {
@@ -149,9 +178,16 @@ export default apiHandler({
         connect:          has(PERMS.connect),
         speak:            has(PERMS.speak),
       },
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: Stamp success payloads too so clients have a uniform shape.
+      cached_at: Date.now(),
+      // --- END AI-MODIFIED ---
     }
 
-    cache.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS })
+    // --- AI-MODIFIED (2026-04-30) ---
+    // Purpose: Successful lookups get the long TTL. See top-of-file comment.
+    cache.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS_OK })
+    // --- END AI-MODIFIED ---
     return res.status(200).json(payload)
   },
 })

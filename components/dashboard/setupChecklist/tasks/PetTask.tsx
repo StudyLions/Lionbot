@@ -82,6 +82,12 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: Always true -- this is a single toggle. Admin can confirm
+          // their current setting (whether enabled or not) with one tap.
+          onComplete={onComplete}
+          hasValue
+          // --- END AI-MODIFIED ---
         />
       }
     >

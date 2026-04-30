@@ -89,6 +89,12 @@ export default function FocusTask({ guildId, open, onClose, onComplete, onSkip }
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: Always true -- bot ships with sensible defaults
+          // (50 coins per task, 10/day limit, summary off).
+          onComplete={onComplete}
+          hasValue
+          // --- END AI-MODIFIED ---
         />
       }
     >

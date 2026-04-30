@@ -12,6 +12,10 @@
 // ============================================================
 import { useEffect, useState } from "react"
 import { Calendar } from "lucide-react"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: SWR mutate for the BotPermBadge Try-again handler.
+import { mutate as globalMutate } from "swr"
+// --- END AI-MODIFIED ---
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
 import DrawerFooter from "../DrawerFooter"
@@ -54,6 +58,10 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
   })
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Local "checking..." state for BotPermBadge Try-again button.
+  const [retryingPerms, setRetryingPerms] = useState(false)
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!data) return
@@ -101,10 +109,20 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
 
   let permStatus: PermStatus = "unknown"
   let permMessage = ""
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: retryable flag so we can pass it selectively to BotPermBadge
+  // (only true when the error is the bot-not-in-server case).
+  let permRetryable = false
+  // --- END AI-MODIFIED ---
   if (perms && enabled) {
     if (!perms.bot_present) {
       permStatus = "error"
-      permMessage = "The bot is not in this server."
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: Empty message lets BotPermBadge default to its softer
+      // "couldn't see the bot right now" copy paired with Try-again.
+      permMessage = ""
+      permRetryable = true
+      // --- END AI-MODIFIED ---
     } else if (
       !perms.perms.move_members ||
       !perms.perms.connect ||
@@ -124,6 +142,27 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
     }
   }
 
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Same Retry handler as Welcome/Notifications -- skip the API's
+  // 5s negative cache and overwrite SWR's cache with the fresh payload.
+  async function retryPermsLookup() {
+    setRetryingPerms(true)
+    try {
+      const res = await fetch(`${permsKey}?refresh=true`)
+      if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
+      const fresh = await res.json()
+      await globalMutate(permsKey, fresh, { revalidate: false })
+      if (!fresh.bot_present) {
+        toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
+    } finally {
+      setRetryingPerms(false)
+    }
+  }
+  // --- END AI-MODIFIED ---
+
   return (
     <TaskDrawer
       open={open}
@@ -142,6 +181,13 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: hasValue if the admin enabled the feature OR has a
+          // lobby/category already configured (e.g. they're re-opening a
+          // task that was set up before this widget existed).
+          onComplete={onComplete}
+          hasValue={!!(enabled || draft.lobby_channel || draft.room_channel)}
+          // --- END AI-MODIFIED ---
         />
       }
     >
@@ -157,15 +203,26 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
         <>
           {permStatus !== "unknown" && permStatus !== "ok" && (
             <div className="mb-4">
+              {/* --- AI-MODIFIED (2026-04-30) ---
+                  Purpose: Pass retryable+onRetry; suppress the role-fix
+                  steps in the bot-not-in-server case (they don't apply). */}
               <BotPermBadge
                 status={permStatus}
                 message={permMessage}
-                fix={[
-                  "Open Server Settings \u2192 Roles in Discord.",
-                  "Find the LionBot role.",
-                  "Enable: Move Members, Connect, Speak, Manage Channels.",
-                ]}
+                retryable={permRetryable}
+                onRetry={permRetryable ? retryPermsLookup : undefined}
+                retrying={retryingPerms}
+                fix={
+                  permRetryable
+                    ? undefined
+                    : [
+                      "Open Server Settings \u2192 Roles in Discord.",
+                      "Find the LionBot role.",
+                      "Enable: Move Members, Connect, Speak, Manage Channels.",
+                    ]
+                }
               />
+              {/* --- END AI-MODIFIED --- */}
             </div>
           )}
 

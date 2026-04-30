@@ -92,6 +92,13 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: Wire the new "mark as done without saving" path.
+          // hasValue is always true for Rewards because the bot ships with
+          // sensible defaults (100/50/0) -- admins can confirm with one tap.
+          onComplete={onComplete}
+          hasValue
+          // --- END AI-MODIFIED ---
         />
       }
     >

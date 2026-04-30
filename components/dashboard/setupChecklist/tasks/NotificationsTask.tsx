@@ -8,6 +8,11 @@
 // ============================================================
 import { useEffect, useState } from "react"
 import { Bell } from "lucide-react"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Use SWR's mutate to push retry payloads into the cache without
+// changing the cache key.
+import { mutate as globalMutate } from "swr"
+// --- END AI-MODIFIED ---
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
 import DrawerFooter from "../DrawerFooter"
@@ -65,6 +70,10 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
   })
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Local "checking..." state for the BotPermBadge Try-again button.
+  const [retryingPerms, setRetryingPerms] = useState(false)
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!data) return
@@ -108,6 +117,30 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
     else topPerm = "ok"
   }
 
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Retry handler for the bot-not-in-server false-negative case.
+  // Calls the perms endpoint with ?refresh=true so the API skips its 5s
+  // negative-result cache, then writes the fresh payload into SWR's cache
+  // for the bare permsKey so the rest of the component re-renders without
+  // a second round-trip.
+  async function retryPermsLookup() {
+    setRetryingPerms(true)
+    try {
+      const res = await fetch(`${permsKey}?refresh=true`)
+      if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
+      const fresh = await res.json()
+      await globalMutate(permsKey, fresh, { revalidate: false })
+      if (!fresh.bot_present) {
+        toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
+    } finally {
+      setRetryingPerms(false)
+    }
+  }
+  // --- END AI-MODIFIED ---
+
   return (
     <TaskDrawer
       open={open}
@@ -126,6 +159,19 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: hasValue=true once any of the 4 channels is set. With
+          // all 4 blank there's nothing meaningful for the admin to confirm.
+          onComplete={onComplete}
+          hasValue={
+            !!(
+              draft.event_log_channel ||
+              draft.mod_log_channel ||
+              draft.alert_channel ||
+              draft.pomodoro_channel
+            )
+          }
+          // --- END AI-MODIFIED ---
         />
       }
     >
@@ -146,11 +192,22 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
           />
         </div>
       )}
+      {/* --- AI-MODIFIED (2026-04-30) ---
+          Purpose: Pass retryable+onRetry so the badge shows a "Try again"
+          button (handles the Discord 404 false-negative case). Drop the
+          old hard-coded "isn't in this server yet" copy in favor of
+          BotPermBadge's softer default. */}
       {topPerm === "error" && (
         <div className="mb-4">
-          <BotPermBadge status="error" message="The bot isn't in this server yet. Invite it first." />
+          <BotPermBadge
+            status="error"
+            retryable
+            onRetry={retryPermsLookup}
+            retrying={retryingPerms}
+          />
         </div>
       )}
+      {/* --- END AI-MODIFIED --- */}
 
       {FIELDS.map((f) => (
         <SettingRow key={f.key} label={f.label} jargon="channel" help={f.help}>

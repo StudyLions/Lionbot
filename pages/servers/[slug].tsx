@@ -226,12 +226,13 @@ export default function ServerProfilePage({
             }
           >
             <div className="max-w-5xl mx-auto px-4 sm:px-6 pb-12 sm:pb-16 relative z-10">
-              <Link
-                href="/servers"
-                className="inline-flex items-center gap-1.5 text-xs font-medium opacity-70 hover:opacity-100 transition-opacity mb-6"
-                style={{ color: "var(--listing-text)" }}
-              >
-                <ChevronLeft size={14} /> All servers
+              <Link href="/servers" passHref>
+                <a
+                  className="inline-flex items-center gap-1.5 text-xs font-medium opacity-70 hover:opacity-100 transition-opacity mb-6"
+                  style={{ color: "var(--listing-text)" }}
+                >
+                  <ChevronLeft size={14} /> All servers
+                </a>
               </Link>
               <div className="flex items-end gap-5 sm:gap-6">
                 {listing.guild_icon_url && (

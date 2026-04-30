@@ -13,6 +13,10 @@
 // ============================================================
 import { useEffect, useState } from "react"
 import { Hand, Send } from "lucide-react"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Use SWR mutate to overwrite the perms cache after a Try-again.
+import { mutate as globalMutate } from "swr"
+// --- END AI-MODIFIED ---
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
 import DrawerFooter from "../DrawerFooter"
@@ -52,6 +56,10 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [sendingTest, setSendingTest] = useState(false)
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Local state for the BotPermBadge Try-again spinner.
+  const [retryingPerms, setRetryingPerms] = useState(false)
+  // --- END AI-MODIFIED ---
 
   useEffect(() => {
     if (!data) return
@@ -110,10 +118,22 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
   // Compute the preflight badge state from bot perms.
   let permStatus: PermStatus = "unknown"
   let permMessage = ""
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Track whether the error is the bot-not-in-server case so we
+  // can pass `retryable` selectively (admin can't "try again" for missing
+  // Send Messages -- they have to fix it in Discord).
+  let permRetryable = false
+  // --- END AI-MODIFIED ---
   if (perms && draft.greeting_channel) {
     if (!perms.bot_present) {
       permStatus = "error"
-      permMessage = "The bot is not in this server. Re-invite it before configuring channels."
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: Drop the hard-coded "Re-invite it before configuring" copy
+      // so the BotPermBadge default ("We couldn't see the bot in this
+      // server right now...") is shown alongside the Try-again button.
+      permMessage = ""
+      permRetryable = true
+      // --- END AI-MODIFIED ---
     } else if (!perms.perms.send_messages || !perms.perms.embed_links) {
       permStatus = "error"
       const missing = [
@@ -125,6 +145,28 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
       permStatus = "ok"
     }
   }
+
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Retry handler -- hits the perms endpoint with ?refresh=true to
+  // skip the API's 5s negative cache, then writes the fresh payload into
+  // SWR for the bare permsKey.
+  async function retryPermsLookup() {
+    setRetryingPerms(true)
+    try {
+      const res = await fetch(`${permsKey}?refresh=true`)
+      if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
+      const fresh = await res.json()
+      await globalMutate(permsKey, fresh, { revalidate: false })
+      if (!fresh.bot_present) {
+        toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
+    } finally {
+      setRetryingPerms(false)
+    }
+  }
+  // --- END AI-MODIFIED ---
 
   return (
     <TaskDrawer
@@ -144,6 +186,13 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: hasValue=true once the admin has either picked a
+          // greeting channel OR written a custom message. Without one of
+          // those there's nothing meaningful to confirm yet.
+          onComplete={onComplete}
+          hasValue={!!(draft.greeting_channel || draft.greeting_message)}
+          // --- END AI-MODIFIED ---
         />
       }
     >
@@ -166,11 +215,19 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
         />
         {permStatus !== "unknown" && (
           <div className="mt-2">
+            {/* --- AI-MODIFIED (2026-04-30) ---
+                Purpose: Wire retryable/onRetry/retrying. Suppress the per-
+                channel "Open the channel \u2192 Permissions" fix list when the
+                error is the bot-not-in-server case (those steps don't apply
+                if the bot isn't present). */}
             <BotPermBadge
               status={permStatus}
               message={permMessage}
+              retryable={permRetryable}
+              onRetry={permRetryable ? retryPermsLookup : undefined}
+              retrying={retryingPerms}
               fix={
-                permStatus === "error"
+                permStatus === "error" && !permRetryable
                   ? [
                     "Open the channel in Discord.",
                     "Tap the gear \u2192 Permissions.",
@@ -180,6 +237,7 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
                   : undefined
               }
             />
+            {/* --- END AI-MODIFIED --- */}
           </div>
         )}
       </SettingRow>

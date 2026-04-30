@@ -81,6 +81,14 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          // --- AI-MODIFIED (2026-04-30) ---
+          // Purpose: hasValue if the server has any of the 3 essentials set.
+          // Previously this same logic powered the bespoke "These look right
+          // \u2014 mark as done" link below; now DrawerFooter handles it for
+          // every task and the duplicate link below has been removed.
+          onComplete={onComplete}
+          hasValue={!!(server?.timezone || server?.admin_role || server?.mod_role)}
+          // --- END AI-MODIFIED ---
         />
       }
     >
@@ -134,22 +142,34 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
         </p>
       </SettingRow>
 
-      {/* Done-without-saving shortcut for admins who just want to confirm */}
-      {!dirty && server && (server.timezone || server.admin_role || server.mod_role) && (
-        <div className="mt-5 pt-4 border-t border-border/40">
-          <button
-            type="button"
-            onClick={() => {
-              onComplete()
-              onClose()
-            }}
-            disabled={saving}
-            className="text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
-          >
-            These look right — mark as done
-          </button>
-        </div>
-      )}
+      {/* --- AI-REPLACED (2026-04-30) ---
+          Reason: The bespoke "These look right \u2014 mark as done" shortcut
+          was a workaround for the dirty-state bug in DrawerFooter. Now that
+          DrawerFooter has a three-state primary button (Save / Mark-done /
+          Close) and ALL 8 task drawers benefit from it, we no longer need
+          the duplicate per-task link.
+          What the new code does better: One canonical primary action sits
+          at the bottom of every drawer (in the sticky footer). Removes the
+          visual confusion of two competing "save/done" buttons in the
+          Essentials drawer specifically.
+          --- Original code (commented out for rollback) ---
+          {!dirty && server && (server.timezone || server.admin_role || server.mod_role) && (
+            <div className="mt-5 pt-4 border-t border-border/40">
+              <button
+                type="button"
+                onClick={() => {
+                  onComplete()
+                  onClose()
+                }}
+                disabled={saving}
+                className="text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded"
+              >
+                These look right \u2014 mark as done
+              </button>
+            </div>
+          )}
+          --- End original code --- */}
+      {/* --- END AI-REPLACED --- */}
 
       {/* --- AI-MODIFIED (2026-04-29) ---
           Purpose: Fill the empty space at the bottom of the drawer with a
