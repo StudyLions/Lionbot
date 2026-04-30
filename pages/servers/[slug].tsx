@@ -464,12 +464,13 @@ export default function ServerProfilePage({
                 <Link href="/" className="underline" style={{ color: accent }}>LionBot</Link>,
                 the productivity bot trusted by 70k+ Discord communities.
               </p>
-              <Link
-                href="/servers"
-                className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
-                style={{ color: accent }}
-              >
-                <Globe size={12} /> Explore more servers
+              <Link href="/servers" passHref>
+                <a
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+                  style={{ color: accent }}
+                >
+                  <Globe size={12} /> Explore more servers
+                </a>
               </Link>
             </SidebarCard>
           </aside>

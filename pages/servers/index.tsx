@@ -114,12 +114,11 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           </div>
 
           <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <Link
-              href="/dashboard/servers"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-sm font-medium text-amber-300 hover:bg-amber-500/15 transition-colors"
-            >
-              <Crown size={14} /> List your server
-              <ChevronRight size={14} />
+            <Link href="/dashboard/servers" passHref>
+              <a className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-sm font-medium text-amber-300 hover:bg-amber-500/15 transition-colors">
+                <Crown size={14} /> List your server
+                <ChevronRight size={14} />
+              </a>
             </Link>
           </div>
         </div>
@@ -254,10 +253,8 @@ function ServerCard({ listing }: { listing: DirectoryListing }) {
     : null
 
   return (
-    <Link
-      href={`/servers/${listing.slug}`}
-      className="group block bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-black/20"
-    >
+    <Link href={`/servers/${listing.slug}`} passHref>
+      <a className="group block bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-black/20">
       <div
         className="h-28 sm:h-32 relative"
         style={
@@ -324,6 +321,7 @@ function ServerCard({ listing }: { listing: DirectoryListing }) {
           )}
         </div>
       </div>
+      </a>
     </Link>
   )
 }
@@ -332,11 +330,11 @@ function PromotedCard({ listing }: { listing: DirectoryListing }) {
   const theme = LISTING_THEMES.find((t) => t.id === listing.theme_preset) ?? LISTING_THEMES[0]
   const accent = listing.accent_color || theme.defaultAccent
   return (
-    <Link
-      href={`/servers/${listing.slug}`}
-      className="snap-start flex-shrink-0 w-72 sm:w-80 rounded-xl overflow-hidden border-2 group"
-      style={{ borderColor: accent }}
-    >
+    <Link href={`/servers/${listing.slug}`} passHref>
+      <a
+        className="snap-start flex-shrink-0 w-72 sm:w-80 rounded-xl overflow-hidden border-2 group"
+        style={{ borderColor: accent }}
+      >
       <div
         className="h-24 relative"
         style={
@@ -374,6 +372,7 @@ function PromotedCard({ listing }: { listing: DirectoryListing }) {
           </div>
         </div>
       </div>
+      </a>
     </Link>
   )
 }
