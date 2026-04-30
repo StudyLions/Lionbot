@@ -24,6 +24,26 @@ export interface TimelineEntry {
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 30, 2026 ─────────────────────────────────────────
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Timeline entries for the Setup Checklist Phase 1 bug fixes
+  // and Phase 2 Premium features section.
+  {
+    date: "2026-04-30",
+    title: "Setup Checklist: Premium Features Section",
+    description:
+      "We added a Premium features section to the dashboard's Setup Checklist for premium servers. Seven new tasks let you quickly configure ambient sounds, anti-AFK in study rooms, premium Pomodoro extras, leaderboard auto-post, sticky messages, card branding, and your public server listing — all from one place. Anti-AFK and branding are configurable inline (a toggle, an action picker, a colour preset) so you don't even need to leave the checklist. Servers without premium see a single, respectful preview row that lists what premium offers without nagging — no exclamation marks, no scarcity tactics, just a quiet \"See pricing\" button if you're curious.",
+    category: "premium",
+    area: "website",
+  },
+  {
+    date: "2026-04-30",
+    title: "Setup Checklist: Two Bug Fixes from Real Admin Reports",
+    description:
+      "Fixed two annoying bugs admins flagged after the new Setup Checklist shipped. First: the dashboard sometimes warned that the bot wasn't in your server when it actually was — a transient Discord lookup glitch that got cached for a full minute. We dropped the negative cache to 5 seconds and added an inline \"Try again\" button alongside a \"Re-invite the bot\" link. Second: if you opened a setup task and were happy with the existing settings, the Save button stayed disabled because nothing had changed — you had to make a fake change, then undo it. Now every task drawer has a \"Looks good — mark as done\" option when there's nothing to save, so you can confirm a task with one tap.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   {
     date: "2026-04-30",
     title: "Feature Your Server: a Public Profile Page for Premium Communities",
