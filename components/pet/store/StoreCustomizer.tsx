@@ -574,7 +574,7 @@ export default function StoreCustomizer({
                   className="font-pixel text-[11px] underline-offset-2 hover:underline"
                   style={{ color: draftTheme.accent }}
                 >
-                  Upgrade for more options ->
+                  Upgrade for more options &rarr;
                 </a>
               </Link>
             )}
