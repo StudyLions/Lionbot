@@ -11,6 +11,13 @@
 import { getToken } from "next-auth/jwt"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "./prisma"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: accept the LionBot iOS app's signed-JWT bearer token in
+//          addition to the NextAuth browser cookie, so every existing
+//          /api/dashboard/* and /api/pet/* route works from iOS via
+//          Authorization: Bearer <token>. See utils/iosAuth.ts.
+import { extractBearer, verifyIosBearer } from "./iosAuth"
+// --- END AI-MODIFIED ---
 
 const secret = process.env.SECRET
 const MANAGE_GUILD = 0x20
@@ -39,12 +46,35 @@ export async function getAuthContext(req: NextApiRequest): Promise<AuthContext |
   })
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
-  if (!token?.discordId || !token?.accessToken) return null
-  return {
-    discordId: token.discordId as string,
-    userId: BigInt(token.discordId as string),
-    accessToken: token.accessToken as string,
+  if (token?.discordId && token?.accessToken) {
+    return {
+      discordId: token.discordId as string,
+      userId: BigInt(token.discordId as string),
+      accessToken: token.accessToken as string,
+    }
   }
+
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: fall through to the iOS bearer JWT when there is no
+  //          NextAuth cookie. The bearer carries the same Discord
+  //          accessToken (encrypted at rest in the JWT), so every
+  //          downstream route -- including those that hit the Discord
+  //          API via getUserGuilds / getUserGuildRoles -- works
+  //          identically for iOS clients.
+  const bearer = extractBearer(req)
+  if (bearer) {
+    const verified = await verifyIosBearer(bearer)
+    if (verified) {
+      return {
+        discordId: verified.discordId,
+        userId: BigInt(verified.discordId),
+        accessToken: verified.discordAccessToken,
+      }
+    }
+  }
+  // --- END AI-MODIFIED ---
+
+  return null
 }
 
 export function checkRateLimit(userId: string, maxPerMinute = 60): boolean {
