@@ -26,6 +26,14 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 30, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-30",
+    title: "The Customize-Your-Store Page Is Now a Full-Screen Studio",
+    description:
+      "We rebuilt /pet/marketplace/store/customize from the ground up. The old page sat inside the Pet sidebar with a tiny preview lion in a 300-pixel box and seven control cards stacked underneath, so you could never really see what the choices looked like — picking a theme just changed a small swatch in a corner. The new studio fills your whole browser window: the theme background paints the entire viewport, your shopkeeper lion appears at full size in a sidebar on the left exactly as visitors will see it, and a compact tabbed panel on the right (Look · Identity · Voice) keeps the controls organised without a wall of cards. Pick a theme and the entire page repaints in real time. Type a new welcome message and your shopkeeper says it instantly. Try a custom accent colour and the speech-bubble border re-tints. We also added six quick-pick preset accent colours under the colour wheel so you don't have to fish for a hex code. The Save button now lives in a slim bar pinned to the bottom of the screen with a clear status — All saved · Unsaved changes · X premium changes pending — so you always know where you stand. Free users can still preview every premium theme, animation, and colour exactly as a paying member would; saving anything premium opens the same friendly upgrade window as before, no surprises.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-30",
     title: "Personal Stores: Smarter Layout and a Customize Page That Actually Opens",
     description:
       "Two small but annoying things on the new personal store front got fixed today. First, the page layout: the lion shopkeeper used to sit in a wide hero block at the top with a lot of empty space next to the speech bubble, and on a phone the lion + name + bubble stacked tall enough that the actual listings were pushed below the fold. We turned the layout into a sticky sidebar — your lion, store name, tier badge, speech bubble, and \"List a new item\" button now live in a compact column on the left and stay visible while a buyer scrolls your listings on the right. On phones it collapses into a tight horizontal banner: the lion sits at 140px on the left, the name and listing count read inline next to it, and the listings start much higher up on the screen. Second, the bug: clicking \"Customize Your Store\" used to load forever and never open the customizer — the page was trying to read your Discord ID from the wrong field on the sign-in session, so it never finished loading the preview. The customize studio now opens immediately the moment your store config arrives.",
