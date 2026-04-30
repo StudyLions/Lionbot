@@ -34,7 +34,9 @@ interface StatsResponse {
 function formatHours(minutes: number): string {
   if (minutes < 60) return `${minutes}m`
   const hours = minutes / 60
-  if (hours < 1000) return Math.round(hours).toLocaleString()
+  // Fixed locale to keep SSR/CSR consistent (also matches the Members
+  // tracked thousands separator).
+  if (hours < 1000) return Math.round(hours).toLocaleString("en-US")
   return `${(hours / 1000).toFixed(1)}k`
 }
 
@@ -111,7 +113,7 @@ export function PullQuoteStats({
         <StatCell
           theme={theme}
           accent={accent}
-          number={trackedMembers !== null ? trackedMembers.toLocaleString() : "—"}
+          number={trackedMembers !== null ? trackedMembers.toLocaleString("en-US") : "—"}
           label="Members tracked"
         />
         <div style={{ ...dividerStyle, paddingLeft: "clamp(16px, 4vw, 40px)" }} className="hidden sm:block">
@@ -138,7 +140,7 @@ export function PullQuoteStats({
               <StatCell
                 theme={theme}
                 accent={accent}
-                number={liveCount !== null ? liveCount.toLocaleString() : "—"}
+                number={liveCount !== null ? liveCount.toLocaleString("en-US") : "—"}
                 label="In voice right now"
                 live
                 isLiveActive={!!liveCount && liveCount > 0}
@@ -149,7 +151,7 @@ export function PullQuoteStats({
               <StatCell
                 theme={theme}
                 accent={accent}
-                number={liveCount !== null ? liveCount.toLocaleString() : "—"}
+                number={liveCount !== null ? liveCount.toLocaleString("en-US") : "—"}
                 label="In voice right now"
                 live
                 isLiveActive={!!liveCount && liveCount > 0}

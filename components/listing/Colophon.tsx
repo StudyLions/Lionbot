@@ -29,8 +29,11 @@ export function Colophon({
   externalLinkUrl,
   externalLinkLabel,
 }: ColophonProps) {
+  // Format with a fixed locale so the SSR output and the browser
+  // output match -- otherwise non-en-US visitors hit React hydration
+  // mismatch errors (#418).
   const approvedDate = approvedAt
-    ? new Date(approvedAt).toLocaleDateString(undefined, {
+    ? new Date(approvedAt).toLocaleDateString("en-US", {
         month: "long",
         day: "numeric",
         year: "numeric",

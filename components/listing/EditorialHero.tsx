@@ -338,7 +338,7 @@ export function EditorialHero({
                 }}
                 aria-hidden="true"
               />
-              {inVoiceCount.toLocaleString()} in voice now
+              {inVoiceCount.toLocaleString("en-US")} in voice now
             </span>
           )}
 
@@ -347,7 +347,8 @@ export function EditorialHero({
               className="text-[11px] uppercase tracking-[0.2em] opacity-60 ml-auto"
               style={{ fontFamily: theme.bodyFont }}
             >
-              Featured · {new Date(approvedAt).toLocaleDateString(undefined, { month: "short", year: "numeric" })}
+              {/* Fixed locale so SSR == CSR (avoids hydration mismatch). */}
+              Featured · {new Date(approvedAt).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
             </span>
           )}
         </div>
