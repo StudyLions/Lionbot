@@ -30,7 +30,7 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     date: "2026-04-30",
     title: "Feature Your Server: Magazine-Style Redesign",
     description:
-      "Rebuilt every server profile page to look like a hand-curated magazine feature instead of a stack of generic dashboard cards. There are now five real visual themes — Atlantic (warm ivory paper, drop caps), Wired (matte black with neon accents), Kinfolk (cream and Garamond, monochrome photos), Vogue (oversized Playfair display with double rules), and Frieze (vast negative space, very large display, very small body). Each theme picks its own serif/sans pair, surface colour, cover-blend recipe, and rule style — they actually look different from each other now. The /servers directory got the same treatment: a serif masthead, a single Featured-this-week cover story, and a hairline-separated table-of-contents listing instead of a card grid. The dashboard editor was reorganised content-first so admins write before they decorate, and the live preview now takes 60% of the screen.",
+      "Rebuilt the server profile and directory pages to read like a magazine. Pick from five real themes — Atlantic, Wired, Kinfolk, Vogue, Frieze — each with its own serif pairing, cover treatment, and rule style instead of just an accent-colour swap.",
     category: "improvement",
     area: "website",
   },
