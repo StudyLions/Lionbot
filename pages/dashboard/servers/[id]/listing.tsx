@@ -40,12 +40,10 @@ import {
 import {
   LISTING_CATEGORIES,
   LISTING_THEMES,
-  LISTING_FONTS,
   LISTING_COUNTRIES,
   LISTING_LANGUAGES,
   LISTING_AGE_BANDS,
   LISTING_SECTIONS,
-  LISTING_BLEND_MODES,
   DEFAULT_SECTIONS_ENABLED,
   MAX_GALLERY_IMAGES,
   MAX_SECONDARY_TAGS,
@@ -55,11 +53,12 @@ import {
   COVER_RECOMMENDED_WIDTH,
   COVER_RECOMMENDED_HEIGHT,
   // --- AI-MODIFIED (2026-04-30) ---
-  // Phase 3 -- gem-promotion constants used by the boost card.
+  // Editorial redesign -- theme/section helpers + gem-promotion constants.
+  resolveTheme,
+  normalizeSections,
   LISTING_PROMOTION_GEM_COST,
   LISTING_PROMOTION_HOURS,
   // --- END AI-MODIFIED ---
-  type ListingSectionKey,
 } from "@/constants/ServerListingData"
 import { LISTING_IMAGE_CONSTRAINTS } from "@/utils/listingBlob"
 import {
@@ -160,6 +159,14 @@ const STATUS_BADGES: Record<ListingDTO["status"], { variant: StatusBadgeVariant;
 }
 
 function emptyForm(suggestedSlug: string, guildName: string): FormState {
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Editorial redesign defaults. New listings start in the
+  //   Atlantic theme (most flattering on a server that hasn't yet
+  //   uploaded a cover) instead of the v1 "midnight" palette. The
+  //   font_family + cover_blend_mode columns persist for backward
+  //   compatibility but the renderer no longer reads them, so we
+  //   write inert default values.
+  const defaultTheme = resolveTheme("atlantic")
   return {
     slug: suggestedSlug || "",
     display_name: guildName || "",
@@ -174,8 +181,8 @@ function emptyForm(suggestedSlug: string, guildName: string): FormState {
     primary_country: "",
     primary_language: "en",
     audience_age: "13+",
-    theme_preset: "midnight",
-    accent_color: LISTING_THEMES[0].defaultAccent,
+    theme_preset: defaultTheme.id,
+    accent_color: defaultTheme.defaultAccent,
     font_family: "inter",
     cover_blend_mode: "fade",
     external_link_url: "",
@@ -183,9 +190,18 @@ function emptyForm(suggestedSlug: string, guildName: string): FormState {
     sections_enabled: { ...DEFAULT_SECTIONS_ENABLED },
     nsfw_confirmed: false,
   }
+  // --- END AI-MODIFIED ---
 }
 
 function formFromListing(l: ListingDTO): FormState {
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Editorial redesign -- coerce the persisted theme_preset
+  //   through resolveTheme() so legacy palette IDs (midnight/ocean/...)
+  //   land on a real editorial theme even before the SQL migration runs.
+  //   sections_enabled is run through normalizeSections() so the new
+  //   5-key shape is always returned regardless of what shape the row
+  //   was last saved in.
+  const theme = resolveTheme(l.theme_preset)
   return {
     slug: l.slug,
     display_name: l.display_name,
@@ -200,15 +216,16 @@ function formFromListing(l: ListingDTO): FormState {
     primary_country: l.primary_country ?? "",
     primary_language: l.primary_language ?? "",
     audience_age: l.audience_age ?? "",
-    theme_preset: l.theme_preset,
-    accent_color: l.accent_color ?? LISTING_THEMES.find((t) => t.id === l.theme_preset)?.defaultAccent ?? "#3b82f6",
+    theme_preset: theme.id,
+    accent_color: l.accent_color ?? theme.defaultAccent,
     font_family: l.font_family ?? "inter",
     cover_blend_mode: l.cover_blend_mode ?? "fade",
     external_link_url: l.external_link_url ?? "",
     external_link_label: l.external_link_label ?? "",
-    sections_enabled: { ...DEFAULT_SECTIONS_ENABLED, ...(l.sections_enabled ?? {}) },
+    sections_enabled: normalizeSections(l.sections_enabled),
     nsfw_confirmed: l.nsfw_confirmed,
   }
+  // --- END AI-MODIFIED ---
 }
 
 // ── The main editor ───────────────────────────────────────────
@@ -452,10 +469,23 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-6">
+      {/* --- AI-MODIFIED (2026-04-30) --- */}
+      {/* Purpose: Editorial redesign -- preview column grew from 420px */}
+      {/* fixed (~50% on common widths) to a 60/40 split with the form */}
+      {/* on the LEFT and the preview taking the bigger share. The */}
+      {/* preview becomes the main canvas; the form is the brush. */}
+      <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(540px,_1.5fr)] gap-6">
+        {/* --- END AI-MODIFIED --- */}
         {/* ── Form column ─────────────────────────────────── */}
         <div className="space-y-4 min-w-0">
-          <SectionCard title="Basics" description="Name, URL, description" icon={<FileText size={16} />} defaultOpen>
+          {/* --- AI-MODIFIED (2026-04-30) --- */}
+          {/* Purpose: Editorial redesign -- content-first ordering. */}
+          {/*   We surface "write the story" before "decorate it". The */}
+          {/*   theme picker now opens as the headline branding section */}
+          {/*   with a 2x3 grid of real rendered theme thumbnails. The */}
+          {/*   standalone font + blend-mode pickers are gone -- the */}
+          {/*   theme implies them now. */}
+          <SectionCard title="The story" description="The words that have to come first: name, slug, tagline, description" icon={<FileText size={16} />} defaultOpen>
             <div className="space-y-4 pt-4">
               <TextInput
                 label="Display name"
@@ -486,33 +516,31 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
                 )}
               </div>
               <TextInput
-                label="Tagline"
+                label="Tagline (the deck)"
                 value={form.tagline}
                 onChange={(v) => updateField("tagline", v)}
-                placeholder="A one-line hook that grabs attention"
+                placeholder="A one-line italic deck under your headline"
                 maxLength={MAX_TAGLINE_LENGTH}
               />
               <TextInput
-                label="Long description (Markdown supported)"
+                label="Article body (Markdown supported, gets a drop cap)"
                 value={form.description}
                 onChange={(v) => updateField("description", v)}
                 placeholder="Tell visitors why your community is worth joining. Min 20 characters."
                 multiline
-                rows={6}
+                rows={8}
                 maxLength={MAX_DESCRIPTION_LENGTH}
               />
+              <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
+                Editorial themes apply a drop cap to the first letter and italicise the deck.
+                Treat this like the opening of a feature article, not a Discord channel description.
+              </p>
             </div>
           </SectionCard>
 
-          <SectionCard title="Branding" description="Cover, theme, colours, fonts" icon={<Palette size={16} />}>
+          <SectionCard title="Theme & accent" description="Pick a magazine you'd want your server to be inside" icon={<Palette size={16} />} defaultOpen>
             <div className="space-y-5 pt-4">
-              <CoverUploadField
-                value={form.cover_image_url}
-                uploading={coverUploading}
-                onUpload={handleCoverUpload}
-                onClear={() => updateField("cover_image_url", null)}
-              />
-              <ThemePickerGrid
+              <EditorialThemePickerGrid
                 selected={form.theme_preset}
                 onSelect={(id) => {
                   const t = LISTING_THEMES.find((x) => x.id === id)
@@ -523,69 +551,47 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
                   }))
                 }}
               />
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Accent colour</label>
-                  <div className="mt-1 flex items-center gap-3">
-                    <input
-                      type="color"
-                      value={form.accent_color}
-                      onChange={(e) => updateField("accent_color", e.target.value.toLowerCase())}
-                      className="h-10 w-14 rounded-lg border border-input bg-card cursor-pointer"
-                      aria-label="Accent colour"
-                    />
-                    <input
-                      type="text"
-                      value={form.accent_color}
-                      onChange={(e) => updateField("accent_color", e.target.value.toLowerCase())}
-                      pattern="^#[0-9a-fA-F]{6}$"
-                      className="flex-1 px-3 py-2 bg-card border border-input rounded-lg text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-muted-foreground">Headline font</label>
-                  <select
-                    value={form.font_family}
-                    onChange={(e) => updateField("font_family", e.target.value)}
-                    className="mt-1 w-full px-3 py-2 bg-card border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    {LISTING_FONTS.map((f) => (
-                      <option key={f.id} value={f.id}>{f.label} -- {f.mood}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+
               <div>
-                <label className="text-sm font-medium text-muted-foreground mb-2 block">Cover blend mode</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {LISTING_BLEND_MODES.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => updateField("cover_blend_mode", m.id)}
-                      className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
-                        form.cover_blend_mode === m.id
-                          ? "border-primary bg-primary/10 text-primary"
-                          : "border-input bg-card text-muted-foreground hover:bg-accent hover:text-foreground"
-                      }`}
-                    >
-                      <div className="font-medium">{m.label}</div>
-                      <div className="text-[10px] opacity-70 mt-0.5">{m.description}</div>
-                    </button>
-                  ))}
+                <label className="text-sm font-medium text-muted-foreground">Accent colour</label>
+                <p className="text-[11px] text-muted-foreground/80 mb-2 mt-0.5 leading-relaxed">
+                  Used sparingly: the kicker rule, the Join CTA, and the drop cap.
+                  Picking a theme also picks a sensible default accent for you.
+                </p>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="color"
+                    value={form.accent_color}
+                    onChange={(e) => updateField("accent_color", e.target.value.toLowerCase())}
+                    className="h-10 w-14 rounded-lg border border-input bg-card cursor-pointer"
+                    aria-label="Accent colour"
+                  />
+                  <input
+                    type="text"
+                    value={form.accent_color}
+                    onChange={(e) => updateField("accent_color", e.target.value.toLowerCase())}
+                    pattern="^#[0-9a-fA-F]{6}$"
+                    className="flex-1 px-3 py-2 bg-card border border-input rounded-lg text-sm text-foreground font-mono focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
                 </div>
               </div>
-              <GalleryUploadField
-                images={form.gallery_images}
-                uploading={galleryUploading}
-                onUpload={handleGalleryUpload}
-                onRemove={removeGalleryImage}
+
+              <CoverUploadField
+                value={form.cover_image_url}
+                uploading={coverUploading}
+                onUpload={handleCoverUpload}
+                onClear={() => updateField("cover_image_url", null)}
               />
+              <p className="text-[11px] text-muted-foreground/80 leading-relaxed -mt-1">
+                The cover claims the top of the page (~90vh). Each theme blends it into the
+                article body in its own way: ivory paper fade, duotone neon, monochrome wash, etc.
+                Recommended {COVER_RECOMMENDED_WIDTH}&times;{COVER_RECOMMENDED_HEIGHT} (4:1).
+              </p>
             </div>
           </SectionCard>
 
-          <SectionCard title="Categorization" description="Help people discover your server" icon={<TagsIcon size={16} />}>
+          <SectionCard title="Categorisation" description="Help people discover your server" icon={<TagsIcon size={16} />}>
+          {/* --- END AI-MODIFIED --- */}
             <div className="space-y-4 pt-4">
               <div>
                 <label className="text-sm font-medium text-muted-foreground">Primary category</label>
@@ -726,6 +732,28 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
             </div>
           </SectionCard>
 
+          {/* --- AI-MODIFIED (2026-04-30) --- */}
+          {/* Purpose: Editorial redesign -- gallery promoted to its own */}
+          {/*   section so admins think of it as a "photo essay", not a */}
+          {/*   sub-toggle inside Branding. Each theme treats the photos */}
+          {/*   differently (mono / sepia / duotone). */}
+          <SectionCard title="Photo essay" description="Up to 6 full-width images, themed filter applied" icon={<ImageIcon size={16} />}>
+            <div className="space-y-4 pt-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                On the public page these stack vertically, each at full column width with an
+                italic caption below it. <strong>Kinfolk</strong> and <strong>Frieze</strong> render them in monochrome,
+                <strong> Vogue</strong> in sepia, <strong>Wired</strong> in duotone. <strong>Atlantic</strong> keeps the original colour.
+              </p>
+              <GalleryUploadField
+                images={form.gallery_images}
+                uploading={galleryUploading}
+                onUpload={handleGalleryUpload}
+                onRemove={removeGalleryImage}
+              />
+            </div>
+          </SectionCard>
+          {/* --- END AI-MODIFIED --- */}
+
           <SectionCard title="Website link (DoFollow SEO)" description="Premium-only backlink to your own site" icon={<Link2 size={16} />}>
             <div className="space-y-4 pt-4">
               <div className="p-3 rounded-lg bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-200/85 leading-relaxed flex items-start gap-2">
@@ -844,11 +872,23 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
           {/* --- END AI-MODIFIED --- */}
         </div>
 
-        {/* ── Live preview column ─────────────────────────── */}
-        <div className="hidden lg:block">
-          <div className="sticky top-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Live preview</span>
+        {/* --- AI-MODIFIED (2026-04-30) --- */}
+        {/* Purpose: Editorial redesign -- the preview is the main canvas */}
+        {/*   now. We grew the iframe vertically (uses the available */}
+        {/*   viewport height instead of an arbitrary aspect ratio) and */}
+        {/*   the column itself takes the larger share of horizontal space */}
+        {/*   via the parent grid (1fr | 1.5fr). */}
+        <div className="hidden xl:block">
+          <div className="sticky top-6 space-y-2">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-xs font-semibold text-muted-foreground uppercase tracking-[0.2em]">
+                  Live preview
+                </span>
+                <p className="text-[11px] text-muted-foreground/70 mt-0.5">
+                  The page as your visitors will see it.
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setPreviewKey((k) => k + 1)}
@@ -857,7 +897,10 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
                 <RefreshCw size={11} /> Refresh
               </button>
             </div>
-            <div className="rounded-xl border border-border bg-card overflow-hidden aspect-[3/4] max-h-[calc(100vh-160px)]">
+            <div
+              className="rounded-xl border border-border bg-card overflow-hidden"
+              style={{ height: "calc(100vh - 140px)", minHeight: 600 }}
+            >
               {previewUrl ? (
                 <iframe
                   key={previewKey}
@@ -871,11 +914,12 @@ function ListingEditorInner({ data, mutate }: { data: ListingApiResponse; mutate
                 </div>
               )}
             </div>
-            <p className="mt-2 text-[11px] text-muted-foreground leading-relaxed">
-              The preview reflects what's saved in the database -- click <strong>Save draft</strong> to refresh it with your latest edits.
+            <p className="text-[11px] text-muted-foreground/80 leading-relaxed">
+              The preview reflects the last <strong>saved</strong> state. Click <em>Save draft</em> in the form to refresh it.
             </p>
           </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
       </div>
     </>
   )
@@ -1004,11 +1048,39 @@ function GalleryUploadField({
   )
 }
 
-function ThemePickerGrid({ selected, onSelect }: { selected: string; onSelect: (id: string) => void }) {
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Editorial redesign -- replaced the old hex-swatch theme
+//   picker with a 2x3 grid of *rendered* theme thumbnails. Each tile
+//   shows the actual serif headline + body tint + accent treatment
+//   for that theme so admins are picking a visual language, not
+//   reading a hex code. We also load the display fonts on demand
+//   when this picker mounts so the thumbnails look real even before
+//   the user saves.
+function EditorialThemePickerGrid({
+  selected,
+  onSelect,
+}: {
+  selected: string
+  onSelect: (id: string) => void
+}) {
+  // Load all 5 display fonts via a single Google Fonts request the
+  // first time the picker mounts. We do this inline (not in <Head>)
+  // because the editor wraps this in <DashboardShell>, which is the
+  // only component rendered between this and <Layout>; pulling in
+  // next/head from a deeply-nested helper is messier than the cost.
   return (
     <div>
-      <label className="text-sm font-medium text-muted-foreground">Theme preset</label>
-      <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
+      <link
+        rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700&family=Inter+Tight:wght@800;900&family=EB+Garamond:wght@500;600&family=Playfair+Display:wght@600;700&display=swap"
+      />
+      <label className="text-sm font-medium text-muted-foreground">Editorial theme</label>
+      <p className="text-[11px] text-muted-foreground/80 mb-3 mt-0.5 leading-relaxed">
+        Each theme is a real reskin: a serif/sans pair, a surface treatment, a cover blend,
+        and a rule style. The standalone font picker is gone &mdash; the theme now picks the
+        typography for you. You can still override the accent below.
+      </p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {LISTING_THEMES.map((t) => {
           const active = t.id === selected
           return (
@@ -1016,26 +1088,88 @@ function ThemePickerGrid({ selected, onSelect }: { selected: string; onSelect: (
               key={t.id}
               type="button"
               onClick={() => onSelect(t.id)}
-              className={`text-left rounded-lg overflow-hidden border-2 transition-all ${
-                active ? "border-primary ring-2 ring-primary/30" : "border-input hover:border-border"
+              className={`group text-left rounded-lg overflow-hidden border-2 transition-all ${
+                active
+                  ? "border-primary ring-2 ring-primary/30 shadow-lg shadow-primary/20"
+                  : "border-input hover:border-border"
               }`}
+              aria-pressed={active}
             >
               <div
-                className="aspect-[2/1] relative"
-                style={{ background: `${t.bodyTint}` }}
+                className="aspect-[3/2] relative px-4 py-3 flex flex-col justify-between"
+                style={{
+                  background: t.bodyBg,
+                  color: t.bodyText,
+                }}
               >
+                {/* Tiny kicker, mirrors the public hero kicker */}
                 <div
-                  className="absolute inset-0"
-                  style={{ background: t.heroGradient }}
-                />
-                <div
-                  className="absolute bottom-2 left-2 right-2 h-1.5 rounded-full"
-                  style={{ background: t.defaultAccent }}
-                />
+                  style={{
+                    fontFamily: "Inter, sans-serif",
+                    fontSize: 8,
+                    letterSpacing: "0.28em",
+                    textTransform: "uppercase",
+                    fontWeight: 600,
+                    color: t.id === "wired" ? t.defaultAccent : t.mutedText,
+                  }}
+                >
+                  Featured · Vol. I
+                </div>
+                <div>
+                  <div
+                    style={{
+                      fontFamily: t.displayFont,
+                      fontSize: 22,
+                      fontWeight: t.id === "wired" ? 900 : 700,
+                      lineHeight: 1.0,
+                      letterSpacing: "-0.02em",
+                      textTransform: t.id === "wired" ? "uppercase" : "none",
+                      marginBottom: 4,
+                      color: t.bodyText,
+                    }}
+                  >
+                    {t.label}
+                  </div>
+                  <div
+                    style={{
+                      fontFamily: t.italicDeck ? t.displayFont : t.bodyFont,
+                      fontStyle: t.italicDeck ? "italic" : "normal",
+                      fontSize: 11,
+                      lineHeight: 1.35,
+                      color: t.mutedText,
+                    }}
+                  >
+                    {t.inspired}
+                  </div>
+                </div>
+                {/* Hairline rule + accent dot */}
+                <div className="flex items-center gap-2">
+                  <span
+                    className="flex-1"
+                    style={{
+                      borderTop:
+                        t.ruleStyle === "thick"
+                          ? `2px solid ${t.defaultAccent}`
+                          : t.ruleStyle === "double"
+                          ? `3px double ${t.ruleColor}`
+                          : t.ruleStyle === "none"
+                          ? "none"
+                          : `1px solid ${t.ruleColor}`,
+                    }}
+                  />
+                  <span
+                    className="w-2.5 h-2.5"
+                    style={{
+                      background: t.defaultAccent,
+                      borderRadius: t.id === "wired" || t.id === "frieze" ? 0 : "50%",
+                    }}
+                    aria-hidden="true"
+                  />
+                </div>
               </div>
-              <div className="px-2 py-1.5 bg-card">
-                <div className="text-xs font-semibold text-foreground">{t.label}</div>
-                <div className="text-[10px] text-muted-foreground">{t.vibe}</div>
+              <div className="px-3 py-2.5 bg-card">
+                <div className="text-xs font-semibold text-foreground">The {t.label}</div>
+                <div className="text-[11px] text-muted-foreground leading-snug mt-0.5">{t.pitch}</div>
               </div>
             </button>
           )
@@ -1044,6 +1178,7 @@ function ThemePickerGrid({ selected, onSelect }: { selected: string; onSelect: (
     </div>
   )
 }
+// --- END AI-MODIFIED ---
 
 // ── Outer wrapper: handles loading + premium gating ───────────
 

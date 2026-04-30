@@ -1,33 +1,35 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
+// Updated: 2026-04-30 (editorial redesign)
 // Purpose: Dynamic Open Graph image route for server profile
 //          pages. Generates a 1200x630 PNG that social platforms
 //          (Twitter, LinkedIn, Discord, Facebook, etc.) can
 //          embed as a rich preview when someone shares the
 //          /servers/{slug} URL.
 //
-//          Implementation note: we deliberately avoid `@vercel/og`
-//          here so we don't take on a new dependency. The project
-//          already has `sharp` installed for image processing, so
-//          we hand-craft an SVG with the listing's theme colours
-//          and display name, then rasterize it through sharp.
-//          When a cover image is set, we fetch it and composite
-//          the gradient + text on top.
+//          v2 (editorial redesign): each of the 5 editorial themes
+//          renders its own distinct layout so social cards feel
+//          like a continuation of the article, not a generic
+//          "name + tagline + cover" stamp.
 //
-//          Caching: this is a Node API route. We set a long s-max-
-//          age + stale-while-revalidate so the Vercel CDN does the
-//          heavy lifting -- we only do the actual PNG synthesis
-//          on a cold cache miss (and after each admin edit, when
-//          the cache is purged via slug bust).
+//          We keep using sharp + a hand-crafted SVG (no @vercel/og
+//          dependency). Display fonts are specified by font-family
+//          stack -- librsvg picks the closest available system
+//          font, so Atlantic falls back to Georgia / Liberation
+//          Serif, Wired to Inter / DejaVu Sans, etc. The visual
+//          distinctness comes from layout + colour + rule style,
+//          not from pixel-perfect font matching.
+//
+//          Caching: long s-maxage + stale-while-revalidate so the
+//          Vercel CDN takes the load. Per-listing edits bust the
+//          cache via the slug path.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import sharp from "sharp"
 import { prisma } from "@/utils/prisma"
-import { LISTING_THEMES } from "@/constants/ServerListingData"
+import { resolveTheme, ListingTheme } from "@/constants/ServerListingData"
 
-// 1200x630 is the recommended size for Twitter and Facebook
-// preview cards. Most platforms downscale gracefully.
 const OG_WIDTH = 1200
 const OG_HEIGHT = 630
 
@@ -72,9 +74,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const png = await renderOgPng(listing)
     res.setHeader("Content-Type", "image/png")
-    // Cache aggressively at the CDN. The page will bust this when
-    // it edits via a tag or by including ?v=updated_at -- but for
-    // organic shares this stays fresh for 1 hour with a 24h SWR.
     res.setHeader(
       "Cache-Control",
       "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
@@ -86,44 +85,39 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 }
 
+// ── Per-theme renderer ────────────────────────────────────────
+
 async function renderOgPng(listing: ListingForOg): Promise<Buffer> {
-  const theme =
-    LISTING_THEMES.find((t) => t.id === listing.theme_preset) ?? LISTING_THEMES[0]
+  const theme = resolveTheme(listing.theme_preset)
   const accent = sanitiseHex(listing.accent_color) ?? theme.defaultAccent
-  // The theme's bodyTint/cardSurface are HSL CSS strings -- we resolve
-  // them through a tiny helper so the SVG gradient gets concrete RGB
-  // hex values that sharp can rasterize.
-  const fromColor = cssColorToHex(theme.bodyTint) ?? "#0f172a"
-  const toColor = cssColorToHex(theme.cardSurface) ?? "#1e293b"
 
-  const overlaySvg = buildOverlaySvg({
-    title: listing.display_name,
-    tagline: listing.tagline ?? `A featured ${listing.category} server on LionBot`,
-    accent,
-    fromColor,
-    toColor,
-    showCoverDarkening: !!listing.cover_image_url,
-  })
+  // Build a base canvas of the theme's body colour (so unloaded
+  // covers still look like the article). When a cover is present,
+  // we composite it underneath the overlay with a theme-specific
+  // treatment.
+  const themeBaseColor = theme.bodyBg
 
-  // Pipeline: start from either the cover image (resized + slightly
-  // darkened) or a flat gradient SVG, then composite the text overlay
-  // on top.
   let base: sharp.Sharp
   if (listing.cover_image_url) {
     try {
       const resp = await fetch(listing.cover_image_url)
       if (!resp.ok) throw new Error(`cover fetch ${resp.status}`)
       const buf = Buffer.from(await resp.arrayBuffer())
-      base = sharp(buf)
-        .resize(OG_WIDTH, OG_HEIGHT, { fit: "cover", position: "center" })
-        .modulate({ brightness: 0.7 })
+      base = await applyCoverTreatment(theme, buf)
     } catch (err) {
-      console.warn("[og/server] cover fetch failed; falling back to gradient", err)
-      base = gradientBase(fromColor, toColor)
+      console.warn("[og/server] cover fetch failed; falling back to theme base", err)
+      base = themeFlatBase(themeBaseColor)
     }
   } else {
-    base = gradientBase(fromColor, toColor)
+    base = themeFlatBase(themeBaseColor)
   }
+
+  const overlaySvg = buildOverlaySvgForTheme(theme, accent, {
+    title: listing.display_name,
+    tagline: listing.tagline ?? "",
+    category: listing.category,
+    hasCover: !!listing.cover_image_url,
+  })
 
   return base
     .composite([{ input: Buffer.from(overlaySvg), top: 0, left: 0 }])
@@ -131,86 +125,294 @@ async function renderOgPng(listing: ListingForOg): Promise<Buffer> {
     .toBuffer()
 }
 
-function gradientBase(fromColor: string, toColor: string): sharp.Sharp {
-  const svg = `
-    <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stop-color="${fromColor}" />
-          <stop offset="100%" stop-color="${toColor}" />
-        </linearGradient>
-      </defs>
-      <rect width="100%" height="100%" fill="url(#bg)" />
-    </svg>
-  `
+function themeFlatBase(hex: string): sharp.Sharp {
+  // Solid theme-colour PNG sized to 1200x630. We round through SVG so
+  // sharp reuses its rasteriser without a separate image pipeline.
+  const svg = `<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="${hex}" />
+  </svg>`
   return sharp(Buffer.from(svg))
 }
 
-function buildOverlaySvg(args: {
+/**
+ * Apply the theme's cover treatment to the uploaded cover photo.
+ * Atlantic: gentle warm tint + slight darkening at the bottom.
+ * Wired: greyscale + a magenta tint to fake duotone.
+ * Kinfolk: full greyscale.
+ * Vogue: sepia.
+ * Frieze: greyscale + brightness lift.
+ */
+async function applyCoverTreatment(theme: ListingTheme, buf: Buffer): Promise<sharp.Sharp> {
+  let pipeline = sharp(buf).resize(OG_WIDTH, OG_HEIGHT, {
+    fit: "cover",
+    position: "center",
+  })
+
+  switch (theme.coverBlend) {
+    case "duotone":
+      // Greyscale base, then composite a magenta overlay at low opacity
+      // for a faux-duotone. Real duotones need LUTs but this reads close.
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.6 })
+      break
+    case "monochrome":
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.7 })
+      break
+    case "wash":
+      pipeline = pipeline
+        .modulate({ saturation: 0.55, brightness: 0.85 })
+        .tint({ r: 230, g: 200, b: 170 })
+      break
+    case "spare":
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.95 })
+      break
+    case "paper":
+    default:
+      pipeline = pipeline.modulate({ brightness: 0.78, saturation: 0.85 })
+      break
+  }
+
+  return pipeline
+}
+
+interface OverlayInput {
   title: string
   tagline: string
-  accent: string
-  fromColor: string
-  toColor: string
-  showCoverDarkening: boolean
-}): string {
-  const safeTitle = clampText(escapeXml(args.title), 60)
-  const safeTagline = clampText(escapeXml(args.tagline), 110)
-  const accent = args.accent
-
-  // The text block is anchored bottom-left with a soft gradient
-  // overlay behind it so it's legible on any cover photo. The
-  // accent ribbon at the top-left is the brand element that ties
-  // each social card back to the LionBot directory.
-  return `
-    <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="scrim" x1="0" y1="1" x2="0" y2="0">
-          <stop offset="0%" stop-color="rgba(0,0,0,0.85)" />
-          <stop offset="60%" stop-color="rgba(0,0,0,0.35)" />
-          <stop offset="100%" stop-color="rgba(0,0,0,0)" />
-        </linearGradient>
-        <filter id="textShadow" x="-5%" y="-5%" width="110%" height="110%">
-          <feDropShadow dx="0" dy="2" stdDeviation="6" flood-opacity="0.55" />
-        </filter>
-      </defs>
-
-      <rect x="0" y="${OG_HEIGHT - 360}" width="100%" height="360" fill="url(#scrim)" />
-
-      <!-- Accent corner ribbon -->
-      <g transform="translate(60,60)">
-        <rect width="180" height="44" rx="22" fill="${accent}" opacity="0.92" />
-        <text x="90" y="29" text-anchor="middle"
-          font-family="Inter, system-ui, sans-serif"
-          font-size="18" font-weight="700" fill="#0b1020">
-          LionBot
-        </text>
-      </g>
-
-      <!-- Title + tagline anchored bottom-left -->
-      <g filter="url(#textShadow)">
-        <text x="60" y="${OG_HEIGHT - 130}"
-          font-family="Inter, system-ui, sans-serif"
-          font-size="68" font-weight="800" fill="#ffffff" letter-spacing="-1">
-          ${safeTitle}
-        </text>
-        <text x="60" y="${OG_HEIGHT - 70}"
-          font-family="Inter, system-ui, sans-serif"
-          font-size="28" font-weight="500" fill="rgba(255,255,255,0.85)">
-          ${safeTagline}
-        </text>
-      </g>
-
-      <!-- Footer URL chip -->
-      <g transform="translate(60,${OG_HEIGHT - 50})">
-        <text font-family="Inter, system-ui, sans-serif"
-          font-size="20" font-weight="500" fill="rgba(255,255,255,0.65)">
-          lionbot.org/servers
-        </text>
-      </g>
-    </svg>
-  `
+  category: string
+  hasCover: boolean
 }
+
+function buildOverlaySvgForTheme(
+  theme: ListingTheme,
+  accent: string,
+  input: OverlayInput,
+): string {
+  switch (theme.id) {
+    case "wired":
+      return buildWiredOverlay(theme, accent, input)
+    case "kinfolk":
+      return buildKinfolkOverlay(theme, accent, input)
+    case "vogue":
+      return buildVogueOverlay(theme, accent, input)
+    case "frieze":
+      return buildFriezeOverlay(theme, accent, input)
+    case "atlantic":
+    default:
+      return buildAtlanticOverlay(theme, accent, input)
+  }
+}
+
+// ── Theme overlays ────────────────────────────────────────────
+
+function buildAtlanticOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
+  const title = clampText(escapeXml(input.title), 50)
+  const tagline = clampText(escapeXml(input.tagline || `A featured ${input.category} community on LionBot`), 90)
+  // Atlantic: warm ivory wash from the bottom, serif title, italic
+  // deck, hairline rule, accent kicker. Cover sits behind a paper-fade.
+  const fadeY = OG_HEIGHT - 360
+  return `
+<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="paperFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
+      <stop offset="55%" stop-color="${theme.bodyBg}" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  ${input.hasCover ? `<rect x="0" y="${fadeY}" width="100%" height="${OG_HEIGHT - fadeY}" fill="url(#paperFade)" />` : ""}
+
+  <!-- Top kicker -->
+  <g transform="translate(72,76)">
+    <rect width="44" height="2" y="14" fill="${accent}" />
+    <text x="60" y="22" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="6" fill="${theme.bodyText}">
+      FEATURED · ${escapeXml(input.category.toUpperCase())}
+    </text>
+  </g>
+
+  <!-- Title + deck -->
+  <g transform="translate(72,${OG_HEIGHT - 220})">
+    <text font-family="Spectral, Georgia, 'Liberation Serif', serif" font-size="86" font-weight="700" fill="${theme.bodyText}" letter-spacing="-2">
+      ${title}
+    </text>
+    <text y="64" font-family="Spectral, Georgia, 'Liberation Serif', serif" font-style="italic" font-size="32" fill="${theme.mutedText}">
+      ${tagline}
+    </text>
+  </g>
+
+  <!-- Footer rule + colophon -->
+  <line x1="72" y1="${OG_HEIGHT - 76}" x2="${OG_WIDTH - 72}" y2="${OG_HEIGHT - 76}" stroke="${theme.ruleColor}" stroke-width="1" />
+  <text x="72" y="${OG_HEIGHT - 36}" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="4" fill="${theme.mutedText}">
+    THE LIONBOT DIRECTORY
+  </text>
+  <text x="${OG_WIDTH - 72}" y="${OG_HEIGHT - 36}" text-anchor="end" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" fill="${theme.mutedText}">
+    lionbot.org/servers
+  </text>
+</svg>`
+}
+
+function buildWiredOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
+  const title = clampText(escapeXml(input.title.toUpperCase()), 40)
+  const tagline = clampText(escapeXml(input.tagline || `${input.category} community`), 100)
+  // Wired: matte black, accent magenta, all-caps Inter Tight, thick
+  // accent rule under the kicker. Cover sits as a faux duotone.
+  return `
+<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="darkScrim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="rgba(10,10,12,0.30)" />
+      <stop offset="60%" stop-color="rgba(10,10,12,0.85)" />
+      <stop offset="100%" stop-color="rgba(10,10,12,1)" />
+    </linearGradient>
+    <linearGradient id="accentTint" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${accent}" stop-opacity="0.40" />
+      <stop offset="60%" stop-color="${accent}" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  ${input.hasCover ? `<rect width="100%" height="100%" fill="url(#accentTint)" />` : ""}
+  <rect width="100%" height="100%" fill="url(#darkScrim)" />
+
+  <!-- Top kicker -->
+  <g transform="translate(72,76)">
+    <rect width="56" height="4" fill="${accent}" />
+    <text y="42" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="800" letter-spacing="6" fill="${accent}">
+      FEATURED · ${escapeXml(input.category.toUpperCase())}
+    </text>
+  </g>
+
+  <!-- Title + deck -->
+  <g transform="translate(72,${OG_HEIGHT - 240})">
+    <text font-family="Inter, Helvetica, Arial, sans-serif" font-size="104" font-weight="900" fill="#ffffff" letter-spacing="-3" textLength="${Math.min(OG_WIDTH - 144, title.length * 50)}" lengthAdjust="spacingAndGlyphs">
+      ${title}
+    </text>
+    <text y="64" font-family="Inter, Helvetica, Arial, sans-serif" font-size="28" font-weight="500" fill="rgba(245,245,247,0.80)">
+      ${tagline}
+    </text>
+  </g>
+
+  <!-- Footer accent rule + URL -->
+  <rect x="72" y="${OG_HEIGHT - 84}" width="${OG_WIDTH - 144}" height="3" fill="${accent}" />
+  <text x="72" y="${OG_HEIGHT - 38}" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="5" fill="#ffffff">
+    LIONBOT.ORG/SERVERS
+  </text>
+</svg>`
+}
+
+function buildKinfolkOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
+  const title = clampText(escapeXml(input.title), 38)
+  const tagline = clampText(escapeXml(input.tagline || `A ${input.category} community`), 90)
+  // Kinfolk: cream + EB Garamond. Wide horizontal margins. Italic
+  // deck. Title centred. No drop cap, just generous spacing.
+  return `
+<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="creamFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
+      <stop offset="60%" stop-color="${theme.bodyBg}" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 480}" width="100%" height="480" fill="url(#creamFade)" />` : ""}
+
+  <!-- Tiny single-word kicker, italic -->
+  <text x="50%" y="120" text-anchor="middle" font-family="EB Garamond, Garamond, Georgia, serif" font-style="italic" font-size="28" fill="${theme.mutedText}">
+    Featured · ${escapeXml(input.category)}
+  </text>
+
+  <!-- Centered title -->
+  <text x="50%" y="${OG_HEIGHT / 2 + 30}" text-anchor="middle" font-family="EB Garamond, Garamond, Georgia, serif" font-size="92" font-weight="500" fill="${theme.bodyText}" letter-spacing="-1">
+    ${title}
+  </text>
+
+  <!-- Italic centered deck -->
+  <text x="50%" y="${OG_HEIGHT / 2 + 90}" text-anchor="middle" font-family="EB Garamond, Garamond, Georgia, serif" font-style="italic" font-size="30" fill="${theme.mutedText}">
+    ${tagline}
+  </text>
+
+  <!-- Hairline + colophon, centred -->
+  <line x1="${OG_WIDTH / 2 - 80}" y1="${OG_HEIGHT - 90}" x2="${OG_WIDTH / 2 + 80}" y2="${OG_HEIGHT - 90}" stroke="${theme.ruleColor}" stroke-width="1" />
+  <text x="50%" y="${OG_HEIGHT - 50}" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-size="20" letter-spacing="6" fill="${theme.mutedText}">
+    LIONBOT.ORG/SERVERS
+  </text>
+</svg>`
+}
+
+function buildVogueOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
+  const title = clampText(escapeXml(input.title.toUpperCase()), 38)
+  const tagline = clampText(escapeXml(input.tagline || `A ${input.category} community`), 100)
+  // Vogue: oversized Playfair, double rule, "VOL. I" eyebrow, italic
+  // deck under title.
+  return `
+<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="ecruFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
+      <stop offset="55%" stop-color="${theme.bodyBg}" stop-opacity="0.55" />
+      <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 380}" width="100%" height="380" fill="url(#ecruFade)" />` : ""}
+
+  <!-- Top "Vol. I — Issue NN" eyebrow -->
+  <text x="72" y="100" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="6" fill="${accent}">
+    VOL. I — ${escapeXml(input.category.toUpperCase())}
+  </text>
+
+  <!-- Massive title -->
+  <text x="72" y="${OG_HEIGHT - 200}" font-family="Playfair Display, Georgia, 'Liberation Serif', serif" font-size="120" font-weight="700" fill="${theme.bodyText}" letter-spacing="-3">
+    ${title}
+  </text>
+
+  <!-- Italic deck -->
+  <text x="72" y="${OG_HEIGHT - 130}" font-family="Playfair Display, Georgia, serif" font-style="italic" font-size="34" fill="${theme.mutedText}">
+    ${tagline}
+  </text>
+
+  <!-- Double rule + colophon -->
+  <line x1="72" y1="${OG_HEIGHT - 80}" x2="${OG_WIDTH - 72}" y2="${OG_HEIGHT - 80}" stroke="${theme.ruleColor}" stroke-width="1" />
+  <line x1="72" y1="${OG_HEIGHT - 76}" x2="${OG_WIDTH - 72}" y2="${OG_HEIGHT - 76}" stroke="${theme.ruleColor}" stroke-width="1" />
+  <text x="72" y="${OG_HEIGHT - 36}" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="6" fill="${theme.mutedText}">
+    LIONBOT.ORG / SERVERS
+  </text>
+</svg>`
+}
+
+function buildFriezeOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
+  const title = clampText(escapeXml(input.title), 32)
+  const tagline = clampText(escapeXml(input.tagline || `${input.category}`), 80)
+  // Frieze: very large title, very small deck, mono kicker, no rule.
+  return `
+<svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="boneFade" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
+      <stop offset="70%" stop-color="${theme.bodyBg}" stop-opacity="0.7" />
+      <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 420}" width="100%" height="420" fill="url(#boneFade)" />` : ""}
+
+  <!-- Mono kicker -->
+  <text x="72" y="100" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="20" letter-spacing="8" fill="${theme.mutedText}">
+    /  FEATURED  /  ${escapeXml(input.category.toUpperCase())}
+  </text>
+
+  <!-- Massive title bottom-left -->
+  <text x="72" y="${OG_HEIGHT - 170}" font-family="Inter, Helvetica, Arial, sans-serif" font-size="148" font-weight="900" fill="${theme.bodyText}" letter-spacing="-5">
+    ${title}
+  </text>
+
+  <!-- Tiny deck -->
+  <text x="72" y="${OG_HEIGHT - 120}" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" fill="${theme.mutedText}">
+    ${tagline}
+  </text>
+
+  <!-- Mono colophon -->
+  <text x="72" y="${OG_HEIGHT - 50}" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="20" letter-spacing="6" fill="${theme.mutedText}">
+    LIONBOT.ORG/SERVERS
+  </text>
+</svg>`
+}
+
+// ── Helpers ───────────────────────────────────────────────────
 
 function clampText(text: string, max: number): string {
   if (text.length <= max) return text
@@ -231,57 +433,4 @@ function sanitiseHex(value: string | null | undefined): string | null {
   const trimmed = value.trim()
   if (!/^#[0-9a-fA-F]{3,8}$/.test(trimmed)) return null
   return trimmed
-}
-
-/**
- * The theme constants store body / card colours as CSS strings such as
- * "hsl(222 47% 11%)". Sharp wants concrete colours in the SVG, so we
- * convert the most common two formats (hsl + hex) here. Anything we
- * can't parse falls back to null so the caller can pick a default.
- */
-function cssColorToHex(css: string | null | undefined): string | null {
-  if (!css) return null
-  const trimmed = css.trim()
-  if (trimmed.startsWith("#")) return sanitiseHex(trimmed)
-  const hslMatch = trimmed.match(
-    /^hsla?\(\s*(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)%\s+(\d+(?:\.\d+)?)%\s*(?:\/\s*(\d+(?:\.\d+)?))?\s*\)$/i,
-  )
-  if (!hslMatch) return null
-  const h = parseFloat(hslMatch[1])
-  const s = parseFloat(hslMatch[2]) / 100
-  const l = parseFloat(hslMatch[3]) / 100
-  return hslToHex(h, s, l)
-}
-
-function hslToHex(h: number, s: number, l: number): string {
-  const c = (1 - Math.abs(2 * l - 1)) * s
-  const x = c * (1 - Math.abs(((h / 60) % 2) - 1))
-  const m = l - c / 2
-  let r = 0,
-    g = 0,
-    b = 0
-  if (h < 60) {
-    r = c
-    g = x
-  } else if (h < 120) {
-    r = x
-    g = c
-  } else if (h < 180) {
-    g = c
-    b = x
-  } else if (h < 240) {
-    g = x
-    b = c
-  } else if (h < 300) {
-    r = x
-    b = c
-  } else {
-    r = c
-    b = x
-  }
-  const toHex = (v: number) => {
-    const n = Math.round((v + m) * 255)
-    return n.toString(16).padStart(2, "0")
-  }
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`
 }

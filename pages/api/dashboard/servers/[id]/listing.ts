@@ -42,7 +42,7 @@ import {
 import {
   LISTING_CATEGORY_IDS,
   LISTING_THEME_IDS,
-  LISTING_FONT_IDS,
+  LEGACY_THEME_MAP,
   LISTING_COUNTRIES,
   LISTING_LANGUAGES,
   LISTING_AGE_BANDS,
@@ -54,6 +54,7 @@ import {
   MAX_TAGLINE_LENGTH,
   MAX_DISPLAY_NAME_LENGTH,
   LISTING_BLEND_MODES,
+  normalizeSections,
 } from "@/constants/ServerListingData"
 
 const COUNTRY_IDS = new Set<string>(LISTING_COUNTRIES.map((c) => c.id))
@@ -164,22 +165,37 @@ function parsePayload(body: any): ParsedPayload {
     throw new ValidationError("Invalid audience age band")
   }
 
-  const theme_preset = String(body.theme_preset ?? "midnight")
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Editorial redesign -- coerce the persisted theme through
+  //   LEGACY_THEME_MAP so unmigrated rows still validate, and switch
+  //   the default from the (now-removed) "midnight" palette to the new
+  //   editorial default "atlantic". font_family is now vestigial: we
+  //   accept any short string (defaults to "inter") and no longer
+  //   gate on LISTING_FONT_IDS, so legacy values like "playfair" or
+  //   "fraunces" still survive a save.
+  let theme_preset = String(body.theme_preset ?? "atlantic")
   if (!LISTING_THEME_IDS.has(theme_preset)) {
-    throw new ValidationError("Invalid theme preset")
+    const mapped = LEGACY_THEME_MAP[theme_preset]
+    if (mapped && LISTING_THEME_IDS.has(mapped)) {
+      theme_preset = mapped
+    } else {
+      throw new ValidationError("Invalid theme preset")
+    }
   }
   const accent_color = body.accent_color ? String(body.accent_color).toLowerCase() : null
   if (accent_color && !isHexColor(accent_color)) {
     throw new ValidationError("Accent colour must be a valid hex code")
   }
-  const font_family = body.font_family ? String(body.font_family) : null
-  if (font_family && !LISTING_FONT_IDS.has(font_family)) {
-    throw new ValidationError("Invalid font choice")
-  }
+  // font_family is no longer rendered by the editorial themes; we keep
+  // the column for backward compatibility but accept anything short.
+  const font_family = body.font_family
+    ? String(body.font_family).slice(0, 64)
+    : null
   const cover_blend_mode = String(body.cover_blend_mode ?? "fade")
   if (!BLEND_MODE_IDS.has(cover_blend_mode)) {
     throw new ValidationError("Invalid blend mode")
   }
+  // --- END AI-MODIFIED ---
 
   const cover_image_url = body.cover_image_url ? String(body.cover_image_url) : null
   if (cover_image_url && !isHttpUrl(cover_image_url)) {
@@ -210,15 +226,21 @@ function parsePayload(body: any): ParsedPayload {
       : null
   }
 
-  const sectionsRaw = body.sections_enabled
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Editorial redesign -- run the incoming sections_enabled
+  //   through normalizeSections() so legacy v1 keys (verified_stats,
+  //   live_sessions, embed_widget, tags, country_language) get folded
+  //   into the new 5-key shape (hero, description, stats, gallery,
+  //   external_link). The set-based filter still drops anything we
+  //   don't recognise.
+  const incoming = normalizeSections(body.sections_enabled as Record<string, unknown> | undefined)
   const sections_enabled: Record<string, boolean> = { ...DEFAULT_SECTIONS_ENABLED }
-  if (sectionsRaw && typeof sectionsRaw === "object") {
-    for (const key of Object.keys(sectionsRaw)) {
-      if (LISTING_SECTION_KEYS.has(key)) {
-        sections_enabled[key] = Boolean(sectionsRaw[key])
-      }
+  for (const key of Object.keys(incoming)) {
+    if (LISTING_SECTION_KEYS.has(key)) {
+      sections_enabled[key] = Boolean(incoming[key])
     }
   }
+  // --- END AI-MODIFIED ---
 
   const nsfw_confirmed = Boolean(body.nsfw_confirmed)
   if (submit && !nsfw_confirmed) {

@@ -1,28 +1,30 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
+// Updated: 2026-04-30 (editorial redesign)
 // Purpose: Public directory at /servers -- browse all approved
 //          premium server profiles. SSG with 5-minute ISR so
 //          newly-approved listings appear in roughly-real-time
 //          but every visitor still gets a fully pre-rendered
 //          page Google can index.
 //
-//          Filters (category, language, study-only) are
-//          client-side only -- the dataset is small enough
-//          for that to be both faster and more responsive than
-//          round-tripping to the API on every keystroke.
+//          v2 (editorial redesign): magazine masthead, single
+//          "Featured this week" cover story, then a hairline-
+//          separated table-of-contents listing. Filters live in a
+//          single horizontal row of chip tabs above the TOC --
+//          no left sidebar. The whole page reads like a magazine
+//          contents page, not a card grid.
 // ============================================================
 import type { GetStaticProps } from "next"
+import Head from "next/head"
 import Layout from "@/components/Layout/Layout"
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import {
-  Search, Sparkles, MapPin, Languages as LangIcon, Globe,
-  Filter, BookOpen, Crown, X, ChevronRight,
-} from "lucide-react"
+import { Search, ChevronRight } from "lucide-react"
 import { fetchDirectoryListings, type DirectoryListing } from "@/utils/listingDirectory"
 import {
-  LISTING_CATEGORIES, LISTING_LANGUAGES, LISTING_COUNTRIES, LISTING_THEMES,
+  LISTING_CATEGORIES, LISTING_LANGUAGES, LISTING_COUNTRIES,
+  resolveTheme,
 } from "@/constants/ServerListingData"
 import { ServersDirectorySEO } from "@/constants/SeoData"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
@@ -32,40 +34,86 @@ interface ServersIndexProps {
   listings: DirectoryListing[]
 }
 
-const ALL_CATEGORY = { id: "all", label: "All categories", emoji: "🌐" }
+// Macro category groupings used by the chip-tab filter row. Each chip
+// matches multiple primary/secondary tag IDs so admins don't have to
+// hunt through 40 categories at the top of the page. "all" + 5 chips
+// keeps the row readable on mobile without horizontal scroll.
+const SECTION_TABS: { id: string; label: string; matches: Set<string> }[] = [
+  { id: "all", label: "All", matches: new Set() },
+  {
+    id: "study",
+    label: "Study",
+    matches: new Set([
+      "study", "math", "science", "coding", "engineering",
+      "medicine", "law", "business", "arts", "music", "writing",
+      "philosophy", "history", "psychology", "creative-writing",
+    ]),
+  },
+  {
+    id: "tech",
+    label: "Tech & AI",
+    matches: new Set(["coding", "ai-ml", "engineering"]),
+  },
+  {
+    id: "languages",
+    label: "Languages",
+    matches: new Set(["language-learning", "international"]),
+  },
+  {
+    id: "test-prep",
+    label: "Test prep",
+    matches: new Set(["sat-act", "ib", "a-levels", "gcse", "ap", "gre-gmat", "lsat", "mcat"]),
+  },
+  {
+    id: "community",
+    label: "Community",
+    matches: new Set([
+      "high-school", "university", "graduate", "professional",
+      "lgbtq-friendly", "neurodivergent", "international",
+      "fitness", "mindfulness", "self-improvement", "reading",
+      "gaming", "anime-manga", "chess",
+    ]),
+  },
+]
+
+function listingMatchesTab(l: DirectoryListing, tabId: string): boolean {
+  if (tabId === "all") return true
+  const tab = SECTION_TABS.find((t) => t.id === tabId)
+  if (!tab) return true
+  if (tab.matches.has(l.category)) return true
+  return l.secondary_tags.some((t) => tab.matches.has(t))
+}
 
 export default function ServersIndexPage({ listings }: ServersIndexProps) {
   const [query, setQuery] = useState("")
-  const [category, setCategory] = useState<string>("all")
-  const [language, setLanguage] = useState<string>("all")
-  const [studyOnly, setStudyOnly] = useState(false)
-  const [filtersOpen, setFiltersOpen] = useState(false)
+  const [tab, setTab] = useState<string>("all")
 
-  const promoted = useMemo(
-    () => listings.filter((l) => l.promoted_until !== null),
-    [listings],
-  )
+  // Pick a single "Featured this week" story: first promoted listing
+  // if any, else the most recently approved with a cover image. The
+  // cover-story slot is the editorial spine of the page so we want
+  // it visually strong every time -- never an iconless server.
+  const featured = useMemo(() => {
+    const promoted = listings.find((l) => l.promoted_until !== null && l.cover_image_url)
+    if (promoted) return promoted
+    const withCover = listings.find((l) => l.cover_image_url)
+    if (withCover) return withCover
+    return listings[0] ?? null
+  }, [listings])
 
-  const filtered = useMemo(() => {
+  // The "rest" of the listings (everything except the featured one).
+  // Filtered by the active tab + freeform search. Featured one stays
+  // pinned to the cover-story slot regardless of filters so the page
+  // never collapses to a search-result-list aesthetic.
+  const rest = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return listings.filter((l) => {
-      if (category !== "all" && l.category !== category && !l.secondary_tags.includes(category)) {
-        return false
-      }
-      if (language !== "all" && l.primary_language !== language) return false
-      if (studyOnly && !l.is_study_server) return false
-      if (q && !`${l.display_name} ${l.tagline ?? ""}`.toLowerCase().includes(q)) return false
-      return true
-    })
-  }, [listings, query, category, language, studyOnly])
-
-  const hasFilters = category !== "all" || language !== "all" || studyOnly || query.length > 0
-  const clearFilters = () => {
-    setQuery("")
-    setCategory("all")
-    setLanguage("all")
-    setStudyOnly(false)
-  }
+    return listings
+      .filter((l) => l.slug !== featured?.slug)
+      .filter((l) => {
+        if (!listingMatchesTab(l, tab)) return false
+        if (q && !`${l.display_name} ${l.tagline ?? ""}`.toLowerCase().includes(q)) return false
+        return true
+      })
+  }, [listings, featured, tab, query])
 
   const collectionJsonLd = useMemo(() => ({
     "@context": "https://schema.org",
@@ -73,176 +121,338 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
     name: ServersDirectorySEO.title,
     description: ServersDirectorySEO.description,
     url: `${SITE_URL}/servers`,
-    hasPart: filtered.slice(0, 30).map((l) => ({
+    hasPart: listings.slice(0, 30).map((l) => ({
       "@type": "Organization",
       name: l.display_name,
       description: l.tagline || undefined,
       url: `${SITE_URL}/servers/${l.slug}`,
       ...(l.guild_icon_url ? { logo: l.guild_icon_url } : {}),
     })),
-  }), [filtered])
+  }), [listings])
 
   return (
     <Layout SEO={ServersDirectorySEO}>
+      <Head>
+        {/* The directory is itself an Atlantic-themed magazine page,
+            so we load Spectral here even though no individual listing
+            is being rendered. Inter is already in our base bundle. */}
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+        />
+      </Head>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionJsonLd) }}
       />
 
-      {/* Hero */}
-      <section className="relative pt-28 pb-12 px-4 overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(800px_circle_at_50%_-10%,_rgba(59,130,246,0.15),_transparent_60%)]" />
-        <div className="max-w-5xl mx-auto text-center">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 border border-primary/30 text-xs font-semibold text-primary uppercase tracking-wider mb-5">
-            <Sparkles size={12} /> Premium server directory
+      {/* The whole page lives inside a styled wrapper so the magazine
+          aesthetic doesn't fight the rest of the site's dark theme.
+          We keep our existing header/footer chrome intact -- this is
+          just the article well. */}
+      <div className="directory-shell">
+        {/* ── Masthead ────────────────────────────────────── */}
+        <header className="masthead">
+          <div className="masthead-rule" aria-hidden="true" />
+          <div className="masthead-eyebrow">
+            <span>Vol. I</span>
+            <span>·</span>
+            <span>Premium Discord Communities</span>
+            <span className="masthead-eyebrow-spacer" />
+            <span>{listings.length} listings</span>
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground">
-            Discover Discord communities <span className="text-primary">worth joining</span>.
-          </h1>
-          <p className="mt-5 text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-            Hand-curated study servers, focus communities, and language exchanges &mdash; all verified premium Discords running on LionBot.
+          <h1 className="masthead-title">The LionBot Directory</h1>
+          <p className="masthead-deck">
+            A hand-picked record of the premium Discord communities running on
+            LionBot — curated for serious focus, real conversation, and the
+            kind of quiet study energy that pays off long-term. Updated weekly.
           </p>
-          <div className="mt-8 max-w-2xl mx-auto relative">
-            <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <div className="masthead-rule" aria-hidden="true" />
+        </header>
+
+        {/* ── Featured cover story ──────────────────────────── */}
+        {featured && <CoverStory listing={featured} />}
+
+        {/* ── Filter tabs + quiet search ────────────────────── */}
+        <div className="filters">
+          <nav className="tabs" aria-label="Filter by category">
+            {SECTION_TABS.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                className={`tab ${tab === t.id ? "tab-active" : ""}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+          <div className="search">
+            <Search size={14} className="search-icon" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by name, tagline, or topic..."
-              className="w-full pl-11 pr-4 py-3.5 bg-card border border-border rounded-xl text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent shadow-lg shadow-black/10"
+              placeholder="Search the directory…"
+              className="search-input"
             />
           </div>
-
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-            <Link href="/dashboard/servers" passHref>
-              <a className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-amber-500/10 border border-amber-500/30 text-sm font-medium text-amber-300 hover:bg-amber-500/15 transition-colors">
-                <Crown size={14} /> List your server
-                <ChevronRight size={14} />
-              </a>
-            </Link>
-          </div>
         </div>
-      </section>
 
-      {/* Promoted carousel */}
-      {promoted.length > 0 && !hasFilters && (
-        <section className="max-w-6xl mx-auto px-4 mb-10">
-          <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
-            <Crown size={14} /> Promoted right now
-          </h2>
-          <div className="flex gap-3 overflow-x-auto pb-3 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
-            {promoted.map((l) => (
-              <PromotedCard key={l.slug} listing={l} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Main grid: filters + cards */}
-      <section className="max-w-6xl mx-auto px-4 pb-20 grid gap-6 lg:gap-8 grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)]">
-        {/* Filters */}
-        <aside className="lg:sticky lg:top-6 lg:self-start">
-          <button
-            type="button"
-            onClick={() => setFiltersOpen((v) => !v)}
-            className="lg:hidden w-full mb-3 inline-flex items-center justify-between gap-2 px-4 py-2.5 bg-card border border-border rounded-lg text-sm font-medium text-foreground"
-          >
-            <span className="inline-flex items-center gap-2"><Filter size={14} /> Filters</span>
-            <span className="text-xs text-muted-foreground">{filtered.length} of {listings.length}</span>
-          </button>
-          <div className={`${filtersOpen ? "block" : "hidden lg:block"} bg-card/50 border border-border rounded-xl p-4 space-y-5`}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Filters</h2>
-              {hasFilters && (
-                <button
-                  type="button"
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
-                >
-                  <X size={12} /> Clear
-                </button>
-              )}
-            </div>
-            <FilterSection title="Category">
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value={ALL_CATEGORY.id}>{ALL_CATEGORY.label}</option>
-                {LISTING_CATEGORIES.map((c) => (
-                  <option key={c.id} value={c.id}>{c.emoji} {c.label}</option>
-                ))}
-              </select>
-            </FilterSection>
-            <FilterSection title="Language">
-              <select
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="all">Any language</option>
-                {LISTING_LANGUAGES.map((l) => (
-                  <option key={l.id} value={l.id}>{l.label}</option>
-                ))}
-              </select>
-            </FilterSection>
-            <FilterSection title="Vibe">
-              <label className="flex items-center gap-2 text-sm text-foreground cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={studyOnly}
-                  onChange={(e) => setStudyOnly(e.target.checked)}
-                  className="h-4 w-4 rounded border-input accent-primary"
-                />
-                <BookOpen size={14} className="text-muted-foreground" />
-                Study servers only
-              </label>
-            </FilterSection>
-          </div>
-        </aside>
-
-        {/* Cards */}
-        <div>
-          <div className="hidden lg:flex items-center justify-between mb-4">
-            <p className="text-sm text-muted-foreground">
-              {filtered.length === listings.length
-                ? `${listings.length} server${listings.length === 1 ? "" : "s"}`
-                : `${filtered.length} of ${listings.length} servers`}
-            </p>
-          </div>
-          {filtered.length === 0 ? (
-            <div className="text-center py-20 bg-card/50 border border-dashed border-border rounded-xl">
-              <Globe size={36} className="mx-auto text-muted-foreground/40 mb-3" />
-              <p className="text-foreground font-medium">No servers match those filters yet.</p>
-              <p className="text-sm text-muted-foreground mt-1">Try widening the search or clearing your filters.</p>
+        {/* ── TOC listing ───────────────────────────────────── */}
+        <section className="toc">
+          {rest.length === 0 ? (
+            <div className="toc-empty">
+              <p className="toc-empty-title">No servers in this section yet.</p>
+              <p className="toc-empty-sub">
+                Try a different category, or clear the search to see everything in the directory.
+              </p>
             </div>
           ) : (
-            <div className="grid gap-4 sm:grid-cols-2">
-              {filtered.map((l) => (
-                <ServerCard key={l.slug} listing={l} />
+            <ol className="toc-list" role="list">
+              {rest.map((l, idx) => (
+                <TocRow key={l.slug} listing={l} index={idx + 1} />
               ))}
-            </div>
+            </ol>
           )}
-        </div>
-      </section>
+        </section>
+
+        {/* ── Footer strip: editorial pitch ───────────────── */}
+        <aside className="pitch">
+          <p className="pitch-eyebrow">For server owners</p>
+          <p className="pitch-headline">
+            Want your community featured?
+          </p>
+          <p className="pitch-body">
+            Each listing is reviewed by hand. Premium servers get a custom
+            profile page, an editorial layout, a single DoFollow backlink
+            that helps your own SEO, and a permanent spot in this directory.
+          </p>
+          <Link href="/donate#feature_server" passHref>
+            <a className="pitch-cta">
+              Apply for editorial review <ChevronRight size={16} />
+            </a>
+          </Link>
+        </aside>
+      </div>
+
+      <style jsx>{`
+        .directory-shell {
+          background: #f6f1e7;
+          color: #1a1612;
+          font-family: Inter, system-ui, sans-serif;
+          margin-top: -1px;
+          min-height: 100vh;
+          padding-bottom: clamp(64px, 10vh, 120px);
+        }
+        .masthead {
+          max-width: min(1100px, 92vw);
+          margin: 0 auto;
+          padding: clamp(56px, 10vh, 120px) clamp(20px, 5vw, 40px) clamp(36px, 6vh, 64px);
+          text-align: center;
+        }
+        .masthead-rule {
+          height: 1px;
+          background: rgba(26, 22, 18, 0.18);
+          margin: 0 auto;
+          max-width: 240px;
+        }
+        .masthead-eyebrow {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+          margin: 1.4rem 0;
+          font-size: 0.7rem;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: #6b5d4f;
+          font-weight: 600;
+        }
+        .masthead-eyebrow-spacer {
+          width: 0;
+        }
+        .masthead-title {
+          font-family: Spectral, Georgia, serif;
+          font-size: clamp(2.6rem, 7vw, 5.4rem);
+          font-weight: 700;
+          line-height: 1;
+          letter-spacing: -0.02em;
+          color: #1a1612;
+          margin: 0 0 0.6em;
+        }
+        .masthead-deck {
+          font-family: Spectral, Georgia, serif;
+          font-style: italic;
+          font-size: clamp(1.05rem, 1.8vw, 1.35rem);
+          line-height: 1.55;
+          color: #3d352c;
+          max-width: 56ch;
+          margin: 0 auto 1.8rem;
+        }
+
+        .filters {
+          max-width: min(1100px, 92vw);
+          margin: clamp(36px, 6vh, 64px) auto 0;
+          padding: 0 clamp(20px, 5vw, 40px);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          border-bottom: 1px solid rgba(26, 22, 18, 0.18);
+          padding-bottom: 14px;
+        }
+        @media (min-width: 720px) {
+          .filters {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 24px;
+          }
+        }
+        .tabs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 4px 18px;
+          align-items: center;
+        }
+        .tab {
+          background: none;
+          border: none;
+          padding: 6px 0;
+          font-family: Inter, sans-serif;
+          font-size: 0.78rem;
+          font-weight: 600;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #6b5d4f;
+          cursor: pointer;
+          border-bottom: 1px solid transparent;
+          transition: color 0.15s, border-color 0.15s;
+        }
+        .tab:hover {
+          color: #1a1612;
+        }
+        .tab-active {
+          color: #1a1612;
+          border-bottom-color: #8b1e1e;
+        }
+
+        .search {
+          position: relative;
+          width: 100%;
+          max-width: 320px;
+        }
+        .search-icon {
+          position: absolute;
+          left: 0;
+          top: 50%;
+          transform: translateY(-50%);
+          color: #6b5d4f;
+          pointer-events: none;
+        }
+        .search-input {
+          width: 100%;
+          padding: 10px 0 10px 24px;
+          background: transparent;
+          border: none;
+          border-bottom: 1px solid rgba(26, 22, 18, 0.18);
+          font-family: Inter, sans-serif;
+          font-size: 0.92rem;
+          color: #1a1612;
+        }
+        .search-input::placeholder {
+          color: #8a7c6e;
+          font-style: italic;
+        }
+        .search-input:focus {
+          outline: none;
+          border-bottom-color: #8b1e1e;
+        }
+
+        .toc {
+          max-width: min(1100px, 92vw);
+          margin: 0 auto;
+          padding: 0 clamp(20px, 5vw, 40px);
+        }
+        .toc-empty {
+          padding: clamp(48px, 10vh, 96px) 0;
+          text-align: center;
+        }
+        .toc-empty-title {
+          font-family: Spectral, Georgia, serif;
+          font-style: italic;
+          font-size: 1.2rem;
+          color: #1a1612;
+          margin: 0 0 0.5rem;
+        }
+        .toc-empty-sub {
+          font-size: 0.9rem;
+          color: #6b5d4f;
+          margin: 0;
+        }
+        .toc-list {
+          list-style: none;
+          margin: 0;
+          padding: 0;
+        }
+
+        .pitch {
+          max-width: min(820px, 92vw);
+          margin: clamp(64px, 12vh, 120px) auto 0;
+          padding: clamp(32px, 6vh, 56px) clamp(20px, 5vw, 40px);
+          border-top: 3px double rgba(26, 22, 18, 0.20);
+          border-bottom: 3px double rgba(26, 22, 18, 0.20);
+          text-align: center;
+        }
+        .pitch-eyebrow {
+          font-size: 0.7rem;
+          font-weight: 600;
+          letter-spacing: 0.28em;
+          text-transform: uppercase;
+          color: #6b5d4f;
+          margin: 0 0 0.8rem;
+        }
+        .pitch-headline {
+          font-family: Spectral, Georgia, serif;
+          font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+          font-weight: 600;
+          letter-spacing: -0.01em;
+          color: #1a1612;
+          margin: 0 0 0.8rem;
+        }
+        .pitch-body {
+          font-family: Inter, sans-serif;
+          font-size: 0.98rem;
+          line-height: 1.65;
+          color: #3d352c;
+          max-width: 60ch;
+          margin: 0 auto 1.4rem;
+        }
+        .pitch-cta {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          font-family: Inter, sans-serif;
+          font-size: 0.9rem;
+          font-weight: 600;
+          color: #8b1e1e;
+          text-decoration: underline;
+          text-underline-offset: 4px;
+          text-decoration-thickness: 1px;
+        }
+        .pitch-cta:hover {
+          opacity: 0.85;
+        }
+      `}</style>
     </Layout>
   )
 }
 
-// ── Sub-components ────────────────────────────────────────────
+// ── Cover story ────────────────────────────────────────────────
 
-function FilterSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">{title}</label>
-      {children}
-    </div>
-  )
-}
-
-function ServerCard({ listing }: { listing: DirectoryListing }) {
-  const theme = LISTING_THEMES.find((t) => t.id === listing.theme_preset) ?? LISTING_THEMES[0]
+function CoverStory({ listing }: { listing: DirectoryListing }) {
+  const theme = resolveTheme(listing.theme_preset)
   const accent = listing.accent_color || theme.defaultAccent
   const category = LISTING_CATEGORIES.find((c) => c.id === listing.category)
   const country = listing.primary_country
@@ -253,132 +463,297 @@ function ServerCard({ listing }: { listing: DirectoryListing }) {
     : null
 
   return (
-    <Link href={`/servers/${listing.slug}`} passHref>
-      <a className="group block bg-card border border-border rounded-xl overflow-hidden hover:border-primary/40 transition-all hover:shadow-xl hover:shadow-black/20">
-      <div
-        className="h-28 sm:h-32 relative"
-        style={
-          listing.cover_image_url
-            ? {
-                background: `linear-gradient(180deg, transparent 0%, hsl(0 0% 0% / 0.45) 100%), url('${escapeCssUrl(listing.cover_image_url)}') center/cover no-repeat`,
-              }
-            : { background: theme.heroGradient + ", " + theme.bodyTint }
-        }
-      >
-        {listing.promoted_until && (
-          <span className="absolute top-2 right-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/90 text-amber-950 text-[10px] font-bold uppercase tracking-wide">
-            <Crown size={10} /> Promoted
-          </span>
-        )}
-        {listing.is_study_server && (
-          <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-black/40 text-white text-[10px] font-medium backdrop-blur-sm">
-            <BookOpen size={10} /> Study
-          </span>
-        )}
-      </div>
-      <div className="p-4 -mt-8 relative">
-        <div className="flex items-start gap-3">
-          {listing.guild_icon_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={listing.guild_icon_url}
-              alt=""
-              className="w-12 h-12 rounded-xl border-2 border-card flex-shrink-0 shadow-md"
-            />
-          ) : (
-            <div
-              className="w-12 h-12 rounded-xl border-2 border-card flex-shrink-0 shadow-md flex items-center justify-center font-bold text-white"
-              style={{ background: accent }}
-            >
-              {listing.display_name.charAt(0).toUpperCase()}
+    <section
+      style={{
+        maxWidth: "min(1100px, 92vw)",
+        margin: "0 auto",
+        padding: "clamp(24px, 5vh, 56px) clamp(20px, 5vw, 40px) clamp(48px, 8vh, 96px)",
+      }}
+    >
+      <Link href={`/servers/${listing.slug}`} passHref>
+        <a className="cover-story group">
+          <div className="cover-story-image-wrap">
+            {listing.cover_image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={listing.cover_image_url}
+                alt=""
+                className="cover-story-image"
+              />
+            ) : (
+              <div
+                className="cover-story-image cover-story-fallback"
+                style={{ background: accent }}
+              />
+            )}
+            <span className="cover-story-tag">
+              {listing.promoted_until ? "Featured" : "Editor's pick"}
+            </span>
+          </div>
+
+          <div className="cover-story-body">
+            <div className="cover-story-eyebrow">
+              {category ? category.label : "Discord community"}
+              {country ? ` · ${country.label}` : ""}
+              {language ? ` · ${language.label}` : ""}
             </div>
-          )}
-          <div className="min-w-0 pt-2">
-            <h3 className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-              {listing.display_name}
-            </h3>
-            {category && (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                <span aria-hidden="true">{category.emoji}</span> {category.label}
+            <h2 className="cover-story-title">{listing.display_name}</h2>
+            {listing.tagline && (
+              <p className="cover-story-deck">
+                {listing.tagline}
               </p>
             )}
+            <span className="cover-story-cta" style={{ color: accent }}>
+              Read the listing →
+            </span>
           </div>
-        </div>
-        {listing.tagline && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed">{listing.tagline}</p>
-        )}
-        <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-          {country && (
-            <span className="inline-flex items-center gap-1">
-              <span aria-hidden="true">{country.flag}</span>
-              {country.label}
-            </span>
-          )}
-          {language && (
-            <span className="inline-flex items-center gap-1">
-              <LangIcon size={11} /> {language.label}
-            </span>
-          )}
-        </div>
-      </div>
-      </a>
-    </Link>
+
+          <style jsx>{`
+            .cover-story {
+              display: grid;
+              grid-template-columns: 1fr;
+              gap: clamp(20px, 4vh, 36px);
+              text-decoration: none;
+              color: inherit;
+            }
+            @media (min-width: 720px) {
+              .cover-story {
+                grid-template-columns: 1.4fr 1fr;
+                gap: clamp(28px, 5vw, 56px);
+                align-items: center;
+              }
+            }
+            .cover-story-image-wrap {
+              position: relative;
+              width: 100%;
+              aspect-ratio: 3 / 2;
+              overflow: hidden;
+              background: #d8d0c2;
+            }
+            .cover-story-image {
+              width: 100%;
+              height: 100%;
+              object-fit: cover;
+              display: block;
+              transition: transform 0.6s ease;
+            }
+            .cover-story:hover .cover-story-image {
+              transform: scale(1.02);
+            }
+            .cover-story-fallback {
+              opacity: 0.85;
+            }
+            .cover-story-tag {
+              position: absolute;
+              top: 12px;
+              left: 12px;
+              background: rgba(255, 255, 255, 0.92);
+              color: #1a1612;
+              font-family: Inter, sans-serif;
+              font-size: 0.66rem;
+              font-weight: 700;
+              letter-spacing: 0.22em;
+              text-transform: uppercase;
+              padding: 5px 10px;
+            }
+            .cover-story-eyebrow {
+              font-family: Inter, sans-serif;
+              font-size: 0.7rem;
+              font-weight: 600;
+              letter-spacing: 0.22em;
+              text-transform: uppercase;
+              color: #6b5d4f;
+              margin-bottom: 0.8rem;
+            }
+            .cover-story-title {
+              font-family: Spectral, Georgia, serif;
+              font-size: clamp(1.8rem, 4vw, 3rem);
+              font-weight: 700;
+              line-height: 1.05;
+              letter-spacing: -0.02em;
+              color: #1a1612;
+              margin: 0 0 0.8rem;
+            }
+            .cover-story:hover .cover-story-title {
+              text-decoration: underline;
+              text-decoration-thickness: 1px;
+              text-underline-offset: 6px;
+            }
+            .cover-story-deck {
+              font-family: Spectral, Georgia, serif;
+              font-style: italic;
+              font-size: clamp(1rem, 1.6vw, 1.2rem);
+              line-height: 1.5;
+              color: #3d352c;
+              margin: 0 0 1.4rem;
+              max-width: 38ch;
+            }
+            .cover-story-cta {
+              font-family: Inter, sans-serif;
+              font-size: 0.88rem;
+              font-weight: 600;
+              text-decoration: underline;
+              text-underline-offset: 4px;
+            }
+          `}</style>
+        </a>
+      </Link>
+    </section>
   )
 }
 
-function PromotedCard({ listing }: { listing: DirectoryListing }) {
-  const theme = LISTING_THEMES.find((t) => t.id === listing.theme_preset) ?? LISTING_THEMES[0]
-  const accent = listing.accent_color || theme.defaultAccent
+// ── TOC row ───────────────────────────────────────────────────
+
+function TocRow({ listing, index }: { listing: DirectoryListing; index: number }) {
+  const category = LISTING_CATEGORIES.find((c) => c.id === listing.category)
+  const country = listing.primary_country
+    ? LISTING_COUNTRIES.find((c) => c.id === listing.primary_country)
+    : null
+  const language = listing.primary_language
+    ? LISTING_LANGUAGES.find((l) => l.id === listing.primary_language)
+    : null
+
+  const meta = [
+    category?.label,
+    country?.label,
+    language?.label,
+    listing.is_study_server ? "Study" : null,
+  ].filter(Boolean) as string[]
+
   return (
-    <Link href={`/servers/${listing.slug}`} passHref>
-      <a
-        className="snap-start flex-shrink-0 w-72 sm:w-80 rounded-xl overflow-hidden border-2 group"
-        style={{ borderColor: accent }}
-      >
-      <div
-        className="h-24 relative"
-        style={
-          listing.cover_image_url
-            ? {
-                background: `linear-gradient(180deg, transparent 0%, hsl(0 0% 0% / 0.55) 100%), url('${escapeCssUrl(listing.cover_image_url)}') center/cover no-repeat`,
-              }
-            : { background: theme.heroGradient + ", " + theme.bodyTint }
-        }
-      >
-        <span className="absolute top-2 left-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/90 text-amber-950 text-[10px] font-bold uppercase tracking-wide">
-          <Crown size={10} /> Promoted
-        </span>
-      </div>
-      <div className="p-3.5 bg-card">
-        <div className="flex items-center gap-2.5">
+    <li className="toc-row">
+      <Link href={`/servers/${listing.slug}`} passHref>
+        <a className="toc-link group">
+          <span className="toc-num">{String(index).padStart(2, "0")}</span>
           {listing.guild_icon_url ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={listing.guild_icon_url} alt="" className="w-9 h-9 rounded-lg border border-border" />
+            <img src={listing.guild_icon_url} alt="" className="toc-icon" />
           ) : (
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center font-bold text-white text-sm"
-              style={{ background: accent }}
-            >
+            <span className="toc-icon toc-icon-fallback" aria-hidden="true">
               {listing.display_name.charAt(0).toUpperCase()}
-            </div>
+            </span>
           )}
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-              {listing.display_name}
-            </p>
-            {listing.tagline && (
-              <p className="text-xs text-muted-foreground truncate">{listing.tagline}</p>
-            )}
-          </div>
-        </div>
-      </div>
-      </a>
-    </Link>
+          <span className="toc-text">
+            <span className="toc-name">{listing.display_name}</span>
+            {listing.tagline && <span className="toc-deck">{listing.tagline}</span>}
+            <span className="toc-meta">{meta.join("   ·   ")}</span>
+          </span>
+          {listing.promoted_until && <span className="toc-badge">Featured</span>}
+          <ChevronRight size={16} className="toc-arrow" />
+        </a>
+      </Link>
+      <style jsx>{`
+        .toc-row {
+          border-bottom: 1px solid rgba(26, 22, 18, 0.12);
+        }
+        .toc-link {
+          display: grid;
+          grid-template-columns: auto auto 1fr auto auto;
+          align-items: center;
+          gap: 16px;
+          padding: clamp(20px, 3vh, 32px) 0;
+          color: #1a1612;
+          text-decoration: none;
+          transition: padding 0.2s ease;
+        }
+        .toc-link:hover {
+          padding-left: 8px;
+        }
+        .toc-num {
+          font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+          font-size: 0.78rem;
+          color: #8a7c6e;
+          letter-spacing: 0.1em;
+        }
+        .toc-icon {
+          width: 44px;
+          height: 44px;
+          object-fit: cover;
+          border-radius: 50%;
+          flex-shrink: 0;
+          background: #d8d0c2;
+        }
+        .toc-icon-fallback {
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          background: #c4b8a4;
+          color: #1a1612;
+          font-family: Spectral, Georgia, serif;
+          font-weight: 700;
+          font-size: 1.15rem;
+        }
+        .toc-text {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          min-width: 0;
+        }
+        .toc-name {
+          font-family: Spectral, Georgia, serif;
+          font-size: clamp(1.15rem, 2vw, 1.4rem);
+          font-weight: 600;
+          letter-spacing: -0.005em;
+          color: #1a1612;
+        }
+        .toc-link:hover .toc-name {
+          text-decoration: underline;
+          text-decoration-thickness: 1px;
+          text-underline-offset: 4px;
+        }
+        .toc-deck {
+          font-family: Spectral, Georgia, serif;
+          font-style: italic;
+          font-size: 0.95rem;
+          line-height: 1.5;
+          color: #3d352c;
+          max-width: 60ch;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+        }
+        .toc-meta {
+          font-family: Inter, sans-serif;
+          font-size: 0.7rem;
+          font-weight: 600;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #6b5d4f;
+          margin-top: 2px;
+        }
+        .toc-badge {
+          font-family: Inter, sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          color: #8b1e1e;
+          padding: 4px 10px;
+          border: 1px solid #8b1e1e;
+        }
+        .toc-arrow {
+          color: #8a7c6e;
+          flex-shrink: 0;
+          transition: transform 0.2s ease;
+        }
+        .toc-link:hover .toc-arrow {
+          transform: translateX(4px);
+          color: #1a1612;
+        }
+        @media (max-width: 600px) {
+          .toc-link {
+            grid-template-columns: auto auto 1fr auto;
+            gap: 12px;
+          }
+          .toc-arrow {
+            display: none;
+          }
+        }
+      `}</style>
+    </li>
   )
-}
-
-function escapeCssUrl(url: string): string {
-  return url.replace(/'/g, "%27").replace(/"/g, "%22")
 }
 
 // ── Static generation w/ ISR ──────────────────────────────────
@@ -388,7 +763,6 @@ export const getStaticProps: GetStaticProps<ServersIndexProps> = async ({ locale
   try {
     listings = await fetchDirectoryListings()
   } catch (err) {
-    // If the DB hiccups during build, render an empty state rather than 500.
     console.warn("[servers/index] fetch failed, rendering empty page:", err)
   }
   return {

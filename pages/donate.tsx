@@ -4,6 +4,7 @@
 //          Stripe Customer Portal), and existing gem packages.
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import Head from "next/head";
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -48,10 +49,8 @@ import {
   Store,
   // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-04-30) ---
-  // Purpose: Icons for "Feature Your Server" tab and feature highlights.
+  // Purpose: Icons for "Feature Your Server" tab.
   Compass,
-  Globe,
-  Link2,
   // --- END AI-MODIFIED ---
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
@@ -101,6 +100,66 @@ function GemIcon({ className = "h-4 w-4", style }: { className?: string; style?:
       className={className}
       style={{ objectFit: "contain", ...style }}
     />
+  );
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Tiny pull-quote stat used inside the editorial preview
+//   on the "Feature Your Server" donate tab. Mirrors the typography
+//   of components/listing/PullQuoteStats.tsx but at miniature scale.
+function PreviewStat({
+  number,
+  label,
+  liveDot,
+}: {
+  number: string;
+  label: string;
+  liveDot?: boolean;
+}) {
+  return (
+    <div style={{ paddingLeft: 0 }}>
+      <div
+        style={{
+          fontFamily: "Spectral, Georgia, serif",
+          fontSize: "1.4rem",
+          fontWeight: 600,
+          letterSpacing: "-0.02em",
+          color: "#1a1612",
+          lineHeight: 1,
+        }}
+      >
+        {number}
+      </div>
+      <div
+        style={{
+          marginTop: 4,
+          fontFamily: "Inter, sans-serif",
+          fontSize: 9,
+          fontWeight: 600,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "#6b5d4f",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        {liveDot && (
+          <span
+            aria-hidden="true"
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: "#22c55e",
+              boxShadow: "0 0 0 3px rgba(34,197,94,0.18)",
+            }}
+          />
+        )}
+        {label}
+      </div>
+    </div>
   );
 }
 // --- END AI-MODIFIED ---
@@ -1363,30 +1422,71 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px]">
             <div className="p-6 lg:p-8 flex flex-col justify-center">
               {/* --- AI-MODIFIED (2026-04-30) --- */}
-              {/* Purpose: New "Feature Your Server" tab content -- the marquee */}
-              {/* selling point of Server Premium for community owners. */}
+              {/* Purpose: Editorial rewrite of the "Feature Your Server" tab. */}
+              {/*   Less feature-list, more "what our editors look for". The */}
+              {/*   right-hand preview is now a real Atlantic-theme mock so */}
+              {/*   the section visually previews the actual product instead */}
+              {/*   of advertising it with stock card chrome. */}
               {activeTab === "feature_server" && (
                 <div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 text-amber-400 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider mb-3">
-                    <Sparkles className="h-3 w-3" /> New
+                  <span
+                    className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-400 mb-4"
+                  >
+                    <span className="inline-block w-6 h-px bg-amber-400" aria-hidden="true" />
+                    Editorial / New
                   </span>
-                  <h3 className="text-xl font-bold text-foreground mb-2">Feature Your Server</h3>
-                  <p className="text-muted-foreground mb-4 text-sm">
-                    Get your community on <span className="text-foreground font-medium">lionbot.org/servers</span> &mdash; a public, SEO-friendly directory of premium Discord servers.
+                  <h3
+                    className="text-foreground mb-3"
+                    style={{
+                      fontFamily: "Spectral, Georgia, serif",
+                      fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
+                      fontWeight: 700,
+                      letterSpacing: "-0.02em",
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    A magazine-grade page for your community.
+                  </h3>
+                  <p
+                    className="text-muted-foreground mb-5"
+                    style={{
+                      fontFamily: "Spectral, Georgia, serif",
+                      fontStyle: "italic",
+                      fontSize: "1.0rem",
+                      lineHeight: 1.55,
+                      maxWidth: "44ch",
+                    }}
+                  >
+                    A hand-curated profile at <span className="text-foreground not-italic font-medium">lionbot.org/servers/your-handle</span> &mdash;
+                    five editorial themes to choose from, restrained typography, a single
+                    DoFollow backlink that actually moves your SEO, and a permanent
+                    spot in our directory.
                   </p>
-                  <div className="space-y-2 text-sm">
-                    {[
-                      "Beautiful, fully customisable profile page with your own theme & cover",
-                      "1 DoFollow link to your website (real SEO juice, not just a redirect)",
-                      "Bot-managed Discord invite link, rotated on demand",
-                      "Searchable & filterable directory ranked by activity",
-                      "Optional Verified-by-Leo live stats and study session counts",
-                      "Auto-generated social preview cards for shares & posts",
-                    ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-foreground/85">
-                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
-                      </div>
-                    ))}
+                  <div className="space-y-3 text-sm leading-relaxed text-foreground/85">
+                    <p className="flex gap-3">
+                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
+                      <span>
+                        Choose from five editorial themes: <em>The Atlantic</em>, <em>Wired</em>, <em>Kinfolk</em>, <em>Vogue</em>, or <em>Frieze</em>. Each one is a real reskin, not a palette swap.
+                      </span>
+                    </p>
+                    <p className="flex gap-3">
+                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
+                      <span>
+                        One DoFollow link to your own website. Real backlink, no redirects, no <code className="text-xs">rel=&quot;nofollow&quot;</code>.
+                      </span>
+                    </p>
+                    <p className="flex gap-3">
+                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
+                      <span>
+                        Optional &ldquo;Verified by Leo&rdquo; pull-quote stats &mdash; tracked members, study hours, and a live in-voice count, pulled straight from your activity.
+                      </span>
+                    </p>
+                    <p className="flex gap-3">
+                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
+                      <span>
+                        Reviewed by hand. We turn down servers that wouldn&rsquo;t fit, so the directory stays worth landing in.
+                      </span>
+                    </p>
                   </div>
                 </div>
               )}
@@ -1535,88 +1635,188 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
             <div className="relative bg-background/60 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
               {/* --- AI-MODIFIED (2026-04-30) --- */}
-              {/* Purpose: Static preview for "Feature Your Server" tab. */}
-              {/* Mocks a server-listing card so visitors see exactly what */}
-              {/* their server's public profile will look like. */}
+              {/* Purpose: Replaced the rounded-card mock with a single */}
+              {/*   cropped Atlantic-theme profile mock. The preview now */}
+              {/*   *is* a tiny version of the actual product. */}
               {activeTab === "feature_server" && (
-                <div className="relative w-full max-w-sm">
-                  <div className="absolute -inset-6 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.10),_transparent_70%)] pointer-events-none" />
-                  <div className="relative rounded-2xl border border-border bg-card/80 overflow-hidden shadow-xl shadow-black/30">
+                <>
+                  <Head>
+                    <link
+                      key="feature-server-preview-font"
+                      rel="stylesheet"
+                      href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+                    />
+                  </Head>
+                  <div
+                    className="relative w-full max-w-md mx-auto overflow-hidden shadow-2xl shadow-black/40"
+                    style={{
+                      background: "#f6f1e7",
+                      color: "#1a1612",
+                      borderRadius: 4,
+                      transform: "rotate(-0.5deg)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    {/* Hero band */}
                     <div
-                      className="h-24 relative"
                       style={{
+                        height: 168,
                         background:
-                          "linear-gradient(135deg,#1e293b 0%,#312e81 50%,#7c3aed 100%)",
+                          "linear-gradient(180deg, rgba(246,241,231,0.0) 0%, rgba(246,241,231,0.45) 70%, #f6f1e7 100%), linear-gradient(135deg,#7a3a3a 0%,#3d2a2a 60%, #1a1612 100%)",
+                        position: "relative",
                       }}
                     >
-                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(255,255,255,0.18),transparent_60%)]" />
-                      <div className="absolute -bottom-7 left-5 h-14 w-14 rounded-2xl border-4 border-card bg-blue-600 flex items-center justify-center text-white text-lg font-bold shadow-lg">
-                        SH
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 22,
+                          bottom: 16,
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 9,
+                          letterSpacing: "0.28em",
+                          textTransform: "uppercase",
+                          color: "rgba(255,255,255,0.85)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        FEATURED · STUDY · UNIVERSITY
                       </div>
-                      <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-300 backdrop-blur">
-                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" /> Verified by Leo
-                      </span>
                     </div>
-                    <div className="px-5 pt-10 pb-5">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-base font-bold text-foreground">Study Haven</h4>
-                        <span className="inline-flex items-center rounded-md bg-blue-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-blue-300 uppercase tracking-wider">
-                          Study
+
+                    {/* Body */}
+                    <div style={{ padding: "22px 26px 28px" }}>
+                      <h4
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontSize: "1.6rem",
+                          fontWeight: 700,
+                          lineHeight: 1.05,
+                          letterSpacing: "-0.015em",
+                          color: "#1a1612",
+                          margin: 0,
+                        }}
+                      >
+                        Study Haven
+                      </h4>
+                      <p
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontStyle: "italic",
+                          fontSize: "0.92rem",
+                          lineHeight: 1.45,
+                          color: "#3d352c",
+                          margin: "8px 0 16px",
+                        }}
+                      >
+                        A wholesome co-working community of 12,000 learners,
+                        running daily pomodoros and quiet voice rooms.
+                      </p>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          marginBottom: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            background: "#8b1e1e",
+                            color: "#ffffff",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "8px 14px",
+                            borderRadius: 999,
+                          }}
+                        >
+                          Join the community
+                        </div>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 11,
+                            color: "#3d352c",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              background: "#22c55e",
+                              boxShadow: "0 0 0 4px rgba(34,197,94,0.18)",
+                              display: "inline-block",
+                            }}
+                          />
+                          87 in voice now
                         </span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                        Daily co-working pomodoros, active mods, and a wholesome community of 12k learners.
+
+                      <div
+                        style={{
+                          borderTop: "1px solid rgba(26,22,18,0.18)",
+                          borderBottom: "1px solid rgba(26,22,18,0.18)",
+                          padding: "14px 0",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr",
+                        }}
+                      >
+                        <PreviewStat number="12,400" label="Members" />
+                        <PreviewStat number="4,200" label="Hours / 30d" />
+                        <PreviewStat number="87" label="In voice" liveDot />
+                      </div>
+
+                      <p
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontSize: "0.9rem",
+                          lineHeight: 1.65,
+                          color: "#1a1612",
+                          margin: "16px 0 0",
+                        }}
+                      >
+                        <span
+                          style={{
+                            float: "left",
+                            fontFamily: "Spectral, Georgia, serif",
+                            fontWeight: 700,
+                            fontSize: "3.2em",
+                            lineHeight: 0.85,
+                            padding: "0.08em 0.12em 0 0",
+                            margin: "0.05em 0.06em 0 0",
+                            color: "#1a1612",
+                          }}
+                        >
+                          W
+                        </span>
+                        e started Study Haven on a Friday after midterms with five
+                        people, a single voice room, and an hourly pomodoro alarm
+                        nobody could turn off…
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-1.5">
-                        {["Languages", "STEM", "Pomodoro", "Beginners"].map((tag) => (
-                          <span
-                            key={tag}
-                            className="inline-flex items-center rounded-full bg-muted/60 text-[10px] text-muted-foreground px-2 py-0.5"
-                          >
-                            #{tag}
-                          </span>
-                        ))}
-                      </div>
-                      <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-                        <div className="rounded-md bg-muted/40 py-1.5">
-                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Members</div>
-                          <div className="text-sm font-bold text-foreground">12.4k</div>
-                        </div>
-                        <div className="rounded-md bg-muted/40 py-1.5">
-                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Live</div>
-                          <div className="text-sm font-bold text-emerald-400">87</div>
-                        </div>
-                        <div className="rounded-md bg-muted/40 py-1.5">
-                          <div className="text-[10px] text-muted-foreground/70 uppercase tracking-wider">Studied</div>
-                          <div className="text-sm font-bold text-foreground">4.2M</div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center gap-2">
-                        <button
-                          className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold py-2 transition-colors"
-                          type="button"
-                          tabIndex={-1}
-                          aria-hidden
-                        >
-                          <Compass className="h-3.5 w-3.5" /> Join Discord
-                        </button>
-                        <button
-                          className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-border bg-card text-xs font-medium text-muted-foreground hover:text-foreground px-3 py-2 transition-colors"
-                          type="button"
-                          tabIndex={-1}
-                          aria-hidden
-                        >
-                          <Link2 className="h-3.5 w-3.5" />
-                          Website
-                        </button>
-                      </div>
-                      <div className="mt-3 flex items-center gap-1.5 text-[10px] text-muted-foreground/70">
-                        <Globe className="h-3 w-3" />
-                        lionbot.org/servers/study-haven
-                      </div>
+                    </div>
+
+                    {/* Tape edge / colophon */}
+                    <div
+                      style={{
+                        borderTop: "1px solid rgba(26,22,18,0.18)",
+                        padding: "10px 26px",
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: "#6b5d4f",
+                      }}
+                    >
+                      lionbot.org/servers/study-haven
                     </div>
                   </div>
-                </div>
+                </>
               )}
               {/* --- END AI-MODIFIED --- */}
 
