@@ -34,10 +34,17 @@
 // ============================================================
 import { jwtVerify } from "jose"
 import type { NextRequest } from "next/server"
-
-// Mirrors lib/ios/auth.ts IOS_JWT_VERSION. Kept inline so this
-// file has zero imports from the Node-only sibling module.
-const IOS_JWT_VERSION = "ios-1"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: source IOS_JWT_VERSION from the shared `./version`
+//          module instead of an inlined copy. The previous inline
+//          constant was a foot-gun: bumping it in `lib/ios/auth.ts`
+//          but forgetting it here would cause middleware to
+//          reject every newly-minted token while the route
+//          handler still accepted them. `./version.ts` is a pure
+//          constant module (no Node imports) so it loads cleanly
+//          in the Edge runtime where this file runs.
+import { IOS_JWT_VERSION } from "./version"
+// --- END AI-MODIFIED ---
 
 const SECRET = process.env.SECRET
 

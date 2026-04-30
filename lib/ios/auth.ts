@@ -27,9 +27,16 @@
 import crypto from "crypto"
 import { SignJWT, jwtVerify } from "jose"
 import type { NextApiRequest } from "next"
-
-export const IOS_JWT_VERSION = "ios-1"
-export const IOS_JWT_TTL = "30d"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: source IOS_JWT_VERSION + IOS_JWT_TTL from the shared
+//          lib/ios/version.ts module so middleware (Edge) and
+//          route handlers (Node) cannot drift apart. See that
+//          file's header for the full rationale.
+import { IOS_JWT_VERSION, IOS_JWT_TTL } from "./version"
+// Re-export so existing call sites that import from this module
+// keep working (no API surface change for callers).
+export { IOS_JWT_VERSION, IOS_JWT_TTL }
+// --- END AI-MODIFIED ---
 
 const SECRET = process.env.SECRET
 
