@@ -35,6 +35,8 @@ import Link from "next/link"
 import {
   Save, Lock, Palette, Sparkles, Type, MessageSquare, Link2,
   ChevronLeft, Eye, Heart, Store, ShoppingBag, Check, Wand2, User,
+  Settings,
+  type LucideIcon,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -174,7 +176,7 @@ const ACCENT_PRESETS: { name: string; hex: string }[] = [
 
 type TabId = "look" | "identity" | "voice"
 
-const TABS: { id: TabId; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
+const TABS: { id: TabId; label: string; icon: LucideIcon }[] = [
   { id: "look",     label: "Look",     icon: Wand2 },
   { id: "identity", label: "Identity", icon: User },
   { id: "voice",    label: "Voice",    icon: MessageSquare },
