@@ -12,7 +12,7 @@
 //               to this route.
 //            4. We finish the exchange server-side using
 //               DISCORD_CLIENT_SECRET, fetch the Discord user, mint a
-//               signed iOS JWT bearer (utils/iosAuth.ts), and return
+//               signed iOS JWT bearer (lib/ios/auth.ts), and return
 //               { session_token, user }.
 //
 //          We mirror the side effects of the website NextAuth signIn
@@ -21,7 +21,7 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { mintIosBearer } from "@/utils/iosAuth"
+import { mintIosBearer } from "@/lib/ios/auth"
 import { notifyLogin } from "@/utils/surveyWebhook"
 import { maybeSendWelcomeEmail } from "@/utils/email/triggers/welcome"
 

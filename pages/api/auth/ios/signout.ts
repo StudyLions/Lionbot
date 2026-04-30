@@ -14,7 +14,7 @@
 //          keeps the client logic dead simple.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
-import { extractBearer, verifyIosBearer } from "@/utils/iosAuth"
+import { extractBearer, verifyIosBearer } from "@/lib/ios/auth"
 
 export default async function handler(
   req: NextApiRequest,

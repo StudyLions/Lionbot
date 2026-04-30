@@ -13,10 +13,12 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "./prisma"
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: accept the LionBot iOS app's signed-JWT bearer token in
-//          addition to the NextAuth browser cookie, so every existing
-//          /api/dashboard/* and /api/pet/* route works from iOS via
-//          Authorization: Bearer <token>. See utils/iosAuth.ts.
-import { extractBearer, verifyIosBearer } from "./iosAuth"
+//          addition to the NextAuth browser cookie. ALL iOS-specific
+//          logic lives in lib/ios/* so this file's touch is one line
+//          (the bridge call inside getAuthContext). This minimizes
+//          merge collisions when website work and iOS work happen on
+//          two computers in parallel.
+import { tryIosBearerAuth } from "@/lib/ios/adminAuthBridge"
 // --- END AI-MODIFIED ---
 
 const secret = process.env.SECRET
@@ -55,23 +57,11 @@ export async function getAuthContext(req: NextApiRequest): Promise<AuthContext |
   }
 
   // --- AI-MODIFIED (2026-04-30) ---
-  // Purpose: fall through to the iOS bearer JWT when there is no
-  //          NextAuth cookie. The bearer carries the same Discord
-  //          accessToken (encrypted at rest in the JWT), so every
-  //          downstream route -- including those that hit the Discord
-  //          API via getUserGuilds / getUserGuildRoles -- works
-  //          identically for iOS clients.
-  const bearer = extractBearer(req)
-  if (bearer) {
-    const verified = await verifyIosBearer(bearer)
-    if (verified) {
-      return {
-        discordId: verified.discordId,
-        userId: BigInt(verified.discordId),
-        accessToken: verified.discordAccessToken,
-      }
-    }
-  }
+  // Fall through to the iOS bearer JWT when there is no NextAuth
+  // cookie. All iOS logic lives in lib/ios/adminAuthBridge.ts so this
+  // file stays website-only (see header note for why).
+  const ios = await tryIosBearerAuth(req)
+  if (ios) return ios
   // --- END AI-MODIFIED ---
 
   return null

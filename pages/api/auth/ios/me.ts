@@ -8,7 +8,7 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { extractBearer, verifyIosBearer } from "@/utils/iosAuth"
+import { extractBearer, verifyIosBearer } from "@/lib/ios/auth"
 import { isLionheartActive } from "./exchange"
 
 const DISCORD_USER_URL = "https://discord.com/api/users/@me"

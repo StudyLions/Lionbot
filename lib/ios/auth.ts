@@ -1,6 +1,7 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
+// Moved: 2026-04-30 from utils/iosAuth.ts -> lib/ios/auth.ts
 // Purpose: Issue + verify signed JWT bearer tokens for the LionBot
 //          iOS app. Discord access/refresh tokens are encrypted
 //          with AES-256-GCM (key derived from the existing NextAuth
@@ -11,12 +12,17 @@
 //            - pages/api/auth/ios/exchange.ts (mint)
 //            - pages/api/auth/ios/me.ts       (verify)
 //            - pages/api/auth/ios/signout.ts  (verify)
-//            - utils/adminAuth.ts             (verify, fall through
-//                                              to the existing
-//                                              NextAuth cookie path)
+//            - lib/ios/adminAuthBridge.ts     (verify, bridges into
+//                                              utils/adminAuth.ts)
 //
 //          To rotate iOS sessions en masse, bump IOS_JWT_VERSION
 //          and the matching expected version in verifyIosBearer.
+//
+//          IMPORTANT (multi-machine coordination):
+//          All iOS-only website code lives under Lionbot-Website/lib/ios/
+//          so it never touches files the website team also edits. The
+//          ONE exception is the 3-line bridge call inside
+//          utils/adminAuth.ts -> getAuthContext, which delegates here.
 // ============================================================
 import crypto from "crypto"
 import { SignJWT, jwtVerify } from "jose"
@@ -29,7 +35,7 @@ const SECRET = process.env.SECRET
 
 if (!SECRET) {
   console.warn(
-    "[iosAuth] SECRET env var is not set. iOS bearer tokens will fail to mint or verify."
+    "[lib/ios/auth] SECRET env var is not set. iOS bearer tokens will fail to mint or verify."
   )
 }
 
@@ -75,7 +81,7 @@ function decryptToken(encoded: string): string {
   if (!encoded) return ""
   const buf = Buffer.from(encoded, "base64url")
   if (buf.length < 12 + 16) {
-    throw new Error("iosAuth: ciphertext is too short")
+    throw new Error("lib/ios/auth: ciphertext is too short")
   }
   const iv = buf.subarray(0, 12)
   const tag = buf.subarray(buf.length - 16)
@@ -95,7 +101,7 @@ export async function mintIosBearer(params: {
   discordRefreshToken?: string | null
 }): Promise<string> {
   if (!SECRET) {
-    throw new Error("iosAuth.mintIosBearer: SECRET env var is not set")
+    throw new Error("lib/ios/auth.mintIosBearer: SECRET env var is not set")
   }
 
   const claims: IosJwtClaims = {
