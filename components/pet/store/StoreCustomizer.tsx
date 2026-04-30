@@ -29,7 +29,7 @@
 // hitting Save with locked items routes through UpgradePrompt instead
 // of dropping the change. This logic is preserved verbatim from rev 1.
 // ============================================================
-import { useMemo, useState, useCallback } from "react"
+import { useMemo, useState, useCallback, useEffect } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import {
@@ -293,6 +293,13 @@ export default function StoreCustomizer({
     items: UpgradePromptItem[]
     requiredTier: LionHeartTier
   }>({ open: false, items: [], requiredTier: "LIONHEART" })
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: timestamp of the last successful save. Drives the green "Saved!"
+  // pill + green border in the save bar for 3s so the user gets visible
+  // confirmation right at the click point even if the toast misses for any
+  // reason. Auto-clears via the useEffect below.
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
+  // --- END AI-MODIFIED ---
 
   const isPremium = initial.gating.tier !== "FREE"
 
@@ -440,6 +447,31 @@ export default function StoreCustomizer({
     return highest
   }, [lockedItems, themeId, animationId, themeMap, animMap])
 
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: client-side slug shape gate. The IdentityTab has been rendering
+  // the inline error from this same call, but the Save button used to stay
+  // enabled regardless -- a premium user with "ab" or "-foo" would fire a
+  // PUT, the server would return 400, and (because the sonner Toaster wasn't
+  // mounted) the rejection was completely silent. Centralizing the check
+  // here lets us disable Save AND keep the inline error in sync.
+  const slugShapeError = useMemo(() => {
+    const normalized = normalizeSlug(slug)
+    if (normalized.length === 0) return null
+    return validateSlugShape(normalized)
+  }, [slug])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: auto-clear the "Saved!" pill 3 seconds after a successful save,
+  // so the save bar reverts to the standard "All saved" / "Unsaved changes"
+  // state once the confirmation has been visible long enough to register.
+  useEffect(() => {
+    if (lastSavedAt === null) return
+    const t = setTimeout(() => setLastSavedAt(null), 3000)
+    return () => clearTimeout(t)
+  }, [lastSavedAt])
+  // --- END AI-MODIFIED ---
+
   // --- Diff -- has the user actually changed anything? --------------
   const hasChanges = useMemo(() => {
     if ((displayName.trim() || null) !== (initial.store.displayName || null)) return true
@@ -469,9 +501,15 @@ export default function StoreCustomizer({
     setSaving(true)
     try {
       const payload: Record<string, unknown> = {}
-      if ((displayName || null) !== (initial.store.displayName || null)) {
-        payload.displayName = displayName.trim() || null
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: trim displayName once and use the trimmed value for both the
+      // diff and the payload, matching the hasChanges memo exactly so the two
+      // can never disagree on whether displayName changed.
+      const trimmedDisplayName = displayName.trim()
+      if ((trimmedDisplayName || null) !== (initial.store.displayName || null)) {
+        payload.displayName = trimmedDisplayName || null
       }
+      // --- END AI-MODIFIED ---
       if (speechBubble !== initial.store.speechBubble) {
         payload.speechBubble = speechBubble.trim() || null
       }
@@ -500,6 +538,12 @@ export default function StoreCustomizer({
       }
       await dashboardMutate("PUT", "/api/pet/marketplace/store/me", payload)
       toast.success("Store updated!")
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: flash the inline "Saved!" pill in the save bar for 3s so the
+      // user gets visible feedback at the click point regardless of toast
+      // visibility (defense in depth -- toast was the only signal until now).
+      setLastSavedAt(Date.now())
+      // --- END AI-MODIFIED ---
       invalidatePrefix("/api/pet/marketplace/store")
       onSaved?.()
     } catch (e: any) {
@@ -652,6 +696,7 @@ export default function StoreCustomizer({
                   setDisplayName={setDisplayName}
                   slug={slug}
                   setSlug={setSlug}
+                  slugShapeError={slugShapeError}
                   initial={initial}
                   isPremium={isPremium}
                 />
@@ -674,49 +719,78 @@ export default function StoreCustomizer({
 
       {/* STICKY SAVE BAR -- always visible, lives outside the FullBleedShell
           so it sticks to the viewport regardless of theme background height. */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
-        <div className="max-w-[1600px] mx-auto px-3 sm:px-4 pb-3 sm:pb-4">
-          <div
-            className={cn(
-              "pointer-events-auto",
-              "border-2 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap",
-              "shadow-[0_-2px_0_#060810,2px_2px_0_#060810]",
-            )}
-            style={{
-              background: "rgba(8,12,24,0.92)",
-              borderColor: lockedItems.length > 0 ? "#f0c040" : "#3a4a6c",
-              backdropFilter: "blur(6px)",
-            }}
-          >
-            <div className="flex items-center gap-3 flex-wrap min-w-0">
-              {lockedItems.length > 0 ? (
-                <span className="font-pixel text-[11px] text-[#f0c040] flex items-center gap-1.5">
-                  <Lock size={11} />
-                  {lockedItems.length} premium change{lockedItems.length === 1 ? "" : "s"} pending
-                </span>
-              ) : hasChanges ? (
-                <span className="font-pixel text-[11px] text-[#a8c5ff] flex items-center gap-1.5">
-                  <Sparkles size={11} /> Unsaved changes
-                </span>
-              ) : (
-                <span className="font-pixel text-[11px] text-[#8899aa] flex items-center gap-1.5">
-                  <Check size={11} /> All saved
-                </span>
-              )}
+      {/* --- AI-MODIFIED (2026-04-30) --- */}
+      {/* Purpose: drive the status pill + border colour + disabled prop from
+          the new lastSavedAt + slugShapeError signals so the user gets visible
+          confirmation right at the click point and can't fire a save with a
+          known-invalid slug shape. */}
+      {(() => {
+        const justSaved = lastSavedAt !== null
+        const borderTint =
+          justSaved ? "#40d870"
+          : slugShapeError ? "#ff6b9d"
+          : lockedItems.length > 0 ? "#f0c040"
+          : "#3a4a6c"
+        return (
+          <div className="fixed bottom-0 left-0 right-0 z-40 pointer-events-none">
+            <div className="max-w-[1600px] mx-auto px-3 sm:px-4 pb-3 sm:pb-4">
+              <div
+                className={cn(
+                  "pointer-events-auto",
+                  "border-2 px-3 sm:px-4 py-2.5 flex items-center justify-between gap-3 flex-wrap",
+                  "shadow-[0_-2px_0_#060810,2px_2px_0_#060810]",
+                  "transition-[border-color] duration-200",
+                )}
+                style={{
+                  background: "rgba(8,12,24,0.92)",
+                  borderColor: borderTint,
+                  backdropFilter: "blur(6px)",
+                }}
+              >
+                <div className="flex items-center gap-3 flex-wrap min-w-0">
+                  {justSaved ? (
+                    <span className="font-pixel text-[11px] text-[#40d870] flex items-center gap-1.5 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
+                      <Check size={11} /> Saved!
+                    </span>
+                  ) : slugShapeError ? (
+                    <span className="font-pixel text-[11px] text-[#ff6b9d] flex items-center gap-1.5">
+                      <Lock size={11} /> Fix slug to save: {slugShapeError.message}
+                    </span>
+                  ) : lockedItems.length > 0 ? (
+                    <span className="font-pixel text-[11px] text-[#f0c040] flex items-center gap-1.5">
+                      <Lock size={11} />
+                      {lockedItems.length} premium change{lockedItems.length === 1 ? "" : "s"} pending
+                    </span>
+                  ) : hasChanges ? (
+                    <span className="font-pixel text-[11px] text-[#a8c5ff] flex items-center gap-1.5">
+                      <Sparkles size={11} /> Unsaved changes
+                    </span>
+                  ) : (
+                    <span className="font-pixel text-[11px] text-[#8899aa] flex items-center gap-1.5">
+                      <Check size={11} /> All saved
+                    </span>
+                  )}
+                </div>
+                <PixelButton
+                  variant="primary"
+                  size="md"
+                  onClick={handleSave}
+                  loading={saving}
+                  disabled={
+                    saving ||
+                    slugShapeError !== null ||
+                    (!hasChanges && lockedItems.length === 0)
+                  }
+                >
+                  <Save size={12} className="mr-1" />
+                  {lockedItems.length > 0 ? "Review & save" : hasChanges ? "Save changes" : "Saved"}
+                </PixelButton>
+              </div>
             </div>
-            <PixelButton
-              variant="primary"
-              size="md"
-              onClick={handleSave}
-              loading={saving}
-              disabled={saving || (!hasChanges && lockedItems.length === 0)}
-            >
-              <Save size={12} className="mr-1" />
-              {lockedItems.length > 0 ? "Review & save" : hasChanges ? "Save changes" : "Saved"}
-            </PixelButton>
           </div>
-        </div>
-      </div>
+        )
+      })()}
+      {/* --- END AI-MODIFIED --- */}
 
       <UpgradePrompt
         open={upgradePrompt.open}
@@ -1123,12 +1197,18 @@ function LookTab({
 // ================================================================
 
 function IdentityTab({
-  displayName, setDisplayName, slug, setSlug, initial, isPremium,
+  displayName, setDisplayName, slug, setSlug, slugShapeError, initial, isPremium,
 }: {
   displayName: string
   setDisplayName: (v: string) => void
   slug: string
   setSlug: (v: string) => void
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: receive the slug shape error from the parent so the inline
+  // message and the Save button's disabled prop are driven by the same
+  // memo (single source of truth).
+  slugShapeError: { code: string; message: string } | null
+  // --- END AI-MODIFIED ---
   initial: MeApiResponse
   isPremium: boolean
 }) {
@@ -1197,10 +1277,9 @@ function IdentityTab({
           )}
         </div>
         {slug && (() => {
-          const shape = validateSlugShape(normalizeSlug(slug))
-          if (shape) {
+          if (slugShapeError) {
             return (
-              <p className="font-pixel text-[10px] text-[var(--pet-rose,#ff6b9d)]">{shape.message}</p>
+              <p className="font-pixel text-[10px] text-[var(--pet-rose,#ff6b9d)]">{slugShapeError.message}</p>
             )
           }
           if (initial.gating.canSetSlug) {

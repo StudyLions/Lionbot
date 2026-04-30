@@ -5,6 +5,17 @@ import { DefaultSeo, OrganizationJsonLd, SoftwareAppJsonLd } from "next-seo";
 import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Mount the sonner Toaster globally so toast.success/error/message
+// calls across all pages that import { toast } from "sonner" actually render.
+// Up to today, only react-hot-toast was mounted (via ToastProvider above), so
+// every sonner toast in the app (12 files, mostly under /pet) was a silent
+// no-op. The customize-store Save button looked completely dead because of
+// this -- the PUT was succeeding, the data was persisting, but no feedback
+// was reaching the user. Offset of 5rem clears the customize page's sticky
+// save bar with breathing room on small screens.
+import { Toaster as SonnerToaster } from "sonner";
+// --- END AI-MODIFIED ---
 import { SoundProvider } from "@/lib/SoundContext";
 import MiniSessionTimer from "@/components/dashboard/MiniSessionTimer";
 // --- AI-MODIFIED (2026-04-06) ---
@@ -97,6 +108,20 @@ function App({ Component, pageProps }) {
         <SurveyWidget />
         {/* --- END AI-MODIFIED --- */}
         <ToastProvider />
+        {/* --- AI-MODIFIED (2026-04-30) --- */}
+        {/* Purpose: Mount the sonner Toaster (see import comment above). */}
+        <SonnerToaster
+          position="bottom-right"
+          theme="dark"
+          offset="5rem"
+          toastOptions={{
+            style: {
+              fontFamily: "'Press Start 2P', system-ui, monospace",
+              fontSize: "11px",
+            },
+          }}
+        />
+        {/* --- END AI-MODIFIED --- */}
       </SoundProvider>
       {/* --- END AI-MODIFIED --- */}
       </ThemeProvider>
