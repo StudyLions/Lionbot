@@ -37,7 +37,11 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
-import { ChevronLeft, Settings, Heart, Store, ShoppingBag } from "lucide-react"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Theme catalog + discoverability rollout -- ChevronRight + Compass
+// for the new "discover more shops" CTA at the bottom of the page.
+import { ChevronLeft, ChevronRight, Compass, Settings, Heart, Store, ShoppingBag } from "lucide-react"
+// --- END AI-MODIFIED ---
 import { toast } from "sonner"
 
 import Layout from "@/components/Layout/Layout"
@@ -454,6 +458,56 @@ function StoreInner() {
             )}
           </section>
         </div>
+
+        {/* --- AI-MODIFIED (2026-04-30) --- */}
+        {/* Purpose: Theme catalog + discoverability rollout -- "discover more
+            shops" CTA banner at the bottom of every store page. Tinted with
+            the seller's accent so it harmonises with the rest of the page,
+            but self-contained so visitors who liked this shop have a clear
+            path back to the marketplace's full store directory. */}
+        <Link href="/pet/marketplace">
+          <a
+            className="block border-2 px-4 py-3 sm:px-5 sm:py-4 transition-all hover:scale-[1.01] hover:brightness-110 no-underline mt-2 sm:mt-4"
+            style={{
+              background: theme.panelBackground,
+              borderColor: accent,
+              color: theme.textColor,
+              boxShadow: `3px 3px 0 ${accent}40`,
+            }}
+            aria-label="Discover more themed stores in the marketplace"
+          >
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 flex items-center gap-3">
+                <span
+                  className="flex-shrink-0 w-9 h-9 sm:w-10 sm:h-10 border-2 flex items-center justify-center"
+                  style={{ borderColor: accent, background: `${accent}1f`, color: accent }}
+                >
+                  <Compass size={18} />
+                </span>
+                <div className="min-w-0">
+                  <p className="font-pixel text-[12px] sm:text-[14px] font-bold truncate">
+                    Liked {seller.discordName}&apos;s shop?
+                  </p>
+                  <p
+                    className="font-pixel text-[10px] sm:text-[11px] mt-0.5 truncate"
+                    style={{ color: theme.textDim }}
+                  >
+                    Discover more themed stores in the marketplace.
+                  </p>
+                </div>
+              </div>
+              <span
+                className="font-pixel text-[10px] sm:text-[12px] flex-shrink-0 inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1.5 border-2"
+                style={{ borderColor: accent, background: `${accent}26`, color: accent }}
+              >
+                <span className="hidden sm:inline">Browse all</span>
+                <span className="sm:hidden">Browse</span>
+                <ChevronRight size={14} />
+              </span>
+            </div>
+          </a>
+        </Link>
+        {/* --- END AI-MODIFIED --- */}
       </div>
 
       {buyTarget && (

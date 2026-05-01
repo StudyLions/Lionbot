@@ -25,6 +25,18 @@ export interface TimelineEntry {
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 30, 2026 ─────────────────────────────────────────
   // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Theme catalog expansion + better paths from the marketplace
+  // to individual seller shops.
+  {
+    date: "2026-04-30",
+    title: "Marketplace Stores: Ten New Themes and a Real Path to Discover Them",
+    description:
+      "We tripled the personal-store theme catalog from five to fifteen. The new themes — Cherry Blossom, Scholar's Library, Mint & Cocoa, Synthwave Sunset, Cosmic Drift, Mossy Cottage, Neon Alley, Volcanic Forge, Aurora Glacier, and Royal Tapestry — each have their own background, font, and accent, and are gated by LionHeart tier so picking a theme means something. The customizer now groups the picker by tier (Base / LionHeart / LionHeart+ / LionHeart++) so it stays scannable. We also fixed the biggest gap in the marketplace: until now, the only path to a seller's shop was a tiny 9px name on a single listing. Now the top of /pet/marketplace shows a horizontal strip of theme-painted store tiles so you can browse shops the way you browse listings, every listing card and row shows a proper \"Visit shop\" chip tinted with the store's accent colour (visible on mobile too), and every store page ends with a \"Liked this shop? Discover more stores →\" banner that points back to the marketplace.",
+    category: "feature",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-30) ---
   // Purpose: Editorial redesign of the "Feature Your Server" feature.
   {
     date: "2026-04-30",

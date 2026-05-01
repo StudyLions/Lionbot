@@ -16,7 +16,11 @@ import { cn } from "@/lib/utils"
 // Purpose: Marketplace 2.0 Phase 3 -- Sparkles icon for the FEATURED badge.
 import { Clock, ScrollText, Sparkles } from "lucide-react"
 // --- END AI-MODIFIED ---
-import type { ListingData } from "./ListingCard"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Reuse the SellerStoreChip from ListingCard so card and row share
+// the same tinted "Visit shop" chip and never drift visually.
+import { SellerStoreChip, type ListingData } from "./ListingCard"
+// --- END AI-MODIFIED ---
 
 const RARITY_TEXT: Record<string, string> = {
   COMMON: "#8899aa", UNCOMMON: "#80b0ff", RARE: "#ff8080",
@@ -138,20 +142,15 @@ export default function ListingRow({ listing, onBuy }: Props) {
         {/* Purpose: Marketplace 2.0 -- seller name links to their personal
             store front when sellerId is available; falls back to plain text
             so legacy callers without sellerId don't break. */}
-        {listing.sellerId ? (
-          <Link href={`/pet/marketplace/store/${listing.sellerId}`}>
-            <a
-              onClick={(e) => e.stopPropagation()}
-              className="font-pixel text-[9px] text-[#3a4a60] hover:text-[var(--pet-gold,#f0c040)] w-20 truncate flex-shrink-0 hidden md:block transition-colors"
-            >
-              {listing.sellerName}
-            </a>
-          </Link>
-        ) : (
-          <span className="font-pixel text-[9px] text-[#3a4a60] w-20 truncate flex-shrink-0 hidden md:block">
-            {listing.sellerName}
-          </span>
-        )}
+        {/* --- AI-MODIFIED (2026-04-30) --- */}
+        {/* Purpose: Theme catalog + discoverability rollout -- promote the
+            tiny seller link to a full SellerStoreChip (same chip as the
+            grid card) and drop the hidden-md class so mobile rows surface
+            the icon-only chip too. */}
+        <div className="flex-shrink-0 max-w-[160px]">
+          <SellerStoreChip listing={listing} fallbackBorder={bc} compact />
+        </div>
+        {/* --- END AI-MODIFIED --- */}
         {/* --- END AI-MODIFIED --- */}
 
         {/* Buy */}

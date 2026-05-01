@@ -28,6 +28,11 @@ import FilterSidebar, { type FilterState } from "@/components/pet/marketplace/Fi
 import ListingCard from "@/components/pet/marketplace/ListingCard"
 import ListingRow from "@/components/pet/marketplace/ListingRow"
 import BuyDialog from "@/components/pet/marketplace/BuyDialog"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Theme catalog + discoverability rollout -- horizontal strip of
+// theme-painted seller stores rendered above the filter/listings grid.
+import FeaturedStoresStrip from "@/components/pet/marketplace/FeaturedStoresStrip"
+// --- END AI-MODIFIED ---
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelCard from "@/components/pet/ui/PixelCard"
@@ -170,6 +175,17 @@ export default function MarketplacePage() {
                   </span>
                 </div>
               )}
+
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: Theme catalog + discoverability rollout -- surface
+                  customised seller stores at the top of the marketplace
+                  page so visitors see "shops" as a first-class destination
+                  rather than a tiny chip on a single listing. The strip
+                  fetches from /api/pet/marketplace/featured-stores and
+                  returns null automatically when there are no qualifying
+                  stores, so the page just collapses cleanly. */}
+              <FeaturedStoresStrip enabled={!!session} />
+              {/* --- END AI-MODIFIED --- */}
 
               {/* Main content: sidebar + listings */}
               <div className="flex gap-4">

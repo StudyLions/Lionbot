@@ -1047,54 +1047,75 @@ function LookTab({
 }) {
   return (
     <div className="space-y-4">
-      <PixelCard className="p-4 lg:p-5 space-y-3" corners>
+      <PixelCard className="p-4 lg:p-5 space-y-4" corners>
         <FieldHeader
           label="Theme"
           icon={<Palette size={14} />}
           hint="Repaints the entire page background. Pick one and the whole studio updates instantly."
         />
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-          {themes.map((t) => {
-            const selected = themeId === t.id
+        {(["FREE", "LIONHEART", "LIONHEART_PLUS", "LIONHEART_PLUS_PLUS"] as LionHeartTier[]).map(
+          (tierKey) => {
+            const inGroup = themes.filter((t) => t.minTier === tierKey)
+            if (!inGroup.length) return null
+            const groupLabel =
+              tierKey === "FREE" ? "Base themes" : `${LION_HEART_TIER_LABELS[tierKey]} themes`
             return (
-              <button
-                key={t.id}
-                type="button"
-                onClick={() => setThemeId(t.id)}
-                className={cn(
-                  "group flex flex-col items-stretch border-2 transition-all overflow-hidden text-left",
-                  selected
-                    ? "border-[var(--pet-gold,#f0c040)] shadow-[0_0_0_2px_rgba(240,192,64,0.25)]"
-                    : "border-[#1a2a3c] hover:border-[#3a4a6c]",
-                )}
-              >
-                <div
-                  className="h-20 w-full"
-                  style={{
-                    background: t.previewSwatch,
-                    backgroundSize: "200% 200%",
-                  }}
-                />
-                <div className="p-2 bg-[#080c18]">
-                  <div className="flex items-center gap-1">
-                    <span className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
-                      {t.name}
-                    </span>
-                    {!t.unlocked && (
-                      <Lock size={10} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
-                    )}
-                    {selected && t.unlocked && (
-                      <Check size={10} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
-                    )}
-                  </div>
-                  <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] mt-0.5">
-                    {t.unlocked ? "Free for you" : LION_HEART_TIER_LABELS[t.minTier]}
-                  </p>
+              <div key={tierKey} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-pixel text-[10px] tracking-[0.18em] uppercase text-[var(--pet-text-dim,#8899aa)]">
+                    {groupLabel}
+                  </span>
+                  <span className="flex-1 h-px bg-[#1a2a3c]" />
+                  <span className="font-pixel text-[9px] text-[var(--pet-text-dim,#5a6a7c)]">
+                    {inGroup.length}
+                  </span>
                 </div>
-              </button>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {inGroup.map((t) => {
+                    const selected = themeId === t.id
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => setThemeId(t.id)}
+                        className={cn(
+                          "group flex flex-col items-stretch border-2 transition-all overflow-hidden text-left",
+                          selected
+                            ? "border-[var(--pet-gold,#f0c040)] shadow-[0_0_0_2px_rgba(240,192,64,0.25)]"
+                            : "border-[#1a2a3c] hover:border-[#3a4a6c]",
+                        )}
+                      >
+                        <div
+                          className="h-20 w-full"
+                          style={{
+                            background: t.previewSwatch,
+                            backgroundSize: "200% 200%",
+                          }}
+                        />
+                        <div className="p-2 bg-[#080c18]">
+                          <div className="flex items-center gap-1">
+                            <span className="font-pixel text-[11px] text-[var(--pet-text,#e2e8f0)] truncate">
+                              {t.name}
+                            </span>
+                            {!t.unlocked && (
+                              <Lock size={10} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
+                            )}
+                            {selected && t.unlocked && (
+                              <Check size={10} className="text-[var(--pet-gold,#f0c040)] flex-shrink-0" />
+                            )}
+                          </div>
+                          <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#7a8a9a)] mt-0.5">
+                            {t.unlocked ? "Free for you" : LION_HEART_TIER_LABELS[t.minTier]}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
             )
-          })}
-        </div>
+          },
+        )}
       </PixelCard>
 
       <PixelCard className="p-4 lg:p-5 space-y-3" corners>

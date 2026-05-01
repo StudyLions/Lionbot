@@ -1,6 +1,8 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-29
+// Updated: 2026-04-30 -- expanded catalog from 5 to 15 themes
+//                       (5 LionHeart, 5 LionHeart+, 4 LionHeart++)
 // Purpose: Marketplace 2.0 Phase 2 -- catalog of personal-store
 //          themes. Each theme owns the background, panel, accent,
 //          text, font-family, and (optionally) an animation hook
@@ -8,11 +10,13 @@
 //          the free tier always gets `default`, premium tiers
 //          unlock progressively richer aesthetics.
 //
-//          The four "premium" themes are ports of the design
+//          The original 4 "premium" themes are ports of the
 //          mockups in pet-ui-mockups/ (Stardew, Pokemon GBA,
-//          Earthbound, Gameboy Color), repackaged as data so the
-//          StoreCanvas + customizer can render them without a
-//          file-per-theme component.
+//          Earthbound, Gameboy Color). The 10 newer themes are
+//          custom-designed (sakura, library, mint, synthwave,
+//          cosmic, cottage, cyberpunk, lava, aurora, royal) and
+//          shipped as pure CSS data so StoreCanvas + customizer
+//          can render them without a file-per-theme component.
 //
 //          Used by:
 //            components/pet/store/StoreCanvas.tsx (rendering)
@@ -26,8 +30,18 @@ export type StoreThemeId =
   | "default"
   | "stardew"
   | "pokemon"
+  | "sakura"
+  | "library"
+  | "mint"
   | "earthbound"
+  | "synthwave"
+  | "cosmic"
+  | "cottage"
+  | "cyberpunk"
   | "gameboy"
+  | "lava"
+  | "aurora"
+  | "royal"
 
 export type StoreAnimationId =
   | "none"
@@ -137,6 +151,73 @@ export const STORE_THEMES: Record<StoreThemeId, StoreTheme> = {
     previewSwatch: "#f5f0e6",
   },
 
+  sakura: {
+    id: "sakura",
+    name: "Cherry Blossom",
+    description:
+      "Soft pink petals over a warm cream parchment. A gentle, springtime garden vibe.",
+    minTier: "LIONHEART",
+    pageBackground:
+      "radial-gradient(circle at 18% 22%, rgba(255,255,255,0.55) 0 6px, transparent 7px) 0 0/180px 220px, " +
+      "radial-gradient(circle at 72% 64%, rgba(255,255,255,0.55) 0 5px, transparent 6px) 60px 80px/220px 260px, " +
+      "linear-gradient(180deg, #ffd9e2 0%, #ffeef2 55%, #fff5ed 100%)",
+    panelBackground: "#fff1f5",
+    panelBorder: "#a04060",
+    textColor: "#3a1f2c",
+    textDim: "#7a5060",
+    accent: "#d04880",
+    font: {
+      family: "'Pixelify Sans', system-ui, monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;700&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #ffd9e2, #ffeef2, #fff5ed)",
+  },
+
+  library: {
+    id: "library",
+    name: "Scholar's Library",
+    description:
+      "Sepia parchment, leather spines, and brass trim. Smells faintly of pipe tobacco and old paper.",
+    minTier: "LIONHEART",
+    pageBackground:
+      "repeating-linear-gradient(90deg, #2d1808 0 4px, #4a2814 4px 6px, #2d1808 6px 200px), " +
+      "linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 30%)",
+    panelBackground: "#f4eadc",
+    panelBorder: "#5c3a1d",
+    textColor: "#2d1808",
+    textDim: "#7a5230",
+    accent: "#b89438",
+    font: {
+      family: "'VT323', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=VT323&display=swap",
+    },
+    previewSwatch: "#f4eadc",
+  },
+
+  mint: {
+    id: "mint",
+    name: "Mint & Cocoa",
+    description:
+      "Cool mint cream over warm cocoa wood. Like a chocolate-mint bar wrapped in pixel art.",
+    minTier: "LIONHEART",
+    pageBackground:
+      "repeating-linear-gradient(0deg, rgba(0,0,0,0.05) 0 1px, transparent 1px 80px), " +
+      "linear-gradient(180deg, #3a201a 0%, #5a3024 100%)",
+    panelBackground: "#e3f0e0",
+    panelBorder: "#3a201a",
+    textColor: "#2a1610",
+    textDim: "#6a4030",
+    accent: "#4cc090",
+    font: {
+      family: "'Pixelify Sans', system-ui, monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;700&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #e3f0e0, #4cc090, #3a201a)",
+  },
+
   earthbound: {
     id: "earthbound",
     name: "Psychedelic Trip",
@@ -156,6 +237,97 @@ export const STORE_THEMES: Record<StoreThemeId, StoreTheme> = {
         "https://fonts.googleapis.com/css2?family=Silkscreen&family=VT323&display=swap",
     },
     previewSwatch: "linear-gradient(135deg, #ff6b9d, #ffd93d, #6bcf7f, #4dc4ff, #c084fc)",
+  },
+
+  synthwave: {
+    id: "synthwave",
+    name: "Synthwave Sunset",
+    description:
+      "Hot pink and cyan over a vapor-grid horizon. Equal parts arcade and 80s mall.",
+    minTier: "LIONHEART_PLUS",
+    pageBackground:
+      "linear-gradient(180deg, #1a0030 0%, #4a0a5a 28%, #ff2d92 55%, #ff7e36 78%, #ffd060 100%), " +
+      "repeating-linear-gradient(180deg, rgba(0,240,255,0.18) 0 1px, transparent 1px 24px)",
+    panelBackground: "#0a0418",
+    panelBorder: "#ff2d92",
+    textColor: "#ddf6ff",
+    textDim: "#8090b0",
+    accent: "#ff2d92",
+    font: {
+      family: "'VT323', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=VT323&display=swap",
+    },
+    previewSwatch: "linear-gradient(180deg, #1a0030, #ff2d92, #ffd060)",
+  },
+
+  cosmic: {
+    id: "cosmic",
+    name: "Cosmic Drift",
+    description:
+      "Deep indigo nebula dotted with pixel stars. Quiet, slow, infinite.",
+    minTier: "LIONHEART_PLUS",
+    pageBackground:
+      "radial-gradient(circle at 12% 18%, #ffffff 1px, transparent 2px) 0 0/280px 320px, " +
+      "radial-gradient(circle at 78% 62%, #b0b8ff 1px, transparent 2px) 80px 120px/300px 360px, " +
+      "radial-gradient(circle at 36% 84%, #ffffff 1px, transparent 2px) 160px 40px/240px 280px, " +
+      "radial-gradient(ellipse at 50% 30%, #2c1858 0%, #0a0820 60%, #03030f 100%)",
+    panelBackground: "#080a18",
+    panelBorder: "#3a2870",
+    textColor: "#e8e8ff",
+    textDim: "#9090b8",
+    accent: "#5cc8ff",
+    font: {
+      family: "'Press Start 2P', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap",
+    },
+    previewSwatch: "radial-gradient(ellipse, #2c1858, #0a0820, #03030f)",
+  },
+
+  cottage: {
+    id: "cottage",
+    name: "Mossy Cottage",
+    description:
+      "Warm wood, moss-green trim, hand-painted parchment. Cozy fireplace energy.",
+    minTier: "LIONHEART_PLUS",
+    pageBackground:
+      "repeating-linear-gradient(90deg, #4a2c14 0 2px, #6b4220 2px 200px, #4a2c14 200px 202px, #8b6033 202px 400px), " +
+      "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0) 40%)",
+    panelBackground: "#f0e8d4",
+    panelBorder: "#3a5028",
+    textColor: "#2a3818",
+    textDim: "#5a6038",
+    accent: "#7a9050",
+    font: {
+      family: "'Pixelify Sans', system-ui, monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;700&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #f0e8d4, #7a9050, #4a2c14)",
+  },
+
+  cyberpunk: {
+    id: "cyberpunk",
+    name: "Neon Alley",
+    description:
+      "Wet asphalt, blown-out cyan, hot magenta signage. The dive bar of the future.",
+    minTier: "LIONHEART_PLUS",
+    pageBackground:
+      "radial-gradient(ellipse at 18% 24%, rgba(255,0,170,0.32) 0 60px, transparent 80px), " +
+      "radial-gradient(ellipse at 78% 70%, rgba(0,240,255,0.30) 0 70px, transparent 90px), " +
+      "linear-gradient(180deg, #06060c 0%, #0a0e1c 60%, #060810 100%)",
+    panelBackground: "#0a0a14",
+    panelBorder: "#00f0ff",
+    textColor: "#e0fcff",
+    textDim: "#7080a0",
+    accent: "#ff00aa",
+    font: {
+      family: "'Press Start 2P', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #06060c, #ff00aa, #00f0ff)",
   },
 
   gameboy: {
@@ -178,10 +350,85 @@ export const STORE_THEMES: Record<StoreThemeId, StoreTheme> = {
     },
     previewSwatch: "#9bbc0f",
   },
+
+  lava: {
+    id: "lava",
+    name: "Volcanic Forge",
+    description:
+      "Charcoal obsidian veined with molten ember. The floor is, in fact, lava.",
+    minTier: "LIONHEART_PLUS_PLUS",
+    pageBackground:
+      "radial-gradient(ellipse at 20% 90%, rgba(255,80,40,0.45) 0 18%, transparent 40%), " +
+      "radial-gradient(ellipse at 80% 110%, rgba(255,140,40,0.40) 0 14%, transparent 38%), " +
+      "linear-gradient(180deg, #0a0303 0%, #1a0a05 50%, #2a0e06 100%)",
+    panelBackground: "#1a0a05",
+    panelBorder: "#ff5028",
+    textColor: "#ffe8d8",
+    textDim: "#a08070",
+    accent: "#ff8030",
+    font: {
+      family: "'Press Start 2P', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap",
+    },
+    previewSwatch: "radial-gradient(ellipse, #ff8030, #1a0a05, #0a0303)",
+  },
+
+  aurora: {
+    id: "aurora",
+    name: "Aurora Glacier",
+    description:
+      "Frosted ice with shimmering northern-lights ribbons of teal and lavender drifting overhead.",
+    minTier: "LIONHEART_PLUS_PLUS",
+    pageBackground:
+      "linear-gradient(135deg, #5fc8e8 0%, #8a78ff 30%, #5fc8e8 55%, #b078ff 80%, #5fc8e8 100%), " +
+      "linear-gradient(180deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 100%)",
+    panelBackground: "#e8f3fb",
+    panelBorder: "#1a2a4a",
+    textColor: "#0a1a3a",
+    textDim: "#5070a0",
+    accent: "#3a90c8",
+    font: {
+      family: "'Pixelify Sans', system-ui, monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400;500;700&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #5fc8e8, #8a78ff, #b078ff)",
+  },
+
+  royal: {
+    id: "royal",
+    name: "Royal Tapestry",
+    description:
+      "Deep burgundy velvet with gold filigree. Built for nobility and very expensive cheese.",
+    minTier: "LIONHEART_PLUS_PLUS",
+    pageBackground:
+      "radial-gradient(circle at 25% 35%, rgba(212,168,56,0.20) 0 6px, transparent 8px) 0 0/120px 140px, " +
+      "radial-gradient(circle at 75% 75%, rgba(212,168,56,0.16) 0 4px, transparent 6px) 60px 70px/120px 140px, " +
+      "linear-gradient(180deg, #2a040c 0%, #4a0a1a 60%, #2a040c 100%)",
+    panelBackground: "#f8efd8",
+    panelBorder: "#4a0a1a",
+    textColor: "#3a050f",
+    textDim: "#7a3040",
+    accent: "#d4a838",
+    font: {
+      family: "'VT323', monospace",
+      googleFontHref:
+        "https://fonts.googleapis.com/css2?family=VT323&display=swap",
+    },
+    previewSwatch: "linear-gradient(135deg, #4a0a1a, #d4a838, #f8efd8)",
+  },
 }
 
 export const STORE_THEME_ORDER: StoreThemeId[] = [
-  "default", "stardew", "pokemon", "earthbound", "gameboy",
+  // FREE
+  "default",
+  // LIONHEART
+  "stardew", "pokemon", "sakura", "library", "mint",
+  // LIONHEART_PLUS
+  "earthbound", "synthwave", "cosmic", "cottage", "cyberpunk",
+  // LIONHEART_PLUS_PLUS
+  "gameboy", "lava", "aurora", "royal",
 ]
 
 // ----------------------------------------------------------------
