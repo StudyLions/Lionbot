@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 1, 2026 ────────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-01) ---
+  // Purpose: Bug fix for streak resetting on the 1st of every month.
+  {
+    date: "2026-05-01",
+    title: "Fixed: Streak resetting to 1 on the first of each month",
+    description:
+      "The dashboard streak (and the streak shown in your weekly digest email) was resetting to 1 every time a new month started, even if you had studied every single day. The streak now correctly walks back across month and year boundaries, and Longest reflects your true all-time best. Reported by whitexblack.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── April 30, 2026 ─────────────────────────────────────────
   // --- AI-MODIFIED (2026-04-30) ---
   // Purpose: Theme catalog expansion + better paths from the marketplace

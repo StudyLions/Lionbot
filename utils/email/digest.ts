@@ -120,7 +120,6 @@ export async function buildWeeklyDigest(
   const todayStart = getUtcDayStart(now)
   const yesterdayStart = new Date(todayStart)
   yesterdayStart.setUTCDate(todayStart.getUTCDate() - 1)
-  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
   const weekEndDisplay = new Date(thisWeekStart)
   weekEndDisplay.setUTCDate(thisWeekStart.getUTCDate() + 6)
 
@@ -128,7 +127,7 @@ export async function buildWeeklyDigest(
     weekAgg,
     lastWeekAgg,
     tasksCount,
-    monthActive,
+    allActiveDaysRows,
     topServerRow,
     gemsAgg,
     firstActivityRow,
@@ -147,13 +146,19 @@ export async function buildWeeklyDigest(
         completed_at: { gte: thisWeekStart, lt: nextWeekStart },
       },
     }),
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Bug fix — was filtered to current month only, which made the
+    //          digest's currentStreak reset to 1 on the 1st of every month for
+    //          every user (same bug as pages/api/dashboard/stats.ts had). Query
+    //          the full distinct-day history so streak math works across month
+    //          and year boundaries.
     prisma.$queryRaw<{ date: Date }[]>(Prisma.sql`
       SELECT DISTINCT DATE(start_time AT TIME ZONE 'UTC')::date AS date
       FROM voice_sessions
       WHERE userid = ${userid}
-        AND start_time >= ${monthStart}
       ORDER BY date
     `),
+    // --- END AI-MODIFIED ---
     prisma.$queryRaw<{ guildid: bigint; total_seconds: bigint | number }[]>(Prisma.sql`
       SELECT guildid, COALESCE(SUM(duration), 0)::bigint AS total_seconds
       FROM voice_sessions
@@ -181,7 +186,7 @@ export async function buildWeeklyDigest(
   const studyMinutesThisWeek = Math.round((weekAgg._sum.duration ?? 0) / 60)
   const studyMinutesLastWeek = Math.round((lastWeekAgg._sum.duration ?? 0) / 60)
 
-  const activeDays = monthActive
+  const activeDays = allActiveDaysRows
     .map((r) => {
       const d = r.date instanceof Date ? r.date : new Date(r.date)
       return d.toISOString().slice(0, 10)
@@ -191,7 +196,6 @@ export async function buildWeeklyDigest(
   // Replicates dashboard streak logic: count consecutive UTC days
   // starting from today (or yesterday if today has no session yet).
   const todayKey = todayStart.toISOString().slice(0, 10)
-  const yKey = yesterdayStart.toISOString().slice(0, 10)
   const set = new Set(activeDays)
   let currentStreak = 0
   let cursor = set.has(todayKey) ? new Date(todayStart) : new Date(yesterdayStart)
