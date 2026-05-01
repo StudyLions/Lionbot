@@ -25,6 +25,17 @@ export interface TimelineEntry {
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── May 1, 2026 ────────────────────────────────────────────
   // --- AI-MODIFIED (2026-05-01) ---
+  // Purpose: Bug fix — Setup Checklist couldn't load on freshly added servers.
+  {
+    date: "2026-05-01",
+    title: "Fixed: Setup Checklist not loading right after adding the bot",
+    description:
+      "If you opened the Setup Checklist from the bot's welcome DM before running any commands, it showed \"Couldn't load your setup checklist\" because Leo hadn't created your server's config row yet. The dashboard now creates it on the spot.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-05-01) ---
   // Purpose: Bug fix for streak resetting on the 1st of every month.
   {
     date: "2026-05-01",

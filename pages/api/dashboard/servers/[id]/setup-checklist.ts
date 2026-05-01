@@ -271,9 +271,22 @@ export default apiHandler({
     // config + premium status. Premium status drives whether we ALSO need
     // the premium-feature configured signals (skipped for non-premium to
     // save 6 round-trips per request).
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Auto-create the guild_config row when missing. The bot
+    // creates this row lazily on first member activity, but admins can be
+    // linked here directly from the bot's "Setup Checklist" welcome DM
+    // before any command has run -- in which case the old `findUnique`
+    // returned null and we 404'd, surfacing as "Couldn't load your setup
+    // checklist" on the widget. Same auto-create pattern as
+    // `pages/api/dashboard/servers/[id]/config.ts` line 119+. The empty
+    // `update` keeps existing rows untouched; the `create` only fires
+    // once per guild and is gated by `requireAdmin` above so random users
+    // can't spam-create rows for guilds they don't admin.
     const [gc, sgc, isPremium] = await Promise.all([
-      prisma.guild_config.findUnique({
+      prisma.guild_config.upsert({
         where: { guildid: guildId },
+        update: {},
+        create: { guildid: guildId },
         select: {
           timezone: true,
           admin_role: true,
@@ -306,8 +319,7 @@ export default apiHandler({
       }),
       isPremiumGuild(guildId),
     ])
-
-    if (!gc) return res.status(404).json({ error: "Server not found" })
+    // --- END AI-MODIFIED (2026-05-01) ---
 
     // Premium-feature configured detection runs only when the guild is
     // actually premium. For non-premium guilds the teaser row's
@@ -349,14 +361,20 @@ export default apiHandler({
       throw new ValidationError(`Invalid status "${status}"`)
     }
 
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Tolerate a missing guild_config row (fresh guild that the
+    // bot hasn't lazy-created yet -- see the GET handler comment for full
+    // context) by treating "no row" as "no recorded state". The actual
+    // write happens via upsert below so the row gets created in the same
+    // transaction the user marks their first task done in.
     const existing = await prisma.guild_config.findUnique({
       where: { guildid: guildId },
       select: { setup_checklist_state: true },
     })
-    if (!existing) return res.status(404).json({ error: "Server not found" })
+    // --- END AI-MODIFIED (2026-05-01) ---
 
     const next: Record<string, TaskStatus> = {
-      ...((existing.setup_checklist_state as Record<string, TaskStatus> | null) ?? {}),
+      ...((existing?.setup_checklist_state as Record<string, TaskStatus> | null) ?? {}),
     }
     // Pending = the absence of a recorded status. Keeps the JSON small as servers
     // un-skip tasks rather than accumulating stale "pending" entries.
@@ -366,10 +384,16 @@ export default apiHandler({
       next[task] = status
     }
 
-    await prisma.guild_config.update({
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Use upsert so a fresh-guild PATCH (no existing row) still
+    // succeeds. The create branch only fires the very first time anyone
+    // touches the checklist for this guild.
+    await prisma.guild_config.upsert({
       where: { guildid: guildId },
-      data: { setup_checklist_state: next },
+      update: { setup_checklist_state: next },
+      create: { guildid: guildId, setup_checklist_state: next },
     })
+    // --- END AI-MODIFIED (2026-05-01) ---
 
     // --- AI-MODIFIED (2026-04-30) ---
     // Purpose: Re-fetch the slim summary so the client doesn't need a
