@@ -78,20 +78,40 @@ import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 // --- AI-MODIFIED (2026-03-21) ---
 // Purpose: Import scroll snapshot helpers to preserve enhancement data on listings
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- drop the flat MAX_ACTIVE_LISTINGS_PER_USER import
+// in favor of the tier-aware getMaxActiveListings helper. getExpiresAt now
+// accepts a tier so the seller's listing duration matches their LionHeart
+// perks. The cap-check returns the polite LISTING_CAP_REACHED grandfather
+// error so existing free sellers above the new cap aren't disrupted -- they
+// just can't add new listings until they're back under the cap.
 import {
-  getExpiresAt, MAX_PRICE_PER_UNIT, MAX_ACTIVE_LISTINGS_PER_USER,
+  getExpiresAt, MAX_PRICE_PER_UNIT,
   snapshotScrollSlots, computeTotalBonus,
 } from "@/utils/marketplace"
+import {
+  getUserTier, getMaxActiveListings, getNextTierWithMoreListings,
+  LION_HEART_TIER_LABELS,
+} from "@/utils/subscription"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
 
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- HttpError now carries an optional `body` for
+// rich client responses (e.g. LISTING_CAP_REACHED needs to surface the
+// current count, the cap, and the suggested upgrade tier so the UI can
+// render a helpful upgrade prompt instead of a flat error string).
 class HttpError extends Error {
   status: number
-  constructor(status: number, message: string) {
+  body?: Record<string, unknown>
+  constructor(status: number, message: string, body?: Record<string, unknown>) {
     super(message)
     this.status = status
+    this.body = body
   }
 }
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async POST(req, res) {
@@ -130,14 +150,48 @@ export default apiHandler({
     if (!item) return res.status(404).json({ error: "Item not found" })
     if (!item.tradeable) return res.status(400).json({ error: "This item cannot be traded" })
 
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 -- resolve the seller's effective LionHeart
+    // tier outside the transaction so we can use it for both the active-
+    // listings cap AND the listing duration. tier resolution is a single
+    // index lookup so doing it pre-transaction keeps the txn short.
+    const sellerTier = await getUserTier(userId)
+    const cap = getMaxActiveListings(sellerTier)
+    // --- END AI-MODIFIED ---
+
     try {
       await prisma.$transaction(async (tx) => {
         const activeCount = await tx.lg_marketplace_listings.count({
           where: { seller_userid: userId, status: "ACTIVE" },
         })
-        if (activeCount >= MAX_ACTIVE_LISTINGS_PER_USER) {
-          throw new HttpError(400, `You can have at most ${MAX_ACTIVE_LISTINGS_PER_USER} active listings`)
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Marketplace 2.0 GRANDFATHER RULE -- existing listings are
+        // never modified. If a free seller is over the new cap (e.g. they
+        // had 30 listings under the old "everyone gets 30" world and we
+        // later lower the free cap), they keep every listing they have --
+        // they just can't ADD a new one until enough sell or expire to put
+        // them back under the cap. The error response includes the cap,
+        // current count, and the cheapest upgrade that would help so the
+        // UI can render a friendly upsell.
+        if (activeCount >= cap) {
+          const upgradeTier = getNextTierWithMoreListings(sellerTier)
+          throw new HttpError(
+            403,
+            `You have ${activeCount} active listings (your limit is ${cap}). ` +
+              `Existing listings will stay until they sell or expire -- ` +
+              (upgradeTier
+                ? `upgrade to ${LION_HEART_TIER_LABELS[upgradeTier]} to list more.`
+                : `you are already on the highest tier.`),
+            {
+              code: "LISTING_CAP_REACHED",
+              currentCount: activeCount,
+              cap,
+              tier: sellerTier,
+              upgradeTier,
+            },
+          )
         }
+        // --- END AI-MODIFIED ---
 
         const equipped = await tx.lg_pet_equipment.findFirst({
           where: { userid: userId, itemid: itemId },
@@ -194,6 +248,12 @@ export default apiHandler({
 
         // --- AI-MODIFIED (2026-03-21) ---
         // Purpose: Store scroll_data and total_bonus on the listing
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Marketplace 2.0 -- pass the seller's tier so LionHeart
+        // members get longer listing windows (FREE=7d, LH=14d, LH+=21d,
+        // LH++=30d). The duration is baked into the row at creation time,
+        // so existing listings keep whatever duration they were originally
+        // given.
         await tx.lg_marketplace_listings.create({
           data: {
             seller_userid: userId,
@@ -204,11 +264,12 @@ export default apiHandler({
             price_per_unit: pricePerUnit,
             currency,
             status: "ACTIVE",
-            expires_at: getExpiresAt(),
+            expires_at: getExpiresAt(sellerTier),
             scroll_data: scrollData ? (scrollData as any) : undefined,
             total_bonus: totalBonus,
           },
         })
+        // --- END AI-MODIFIED ---
         // --- END AI-MODIFIED ---
       })
 
@@ -218,7 +279,12 @@ export default apiHandler({
       })
     } catch (e: any) {
       if (e instanceof HttpError) {
-        return res.status(e.status).json({ error: e.message })
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Surface the rich error body (currently only used for
+        // LISTING_CAP_REACHED) so the client can render a contextual
+        // upgrade prompt instead of a flat error string.
+        return res.status(e.status).json({ error: e.message, ...(e.body ?? {}) })
+        // --- END AI-MODIFIED ---
       }
       throw e
     }

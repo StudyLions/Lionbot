@@ -74,7 +74,39 @@ export function computeTotalBonus(scrollData: ScrollSlotSnapshot[] | null): numb
 }
 // --- END AI-MODIFIED ---
 
-const LISTING_DURATION_DAYS = 7
+// --- AI-REPLACED (2026-04-29) ---
+// Reason: Marketplace 2.0 -- replace flat-rate constants with tier-aware
+//   helpers in utils/subscription.ts. Free users keep the original 5% fee
+//   and 7-day duration; LionHeart subscribers get progressively better
+//   numbers. Existing listings are NOT touched (durations are baked into
+//   the row at creation time, fees apply at sale time and the FREE tier
+//   rate is unchanged).
+// What the new code does better: single source of truth for the perk
+//   ladder, no need to edit two places when LionHeart gets a new tier,
+//   and the website + bot can both import the same numbers.
+// --- Original code (commented out for rollback) ---
+// const LISTING_DURATION_DAYS = 7
+// export const MARKETPLACE_FEE_PERCENT = 5
+// export const MAX_ACTIVE_LISTINGS_PER_USER = 30
+// --- End original code ---
+import {
+  getListingDurationDays,
+  getMarketplaceFeePercent,
+  getMaxActiveListings,
+  type LionHeartTier,
+} from "@/utils/subscription"
+
+// Re-exported so existing call sites can import from one place if they prefer.
+export { getListingDurationDays, getMarketplaceFeePercent, getMaxActiveListings }
+export type { LionHeartTier }
+
+// Default-tier (FREE) numbers retained as legacy aliases for any code that
+// hasn't been migrated yet. They MUST equal the FREE-tier values from
+// utils/subscription.ts so behavior is byte-identical for non-subscribers.
+export const MARKETPLACE_FEE_PERCENT = getMarketplaceFeePercent("FREE")
+export const MAX_ACTIVE_LISTINGS_PER_USER = getMaxActiveListings("FREE")
+// --- END AI-REPLACED ---
+
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Remove hardcoded IP fallback -- staging and production use different ports
 // --- Original code (commented out for rollback) ---
@@ -84,10 +116,17 @@ const BOT_RENDER_URL = process.env.BOT_RENDER_URL
 // --- END AI-MODIFIED ---
 const BOT_RENDER_AUTH = process.env.BOT_RENDER_AUTH || ""
 
-export const MARKETPLACE_FEE_PERCENT = 5
-
 export const MAX_PRICE_PER_UNIT = 10_000_000
-export const MAX_ACTIVE_LISTINGS_PER_USER = 30
+
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- store name + speech bubble character caps.
+// SPEECH_BUBBLE_MAX_FREE keeps the prompt short for non-subscribers; LionHeart
+// members get the longer cap. STORE_NAME_MAX_LENGTH matches the @db.VarChar(40)
+// column on lg_user_stores.
+export const STORE_NAME_MAX_LENGTH = 40
+export const SPEECH_BUBBLE_MAX_FREE = 100
+export const SPEECH_BUBBLE_MAX_PREMIUM = 500
+// --- END AI-MODIFIED ---
 
 let lastExpireRun = 0
 const EXPIRE_DEBOUNCE_MS = 30_000
@@ -233,11 +272,26 @@ async function restoreInventoryStandalone(
 }
 // --- END AI-MODIFIED ---
 
-export function getExpiresAt(): Date {
+// --- AI-REPLACED (2026-04-29) ---
+// Reason: Marketplace 2.0 -- listing duration becomes tier-based instead of
+//   a flat 7 days. Free users still get 7 days (identical to legacy behavior),
+//   LionHeart subscribers get progressively longer durations.
+// What the new code does better: takes an optional tier argument so
+//   list.ts can pass the seller's tier; defaults to FREE so any older
+//   call site keeps working unchanged.
+// --- Original code (commented out for rollback) ---
+// export function getExpiresAt(): Date {
+//   const d = new Date()
+//   d.setDate(d.getDate() + LISTING_DURATION_DAYS)
+//   return d
+// }
+// --- End original code ---
+export function getExpiresAt(tier: LionHeartTier = "FREE"): Date {
   const d = new Date()
-  d.setDate(d.getDate() + LISTING_DURATION_DAYS)
+  d.setDate(d.getDate() + getListingDurationDays(tier))
   return d
 }
+// --- END AI-REPLACED ---
 
 export async function notifySellerDM(data: {
   sellerUserId: string

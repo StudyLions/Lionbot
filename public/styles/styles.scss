@@ -348,7 +348,22 @@ p, a, b {
   --pet-text-dim: #8899aa;
   --pet-shadow: #060810;
 
-  background: var(--pet-bg);
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Repaint the page background so it doesn't feel dead. The flat
+  // #0a0e1a was lifeless and the old .pet-scanline overlay was at 3% alpha
+  // (invisible). Now the body has 3 layered effects:
+  //   1. A subtle 1.5%-alpha dot grid on an 8px tile (texture)
+  //   2. A faint radial vignette from top so the page isn't uniform (depth)
+  //   3. Solid base color underneath (color)
+  // The scanline overlay (.pet-scanline) is bumped to 8% alpha + 4px stripes
+  // below so it's actually visible like a CRT.
+  background-color: var(--pet-bg);
+  background-image:
+    radial-gradient(circle at 2px 2px, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% -10%, rgba(64, 128, 240, 0.05), transparent 60%);
+  background-size: 8px 8px, 100% 100%;
+  background-attachment: fixed, fixed;
+  // --- END AI-MODIFIED ---
   color: var(--pet-text);
   font-family: 'ChunkyDunk', monospace;
   -webkit-font-smoothing: none;
@@ -357,6 +372,16 @@ p, a, b {
   *, *::before, *::after {
     border-radius: 0 !important;
   }
+
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Pixel-treat all Lucide vector icons inside /pet so they stop
+  // clashing with the pixel-art sprites and ChunkyDunk font. shape-rendering
+  // disables SVG anti-aliasing, image-rendering hints to the GPU. Reversible.
+  svg.lucide {
+    shape-rendering: crispEdges;
+    image-rendering: pixelated;
+  }
+  // --- END AI-MODIFIED ---
 }
 
 .pet-scanline {
@@ -366,13 +391,17 @@ p, a, b {
     position: absolute;
     inset: 0;
     pointer-events: none;
+    // --- AI-MODIFIED (2026-04-28) ---
+    // Purpose: Make the scanline actually visible. Was 3% alpha on 2px stripes
+    // which rendered as nothing. Now 8% alpha on 4px stripes for a real CRT feel.
     background: repeating-linear-gradient(
       0deg,
       transparent 0px,
-      transparent 2px,
-      rgba(0, 0, 0, 0.03) 2px,
-      rgba(0, 0, 0, 0.03) 4px
+      transparent 3px,
+      rgba(0, 0, 0, 0.08) 3px,
+      rgba(0, 0, 0, 0.08) 4px
     );
+    // --- END AI-MODIFIED ---
     z-index: 1;
   }
 }
@@ -479,33 +508,49 @@ p, a, b {
 .animate-coin-bob { animation: coin-bob 1.5s ease-in-out infinite; }
 // --- END AI-MODIFIED ---
 
-// --- AI-MODIFIED (2026-03-20) ---
-// Purpose: Scale all pet section text by 35% for better readability
+// --- AI-REPLACED (2026-04-28) ---
+// Reason: The 35% text upscale was breaking the ChunkyDunk pixel font's grid.
+// Pixel fonts MUST render at integer multiples of their base pixel size or
+// they smudge. Multiplying every Tailwind text class by 1.35 made the entire
+// /pet section look fuzzy, oversized, and inconsistent.
+// What the new code does better: Lets pixel-art text classes render at their
+// native size so the font is crisp. Where a page genuinely needs bigger text,
+// it should use a bigger explicit Tailwind class (e.g. text-3xl) at the call
+// site rather than rely on a global multiplier. Custom bracket sizes
+// (text-[10px], etc.) get a small targeted bump so they remain legible
+// without triggering sub-pixel rendering.
+// --- Original code (commented out for rollback) ---
+// .pet-section {
+//   --pet-text-scale: 1.35;
+//   & p, & a, & b { font-size: calc(18px * var(--pet-text-scale)) !important; }
+//   & .text-xs   { font-size: calc(0.75rem  * var(--pet-text-scale)) !important; line-height: calc(1rem    * var(--pet-text-scale)) !important; }
+//   & .text-sm   { font-size: calc(0.875rem * var(--pet-text-scale)) !important; line-height: calc(1.25rem * var(--pet-text-scale)) !important; }
+//   & .text-base { font-size: calc(1rem     * var(--pet-text-scale)) !important; line-height: calc(1.5rem  * var(--pet-text-scale)) !important; }
+//   & .text-lg   { font-size: calc(1.125rem * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+//   & .text-xl   { font-size: calc(1.25rem  * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
+//   & .text-2xl  { font-size: calc(1.5rem   * var(--pet-text-scale)) !important; line-height: calc(2rem    * var(--pet-text-scale)) !important; }
+//   & .text-3xl  { font-size: calc(1.875rem * var(--pet-text-scale)) !important; line-height: calc(2.25rem * var(--pet-text-scale)) !important; }
+//   & .text-5xl  { font-size: calc(3rem     * var(--pet-text-scale)) !important; }
+//   & .text-\[5px\]  { font-size: 7px  !important; }
+//   & .text-\[7px\]  { font-size: 9px  !important; }
+//   & .text-\[8px\]  { font-size: 11px !important; }
+//   & .text-\[9px\]  { font-size: 12px !important; }
+//   & .text-\[10px\] { font-size: 14px !important; }
+//   & .text-\[11px\] { font-size: 15px !important; }
+//   & .text-\[12px\] { font-size: 16px !important; }
+//   & .text-\[13px\] { font-size: 18px !important; }
+//   & .text-\[14px\] { font-size: 19px !important; }
+// }
+// --- End original code ---
 .pet-section {
-  --pet-text-scale: 1.35;
-
-  & p, & a, & b { font-size: calc(18px * var(--pet-text-scale)) !important; }
-
-  & .text-xs   { font-size: calc(0.75rem  * var(--pet-text-scale)) !important; line-height: calc(1rem    * var(--pet-text-scale)) !important; }
-  & .text-sm   { font-size: calc(0.875rem * var(--pet-text-scale)) !important; line-height: calc(1.25rem * var(--pet-text-scale)) !important; }
-  & .text-base { font-size: calc(1rem     * var(--pet-text-scale)) !important; line-height: calc(1.5rem  * var(--pet-text-scale)) !important; }
-  & .text-lg   { font-size: calc(1.125rem * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
-  & .text-xl   { font-size: calc(1.25rem  * var(--pet-text-scale)) !important; line-height: calc(1.75rem * var(--pet-text-scale)) !important; }
-  & .text-2xl  { font-size: calc(1.5rem   * var(--pet-text-scale)) !important; line-height: calc(2rem    * var(--pet-text-scale)) !important; }
-  & .text-3xl  { font-size: calc(1.875rem * var(--pet-text-scale)) !important; line-height: calc(2.25rem * var(--pet-text-scale)) !important; }
-  & .text-5xl  { font-size: calc(3rem     * var(--pet-text-scale)) !important; }
-
+  // Tailwind text classes inside /pet now render at their native sizes.
+  // Only the very small custom bracket sizes get a tiny bump for legibility.
   & .text-\[5px\]  { font-size: 7px  !important; }
-  & .text-\[7px\]  { font-size: 9px  !important; }
-  & .text-\[8px\]  { font-size: 11px !important; }
-  & .text-\[9px\]  { font-size: 12px !important; }
-  & .text-\[10px\] { font-size: 14px !important; }
-  & .text-\[11px\] { font-size: 15px !important; }
-  & .text-\[12px\] { font-size: 16px !important; }
-  & .text-\[13px\] { font-size: 18px !important; }
-  & .text-\[14px\] { font-size: 19px !important; }
+  & .text-\[7px\]  { font-size: 8px  !important; }
+  & .text-\[8px\]  { font-size: 9px  !important; }
+  & .text-\[9px\]  { font-size: 10px !important; }
 }
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Rarity-based item card glow and sparkle particle animations
@@ -753,6 +798,63 @@ p, a, b {
 .animate-enhance-streak-flame { animation: enhance-streak-flame 0.4s ease-in-out infinite; }
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: 44x44 px thumb on the Setup Checklist mobile slider so it's
+// grabbable one-handed (Apple HIG / WCAG touch-target minimum). Range
+// inputs default to 16-22px thumbs which mobile audit found unusable
+// for the existing wizard sliders.
+.setup-mobile-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  height: 44px; // expand the click target vertically
+  cursor: pointer;
+  outline: none;
+
+  &::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: hsl(var(--muted));
+  }
+  &::-moz-range-track {
+    height: 6px;
+    border-radius: 9999px;
+    background: hsl(var(--muted));
+  }
+
+  &::-webkit-slider-thumb {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    border: 4px solid hsl(var(--background));
+    box-shadow: 0 1px 4px hsl(var(--background) / 0.6), 0 0 0 1px hsl(var(--primary) / 0.4);
+    margin-top: -11px; // centers thumb on track
+    transition: box-shadow 120ms ease-out;
+  }
+  &::-moz-range-thumb {
+    width: 28px;
+    height: 28px;
+    border-radius: 9999px;
+    background: hsl(var(--primary));
+    border: 4px solid hsl(var(--background));
+    box-shadow: 0 1px 4px hsl(var(--background) / 0.6), 0 0 0 1px hsl(var(--primary) / 0.4);
+    transition: box-shadow 120ms ease-out;
+  }
+
+  &:focus-visible::-webkit-slider-thumb,
+  &:active::-webkit-slider-thumb {
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0.25), 0 0 0 1px hsl(var(--primary));
+  }
+  &:focus-visible::-moz-range-thumb,
+  &:active::-moz-range-thumb {
+    box-shadow: 0 0 0 6px hsl(var(--primary) / 0.25), 0 0 0 1px hsl(var(--primary));
+  }
+}
+// --- END AI-MODIFIED ---
+
 // --- AI-MODIFIED (2026-03-24) ---
 // Purpose: Respect user preference for reduced motion
 // --- AI-MODIFIED (2026-04-25) ---
@@ -776,4 +878,32 @@ p, a, b {
   }
 }
 // --- END AI-MODIFIED ---
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 3 -- featured listing animated frame.
+// Renders an animated 4-stop gradient as the wrapper background; the
+// inner card sits 2px inside it (via padding on .lg-featured-frame),
+// so the gradient reads as a glowing halo around the card. The frame
+// also ships a soft outer drop-shadow that pulses with the gradient
+// to add depth without jitter.
+.lg-featured-frame {
+  position: relative;
+  background: linear-gradient(135deg, #f0c040 0%, #ff6b9d 25%, #a855f7 50%, #4dc4ff 75%, #f0c040 100%);
+  background-size: 300% 300%;
+  animation: lg-featured-shimmer 6s ease-in-out infinite;
+  box-shadow:
+    0 0 12px rgba(240, 192, 64, 0.18),
+    0 0 28px rgba(168, 85, 247, 0.12);
+}
+
+@keyframes lg-featured-shimmer {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+// prefers-reduced-motion is already handled by the global rule above
+// (it sets animation-duration to 0.01ms), so the frame still renders
+// the gradient -- it just stops shimmering.
 // --- END AI-MODIFIED ---

@@ -31,8 +31,14 @@ export function useDashboard<T = any>(
   }
 }
 
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- accept PUT in addition to POST/PATCH/DELETE so
+// the store config update endpoint (PUT /api/pet/marketplace/store/me) can
+// reuse the same helper (and same error handling) as every other dashboard
+// mutation. PUT is the right verb for full-resource replace, which is what
+// the store config endpoint actually does.
 export async function dashboardMutate(
-  method: "POST" | "PATCH" | "DELETE",
+  method: "POST" | "PUT" | "PATCH" | "DELETE",
   url: string,
   data?: any
 ) {
@@ -43,11 +49,15 @@ export async function dashboardMutate(
   })
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.error || "Request failed")
+    const err = new Error(body.error || "Request failed")
+    ;(err as any).status = res.status
+    ;(err as any).body = body
+    throw err
   }
   const text = await res.text()
   return text ? JSON.parse(text) : {}
 }
+// --- END AI-MODIFIED ---
 
 export function invalidate(key: string) {
   globalMutate(key)

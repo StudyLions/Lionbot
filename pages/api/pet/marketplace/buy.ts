@@ -127,10 +127,17 @@ import { getAuthContext } from "@/utils/adminAuth"
 import { apiHandler } from "@/utils/apiHandler"
 // --- AI-MODIFIED (2026-03-21) ---
 // Purpose: Import scroll-aware restoration + type for scroll data transfer on purchase
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 -- drop the flat MARKETPLACE_FEE_PERCENT import
+// in favor of the tier-aware getMarketplaceFeePercent helper. The seller's
+// LionHeart tier is resolved from user_subscriptions inside the transaction
+// so the fee always matches what they're entitled to AT SALE TIME.
 import {
-  notifySellerDM, MARKETPLACE_FEE_PERCENT, upsertInventory,
+  notifySellerDM, upsertInventory,
   restoreInventoryWithScrolls, type ScrollSlotSnapshot,
 } from "@/utils/marketplace"
+import { getMarketplaceFeePercent, type LionHeartTier } from "@/utils/subscription"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 import { checkRateLimit } from "@/utils/rateLimit"
 // --- AI-MODIFIED (2026-03-23) ---
@@ -191,8 +198,29 @@ export default apiHandler({
           throw new HttpError(400, "Total price exceeds maximum safe value")
         }
 
-        const fee = Math.floor(totalPrice * MARKETPLACE_FEE_PERCENT / 100)
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Marketplace 2.0 -- look up the seller's effective LionHeart
+        // tier and use it to compute their fee%. Free sellers stay at 5% so
+        // existing listings are unaffected. The lookup happens INSIDE the
+        // transaction so we always read the most-up-to-date subscription state.
+        const sellerSubRow = await tx.user_subscriptions.findUnique({
+          where: { userid: sellerUserId },
+          select: { tier: true, status: true },
+        })
+        let sellerTier: LionHeartTier = "FREE"
+        if (
+          sellerSubRow &&
+          (sellerSubRow.status === "ACTIVE" || sellerSubRow.status === "CANCELLING") &&
+          (sellerSubRow.tier === "LIONHEART" ||
+            sellerSubRow.tier === "LIONHEART_PLUS" ||
+            sellerSubRow.tier === "LIONHEART_PLUS_PLUS")
+        ) {
+          sellerTier = sellerSubRow.tier
+        }
+        const feePercent = getMarketplaceFeePercent(sellerTier)
+        const fee = Math.floor((totalPrice * feePercent) / 100)
         const sellerReceives = totalPrice - fee
+        // --- END AI-MODIFIED ---
 
         const buyers = await tx.$queryRaw<any[]>`
           SELECT * FROM user_config WHERE userid = ${buyerId} FOR UPDATE

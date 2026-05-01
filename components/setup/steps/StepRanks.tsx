@@ -122,15 +122,21 @@ export default function StepRanks({
             <p className="text-xs text-gray-500">Send members a private message (DM) when they reach a new rank</p>
           </div>
         </div>
+        {/* --- AI-MODIFIED (2026-04-29) --- */}
+        {/* Reason: Old slider was 1-20 default 5 -- the bot ships with xp_per_period=101.
+            That means an admin sliding to MAX was setting 20% of bot reality, and the
+            described "Higher = faster ranking" was misleading. Rescale to 5-200 default
+            100 to match what the bot actually does and align with settings.tsx. */}
         <Slider
           label="XP per check-in"
-          value={config.xp_per_period ?? 5}
-          min={1}
-          max={20}
-          step={1}
+          value={config.xp_per_period ?? 100}
+          min={5}
+          max={200}
+          step={5}
           onChange={(v) => onUpdate("xp_per_period", v)}
-          description="The bot checks activity every few minutes and awards this much XP. Higher = faster ranking."
+          description="Every 5 minutes a member chats, they earn this much XP. The bot ships with 100 — leave it unless you want a slower or faster economy."
         />
+        {/* --- END AI-MODIFIED --- */}
       </div>
 
       {/* Rank-up Preview */}

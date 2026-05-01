@@ -112,9 +112,13 @@ const sections: NavSection[] = [
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Support locked state for items requiring a pet
 function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isActive: boolean; onClick?: () => void; locked?: boolean }) {
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Match the disabled / locked rows to the new active-row spacing
+  // (3px left border + 8px cursor slot) so all rows line up perfectly.
   if (item.disabled) {
     return (
-      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#4a5568] cursor-not-allowed">
+      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#4a5568] cursor-not-allowed border-l-[3px] border-l-transparent">
+        <span className="font-pixel text-[10px] leading-none w-2 inline-block text-transparent" aria-hidden="true">{"\u25B6"}</span>
         <span className="opacity-40">{item.icon}</span>
         {item.label}
         <span className="ml-auto text-[11px] text-[#3a4050]">SOON</span>
@@ -124,14 +128,16 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
 
   if (locked) {
     return (
-      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#3a4a5c] cursor-not-allowed border-l-2 border-l-transparent"
+      <span className="font-pixel flex items-center gap-2.5 px-3 py-2 text-sm text-[#3a4a5c] cursor-not-allowed border-l-[3px] border-l-transparent"
             title="Adopt a pet to unlock">
+        <span className="font-pixel text-[10px] leading-none w-2 inline-block text-transparent" aria-hidden="true">{"\u25B6"}</span>
         <span className="opacity-30">{item.icon}</span>
         <span className="opacity-50">{item.label}</span>
         <Lock size={10} className="ml-auto opacity-40" />
       </span>
     )
   }
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-03-24) ---
   // Purpose: Badge indicator for pending friend requests
@@ -141,14 +147,19 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
   // aria-label includes badge count for SR users
   const hasBadge = item.badge != null && item.badge > 0
   const ariaLabel = hasBadge ? `${item.label} (${item.badge} pending)` : undefined
+  // --- AI-MODIFIED (2026-04-28) ---
+  // Purpose: Active item now has a stronger pixel-art treatment -- a 3px
+  // solid gold left bar (was 2px), a brighter bg highlight, AND a leading
+  // ▶ glyph in pixel font. This makes the current page unmistakable and
+  // matches classic RPG menu cursors.
   return (
     <Link href={item.href} onClick={onClick}>
       <span
         className={cn(
-          "font-pixel flex items-center gap-2.5 px-3 py-2 text-sm transition-all border-l-2",
+          "font-pixel flex items-center gap-2.5 px-3 py-2 text-sm transition-all border-l-[3px]",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--pet-blue,#4080f0)] focus-visible:ring-inset",
           isActive
-            ? "border-l-[#f0c040] bg-[#f0c040]/8 text-[#f0c040]"
+            ? "border-l-[#f0c040] bg-[#f0c040]/12 text-[#ffd860]"
             : hasBadge
               ? "border-l-[#f0c040]/60 text-[#f0c040] bg-[#f0c040]/5 hover:bg-[#f0c040]/10"
               : "border-l-transparent text-[#8899aa] hover:text-[#c0d0e0] hover:bg-[#1a2438] hover:border-l-[#3a4a6c]"
@@ -156,6 +167,15 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
         aria-current={isActive ? "page" : undefined}
         aria-label={ariaLabel}
       >
+        <span
+          className={cn(
+            "font-pixel text-[10px] leading-none w-2 inline-block",
+            isActive ? "text-[#ffd860]" : "text-transparent"
+          )}
+          aria-hidden="true"
+        >
+          {"\u25B6"}
+        </span>
         <span className="opacity-70">{item.icon}</span>
         {item.label}
         {hasBadge && (
@@ -166,6 +186,7 @@ function NavItemLink({ item, isActive, onClick, locked }: { item: NavItem; isAct
       </span>
     </Link>
   )
+  // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
 }
@@ -199,72 +220,121 @@ function NavContent({ onNavigate, hasPet = true }: { onNavigate?: () => void; ha
   return (
     <div className="flex flex-col h-full bg-[var(--pet-card,#0f1628)]">
       {session?.user && (
-        <div className="px-4 py-4 flex flex-col gap-2 border-b-2 border-[var(--pet-border,#2a3a5c)]">
-          <div className="flex items-center gap-3">
+        // --- AI-MODIFIED (2026-04-28) ---
+        // Purpose: "Trainer card" header treatment. The Discord avatar gets a
+        // proper beveled frame (light top-left + dark bottom-right outer edges
+        // + thick dark inner border) so it reads as an intentional pixel-art
+        // portrait regardless of source resolution. Drops "LionGotchi" subtitle
+        // in favor of the persistent currency strip below which carries the
+        // same identity signal more concretely.
+        <div className="px-3 py-3 flex flex-col gap-2.5 border-b-2 border-[var(--pet-border,#2a3a5c)] bg-[#0a0e1a]">
+          <div className="flex items-center gap-2.5">
             {session.user.image && (
-              // --- AI-MODIFIED (2026-04-25) ---
-              // Purpose: Meaningful avatar alt text (was empty)
-              <img
-                src={session.user.image}
-                alt={session.user.name ? `${session.user.name}'s avatar` : "User avatar"}
-                className="w-8 h-8 border-2 border-[var(--pet-border,#2a3a5c)]"
-                style={{ imageRendering: "pixelated" }}
-              />
-              // --- END AI-MODIFIED ---
+              <span
+                className="relative flex-shrink-0"
+                style={{
+                  // 2-tone outer bevel (light top-left, dark bottom-right) +
+                  // hard shadow so the frame feels like an actual portrait holder.
+                  boxShadow:
+                    "inset 1px 1px 0 #4a5a7c, inset -1px -1px 0 #060810, 2px 2px 0 #060810",
+                  padding: 2,
+                  background: "#2a3a5c",
+                }}
+              >
+                <img
+                  src={session.user.image}
+                  alt={session.user.name ? `${session.user.name}'s avatar` : "User avatar"}
+                  className="block w-8 h-8"
+                  style={{ imageRendering: "pixelated" }}
+                />
+              </span>
             )}
-            <div className="min-w-0">
-              <p className="font-pixel text-sm text-[var(--pet-text,#e2e8f0)] truncate">
+            <div className="min-w-0 flex-1">
+              <p className="font-pixel text-[13px] text-[var(--pet-text,#e2e8f0)] truncate leading-tight">
                 {session.user.name}
               </p>
-              <p className="font-pixel text-[12px] text-[var(--pet-gold,#f0c040)]">LionGotchi</p>
+              <p className="font-pixel text-[10px] text-[var(--pet-gold,#f0c040)] uppercase tracking-wider mt-0.5">
+                Trainer
+              </p>
             </div>
           </div>
-          {/* --- AI-MODIFIED (2026-03-16) --- */}
-          {/* Purpose: Persistent gold/gems balance display */}
           {balanceData && (
-            <div className="flex items-center gap-3 px-1 py-1.5 bg-[#0a0e1a] border border-[#1a2a3c]">
+            <div className="flex items-center justify-between px-2 py-1.5 bg-[#060810] border-2 border-[#1a2a3c]"
+              style={{ boxShadow: "inset 1px 1px 0 rgba(255,255,255,0.03)" }}
+            >
               <GoldDisplay amount={Number(balanceData.gold)} size="sm" />
-              <div className="w-px h-4 bg-[#2a3a5c]" />
+              <span className="block w-px h-4 bg-[#2a3a5c]" />
               <GoldDisplay amount={balanceData.gems} size="sm" type="gem" />
             </div>
           )}
-          {/* --- END AI-MODIFIED --- */}
         </div>
+        // --- END AI-MODIFIED ---
       )}
 
+      {/* --- AI-MODIFIED (2026-04-28) ---
+          Purpose: Restyle the Dashboard back button so it stops being a
+          rogue blue beveled box and instead matches the section header
+          pattern (dark strip + ◂ glyph). Still distinct (it's an action,
+          not a section), but it harmonizes with the rest of the nav.
+          Original kept commented for rollback. */}
+      {/* --- Original code (commented out for rollback) ---
       <div className="px-3 py-3">
-        {/* --- AI-MODIFIED (2026-04-25) --- */}
-        {/* Purpose: motion-safe wraps the press transform so reduced-motion users
-            don't get the translate, focus-visible ring on the back-to-dashboard button */}
         <Link href="/dashboard" onClick={onNavigate}>
-          <span
-            className={cn(
-              "font-pixel flex items-center gap-2 px-3 py-2.5 text-sm",
-              "bg-[#1a2050] border-2 border-[#4060c0] text-[#8090d0]",
-              "shadow-[2px_2px_0_#060810]",
-              "motion-safe:hover:shadow-[1px_1px_0_#060810] motion-safe:hover:translate-x-px motion-safe:hover:translate-y-px",
-              "motion-safe:active:shadow-none motion-safe:active:translate-x-0.5 motion-safe:active:translate-y-0.5",
-              "transition-all cursor-pointer",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4060c0] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]"
-            )}
-          >
+          <span className={cn(
+            "font-pixel flex items-center gap-2 px-3 py-2.5 text-sm",
+            "bg-[#1a2050] border-2 border-[#4060c0] text-[#8090d0]",
+            "shadow-[2px_2px_0_#060810]",
+            "motion-safe:hover:shadow-[1px_1px_0_#060810] motion-safe:hover:translate-x-px motion-safe:hover:translate-y-px",
+            "motion-safe:active:shadow-none motion-safe:active:translate-x-0.5 motion-safe:active:translate-y-0.5",
+            "transition-all cursor-pointer",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4060c0] focus-visible:ring-offset-1 focus-visible:ring-offset-[#0a0e1a]"
+          )}>
             <ChevronLeft size={14} />
             Dashboard
           </span>
         </Link>
-        {/* --- END AI-MODIFIED --- */}
       </div>
+      --- End original code --- */}
+      <div className="px-3 py-2">
+        <Link href="/dashboard" onClick={onNavigate}>
+          <span
+            className={cn(
+              "font-pixel flex items-center gap-2 px-2.5 py-1.5 text-[12px]",
+              "border-2 border-[#1a2a3c] bg-[#060810] text-[#7a8a9a]",
+              "transition-all cursor-pointer",
+              "motion-safe:hover:border-[#3a4a6c] motion-safe:hover:text-[#c0d0e0] motion-safe:hover:bg-[#0a0e1a]",
+              "motion-safe:hover:shadow-[1px_1px_0_#060810]",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3a4a6c] focus-visible:ring-inset",
+              "uppercase tracking-wider"
+            )}
+            style={{ boxShadow: "2px 2px 0 #060810" }}
+          >
+            <span className="text-[10px] leading-none">{"\u25C2"}</span>
+            Dashboard
+          </span>
+        </Link>
+      </div>
+      {/* --- END AI-MODIFIED --- */}
 
       <div className="flex-1 overflow-y-auto px-1 py-1 scrollbar-hide">
         {sections.map((section) => (
           <div key={section.title} className="mb-3">
+            {/* --- AI-MODIFIED (2026-04-28) ---
+                Purpose: Section labels were tiny dim text with a thin solid
+                line separator -- they read as form fieldsets, not zones of
+                a game UI. Now: 4x4 gold block ornament + bigger, brighter
+                label + dotted leader line. Reads as a category bar. */}
             <div className="flex items-center gap-2 px-3 py-1.5">
-              {/* --- AI-MODIFIED (2026-03-24) --- */}
-              {/* Purpose: Improved contrast for section labels */}
-              <span className="font-pixel text-[12px] text-[var(--pet-text-dim,#7a8a9a)] tracking-widest">{section.title}</span>
-              {/* --- END AI-MODIFIED --- */}
-              <div className="flex-1 h-px bg-[var(--pet-border,#2a3a5c)]" />
+              <span
+                className="block w-1.5 h-1.5 flex-shrink-0"
+                style={{ background: "var(--pet-gold,#f0c040)", boxShadow: "1px 1px 0 #060810" }}
+              />
+              <span className="font-pixel text-[12px] text-[#a8b8c8] tracking-[0.2em] uppercase">
+                {section.title}
+              </span>
+              <div className="flex-1" style={{ borderTop: "1px dotted var(--pet-border,#2a3a5c)" }} />
             </div>
+            {/* --- END AI-MODIFIED --- */}
             <div>
               {section.items.map((item) => {
                 const isActive = item.href === "/pet"

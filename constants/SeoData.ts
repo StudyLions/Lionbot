@@ -102,3 +102,85 @@ export const SkinsSEO = {
   },
 };
 // --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: SEO data for the new "Feature Your Server" public directory
+// at /servers and the per-server profile pages at /servers/[slug].
+// The directory is the single biggest SEO surface this product has --
+// every approved server page contributes a unique, content-rich URL
+// to our sitemap, so the description copy here is intentionally
+// keyword-dense for "Discord study server", "study community", etc.
+export const ServersDirectorySEO = {
+  title: "Discord Study Servers — Find Your Community",
+  description:
+    "Discover the best Discord study servers, focus communities, and language exchanges. Browse premium-verified servers powered by LionBot, filter by topic, and join with one click.",
+  canonical: `${SITE_URL}/servers`,
+  openGraph: {
+    title: "Find a Discord Study Server You'll Love — LionBot",
+    description:
+      "Browse hundreds of verified Discord study servers. Filter by category, language, and country.",
+    url: `${SITE_URL}/servers`,
+  },
+};
+
+export interface ServerProfileSEOInput {
+  slug: string
+  displayName: string
+  tagline?: string | null
+  description?: string | null
+  category?: string | null
+  country?: string | null
+  language?: string | null
+  coverImageUrl?: string | null
+}
+
+export function buildServerProfileSEO(input: ServerProfileSEOInput) {
+  const url = `${SITE_URL}/servers/${input.slug}`
+  // Compose a concise meta description that always fits in <160 chars.
+  // We prefer the tagline -> first line of description -> generic fallback.
+  const rawDescription =
+    input.tagline ||
+    (input.description ? input.description.split(/\n/).find((l) => l.trim().length > 0) : null) ||
+    `Join ${input.displayName}, a Discord community on LionBot.`
+  const description = rawDescription.length > 155
+    ? rawDescription.slice(0, 152).trimEnd() + "..."
+    : rawDescription
+
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Always point social previews at our dynamic OG image route
+  //   (`/api/og/server/[slug]`). It guarantees a 1200x630 PNG sized for
+  //   Twitter/Facebook cards even if the admin uploaded a non-standard
+  //   cover, and it bakes the server name + theme into the preview.
+  //   The cover image itself is included as a secondary OG image so
+  //   platforms that prefer the raw upload still get it.
+  const ogUrl = `${SITE_URL}/api/og/server/${encodeURIComponent(input.slug)}`
+  const images: { url: string; alt: string; width?: number; height?: number; type?: string }[] = [
+    {
+      url: ogUrl,
+      alt: `${input.displayName} on LionBot`,
+      width: 1200,
+      height: 630,
+      type: "image/png",
+    },
+  ]
+  if (input.coverImageUrl) {
+    images.push({ url: input.coverImageUrl, alt: input.displayName })
+  }
+
+  return {
+    title: `${input.displayName} — Discord Server on LionBot`,
+    description,
+    canonical: url,
+    openGraph: {
+      title: `${input.displayName} — Join the Discord`,
+      description,
+      url,
+      images,
+    },
+    twitter: {
+      cardType: "summary_large_image",
+    },
+  }
+  // --- END AI-MODIFIED ---
+}
+// --- END AI-MODIFIED ---

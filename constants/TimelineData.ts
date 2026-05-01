@@ -23,12 +23,112 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── April 30, 2026 ─────────────────────────────────────────
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Theme catalog expansion + better paths from the marketplace
+  // to individual seller shops.
+  {
+    date: "2026-04-30",
+    title: "Marketplace Stores: Ten New Themes and a Real Path to Discover Them",
+    description:
+      "We tripled the personal-store theme catalog from five to fifteen. The new themes — Cherry Blossom, Scholar's Library, Mint & Cocoa, Synthwave Sunset, Cosmic Drift, Mossy Cottage, Neon Alley, Volcanic Forge, Aurora Glacier, and Royal Tapestry — each have their own background, font, and accent, and are gated by LionHeart tier so picking a theme means something. The customizer now groups the picker by tier (Base / LionHeart / LionHeart+ / LionHeart++) so it stays scannable. We also fixed the biggest gap in the marketplace: until now, the only path to a seller's shop was a tiny 9px name on a single listing. Now the top of /pet/marketplace shows a horizontal strip of theme-painted store tiles so you can browse shops the way you browse listings, every listing card and row shows a proper \"Visit shop\" chip tinted with the store's accent colour (visible on mobile too), and every store page ends with a \"Liked this shop? Discover more stores →\" banner that points back to the marketplace.",
+    category: "feature",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Editorial redesign of the "Feature Your Server" feature.
+  {
+    date: "2026-04-30",
+    title: "Feature Your Server: Magazine-Style Redesign",
+    description:
+      "Rebuilt the server profile and directory pages to read like a magazine. Pick from five real themes — Atlantic, Wired, Kinfolk, Vogue, Frieze — each with its own serif pairing, cover treatment, and rule style instead of just an accent-colour swap.",
+    category: "improvement",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  {
+    date: "2026-04-30",
+    title: "Setup Checklist: Premium Features Section",
+    description:
+      "We added a Premium features section to the dashboard's Setup Checklist for premium servers. Seven new tasks let you quickly configure ambient sounds, anti-AFK in study rooms, premium Pomodoro extras, leaderboard auto-post, sticky messages, card branding, and your public server listing — all from one place. Anti-AFK and branding are configurable inline (a toggle, an action picker, a colour preset) so you don't even need to leave the checklist. Servers without premium see a single, respectful preview row that lists what premium offers without nagging — no exclamation marks, no scarcity tactics, just a quiet \"See pricing\" button if you're curious.",
+    category: "premium",
+    area: "website",
+  },
+  {
+    date: "2026-04-30",
+    title: "Setup Checklist: Two Bug Fixes from Real Admin Reports",
+    description:
+      "Fixed two annoying bugs admins flagged after the new Setup Checklist shipped. First: the dashboard sometimes warned that the bot wasn't in your server when it actually was — a transient Discord lookup glitch that got cached for a full minute. We dropped the negative cache to 5 seconds and added an inline \"Try again\" button alongside a \"Re-invite the bot\" link. Second: if you opened a setup task and were happy with the existing settings, the Save button stayed disabled because nothing had changed — you had to make a fake change, then undo it. Now every task drawer has a \"Looks good — mark as done\" option when there's nothing to save, so you can confirm a task with one tap.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  {
+    date: "2026-04-30",
+    title: "Feature Your Server: a Public Profile Page for Premium Communities",
+    description:
+      "Premium server admins can now publish a beautiful, customisable profile page for their community at lionbot.org/servers/your-handle. Choose a theme, accent colour, and font; upload a cover image and gallery; pick a category and tags; toggle which sections to show; and add one DoFollow link to your website (a real SEO-juicy backlink, not a redirect). Every page has a bot-managed Discord invite, optional \"Verified by Leo\" live stats (member count, study minutes, in-voice-now), an embeddable widget for your own site, and a dynamic social preview image. Pages are reviewed by us before going live, and you can boost yours to the top of the new /servers directory with LionGems.",
+    category: "premium",
+    area: "both",
+  },
+  {
+    date: "2026-04-30",
+    title: "New Site Section: /servers Directory",
+    description:
+      "We added a public directory of premium servers at lionbot.org/servers — searchable, filterable by category, country, language, and study-only. The Header navigation now shows a Servers link in place of Features (Features moved into the Guides dropdown). The directory updates automatically as new premium servers publish their listings.",
+    category: "website",
+    area: "website",
+  },
+  {
+    date: "2026-04-30",
+    title: "Store Customizer Is Now a Full-Screen Studio",
+    description:
+      "Rebuilt the store customizer as a full-screen studio: your shopkeeper lion at full size on the left in the live theme, and a tabbed panel on the right (Look · Identity · Voice) for every control. Pick a theme, change a colour, or rewrite your greeting and the whole page repaints instantly. A pinned status bar shows when changes are saved or pending.",
+    category: "improvement",
+    area: "website",
+  },
+  {
+    date: "2026-04-30",
+    title: "Personal Stores: Tighter Layout, Customize Button Fixed",
+    description:
+      "Your lion, store name, and speech bubble now sit in a sticky sidebar (a tight banner on phones) so listings show up much higher on the page. Also fixed: \"Customize Your Store\" used to load forever and never open — it now opens the moment your store config arrives.",
+    category: "bugfix",
+    area: "website",
+  },
+
+  // ── April 29, 2026 ─────────────────────────────────────────
+  {
+    date: "2026-04-29",
+    title: "Marketplace 2.0 Parts 2 & 3: Themes, Featured Listings, Vanity URLs",
+    description:
+      "Five store themes (Default, Stardew, Pokemon, Earthbound, Game Boy) with animated backgrounds, accent colours, and live preview. LionHeart members can now feature listings (1/3/10 slots by tier) to push them to the top of the marketplace with a rainbow frame. Every store can have a custom URL like /pet/marketplace/store/your-handle.",
+    category: "feature",
+    area: "website",
+  },
+  {
+    date: "2026-04-29",
+    title: "Marketplace 2.0 Part 1: Personal Stores and Lower Fees for Subscribers",
+    description:
+      "Every seller now has a personal store front at /pet/marketplace/store/{your_id} — your lion is the shopkeeper, with a custom greeting and all your active listings in one place. LionHeart subscribers also get lower fees (4/3/2% by tier), longer listings, and higher caps. Existing listings are never touched.",
+    category: "feature",
+    area: "website",
+  },
+  {
+    date: "2026-04-29",
+    title: "New Setup Checklist for Server Admins",
+    description:
+      "Server setup got a full rebuild. The old 12-step wizard is now an 8-task Setup Checklist on your server's dashboard, with each task opening a focused panel (slide-in on desktop, full-screen on phones). Plain-English tooltips for technical terms, every task is skippable, and the bot warns upfront if it's missing the permissions you're enabling. The old wizard lives on as \"Guided Tour\" in dashboard search.",
+    category: "improvement",
+    area: "website",
+  },
+
   // ── April 26, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-26",
     title: "Fixed: Crops Were Invisible on the Family Farm",
     description:
-      "If you've walked into your family farm in the last few weeks and found yourself staring at tilled soil with no plants on it, even though the tooltip that popped up when you hovered a plot clearly said something like \"Phoenix Bloom — Budding 79%\", the crops were there the whole time — your family's gold was being invested correctly, the plants were growing on schedule in the database, and harvests still paid out — but the family-farm page was failing to draw the plant sprite on top of the soil, so the whole scene looked empty. The personal farm page was not affected; only the shared family farm was. The cause was that the shared farm scene (the same component that renders both your personal plot layout and your family's) needs a few identifying fields about each planted crop to pick the right sprite, and the family farm's data endpoint was quietly serving them in a slightly different shape than the personal one. The render step checked for those fields at the top level, found nothing, and skipped drawing the plant — but the tooltip drew fine because it reads a different field, which is why you could see the name and growth stage floating over the empty-looking dirt. We lined the two endpoints up so they return the exact same shape, and your plants now show up in the scene again. Reported by Fire in the support server. Nothing was lost, nothing needs to be replanted — the next time you open the page, the sprites will just be there.",
+      "Crops on the family farm were rendering as empty soil even though the plants were growing fine in the background — only the shared farm view was affected, personal farms were not. Sprites now show up correctly. Nothing was lost; refresh the page and your plants are there. Reported by Fire.",
     category: "bugfix",
     area: "website",
   },
@@ -36,49 +136,49 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // ── April 25, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-25",
-    title: "Farm Timers Now Show Hours When You Have Hours Left",
+    title: "Farm Timers Now Show Hours Properly",
     description:
-      "Quick quality-of-life fix for the LionGotchi farm. The water countdown on each plot — both the little floating tooltip you see when you hover a plot in the farm scene, and the bigger \"Water in\" line in the plot detail panel on the right — used to format itself as minutes:seconds no matter how long the timer was. That worked fine for short waits like \"5:42\", but anything past an hour turned into an unreadable wall of minutes — for example, a freshly watered Phoenix Bloom would tick down from \"480:00\" instead of the much friendlier \"8:00:00\". Now, as soon as a timer hits an hour or more, it switches to hours:minutes:seconds (like \"6:23:35\"), and drops back to plain minutes:seconds once it's under an hour. Suggested by Lucky in the support server.",
+      "Farm water timers now switch to hours:minutes:seconds when you have an hour or more left. Previously a freshly watered Phoenix Bloom would tick down from \"480:00\" instead of \"8:00:00\". Suggested by Lucky.",
     category: "improvement",
     area: "website",
   },
   {
     date: "2026-04-25",
-    title: "Fixed: Clearing Active Blacklists Showed \"Internal Server Error\" Even Though It Worked",
+    title: "Fixed: \"Clear All Blacklists\" Showed Error Even When It Worked",
     description:
-      "If you tried to use the new \"Clear all active blacklists\" admin tool on your server's Video Channels or Screen Channels page in the last few days, you might have seen a red \"Internal server error\" appear under the confirmation field after typing CLEAR — and naturally clicked the button again, and seen the same error again. We are sorry about that. The action was actually working every time: every record was being pardoned, every blacklist role was being removed from the affected members in Discord, and the audit row was being written. The error message you saw was caused by a bug in the very last step where the page formats its success response for your browser — the response included a numeric ID that was too large for the standard JSON format we use, which made the server crash on the way out the door even though the destructive work had already finished. We patched the response to convert that one number to text before sending, which is the same pattern we already use on the older \"Reset member stats\" admin tool. If you saw the error and clicked Clear multiple times, do not worry — the second and third clicks were no-ops because there was nothing left to clear by then; you will only see one set of pardons in your moderation history (the first one), not three.",
+      "The \"Clear all active blacklists\" admin tool on Video and Screen Channels was showing a red \"Internal server error\" even though it had already finished pardoning everyone successfully. The destructive work always ran; only the success response was broken. Extra clicks on Clear were no-ops, so nothing was double-pardoned.",
     category: "bugfix",
     area: "website",
   },
   {
     date: "2026-04-25",
-    title: "LionHeart Profile Cards — Real Bloom, Smoother Animation, Gold Streak Fire",
+    title: "LionHeart Profile Cards — Real Bloom and Smoother Animation",
     description:
-      "We rebuilt the visual layer that turns your normal profile card into the animated LionHeart version. Every glow on the card — the soft halo around your avatar, the pulsing tier-coloured border around the whole card, the bokeh under each sparkle — now uses a true Gaussian-blur bloom pass instead of three stacked ring outlines drawn at increasing radii. The difference is the same as the difference between a real lens flare and a polygon stroke: the new glow has actual softness, falls off naturally, and never shows the hard edges of a ring. Snowflakes and diamonds slowly rotate in place across the loop instead of sitting frozen in space, the cards now run at 18 frames at ~90ms each (up from 12) so the animation feels noticeably smoother, and active supporters get a once-per-loop diagonal white shimmer sweep that rolls across the card like the one on the donate hero. Two long-promised streak rewards finally light up: at 30+ day streaks the edge glow now cycles its hue across the loop into a soft rainbow shimmer, and at 100+ day streaks the gold streak override now actually scales the bloom radius up by 1.5× for a noticeably bigger, fierier glow (both were previously coded but never wired in). On the technical side, the GIFs now palette-quantize to 128 colours and run through PIL's encoder optimizer, so 18-frame bloom-heavy cards land between ~680KB and ~940KB instead of running 2MB+, and the bot's image API now sniffs the magic bytes and serves animated supporter cards as image/gif instead of always lying that they're image/png — which means the dashboard preview frame finally plays the animation instead of showing one stuck frame. We also removed the duplicate static avatar ring that used to be drawn underneath the new animated bloom, because two halos stacked on top of each other ruined the soft-light look.",
+      "Rebuilt the LionHeart animated profile card. Glows now use a true Gaussian-blur bloom (instead of stacked rings), snowflakes and diamonds rotate as they fall, and the animation runs noticeably smoother. The 30+ day rainbow border and 100+ day gold-streak fire boost are finally wired in, and the dashboard preview now plays the animation instead of showing a stuck frame.",
     category: "premium",
     area: "bot",
   },
   {
     date: "2026-04-25",
-    title: "LionHeart Studio — A Real Studio for Customizing Your Profile Card",
+    title: "LionHeart Studio — A Real Studio for Your Profile Card",
     description:
-      "We rebuilt the entire LionHeart supporter dashboard from scratch and turned it into something that actually feels like the premium product you're paying for. The old page was a 1,200-line vertical settings form: six separate color sections each with fourteen swatches, four dropdowns, a Save button, a Refresh Preview button, and a tiny preview buried at the bottom that you'd scroll back up from to tweak the next slider. The new LionHeart Studio puts your live profile card in a sticky Discord-style chat frame on the left side of the screen with a fake 'Just hit 2h 14m of focused study today' message above it, so you can finally see exactly how your card lands in chat as you tweak it. On the right, all the controls are split into five clean tabs — Looks, Colors, Motion, Frame, Profile — and there's no Save button anymore. Every change auto-saves in the background after a 600ms pause and auto-renders a fresh preview after 800ms, with a small 'Saved ✓' / 'Rendering…' / 'Saving…' status pill in the corner so you always know what state your card is in. The Looks tab leads with twelve hand-tuned curated themes (Royal Gold, Cyber Pink, Cozy Garden, Holographic, Minimal Ice, Stardust, Snowstorm, Lightning Strike, Hearts on Fire, Black Diamond, Sakura, Inferno) — one click applies a coordinated palette, particle style, border and animation speed in one go. Each look has a mini animated SVG preview that runs entirely in your browser (no API call), and there's a Surprise Me button that picks a random look and tints it. The Colors tab swaps the old swatch-grid blocks for a single palette node graph showing all six color targets (sparkle, ring, glow, particle, username, embed) as live-glowing nodes you click to recolor — a Link All toggle changes them all together, and there's a built-in HSL editor with hue/saturation/lightness sliders, a hex input, harmony auto-fill (mono / analogous / complementary / triadic), and a recent colors strip. The Motion tab has six self-animating particle-style cards that show you exactly what each shape looks like falling behind your card (no render needed), an intensity slider with a 25-cell density preview, and a speed picker with a real animated speedometer needle. The Frame tab has six SVG-rendered border style previews. The Profile tab keeps bio text, the seasonal toggle (now with a calendar tooltip showing the four date windows and which one is currently active), an embed accent picker with a live mock embed preview, and the timer personalization. There's also a Compare button that side-by-sides your saved version against your draft so you can see exactly what you've changed. The hero header at the top is now a tier-colored card with a shimmering badge, an animated boost shelf showing your monthly gems / coin boost / farm growth / drop rate / LionGotchi gold / unlocked timer themes, and three actions (Manage subscription, Surprise me, Reset to defaults). Top-tier supporters (LionHeart++) now get a thank-you celebration card at the bottom of the page instead of an upgrade pitch. The whole experience is sticky on desktop, stacks cleanly on mobile, and the card preview backend rate limit was relaxed from 5 seconds to 1.5 seconds for active supporters so the auto-render flows without ever feeling throttled.",
+      "Rebuilt the LionHeart supporter dashboard. Your live profile card now sits in a sticky Discord-style chat preview on the left, with everything else split into clean tabs (Looks · Colors · Motion · Frame · Profile). No more Save button — every change auto-saves with a status pill. New: 12 one-click curated themes, a palette node graph for recolouring, animated previews for every particle and border style, a Surprise Me randomiser, and a Compare button to diff your saved card against your draft.",
     category: "premium",
     area: "website",
   },
   {
     date: "2026-04-25",
-    title: "Fixed: USD Subscribers Were Not Getting Their Gems or LionHeart++ Server Premium",
+    title: "Fixed: USD Subscribers Weren't Getting Gems or Server Premium",
     description:
-      "We caught and fixed a serious bug today affecting anyone who subscribed to LionHeart, LionHeart+, or LionHeart++ in US dollars. The Stripe webhook that activates your perks the moment you finish checkout was checking your purchased Stripe Price ID against the wrong list of known IDs — it only knew about our older EUR price IDs, not the newer USD ones — so every USD subscription came in flagged as 'no tier'. The dashboard showed you as a supporter (because the subscription itself was active in Stripe and recorded correctly), but no monthly LionGems were credited, the included server premium slot for LionHeart++ was not provisioned, and your top.gg vote rewards quietly fell back to the free 5-gem rate instead of the boosted 10/15/30 amounts. We rewrote the webhook's price-to-tier mapping to recognize all four families of price IDs we have configured (USD, EUR, plus the legacy public ones) and trim trailing whitespace, and we added a loud warning log so the next time someone adds a new Stripe price we'll spot it immediately instead of silently downgrading the subscriber. We also went back and made the three affected accounts whole — credited the missing first-month LionGems (3000 / 1200 / 1200), set the right subscription tier on each row, and provisioned the LionHeart++ server premium slot for the user who paid for that tier. If you subscribed in USD any time in the last few weeks and noticed your perks weren't showing up, you should now see your full balance and tier on your dashboard.",
+      "Anyone who subscribed to LionHeart in USD wasn't getting their monthly LionGems, server premium slot, or boosted top.gg vote rewards — the Stripe webhook only recognised the older EUR price IDs, so USD subscriptions were flagged as \"no tier\". Fixed, and we made the affected accounts whole (gems credited, tiers set, server premium provisioned).",
     category: "bugfix",
     area: "website",
   },
   {
     date: "2026-04-25",
-    title: "Email — Welcomes, Weekly Recaps, and Full Control Over What Lands in Your Inbox",
+    title: "Email — Welcomes, Weekly Recaps, and Full Notification Control",
     description:
-      "We launched our first proper email program this week. The moment you sign in with Discord for the first time, you now get a warm welcome email with a short list of things to try — and if you happen to own or moderate one of the servers running LionBot, you get a different version of that email with a 5-step setup checklist that deep-links straight into your server's dashboard (greetings, ranks, shop, role menus, pomodoro). It is one-time and idempotent — signing in a second time will not double-send. Every Sunday evening (18:00 UTC), if you have studied at all that week, you will get a weekly recap with your focus time vs. last week, your current streak, tasks completed, your top server, LionGems earned, and a personalised highlight (\"Beat last week by 3.2 hours\", \"First 10-hour week!\", that kind of thing). The numbers come from the same place as your dashboard so they will always match. Every email is fully on-brand — same blues, same warm cream background, same font feel as the dashboard — with a logo header and a clean footer with one-click unsubscribe and a link to manage preferences. Speaking of: there is a brand-new Email Notifications card on /dashboard/settings where you can toggle each category individually (welcome, weekly digest, lifecycle, premium, announcements) or hit the big red 'Unsubscribe from all' button if you want a clean break — and there is a public unsubscribe page that works without you having to be signed in at all. Gmail and Outlook will also show their native unsubscribe button on every message because we added the proper RFC 8058 List-Unsubscribe headers. Every marketing email closes with a small premium block that adapts to your tier — free users see what they would unlock with LionHeart, LionHeart users see why LionHeart+ is worth it, top supporters get a thank-you instead of a pitch.",
+      "Launched our first email program. Sign in for the first time and you'll get a warm welcome (with a setup checklist if you're a server admin). Every Sunday at 18:00 UTC, anyone who studied that week gets a recap with focus time vs last week, streak, top server, and gems earned. A new Email Notifications card on /dashboard/settings toggles each category, with one-click unsubscribe in every email.",
     category: "feature",
     area: "website",
   },
@@ -87,7 +187,7 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     date: "2026-04-24",
     title: "A Refreshed Homepage and Premium Page",
     description:
-      "We gave the homepage and the premium (donate) page a big visual refresh so the site finally feels as polished as the bot it's selling. The homepage now opens with a redesigned hero featuring a floating 'live activity' card showing how many people are studying right now, how many are in voice rooms, and the lifetime session count — with a small ring of community avatars underneath. Right under the hero, a slim trust strip surfaces three live counters (active servers, members tracked, study sessions) so the social proof is above the fold instead of buried halfway down the page. The three separate LionGotchi sections (your pet, the farm, the marketplace) have been collapsed into a single section with a tab switcher, which both shortens the page and tells a tighter 'this is one connected ecosystem' story. A new premium teaser block sits between the trailer and the how-it-works steps with a glowing animated profile-card preview, three perks, and dual CTAs that bridge to the premium page. The how-it-works section trades its three numbered circles for three illustrated step tiles (an invite-button mock, a dashboard-toggles mock, and a live-stats mock with a pulse dot). The page closes on a bolder full-width gradient banner with three CTAs — Add to Discord, View Premium, Join Discord. The premium page got an even bigger overhaul: a new split hero with an animated showcase, an 'audience chooser' strip so you can jump straight to Personal / Server / Gems, a value-pillars 'why upgrade' block, redesigned tier cards with a clearly dominant 'Most Popular' LionHeart+ tier, an always-visible comparison grid (no more hidden table), a 'what you give up on free' loss-aversion strip, restyled gem packages with a 'Best Value' badge and a 'what gems unlock' sidebar, a trust band before the FAQ, a mobile swipe carousel for the tier cards, and a sticky pricing CTA bar that slides in once you scroll past the tiers. Every Subscribe / Pay button now has risk-reversal microcopy underneath ('Cancel anytime · Secure with Stripe · Instant activation') and the modal CTAs read 'Pay €X with Stripe' and 'Sign in with Discord to checkout' instead of generic 'Confirm Purchase' wording. Both pages were also migrated off the old hardcoded grey palette onto the same shadcn design tokens the dashboard uses, so the whole site now feels like one cohesive product.",
+      "Big visual refresh of the homepage and premium page. The homepage gets a redesigned hero with live activity, the three LionGotchi sections collapse into one tabbed block, and a bolder gradient closer. The premium page got the bigger overhaul: split hero, an always-visible tier-comparison grid, a clearly dominant \"Most Popular\" tier, gem \"Best Value\" badges, and a sticky pricing bar that slides in on scroll. Both pages now share the dashboard's design tokens.",
     category: "website",
     area: "website",
   },
@@ -95,58 +195,58 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     date: "2026-04-24",
     title: "Plant Your Whole Farm in One Click",
     description:
-      "We added a 'Plant All' button to the toolbar on both the personal farm and the family farm in your LionGotchi dashboard, in response to a request from a member of one of our families. Previously, planting on a farm with 15 plots meant clicking each empty plot one-by-one, picking a seed, and confirming — and on a family with multiple farms, that turned into 50–150 separate clicks just to fill everything for a study session. Now, with at least one empty plot on the active farm, a green 'Plant All (N)' button appears next to the Water All / Harvest All buttons. Clicking it opens the same familiar seed shop, but every seed card shows the total batch cost upfront (e.g. '120G' with '10G x 12' beneath, instead of just '10G'), and the green action button reads 'Buy & Plant All (12)' so you can see exactly how many plots and how much gold you're committing before clicking. The server validates you can afford the full batch before any gold is spent — there's no 'partially planted' state. Each plot still rolls its own rarity independently, so you can absolutely still get a lucky LEGENDARY in the middle of a Plant All batch (and we'll tell you in the success toast: 'Planted 12 x Carrot for 120G — 1 RARE!'). Family farm planting respects the same plant_farm permission as single-plot planting, and the gold comes from the family treasury (clearly labelled in the dialog so members don't confuse it with their personal balance). Dead plants still need to be cleared with the existing 'Clear Dead' button before they count as empty — keeping that step explicit means no surprise gold drains. Thanks to Gaijin Yakuza for the suggestion.",
+      "Added a \"Plant All\" button to the personal and family farm toolbars. Pick a seed and the action button shows the full batch cost upfront (e.g. \"Buy & Plant All (12) — 120G\"). Each plot still rolls its own rarity, so you can still get a lucky LEGENDARY in a batch. Family planting uses the treasury and respects the existing permission. Thanks to Gaijin Yakuza.",
     category: "liongotchi",
     area: "website",
   },
   // ── April 23, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-23",
-    title: "Mods Can Now Edit Pomodoro Timers They Created (Bug Report #0041)",
+    title: "Mods Can Now Edit Pomodoro Timers They Created",
     description:
-      "Spotted a frustrating inconsistency in how Pomodoro timer permissions worked: anyone with the 'Manage Channels' permission could create a brand-new Pomodoro timer in a voice channel using `/pomodoro create` (with any focus length, break length, voice alerts, custom name, etc.) — but the moment they tried to change one of those same settings later via `/pomodoro edit`, the bot would refuse with a 'You don't have permission' error. The fix is now live: for regular guild voice-channel timers (the kind a mod creates for the whole server to use), `/pomodoro edit` now uses the exact same permission check as `/pomodoro create`. If you can create the timer, you can edit it. Private study room timers — the kind tied to a specific room owner — keep their stricter rules: only the room owner or a server admin can change those, so random mods can't override what a room owner has set up. We also tightened up a tiny related gap where the 'Voice Alerts' button on the timer settings UI had no permission check at all (anyone with access to the menu could toggle it). Now it follows the same rules as everything else — same role gates as the matching slash command parameter. Thanks to the user who filed bug report #0041.",
+      "Anyone with Manage Channels could create a Pomodoro timer with /pomodoro create, but got \"You don't have permission\" when trying to /pomodoro edit it. Fixed: if you can create it, you can edit it. Private study room timers keep their stricter owner-only rules. Thanks to bug report #0041.",
     category: "bugfix",
     area: "bot",
   },
   {
     date: "2026-04-23",
-    title: "Manage Your Subscription: Switch Plans, Currencies, and Add Tax IDs From Stripe",
+    title: "Manage Your Subscription: Switch Plans and Add Tax IDs",
     description:
-      "We gave the 'Manage Subscription' page on Stripe a long-overdue tune-up so it actually reflects what you can subscribe to today. If you have a LionHeart subscription, the 'Change plan' option now shows the current pricing for all three tiers (LionHeart, LionHeart+, LionHeart++) in both USD and EUR — previously it was still showing the original launch prices from earlier this year. If your server has Server Premium, you can now switch between monthly and yearly plans (and between USD and EUR) right from the portal without having to cancel and re-subscribe — that flow used to be missing entirely, so admins had to email us to switch billing frequency. We also added the missing Privacy Policy and Terms of Service links to the portal footer (small thing, but Stripe was nagging us about it), and unlocked the ability to add a billing name, address, phone number, and tax ID to your account. The tax ID field in particular helps EU and UK customers get proper VAT-compliant invoices. None of this changes what you're charged or how your existing subscription works — it just gives you proper self-service over the parts of your subscription you should always have been able to control.",
+      "Long-overdue tune-up of the Stripe subscription portal. The \"Change plan\" option now shows current pricing for all three LionHeart tiers in USD and EUR, and Server Premium subscribers can switch between monthly/yearly without cancelling. Tax ID and billing address fields are now available so EU/UK customers can get VAT-compliant invoices.",
     category: "improvement",
     area: "website",
   },
   {
     date: "2026-04-23",
-    title: "Family 'Leave' Button Now Asks for Confirmation",
+    title: "Family \"Leave\" Button Now Asks for Confirmation",
     description:
-      "We had a few reports that members were tapping the 'Leave' button on the family hub by accident — usually meaning to tap one of the buttons next to it — and then getting stuck on the 7-day cooldown before they could rejoin or join another family. The button now opens a confirmation prompt first: a clear warning embed reminding you that you won't be able to join another family for 7 days, plus a red 'Yes, Leave' button and a grey 'Cancel' button. The leader-side 'Disband' button gets the same treatment, with extra wording that the bank items and treasury gold will be returned to you. Tapping the wrong button is now harmless — just hit Cancel and you're back to the family hub. Thanks to Sky for the suggestion.",
+      "The \"Leave\" button on the family hub now opens a confirmation prompt first, with a clear warning about the 7-day rejoin cooldown. The leader-side \"Disband\" button gets the same treatment, plus wording that bank items and treasury gold will be returned. Thanks to Sky.",
     category: "improvement",
     area: "bot",
   },
   {
     date: "2026-04-23",
-    title: "Room Decorating: Drag Feels Smoother on Phones, and Items Can No Longer Hide Off-Screen",
+    title: "Room Decorating: Smoother Drag, No More Lost Items",
     description:
-      "Two follow-up tweaks to the LionGotchi room editor based on a bug report from a member of Comité des jeunes Lit Up. First, when you drag a piece of furniture on a phone, the movement now feels noticeably smoother — touchscreens fire 'finger moved' events extremely fast (over 100 times a second on most devices), and we were running a full re-render on every single one of those events, which made the chair you were dragging stutter behind your finger. The drag now updates at most once per screen refresh (60 times a second), which is what your eye can actually see anyway, so the chair sticks to your finger instead of trailing it. Second, we tightened the off-canvas guardrail. Most furniture sprites are 200x200 images where the actual visible chair, lamp, or rug only takes up a smaller portion of the middle — the corners are transparent. Our previous safety check looked at the full 200x200 image, so you could still accidentally drag a lamp far enough that the only thing 'on-canvas' was an invisible transparent corner, making the lamp seem to vanish. The new check uses each item's true visible area, so at least 24 pixels of the actual chair/lamp/rug stays on the canvas no matter how aggressively you drag. No more lost decorations.",
+      "Two tweaks to the LionGotchi room editor. Dragging furniture on a phone is noticeably smoother now (we were re-rendering ~100 times a second; capped to 60fps). And the off-canvas guardrail now uses each item's true visible area, so you can't accidentally drag a lamp into the void where its only on-canvas pixels are transparent. Reported by a member of Comité des jeunes Lit Up.",
     category: "liongotchi",
     area: "website",
   },
   // ── April 21, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-21",
-    title: "Room Decorating: Smoother Drag, Matching Colors Everywhere, and a Mobile-Friendly Preview",
+    title: "Room Decorating: Matching Colors and Mobile-Friendly Preview",
     description:
-      "We tackled four bugs in the LionGotchi room editor that had been making decorating frustrating. First — and the biggest one — some wallpapers and furniture were showing up in completely different colors on the website than what your pet actually had on Discord (a 'bookcase wall' might look green in the editor but show up purple in the bot's profile cards). Under the hood, the website's image library on our CDN had drifted out of sync with the bot's local files over the past few months, so we wrote a sync tool and re-uploaded all 312 room asset images straight from the bot. Now whatever color you pick on the website is exactly what shows up on Discord. Second, when you placed or swapped a piece of furniture, you sometimes had to click it a second time before it would render — and the canvas would briefly flash blank while the new image loaded. We fixed both: images now load incrementally instead of being wiped and reloaded together, and items appear immediately on first equip even before they're added to your saved layout order. Third, the drag-to-position controls now keep at least 20 pixels of every decoration on-screen, so you can't accidentally fling a chair or rug into the void where you can't grab it back. Fourth, on phones, the room preview on the /pet overview and on friends' profiles was getting cut off by the Gameboy frame; the canvas and frame are now fully responsive and scale to whatever size your screen has. Decorating should feel a lot less janky now.",
+      "Four bug fixes for the LionGotchi room editor. The big one: wallpapers and furniture were showing different colors on the website vs Discord — we re-uploaded all 312 room asset images so they now match. Items appear immediately on first equip without a blank-canvas flash, drag keeps at least 20px of every decoration on-screen, and the room preview no longer gets cut off by the Gameboy frame on phones.",
     category: "liongotchi",
     area: "website",
   },
   // ── April 20, 2026 ─────────────────────────────────────────
   {
     date: "2026-04-20",
-    title: "Disable Auto-Blacklisting (and Wipe Active Bans) From the Dashboard",
+    title: "Disable Auto-Blacklisting From the Dashboard",
     description:
-      "We heard from a few admins this week that when LionBot kicks a member from a camera-required or screen-share channel, it can also assign a 'blacklist' role for repeat offenders — and there was no obvious way to turn that off, or to clear out everyone who was already affected. Both problems are now solved on the dashboard. The Video Channels page now has a clearly labelled 'Auto-Blacklisting' card that shows whether the feature is ON or OFF in plain language, with a one-click 'Disable' button next to the role selector — clear it, save, and members will only ever be kicked, never auto-blacklisted again. We also built a brand-new Screen Channels page with the exact same controls (previously screen-share enforcement was only configurable via slash command). And if you've already accumulated a list of currently-blacklisted members, both pages now show how many are active and let you 'Clear All Active Blacklists' — which pardons every active record AND removes the role from each affected member in Discord, in one action, with a typed confirmation and an audit trail. Built in response to a support ticket from a Study Space admin asking exactly how to do this.",
+      "The Video Channels page now has a clearly labelled \"Auto-Blacklisting\" card with a one-click Disable button — turn it off and members will only ever be kicked from camera-required channels, never blacklisted. We also built a brand-new Screen Channels page with the same controls. Both pages let you \"Clear All Active Blacklists\" in one action with a typed confirmation.",
     category: "feature",
     area: "website",
   },
@@ -154,7 +254,7 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     date: "2026-04-20",
     title: "Pomodoro Voice Alerts Are Audible Again",
     description:
-      "If you had voice alerts enabled on a Pomodoro timer, you may have noticed that lately the bot would join the channel for a few seconds each round but no chime would actually play (or, on some systems, you'd hear a faint click followed by silence). After digging into a stubborn report from a regular user whose timer had been silent for weeks, we found the root cause: the bot was sending the raw bytes of the alert sound files directly to Discord, but Discord's voice service expects the audio to be in a very specific format (48 kHz raw PCM). Our alert files were 44.1 kHz WAV files with a header on top, so what Discord actually received was a brief blip of header noise followed by audio it couldn't make sense of — which most ears interpret as silence. We now route the alert through ffmpeg, which decodes the WAV file and converts it to exactly the format Discord wants. Same alert sounds, same timing, same volume — just actually audible now. The fix mirrors how our SoundsBot has always played its rain/campfire/LoFi tracks, which is why those have been working perfectly.",
+      "Pomodoro voice alerts had gone silent — the bot would join the channel for a few seconds each round but no chime played. We were sending raw WAV bytes to Discord, which expects a specific audio format. Now we route the alert through ffmpeg first, so the chime actually plays. Same sounds, same timing.",
     category: "bugfix",
     area: "bot",
   },
@@ -196,7 +296,7 @@ export const TIMELINE_ENTRIES: TimelineEntry[] = [
     date: "2026-04-17",
     title: "Reset a Member's Tracked Stats from the Dashboard",
     description:
-      "Server admins can now selectively wipe a single member's tracked study data from the dashboard — voice and text study time, voice and text XP, pomodoro milestones, season stats, and (optionally) coins — with an optional time-frame filter (last 24 hours, last 7 days, last 30 days, custom range, or all time). Every reset shows a live preview of exactly what will be deleted, requires a written reason, and asks you to type the member's name to confirm. Each action is logged with the admin who ran it, the scope, and the rows affected, so nothing happens silently. Only admins of that specific server can use this, and the tool is locked to the targeted member in the targeted server — it cannot accidentally touch anyone else's data.",
+      "Server admins can now selectively wipe a single member's tracked study data — voice/text time and XP, pomodoros, season stats, and (optionally) coins — with a time-frame filter (24h, 7 days, 30 days, custom, or all time). Every reset shows a live preview, requires a typed name confirmation, and is fully logged.",
     category: "feature",
     area: "website",
   },

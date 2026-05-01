@@ -21,14 +21,21 @@ import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "@/co
 // Purpose: add Bug and MessageSquareWarning icons for Advanced section
 // --- AI-MODIFIED (2026-04-20) ---
 // Purpose: add MonitorPlay icon for new Screen Channels nav link
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: add CheckSquare icon for the renamed "Setup Checklist" nav entry
 import {
   BarChart3, Users, Shield, Coins, Settings, Trophy,
   ShoppingBag, ListChecks, Calendar, Timer, Video,
   Wand2, ArrowLeft, Menu, Server, Paintbrush, Sparkles,
   Volume2, VolumeX, PawPrint, Crown, Pin, DoorOpen,
   Search, X, Clock, Bug, MessageSquareWarning, Type,
-  ShieldAlert, MonitorPlay,
+  ShieldAlert, MonitorPlay, CheckSquare,
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Globe icon for "Feature Your Server" listing nav link
+  Globe,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -44,6 +51,10 @@ import ThemeSelector from "@/components/dashboard/ThemeSelector"
 import CommandPalette from "@/components/dashboard/search/CommandPalette"
 import { getSearchItems } from "@/components/dashboard/search/searchRegistry"
 import { useSearch, flatResults, hasResults } from "@/components/dashboard/search/useSearch"
+// --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Feature-flag the not-yet-shipped "Feature Your Server" sidebar link.
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 // --- END AI-MODIFIED ---
 
 interface ServerNavProps {
@@ -130,7 +141,15 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // admins can disable auto-blacklisting without slash commands.
         { href: "/screenchannels", label: "Screen Channels", icon: <MonitorPlay size={16} /> },
         // --- END AI-MODIFIED ---
-        { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
+        // --- AI-REPLACED (2026-04-29) ---
+        // Reason: Old wizard moved to deprecated "Guided tour" mode. Primary
+        //         setup flow is now the Setup Checklist widget on the overview.
+        //         Deep-linking with ?setup=open auto-expands the checklist UI.
+        // --- Original code (commented out for rollback) ---
+        // { href: "/setup", label: "Setup Wizard", icon: <Wand2 size={16} /> },
+        // --- End original code ---
+        { href: "?setup=open", label: "Setup Checklist", icon: <CheckSquare size={16} /> },
+        // --- END AI-REPLACED ---
       ],
     })
     // --- AI-MODIFIED (2026-03-22) ---
@@ -157,6 +176,14 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // --- AI-MODIFIED (2026-04-06) ---
         // Purpose: Anti AFK System premium feature nav link
         { href: "/anti-afk", label: "Anti AFK System", icon: <ShieldAlert size={16} />, supporterPerk: true },
+        // --- END AI-MODIFIED ---
+        // --- AI-MODIFIED (2026-05-01) ---
+        // Purpose: "Feature Your Server" premium feature nav link -- sets up the
+        // public profile page at /servers/[slug]. Hidden behind the
+        // SERVERS_DIRECTORY_ENABLED flag while the editor studio is paused.
+        ...(SERVERS_DIRECTORY_ENABLED
+          ? [{ href: "/listing", label: "Feature Your Server", icon: <Globe size={16} />, supporterPerk: true }]
+          : []),
         // --- END AI-MODIFIED ---
       ],
     })

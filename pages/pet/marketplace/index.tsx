@@ -28,6 +28,11 @@ import FilterSidebar, { type FilterState } from "@/components/pet/marketplace/Fi
 import ListingCard from "@/components/pet/marketplace/ListingCard"
 import ListingRow from "@/components/pet/marketplace/ListingRow"
 import BuyDialog from "@/components/pet/marketplace/BuyDialog"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Theme catalog + discoverability rollout -- horizontal strip of
+// theme-painted seller stores rendered above the filter/listings grid.
+import FeaturedStoresStrip from "@/components/pet/marketplace/FeaturedStoresStrip"
+// --- END AI-MODIFIED ---
 import GoldDisplay from "@/components/pet/ui/GoldDisplay"
 import PixelButton from "@/components/pet/ui/PixelButton"
 import PixelCard from "@/components/pet/ui/PixelCard"
@@ -48,6 +53,9 @@ export default function MarketplacePage() {
   const router = useRouter()
 
   const q = router.query
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 Phase 3 -- featuredOnly default false, parsed
+  // from `?featured=true` query string so the filter is shareable / bookmarkable.
   const [filters, setFilters] = useState<FilterState>({
     search: (q.q as string) || "",
     category: (q.cat as string) || "",
@@ -55,7 +63,9 @@ export default function MarketplacePage() {
     currency: (q.currency as string) || "",
     minEnhancement: parseInt(q.minEnh as string) || 0,
     hasScrolls: q.scrolls === "true",
+    featuredOnly: q.featured === "true",
   })
+  // --- END AI-MODIFIED ---
   const [sort, setSort] = useState((q.sort as string) || "newest")
   const [page, setPage] = useState(parseInt(q.page as string) || 1)
   const [viewMode, setViewMode] = useState<ViewMode>("grid")
@@ -67,7 +77,14 @@ export default function MarketplacePage() {
   }, [])
 
   const clearFilters = useCallback(() => {
-    setFilters({ search: "", category: "", rarities: new Set(), currency: "", minEnhancement: 0, hasScrolls: false })
+    setFilters({
+      search: "", category: "", rarities: new Set(), currency: "",
+      minEnhancement: 0, hasScrolls: false,
+      // --- AI-MODIFIED (2026-04-29) ---
+      // Purpose: Marketplace 2.0 Phase 3 -- include in CLEAR ALL.
+      featuredOnly: false,
+      // --- END AI-MODIFIED ---
+    })
     setPage(1)
   }, [])
 
@@ -79,6 +96,10 @@ export default function MarketplacePage() {
     if (filters.currency) p.set("currency", filters.currency)
     if (filters.minEnhancement > 0) p.set("minEnhancement", String(filters.minEnhancement))
     if (filters.hasScrolls) p.set("hasScrolls", "true")
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 Phase 3 -- propagate to API.
+    if (filters.featuredOnly) p.set("featured", "true")
+    // --- END AI-MODIFIED ---
     p.set("sort", sort)
     p.set("page", String(page))
     return p.toString()
@@ -154,6 +175,17 @@ export default function MarketplacePage() {
                   </span>
                 </div>
               )}
+
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: Theme catalog + discoverability rollout -- surface
+                  customised seller stores at the top of the marketplace
+                  page so visitors see "shops" as a first-class destination
+                  rather than a tiny chip on a single listing. The strip
+                  fetches from /api/pet/marketplace/featured-stores and
+                  returns null automatically when there are no qualifying
+                  stores, so the page just collapses cleanly. */}
+              <FeaturedStoresStrip enabled={!!session} />
+              {/* --- END AI-MODIFIED --- */}
 
               {/* Main content: sidebar + listings */}
               <div className="flex gap-4">

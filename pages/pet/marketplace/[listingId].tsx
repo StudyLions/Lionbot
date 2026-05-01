@@ -301,10 +301,23 @@ export default function ListingDetailPage() {
                                   <span className="font-pixel text-[11px] text-[#4a5a70] border border-[#2a3a5c] px-1.5 py-0.5">{listing.item.slot}</span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-3 mt-2 font-pixel text-[11px] text-[#4a5a70]">
-                                <span className="flex items-center gap-1"><User size={11} /> {listing.sellerName}</span>
+                              {/* --- AI-MODIFIED (2026-04-29) --- */}
+                              {/* Purpose: Marketplace 2.0 -- seller name now links to their
+                                  personal store front when sellerId is present. Falls back
+                                  to plain text for legacy listings without a sellerId. */}
+                              <div className="flex items-center gap-3 mt-2 font-pixel text-[11px] text-[#4a5a70] flex-wrap">
+                                {listing.sellerId ? (
+                                  <Link href={`/pet/marketplace/store/${listing.sellerId}`}>
+                                    <a className="flex items-center gap-1 hover:text-[var(--pet-gold,#f0c040)] transition-colors">
+                                      <User size={11} /> Visit {listing.sellerName}&apos;s store
+                                    </a>
+                                  </Link>
+                                ) : (
+                                  <span className="flex items-center gap-1"><User size={11} /> {listing.sellerName}</span>
+                                )}
                                 <span className="flex items-center gap-1"><Clock size={11} /> {timeLeft(listing.expiresAt)}</span>
                               </div>
+                              {/* --- END AI-MODIFIED --- */}
                             </div>
                             <Link href={`/pet/wiki/${listing.item.id}`}>
                               <a className="flex-shrink-0 font-pixel text-[10px] text-[#4a5a70] hover:text-[#80b0ff] border border-[#2a3a5c] px-2 py-1 flex items-center gap-1 transition-colors">

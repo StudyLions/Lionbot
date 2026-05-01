@@ -4,6 +4,7 @@
 //          Stripe Customer Portal), and existing gem packages.
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
+import Head from "next/head";
 import { GetStaticProps } from "next";
 import { serverSideTranslations } from "next-i18next/serverSideTranslations";
 import { useTranslation } from "next-i18next";
@@ -43,6 +44,14 @@ import {
   Radio,
   Music,
   Coins,
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Purpose: Marketplace 2.0 -- icon for the new store / marketplace perks.
+  Store,
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Purpose: Icons for "Feature Your Server" tab.
+  Compass,
+  // --- END AI-MODIFIED ---
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -91,6 +100,66 @@ function GemIcon({ className = "h-4 w-4", style }: { className?: string; style?:
       className={className}
       style={{ objectFit: "contain", ...style }}
     />
+  );
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Tiny pull-quote stat used inside the editorial preview
+//   on the "Feature Your Server" donate tab. Mirrors the typography
+//   of components/listing/PullQuoteStats.tsx but at miniature scale.
+function PreviewStat({
+  number,
+  label,
+  liveDot,
+}: {
+  number: string;
+  label: string;
+  liveDot?: boolean;
+}) {
+  return (
+    <div style={{ paddingLeft: 0 }}>
+      <div
+        style={{
+          fontFamily: "Spectral, Georgia, serif",
+          fontSize: "1.4rem",
+          fontWeight: 600,
+          letterSpacing: "-0.02em",
+          color: "#1a1612",
+          lineHeight: 1,
+        }}
+      >
+        {number}
+      </div>
+      <div
+        style={{
+          marginTop: 4,
+          fontFamily: "Inter, sans-serif",
+          fontSize: 9,
+          fontWeight: 600,
+          letterSpacing: "0.18em",
+          textTransform: "uppercase",
+          color: "#6b5d4f",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 5,
+        }}
+      >
+        {liveDot && (
+          <span
+            aria-hidden="true"
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: "50%",
+              background: "#22c55e",
+              boxShadow: "0 0 0 3px rgba(34,197,94,0.18)",
+            }}
+          />
+        )}
+        {label}
+      </div>
+    </div>
   );
 }
 // --- END AI-MODIFIED ---
@@ -429,12 +498,21 @@ function gemValueInCurrency(gems: number, currency: Currency): number {
 }
 
 // "Everything in X, plus..." delta perks per tier so we never repeat the same list 3 times.
+// --- AI-MODIFIED (2026-04-29) ---
+// Purpose: Marketplace 2.0 Phase 1 -- add the new marketplace / personal-store
+// perks per tier so the donate page advertises them. Numbers are mirrored
+// from utils/subscription.ts and StudyLion's marketplace_perks.py.
 function getDeltaPerks(
   tierId: SubscriptionTier
 ): Array<{ label: string; icon: typeof TrendingUp; highlight?: boolean }> {
   if (tierId === "LIONHEART") {
     return [
       { label: "500 LionGems every month", icon: Sparkles, highlight: true },
+      { label: "Custom marketplace store name + longer speech bubble", icon: Store, highlight: true },
+      { label: "Custom store URL + 1 featured listing slot", icon: Store, highlight: true },
+      { label: "Premium store themes & background animations", icon: Store },
+      { label: "Marketplace fee 5% \u2192 4%", icon: Coins },
+      { label: "Listings last 14 days (vs 7) and up to 50 active", icon: Store },
       { label: "1.5x LionCoins from every vote", icon: TrendingUp },
       { label: "+15% bonus drop rate on items", icon: Zap },
       { label: "1.2x farm growth speed", icon: Sprout },
@@ -445,6 +523,8 @@ function getDeltaPerks(
   if (tierId === "LIONHEART_PLUS") {
     return [
       { label: "2.4x more gems (1,200/month)", icon: Sparkles, highlight: true },
+      { label: "Marketplace fee just 3% and 21-day listings", icon: Coins, highlight: true },
+      { label: "Up to 75 active listings + 3 featured listing slots", icon: Store, highlight: true },
       { label: "1.75x vote boost (up from 1.5x)", icon: TrendingUp },
       { label: "+25% drop rate (up from 15%)", icon: Zap },
       { label: "1.35x farm growth", icon: Sprout },
@@ -456,11 +536,14 @@ function getDeltaPerks(
     { label: "6x more gems (3,000/month)", icon: Sparkles, highlight: true },
     { label: "Plants never die. Period.", icon: Shield, highlight: true },
     { label: "1 free Server Premium slot", icon: Server, highlight: true },
+    { label: "Marketplace fee just 2% and 30-day listings", icon: Coins, highlight: true },
+    { label: "Up to 100 active listings + 10 featured listing slots", icon: Store, highlight: true },
     { label: "2x vote boost (max tier)", icon: TrendingUp },
     { label: "+50% drop rate", icon: Zap },
     { label: "All 10 Pomodoro themes", icon: Sparkles },
   ];
 }
+// --- END AI-MODIFIED ---
 
 const TIER_TAGLINES: Record<SubscriptionTier, string> = {
   LIONHEART: "Start enjoying real perks",
@@ -1067,7 +1150,21 @@ const FEATURE_GROUP_TAGS = [
   "LionGotchi Pet", "Button Labels", "Goals Cards",
 ];
 
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: Added "Feature Your Server" as a new premium tab on /donate.
+//   Lives at the front so it's the first thing prospective subscribers see.
+// --- Original code (commented out for rollback) ---
+// const PREMIUM_TABS = [
+//   { id: "branding", label: "Visual Branding", Icon: Palette },
+//   { id: "text", label: "Text Branding", Icon: Type },
+//   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
+//   { id: "leaderboard", label: "Leaderboards", Icon: Trophy },
+//   { id: "sounds", label: "Sounds", Icon: Volume2 },
+//   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
+// ] as const;
+// --- End original code ---
 const PREMIUM_TABS = [
+  { id: "feature_server", label: "Feature Your Server", Icon: Compass },
   { id: "branding", label: "Visual Branding", Icon: Palette },
   { id: "text", label: "Text Branding", Icon: Type },
   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
@@ -1075,6 +1172,7 @@ const PREMIUM_TABS = [
   { id: "sounds", label: "Sounds", Icon: Volume2 },
   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
 ] as const;
+// --- END AI-MODIFIED ---
 
 type PremiumTabId = typeof PREMIUM_TABS[number]["id"];
 
@@ -1323,6 +1421,35 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
 
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px]">
             <div className="p-6 lg:p-8 flex flex-col justify-center">
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: Editorial rewrite of the "Feature Your Server" tab. */}
+              {/*   Less feature-list, more "what our editors look for". The */}
+              {/*   right-hand preview is now a real Atlantic-theme mock so */}
+              {/*   the section visually previews the actual product instead */}
+              {/*   of advertising it with stock card chrome. */}
+              {activeTab === "feature_server" && (
+                <div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">Public Server Profile</h3>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Your own page at lionbot.org/servers/your-handle, listed in our public directory.
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {["Five dark editorial themes",
+                      "One DoFollow backlink to your website",
+                      "Live stats: members, study hours, in-voice",
+                      "Cover, description, photo gallery, tags",
+                      "Auto-generated social cards & embed widget",
+                      "Hand-reviewed before going live",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {activeTab === "branding" && (
                 <div>
                   <h3 className="text-xl font-bold text-foreground mb-2">Custom Visual Branding</h3>
@@ -1465,6 +1592,192 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             </div>
 
             <div className="relative bg-background/60 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
+              {/* --- AI-MODIFIED (2026-04-30) --- */}
+              {/* Purpose: Replaced the rounded-card mock with a single */}
+              {/*   cropped Atlantic-theme profile mock. The preview now */}
+              {/*   *is* a tiny version of the actual product. */}
+              {activeTab === "feature_server" && (
+                <>
+                  <Head>
+                    <link
+                      key="feature-server-preview-font"
+                      rel="stylesheet"
+                      href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+                    />
+                  </Head>
+                  <div
+                    className="relative w-full max-w-md mx-auto overflow-hidden shadow-2xl shadow-black/40"
+                    style={{
+                      background: "#f6f1e7",
+                      color: "#1a1612",
+                      borderRadius: 4,
+                      transform: "rotate(-0.5deg)",
+                    }}
+                    aria-hidden="true"
+                  >
+                    {/* Hero band */}
+                    <div
+                      style={{
+                        height: 168,
+                        background:
+                          "linear-gradient(180deg, rgba(246,241,231,0.0) 0%, rgba(246,241,231,0.45) 70%, #f6f1e7 100%), linear-gradient(135deg,#7a3a3a 0%,#3d2a2a 60%, #1a1612 100%)",
+                        position: "relative",
+                      }}
+                    >
+                      <div
+                        style={{
+                          position: "absolute",
+                          left: 22,
+                          bottom: 16,
+                          fontFamily: "Inter, sans-serif",
+                          fontSize: 9,
+                          letterSpacing: "0.28em",
+                          textTransform: "uppercase",
+                          color: "rgba(255,255,255,0.85)",
+                          fontWeight: 600,
+                        }}
+                      >
+                        FEATURED · STUDY · UNIVERSITY
+                      </div>
+                    </div>
+
+                    {/* Body */}
+                    <div style={{ padding: "22px 26px 28px" }}>
+                      <h4
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontSize: "1.6rem",
+                          fontWeight: 700,
+                          lineHeight: 1.05,
+                          letterSpacing: "-0.015em",
+                          color: "#1a1612",
+                          margin: 0,
+                        }}
+                      >
+                        Study Haven
+                      </h4>
+                      <p
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontStyle: "italic",
+                          fontSize: "0.92rem",
+                          lineHeight: 1.45,
+                          color: "#3d352c",
+                          margin: "8px 0 16px",
+                        }}
+                      >
+                        A wholesome co-working community of 12,000 learners,
+                        running daily pomodoros and quiet voice rooms.
+                      </p>
+
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 10,
+                          marginBottom: 16,
+                        }}
+                      >
+                        <div
+                          style={{
+                            background: "#8b1e1e",
+                            color: "#ffffff",
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "8px 14px",
+                            borderRadius: 999,
+                          }}
+                        >
+                          Join the community
+                        </div>
+                        <span
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: 6,
+                            fontFamily: "Inter, sans-serif",
+                            fontSize: 11,
+                            color: "#3d352c",
+                          }}
+                        >
+                          <span
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: "50%",
+                              background: "#22c55e",
+                              boxShadow: "0 0 0 4px rgba(34,197,94,0.18)",
+                              display: "inline-block",
+                            }}
+                          />
+                          87 in voice now
+                        </span>
+                      </div>
+
+                      <div
+                        style={{
+                          borderTop: "1px solid rgba(26,22,18,0.18)",
+                          borderBottom: "1px solid rgba(26,22,18,0.18)",
+                          padding: "14px 0",
+                          display: "grid",
+                          gridTemplateColumns: "1fr 1fr 1fr",
+                        }}
+                      >
+                        <PreviewStat number="12,400" label="Members" />
+                        <PreviewStat number="4,200" label="Hours / 30d" />
+                        <PreviewStat number="87" label="In voice" liveDot />
+                      </div>
+
+                      <p
+                        style={{
+                          fontFamily: "Spectral, Georgia, serif",
+                          fontSize: "0.9rem",
+                          lineHeight: 1.65,
+                          color: "#1a1612",
+                          margin: "16px 0 0",
+                        }}
+                      >
+                        <span
+                          style={{
+                            float: "left",
+                            fontFamily: "Spectral, Georgia, serif",
+                            fontWeight: 700,
+                            fontSize: "3.2em",
+                            lineHeight: 0.85,
+                            padding: "0.08em 0.12em 0 0",
+                            margin: "0.05em 0.06em 0 0",
+                            color: "#1a1612",
+                          }}
+                        >
+                          W
+                        </span>
+                        e started Study Haven on a Friday after midterms with five
+                        people, a single voice room, and an hourly pomodoro alarm
+                        nobody could turn off…
+                      </p>
+                    </div>
+
+                    {/* Tape edge / colophon */}
+                    <div
+                      style={{
+                        borderTop: "1px solid rgba(26,22,18,0.18)",
+                        padding: "10px 26px",
+                        fontFamily:
+                          "ui-monospace, SFMono-Regular, Menlo, monospace",
+                        fontSize: 10,
+                        letterSpacing: "0.18em",
+                        textTransform: "uppercase",
+                        color: "#6b5d4f",
+                      }}
+                    >
+                      lionbot.org/servers/study-haven
+                    </div>
+                  </div>
+                </>
+              )}
+              {/* --- END AI-MODIFIED --- */}
+
               {activeTab === "branding" && (
                 <div className="relative w-full h-full flex items-center justify-center min-h-[320px]">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(99,102,241,0.06),_transparent_70%)]" />

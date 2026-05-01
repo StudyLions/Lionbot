@@ -6,6 +6,17 @@
 // ============================================================
 import {getToken} from "next-auth/jwt"
 import {NextResponse} from "next/server"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: accept the LionBot iOS app's signed-JWT bearer in
+//          addition to the NextAuth browser cookie when gating
+//          /api/dashboard/* and /api/pet/*. Without this the
+//          middleware rewrites every iOS request to
+//          /api/auth/unauthorized BEFORE the route handler can
+//          run the iOS bridge inside utils/adminAuth.ts.
+//          See lib/ios/edgeAuth.ts for the Edge-runtime-safe
+//          verifier (uses jose only -- no Node `crypto` import).
+import {verifyIosBearerEdge, extractBearerEdge} from "./lib/ios/edgeAuth"
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Defense-in-depth JWT check for dashboard/pet API routes.
@@ -58,6 +69,26 @@ export async function middleware(req) {
     })
     // --- END AI-MODIFIED ---
     if (!token?.discordId) {
+      // --- AI-MODIFIED (2026-04-30) ---
+      // Purpose: fall through to the iOS bearer JWT before
+      //          rewriting to /api/auth/unauthorized. Without
+      //          this, the LionBot iOS app's bearer is rejected
+      //          by middleware before the route handler ever
+      //          gets a chance to verify it via the bridge in
+      //          utils/adminAuth.ts. We only verify the SIGNATURE
+      //          here (Edge runtime can't run AES-GCM decrypt of
+      //          the embedded Discord token); the route handler
+      //          still does the FULL verify via getAuthContext
+      //          before touching the DB, so this is defense-in-
+      //          depth, not a relaxation of authorization.
+      const bearer = extractBearerEdge(req)
+      if (bearer) {
+        const ios = await verifyIosBearerEdge(bearer)
+        if (ios?.discordId) {
+          return NextResponse.next()
+        }
+      }
+      // --- END AI-MODIFIED ---
       // --- AI-REPLACED (2026-03-21) ---
       // Reason: Next.js 12 middleware cannot return response bodies
       // What the new code does better: rewrites to a dedicated 401 API endpoint instead

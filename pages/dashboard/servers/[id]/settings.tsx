@@ -80,14 +80,23 @@ const DEFAULTS: Record<string, any> = {
   task_reward_limit: 10,
   renting_price: 1000,
   renting_cap: 25,
-  renting_visible: true,
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Reason: Bot ships renting_visible=False (rooms/settings.py line 162). The dashboard
+  // was reporting "Default: true" to admins, which silently disagreed with the bot.
+  renting_visible: false,
+  // --- END AI-MODIFIED ---
   renting_sync_perms: false,
   accountability_price: 100,
   accountability_reward: 200,
   accountability_bonus: 200,
   rank_type: "XP",
   dm_ranks: true,
-  xp_per_period: 5,
+  // --- AI-MODIFIED (2026-04-29) ---
+  // Reason: Was 5; bot ships with xp_per_period=101 (~20 XP/min). Old value claimed
+  // "Default: 5" to admins, which was 5% of reality. Aligned with the new checklist
+  // and StepRanks.tsx so all surfaces report the same number.
+  xp_per_period: 100,
+  // --- END AI-MODIFIED ---
   xp_per_centiword: null,
   video_studyban: true,
   video_grace_period: 90,

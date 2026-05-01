@@ -48,6 +48,22 @@ export default apiHandler({
       select: { listingid: true, price_per_unit: true, currency: true, quantity_remaining: true },
     })
 
+    // --- AI-MODIFIED (2026-04-29) ---
+    // Purpose: Marketplace 2.0 -- check for the seller's lg_user_stores row
+    // so the listing detail page can render a "Visit X's Store" link with
+    // the seller's preferred display name (or fall back to their Discord
+    // username). The lookup is optional -- sellers without a row just get
+    // the default treatment.
+    const sellerStore = await prisma.lg_user_stores.findUnique({
+      where: { userid: listing.seller_userid },
+      select: { display_name: true },
+    })
+    const sellerDisplay =
+      sellerStore?.display_name ??
+      seller?.name ??
+      `Player${listing.seller_userid.toString().slice(-4)}`
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({
       listing: {
         listingId: listing.listingid,
@@ -61,7 +77,12 @@ export default apiHandler({
         quantityListed: listing.quantity_listed,
         pricePerUnit: listing.price_per_unit,
         currency: listing.currency,
-        sellerName: seller?.name ?? `Player${listing.seller_userid.toString().slice(-4)}`,
+        // --- AI-MODIFIED (2026-04-29) ---
+        // Purpose: Marketplace 2.0 -- include sellerId so the page can link
+        // to the seller's store and use the store's display_name fallback.
+        sellerId: listing.seller_userid.toString(),
+        sellerName: sellerDisplay,
+        // --- END AI-MODIFIED ---
         status: listing.status,
         createdAt: listing.created_at.toISOString(),
         expiresAt: listing.expires_at.toISOString(),

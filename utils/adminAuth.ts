@@ -11,6 +11,15 @@
 import { getToken } from "next-auth/jwt"
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "./prisma"
+// --- AI-MODIFIED (2026-04-30) ---
+// Purpose: accept the LionBot iOS app's signed-JWT bearer token in
+//          addition to the NextAuth browser cookie. ALL iOS-specific
+//          logic lives in lib/ios/* so this file's touch is one line
+//          (the bridge call inside getAuthContext). This minimizes
+//          merge collisions when website work and iOS work happen on
+//          two computers in parallel.
+import { tryIosBearerAuth } from "@/lib/ios/adminAuthBridge"
+// --- END AI-MODIFIED ---
 
 const secret = process.env.SECRET
 const MANAGE_GUILD = 0x20
@@ -39,12 +48,23 @@ export async function getAuthContext(req: NextApiRequest): Promise<AuthContext |
   })
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
-  if (!token?.discordId || !token?.accessToken) return null
-  return {
-    discordId: token.discordId as string,
-    userId: BigInt(token.discordId as string),
-    accessToken: token.accessToken as string,
+  if (token?.discordId && token?.accessToken) {
+    return {
+      discordId: token.discordId as string,
+      userId: BigInt(token.discordId as string),
+      accessToken: token.accessToken as string,
+    }
   }
+
+  // --- AI-MODIFIED (2026-04-30) ---
+  // Fall through to the iOS bearer JWT when there is no NextAuth
+  // cookie. All iOS logic lives in lib/ios/adminAuthBridge.ts so this
+  // file stays website-only (see header note for why).
+  const ios = await tryIosBearerAuth(req)
+  if (ios) return ios
+  // --- END AI-MODIFIED ---
+
+  return null
 }
 
 export function checkRateLimit(userId: string, maxPerMinute = 60): boolean {
