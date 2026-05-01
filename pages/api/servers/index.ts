@@ -13,8 +13,14 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { fetchDirectoryListings } from "@/utils/listingDirectory"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Feature gate -- see constants/FeatureFlags.ts.
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return res.status(404).json({ error: "Not found" })
+  }
+
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET")
     return res.status(405).end()

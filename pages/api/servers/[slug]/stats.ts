@@ -22,6 +22,7 @@
 // ============================================================
 import { apiHandler } from "@/utils/apiHandler"
 import { prisma } from "@/utils/prisma"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 interface StatsResponse {
   tracked_members: number
@@ -32,6 +33,11 @@ interface StatsResponse {
 
 export default apiHandler({
   async GET(req, res) {
+    // Feature gate -- see constants/FeatureFlags.ts.
+    if (!SERVERS_DIRECTORY_ENABLED) {
+      return res.status(404).json({ error: "Not found" })
+    }
+
     const slugRaw = req.query.slug
     const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw
     if (!slug || typeof slug !== "string") {

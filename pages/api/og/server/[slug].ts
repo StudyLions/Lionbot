@@ -1,17 +1,19 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
-// Updated: 2026-04-30 (editorial redesign)
+// Updated: 2026-05-01 (dark-only palette)
 // Purpose: Dynamic Open Graph image route for server profile
 //          pages. Generates a 1200x630 PNG that social platforms
 //          (Twitter, LinkedIn, Discord, Facebook, etc.) can
 //          embed as a rich preview when someone shares the
 //          /servers/{slug} URL.
 //
-//          v2 (editorial redesign): each of the 5 editorial themes
-//          renders its own distinct layout so social cards feel
-//          like a continuation of the article, not a generic
-//          "name + tagline + cover" stamp.
+//          Each of the 5 editorial themes renders its own distinct
+//          layout so social cards feel like a continuation of the
+//          article, not a generic "name + tagline + cover" stamp.
+//          All colour tokens come from the theme objects in
+//          constants/ServerListingData.ts so the OG cards auto-
+//          follow palette changes (e.g. the dark-only switch).
 //
 //          We keep using sharp + a hand-crafted SVG (no @vercel/og
 //          dependency). Display fonts are specified by font-family
@@ -29,6 +31,7 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import sharp from "sharp"
 import { prisma } from "@/utils/prisma"
 import { resolveTheme, ListingTheme } from "@/constants/ServerListingData"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 const OG_WIDTH = 1200
 const OG_HEIGHT = 630
@@ -49,6 +52,13 @@ interface ListingForOg {
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Feature gate -- see constants/FeatureFlags.ts. Hide the OG image
+  // endpoint while the public directory is disabled so any cached
+  // social cards stop resolving too.
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return res.status(404).end("Not found")
+  }
+
   const slugRaw = req.query.slug
   const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw
   if (!slug || typeof slug !== "string") {
@@ -136,11 +146,18 @@ function themeFlatBase(hex: string): sharp.Sharp {
 
 /**
  * Apply the theme's cover treatment to the uploaded cover photo.
- * Atlantic: gentle warm tint + slight darkening at the bottom.
- * Wired: greyscale + a magenta tint to fake duotone.
- * Kinfolk: full greyscale.
- * Vogue: sepia.
- * Frieze: greyscale + brightness lift.
+ * All themes are dark-surfaced now, so brightness multipliers stay
+ * low to keep light-on-photo headlines legible.
+ *
+ * Atlantic (paper): warm darken, slight desat -- the photo eases
+ *   into the warm-dark page below.
+ * Wired (duotone): greyscale + heavy darken; the SVG accentTint
+ *   layer adds the magenta fake-duotone on top.
+ * Kinfolk (monochrome): full greyscale, slightly darker.
+ * Vogue (wash): wine-toned tint + saturation pull, so colour
+ *   covers feel printed in oxblood ink.
+ * Frieze (spare): greyscale, gentle darken (no aggressive treatment
+ *   — Frieze trusts the image and lets the typography do the work).
  */
 async function applyCoverTreatment(theme: ListingTheme, buf: Buffer): Promise<sharp.Sharp> {
   let pipeline = sharp(buf).resize(OG_WIDTH, OG_HEIGHT, {
@@ -150,24 +167,24 @@ async function applyCoverTreatment(theme: ListingTheme, buf: Buffer): Promise<sh
 
   switch (theme.coverBlend) {
     case "duotone":
-      // Greyscale base, then composite a magenta overlay at low opacity
-      // for a faux-duotone. Real duotones need LUTs but this reads close.
-      pipeline = pipeline.greyscale().modulate({ brightness: 0.6 })
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.55 })
       break
     case "monochrome":
-      pipeline = pipeline.greyscale().modulate({ brightness: 0.7 })
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.62 })
       break
     case "wash":
+      // Wine tint instead of the old warm-cream tint, so the cover
+      // matches the deep-oxblood Vogue surface below.
       pipeline = pipeline
-        .modulate({ saturation: 0.55, brightness: 0.85 })
-        .tint({ r: 230, g: 200, b: 170 })
+        .modulate({ saturation: 0.5, brightness: 0.7 })
+        .tint({ r: 130, g: 65, b: 80 })
       break
     case "spare":
-      pipeline = pipeline.greyscale().modulate({ brightness: 0.95 })
+      pipeline = pipeline.greyscale().modulate({ brightness: 0.72 })
       break
     case "paper":
     default:
-      pipeline = pipeline.modulate({ brightness: 0.78, saturation: 0.85 })
+      pipeline = pipeline.modulate({ brightness: 0.65, saturation: 0.85 })
       break
   }
 
@@ -206,19 +223,20 @@ function buildOverlaySvgForTheme(
 function buildAtlanticOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
   const title = clampText(escapeXml(input.title), 50)
   const tagline = clampText(escapeXml(input.tagline || `A featured ${input.category} community on LionBot`), 90)
-  // Atlantic: warm ivory wash from the bottom, serif title, italic
-  // deck, hairline rule, accent kicker. Cover sits behind a paper-fade.
+  // Atlantic: warm-dark wash from the bottom, serif title, italic
+  // deck, hairline rule, lifted-burgundy kicker. Cover sits behind
+  // a paper-fade that resolves into the dark journalism surface.
   const fadeY = OG_HEIGHT - 360
   return `
 <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="paperFade" x1="0" y1="1" x2="0" y2="0">
+    <linearGradient id="atlanticFade" x1="0" y1="1" x2="0" y2="0">
       <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
       <stop offset="55%" stop-color="${theme.bodyBg}" stop-opacity="0.55" />
       <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
     </linearGradient>
   </defs>
-  ${input.hasCover ? `<rect x="0" y="${fadeY}" width="100%" height="${OG_HEIGHT - fadeY}" fill="url(#paperFade)" />` : ""}
+  ${input.hasCover ? `<rect x="0" y="${fadeY}" width="100%" height="${OG_HEIGHT - fadeY}" fill="url(#atlanticFade)" />` : ""}
 
   <!-- Top kicker -->
   <g transform="translate(72,76)">
@@ -299,18 +317,18 @@ function buildWiredOverlay(theme: ListingTheme, accent: string, input: OverlayIn
 function buildKinfolkOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
   const title = clampText(escapeXml(input.title), 38)
   const tagline = clampText(escapeXml(input.tagline || `A ${input.category} community`), 90)
-  // Kinfolk: cream + EB Garamond. Wide horizontal margins. Italic
-  // deck. Title centred. No drop cap, just generous spacing.
+  // Kinfolk: cool dark slate + EB Garamond. Wide horizontal margins.
+  // Italic deck. Title centred. No drop cap, just generous spacing.
   return `
 <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="creamFade" x1="0" y1="1" x2="0" y2="0">
+    <linearGradient id="kinfolkFade" x1="0" y1="1" x2="0" y2="0">
       <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
       <stop offset="60%" stop-color="${theme.bodyBg}" stop-opacity="0.7" />
       <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
     </linearGradient>
   </defs>
-  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 480}" width="100%" height="480" fill="url(#creamFade)" />` : ""}
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 480}" width="100%" height="480" fill="url(#kinfolkFade)" />` : ""}
 
   <!-- Tiny single-word kicker, italic -->
   <text x="50%" y="120" text-anchor="middle" font-family="EB Garamond, Garamond, Georgia, serif" font-style="italic" font-size="28" fill="${theme.mutedText}">
@@ -338,18 +356,18 @@ function buildKinfolkOverlay(theme: ListingTheme, accent: string, input: Overlay
 function buildVogueOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
   const title = clampText(escapeXml(input.title.toUpperCase()), 38)
   const tagline = clampText(escapeXml(input.tagline || `A ${input.category} community`), 100)
-  // Vogue: oversized Playfair, double rule, "VOL. I" eyebrow, italic
-  // deck under title.
+  // Vogue: oversized Playfair on the deep oxblood surface, double
+  // rule, "VOL. I" eyebrow in lifted rose, italic deck under title.
   return `
 <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="ecruFade" x1="0" y1="1" x2="0" y2="0">
+    <linearGradient id="vogueFade" x1="0" y1="1" x2="0" y2="0">
       <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
       <stop offset="55%" stop-color="${theme.bodyBg}" stop-opacity="0.55" />
       <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
     </linearGradient>
   </defs>
-  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 380}" width="100%" height="380" fill="url(#ecruFade)" />` : ""}
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 380}" width="100%" height="380" fill="url(#vogueFade)" />` : ""}
 
   <!-- Top "Vol. I — Issue NN" eyebrow -->
   <text x="72" y="100" font-family="Inter, Helvetica, Arial, sans-serif" font-size="22" font-weight="600" letter-spacing="6" fill="${accent}">
@@ -378,17 +396,18 @@ function buildVogueOverlay(theme: ListingTheme, accent: string, input: OverlayIn
 function buildFriezeOverlay(theme: ListingTheme, accent: string, input: OverlayInput): string {
   const title = clampText(escapeXml(input.title), 32)
   const tagline = clampText(escapeXml(input.tagline || `${input.category}`), 80)
-  // Frieze: very large title, very small deck, mono kicker, no rule.
+  // Frieze: very large title in near-white, very small deck, mono
+  // kicker, no rule. Cover (if any) eases into the pure dark surface.
   return `
 <svg width="${OG_WIDTH}" height="${OG_HEIGHT}" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="boneFade" x1="0" y1="1" x2="0" y2="0">
+    <linearGradient id="friezeFade" x1="0" y1="1" x2="0" y2="0">
       <stop offset="0%" stop-color="${theme.bodyBg}" stop-opacity="1" />
       <stop offset="70%" stop-color="${theme.bodyBg}" stop-opacity="0.7" />
       <stop offset="100%" stop-color="${theme.bodyBg}" stop-opacity="0" />
     </linearGradient>
   </defs>
-  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 420}" width="100%" height="420" fill="url(#boneFade)" />` : ""}
+  ${input.hasCover ? `<rect x="0" y="${OG_HEIGHT - 420}" width="100%" height="420" fill="url(#friezeFade)" />` : ""}
 
   <!-- Mono kicker -->
   <text x="72" y="100" font-family="Menlo, Consolas, 'Courier New', monospace" font-size="20" letter-spacing="8" fill="${theme.mutedText}">

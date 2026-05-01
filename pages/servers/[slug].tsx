@@ -34,6 +34,7 @@ import {
   resolveTheme,
   normalizeSections,
 } from "@/constants/ServerListingData"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 import { buildServerProfileSEO } from "@/constants/SeoData"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { SITE_URL } from "next-seo.config"
@@ -304,6 +305,13 @@ export default function ServerProfilePage({
 // ── Server-side fetch ─────────────────────────────────────────
 
 export const getServerSideProps: GetServerSideProps<ServerProfileProps> = async (ctx) => {
+  // Feature gate -- see constants/FeatureFlags.ts. Returning notFound
+  // here also blocks the ?preview=TOKEN flow on purpose (we don't want
+  // any /servers/* URL to render while the feature is hidden).
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return { notFound: true }
+  }
+
   const slug = String(ctx.params?.slug ?? "").toLowerCase().trim()
   if (!slug) return { notFound: true }
 

@@ -10,8 +10,14 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  // Feature gate -- see constants/FeatureFlags.ts.
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return res.status(404).end()
+  }
+
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET")
     return res.status(405).end()

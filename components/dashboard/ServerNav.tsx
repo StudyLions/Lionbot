@@ -52,6 +52,10 @@ import CommandPalette from "@/components/dashboard/search/CommandPalette"
 import { getSearchItems } from "@/components/dashboard/search/searchRegistry"
 import { useSearch, flatResults, hasResults } from "@/components/dashboard/search/useSearch"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Feature-flag the not-yet-shipped "Feature Your Server" sidebar link.
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
+// --- END AI-MODIFIED ---
 
 interface ServerNavProps {
   serverId: string
@@ -173,10 +177,13 @@ function buildSections(isAdmin: boolean, isMod: boolean): NavSection[] {
         // Purpose: Anti AFK System premium feature nav link
         { href: "/anti-afk", label: "Anti AFK System", icon: <ShieldAlert size={16} />, supporterPerk: true },
         // --- END AI-MODIFIED ---
-        // --- AI-MODIFIED (2026-04-30) ---
+        // --- AI-MODIFIED (2026-05-01) ---
         // Purpose: "Feature Your Server" premium feature nav link -- sets up the
-        // public profile page at /servers/[slug]
-        { href: "/listing", label: "Feature Your Server", icon: <Globe size={16} />, supporterPerk: true },
+        // public profile page at /servers/[slug]. Hidden behind the
+        // SERVERS_DIRECTORY_ENABLED flag while the editor studio is paused.
+        ...(SERVERS_DIRECTORY_ENABLED
+          ? [{ href: "/listing", label: "Feature Your Server", icon: <Globe size={16} />, supporterPerk: true }]
+          : []),
         // --- END AI-MODIFIED ---
       ],
     })

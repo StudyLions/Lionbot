@@ -23,6 +23,11 @@ interface PullQuoteStatsProps {
   slug: string
   /** When false, suppresses the live in-voice column (not the others). */
   showLive: boolean
+  /** Optional pre-supplied stats. When provided, the component skips
+   *  the /api/servers/[slug]/stats fetch entirely. Used by the editor
+   *  preview where the listing isn't published yet (or doesn't exist
+   *  in the DB), so the API would 404. */
+  previewStats?: StatsResponse | null
 }
 
 interface StatsResponse {
@@ -49,11 +54,21 @@ export function PullQuoteStats({
   accent,
   slug,
   showLive,
+  previewStats,
 }: PullQuoteStatsProps) {
-  const [stats, setStats] = useState<StatsResponse | null>(null)
+  const [stats, setStats] = useState<StatsResponse | null>(previewStats ?? null)
   const [errored, setErrored] = useState(false)
 
   useEffect(() => {
+    // Preview mode: skip the API call entirely so the editor canvas
+    // doesn't 404 against an unpublished listing. We still respond to
+    // changes in previewStats so admins editing stats-related fields
+    // see updates reflected immediately.
+    if (previewStats !== undefined && previewStats !== null) {
+      setStats(previewStats)
+      return
+    }
+
     let cancelled = false
     const fetchStats = () =>
       fetch(`/api/servers/${encodeURIComponent(slug)}/stats`, { cache: "no-store" })
@@ -79,7 +94,7 @@ export function PullQuoteStats({
       cancelled = true
       if (timer !== undefined) window.clearInterval(timer)
     }
-  }, [slug, showLive])
+  }, [slug, showLive, previewStats])
 
   if (errored) return null
 

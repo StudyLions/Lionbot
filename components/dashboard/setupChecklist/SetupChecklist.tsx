@@ -66,6 +66,11 @@ import ListingTask from "./tasks/premium/ListingTask"
 import PremiumPreviewTask from "./tasks/premium/PremiumPreviewTask"
 // --- END AI-MODIFIED ---
 import PowerUserSection from "./PowerUserSection"
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Hide the "Feature your server" setup task while the editor
+// studio is paused. Re-enable in constants/FeatureFlags.ts.
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: Expanded TaskId union to include the 7 premium tasks plus the
@@ -117,6 +122,10 @@ const CORE_TASKS: TaskMeta[] = [
 // ambient sounds and anti-AFK are the most-loved features so they sit at
 // the top; admin-flavored options (sticky, leaderboard autopost) follow,
 // then the polish/growth options (branding, listing).
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Filter out the "Feature your server" task while the public
+// directory is hidden. The TaskId union still includes "listing" so
+// nothing else has to change when the flag flips back on.
 const PREMIUM_TASKS: TaskMeta[] = [
   { id: "ambient_sounds",       title: "Ambient sounds",         summary: "Up to 10 ambient sound bots playing rain, ocean, LoFi and more.",  icon: Music2,    section: "premium" },
   { id: "anti_afk",             title: "Anti-AFK in study rooms", summary: "Kick or move members who go idle for too long.",                  icon: ShieldOff, section: "premium" },
@@ -124,8 +133,11 @@ const PREMIUM_TASKS: TaskMeta[] = [
   { id: "leaderboard_autopost", title: "Leaderboard auto-post",   summary: "Schedule daily, weekly or monthly top-studier posts.",             icon: BarChart3, section: "premium" },
   { id: "sticky_messages",      title: "Sticky messages",         summary: "Auto-repost a pinned-style embed at the bottom of channels.",      icon: Pin,       section: "premium" },
   { id: "branding",             title: "Card branding",           summary: "Pick the colours and theme used on Leo's stat cards.",             icon: Palette,   section: "premium" },
-  { id: "listing",              title: "Feature your server",     summary: "Build a public profile page and get a real backlink.",             icon: Sparkles,  section: "premium" },
+  ...(SERVERS_DIRECTORY_ENABLED
+    ? [{ id: "listing" as TaskId, title: "Feature your server", summary: "Build a public profile page and get a real backlink.", icon: Sparkles, section: "premium" as const }]
+    : []),
 ]
+// --- END AI-MODIFIED ---
 
 // Single teaser row used for non-premium servers. Lives in its own array
 // so the visible task list stays simple to assemble below.
@@ -720,13 +732,19 @@ export default function SetupChecklist({ guildId }: Props) {
         onComplete={() => updateTaskStatus("sticky_messages", "done")}
         onSkip={() => updateTaskStatus("sticky_messages", "skipped")}
       />
-      <ListingTask
-        guildId={guildId}
-        open={openTask === "listing"}
-        onClose={() => setOpenTask(null)}
-        onComplete={() => updateTaskStatus("listing", "done")}
-        onSkip={() => updateTaskStatus("listing", "skipped")}
-      />
+      {/* --- AI-MODIFIED (2026-05-01) --- */}
+      {/* Hide the drawer entirely while the feature is paused so a stale */}
+      {/* `openTask === "listing"` from prior state can't summon it. */}
+      {SERVERS_DIRECTORY_ENABLED && (
+        <ListingTask
+          guildId={guildId}
+          open={openTask === "listing"}
+          onClose={() => setOpenTask(null)}
+          onComplete={() => updateTaskStatus("listing", "done")}
+          onSkip={() => updateTaskStatus("listing", "skipped")}
+        />
+      )}
+      {/* --- END AI-MODIFIED --- */}
       <PremiumPreviewTask
         guildId={guildId}
         open={openTask === "premium_preview"}

@@ -1,19 +1,23 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
-// Updated: 2026-04-30 (editorial redesign)
+// Updated: 2026-05-01 (dark-only palette)
 // Purpose: Public directory at /servers -- browse all approved
 //          premium server profiles. SSG with 5-minute ISR so
 //          newly-approved listings appear in roughly-real-time
 //          but every visitor still gets a fully pre-rendered
 //          page Google can index.
 //
-//          v2 (editorial redesign): magazine masthead, single
-//          "Featured this week" cover story, then a hairline-
-//          separated table-of-contents listing. Filters live in a
-//          single horizontal row of chip tabs above the TOC --
-//          no left sidebar. The whole page reads like a magazine
-//          contents page, not a card grid.
+//          Editorial layout: magazine masthead, single "Featured
+//          this week" cover story, then a hairline-separated
+//          table-of-contents listing. Filters live in a single
+//          horizontal row of chip tabs above the TOC -- no left
+//          sidebar. Reads like a magazine contents page, not a
+//          card grid.
+//
+//          Tokens here are hardcoded to the Atlantic-dark palette
+//          (warm near-black + cream + lifted burgundy accent) to
+//          stay flush with the rest of lionbot.org's dark theme.
 // ============================================================
 import type { GetStaticProps } from "next"
 import Head from "next/head"
@@ -26,6 +30,7 @@ import {
   LISTING_CATEGORIES, LISTING_LANGUAGES, LISTING_COUNTRIES,
   resolveTheme,
 } from "@/constants/ServerListingData"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 import { ServersDirectorySEO } from "@/constants/SeoData"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 import { SITE_URL } from "next-seo.config"
@@ -238,8 +243,8 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
 
       <style jsx>{`
         .directory-shell {
-          background: #f6f1e7;
-          color: #1a1612;
+          background: #1a1612;
+          color: #ece4d3;
           font-family: Inter, system-ui, sans-serif;
           margin-top: -1px;
           min-height: 100vh;
@@ -253,7 +258,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
         }
         .masthead-rule {
           height: 1px;
-          background: rgba(26, 22, 18, 0.18);
+          background: rgba(236, 228, 211, 0.18);
           margin: 0 auto;
           max-width: 240px;
         }
@@ -267,7 +272,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-size: 0.7rem;
           letter-spacing: 0.28em;
           text-transform: uppercase;
-          color: #6b5d4f;
+          color: #8e8273;
           font-weight: 600;
         }
         .masthead-eyebrow-spacer {
@@ -279,7 +284,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-weight: 700;
           line-height: 1;
           letter-spacing: -0.02em;
-          color: #1a1612;
+          color: #ece4d3;
           margin: 0 0 0.6em;
         }
         .masthead-deck {
@@ -287,7 +292,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-style: italic;
           font-size: clamp(1.05rem, 1.8vw, 1.35rem);
           line-height: 1.55;
-          color: #3d352c;
+          color: #c2b6a1;
           max-width: 56ch;
           margin: 0 auto 1.8rem;
         }
@@ -299,7 +304,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          border-bottom: 1px solid rgba(26, 22, 18, 0.18);
+          border-bottom: 1px solid rgba(236, 228, 211, 0.18);
           padding-bottom: 14px;
         }
         @media (min-width: 720px) {
@@ -325,17 +330,17 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-weight: 600;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: #6b5d4f;
+          color: #8e8273;
           cursor: pointer;
           border-bottom: 1px solid transparent;
           transition: color 0.15s, border-color 0.15s;
         }
         .tab:hover {
-          color: #1a1612;
+          color: #ece4d3;
         }
         .tab-active {
-          color: #1a1612;
-          border-bottom-color: #8b1e1e;
+          color: #ece4d3;
+          border-bottom-color: #c64545;
         }
 
         .search {
@@ -348,7 +353,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           left: 0;
           top: 50%;
           transform: translateY(-50%);
-          color: #6b5d4f;
+          color: #8e8273;
           pointer-events: none;
         }
         .search-input {
@@ -356,18 +361,18 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           padding: 10px 0 10px 24px;
           background: transparent;
           border: none;
-          border-bottom: 1px solid rgba(26, 22, 18, 0.18);
+          border-bottom: 1px solid rgba(236, 228, 211, 0.18);
           font-family: Inter, sans-serif;
           font-size: 0.92rem;
-          color: #1a1612;
+          color: #ece4d3;
         }
         .search-input::placeholder {
-          color: #8a7c6e;
+          color: #8e8273;
           font-style: italic;
         }
         .search-input:focus {
           outline: none;
-          border-bottom-color: #8b1e1e;
+          border-bottom-color: #c64545;
         }
 
         .toc {
@@ -383,12 +388,12 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-family: Spectral, Georgia, serif;
           font-style: italic;
           font-size: 1.2rem;
-          color: #1a1612;
+          color: #ece4d3;
           margin: 0 0 0.5rem;
         }
         .toc-empty-sub {
           font-size: 0.9rem;
-          color: #6b5d4f;
+          color: #8e8273;
           margin: 0;
         }
         .toc-list {
@@ -401,8 +406,8 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           max-width: min(820px, 92vw);
           margin: clamp(64px, 12vh, 120px) auto 0;
           padding: clamp(32px, 6vh, 56px) clamp(20px, 5vw, 40px);
-          border-top: 3px double rgba(26, 22, 18, 0.20);
-          border-bottom: 3px double rgba(26, 22, 18, 0.20);
+          border-top: 3px double rgba(236, 228, 211, 0.22);
+          border-bottom: 3px double rgba(236, 228, 211, 0.22);
           text-align: center;
         }
         .pitch-eyebrow {
@@ -410,7 +415,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-weight: 600;
           letter-spacing: 0.28em;
           text-transform: uppercase;
-          color: #6b5d4f;
+          color: #8e8273;
           margin: 0 0 0.8rem;
         }
         .pitch-headline {
@@ -418,14 +423,14 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-size: clamp(1.6rem, 3.2vw, 2.4rem);
           font-weight: 600;
           letter-spacing: -0.01em;
-          color: #1a1612;
+          color: #ece4d3;
           margin: 0 0 0.8rem;
         }
         .pitch-body {
           font-family: Inter, sans-serif;
           font-size: 0.98rem;
           line-height: 1.65;
-          color: #3d352c;
+          color: #c2b6a1;
           max-width: 60ch;
           margin: 0 auto 1.4rem;
         }
@@ -436,7 +441,7 @@ export default function ServersIndexPage({ listings }: ServersIndexProps) {
           font-family: Inter, sans-serif;
           font-size: 0.9rem;
           font-weight: 600;
-          color: #8b1e1e;
+          color: #c64545;
           text-decoration: underline;
           text-underline-offset: 4px;
           text-decoration-thickness: 1px;
@@ -528,7 +533,7 @@ function CoverStory({ listing }: { listing: DirectoryListing }) {
               width: 100%;
               aspect-ratio: 3 / 2;
               overflow: hidden;
-              background: #d8d0c2;
+              background: #2a241e;
             }
             .cover-story-image {
               width: 100%;
@@ -547,14 +552,16 @@ function CoverStory({ listing }: { listing: DirectoryListing }) {
               position: absolute;
               top: 12px;
               left: 12px;
-              background: rgba(255, 255, 255, 0.92);
-              color: #1a1612;
+              background: rgba(26, 22, 18, 0.86);
+              color: #ece4d3;
+              border: 1px solid rgba(236, 228, 211, 0.22);
               font-family: Inter, sans-serif;
               font-size: 0.66rem;
               font-weight: 700;
               letter-spacing: 0.22em;
               text-transform: uppercase;
               padding: 5px 10px;
+              backdrop-filter: blur(4px);
             }
             .cover-story-eyebrow {
               font-family: Inter, sans-serif;
@@ -562,7 +569,7 @@ function CoverStory({ listing }: { listing: DirectoryListing }) {
               font-weight: 600;
               letter-spacing: 0.22em;
               text-transform: uppercase;
-              color: #6b5d4f;
+              color: #8e8273;
               margin-bottom: 0.8rem;
             }
             .cover-story-title {
@@ -571,7 +578,7 @@ function CoverStory({ listing }: { listing: DirectoryListing }) {
               font-weight: 700;
               line-height: 1.05;
               letter-spacing: -0.02em;
-              color: #1a1612;
+              color: #ece4d3;
               margin: 0 0 0.8rem;
             }
             .cover-story:hover .cover-story-title {
@@ -584,7 +591,7 @@ function CoverStory({ listing }: { listing: DirectoryListing }) {
               font-style: italic;
               font-size: clamp(1rem, 1.6vw, 1.2rem);
               line-height: 1.5;
-              color: #3d352c;
+              color: #c2b6a1;
               margin: 0 0 1.4rem;
               max-width: 38ch;
             }
@@ -644,7 +651,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
       </Link>
       <style jsx>{`
         .toc-row {
-          border-bottom: 1px solid rgba(26, 22, 18, 0.12);
+          border-bottom: 1px solid rgba(236, 228, 211, 0.10);
         }
         .toc-link {
           display: grid;
@@ -652,7 +659,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           align-items: center;
           gap: 16px;
           padding: clamp(20px, 3vh, 32px) 0;
-          color: #1a1612;
+          color: #ece4d3;
           text-decoration: none;
           transition: padding 0.2s ease;
         }
@@ -662,7 +669,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
         .toc-num {
           font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
           font-size: 0.78rem;
-          color: #8a7c6e;
+          color: #8e8273;
           letter-spacing: 0.1em;
         }
         .toc-icon {
@@ -671,17 +678,18 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           object-fit: cover;
           border-radius: 50%;
           flex-shrink: 0;
-          background: #d8d0c2;
+          background: #2a241e;
         }
         .toc-icon-fallback {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          background: #c4b8a4;
-          color: #1a1612;
+          background: #2a241e;
+          color: #ece4d3;
           font-family: Spectral, Georgia, serif;
           font-weight: 700;
           font-size: 1.15rem;
+          border: 1px solid rgba(236, 228, 211, 0.14);
         }
         .toc-text {
           display: flex;
@@ -694,7 +702,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           font-size: clamp(1.15rem, 2vw, 1.4rem);
           font-weight: 600;
           letter-spacing: -0.005em;
-          color: #1a1612;
+          color: #ece4d3;
         }
         .toc-link:hover .toc-name {
           text-decoration: underline;
@@ -706,7 +714,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           font-style: italic;
           font-size: 0.95rem;
           line-height: 1.5;
-          color: #3d352c;
+          color: #c2b6a1;
           max-width: 60ch;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -720,7 +728,7 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           font-weight: 600;
           letter-spacing: 0.18em;
           text-transform: uppercase;
-          color: #6b5d4f;
+          color: #8e8273;
           margin-top: 2px;
         }
         .toc-badge {
@@ -729,18 +737,18 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
           font-weight: 700;
           letter-spacing: 0.22em;
           text-transform: uppercase;
-          color: #8b1e1e;
+          color: #c64545;
           padding: 4px 10px;
-          border: 1px solid #8b1e1e;
+          border: 1px solid #c64545;
         }
         .toc-arrow {
-          color: #8a7c6e;
+          color: #8e8273;
           flex-shrink: 0;
           transition: transform 0.2s ease;
         }
         .toc-link:hover .toc-arrow {
           transform: translateX(4px);
-          color: #1a1612;
+          color: #ece4d3;
         }
         @media (max-width: 600px) {
           .toc-link {
@@ -759,6 +767,13 @@ function TocRow({ listing, index }: { listing: DirectoryListing; index: number }
 // ── Static generation w/ ISR ──────────────────────────────────
 
 export const getStaticProps: GetStaticProps<ServersIndexProps> = async ({ locale }) => {
+  // Feature gate: when SERVERS_DIRECTORY_ENABLED is false the whole
+  // public directory is hidden behind a 404. Re-enable by flipping the
+  // flag in constants/FeatureFlags.ts -- no other code change needed.
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return { notFound: true, revalidate: 300 }
+  }
+
   let listings: DirectoryListing[] = []
   try {
     listings = await fetchDirectoryListings()

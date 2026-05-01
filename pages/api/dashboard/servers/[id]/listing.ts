@@ -56,6 +56,7 @@ import {
   LISTING_BLEND_MODES,
   normalizeSections,
 } from "@/constants/ServerListingData"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 const COUNTRY_IDS = new Set<string>(LISTING_COUNTRIES.map((c) => c.id))
 const LANGUAGE_IDS = new Set<string>(LISTING_LANGUAGES.map((l) => l.id))
@@ -344,6 +345,12 @@ function isCosmeticOnlyDiff(diff: Record<string, any>): boolean {
 
 export default apiHandler({
   async GET(req, res) {
+    // Feature gate -- see constants/FeatureFlags.ts. Both GET and PUT
+    // refuse with 404 while the public directory is hidden so admins
+    // can't read or write listings for an un-shipped feature.
+    if (!SERVERS_DIRECTORY_ENABLED) {
+      return res.status(404).json({ error: "Not found" })
+    }
     const guildId = parseBigInt(req.query.id, "id")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
@@ -375,6 +382,9 @@ export default apiHandler({
   },
 
   async PUT(req, res) {
+    if (!SERVERS_DIRECTORY_ENABLED) {
+      return res.status(404).json({ error: "Not found" })
+    }
     const guildId = parseBigInt(req.query.id, "id")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return

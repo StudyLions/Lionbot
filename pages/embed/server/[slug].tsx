@@ -27,6 +27,7 @@ import {
   resolveTheme,
   ListingTheme,
 } from "@/constants/ServerListingData"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 import { withAlpha } from "@/components/listing/EditorialThemeProvider"
 import { getListingPremiumStatus } from "@/utils/listingHelpers"
 
@@ -52,6 +53,12 @@ export const getStaticPaths: GetStaticPaths = async () => ({
 })
 
 export const getStaticProps: GetStaticProps<EmbedProps> = async (ctx) => {
+  // Feature gate -- see constants/FeatureFlags.ts. Hide the embed
+  // widget so external sites can't iframe a half-built feature.
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return { notFound: true, revalidate: 300 }
+  }
+
   const slugParam = ctx.params?.slug
   const slug = Array.isArray(slugParam) ? slugParam[0] : slugParam
   if (!slug) {

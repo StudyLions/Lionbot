@@ -1429,64 +1429,22 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
               {/*   of advertising it with stock card chrome. */}
               {activeTab === "feature_server" && (
                 <div>
-                  <span
-                    className="inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.24em] text-amber-400 mb-4"
-                  >
-                    <span className="inline-block w-6 h-px bg-amber-400" aria-hidden="true" />
-                    Editorial / New
-                  </span>
-                  <h3
-                    className="text-foreground mb-3"
-                    style={{
-                      fontFamily: "Spectral, Georgia, serif",
-                      fontSize: "clamp(1.6rem, 3vw, 2.1rem)",
-                      fontWeight: 700,
-                      letterSpacing: "-0.02em",
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    A magazine-grade page for your community.
-                  </h3>
-                  <p
-                    className="text-muted-foreground mb-5"
-                    style={{
-                      fontFamily: "Spectral, Georgia, serif",
-                      fontStyle: "italic",
-                      fontSize: "1.0rem",
-                      lineHeight: 1.55,
-                      maxWidth: "44ch",
-                    }}
-                  >
-                    A hand-curated profile at <span className="text-foreground not-italic font-medium">lionbot.org/servers/your-handle</span> &mdash;
-                    five editorial themes to choose from, restrained typography, a single
-                    DoFollow backlink that actually moves your SEO, and a permanent
-                    spot in our directory.
+                  <h3 className="text-xl font-bold text-foreground mb-2">Public Server Profile</h3>
+                  <p className="text-muted-foreground mb-4 text-sm">
+                    Your own page at lionbot.org/servers/your-handle, listed in our public directory.
                   </p>
-                  <div className="space-y-3 text-sm leading-relaxed text-foreground/85">
-                    <p className="flex gap-3">
-                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
-                      <span>
-                        Choose from five editorial themes: <em>The Atlantic</em>, <em>Wired</em>, <em>Kinfolk</em>, <em>Vogue</em>, or <em>Frieze</em>. Each one is a real reskin, not a palette swap.
-                      </span>
-                    </p>
-                    <p className="flex gap-3">
-                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
-                      <span>
-                        One DoFollow link to your own website. Real backlink, no redirects, no <code className="text-xs">rel=&quot;nofollow&quot;</code>.
-                      </span>
-                    </p>
-                    <p className="flex gap-3">
-                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
-                      <span>
-                        Optional &ldquo;Verified by Leo&rdquo; pull-quote stats &mdash; tracked members, study hours, and a live in-voice count, pulled straight from your activity.
-                      </span>
-                    </p>
-                    <p className="flex gap-3">
-                      <span className="text-amber-400 mt-0.5 flex-shrink-0">—</span>
-                      <span>
-                        Reviewed by hand. We turn down servers that wouldn&rsquo;t fit, so the directory stays worth landing in.
-                      </span>
-                    </p>
+                  <div className="space-y-2 text-sm">
+                    {["Five dark editorial themes",
+                      "One DoFollow backlink to your website",
+                      "Live stats: members, study hours, in-voice",
+                      "Cover, description, photo gallery, tags",
+                      "Auto-generated social cards & embed widget",
+                      "Hand-reviewed before going live",
+                    ].map((t, i) => (
+                      <div key={i} className="flex items-center gap-2 text-foreground/85">
+                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

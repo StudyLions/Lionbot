@@ -51,6 +51,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Banner from "@/components/Layout/Header/Banner";
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Feature-flag the not-yet-shipped "Servers" directory link.
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags";
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-15) ---
 // Purpose: added Support link to Discord server
@@ -99,9 +103,15 @@ type NavLink = {
 //   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 // ];
 // --- End original code ---
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Build NAV_LINKS dynamically so the "Servers" link can be hidden
+// behind SERVERS_DIRECTORY_ENABLED while we finish the editor studio.
+// Re-enabling the feature is a one-line flip in constants/FeatureFlags.ts.
 const NAV_LINKS: NavLink[] = [
   { label: "Home", href: "/", icon: Home, matchExact: true },
-  { label: "Servers", href: "/servers", icon: Compass },
+  ...(SERVERS_DIRECTORY_ENABLED
+    ? [{ label: "Servers", href: "/servers", icon: Compass }]
+    : []),
   {
     label: "Guides",
     href: "/guides",
@@ -115,6 +125,7 @@ const NAV_LINKS: NavLink[] = [
   { label: "Updates", href: "/timeline", icon: Sparkles },
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
+// --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---

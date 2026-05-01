@@ -19,6 +19,7 @@ import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 import { requireAdmin } from "@/utils/adminAuth"
 import { isListingPremiumGuild } from "@/utils/listingHelpers"
 import { prisma } from "@/utils/prisma"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 interface DailyPoint {
   date: string
@@ -45,6 +46,9 @@ interface AnalyticsResponse {
 
 export default apiHandler({
   async GET(req, res) {
+    if (!SERVERS_DIRECTORY_ENABLED) {
+      return res.status(404).json({ error: "Not found" })
+    }
     const guildId = parseBigInt(req.query.id, "id")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return

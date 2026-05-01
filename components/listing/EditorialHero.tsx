@@ -54,14 +54,15 @@ function buildCoverStyle(
 
   switch (theme.coverBlend) {
     case "paper":
-      // Atlantic -- soft ivory paper fade. Strong fade at the bottom
-      // so the photo dissolves into the article body.
+      // Atlantic -- soft fade into the warm-dark surface. Strong
+      // bottom fade so the photo dissolves into the article body.
       return {
         background: `
           linear-gradient(180deg,
             ${withAlpha(theme.bodyBg, 0.0)} 0%,
-            ${withAlpha(theme.bodyBg, 0.0)} 35%,
-            ${withAlpha(theme.bodyBg, 0.55)} 70%,
+            ${withAlpha(theme.bodyBg, 0.0)} 30%,
+            ${withAlpha(theme.bodyBg, 0.45)} 65%,
+            ${withAlpha(theme.bodyBg, 0.85)} 88%,
             ${theme.bodyBg} 100%),
           ${baseImage}
         `,
@@ -87,28 +88,33 @@ function buildCoverStyle(
         filter: "contrast(1.05)",
       }
     case "monochrome":
-      // Kinfolk -- desaturated cover that eases into cream.
+      // Kinfolk -- desaturated cover that eases into the cool dark
+      // surface. Greyscale filter so colour photos read as still
+      // life, not snapshots.
       return {
         background: `
           linear-gradient(180deg,
             ${withAlpha(theme.bodyBg, 0.0)} 0%,
-            ${withAlpha(theme.bodyBg, 0.6)} 75%,
+            ${withAlpha(theme.bodyBg, 0.55)} 70%,
             ${theme.bodyBg} 100%),
           ${baseImage}
         `,
         filter: "grayscale(0.9) contrast(1.02)",
       }
     case "wash":
-      // Vogue -- creamy ecru wash + slight warmth.
+      // Vogue -- accent-tinted wash on top, fading into the deep
+      // wine surface at the bottom. The diagonal accent gradient
+      // gives the cover a fashion-editorial sheen without colour
+      // shift on the photo itself.
       return {
         background: `
           linear-gradient(180deg,
-            ${withAlpha("#f3ece4", 0.15)} 0%,
-            ${withAlpha(theme.bodyBg, 0.45)} 60%,
+            ${withAlpha(theme.bodyBg, 0.0)} 0%,
+            ${withAlpha(theme.bodyBg, 0.5)} 60%,
             ${theme.bodyBg} 100%),
           linear-gradient(135deg,
-            ${withAlpha(accent, 0.18)} 0%,
-            rgba(255,255,255,0) 55%),
+            ${withAlpha(accent, 0.22)} 0%,
+            rgba(0,0,0,0) 55%),
           ${baseImage}
         `,
       }
@@ -119,8 +125,8 @@ function buildCoverStyle(
       return {
         background: `
           linear-gradient(180deg,
-            rgba(0,0,0,0.05) 0%,
-            rgba(0,0,0,0) 25%,
+            rgba(0,0,0,0.10) 0%,
+            rgba(0,0,0,0) 22%,
             ${withAlpha(theme.bodyBg, 0.85)} 88%,
             ${theme.bodyBg} 100%),
           ${baseImage}

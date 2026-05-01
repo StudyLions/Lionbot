@@ -19,6 +19,10 @@ interface ColophonProps {
   approvedAt: string | null
   externalLinkUrl?: string | null
   externalLinkLabel?: string | null
+  /** When true, render preview-friendly placeholders instead of
+   *  reading approvedAt — used by the editor's live preview before
+   *  the listing exists in the DB. */
+  isPreview?: boolean
 }
 
 export function Colophon({
@@ -28,6 +32,7 @@ export function Colophon({
   approvedAt,
   externalLinkUrl,
   externalLinkLabel,
+  isPreview,
 }: ColophonProps) {
   // Format with a fixed locale so the SSR output and the browser
   // output match -- otherwise non-en-US visitors hit React hydration
@@ -38,6 +43,8 @@ export function Colophon({
         day: "numeric",
         year: "numeric",
       })
+    : isPreview
+    ? "today (preview)"
     : null
 
   return (

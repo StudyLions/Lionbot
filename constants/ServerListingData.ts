@@ -1,18 +1,20 @@
 // ============================================================
 // AI-GENERATED FILE
 // Created: 2026-04-30
-// Updated: 2026-04-30 (editorial redesign)
+// Updated: 2026-05-01 (dark-only theme palette)
 // Purpose: Static data for the "Feature Your Server" premium feature.
 //          - LISTING_CATEGORIES: ~40 curated tags. Predefined-only
 //            so /servers filtering stays clean and abuse-free.
 //          - LISTING_THEMES: 5 *editorial* theme presets. Each one
 //            is a real visual reskin (different display + body font
-//            pairing, different surface treatment, different cover
-//            blend, different rule style) -- not a palette swap.
-//            Themes are named after real magazines so admins pick
-//            by mood instead of trying to decode "Theme 3 / vibe:
-//            cool & calming". The font pair is implied by the theme,
-//            so we no longer expose a standalone font picker.
+//            pairing, different dark surface treatment, different
+//            cover blend, different rule style) -- not a palette
+//            swap. All five are now dark variants so the public
+//            profile pages match the rest of lionbot.org. Themes
+//            are named after real magazines so admins pick by mood
+//            instead of trying to decode "Theme 3 / vibe: cool &
+//            calming". The font pair is implied by the theme, so
+//            we no longer expose a standalone font picker.
 //          - LISTING_FONTS: kept exported only because legacy listing
 //            rows persist a `font_family` column. The renderer no
 //            longer reads it -- typography is theme-driven now.
@@ -101,16 +103,16 @@ export const LISTING_CATEGORY_IDS = new Set(LISTING_CATEGORIES.map((c) => c.id))
 export type CoverBlendStyle =
   | "duotone"     // Wired -- harsh black + accent two-tone
   | "monochrome"  // Kinfolk -- desaturated to pure greyscale
-  | "wash"        // Vogue -- creamy gradient wash over the cover
-  | "paper"       // Atlantic -- ivory fade with grain
+  | "wash"        // Vogue -- accent-tinted gradient wash over the cover
+  | "paper"       // Atlantic -- soft fade into the warm-dark surface
   | "spare"       // Frieze -- minimal dark-edge vignette only
 
 export type SurfaceTreatment =
-  | "ivory"       // Atlantic -- warm off-white paper
+  | "dusk"        // Atlantic -- warm near-black, journalism feel
   | "matte"       // Wired -- matte black with a faint noise grain
-  | "cream"       // Kinfolk -- cool cream with very wide margins
-  | "ecru"        // Vogue -- warm ecru with red title accents
-  | "bone"        // Frieze -- near-white with negative-space discipline
+  | "graphite"    // Kinfolk -- cool near-black, generous margins
+  | "wine"        // Vogue -- deep oxblood, fashion-magazine night
+  | "void"        // Frieze -- pure dark, vast negative space
 
 export type RuleStyle =
   | "hairline"    // 1px, 30% opacity
@@ -173,31 +175,40 @@ export interface ListingTheme {
 
 /**
  * 5 editorial themes. Pick one and the page gets a real personality:
- * a serif headline, a body font that pairs, a surface, a cover blend,
- * a rule treatment. Admins still pick an accent colour on top, but the
- * theme does the heavy lifting so the page doesn't read as "AI default".
+ * a serif headline, a body font that pairs, a dark surface, a cover
+ * blend, a rule treatment. Admins still pick an accent colour on
+ * top, but the theme does the heavy lifting so the page doesn't
+ * read as "AI default".
+ *
+ * All five themes use dark surfaces so the public profile pages
+ * match the rest of lionbot.org. They stay distinct from each other
+ * by typography (Spectral / Inter Tight / EB Garamond / Playfair),
+ * surface temperature (warm vs cool vs wine vs neutral), accent
+ * colour, gallery treatment, and rule style.
  */
 export const LISTING_THEMES: ListingTheme[] = [
   {
     id: "atlantic",
     label: "The Atlantic",
-    inspired: "Long-form journalism, warm paper",
-    defaultAccent: "#8b1e1e",
+    inspired: "Long-form journalism, warm dark",
+    // Burgundy lifted from the original #8b1e1e so it reads against
+    // a near-black surface without going muddy.
+    defaultAccent: "#c64545",
     displayFont: "Spectral, Georgia, serif",
     bodyFont: "Inter, system-ui, sans-serif",
     googleFonts: ["Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600", "Inter:wght@400;500;600"],
     italicDeck: true,
-    surfaceTreatment: "ivory",
-    bodyBg: "#f6f1e7",
-    bodyText: "#1a1612",
-    mutedText: "#6b5d4f",
-    ruleColor: "rgba(26,22,18,0.18)",
+    surfaceTreatment: "dusk",
+    bodyBg: "#1a1612",
+    bodyText: "#ece4d3",
+    mutedText: "#8e8273",
+    ruleColor: "rgba(236,228,211,0.18)",
     ruleStyle: "hairline",
     coverBlend: "paper",
-    textTone: "dark",
+    textTone: "light",
     dropCap: true,
     galleryFilter: "none",
-    pitch: "Ivory paper, Spectral serif headlines, drop caps. Reads like a feature in a print magazine.",
+    pitch: "Warm near-black, Spectral serif headlines, drop caps. Reads like a long-form feature at midnight.",
   },
   {
     id: "wired",
@@ -224,64 +235,71 @@ export const LISTING_THEMES: ListingTheme[] = [
     id: "kinfolk",
     label: "Kinfolk",
     inspired: "Slow-life, monochrome stillness",
-    defaultAccent: "#3a3a3a",
+    // Soft off-white accent — charcoal-on-charcoal disappears on a
+    // dark surface, so we flip Kinfolk's restrained accent to a near
+    // white that reads but never shouts.
+    defaultAccent: "#cfc8be",
     displayFont: "'EB Garamond', Garamond, serif",
     bodyFont: "Karla, system-ui, sans-serif",
     googleFonts: ["EB+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500", "Karla:wght@400;500;600"],
     italicDeck: true,
-    surfaceTreatment: "cream",
-    bodyBg: "#efeae1",
-    bodyText: "#2a2824",
-    mutedText: "#7a756c",
-    ruleColor: "rgba(42,40,36,0.14)",
+    surfaceTreatment: "graphite",
+    bodyBg: "#17191a",
+    bodyText: "#e6e3dc",
+    mutedText: "#8a8782",
+    ruleColor: "rgba(230,227,220,0.14)",
     ruleStyle: "hairline",
     coverBlend: "monochrome",
-    textTone: "dark",
+    textTone: "light",
     dropCap: false,
     galleryFilter: "grayscale",
-    pitch: "Cream paper, restrained Garamond, monochrome photos. Calm, considered, almost ascetic.",
+    pitch: "Cool near-black, restrained Garamond, monochrome photos. Calm, considered, almost ascetic.",
   },
   {
     id: "vogue",
     label: "Vogue",
     inspired: "Fashion magazine, statement headlines",
-    defaultAccent: "#a82038",
+    // Rose lifted from the original #a82038 so the title accent
+    // pops against the deep wine surface.
+    defaultAccent: "#d63b58",
     displayFont: "'Playfair Display', Georgia, serif",
     bodyFont: "Lato, system-ui, sans-serif",
     googleFonts: ["Playfair+Display:ital,wght@0,500;0,700;0,900;1,500;1,700", "Lato:wght@400;700"],
     italicDeck: true,
-    surfaceTreatment: "ecru",
-    bodyBg: "#f3ece4",
-    bodyText: "#1c1612",
-    mutedText: "#6c5d4d",
-    ruleColor: "rgba(28,22,18,0.20)",
+    surfaceTreatment: "wine",
+    bodyBg: "#171012",
+    bodyText: "#ebe1d8",
+    mutedText: "#9a8b7e",
+    ruleColor: "rgba(235,225,216,0.20)",
     ruleStyle: "double",
     coverBlend: "wash",
-    textTone: "dark",
+    textTone: "light",
     dropCap: true,
     galleryFilter: "sepia",
-    pitch: "Oversized Playfair display, italic deck, sepia gallery. The cover-story treatment.",
+    pitch: "Deep oxblood, oversized Playfair display, italic deck, sepia gallery. The cover-story treatment.",
   },
   {
     id: "frieze",
     label: "Frieze",
     inspired: "Art magazine, severe negative space",
-    defaultAccent: "#000000",
+    // Crisp white instead of black — same idea (a near-monotone
+    // accent against the surface), inverted for dark.
+    defaultAccent: "#ffffff",
     displayFont: "'Inter Tight', Inter, sans-serif",
     bodyFont: "Inter, system-ui, sans-serif",
     googleFonts: ["Inter+Tight:wght@500;700;900", "Inter:wght@400;500"],
     italicDeck: false,
-    surfaceTreatment: "bone",
-    bodyBg: "#fbfbfb",
-    bodyText: "#0a0a0a",
-    mutedText: "#777777",
-    ruleColor: "rgba(0,0,0,0.10)",
+    surfaceTreatment: "void",
+    bodyBg: "#0e0e0d",
+    bodyText: "#ededed",
+    mutedText: "#7a7a7a",
+    ruleColor: "rgba(255,255,255,0.10)",
     ruleStyle: "none",
     coverBlend: "spare",
-    textTone: "dark",
+    textTone: "light",
     dropCap: false,
     galleryFilter: "grayscale",
-    pitch: "Near-white background, vast margins, very large headline, very small body. Art-quarterly cool.",
+    pitch: "Pure dark, vast margins, very large headline, very small body. Art-quarterly cool.",
   },
 ]
 

@@ -40,6 +40,13 @@
 const fs = require("fs");
 const path = require("path");
 
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Mirror of constants/FeatureFlags.ts -> SERVERS_DIRECTORY_ENABLED.
+// next-sitemap is plain CommonJS, so we duplicate the boolean here. Keep
+// these two in sync when re-enabling the public servers directory.
+const SITEMAP_INCLUDES_SERVERS = false;
+// --- END AI-MODIFIED ---
+
 function getGuideSlugs() {
   const dir = path.join(process.cwd(), "content", "guides");
   if (!fs.existsSync(dir)) return [];
@@ -84,6 +91,17 @@ module.exports = {
     ) {
       return null;
     }
+
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Hide /servers and /servers/* from the sitemap while the
+    // public directory is feature-flagged off. We can't import a TS
+    // constant from this CommonJS config cleanly, so we mirror the flag
+    // value here. When you flip SERVERS_DIRECTORY_ENABLED in
+    // constants/FeatureFlags.ts, also flip SITEMAP_INCLUDES_SERVERS below.
+    if (!SITEMAP_INCLUDES_SERVERS && urlPath.startsWith("/servers")) {
+      return null;
+    }
+    // --- END AI-MODIFIED ---
 
     const priorities = {
       "/": 1.0,
@@ -167,21 +185,27 @@ module.exports = {
     //   inside a try/catch and fall back to skipping silently when the
     //   database isn't reachable (e.g. dev machines without DATABASE_URL),
     //   so the sitemap build never blocks a deploy.
-    try {
-      const serverSlugs = await getApprovedServerSlugs();
-      for (const slug of serverSlugs) {
-        paths.push({
-          loc: `/servers/${slug.slug}`,
-          changefreq: "weekly",
-          priority: 0.85,
-          lastmod: slug.updated_at
-            ? new Date(slug.updated_at).toISOString()
-            : new Date().toISOString(),
-        });
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Skip the slug query entirely while the directory is hidden
+    // -- saves a DB round-trip on every sitemap build.
+    if (SITEMAP_INCLUDES_SERVERS) {
+      try {
+        const serverSlugs = await getApprovedServerSlugs();
+        for (const slug of serverSlugs) {
+          paths.push({
+            loc: `/servers/${slug.slug}`,
+            changefreq: "weekly",
+            priority: 0.85,
+            lastmod: slug.updated_at
+              ? new Date(slug.updated_at).toISOString()
+              : new Date().toISOString(),
+          });
+        }
+      } catch (err) {
+        console.warn("[sitemap] Skipping server-listing slugs:", err && err.message);
       }
-    } catch (err) {
-      console.warn("[sitemap] Skipping server-listing slugs:", err && err.message);
     }
+    // --- END AI-MODIFIED ---
     // --- END AI-MODIFIED ---
 
     return paths;

@@ -1603,8 +1603,21 @@ const PROMO_HOURS = LISTING_PROMOTION_HOURS
 
 export default ListingEditorPage
 
-export const getServerSideProps: GetServerSideProps = async ({ locale }) => ({
-  props: {
-    ...(await serverSideTranslations(locale ?? "en", ["common"])),
-  },
-})
+export const getServerSideProps: GetServerSideProps = async ({ locale }) => {
+  // Feature gate -- see constants/FeatureFlags.ts. The editor is hidden
+  // along with the public profile so admins can't edit a not-yet-shipped
+  // feature. Re-enable by flipping SERVERS_DIRECTORY_ENABLED to true.
+  // We require() so the import doesn't pull the runtime flag into the
+  // client bundle when this getServerSideProps is removed in dev hot
+  // reloads (small thing, but keeps the bundle clean).
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { SERVERS_DIRECTORY_ENABLED } = require("@/constants/FeatureFlags")
+  if (!SERVERS_DIRECTORY_ENABLED) {
+    return { notFound: true }
+  }
+  return {
+    props: {
+      ...(await serverSideTranslations(locale ?? "en", ["common"])),
+    },
+  }
+}

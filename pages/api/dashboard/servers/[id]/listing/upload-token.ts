@@ -31,6 +31,7 @@ import {
   LISTING_IMAGE_CONSTRAINTS,
   type ListingImageKind,
 } from "@/utils/listingBlob"
+import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags"
 
 interface UploadClientPayload {
   kind: ListingImageKind
@@ -61,6 +62,9 @@ function parseClientPayload(raw: string | null): UploadClientPayload {
 
 export default apiHandler({
   async POST(req, res) {
+    if (!SERVERS_DIRECTORY_ENABLED) {
+      return res.status(404).json({ error: "Not found" })
+    }
     const guildId = parseBigInt(req.query.id, "id")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
