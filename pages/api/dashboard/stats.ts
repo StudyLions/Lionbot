@@ -68,15 +68,30 @@ function getMonthStart(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))
 }
 
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Bug fix — streak previously reset to 1 on the 1st of every month
+//          because the caller only passed in the current month's active days.
+//          The function itself is unchanged in shape, but we now:
+//            1. Use a Set for O(1) lookup (was O(N) per check via Array.includes)
+//            2. Add a "today not yet attended" grace period that matches the bot's
+//             VoiceStreak achievement behavior (lib/modules/statistics/achievements.py)
+//          The real fix lives at the call site, where we now pass ALL of the user's
+//          distinct active dates instead of just the current month's.
 function computeStreaks(activeDates: string[]): { current: number; longest: number } {
   if (activeDates.length === 0) return { current: 0, longest: 0 }
 
   const sorted = Array.from(new Set(activeDates)).sort()
+  const set = new Set(sorted)
   const today = new Date().toISOString().slice(0, 10)
 
   let current = 0
   let check = today
-  while (sorted.includes(check)) {
+  if (!set.has(check)) {
+    const d = new Date(check)
+    d.setUTCDate(d.getUTCDate() - 1)
+    check = d.toISOString().slice(0, 10)
+  }
+  while (set.has(check)) {
     current++
     const d = new Date(check)
     d.setUTCDate(d.getUTCDate() - 1)
@@ -98,6 +113,7 @@ function computeStreaks(activeDates: string[]): { current: number; longest: numb
   }
   return { current, longest }
 }
+// --- END AI-MODIFIED ---
 
 // --- Achievement definitions ---
 const ACHIEVEMENTS = [
@@ -217,21 +233,30 @@ export default apiHandler({
       dailyStudy.push({ date: dateStr, minutes: dailyMap.get(dateStr) ?? 0 })
     }
 
-    // 3. Streaks (this month)
-    const monthActiveRaw = await prisma.$queryRaw<{ date: Date }[]>(Prisma.sql`
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Bug fix — streak/longest were computed from current-month-only data,
+    //          which caused streak to reset to 1 on the 1st of every month for every
+    //          user. We now query the full history of distinct active days and use
+    //          that for both the calendar (filtered to current month) and the streak
+    //          computation (which needs to walk across month/year boundaries).
+    //          The query is bounded by user-id (and optionally guild-id), both of
+    //          which are indexed, and returns at most ~one row per active day, so
+    //          even multi-year users return only a few hundred rows.
+    const allActiveRaw = await prisma.$queryRaw<{ date: Date }[]>(Prisma.sql`
       SELECT DISTINCT DATE(start_time AT TIME ZONE 'UTC')::date as date
       FROM voice_sessions
       WHERE userid = ${userId}
-        AND start_time >= ${monthStart}
         ${guildId ? Prisma.sql`AND guildid = ${guildId}` : Prisma.empty}
       ORDER BY date
     `)
-
-    const activeDays = monthActiveRaw.map((r) => {
+    const allActiveDays = allActiveRaw.map((r) => {
       const d = r.date instanceof Date ? r.date : new Date(r.date)
       return d.toISOString().slice(0, 10)
     })
-    const { current: currentStreak, longest: longestStreak } = computeStreaks(activeDays)
+    const monthStartIso = monthStart.toISOString().slice(0, 10)
+    const activeDays = allActiveDays.filter((d) => d >= monthStartIso)
+    const { current: currentStreak, longest: longestStreak } = computeStreaks(allActiveDays)
+    // --- END AI-MODIFIED ---
 
     // 4. Achievements
     const [tasksComplete, voteCount, voiceDaysRaw, workoutCount, scheduledCount] = await Promise.all([
@@ -263,7 +288,12 @@ export default apiHandler({
           current = Math.floor(allTimeHours)
           break
         case "VoiceStreak":
-          current = currentStreak
+          // --- AI-MODIFIED (2026-05-01) ---
+          // Purpose: Match bot's VoiceStreak.calculate() — once max ever hit threshold,
+          //          stay at max so the achievement remains unlocked even if the user's
+          //          current streak later drops below 100.
+          current = longestStreak >= a.target ? longestStreak : currentStreak
+          // --- END AI-MODIFIED ---
           break
         case "VoiceDays":
           current = voiceDays

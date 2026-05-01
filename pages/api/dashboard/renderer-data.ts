@@ -36,20 +36,46 @@ function getMonthStart(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1))
 }
 
-function computeCurrentStreak(activeDates: string[]): number {
-  if (activeDates.length === 0) return 0
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Bug fix — caller previously passed only the current month's active days,
+//          which made currentStreak reset to 1 on the 1st of every month. The fix
+//          is at the call site (we now pass full history); here we additionally
+//          switch from Array.includes to Set lookup and add a "today not yet
+//          attended" grace period that matches the bot's VoiceStreak behavior.
+function computeCurrentStreak(activeDates: string[]): { current: number; longest: number } {
+  if (activeDates.length === 0) return { current: 0, longest: 0 }
   const sorted = Array.from(new Set(activeDates)).sort()
+  const set = new Set(sorted)
   const today = new Date().toISOString().slice(0, 10)
   let current = 0
   let check = today
-  while (sorted.includes(check)) {
+  if (!set.has(check)) {
+    const d = new Date(check)
+    d.setUTCDate(d.getUTCDate() - 1)
+    check = d.toISOString().slice(0, 10)
+  }
+  while (set.has(check)) {
     current++
     const d = new Date(check)
     d.setUTCDate(d.getUTCDate() - 1)
     check = d.toISOString().slice(0, 10)
   }
-  return current
+  let longest = 1
+  let run = 1
+  for (let i = 1; i < sorted.length; i++) {
+    const prev = new Date(sorted[i - 1])
+    const curr = new Date(sorted[i])
+    prev.setUTCDate(prev.getUTCDate() + 1)
+    if (prev.toISOString().slice(0, 10) === curr.toISOString().slice(0, 10)) {
+      run++
+      longest = Math.max(longest, run)
+    } else {
+      run = 1
+    }
+  }
+  return { current, longest }
 }
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -90,18 +116,21 @@ export default apiHandler({
     const monthHours = 0 // Would need month aggregate; use 0 for global stats
     const voiceDays = Number(voiceDaysRaw[0]?.count ?? 0)
 
-    const monthActiveRaw = await prisma.$queryRaw<{ date: Date }[]>(Prisma.sql`
+    // --- AI-MODIFIED (2026-05-01) ---
+    // Purpose: Bug fix — query the user's full distinct-day history (not just the
+    //          current month) so the streak doesn't reset on the 1st of the month.
+    const allActiveRaw = await prisma.$queryRaw<{ date: Date }[]>(Prisma.sql`
       SELECT DISTINCT DATE(start_time AT TIME ZONE 'UTC')::date as date
       FROM voice_sessions
       WHERE userid = ${userId}
-        AND start_time >= ${monthStart}
       ORDER BY date
     `)
-    const activeDays = monthActiveRaw.map((r) => {
+    const allActiveDays = allActiveRaw.map((r) => {
       const d = r.date instanceof Date ? r.date : new Date(r.date)
       return d.toISOString().slice(0, 10)
     })
-    const currentStreak = computeCurrentStreak(activeDays)
+    const { current: currentStreak, longest: longestStreak } = computeCurrentStreak(allActiveDays)
+    // --- END AI-MODIFIED ---
 
     const monthAgg = await prisma.voice_sessions.aggregate({
       where: { userid: userId, start_time: { gte: monthStart } },
@@ -116,7 +145,11 @@ export default apiHandler({
           current = Math.floor(allTimeHours)
           break
         case "VoiceStreak":
-          current = currentStreak
+          // --- AI-MODIFIED (2026-05-01) ---
+          // Purpose: Match bot's VoiceStreak.calculate() — once max ever hit threshold,
+          //          stay at max so the achievement remains unlocked.
+          current = longestStreak >= a.target ? longestStreak : currentStreak
+          // --- END AI-MODIFIED ---
           break
         case "VoiceDays":
           current = voiceDays
