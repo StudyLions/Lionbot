@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 1, 2026 ─────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-01) ---
+  // Purpose: Bugfix entry for expired-session UX.
+  {
+    date: "2026-05-01",
+    title: "Dashboard: Expired Sign-Ins Now Send You Back to Discord, Not a Red Error",
+    description:
+      "If your Discord sign-in had quietly expired, the dashboard would show a vague \"Internal Server Error\" instead of telling you to sign in again. Now it just sends you straight back through Discord login and drops you back on the page you were trying to use.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── April 30, 2026 ─────────────────────────────────────────
   // --- AI-MODIFIED (2026-04-30) ---
   // Purpose: Theme catalog expansion + better paths from the marketplace

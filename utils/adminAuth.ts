@@ -48,13 +48,24 @@ export async function getAuthContext(req: NextApiRequest): Promise<AuthContext |
   })
   // --- END AI-MODIFIED ---
   // --- END AI-MODIFIED ---
-  if (token?.discordId && token?.accessToken) {
+  // --- AI-MODIFIED (2026-05-01) ---
+  // Purpose: Reject sessions where the Discord OAuth token refresh has
+  // failed. Without the `!token.error` guard, getAuthContext returned the
+  // stale accessToken, the route handler called Discord with it, Discord
+  // returned 401, and apiHandler mapped that to a generic 500
+  // "Internal Server Error" — confusing the user when the real problem
+  // was just "your sign-in expired, please sign in again". By falling
+  // through to null here, the request is treated as unauthenticated and
+  // the new SESSION_EXPIRED handling kicks in (apiHandler returns 401,
+  // useDashboard fetcher redirects to /api/auth/signin).
+  if (token?.discordId && token?.accessToken && !token?.error) {
     return {
       discordId: token.discordId as string,
       userId: BigInt(token.discordId as string),
       accessToken: token.accessToken as string,
     }
   }
+  // --- END AI-MODIFIED ---
 
   // --- AI-MODIFIED (2026-04-30) ---
   // Fall through to the iOS bearer JWT when there is no NextAuth
@@ -78,9 +89,18 @@ export function checkRateLimit(userId: string, maxPerMinute = 60): boolean {
   return entry.count <= maxPerMinute
 }
 
+// --- AI-MODIFIED (2026-05-01) ---
+// Purpose: Add a `code: "SESSION_EXPIRED"` field so the client-side
+// `useDashboard` fetcher can transparently redirect to /api/auth/signin
+// instead of rendering a generic "Internal Server Error" message. The
+// status stays 401 so existing callers behave the same.
 export function unauthorized(res: NextApiResponse) {
-  return res.status(401).json({ error: "Not authenticated. Please sign in with Discord." })
+  return res.status(401).json({
+    error: "Your sign-in has expired. Please sign in with Discord again.",
+    code: "SESSION_EXPIRED",
+  })
 }
+// --- END AI-MODIFIED ---
 
 export function forbidden(res: NextApiResponse) {
   return res.status(403).json({ error: "You do not have permission to access this resource." })
