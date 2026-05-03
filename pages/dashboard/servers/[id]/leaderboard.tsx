@@ -181,10 +181,38 @@ export default function LeaderboardConfigPage() {
                         className="bg-background border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </SettingRow>
+                    {/* --- AI-REPLACED (2026-05-03) ---
+                        Reason: Original copy only mentioned the leaderboard,
+                        which led real admins to add region/education/vanity
+                        roles assuming it was a leaderboard-only filter. The
+                        bot also uses this list to skip rank assignment, so
+                        members with any of these roles silently stop earning
+                        ranks. New copy makes both effects unmissable.
+                        What the new code does better: explicit warning in
+                        the description plus a stronger tooltip, so admins
+                        can't add self-assigned roles by accident.
+                        --- Original code (commented out for rollback) ---
+                        <SettingRow
+                          label="Unranked Roles"
+                          description="Roles hidden from the leaderboard"
+                          tooltip="Members with any of these roles won't appear on the server leaderboard. Useful for moderators or bots."
+                        >
+                          <RoleSelect
+                            guildId={guildId}
+                            value={data.unrankedRoleIds || []}
+                            onChange={(v) =>
+                              set({ unrankedRoleIds: Array.isArray(v) ? v : v ? [v] : [] })
+                            }
+                            placeholder="Select roles to hide from leaderboard"
+                            multiple
+                            excludeEveryone
+                          />
+                        </SettingRow>
+                        --- End original code --- */}
                     <SettingRow
                       label="Unranked Roles"
-                      description="Roles hidden from the leaderboard"
-                      tooltip="Members with any of these roles won't appear on the server leaderboard. Useful for moderators or bots."
+                      description="Roles excluded from the leaderboard AND from earning activity ranks"
+                      tooltip="Members with any of these roles will be hidden from the leaderboard AND will never be assigned rank roles, even if they pass a rank threshold. Only add roles you genuinely want to opt out of the activity system (e.g. Bots, Admin, Moderator). Do NOT add region, education, or other self-assigned roles — every member who picks one will silently stop receiving ranks."
                     >
                       <RoleSelect
                         guildId={guildId}
@@ -192,11 +220,12 @@ export default function LeaderboardConfigPage() {
                         onChange={(v) =>
                           set({ unrankedRoleIds: Array.isArray(v) ? v : v ? [v] : [] })
                         }
-                        placeholder="Select roles to hide from leaderboard"
+                        placeholder="Select roles to exclude from leaderboard and ranks"
                         multiple
                         excludeEveryone
                       />
                     </SettingRow>
+                    {/* --- END AI-REPLACED --- */}
                   </SectionCard>
 
                   <SectionCard
