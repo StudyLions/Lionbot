@@ -634,12 +634,45 @@ export default apiHandler({
       })
     }
 
+    // --- AI-MODIFIED (2026-05-03) ---
+    // Reason: "Clear Plot" button was broken for the vast majority of dead plots.
+    // The bot only sets `lg_user_farm.dead = true` inside `process_farm_growth`
+    // (gameplay.py), which only fires when the user has fresh voice/message
+    // activity. Any user who plants a seed and then stops talking past the
+    // 48h death timer ends up with a plot whose DB `dead` column is still
+    // `false`, even though the GET handler computes `dead = true` via
+    // `isDead(last_watered, planted_at)` and the UI shows the "Clear Plot"
+    // button. The previous handler then rejected the POST with "Plant is
+    // alive, harvest or let it die first", trapping the plant forever.
+    // We now accept the computed-dead state too -- same logic the family
+    // farm endpoint already uses (pages/api/pet/family/farm.ts).
+    // Confirmed broken on live for 1,677 plots across 493 users
+    // (queried 2026-05-03). Reported by WhiteX in the support server.
+    // What the new code does better:
+    //   - Accepts plots that are dead-by-time even if the bot never marked
+    //     them dead in the DB.
+    //   - Uses the same isDead() helper as the GET handler so frontend and
+    //     backend agree on whether a plot is dead.
+    //   - Splits the "alive" and "empty" guards so error messages stay
+    //     accurate.
+    // --- Original code (commented out for rollback) ---
+    // if (action === "clear") {
+    //   if (!plot.dead && plot.seed_id) {
+    //     return res.status(400).json({ error: "Plant is alive, harvest or let it die first" })
+    //   }
+    //   if (!plot.seed_id && !plot.dead) {
+    //     return res.status(400).json({ error: "Plot is already empty" })
+    //   }
+    //   ...same update + response...
+    // }
+    // --- End original code ---
     if (action === "clear") {
-      if (!plot.dead && plot.seed_id) {
-        return res.status(400).json({ error: "Plant is alive, harvest or let it die first" })
-      }
-      if (!plot.seed_id && !plot.dead) {
+      const computedDead = isDead(plot.last_watered, plot.planted_at, "NONE")
+      if (!plot.seed_id && !plot.dead && !computedDead) {
         return res.status(400).json({ error: "Plot is already empty" })
+      }
+      if (plot.seed_id && !plot.dead && !computedDead) {
+        return res.status(400).json({ error: "Plant is alive, harvest or let it die first" })
       }
 
       await prisma.lg_user_farm.update({
@@ -655,6 +688,7 @@ export default apiHandler({
 
       return res.status(200).json({ success: true, action: "cleared" })
     }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-16) ---
     // Purpose: Sync fullscreen preference to DB (matches bot's lg_pets.fullscreen_mode)

@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 3, 2026 ────────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-03) ---
+  // Purpose: Bug fix — Clear Plot button silently rejected for most dead farm plots.
+  {
+    date: "2026-05-03",
+    title: "Fixed: \"Clear Plot\" button not working on dead farm plants",
+    description:
+      "If a plant died from lack of water and you pressed Clear Plot on the farm page, nothing happened (or you got a confusing \"Plant is alive\" error). The dead plot is now actually cleared so you can plant something new. Reported by WhiteX.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── May 1, 2026 ────────────────────────────────────────────
   // --- AI-MODIFIED (2026-05-01) ---
   // Purpose: Bug fix — Setup Checklist couldn't load on freshly added servers.
