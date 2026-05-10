@@ -40,7 +40,13 @@ import { requireModerator, invalidateGuildPresence } from "@/utils/adminAuth"
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
-const BOT_USER_ID = process.env.DISCORD_CLIENT_ID
+// --- AI-MODIFIED (2026-05-10) ---
+// Purpose: DISCORD_CLIENT_ID is the OAuth2 app ID (for login), NOT the bot's user ID.
+// Derive the real bot user ID from the token (first base64 segment = user ID).
+const BOT_USER_ID = BOT_TOKEN
+  ? Buffer.from(BOT_TOKEN.split(".")[0], "base64").toString()
+  : undefined
+// --- END AI-MODIFIED ---
 
 // Discord permission bit constants. Use BigInt(string) constructor instead of
 // BigInt literal syntax (0x...n) -- tsconfig targets older than ES2020 so
