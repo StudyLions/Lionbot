@@ -23,7 +23,58 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 10, 2026 ───────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Timeline entries for setup experience overhaul + anti-AFK fixes.
+  {
+    date: "2026-05-10",
+    title: "Dashboard setup reliability overhaul",
+    description:
+      "Fixed 21 bugs across the setup experience. The main one: the dashboard sometimes said Leo wasn't in your server even though it was. Also fixed save buttons being clickable before data loaded, settings silently reverting if you edited too fast, and channel/role pickers showing dead-end errors with no retry option.",
+    category: "bugfix",
+    area: "website",
+  },
+  {
+    date: "2026-05-10",
+    title: "Fixed: Anti-AFK kicking camera users and ignoring channel changes",
+    description:
+      "Two bugs fixed. First, members with their camera on could still get kicked if the timing was unlucky — the bot now re-checks camera/streaming right before acting. Second, changing target or excluded channels in the dashboard didn't take effect for users already being tracked. Both apply instantly now.",
+    category: "bugfix",
+    area: "bot",
+  },
+  // --- END AI-MODIFIED ---
+  // ── May 4, 2026 ────────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Timeline entries for schedule command fixes.
+  {
+    date: "2026-05-04",
+    title: "Improved: /schedule stats are easier to read",
+    description:
+      "The stats section of the /schedule command was a confusing flat list where you couldn't tell which numbers were \"recent\" vs \"all time.\" Now they're shown as two side-by-side columns on desktop, with streak on its own line below.",
+    category: "improvement",
+    area: "bot",
+  },
+  {
+    date: "2026-05-04",
+    title: "Fixed: Scheduled session showing \"Missing\" despite being in voice the whole time",
+    description:
+      "If your daily study cap expired during a scheduled session, the bot stopped tracking you even though you were still in the channel. You'd end up marked \"Missing\" with only a few minutes of attendance. The bot now re-clocks you in automatically after a cap reset.",
+    category: "bugfix",
+    area: "bot",
+  },
+  // --- END AI-MODIFIED ---
   // ── May 3, 2026 ────────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Timeline entry for unranked roles documentation fix.
+  {
+    date: "2026-05-03",
+    title: "Clarified: \"Unranked Roles\" also blocks rank-ups, not just leaderboards",
+    description:
+      "\"Unranked Roles\" was described as a leaderboard-only filter, but it also prevented members from ranking up entirely. We renamed it to \"Excluded from Ranks & Leaderboard\" on the dashboard so it's clear what it does. Thanks to Kyla for reporting.",
+    category: "improvement",
+    area: "both",
+  },
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-05-03) ---
   // Purpose: Bug fix — Clear Plot button silently rejected for most dead farm plots.
   {
