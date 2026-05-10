@@ -76,25 +76,22 @@ export function apiHandler(handlers: MethodHandlers) {
         return
       }
       // --- AI-MODIFIED (2026-05-01) ---
-      // Purpose: Map upstream Discord 401s (`err.discordStatus === 401`,
-      // thrown by getUserGuilds / getUserGuildRoles in adminAuth.ts when
-      // a user's OAuth token has been revoked or has expired and
-      // NextAuth could not refresh it) to a 401 response with
-      // `code: "SESSION_EXPIRED"`, instead of the generic 500
-      // "Internal Server Error". The dashboard fetcher
-      // (`hooks/useDashboard.ts`) detects this code and transparently
-      // redirects the user to /api/auth/signin so they re-authenticate
-      // with Discord — instead of seeing a confusing red error and
-      // having to figure out on their own that they need to sign out
-      // and back in. Discovered after a deploy when Ari hit this exact
-      // path on lionbot.org/dashboard/servers and saw "Internal Server
-      // Error" with no hint that re-auth would fix it.
+      // Purpose: Map upstream Discord 401s to a 401 response with SESSION_EXPIRED code
       if (err?.discordStatus === 401) {
         if (!res.headersSent) {
           return res.status(401).json({
             error: "Your Discord sign-in has expired. Please sign in again.",
             code: "SESSION_EXPIRED",
           })
+        }
+        return
+      }
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: Translate Prisma "record not found" to 404 instead of generic 500
+      if (err?.code === "P2025") {
+        if (!res.headersSent) {
+          return res.status(404).json({ error: "Resource not found" })
         }
         return
       }

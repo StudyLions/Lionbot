@@ -118,6 +118,14 @@ export default apiHandler({
       })
     }
 
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: Check BOT_RENDER_URL BEFORE any DB writes so we fail fast
+    // instead of writing a partial save then returning 503.
+    if (!BOT_RENDER_URL) {
+      return res.status(503).json({ error: "Render service not configured" })
+    }
+    // --- END AI-MODIFIED ---
+
     const { baseSkinName, properties } = req.body as {
       baseSkinName?: string
       properties?: Record<string, Record<string, string>>
@@ -194,13 +202,6 @@ export default apiHandler({
         }
       }
     }
-
-    // --- AI-MODIFIED (2026-03-20) ---
-    // Purpose: Fail fast when render URL is not configured (before invalidate fetch)
-    if (!BOT_RENDER_URL) {
-      return res.status(503).json({ error: "Render service not configured" })
-    }
-    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-15) ---
     // Purpose: tell the bot to invalidate its in-memory skin/premium caches

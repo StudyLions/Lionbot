@@ -89,14 +89,31 @@ export default function RoleSelect({
     color: intToHex(role.color),
   }))
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Replace dead-end error with retry button
   if (error) {
     return (
       <div className="text-sm text-red-400">
         {label && <span className="block text-gray-300 font-medium mb-1">{label}</span>}
-        Could not load roles. Check bot permissions.
+        Couldn&apos;t load roles.{" "}
+        <button
+          type="button"
+          className="underline hover:text-red-300 transition-colors"
+          onClick={() => {
+            setError("")
+            roleCache.delete(guildId)
+            setLoading(true)
+            fetch(`/api/discord/guild/${guildId}/roles?refresh=true`)
+              .then((r) => { if (!r.ok) throw new Error("Failed"); return r.json() })
+              .then((data) => { setRoles(data); roleCache.set(guildId, { roles: data, expiresAt: Date.now() + 30000 }) })
+              .catch((e) => setError(e.message))
+              .finally(() => setLoading(false))
+          }}
+        >Try again</button>
       </div>
     )
   }
+  // --- END AI-MODIFIED ---
 
   return (
     <SearchSelect

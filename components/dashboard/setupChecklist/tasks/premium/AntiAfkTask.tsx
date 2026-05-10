@@ -9,7 +9,7 @@
 //          /dashboard/servers/[id]/anti-afk and is reachable via the
 //          "More options" link at the bottom.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ShieldOff, ExternalLink } from "lucide-react"
 import TaskDrawer from "../../TaskDrawer"
 import SettingRow from "../../SettingRow"
@@ -70,8 +70,13 @@ export default function AntiAfkTask({ guildId, open, onClose, onComplete, onSkip
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data?.config) return
+    if (!data?.config || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       enabled: !!data.config.enabled,
       action: data.config.action || "kick",
@@ -80,6 +85,7 @@ export default function AntiAfkTask({ guildId, open, onClose, onComplete, onSkip
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof AntiAfkConfig>(k: K, v: AntiAfkConfig[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -130,6 +136,7 @@ export default function AntiAfkTask({ guildId, open, onClose, onComplete, onSkip
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           onComplete={onComplete}
           // hasValue once the admin has enabled it OR explicitly toggled
           // any setting. With enabled=false and pristine defaults, the

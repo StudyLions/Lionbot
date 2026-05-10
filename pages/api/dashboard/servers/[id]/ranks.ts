@@ -129,10 +129,14 @@ export default apiHandler({
       return res.status(400).json({ error: "No valid fields to update" })
     }
 
-    await prisma.guild_config.update({
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: upsert so new guilds with no guild_config row don't 500
+    await prisma.guild_config.upsert({
       where: { guildid: guildId },
-      data: updates,
+      update: updates,
+      create: { guildid: guildId, ...updates },
     })
+    // --- END AI-MODIFIED ---
     return res.status(200).json({ success: true })
   },
   // --- END AI-MODIFIED ---

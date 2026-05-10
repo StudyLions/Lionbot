@@ -324,6 +324,47 @@ interface CachedGuildInfo {
 
 const guildInfoCache = new Map<string, CachedGuildInfo>()
 
+// --- AI-MODIFIED (2026-05-10) ---
+// Purpose: Exported helper to wipe a single guild's presence cache entry.
+// Called by bot-permissions.ts when a retry detects the bot is back, so the
+// server list refreshes on the next load instead of waiting for the old TTL.
+export function invalidateGuildPresence(guildId: string) {
+  guildInfoCache.delete(guildId)
+}
+// --- END AI-MODIFIED ---
+
+// --- AI-REPLACED (2026-05-10) ---
+// Reason: Original cached present:false for 5 minutes with only 1 retry on 429,
+//         causing ticket #0073 (bot shown as not in server for minutes).
+// What the new code does better: Split TTL (5min success / 15s HTTP fail / 10s
+//         network error), 3-attempt exponential backoff retry, console.error logging.
+// --- Original code (commented out for rollback) ---
+// async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
+//   const cached = guildInfoCache.get(guildId)
+//   if (cached && Date.now() < cached.expiresAt) { return cached }
+//   const botToken = process.env.DISCORD_BOT_TOKEN
+//   if (!botToken) { return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 } }
+//   try {
+//     let res = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, { headers: { Authorization: `Bot ${botToken}` } })
+//     if (res.status === 429) {
+//       const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+//       await new Promise((r) => setTimeout(r, retryAfter * 1000))
+//       res = await fetch(`https://discord.com/api/v10/guilds/${guildId}`, { headers: { Authorization: `Bot ${botToken}` } })
+//     }
+//     if (!res.ok) {
+//       const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 300000 }
+//       guildInfoCache.set(guildId, info)
+//       return info
+//     }
+//     const guild = await res.json()
+//     const info: CachedGuildInfo = { present: true, afk_channel_id: guild.afk_channel_id || null, afk_timeout: guild.afk_timeout || 0, expiresAt: Date.now() + 300000 }
+//     guildInfoCache.set(guildId, info)
+//     return info
+//   } catch {
+//     return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 }
+//   }
+// }
+// --- End original code ---
 async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
   const cached = guildInfoCache.get(guildId)
   if (cached && Date.now() < cached.expiresAt) {
@@ -335,37 +376,61 @@ async function fetchGuildInfo(guildId: string): Promise<CachedGuildInfo> {
     return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 }
   }
 
-  try {
-    let res = await fetch(
-      `https://discord.com/api/v10/guilds/${guildId}`,
-      { headers: { Authorization: `Bot ${botToken}` } }
-    )
-    if (res.status === 429) {
-      const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
-      await new Promise((r) => setTimeout(r, retryAfter * 1000))
-      res = await fetch(
+  const TTL_SUCCESS = 300000   // 5 minutes
+  const TTL_HTTP_FAIL = 15000  // 15 seconds
+  const TTL_NET_ERROR = 10000  // 10 seconds
+  const MAX_ATTEMPTS = 3
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      const res = await fetch(
         `https://discord.com/api/v10/guilds/${guildId}`,
         { headers: { Authorization: `Bot ${botToken}` } }
       )
-    }
-    if (!res.ok) {
-      const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 300000 }
+
+      if (res.status === 429) {
+        const retryAfter = parseFloat(res.headers.get("retry-after") || "2")
+        await new Promise((r) => setTimeout(r, retryAfter * 1000))
+        continue
+      }
+
+      if (!res.ok) {
+        console.error(`[fetchGuildInfo] guild=${guildId} attempt=${attempt} status=${res.status}`)
+        if (attempt < MAX_ATTEMPTS) {
+          await new Promise((r) => setTimeout(r, attempt * 1000))
+          continue
+        }
+        const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + TTL_HTTP_FAIL }
+        guildInfoCache.set(guildId, info)
+        return info
+      }
+
+      const guild = await res.json()
+      const info: CachedGuildInfo = {
+        present: true,
+        afk_channel_id: guild.afk_channel_id || null,
+        afk_timeout: guild.afk_timeout || 0,
+        expiresAt: Date.now() + TTL_SUCCESS,
+      }
+      guildInfoCache.set(guildId, info)
+      return info
+    } catch (err) {
+      console.error(`[fetchGuildInfo] guild=${guildId} attempt=${attempt} network error:`, (err as Error)?.message || err)
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, attempt * 1000))
+        continue
+      }
+      const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + TTL_NET_ERROR }
       guildInfoCache.set(guildId, info)
       return info
     }
-    const guild = await res.json()
-    const info: CachedGuildInfo = {
-      present: true,
-      afk_channel_id: guild.afk_channel_id || null,
-      afk_timeout: guild.afk_timeout || 0,
-      expiresAt: Date.now() + 300000,
-    }
-    guildInfoCache.set(guildId, info)
-    return info
-  } catch {
-    return { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + 60000 }
   }
+
+  const info: CachedGuildInfo = { present: false, afk_channel_id: null, afk_timeout: 0, expiresAt: Date.now() + TTL_NET_ERROR }
+  guildInfoCache.set(guildId, info)
+  return info
 }
+// --- END AI-REPLACED ---
 
 export async function checkBotInGuild(guildId: string): Promise<boolean> {
   const info = await fetchGuildInfo(guildId)

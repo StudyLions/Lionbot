@@ -6,7 +6,7 @@
 //          customisation lives in the full editor at
 //          /dashboard/servers/[id]/branding.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Palette, ExternalLink } from "lucide-react"
 import TaskDrawer from "../../TaskDrawer"
 import DrawerFooter from "../../DrawerFooter"
@@ -44,11 +44,17 @@ export default function BrandingTask({ guildId, open, onClose, onComplete, onSki
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraftSkin(data.baseSkinName ?? "original")
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   async function save() {
     if (!draftSkin) return
@@ -90,6 +96,7 @@ export default function BrandingTask({ guildId, open, onClose, onComplete, onSki
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           onComplete={onComplete}
           // hasValue=true: there's always a current skin to confirm
           // (defaults to "original"), so the no-write path is always

@@ -30,20 +30,17 @@ interface Props {
   onSave?: () => void
   onClose: () => void
   // --- AI-MODIFIED (2026-04-30) ---
-  // Purpose: New props that unlock the three-state primary button. onComplete
-  // marks the task done WITHOUT a network write (used when the admin is
-  // happy with the existing/default settings and just wants to confirm).
-  // hasValue is the per-task signal for whether there's anything meaningful
-  // to confirm (e.g. Welcome has a greeting_channel set, or Rewards which
-  // always has sensible defaults so this is always true).
   onComplete?: () => void
   hasValue?: boolean
   // --- END AI-MODIFIED ---
   saving?: boolean
   dirty?: boolean
-  // Override the primary action label (default: "Save and close" / "Looks good \u2014 mark as done" / "Close")
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Disable primary button while parent data is still loading from API.
+  // Prevents accidental saves of useState placeholder values.
+  isLoading?: boolean
+  // --- END AI-MODIFIED ---
   primaryLabel?: string
-  // Hide the skip button (used on already-done tasks)
   hideSkip?: boolean
 }
 
@@ -51,12 +48,11 @@ export default function DrawerFooter({
   onSkip,
   onSave,
   onClose,
-  // --- AI-MODIFIED (2026-04-30) ---
   onComplete,
   hasValue = false,
-  // --- END AI-MODIFIED ---
   saving = false,
   dirty = false,
+  isLoading = false,
   primaryLabel,
   hideSkip = false,
 }: Props) {
@@ -102,12 +98,11 @@ export default function DrawerFooter({
       <button
         type="button"
         onClick={handlePrimary}
-        disabled={saving}
-        // Primary CTA: 44px tall, full saturation primary, prominent.
+        disabled={saving || isLoading}
         className="inline-flex items-center justify-center gap-2 min-h-[44px] px-5 rounded-md text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60"
       >
-        {saving && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
-        {saving ? "Saving\u2026" : computedLabel}
+        {(saving || isLoading) && <Loader2 size={14} className="animate-spin" aria-hidden="true" />}
+        {saving ? "Saving\u2026" : isLoading ? "Loading\u2026" : computedLabel}
       </button>
     </div>
   )

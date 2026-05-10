@@ -6,7 +6,7 @@
 //          Each picker shows a one-line "this channel will receive ___"
 //          plain-English line and a permission preflight badge.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Bell } from "lucide-react"
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: Use SWR's mutate to push retry payloads into the cache without
@@ -75,8 +75,13 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
   const [retryingPerms, setRetryingPerms] = useState(false)
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       event_log_channel: data.event_log_channel ?? null,
       mod_log_channel: data.mod_log_channel ?? null,
@@ -85,6 +90,7 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof ConfigData>(k: K, v: ConfigData[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -130,9 +136,14 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
       if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
       const fresh = await res.json()
       await globalMutate(permsKey, fresh, { revalidate: false })
-      if (!fresh.bot_present) {
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: Refresh server list when bot presence confirmed
+      if (fresh?.bot_present) {
+        globalMutate("/api/dashboard/servers")
+      } else {
         toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
       }
+      // --- END AI-MODIFIED ---
     } catch (err: any) {
       toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
     } finally {
@@ -159,6 +170,7 @@ export default function NotificationsTask({ guildId, open, onClose, onComplete, 
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: hasValue=true once any of the 4 channels is set. With
           // all 4 blank there's nothing meaningful for the admin to confirm.

@@ -228,7 +228,18 @@ export default apiHandler({
           if (SCHEDULE_BIGINT_FIELDS.has(schedCol)) {
             scheduleUpdates[schedCol] = val ? parseBigInt(val, field) : null
           } else {
-            scheduleUpdates[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+            // --- AI-MODIFIED (2026-05-10) ---
+            // Purpose: Reject NaN from parseInt to prevent writing NaN to the DB
+            if (typeof val === 'number') {
+              scheduleUpdates[schedCol] = val
+            } else if (val != null) {
+              const parsed = parseInt(val, 10)
+              if (!Number.isFinite(parsed)) return res.status(400).json({ error: `Invalid number for ${field}` })
+              scheduleUpdates[schedCol] = parsed
+            } else {
+              scheduleUpdates[schedCol] = null
+            }
+            // --- END AI-MODIFIED ---
           }
         // --- END AI-MODIFIED ---
         // --- END AI-MODIFIED ---
@@ -249,12 +260,16 @@ export default apiHandler({
       return res.status(400).json({ error: "No valid fields to update" })
     }
 
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: upsert so new guilds with no guild_config row don't 500
     if (Object.keys(updates).length > 0) {
-      await prisma.guild_config.update({
+      await prisma.guild_config.upsert({
         where: { guildid: guildId },
-        data: updates,
+        update: updates,
+        create: { guildid: guildId, ...updates },
       })
     }
+    // --- END AI-MODIFIED ---
     // --- AI-MODIFIED (2026-03-23) ---
     // Purpose: Write accountability fields to schedule_guild_config via upsert
     if (Object.keys(scheduleUpdates).length > 0) {
@@ -295,7 +310,18 @@ export default apiHandler({
           if (SCHEDULE_BIGINT_FIELDS.has(schedCol)) {
             scheduleImports[schedCol] = val ? parseBigInt(val, field) : null
           } else {
-            scheduleImports[schedCol] = typeof val === 'number' ? val : val != null ? parseInt(val, 10) : null
+            // --- AI-MODIFIED (2026-05-10) ---
+            // Purpose: Same NaN guard for import path
+            if (typeof val === 'number') {
+              scheduleImports[schedCol] = val
+            } else if (val != null) {
+              const parsed = parseInt(val, 10)
+              if (!Number.isFinite(parsed)) return res.status(400).json({ error: `Invalid number for ${field}` })
+              scheduleImports[schedCol] = parsed
+            } else {
+              scheduleImports[schedCol] = null
+            }
+            // --- END AI-MODIFIED ---
           }
         // --- END AI-MODIFIED ---
         // --- END AI-MODIFIED ---
@@ -342,9 +368,12 @@ export default apiHandler({
       }
     }
 
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: upsert so new guilds don't 500
     if (Object.keys(configUpdates).length > 0) {
-      await prisma.guild_config.update({ where: { guildid: guildId }, data: configUpdates })
+      await prisma.guild_config.upsert({ where: { guildid: guildId }, update: configUpdates, create: { guildid: guildId, ...configUpdates } })
     }
+    // --- END AI-MODIFIED ---
     // --- AI-MODIFIED (2026-03-23) ---
     // Purpose: Write accountability fields to schedule_guild_config on import
     if (Object.keys(scheduleImports).length > 0) {

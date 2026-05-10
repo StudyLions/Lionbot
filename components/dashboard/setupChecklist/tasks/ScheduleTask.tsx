@@ -10,7 +10,7 @@
 //          wizard wrote to (now also fixed in config.ts but this drawer
 //          is the canonical source going forward).
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Calendar } from "lucide-react"
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: SWR mutate for the BotPermBadge Try-again handler.
@@ -63,8 +63,13 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
   const [retryingPerms, setRetryingPerms] = useState(false)
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     const isEnabled = !!(data.lobby_channel || data.room_channel)
     setEnabled(isEnabled)
     setDraft({
@@ -76,6 +81,7 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof ScheduleData>(k: K, v: ScheduleData[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -92,6 +98,14 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
   }
 
   async function save() {
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: Validate that required channels are set when enabling the feature.
+    // Without both channels the bot silently does nothing.
+    if (enabled && (!draft.lobby_channel || !draft.room_channel)) {
+      toast.error("Pick a lobby channel and a sessions category before saving.")
+      return
+    }
+    // --- END AI-MODIFIED ---
     setSaving(true)
     try {
       await dashboardMutate("PATCH", apiKey, draft)
@@ -152,9 +166,14 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
       if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
       const fresh = await res.json()
       await globalMutate(permsKey, fresh, { revalidate: false })
-      if (!fresh.bot_present) {
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: Refresh server list when bot presence confirmed
+      if (fresh?.bot_present) {
+        globalMutate("/api/dashboard/servers")
+      } else {
         toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
       }
+      // --- END AI-MODIFIED ---
     } catch (err: any) {
       toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
     } finally {
@@ -181,12 +200,12 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
           onClose={onClose}
           saving={saving}
           dirty={dirty}
-          // --- AI-MODIFIED (2026-04-30) ---
-          // Purpose: hasValue if the admin enabled the feature OR has a
-          // lobby/category already configured (e.g. they're re-opening a
-          // task that was set up before this widget existed).
+          isLoading={!data}
+          // --- AI-MODIFIED (2026-05-10) ---
+          // Purpose: hasValue requires both channels set (not just enabled toggle).
+          // Prevents marking a misconfigured feature as done.
           onComplete={onComplete}
-          hasValue={!!(enabled || draft.lobby_channel || draft.room_channel)}
+          hasValue={!!(draft.lobby_channel && draft.room_channel)}
           // --- END AI-MODIFIED ---
         />
       }
