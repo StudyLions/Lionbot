@@ -11,7 +11,7 @@
 //          missing it surfaces a friendly "coming soon" message. Wire-up to
 //          the bot's IPC happens in a follow-up.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Hand, Send } from "lucide-react"
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: Use SWR mutate to overwrite the perms cache after a Try-again.
@@ -61,8 +61,13 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
   const [retryingPerms, setRetryingPerms] = useState(false)
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       greeting_channel: data.greeting_channel ?? null,
       greeting_message: data.greeting_message ?? null,
@@ -70,6 +75,7 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof ConfigData>(k: K, v: ConfigData[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -157,9 +163,15 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
       if (!res.ok) throw new Error(`Lookup failed (${res.status})`)
       const fresh = await res.json()
       await globalMutate(permsKey, fresh, { revalidate: false })
-      if (!fresh.bot_present) {
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: When retry confirms bot presence, also refresh the server list
+      // so the server card stops showing "No Bot" immediately.
+      if (fresh?.bot_present) {
+        globalMutate("/api/dashboard/servers")
+      } else {
         toast("Still can't see the bot. If you just kicked + re-invited it, give Discord ~10 seconds.")
       }
+      // --- END AI-MODIFIED ---
     } catch (err: any) {
       toast.error(err?.message || "Couldn't re-check the bot \u2014 try again in a moment.")
     } finally {
@@ -186,6 +198,7 @@ export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: hasValue=true once the admin has either picked a
           // greeting channel OR written a custom message. Without one of

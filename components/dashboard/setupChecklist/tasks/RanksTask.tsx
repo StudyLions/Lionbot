@@ -13,7 +13,7 @@
 //          Validates that at least one rank type is on before save (otherwise
 //          members rank up to nothing).
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Trophy } from "lucide-react"
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
@@ -48,8 +48,13 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       voice: data.voiceRanksEnabled,
       msg: data.msgRanksEnabled,
@@ -59,6 +64,7 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof Draft>(k: K, v: Draft[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -72,30 +78,27 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
     }
     setSaving(true)
     try {
-      // Two endpoints: ranks PUT for the enable flags, config PATCH for
-      // dm_ranks + rank_channel. Run both, fail fast if either fails.
-      // dashboardMutate's signature only types POST/PATCH/DELETE so we hit
-      // /ranks via raw fetch (it's a one-off PUT endpoint).
-      await Promise.all([
-        fetch(ranksKey, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            voiceRanksEnabled: draft.voice,
-            msgRanksEnabled: draft.msg,
-            xpRanksEnabled: draft.xp,
-          }),
-        }).then(async (res) => {
-          if (!res.ok) {
-            const body = await res.json().catch(() => null)
-            throw new Error(body?.error || `Failed to save ranks (HTTP ${res.status})`)
-          }
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: Sequential save — PUT ranks first, then PATCH config. If PUT
+      // fails, config is never touched, avoiding partial state.
+      const putRes = await fetch(ranksKey, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          voiceRanksEnabled: draft.voice,
+          msgRanksEnabled: draft.msg,
+          xpRanksEnabled: draft.xp,
         }),
-        dashboardMutate("PATCH", configKey, {
-          dm_ranks: draft.dm,
-          rank_channel: draft.channel,
-        }),
-      ])
+      })
+      if (!putRes.ok) {
+        const body = await putRes.json().catch(() => null)
+        throw new Error(body?.error || `Failed to save ranks (HTTP ${putRes.status})`)
+      }
+      await dashboardMutate("PATCH", configKey, {
+        dm_ranks: draft.dm,
+        rank_channel: draft.channel,
+      })
+      // --- END AI-MODIFIED ---
       invalidate(ranksKey)
       invalidate(configKey)
       invalidate(`/api/dashboard/servers/${guildId}/setup-checklist`)
@@ -129,6 +132,7 @@ export default function RanksTask({ guildId, open, onClose, onComplete, onSkip }
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: hasValue once at least one rank type is enabled. With
           // all three off the validation in save() would also block, so this

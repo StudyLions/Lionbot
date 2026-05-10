@@ -5,7 +5,7 @@
 //          Three short fields: timezone, admin role, moderator role.
 //          See docs/setup-copy.md for the canonical copy.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Settings } from "lucide-react"
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
@@ -29,9 +29,13 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
-  // Sync server state into the draft on open and on subsequent fetches.
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!server) return
+    if (!server || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       timezone: server.timezone ?? null,
       admin_role: server.admin_role ?? null,
@@ -39,6 +43,7 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
     })
     setDirty(false)
   }, [server, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof EssentialsConfig>(key: K, value: EssentialsConfig[K]) {
     setDraft((d) => ({ ...d, [key]: value }))
@@ -81,13 +86,17 @@ export default function EssentialsTask({ guildId, open, onClose, onComplete, onS
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!server}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: hasValue if the server has any of the 3 essentials set.
           // Previously this same logic powered the bespoke "These look right
           // \u2014 mark as done" link below; now DrawerFooter handles it for
           // every task and the duplicate link below has been removed.
           onComplete={onComplete}
-          hasValue={!!(server?.timezone || server?.admin_role || server?.mod_role)}
+          // --- AI-MODIFIED (2026-05-10) ---
+          // Purpose: Use draft (unsaved user changes) not server (stale fetched state).
+          // Fixes silent data loss when admin clears fields and hits "mark as done".
+          hasValue={!!(draft.timezone || draft.admin_role || draft.mod_role)}
           // --- END AI-MODIFIED ---
         />
       }

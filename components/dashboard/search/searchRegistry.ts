@@ -229,17 +229,10 @@ const PAGE_ITEMS: SearchItem[] = [
     iconName: "CheckSquare",
     requiredLevel: "admin",
   },
-  {
-    id: "page-setup-guided-tour",
-    title: "Guided tour (legacy wizard)",
-    description: "Original 12-step setup walkthrough — kept for power users",
-    category: "page",
-    page: "Features",
-    route: "/setup",
-    keywords: ["wizard", "guided", "tour", "setup", "legacy", "advanced"],
-    iconName: "Wand2",
-    requiredLevel: "admin",
-  },
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Removed misleading "Guided tour (legacy wizard)" entry — the
+  // /setup route redirects to the overview page and the entry was a dead link.
+  // --- END AI-MODIFIED ---
   // --- END AI-REPLACED ---
   {
     id: "page-branding",

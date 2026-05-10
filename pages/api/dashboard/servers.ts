@@ -64,13 +64,25 @@ export default apiHandler({
     // Purpose: skip memberships for servers the user is no longer in (stale DB records)
     const activeMemberships = memberships.filter((m) => discordGuildMap.has(m.guildid.toString()))
 
-    const servers = await Promise.all(
-      activeMemberships.map(async (m) => {
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: Per-guild try/catch so one failing guild doesn't 500 the entire list.
+    //          Concurrency limiter (batch 3) to avoid Discord rate-limit cascades.
+    async function processInBatches<T, R>(items: T[], batchSize: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+      const results: R[] = []
+      for (let i = 0; i < items.length; i += batchSize) {
+        const batch = items.slice(i, i + batchSize)
+        const batchResults = await Promise.all(batch.map(fn))
+        results.push(...batchResults)
+      }
+      return results
+    }
+
+    const servers = await processInBatches(activeMemberships, 3, async (m) => {
+      try {
         const guildIdStr = m.guildid.toString()
         const discordGuild = discordGuildMap.get(guildIdStr)!
 
         let role: ServerRole = "member"
-    // --- END AI-MODIFIED ---
         if (discordGuild) {
           const perms = BigInt(discordGuild.permissions)
           if (perms & BigInt(ADMINISTRATOR)) {
@@ -78,18 +90,22 @@ export default apiHandler({
           } else if (perms & BigInt(MANAGE_GUILD)) {
             role = "moderator"
             if (m.guild_config?.admin_role) {
-              const userRoles = await getUserGuildRoles(m.guildid, auth.discordId)
-              if (userRoles.includes(m.guild_config.admin_role.toString())) {
-                role = "admin"
-              }
+              try {
+                const userRoles = await getUserGuildRoles(m.guildid, auth.discordId)
+                if (userRoles.includes(m.guild_config.admin_role.toString())) {
+                  role = "admin"
+                }
+              } catch { /* fall through with role=moderator */ }
             }
           } else if (m.guild_config?.mod_role || m.guild_config?.admin_role) {
-            const userRoles = await getUserGuildRoles(m.guildid, auth.discordId)
-            if (m.guild_config.admin_role && userRoles.includes(m.guild_config.admin_role.toString())) {
-              role = "admin"
-            } else if (m.guild_config.mod_role && userRoles.includes(m.guild_config.mod_role.toString())) {
-              role = "moderator"
-            }
+            try {
+              const userRoles = await getUserGuildRoles(m.guildid, auth.discordId)
+              if (m.guild_config.admin_role && userRoles.includes(m.guild_config.admin_role.toString())) {
+                role = "admin"
+              } else if (m.guild_config.mod_role && userRoles.includes(m.guild_config.mod_role.toString())) {
+                role = "moderator"
+              }
+            } catch { /* fall through with role=member */ }
           }
         }
 
@@ -99,28 +115,39 @@ export default apiHandler({
           iconUrl = `https://cdn.discordapp.com/icons/${guildIdStr}/${discordGuild.icon}.${ext}?size=128`
         }
 
-        // --- AI-MODIFIED (2026-03-14) ---
-        // Purpose: check actual bot presence via Discord API instead of stale guild_config
         const botPresent = await checkBotInGuild(guildIdStr)
 
         return {
           guildId: guildIdStr,
           guildName: discordGuild?.name || m.guild_config?.name || "Unknown Server",
           displayName: m.display_name,
-          // --- AI-MODIFIED (2026-03-14) ---
-          // Purpose: use voice_sessions aggregate instead of members.tracked_time
           trackedTimeSeconds: studyMap.get(m.guildid.toString()) || 0,
           trackedTimeHours: Math.round(((studyMap.get(m.guildid.toString()) || 0) / 3600) * 10) / 10,
-          // --- END AI-MODIFIED ---
           coins: m.coins || 0,
           firstJoined: m.first_joined,
           role,
           iconUrl,
           botPresent,
         }
-        // --- END AI-MODIFIED ---
-      })
-    )
+      } catch (err) {
+        console.error(`[servers] Failed to process guild ${m.guildid}:`, (err as Error)?.message || err)
+        const guildIdStr = m.guildid.toString()
+        const discordGuild = discordGuildMap.get(guildIdStr)
+        return {
+          guildId: guildIdStr,
+          guildName: discordGuild?.name || m.guild_config?.name || "Unknown Server",
+          displayName: m.display_name,
+          trackedTimeSeconds: studyMap.get(guildIdStr) || 0,
+          trackedTimeHours: Math.round(((studyMap.get(guildIdStr) || 0) / 3600) * 10) / 10,
+          coins: m.coins || 0,
+          firstJoined: m.first_joined,
+          role: "member" as ServerRole,
+          iconUrl: discordGuild?.icon ? `https://cdn.discordapp.com/icons/${guildIdStr}/${discordGuild.icon}.${discordGuild.icon.startsWith("a_") ? "gif" : "webp"}?size=128` : null,
+          botPresent: false,
+        }
+      }
+    })
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-03-20) ---
     // Purpose: discover admin/mod guilds where the bot is present but no members row exists yet
@@ -132,12 +159,17 @@ export default apiHandler({
       return (perms & BigInt(ADMINISTRATOR)) !== BigInt(0) || (perms & BigInt(MANAGE_GUILD)) !== BigInt(0)
     })
 
-    const newServerChecks = await Promise.all(
-      candidateGuilds.map(async (g) => {
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: Same concurrency limiter for candidate guilds + per-guild error isolation
+    const newServerChecks = await processInBatches(candidateGuilds, 3, async (g) => {
+      try {
         const botPresent = await checkBotInGuild(g.id)
         return { guild: g, botPresent }
-      })
-    )
+      } catch {
+        return { guild: g, botPresent: false }
+      }
+    })
+    // --- END AI-MODIFIED ---
 
     for (const { guild: g, botPresent } of newServerChecks) {
       if (!botPresent) continue

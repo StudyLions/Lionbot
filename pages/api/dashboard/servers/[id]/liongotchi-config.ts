@@ -5,7 +5,10 @@
 // ============================================================
 import { prisma } from "@/utils/prisma"
 import { requireAdmin, requireAuth, isModerator } from "@/utils/adminAuth"
-import { apiHandler } from "@/utils/apiHandler"
+// --- AI-MODIFIED (2026-05-10) ---
+// Purpose: Use parseBigInt for 400 instead of 500 on invalid guild IDs
+import { apiHandler, parseBigInt, ValidationError } from "@/utils/apiHandler"
+// --- END AI-MODIFIED ---
 
 const LG_FIELDS = [
   'lg_enabled',
@@ -22,7 +25,7 @@ const DISPLAY_NAME_REGEX = /^[a-zA-Z0-9 ]*$/
 
 export default apiHandler({
   async GET(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAuth(req, res)
     if (!auth) return
 
@@ -56,7 +59,7 @@ export default apiHandler({
   },
 
   async PATCH(req, res) {
-    const guildId = BigInt(req.query.id as string)
+    const guildId = parseBigInt(req.query.id, "guild ID")
     const auth = await requireAdmin(req, res, guildId)
     if (!auth) return
 
@@ -91,7 +94,12 @@ export default apiHandler({
           updates[field] = null
         }
       } else if (BIGINT_FIELDS.has(field)) {
-        updates[field] = val ? BigInt(val) : null
+        // --- AI-MODIFIED (2026-05-10) ---
+        // Purpose: Graceful 400 on malformed snowflake IDs instead of uncaught BigInt crash
+        if (val) {
+          try { updates[field] = BigInt(val) } catch { return res.status(400).json({ error: `Invalid ID for ${field}` }) }
+        } else { updates[field] = null }
+        // --- END AI-MODIFIED ---
       } else {
         updates[field] = val
       }
@@ -101,10 +109,15 @@ export default apiHandler({
       return res.status(400).json({ error: "No valid fields to update" })
     }
 
-    await prisma.guild_config.update({
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: upsert instead of update — prevents 500 if guild_config row
+    // doesn't exist yet (new guilds that haven't run any bot command yet).
+    await prisma.guild_config.upsert({
       where: { guildid: guildId },
-      data: updates,
+      update: updates,
+      create: { guildid: guildId, ...updates },
     })
+    // --- END AI-MODIFIED ---
 
     return res.status(200).json({ success: true, updated: Object.keys(updates) })
   },

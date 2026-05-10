@@ -75,6 +75,15 @@ export function apiHandler(handlers: MethodHandlers) {
         }
         return
       }
+      // --- AI-MODIFIED (2026-05-10) ---
+      // Purpose: Translate Prisma "record not found" to 404 instead of generic 500
+      if (err?.code === "P2025") {
+        if (!res.headersSent) {
+          return res.status(404).json({ error: "Resource not found" })
+        }
+        return
+      }
+      // --- END AI-MODIFIED ---
       console.error(`API error [${req.method} ${req.url}]:`, err?.message || err)
       if (!res.headersSent) {
         res.status(500).json({ error: "Internal server error" })

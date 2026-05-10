@@ -3,7 +3,10 @@
 // Created: 2026-03-13
 // Purpose: Permission-based wrapper component
 // ============================================================
-import { useSession } from "next-auth/react"
+// --- AI-MODIFIED (2026-05-10) ---
+// Purpose: Import signIn to handle session.error === "RefreshTokenError"
+import { useSession, signIn } from "next-auth/react"
+// --- END AI-MODIFIED ---
 import { ReactNode } from "react"
 import UnauthLanding from "@/components/UnauthLanding"
 
@@ -16,7 +19,7 @@ interface AdminGuardProps {
 
 export default function AdminGuard({ children, variant = "dashboard" }: AdminGuardProps) {
 // --- END AI-MODIFIED ---
-  const { status } = useSession()
+  const { status, data: session } = useSession()
 
   if (status === "loading") {
     return (
@@ -29,6 +32,27 @@ export default function AdminGuard({ children, variant = "dashboard" }: AdminGua
       </div>
     )
   }
+
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: Detect expired Discord session and prompt re-login instead of
+  // trapping the user in a broken state where every API call silently fails.
+  if ((session as any)?.error === "RefreshTokenError") {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+        <div className="text-center">
+          <h2 className="text-xl font-bold text-foreground mb-2">Session expired</h2>
+          <p className="text-muted-foreground text-sm">Your Discord session has expired. Sign in again to continue.</p>
+        </div>
+        <button
+          onClick={() => signIn("discord")}
+          className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg text-sm font-medium transition-colors"
+        >
+          Sign in with Discord
+        </button>
+      </div>
+    )
+  }
+  // --- END AI-MODIFIED ---
 
   if (status === "unauthenticated") {
     // --- AI-REPLACED (2026-03-17) ---

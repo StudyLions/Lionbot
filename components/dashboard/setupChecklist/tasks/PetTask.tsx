@@ -5,7 +5,7 @@
 //          Single on/off + drop notification channel. The full pet config
 //          (item drops, raids, marketplace, etc.) lives at /pet/settings.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { PawPrint, ExternalLink } from "lucide-react"
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
@@ -33,8 +33,13 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       lg_enabled: data.lg_enabled ?? false,
       lg_drop_channel: data.lg_drop_channel ?? null,
@@ -42,6 +47,7 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof LgConfig>(k: K, v: LgConfig[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -82,6 +88,7 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: Always true -- this is a single toggle. Admin can confirm
           // their current setting (whether enabled or not) with one tap.

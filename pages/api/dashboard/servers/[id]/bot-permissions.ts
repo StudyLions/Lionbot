@@ -32,7 +32,11 @@
 //            }
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
-import { requireModerator } from "@/utils/adminAuth"
+// --- AI-MODIFIED (2026-05-10) ---
+// Purpose: Import invalidateGuildPresence so a successful retry clears the
+// stale negative entry in guildInfoCache (used by checkBotInGuild/servers.ts).
+import { requireModerator, invalidateGuildPresence } from "@/utils/adminAuth"
+// --- END AI-MODIFIED ---
 import { apiHandler, parseBigInt } from "@/utils/apiHandler"
 
 const BOT_TOKEN = process.env.DISCORD_BOT_TOKEN
@@ -187,6 +191,15 @@ export default apiHandler({
     // --- AI-MODIFIED (2026-04-30) ---
     // Purpose: Successful lookups get the long TTL. See top-of-file comment.
     cache.set(cacheKey, { payload, expiresAt: Date.now() + CACHE_TTL_MS_OK })
+    // --- END AI-MODIFIED ---
+
+    // --- AI-MODIFIED (2026-05-10) ---
+    // Purpose: When a ?refresh=true call confirms the bot IS present, clear
+    // the stale negative entry in guildInfoCache so the server list endpoint
+    // doesn't keep showing "No Bot" for 15s.
+    if (req.query.refresh === "true") {
+      invalidateGuildPresence(cacheKey)
+    }
     // --- END AI-MODIFIED ---
     return res.status(200).json(payload)
   },

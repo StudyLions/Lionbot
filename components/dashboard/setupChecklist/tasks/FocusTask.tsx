@@ -8,7 +8,7 @@
 //          surfaced here \u2014 see audit notes in
 //          pages/api/dashboard/servers/[id]/config.ts.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Timer } from "lucide-react"
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
@@ -40,8 +40,13 @@ export default function FocusTask({ guildId, open, onClose, onComplete, onSkip }
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       task_reward: data.task_reward ?? RECOMMENDED.reward,
       task_reward_limit: data.task_reward_limit ?? RECOMMENDED.limit,
@@ -49,6 +54,7 @@ export default function FocusTask({ guildId, open, onClose, onComplete, onSkip }
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof ConfigData>(k: K, v: ConfigData[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -89,6 +95,7 @@ export default function FocusTask({ guildId, open, onClose, onComplete, onSkip }
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: Always true -- bot ships with sensible defaults
           // (50 coins per task, 10/day limit, summary off).

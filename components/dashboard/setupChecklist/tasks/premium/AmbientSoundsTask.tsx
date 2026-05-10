@@ -60,8 +60,8 @@ export default function AmbientSoundsTask({ guildId, open, onClose, onComplete, 
         <li className="flex items-start gap-2.5">
           <Cloud size={16} className="shrink-0 mt-0.5 text-amber-400/85" aria-hidden="true" />
           <span className="text-foreground/90">
-            <strong className="font-medium text-foreground">9 sound packs.</strong>
-            <span className="text-muted-foreground"> Rain, ocean, campfire, brown / white / pink noise, LoFi, classical, focus.</span>
+            <strong className="font-medium text-foreground">6 sound packs.</strong>
+            <span className="text-muted-foreground"> Rain, ocean, campfire, brown noise, white noise, LoFi.</span>
           </span>
         </li>
         <li className="flex items-start gap-2.5">

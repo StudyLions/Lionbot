@@ -6,7 +6,7 @@
 //          Uses MobileSlider + RecommendedPill so admins can snap to sensible
 //          defaults in one tap, and a live "1-hour-with-camera earns X" preview.
 // ============================================================
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Coins } from "lucide-react"
 import TaskDrawer from "../TaskDrawer"
 import SettingRow from "../SettingRow"
@@ -41,8 +41,13 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
   const [saving, setSaving] = useState(false)
   const [dirty, setDirty] = useState(false)
 
+  // --- AI-MODIFIED (2026-05-10) ---
+  // Purpose: hydratedRef prevents late-arriving fetch from overwriting user edits
+  const hydratedRef = useRef(false)
+  useEffect(() => { if (!open) hydratedRef.current = false }, [open])
   useEffect(() => {
-    if (!data) return
+    if (!data || hydratedRef.current) return
+    hydratedRef.current = true
     setDraft({
       study_hourly_reward: data.study_hourly_reward ?? RECOMMENDED.hourly,
       study_hourly_live_bonus: data.study_hourly_live_bonus ?? RECOMMENDED.bonus,
@@ -50,6 +55,7 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
     })
     setDirty(false)
   }, [data, open])
+  // --- END AI-MODIFIED ---
 
   function update<K extends keyof ConfigData>(k: K, v: ConfigData[K]) {
     setDraft((d) => ({ ...d, [k]: v }))
@@ -92,6 +98,7 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
           onClose={onClose}
           saving={saving}
           dirty={dirty}
+          isLoading={!data}
           // --- AI-MODIFIED (2026-04-30) ---
           // Purpose: Wire the new "mark as done without saving" path.
           // hasValue is always true for Rewards because the bot ships with
