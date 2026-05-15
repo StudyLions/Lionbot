@@ -1242,7 +1242,15 @@ interface LionheartPremiumInfo {
   transferCooldownEnds: string | null;
 }
 
-function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbol: string }) {
+function ServerPremiumShowcase({
+  currency,
+  symbol,
+  onGiftClick,
+}: {
+  currency: Currency;
+  symbol: string;
+  onGiftClick: () => void;
+}) {
   const { data: session } = useSession();
 
   const [activeTab, setActiveTab] = useState<PremiumTabId>("branding");
@@ -2247,6 +2255,21 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
                   </p>
                 </div>
               )}
+              {/* --- AI-MODIFIED (2026-05-15) --- */}
+              {/* Purpose: Gift entry visible in EVERY state of the right-hand */}
+              {/* column (signed-out, no-admin-servers, and admin-buy flow) so */}
+              {/* members find it whether or not they're a server admin.       */}
+              {session && (
+                <button
+                  type="button"
+                  onClick={onGiftClick}
+                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+                >
+                  <Gift size={13} aria-hidden />
+                  Or gift Server Premium to a server you love
+                </button>
+              )}
+              {/* --- END AI-MODIFIED --- */}
             </div>
           </div>
         </div>
@@ -2757,7 +2780,7 @@ export default function Donate() {
         <LossAversionStrip />
         {/* --- END AI-MODIFIED --- */}
 
-        <ServerPremiumShowcase currency={currency} symbol={symbol} />
+        <ServerPremiumShowcase currency={currency} symbol={symbol} onGiftClick={() => setGiftServerOpen(true)} />
 
         {/* Gem Packages */}
         {/* --- AI-MODIFIED (2026-04-24) ---
