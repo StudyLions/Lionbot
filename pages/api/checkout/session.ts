@@ -92,6 +92,8 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
         totalGems: String(totalGems),
       },
       mode: "payment",
+      // Ari files taxes manually; lock automatic tax off at the API layer.
+      automatic_tax: { enabled: false },
       // --- AI-MODIFIED (2026-03-20) ---
       // Purpose: Safe fallback chain instead of raw req.headers.origin which may be undefined
       success_url: `${(req.headers.origin || process.env.NEXTAUTH_URL || "https://lionbot-website.vercel.app") + NavigationPaths.donate}?payment=success&session_id={CHECKOUT_SESSION_ID}`,

@@ -138,6 +138,8 @@ export default async function handler(
         type: "SERVER_PREMIUM",
         plan,
       },
+      // Ari files taxes manually; lock automatic tax off at the API layer.
+      automatic_tax: { enabled: false },
       success_url: `${baseUrl}/dashboard/servers/${guildId}/settings?premium=success`,
       cancel_url: `${baseUrl}/dashboard/servers/${guildId}/settings?premium=cancelled`,
     })
