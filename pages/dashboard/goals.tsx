@@ -231,7 +231,7 @@ export default function GoalsPage() {
   const isCurrent = weekOffset === 0 && monthOffset === 0
 
   return (
-    <Layout SEO={{ title: "Goals - LionBot Dashboard", description: "Track your study goals" }}>
+    <Layout SEO={{ title: "Goals - LionBot Dashboard", description: "Track your productivity goals" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -245,13 +245,13 @@ export default function GoalsPage() {
               {/* <div>
                 <h1 className="text-2xl font-bold text-foreground">Goals</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  Set targets, track progress, and build consistent study habits.
+                  Set targets, track progress, and build consistent productive habits.
                 </p>
               </div> */}
               {/* --- End original code --- */}
               <PageHeader
                 title="Goals"
-                description="Set targets, track progress, and build consistent study habits."
+                description="Set targets, track progress, and build consistent productive habits."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "Goals" },
@@ -275,7 +275,7 @@ export default function GoalsPage() {
                           : "No goals set this week"}
                       </p>
                       <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
-                        <span>{summary.totalStudyHours}h studied</span>
+                        <span>{summary.totalStudyHours}h logged</span>
                         <span>{summary.totalTasksDone} tasks</span>
                         {summary.totalMessages > 0 && <span>{summary.totalMessages} messages</span>}
                         <span>{summary.serversWithGoals} server{summary.serversWithGoals !== 1 ? "s" : ""}</span>
@@ -390,7 +390,7 @@ export default function GoalsPage() {
                   icon={<Target size={48} strokeWidth={1} className="text-muted-foreground" />}
                   title={isCurrent ? "No goals set yet" : "No goals for this period"}
                   description={isCurrent
-                    ? "Set study goals in Discord using LionBot commands, or navigate to past weeks to see your history."
+                    ? "Set productivity goals in Discord using LionBot commands, or navigate to past weeks to see your history."
                     : "Navigate to the current period to set goals, or go further back to see older goals."}
                 />
               ) : (
@@ -442,7 +442,7 @@ export default function GoalsPage() {
                               {/* --- AI-MODIFIED (2026-04-25) --- */}
                               {/* Purpose: Add focus-visible ring on all goal inputs for keyboard a11y */}
                               <div>
-                                <label className="text-[10px] text-muted-foreground block mb-1">Study hours</label>
+                                <label className="text-[10px] text-muted-foreground block mb-1">Productive hours</label>
                                 <input
                                   type="number" min="0" step="1"
                                   value={editValues.study}
@@ -492,7 +492,7 @@ export default function GoalsPage() {
                           <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 mb-4">
                             <RadialProgress
                               value={g.studyProgress} max={g.studyGoal}
-                              label="Study" unit="h"
+                              label="Productive" unit="h"
                             />
                             <RadialProgress
                               value={g.tasksProgress} max={g.taskGoal}

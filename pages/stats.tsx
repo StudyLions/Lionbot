@@ -121,10 +121,10 @@ export default function StatsPage() {
   return (
     <>
       <Head>
-        <title>Stats for Nerds | StudyLion</title>
+        <title>Stats for Nerds | LionBot</title>
         <meta
           name="description"
-          content="Live statistics from StudyLion's mainframe. 500M+ database rows, 32 shards, 69K+ servers, 1.3M users. Real-time data, beautifully visualized."
+          content="Live statistics from LionBot's mainframe. 500M+ database rows, 32 shards, 69K+ servers, 1.3M users. Real-time data, beautifully visualized."
         />
         {/* --- AI-MODIFIED (2026-03-22) --- */}
         {/* Purpose: Add OG image meta tags for social sharing */}

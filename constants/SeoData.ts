@@ -38,9 +38,9 @@ export const HomepageSEO = {
 };
 
 export const StudySEO = {
-  title: "Study Timer",
+  title: "Productivity Timer",
   description:
-    "Use LionBot's study timer to track your focus sessions and boost your productivity.",
+    "Use LionBot's productivity timer to track your focus sessions and boost your output.",
   canonical: `${SITE_URL}/study`,
 };
 
@@ -63,7 +63,7 @@ export const TermsAndConditionsSEO = {
 export const GuidesSEO = {
   title: "Guides - LionBot",
   description:
-    "Step-by-step guides for setting up and using LionBot on Discord. Learn about pomodoro timers, study tracking, economy systems, leaderboards, and more.",
+    "Step-by-step guides for setting up and using LionBot on Discord. Learn about pomodoro timers, activity tracking, economy systems, leaderboards, and more.",
   canonical: `${SITE_URL}/guides`,
   openGraph: {
     title: "LionBot Guides - Discord Bot Tutorials & How-To Articles",
@@ -111,14 +111,14 @@ export const SkinsSEO = {
 // to our sitemap, so the description copy here is intentionally
 // keyword-dense for "Discord study server", "study community", etc.
 export const ServersDirectorySEO = {
-  title: "Discord Study Servers — Find Your Community",
+  title: "Discord Productivity Communities — Find Your Community",
   description:
-    "Discover the best Discord study servers, focus communities, and language exchanges. Browse premium-verified servers powered by LionBot, filter by topic, and join with one click.",
+    "Discover the best Discord productivity communities, focus servers, and language exchanges. Browse premium-verified servers powered by LionBot, filter by topic, and join with one click.",
   canonical: `${SITE_URL}/servers`,
   openGraph: {
-    title: "Find a Discord Study Server You'll Love — LionBot",
+    title: "Find a Discord Productivity Community You'll Love — LionBot",
     description:
-      "Browse hundreds of verified Discord study servers. Filter by category, language, and country.",
+      "Browse hundreds of verified Discord productivity communities. Filter by category, language, and country.",
     url: `${SITE_URL}/servers`,
   },
 };

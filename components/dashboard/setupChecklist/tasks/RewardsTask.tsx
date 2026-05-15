@@ -85,7 +85,7 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
       open={open}
       onClose={onClose}
       title="Member rewards"
-      subtitle="How many LionCoins members earn from studying."
+      subtitle="How many LionCoins members earn from voice activity."
       icon={Coins}
       returnFocusTo="setup-task-trigger-rewards"
       footer={
@@ -114,7 +114,7 @@ export default function RewardsTask({ guildId, open, onClose, onComplete, onSkip
       </p>
 
       <SettingRow
-        label="Coins per hour of study"
+        label="Coins per hour in voice"
         jargon="lioncoin"
         help="A standard rate is 50–150."
         recommended={

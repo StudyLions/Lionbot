@@ -370,7 +370,7 @@ function WeeklyInsight({ stats, pomStats }: { stats: StatsData; pomStats: Pomodo
     }
     if (list.length === 0) {
       list.push({
-        text: "Start a study session to see your weekly insights here!",
+        text: "Join voice to see your weekly insights here!",
         icon: Lightbulb,
       })
     }
@@ -462,7 +462,7 @@ export default function Dashboard() {
   const monthTrend = stats ? getTrend(stats.studyTime.thisMonthMinutes, stats.studyTime.lastMonthMinutes) : undefined
 
   return (
-    <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot study statistics" }}>
+    <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot productivity statistics" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -508,8 +508,8 @@ export default function Dashboard() {
                     title={`${getGreeting()}, ${displayName}!`}
                     description={
                       stats && stats.studyTime.todayMinutes > 0
-                        ? `You've studied ${formatMinutes(stats.studyTime.todayMinutes)} today`
-                        : "Ready to start studying?"
+                        ? `You've been productive for ${formatMinutes(stats.studyTime.todayMinutes)} today`
+                        : "Ready to be productive?"
                     }
                     actions={
                       <div className="flex items-center gap-3 flex-wrap">
@@ -571,7 +571,7 @@ export default function Dashboard() {
                   {/* Study Activity Chart */}
                   <Card className="border-border bg-card">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-foreground text-base">Study Activity</CardTitle>
+                      <CardTitle className="text-foreground text-base">Activity</CardTitle>
                       <p className="text-xs text-muted-foreground">Last 30 days</p>
                     </CardHeader>
                     <CardContent>
@@ -717,7 +717,7 @@ export default function Dashboard() {
                             compact
                             icon={<Clock size={36} strokeWidth={1.25} />}
                             title="No recent sessions"
-                            description="Join any voice channel in a server with LionBot to start studying."
+                            description="Join any voice channel in a server with LionBot to start tracking."
                           />
                           // --- END AI-MODIFIED ---
                         ) : (

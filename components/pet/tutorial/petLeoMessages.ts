@@ -14,12 +14,12 @@ export interface StepMessages {
 
 export const PET_LEO_MESSAGES: Record<string, StepMessages> = {
   welcome: {
-    intro: "You just got a virtual pet lion. Yes, really. It lives on your screen, grows while you study, and earns you rewards. Let me show you everything it can do.",
+    intro: "You just got a virtual pet lion. Yes, really. It lives on your screen, grows while you're productive, and earns you rewards. Let me show you everything it can do.",
     hint: "This tutorial takes about 3 minutes. Each step explains a feature and shows you what it looks like. You can skip ahead or come back anytime.",
     exit: "Alright, let's dive in! First up: keeping your pet happy.",
   },
   care: {
-    intro: "Your pet has 4 needs -- food, cleanliness, rest, and health. Think of them like real needs. If you ignore them, your pet gets sad and earns less gold. Take care of it and you'll earn MORE gold while studying.",
+    intro: "Your pet has 4 needs -- food, cleanliness, rest, and health. Think of them like real needs. If you ignore them, your pet gets sad and earns less gold. Take care of it and you'll earn MORE gold while you're active.",
     hint: "Stats go down slowly over time. Come back and press the care buttons to fill them up. Happy pet = more gold. It's basically emotional blackmail and I'm not sorry.",
     exit: "Care system? You're a natural pet parent. Let's see your pet's room next.",
   },
@@ -29,8 +29,8 @@ export const PET_LEO_MESSAGES: Record<string, StepMessages> = {
     exit: "Interior designer unlocked. Now let's talk about what your pet wears.",
   },
   inventory: {
-    intro: "Equipment is like clothing for your pet -- hats, shirts, boots, and wings. Each item has a rarity level, which tells you how rare and powerful it is. Items appear randomly while you study or chat in Discord.",
-    hint: "When you study in a voice channel or send messages, items can randomly appear -- we call these 'drops.' Rarer items show up less often, but they're worth way more. Think of it like finding treasure while doing homework.",
+    intro: "Equipment is like clothing for your pet -- hats, shirts, boots, and wings. Each item has a rarity level, which tells you how rare and powerful it is. Items appear randomly while you're active in voice or chat in Discord.",
+    hint: "When you're in a voice channel or send messages, items can randomly appear -- we call these 'drops.' Rarer items show up less often, but they're worth way more. Think of it like finding treasure while you focus.",
     exit: "You now know more about item rarity than most players. Let's customize your frame next.",
   },
   skins: {
@@ -69,7 +69,7 @@ export const PET_LEO_MESSAGES: Record<string, StepMessages> = {
     exit: "Family values. Love to see it. You're almost done!",
   },
   complete: {
-    intro: "That's everything! You now know more about LionGotchi than most people who've been playing for weeks. Go explore, earn gold, collect items, decorate your room, and most importantly -- keep studying.",
+    intro: "That's everything! You now know more about LionGotchi than most people who've been playing for weeks. Go explore, earn gold, collect items, decorate your room, and most importantly -- stay productive.",
     hint: "If you ever forget how something works, you can retake this tutorial anytime from the pet menu. Or just dive in and figure it out -- that's half the fun.",
     exit: "Go forth and conquer, pet parent. Your lion is counting on you. No pressure.",
   },

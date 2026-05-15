@@ -281,7 +281,7 @@ export default function HistoryPage() {
   }
 
   return (
-    <Layout SEO={{ title: "Study History - LionBot Dashboard", description: "Your study session history" }}>
+    <Layout SEO={{ title: "Activity History - LionBot Dashboard", description: "Your session history" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -295,16 +295,16 @@ export default function HistoryPage() {
               {/* <div>
                 <h1 className="text-2xl font-bold text-foreground">Study History</h1>
                 <p className="text-sm text-muted-foreground mt-0.5">
-                  View your study sessions, track patterns, and export your data.
+                  View your activity sessions, track patterns, and export your data.
                 </p>
               </div> */}
               {/* --- End original code --- */}
               <PageHeader
-                title="Study History"
-                description="View your study sessions, track patterns, and export your data."
+                title="Activity History"
+                description="View your activity sessions, track patterns, and export your data."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
-                  { label: "Study History" },
+                  { label: "Activity History" },
                 ]}
               />
               {/* --- END AI-REPLACED --- */}
@@ -318,7 +318,7 @@ export default function HistoryPage() {
                       <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground">Currently studying</p>
+                      <p className="text-sm font-semibold text-foreground">Currently in voice</p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         <span className="text-xs text-muted-foreground">{ongoingSession.guildName}</span>
                         <span className="text-xs font-mono text-emerald-400">{formatDuration(liveMinutes)}</span>
@@ -350,7 +350,7 @@ export default function HistoryPage() {
               {chartData.length > 0 && (
                 <div className="bg-card rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-                    <h3 className="text-sm font-semibold text-foreground">Study Activity</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Activity</h3>
                     {/* --- AI-REPLACED (2026-03-24) ---
                         Reason: Migrated chart period segmented control to shared TabBar component
                         --- Original code (commented out for rollback) ---
@@ -556,7 +556,7 @@ export default function HistoryPage() {
                   icon={<History size={48} strokeWidth={1} className="text-muted-foreground" />}
                   title={datePreset !== "all" || guildFilter || typeFilter !== "all"
                     ? "No sessions match your filters"
-                    : "No study sessions recorded yet"}
+                    : "No sessions recorded yet"}
                   description={datePreset !== "all" || guildFilter || typeFilter !== "all"
                     ? "Try a different date range, server, or session type."
                     : "Join a voice channel in a LionBot server to start tracking!"}

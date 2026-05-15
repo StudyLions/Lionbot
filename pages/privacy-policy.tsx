@@ -33,7 +33,7 @@ export default function PrivacyPolicy() {
               <h2>Overview</h2>
               <p>
                 LionBot (&ldquo;we&rdquo;, &ldquo;us&rdquo;, &ldquo;our&rdquo;) is a Discord bot and web dashboard
-                that helps users track study time, manage tasks, set goals, and interact with a virtual pet system
+                that helps users track voice activity, manage tasks, set goals, and interact with a virtual pet system
                 (LionGotchi). This privacy policy explains exactly what data we collect, why we collect it, how we
                 use it, and your rights regarding that data.
               </p>
@@ -73,21 +73,21 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Timezone &amp; Locale</strong> — Set by you to display times correctly and localize the bot interface.</li>
               </ul>
 
-              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Study &amp; Productivity Data</h3>
+              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Productivity &amp; Activity Data</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Voice Study Sessions</strong> — When you join a tracked voice channel: start time, duration, whether your camera/stream/screenshare was on, and the channel used. This is how we calculate your study hours.</li>
+                <li><strong className="text-foreground">Voice Sessions</strong> — When you join a tracked voice channel: start time, duration, whether your camera/stream/screenshare was on, and the channel used. This is how we calculate your productive hours.</li>
                 <li><strong className="text-foreground">Text Activity Sessions</strong> — Message counts and word counts in tracked text channels (aggregated into sessions). We do <strong className="text-foreground">not</strong> store message content — only counts.</li>
                 <li><strong className="text-foreground">Tasks</strong> — To-do list items you create, including their content, completion status, and timestamps.</li>
-                <li><strong className="text-foreground">Weekly &amp; Monthly Goals</strong> — Study hour targets, task targets, and message targets you set for yourself.</li>
+                <li><strong className="text-foreground">Weekly &amp; Monthly Goals</strong> — Productivity targets, task targets, and message targets you set for yourself.</li>
                 <li><strong className="text-foreground">Reminders</strong> — Reminder content, scheduled times, and repeat intervals you configure.</li>
                 <li><strong className="text-foreground">Workout Sessions</strong> — Start time, duration, and channel for workout tracking.</li>
               </ul>
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Economy &amp; Virtual Currency</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">LionCoins (per-server)</strong> — Virtual currency balance earned through studying. Tracked per server.</li>
+                <li><strong className="text-foreground">LionCoins (per-server)</strong> — Virtual currency balance earned through voice activity. Tracked per server.</li>
                 <li><strong className="text-foreground">LionGems (global)</strong> — Premium currency purchased with real money or earned through promotions. Tracked globally.</li>
-                <li><strong className="text-foreground">Coin/Gem Transactions</strong> — Full transaction history including type (study reward, purchase, transfer, admin action), amounts, and timestamps.</li>
+                <li><strong className="text-foreground">Coin/Gem Transactions</strong> — Full transaction history including type (voice reward, purchase, transfer, admin action), amounts, and timestamps.</li>
                 <li><strong className="text-foreground">Shop Purchases &amp; Inventory</strong> — Items purchased from server shops and your current inventory.</li>
                 <li><strong className="text-foreground">Skin Inventory</strong> — Profile card skins you own (purchased with gems).</li>
               </ul>
@@ -120,12 +120,12 @@ export default function PrivacyPolicy() {
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Moderation Data</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Moderation Tickets</strong> — Warnings, study bans, message censors, and notes issued by server moderators. Includes the reason, duration, and moderator who issued it.</li>
+                <li><strong className="text-foreground">Moderation Tickets</strong> — Warnings, voice bans, message censors, and notes issued by server moderators. Includes the reason, duration, and moderator who issued it.</li>
               </ul>
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Scheduled Sessions</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Session Bookings</strong> — Scheduled study sessions you booked, attendance records, and associated rewards.</li>
+                <li><strong className="text-foreground">Session Bookings</strong> — Scheduled sessions you booked, attendance records, and associated rewards.</li>
               </ul>
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Payment Data</h3>
@@ -155,12 +155,12 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Country</strong> — Helps us understand where our users are located so we can prioritize features and content relevant to different regions.</li>
                 <li><strong className="text-foreground">Age Range</strong> — A broad age bracket (e.g. 18–24, 25–34). We never ask for your exact date of birth.</li>
                 <li><strong className="text-foreground">Gender</strong> — Optional demographic information. You can skip this question entirely.</li>
-                <li><strong className="text-foreground">Use Case</strong> — Whether you use LionBot primarily for studying or for a general community.</li>
-                <li><strong className="text-foreground">Field of Study</strong> — Your academic discipline (e.g. Medicine, Computer Science, Business). Helps us tailor features to the subjects our users study.</li>
+                <li><strong className="text-foreground">Use Case</strong> — Whether you use LionBot primarily for productivity or for a general community.</li>
+                <li><strong className="text-foreground">Field of Interest</strong> — Your primary topic or discipline (e.g. Medicine, Computer Science, Business). Helps us tailor features to the topics our users focus on.</li>
                 <li><strong className="text-foreground">Education Level</strong> — Your current education stage (e.g. High School, Undergraduate, Graduate).</li>
               </ul>
               <p>
-                This data is stored in our database and used to guide product decisions, personalize your experience, and deliver relevant communications and content based on your profile (e.g. features, tips, or promotions relevant to your field of study or region). We do not sell or share this data with third parties. You can request deletion of your survey data at any time.
+                This data is stored in our database and used to guide product decisions, personalize your experience, and deliver relevant communications and content based on your profile (e.g. features, tips, or promotions relevant to your field of interest or region). We do not sell or share this data with third parties. You can request deletion of your survey data at any time.
               </p>
               {/* --- END AI-MODIFIED --- */}
             </section>
@@ -182,16 +182,16 @@ export default function PrivacyPolicy() {
               <h2>How We Use Your Data</h2>
               <p>All data we collect is used for the following purposes:</p>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Providing core services</strong> — Tracking study time, managing tasks, calculating XP/coins, maintaining leaderboards, and powering the LionGotchi pet system.</li>
+                <li><strong className="text-foreground">Providing core services</strong> — Tracking voice activity, managing tasks, calculating XP/coins, maintaining leaderboards, and powering the LionGotchi pet system.</li>
                 <li><strong className="text-foreground">Authentication</strong> — Verifying your identity on the web dashboard via Discord OAuth.</li>
-                <li><strong className="text-foreground">Server moderation</strong> — Enabling server moderators to issue warnings, study bans, and enforce server rules.</li>
+                <li><strong className="text-foreground">Server moderation</strong> — Enabling server moderators to issue warnings, voice bans, and enforce server rules.</li>
                 <li><strong className="text-foreground">Premium features</strong> — Processing gem purchases and managing subscription billing.</li>
-                <li><strong className="text-foreground">Statistics &amp; leaderboards</strong> — Displaying your study stats, rankings, and progress within servers you are a member of.</li>
+                <li><strong className="text-foreground">Statistics &amp; leaderboards</strong> — Displaying your activity stats, rankings, and progress within servers you are a member of.</li>
                 <li><strong className="text-foreground">Notifications</strong> — Sending reminders and vote reminders you opt into.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: document email and survey data usage */}
                 <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of LionBot — never spam, never advertising, and never third-party promotions.</li>
-                <li><strong className="text-foreground">Personalization &amp; audience insights</strong> — Using survey data to understand our user base, personalize your experience, deliver content and communications relevant to your profile (such as your field of study or region), and prioritize features that matter most to our community.</li>
+                <li><strong className="text-foreground">Personalization &amp; audience insights</strong> — Using survey data to understand our user base, personalize your experience, deliver content and communications relevant to your profile (such as your field of interest or region), and prioritize features that matter most to our community.</li>
                 {/* --- END AI-MODIFIED --- */}
               </ul>
             </section>
@@ -200,8 +200,8 @@ export default function PrivacyPolicy() {
             <section>
               <h2>Who Can See Your Data</h2>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Server members</strong> — Your study stats, rank, and profile are visible on server leaderboards to other members of the same server.</li>
-                <li><strong className="text-foreground">Server moderators/admins</strong> — Moderators can view moderation tickets, economy balances, and study stats through the dashboard for members of their server.</li>
+                <li><strong className="text-foreground">Server members</strong> — Your activity stats, rank, and profile are visible on server leaderboards to other members of the same server.</li>
+                <li><strong className="text-foreground">Server moderators/admins</strong> — Moderators can view moderation tickets, economy balances, and activity stats through the dashboard for members of their server.</li>
                 <li><strong className="text-foreground">Stripe</strong> — If you purchase LionGems, Stripe processes your payment. Stripe&apos;s own privacy policy governs their handling of your payment data.</li>
                 <li><strong className="text-foreground">Vercel</strong> — Our website is hosted on Vercel. Vercel may process standard web server logs (IP addresses, request metadata) as part of hosting. See Vercel&apos;s privacy policy.</li>
                 <li><strong className="text-foreground">Hetzner</strong> — Our database and bot are hosted on Hetzner servers in the EU. Hetzner provides infrastructure only and does not access our data.</li>
@@ -234,7 +234,7 @@ export default function PrivacyPolicy() {
                 We retain your data for as long as you use our services. Specifically:
               </p>
               <ul className="list-disc pl-6 space-y-2">
-                <li>Study session history, tasks, goals, and economy data are kept indefinitely while you are an active user.</li>
+                <li>Session history, tasks, goals, and economy data are kept indefinitely while you are an active user.</li>
                 <li>If you leave all servers where LionBot is present, your per-server data remains stored but becomes inactive.</li>
                 <li>If you request data deletion (see below), all your data will be permanently removed within 30 days.</li>
                 <li>Moderation tickets may be retained for server safety purposes even after you leave a server, unless you request full deletion.</li>

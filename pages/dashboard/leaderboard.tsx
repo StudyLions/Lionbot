@@ -55,7 +55,7 @@ interface ServerOption {
 }
 
 const TYPE_OPTIONS: { value: LBType; label: string; icon: typeof Clock }[] = [
-  { value: "study", label: "Study Time", icon: Clock },
+  { value: "study", label: "Productive Time", icon: Clock },
   { value: "messages", label: "Messages", icon: MessageSquare },
   { value: "coins", label: "Coins", icon: Coins },
 ]
@@ -638,7 +638,7 @@ export default function LeaderboardPage() {
                         description={
                           debouncedSearch
                             ? `No members matching "${debouncedSearch}"`
-                            : `No ${type === "study" ? "study" : type === "messages" ? "message" : "coin"} activity in this server${period !== "all" ? " for this period" : ""}.`
+                            : `No ${type === "study" ? "productivity" : type === "messages" ? "message" : "coin"} activity in this server${period !== "all" ? " for this period" : ""}.`
                         }
                       />
                     ) : (

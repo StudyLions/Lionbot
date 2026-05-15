@@ -65,7 +65,7 @@ export default function BoardsListPage() {
         <DashboardShell nav={<DashboardNav />} className="max-w-5xl space-y-6">
           <PageHeader
             title="Boards"
-            description="Shared kanban boards for collaborative study and projects."
+            description="Shared kanban boards for collaborative work and projects."
             breadcrumbs={[
               { label: "Dashboard", href: "/dashboard" },
               { label: "Boards" },

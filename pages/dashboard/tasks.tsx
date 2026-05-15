@@ -330,7 +330,7 @@ export default function TasksPage() {
   // --- Render ---
 
   return (
-    <Layout SEO={{ title: "Tasks - LionBot Dashboard", description: "Manage your study tasks" }}>
+    <Layout SEO={{ title: "Tasks - LionBot Dashboard", description: "Manage your tasks" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -343,12 +343,12 @@ export default function TasksPage() {
               {/* --- Original code (commented out for rollback) --- */}
               {/* <div className="mb-2">
                 <h1 className="text-2xl font-bold text-foreground">Tasks</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Track your study tasks and mark them complete as you go.</p>
+                <p className="text-sm text-muted-foreground mt-0.5">Track your tasks and mark them complete as you go.</p>
               </div> */}
               {/* --- End original code --- */}
               <PageHeader
                 title="Tasks"
-                description="Track your study tasks and mark them complete as you go."
+                description="Track your tasks and mark them complete as you go."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "Tasks" },

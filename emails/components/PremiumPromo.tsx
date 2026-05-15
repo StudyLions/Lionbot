@@ -31,7 +31,7 @@ const PROMO: Record<PromoTier, PromoContent> = {
   free: {
     title: "Speed it up with LionHeart",
     body:
-      "Members get 500–3,000 LionGems each month, faster pet growth, and double study coins across every server. From €4.99/month.",
+      "Members get 500–3,000 LionGems each month, faster pet growth, and double voice coins across every server. From €4.99/month.",
     ctaLabel: "See LionHeart",
     ctaHref: `${brand.siteUrl}/donate`,
   },
@@ -45,7 +45,7 @@ const PROMO: Record<PromoTier, PromoContent> = {
   lionheart_plus: {
     title: "Top tier — LionHeart++",
     body:
-      "Includes a free Server Premium slot for one of your servers, the maximum study and farm boosts, and 3,000 monthly gems.",
+      "Includes a free Server Premium slot for one of your servers, the maximum activity and farm boosts, and 3,000 monthly gems.",
     ctaLabel: "Compare tiers",
     ctaHref: `${brand.siteUrl}/donate`,
   },

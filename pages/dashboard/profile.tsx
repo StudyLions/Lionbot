@@ -235,7 +235,7 @@ export default function ProfilePage() {
         <DashboardShell nav={<DashboardNav />} className="space-y-8">
               <PageHeader
                 title="Profile"
-                description="Your profile card, study stats, skins, and preferences. Your timezone and language affect how LionBot displays times and messages."
+                description="Your profile card, productivity stats, skins, and preferences. Your timezone and language affect how LionBot displays times and messages."
                 breadcrumbs={[
                   { label: "Dashboard", href: "/dashboard" },
                   { label: "Profile" },
@@ -568,7 +568,7 @@ export default function ProfilePage() {
                     {/* Purpose: Mute toggle for schedule DM reminders */}
                     <SettingRow
                       label="Mute Schedule Reminders"
-                      description="Stop DM notifications for upcoming scheduled study sessions"
+                      description="Stop DM notifications for upcoming scheduled sessions"
                     >
                       <Toggle
                         checked={profile.scheduleDmMuted ?? false}

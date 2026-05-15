@@ -93,7 +93,7 @@ export default function StepCommunity({
             </div>
             <p className="text-xs text-gray-400">
               Create interactive menus where members can pick their own roles.
-              Perfect for color roles, notification preferences, study groups, and more.
+              Perfect for color roles, notification preferences, interest groups, and more.
               The role menu editor is a dedicated tool -- we&apos;ll link you there after the wizard.
             </p>
 

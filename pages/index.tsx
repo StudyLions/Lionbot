@@ -487,7 +487,7 @@ function TrailerSection() {
             See LionBot in Action
           </h2>
           <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Discover how LionBot transforms your Discord server into a productive study community.
+            Discover how LionBot transforms your Discord server into a productive community.
           </p>
         </motion.div>
 
@@ -826,7 +826,7 @@ function HowItWorksSection() {
                     142
                   </div>
                   <div className="text-[9px] text-muted-foreground">
-                    studying right now
+                    active right now
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">

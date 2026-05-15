@@ -92,9 +92,9 @@ interface CategoryDef {
 const CATEGORIES: CategoryDef[] = [
   {
     key: "voiceSessions",
-    label: "Voice study sessions",
+    label: "Voice sessions",
     icon: <Mic size={14} />,
-    description: "Deletes tracked voice/study sessions in the selected range.",
+    description: "Deletes tracked voice sessions in the selected range.",
     timeFramed: true,
     formatPreview: (p) => {
       if (p.counts.voiceSessions === 0) return "0 sessions"
@@ -104,9 +104,9 @@ const CATEGORIES: CategoryDef[] = [
   },
   {
     key: "textSessions",
-    label: "Text study sessions",
+    label: "Text sessions",
     icon: <MessageSquare size={14} />,
-    description: "Deletes tracked text-channel study sessions.",
+    description: "Deletes tracked text-channel sessions.",
     timeFramed: true,
     formatPreview: (p) => {
       if (p.counts.textSessions === 0) return "0 sessions"
@@ -118,7 +118,7 @@ const CATEGORIES: CategoryDef[] = [
     key: "voiceXp",
     label: "Voice XP",
     icon: <Sparkles size={14} />,
-    description: "Removes XP earned from voice/study activity.",
+    description: "Removes XP earned from voice activity.",
     timeFramed: true,
     formatPreview: (p) =>
       p.counts.voiceXp === 0
@@ -502,7 +502,7 @@ export default function ResetMemberStatsModal({
                   <p className="text-[11px] text-muted-foreground/80">
                     Will also auto-clear:{" "}
                     {[
-                      willClearBadge ? "last study badge" : null,
+                      willClearBadge ? "last activity badge" : null,
                       willClearVoiceRank ? "cached voice rank" : null,
                       willClearXpRank ? "cached XP rank" : null,
                     ]

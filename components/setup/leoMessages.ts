@@ -17,7 +17,7 @@ export interface StepMessages {
 export const LEO_MESSAGES: Record<string, StepMessages> = {
   welcome: {
     intro: "73,803 servers and counting. This wizard will walk you through everything I can do -- and trust me, it's a lot. Each step explains a feature and lets you configure it. Ready?",
-    hint: "No pressure, but every second you DON'T click that button, a potential study session goes unwasted. Wait, that came out wrong.",
+    hint: "No pressure, but every second you DON'T click that button, a potential productive session goes unwasted. Wait, that came out wrong.",
     exit: "AND WE'RE OFF. Buckle up, bestie.",
   },
   basics: {
@@ -41,18 +41,18 @@ export const LEO_MESSAGES: Record<string, StepMessages> = {
     exit: "Task system configured. Your members now have NO excuse to procrastinate. Well, they do, but now they'll feel guilty about it.",
   },
   pomodoro: {
-    intro: "The Pomodoro Technique: 25 minutes of focus, then a 5-minute break, then repeat. Members type /pomodoro in Discord and study together with synchronized timers. Simple, effective, and scientifically backed. Unlike my jokes, which are just effective.",
-    hint: "Set a dedicated Pomodoro channel so members can focus together. Nothing motivates studying like knowing someone else is also suffering.",
+    intro: "The Pomodoro Technique: 25 minutes of focus, then a 5-minute break, then repeat. Members type /pomodoro in Discord and focus together with synchronized timers. Simple, effective, and scientifically backed. Unlike my jokes, which are just effective.",
+    hint: "Set a dedicated Pomodoro channel so members can focus together. Nothing motivates focus like knowing someone else is also in the zone.",
     exit: "Timer's set! Your members are about to become productivity machines. Or they'll ignore it. Either way, I tried.",
   },
   schedule: {
-    intro: "Accountability sessions. Members pay a small entry fee in LionCoins to join a scheduled study session. Show up? They get their coins back plus a reward. Don't show up? The entry fee is gone forever. It's the ultimate motivation.",
+    intro: "Accountability sessions. Members pay a small entry fee in LionCoins to join a scheduled session. Show up? They get their coins back plus a reward. Don't show up? The entry fee is gone forever. It's the ultimate motivation.",
     hint: "Set the entry fee high enough that missing hurts, but low enough that joining doesn't feel like a mortgage payment. Balance is key. Like yoga, but for Discord.",
-    exit: "Schedule system locked and loaded. Your members are now financially accountable for their study habits. You're welcome, their future selves.",
+    exit: "Schedule system locked and loaded. Your members are now financially accountable for their productivity habits. You're welcome, their future selves.",
   },
   community: {
     intro: "Now for the fun stuff -- role menus (let members pick their own roles), private rooms (temporary voice channels members can create), camera-required channels, and moderation tools. This is where {serverName} goes from 'just another server' to 'wow, they have their stuff together.'",
-    hint: "Private rooms let members create temporary voice channels for study groups or hanging out. It's like giving them their own room, except you don't have to pay rent. Everyone wins.",
+    hint: "Private rooms let members create temporary voice channels for any group or hanging out. It's like giving them their own room, except you don't have to pay rent. Everyone wins.",
     exit: "Community tools? STACKED. {serverName} is about to feel like a five-star Discord resort.",
   },
   liongotchi: {
@@ -61,7 +61,7 @@ export const LEO_MESSAGES: Record<string, StepMessages> = {
     exit: "LionGotchi is LIVE. Your members are about to adopt virtual lions and honestly? That's the most valid thing anyone's done on Discord.",
   },
   premium: {
-    intro: "Real talk for a second. LionBot is a small family project. Built by Ari because studying alone sucked. Now we serve 73k+ servers because apparently everyone agreed.",
+    intro: "Real talk for a second. LionBot is a small family project. Built by Ari because being productive alone sucked. Now we serve 73k+ servers because apparently everyone agreed.",
     hint: "Premium admins get direct contact with the developers. Like, you can literally DM us feature ideas and we'll build them. We ship updates weekly. It's kinda insane, not gonna lie.",
     exit: "Whether you go premium or not -- we're here for you. Join the support server, report bugs, say hi. We fix stuff FAST because we actually care. Cringe? Maybe. True? Absolutely.",
   },

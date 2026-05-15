@@ -320,8 +320,8 @@ const PAGE_ITEMS: SearchItem[] = [
 const SETTINGS_SECTION_ITEMS: SearchItem[] = [
   {
     id: "setting-study-rewards",
-    title: "Study Rewards",
-    description: "Hourly reward, camera bonus, daily study cap",
+    title: "Productivity Rewards",
+    description: "Hourly reward, camera bonus, daily voice cap",
     category: "setting",
     page: "Settings",
     route: "/settings",
@@ -465,7 +465,7 @@ const SETTINGS_SECTION_ITEMS: SearchItem[] = [
   {
     id: "setting-tracking",
     title: "Tracking Exclusions",
-    description: "Channels excluded from study and XP tracking",
+    description: "Channels excluded from voice and XP tracking",
     category: "setting",
     page: "Settings",
     route: "/settings",
@@ -551,7 +551,7 @@ const FEATURE_ITEMS: SearchItem[] = [
   {
     id: "feature-pomodoro-summaries",
     title: "Session Summaries",
-    description: "Automatic study session summary messages",
+    description: "Automatic session summary messages",
     category: "feature",
     page: "Pomodoro",
     route: "/pomodoro",

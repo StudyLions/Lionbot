@@ -50,9 +50,9 @@ export const adminTutorials: Tutorial[] = [
         title: "The Setup Wizard",
         paragraphs: [
           "If you're setting up LionBot for the first time, the Setup Wizard walks you through everything step by step. It's a 12-step guided flow that covers:",
-          "Welcome — Introduction and what to expect. Ranks — Set up rank tiers and choose voice time, XP, or message-based progression. LionGotchi — Enable or disable the virtual pet system. Economy — Configure coin earn rates and daily study caps.",
-          "Tasks — Set up task completion rewards. Pomodoro — Configure focus/break timers for voice channels. Schedule — Set up bookable study time slots. Basics — Server timezone, logging channel, and core settings.",
-          "Community — Study channels, notification preferences, and welcome messages. Commands — Choose which command categories to enable. Premium — Overview of premium features. Celebration — You're all set!",
+          "Welcome — Introduction and what to expect. Ranks — Set up rank tiers and choose voice time, XP, or message-based progression. LionGotchi — Enable or disable the virtual pet system. Economy — Configure coin earn rates and daily activity caps.",
+          "Tasks — Set up task completion rewards. Pomodoro — Configure focus/break timers for voice channels. Schedule — Set up bookable session time slots. Basics — Server timezone, logging channel, and core settings.",
+          "Community — Voice channels, notification preferences, and welcome messages. Commands — Choose which command categories to enable. Premium — Overview of premium features. Celebration — You're all set!",
           "Your progress saves automatically — if you close the browser and come back, the wizard picks up where you left off.",
         ],
         tip: "You can always come back and change settings later. The wizard just gives you a good starting point.",
@@ -75,7 +75,7 @@ export const adminTutorials: Tutorial[] = [
   {
     slug: "configuring-ranks",
     title: "Configuring Ranks",
-    description: "Set up a rank system so members level up as they study. Choose between voice time, XP, or message-based ranks.",
+    description: "Set up a rank system so members level up as they're active. Choose between voice time, XP, or message-based ranks.",
     audience: "admin",
     iconName: "BarChart3",
     estimatedMinutes: 6,
@@ -95,10 +95,10 @@ export const adminTutorials: Tutorial[] = [
         title: "Choosing a Rank Type",
         paragraphs: [
           "You need to decide what type of activity ranks are based on:",
-          "Voice Time — Members rank up by spending time in voice channels. Best for study servers and communities focused on voice activity.",
+          "Voice Time — Members rank up by spending time in voice channels. Best for communities focused on voice activity.",
           "XP (Experience Points) — Members earn XP from both messages and voice activity. A balanced option that rewards all types of participation.",
           "Messages — Members rank up based on message count. Best for text-heavy communities.",
-          "Most study servers use Voice Time since it directly measures study effort.",
+          "Most servers use Voice Time since it directly measures voice activity.",
         ],
       },
       {
@@ -146,7 +146,7 @@ export const adminTutorials: Tutorial[] = [
         title: "What Is the Shop?",
         paragraphs: [
           "The shop gives members something to spend their LionCoins on. The most common shop items are colour roles — custom-colored name roles that members can buy to stand out.",
-          "Having a shop creates a goal for earning coins, which motivates members to study more and stay active.",
+          "Having a shop creates a goal for earning coins, which motivates members to stay active.",
         ],
       },
       {
@@ -163,7 +163,7 @@ export const adminTutorials: Tutorial[] = [
         id: "pricing-strategy",
         title: "Pricing Your Items",
         paragraphs: [
-          "Think about how long it takes members to earn coins when setting prices. If a member earns about 100 coins per hour of study, a 500-coin role takes 5 hours of effort.",
+          "Think about how long it takes members to earn coins when setting prices. If a member earns about 100 coins per hour of voice activity, a 500-coin role takes 5 hours of effort.",
           "Start with lower prices and adjust as you see how your economy develops. You can always change prices later.",
         ],
       },
@@ -193,7 +193,7 @@ export const adminTutorials: Tutorial[] = [
         id: "what-are-role-menus",
         title: "What Are Role Menus?",
         paragraphs: [
-          "Role menus let members assign themselves roles by clicking a button, selecting from a dropdown, or reacting to a message. They're perfect for things like study subject roles, notification preferences, or color roles.",
+          "Role menus let members assign themselves roles by clicking a button, selecting from a dropdown, or reacting to a message. They're perfect for things like topic roles, notification preferences, or color roles.",
           "You create the menu once, and members can interact with it anytime without needing admin help.",
         ],
       },
@@ -216,7 +216,7 @@ export const adminTutorials: Tutorial[] = [
           "You can also use the Role Menu Editor in Discord by right-clicking a message and selecting it from the Apps menu.",
           "Pick your roles, choose a menu type, customize the message, and you're done.",
         ],
-        tip: "Use descriptive labels for each role option. Instead of just 'Biology', write 'Biology — Get notified about biology study sessions' so members know exactly what they're signing up for.",
+        tip: "Use descriptive labels for each role option. Instead of just 'Biology', write 'Biology — Get notified about biology sessions' so members know exactly what they're signing up for.",
       },
       {
         id: "best-practices",
@@ -282,7 +282,7 @@ export const adminTutorials: Tutorial[] = [
   {
     slug: "pomodoro-and-schedule",
     title: "Pomodoro & Schedule",
-    description: "Set up Pomodoro timers in voice channels and configure the schedule system for organized study sessions.",
+    description: "Set up Pomodoro timers in voice channels and configure the schedule system for organized sessions.",
     audience: "admin",
     iconName: "Clock",
     estimatedMinutes: 5,
@@ -310,7 +310,7 @@ export const adminTutorials: Tutorial[] = [
         id: "schedule-system",
         title: "The Schedule System",
         paragraphs: [
-          "The schedule system lets you set up organized study sessions with hourly time slots. Members can book slots ahead of time, which creates commitment and structure.",
+          "The schedule system lets you set up organized sessions with hourly time slots. Members can book slots ahead of time, which creates commitment and structure.",
           "Configure the schedule in the dashboard — set available hours, the schedule channel, and how booking works.",
         ],
       },
@@ -326,8 +326,8 @@ export const adminTutorials: Tutorial[] = [
         id: "pomodoro-analytics",
         title: "Pomodoro Analytics",
         paragraphs: [
-          "Premium servers get access to Pomodoro Analytics — a dashboard page showing detailed usage data. See how many focus sessions your members complete, peak study hours, average session lengths, and which channels are most popular.",
-          "Use these insights to optimize your Pomodoro setup. If most members study between 8-10 PM, make sure your best channels are available during those hours.",
+          "Premium servers get access to Pomodoro Analytics — a dashboard page showing detailed usage data. See how many focus sessions your members complete, peak focus hours, average session lengths, and which channels are most popular.",
+          "Use these insights to optimize your Pomodoro setup. If most members are active between 8-10 PM, make sure your best channels are available during those hours.",
         ],
         note: "Pomodoro Analytics is a premium feature. See the Premium Features tutorial for more details on what's included.",
       },
@@ -404,8 +404,8 @@ export const adminTutorials: Tutorial[] = [
         id: "video-channels",
         title: "Video-On Channels",
         paragraphs: [
-          "Want to make sure members have their cameras on during study sessions? Designate specific voice channels as video-required channels.",
-          "When a member joins a video channel without their camera on, the bot will notify them. This creates accountability and helps build a focused study environment.",
+          "Want to make sure members have their cameras on during sessions? Designate specific voice channels as video-required channels.",
+          "When a member joins a video channel without their camera on, the bot will notify them. This creates accountability and helps build a focused environment.",
         ],
       },
       {
@@ -432,10 +432,10 @@ export const adminTutorials: Tutorial[] = [
         id: "putting-it-together",
         title: "Putting It All Together",
         paragraphs: [
-          "You've covered the core LionBot features. The next tutorials cover premium add-ons — Ambient Sounds for background audio in study channels, and a roundup of all premium features.",
+          "You've covered the core LionBot features. The next tutorials cover premium add-ons — Ambient Sounds for background audio in voice channels, and a roundup of all premium features.",
           "Remember, you can always come back to the dashboard to tweak settings. And if you need help, join the LionBot Discord server for support.",
         ],
-        tip: "Don't enable everything at once. Start with the features your community will use most (usually study tracking + ranks), then add the shop, role menus, and other features over time.",
+        tip: "Don't enable everything at once. Start with the features your community will use most (usually voice tracking + ranks), then add the shop, role menus, and other features over time.",
       },
     ],
   },
@@ -447,7 +447,7 @@ export const adminTutorials: Tutorial[] = [
   {
     slug: "ambient-sounds",
     title: "Ambient Sounds",
-    description: "Add background audio to your study channels — rain, campfire, ocean waves, and white noise — powered by the SoundsBot.",
+    description: "Add background audio to your voice channels — rain, campfire, ocean waves, and white noise — powered by the SoundsBot.",
     audience: "admin",
     iconName: "Volume2",
     estimatedMinutes: 4,
@@ -459,7 +459,7 @@ export const adminTutorials: Tutorial[] = [
         title: "What Are Ambient Sounds?",
         paragraphs: [
           "Ambient Sounds adds background audio to your voice channels — rain, campfire, ocean waves, brown noise, or white noise. It's powered by the SoundsBot, a companion bot that joins voice channels and plays looped audio.",
-          "Members studying in a channel with ambient sounds get a calming background that helps them focus. It's one of the most-loved premium features.",
+          "Members active in a channel with ambient sounds get a calming background that helps them focus. It's one of the most-loved premium features.",
         ],
         note: "Ambient Sounds requires a premium server subscription to enable.",
       },
@@ -476,7 +476,7 @@ export const adminTutorials: Tutorial[] = [
         title: "Configuring Bot Slots",
         paragraphs: [
           "For each slot, you choose three things: a sound type (rain, campfire, ocean, brown noise, or white noise), a voice channel for the bot to join, and a volume level.",
-          "Different channels can have different sounds. For example, put rain in your main study channel and campfire in a cozy late-night channel.",
+          "Different channels can have different sounds. For example, put rain in your main voice channel and campfire in a cozy late-night channel.",
         ],
         tip: "Start with one or two slots and see what your members prefer. You can always add more later. Rain and brown noise are the most popular choices.",
       },
@@ -492,8 +492,8 @@ export const adminTutorials: Tutorial[] = [
         id: "schedule-analytics",
         title: "Schedule & Analytics",
         paragraphs: [
-          "You can set a schedule for when ambient sounds are active. For example, only play sounds during study hours (8 AM to midnight) to save resources during off-hours.",
-          "The analytics section shows usage data — how many members studied with ambient sounds, peak hours, and which sound types are most popular in your server.",
+          "You can set a schedule for when ambient sounds are active. For example, only play sounds during active hours (8 AM to midnight) to save resources during off-hours.",
+          "The analytics section shows usage data — how many members used ambient sounds, peak hours, and which sound types are most popular in your server.",
         ],
       },
       {
@@ -528,7 +528,7 @@ export const adminTutorials: Tutorial[] = [
         id: "premium-overview",
         title: "What's Included in Premium?",
         paragraphs: [
-          "Premium servers unlock a suite of advanced features that help you run a more polished, data-driven study community. These features are available as long as your server has an active premium subscription.",
+          "Premium servers unlock a suite of advanced features that help you run a more polished, data-driven community. These features are available as long as your server has an active premium subscription.",
           "This tutorial covers each premium feature at a glance. Each one has its own section in the server dashboard.",
         ],
       },
@@ -537,26 +537,26 @@ export const adminTutorials: Tutorial[] = [
         title: "Sticky Messages",
         paragraphs: [
           "Sticky messages are persistent messages that stay pinned to the bottom of a channel. When new messages push them up, LionBot automatically reposts them so they're always visible.",
-          "Use sticky messages for rules, study guidelines, important links, or any information you want members to always see. Configure them from the Sticky Messages page in the dashboard.",
+          "Use sticky messages for rules, community guidelines, important links, or any information you want members to always see. Configure them from the Sticky Messages page in the dashboard.",
         ],
-        tip: "Sticky messages work great in channels like #rules, #resources, or #study-tips where you want key information always visible without members scrolling up.",
+        tip: "Sticky messages work great in channels like #rules, #resources, or #tips where you want key information always visible without members scrolling up.",
       },
       {
         id: "leaderboard-autopost",
         title: "Leaderboard Auto-Post",
         paragraphs: [
           "Set up automatic leaderboard posts on a daily, weekly, or monthly schedule. LionBot posts the current leaderboard to a channel of your choice at the time you configure.",
-          "You can also set up rewards — automatically give bonus coins or a special role to the top N members each period. This creates healthy competition and motivates members to study consistently.",
+          "You can also set up rewards — automatically give bonus coins or a special role to the top N members each period. This creates healthy competition and motivates members to stay active consistently.",
         ],
       },
       {
         id: "voice-time-editor-admin",
         title: "Voice Time Editor",
         paragraphs: [
-          "The Voice Time Editor lets members adjust their study session records — fix missing sessions, correct durations, and remove incorrect entries. As an admin, you control whether this feature is available and its limits.",
+          "The Voice Time Editor lets members adjust their voice session records — fix missing sessions, correct durations, and remove incorrect entries. As an admin, you control whether this feature is available and its limits.",
           "Configure the maximum number of monthly edits, how far back members can edit, and any other restrictions from the Voice Time Editor settings page.",
         ],
-        warning: "The Voice Time Editor gives members the ability to modify their study records. Set reasonable limits to prevent abuse while still being helpful for genuine corrections.",
+        warning: "The Voice Time Editor gives members the ability to modify their voice records. Set reasonable limits to prevent abuse while still being helpful for genuine corrections.",
       },
       {
         id: "pomodoro-analytics-premium",
@@ -597,7 +597,7 @@ export const adminTutorials: Tutorial[] = [
         id: "liongotchi-overview",
         title: "LionGotchi for Your Server",
         paragraphs: [
-          "LionGotchi is an optional virtual pet system that adds a gamification layer on top of LionBot's study tracking. Members adopt a pet lion, care for it, collect equipment drops, farm resources, and trade on a marketplace.",
+          "LionGotchi is an optional virtual pet system that adds a gamification layer on top of LionBot's voice tracking. Members adopt a pet lion, care for it, collect equipment drops, farm resources, and trade on a marketplace.",
           "As a server admin, there's minimal setup required — the system works out of the box once members start using /pet. But there's one key thing you should configure: the drop notification channel.",
         ],
       },
@@ -605,7 +605,7 @@ export const adminTutorials: Tutorial[] = [
         id: "drop-channel",
         title: "Setting Up Drop Notifications",
         paragraphs: [
-          "When members study in voice channels or chat in text channels, they have a chance to receive equipment drops. By default, these drop notifications are sent as DMs.",
+          "When members are in voice channels or chat in text channels, they have a chance to receive equipment drops. By default, these drop notifications are sent as DMs.",
           "Use /petdrops to set a channel where drop notifications are posted publicly. This creates excitement — members see each other's drops and it encourages more activity.",
         ],
         command: "/petdrops <#channel>",
@@ -618,7 +618,7 @@ export const adminTutorials: Tutorial[] = [
           "Here's a quick overview of the LionGotchi features your members have access to, so you know what to expect:",
           "/pet — Adopt a pet, feed/bathe/rest it, check inventory and farm. The entry point for everything.",
           "Website /pet section — Full-featured pages for inventory management, room decoration, farming, crafting, enhancement, marketplace trading, friends, family groups, item wiki, and Gameboy skins.",
-          "Members earn equipment drops passively from studying and chatting. They can farm resources, craft items, enhance gear with scrolls, buy and sell items with other players, join families, and decorate their pet's room.",
+          "Members earn equipment drops passively from being in voice and chatting. They can farm resources, craft items, enhance gear with scrolls, buy and sell items with other players, join families, and decorate their pet's room.",
         ],
       },
       {
@@ -626,7 +626,7 @@ export const adminTutorials: Tutorial[] = [
         title: "Getting Members Started",
         paragraphs: [
           "The best way to introduce LionGotchi is with a quick announcement in your server. Let members know they can use /pet to adopt their pet, and point them to the LionGotchi tutorials on this website for a full walkthrough.",
-          "Consider creating a dedicated channel for pet-related discussion and marketplace trades. It helps build community around the feature without cluttering your main study channels.",
+          "Consider creating a dedicated channel for pet-related discussion and marketplace trades. It helps build community around the feature without cluttering your main voice channels.",
         ],
         tip: "Pin a message in your pet channel with links to the LionGotchi member tutorials. Members will have most of their questions answered there.",
       },

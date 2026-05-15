@@ -228,7 +228,7 @@ export function RestrictModal({ open, onClose, loading, memberName, priorRestric
   }
 
   return (
-    <ModalShell open={open} onClose={onClose} loading={loading} title={`Study Restriction -- ${memberName}`} icon={<Ban size={20} />} variant="danger">
+    <ModalShell open={open} onClose={onClose} loading={loading} title={`Voice Restriction -- ${memberName}`} icon={<Ban size={20} />} variant="danger">
       {priorRestrictions > 0 && (
         <div className="flex items-start gap-2 p-2.5 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-300 mb-3">
           <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
@@ -456,7 +456,7 @@ export function ResolveModal({ open, onClose, loading, ticketCount, onConfirm }:
 
   return (
     <ModalShell open={open} onClose={onClose} loading={loading} title={`Resolve ${ticketCount} Record${ticketCount !== 1 ? "s" : ""}`} icon={<Check size={20} />} variant="info">
-      <p className="text-sm text-muted-foreground mb-3">Mark the selected record{ticketCount !== 1 ? "s" : ""} as resolved. For study restrictions, this will end the restriction and allow the member to earn coins/XP again.</p>
+      <p className="text-sm text-muted-foreground mb-3">Mark the selected record{ticketCount !== 1 ? "s" : ""} as resolved. For voice restrictions, this will end the restriction and allow the member to earn coins/XP again.</p>
       <textarea
         value={reason}
         onChange={(e) => setReason(e.target.value)}

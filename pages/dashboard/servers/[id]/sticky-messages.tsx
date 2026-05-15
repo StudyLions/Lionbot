@@ -125,7 +125,7 @@ function EmbedPreview({ form }: { form: StickyForm }) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-semibold text-white">StudyLion</span>
+            <span className="text-sm font-semibold text-white">LionBot</span>
             <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium">BOT</span>
           </div>
           <div
@@ -481,7 +481,7 @@ export default function StickyMessagesPage() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-semibold text-white">StudyLion</span>
+                  <span className="text-sm font-semibold text-white">LionBot</span>
                   <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded font-medium">BOT</span>
                 </div>
                 <div className="rounded-md overflow-hidden border-l-4 border-l-amber-500 bg-[#2b2d31] max-w-md">
@@ -495,7 +495,7 @@ export default function StickyMessagesPage() {
                       4. Have fun studying! 📚
                     </p>
                     <p className="text-[11px] text-gray-500 pt-1 border-t border-gray-700/30 mt-2">
-                      Updated automatically by StudyLion
+                      Updated automatically by LionBot
                     </p>
                   </div>
                 </div>

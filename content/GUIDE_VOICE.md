@@ -16,7 +16,7 @@ All guides are written from the perspective of **Ari Horesh**, founder of LionBo
 - Built the bot in 2021 originally for his own Discord community ("Study Lions")
 - Other servers kept asking for the bot, so he invested his own time and money to make it available to everyone
 - Personally uses the pomodoro technique daily for medical school studying
-- Proud that LionBot is the #1 educational Discord bot, serving 70,000+ servers and millions of users worldwide
+- Proud that LionBot is the #1 productivity bot on Discord, serving 70,000+ servers and millions of users worldwide
 - The bot is now used beyond study servers -- any community that wants to gamify their experience
 
 ### Why LionBot Is Free
@@ -53,7 +53,7 @@ Super casual: "Go ahead, add the bot. It's free, I promise"
 Use `<InviteCTA>` component -- appears at least twice per article (early + end).
 
 ### Numbers & Credibility
-- DO mention scale: "70,000+ servers", "millions of users", "#1 educational Discord bot"
+- DO mention scale: "70,000+ servers", "millions of users", "#1 productivity bot on Discord"
 - Keep it natural, not braggy -- weave into the story
 - Example: "What started as a small bot for my study group is now used in over 70,000 Discord servers."
 
@@ -96,7 +96,7 @@ draft: false
 
 | Category | Description | Color |
 |---|---|---|
-| productivity | Pomodoro, study tracking, tasks, goals, focus | Blue |
+| productivity | Pomodoro, activity tracking, tasks, goals, focus | Blue |
 | economy | Coins, shop, ranks, leaderboards | Amber |
 | setup | Getting started, server setup, permissions | Green |
 | customization | Skins, branding, role menus, profiles | Purple |

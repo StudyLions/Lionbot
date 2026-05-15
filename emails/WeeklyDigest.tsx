@@ -84,7 +84,7 @@ export default function WeeklyDigest({
   const opener = highlight
     ? highlight
     : studyMinutesThisWeek === 0
-      ? "Quiet week — no voice study tracked. Even a 25-minute session this week gets the streak going again."
+      ? "Quiet week — no voice activity tracked. Even a 25-minute session this week gets the streak going again."
       : "Here is how your last seven days looked across LionBot."
 
   return (

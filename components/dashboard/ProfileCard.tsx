@@ -228,7 +228,7 @@ export default function ProfileCard({
         style={{ backgroundColor: `${colors.primaryColor}20` }}
       >
         <StatCell
-          label="Study"
+          label="Productive"
           value={`${data.studyHours}h`}
           color={colors.accentColor}
         />

@@ -83,7 +83,7 @@ export default function StepEconomy({
           step={5}
           onChange={(v) => onUpdate("study_hourly_live_bonus", v)}
           suffix="/hr"
-          description="Extra coins when camera is on (incentivizes video study)"
+          description="Extra coins when camera is on (encourages video presence)"
         />
 
         <Slider

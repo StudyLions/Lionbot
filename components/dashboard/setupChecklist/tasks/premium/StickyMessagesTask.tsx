@@ -38,7 +38,7 @@ export default function StickyMessagesTask({ guildId, open, onClose, onComplete,
       <p className="text-sm text-muted-foreground mb-4">
         Pin a permanent embed to the bottom of a channel — Leo deletes the
         old copy and reposts a fresh one whenever the channel gets active.
-        Great for channel rules, study tips, or important announcements
+        Great for channel rules, tips, or important announcements
         that always need to be visible.
       </p>
 

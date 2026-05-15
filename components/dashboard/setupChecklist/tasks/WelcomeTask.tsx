@@ -38,9 +38,9 @@ interface BotPermResp {
 }
 
 const TEMPLATES = {
-  warm: "Welcome {mention} to {server}! \u{1F44B} We're glad you're here \u2014 grab a seat and study with us.",
+  warm: "Welcome {mention} to {server}! \u{1F44B} We're glad you're here \u2014 grab a seat and hang out with us.",
   brief: "Welcome {mention}!",
-  study: "{mention} just joined. Pop into a voice channel and start a study session whenever you're ready.",
+  study: "{mention} just joined. Pop into a voice channel and start a session whenever you're ready.",
 }
 
 export default function WelcomeTask({ guildId, open, onClose, onComplete, onSkip }: TaskComponentProps) {

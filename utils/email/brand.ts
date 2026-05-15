@@ -15,7 +15,7 @@ export const SITE_URL =
 
 export const brand = {
   name: "LionBot",
-  tagline: "Study together. Grow together.",
+  tagline: "Stay productive. Grow together.",
   siteUrl: SITE_URL,
   logoUrl: `${SITE_URL}/images/lionbot-avatar.png`,
   supportEmail: "support@lionbot.org",
@@ -96,7 +96,7 @@ export const PREF_DESCRIPTIONS: Record<
   email_pref_weekly_digest: {
     label: "Weekly progress digest",
     description:
-      "A short Sunday recap of how much you studied, your streak, and what to focus on next week.",
+      "A short Sunday recap of how productive you were, your streak, and what to focus on next week.",
   },
   email_pref_lifecycle: {
     label: "Streak reminders and re-engagement",

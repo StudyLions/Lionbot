@@ -26,13 +26,13 @@ export const Homepage_sections_middle = [
       "<p>Allow Admins to force the usage of a webcam in specific rooms, to keep the community safe.</p>",
     image: {
       src: require("@/public/images/pages/homePage/lionbot_private_rooms.webp"),
-      alt: "Virtual Study Rooms image",
+      alt: "Virtual Voice Rooms image",
     },
   },
   {
     title: "Pomodoro Timers",
     description:
-      "<p><b>Study/work server? We got your back! </b>" +
+      "<p><b>Any community? We got your back! </b>" +
       "Show a Pomodoro timer in the title of the voice room and play a sound at the start and end of each session.</p>" +
       "<p>Highly customizable feature: create your own custom title, timer, and an infinite number of rooms.</p>",
     image: {
@@ -66,10 +66,10 @@ export const Homepage_sections_middle = [
     description:
       "<p>Give roles to users based on their chat and voice activity. This feature is also completely customizable.</p>" +
       "<p>Name your ranks, choose the intervals, and the colours of all of the badges.</p>" +
-      "<p>*<b>Used by both Study and non-Study servers</b></p>",
+      "<p>*<b>Used by all kinds of communities</b></p>",
     image: {
       src: require("@/public/images/pages/homePage/lionbot_activity_badges.webp"),
-      alt: "Study Badges image",
+      alt: "Activity Badges image",
     },
   },
   {
@@ -86,8 +86,8 @@ export const Homepage_sections_middle = [
   {
     title: "Scheduled sessions",
     description:
-      "<p>User can schedule study sessions where they must attend. Not attending will cause the entire study group to lose a bonus.</p>" +
-      "<p>Allow your users to develop the accountability and responsibility to attend the study session on time.</p>",
+      "<p>User can schedule sessions where they must attend. Not attending will cause the entire group to lose a bonus.</p>" +
+      "<p>Allow your users to develop the accountability and responsibility to attend the session on time.</p>",
     image: {
       src: require("@/public/images/pages/homePage/lionbot_scheduled_sessions.webp"),
       alt: "Scheduled sessions image",

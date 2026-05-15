@@ -569,7 +569,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                   <p className="text-xs text-muted-foreground/60 uppercase tracking-wider font-medium">Bot Activity Stats</p>
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-muted/30 rounded-xl p-3">
-                      <div className="flex items-center gap-1.5 text-emerald-400/70 mb-1"><Clock size={12} /><span className="text-[10px] uppercase tracking-wider">Study Time</span></div>
+                      <div className="flex items-center gap-1.5 text-emerald-400/70 mb-1"><Clock size={12} /><span className="text-[10px] uppercase tracking-wider">Productive Time</span></div>
                       <p className="text-lg font-bold text-foreground">{data.member.trackedTimeHours}h</p>
                     </div>
                     <div className="bg-muted/30 rounded-xl p-3">
@@ -631,7 +631,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
                         <span className="text-[10px] text-amber-400/50 mt-0.5">Add, set, or reset balance</span>
                       </button>
                       <button onClick={onRestrict} className="flex flex-col px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400 hover:bg-red-500/15 transition-colors">
-                        <span className="flex items-center gap-2"><Ban size={14} /> Study Restriction</span>
+                        <span className="flex items-center gap-2"><Ban size={14} /> Voice Restriction</span>
                         <span className="text-[10px] text-red-400/50 mt-0.5">Block voice coin/XP earning</span>
                       </button>
                       {/* --- AI-MODIFIED (2026-04-17) --- */}
@@ -649,7 +649,7 @@ export default function MemberDetailPanel({ open, onClose, data, loading, onWarn
 
                 {/* ====== SESSIONS ====== */}
                 <TabsContent value="sessions" className="px-6 pb-6 space-y-3">
-                  <SectionInfo text="Recent voice and text study sessions tracked by LionBot in this server." />
+                  <SectionInfo text="Recent voice and text sessions tracked by LionBot in this server." />
                   {data.recentSessions.length === 0 ? (
                     <div className="text-center py-10 text-muted-foreground"><Headphones size={32} className="mx-auto mb-2 opacity-40" /><p>No recent sessions</p></div>
                   ) : (

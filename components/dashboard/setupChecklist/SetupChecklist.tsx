@@ -109,12 +109,12 @@ interface TaskMeta {
 const CORE_TASKS: TaskMeta[] = [
   { id: "essentials",    title: "Server essentials",         summary: "Timezone + admin and moderator roles.",                          icon: Settings,  section: "core" },
   { id: "ranks",         title: "How members rank up",       summary: "Voice time, messages, or XP \u2014 mix and match.",                       icon: Trophy,    section: "core" },
-  { id: "rewards",       title: "Member rewards",            summary: "How many LionCoins members earn from studying.",                  icon: Coins,     section: "core" },
+  { id: "rewards",       title: "Member rewards",            summary: "How many LionCoins members earn from voice activity.",            icon: Coins,     section: "core" },
   { id: "welcome",       title: "Welcome new members",       summary: "Greet people when they join.",                                    icon: Hand,      section: "core" },
   { id: "notifications", title: "Notification channels",     summary: "Where the bot sends logs, mod alerts and rank-up posts.",         icon: Bell,      section: "core" },
   { id: "focus",         title: "Tasks and focus timer",     summary: "Reward members for tasks and Pomodoro sessions.",                 icon: Timer,     section: "core" },
   { id: "schedule",      title: "Accountability sessions",   summary: "Optional. Members book a slot, show up, earn rewards.",           icon: Calendar,  section: "core", optional: true },
-  { id: "pet",           title: "Pet game",                  summary: "Optional. LionGotchi pets that members raise by studying.",       icon: PawPrint,  section: "core", optional: true },
+  { id: "pet",           title: "Pet game",                  summary: "Optional. LionGotchi pets that members raise by being active.",   icon: PawPrint,  section: "core", optional: true },
 ]
 
 // --- AI-MODIFIED (2026-04-30) ---
@@ -128,9 +128,9 @@ const CORE_TASKS: TaskMeta[] = [
 // nothing else has to change when the flag flips back on.
 const PREMIUM_TASKS: TaskMeta[] = [
   { id: "ambient_sounds",       title: "Ambient sounds",         summary: "Up to 10 ambient sound bots playing rain, ocean, LoFi and more.",  icon: Music2,    section: "premium" },
-  { id: "anti_afk",             title: "Anti-AFK in study rooms", summary: "Kick or move members who go idle for too long.",                  icon: ShieldOff, section: "premium" },
+  { id: "anti_afk",             title: "Anti-AFK in voice rooms", summary: "Kick or move members who go idle for too long.",                  icon: ShieldOff, section: "premium" },
   { id: "premium_pomodoro",     title: "Premium Pomodoro extras", summary: "Themes, animated timer, group goals, golden hour multiplier.",     icon: Hourglass, section: "premium" },
-  { id: "leaderboard_autopost", title: "Leaderboard auto-post",   summary: "Schedule daily, weekly or monthly top-studier posts.",             icon: BarChart3, section: "premium" },
+  { id: "leaderboard_autopost", title: "Leaderboard auto-post",   summary: "Schedule daily, weekly or monthly top-member posts.",              icon: BarChart3, section: "premium" },
   { id: "sticky_messages",      title: "Sticky messages",         summary: "Auto-repost a pinned-style embed at the bottom of channels.",      icon: Pin,       section: "premium" },
   { id: "branding",             title: "Card branding",           summary: "Pick the colours and theme used on Leo's stat cards.",             icon: Palette,   section: "premium" },
   ...(SERVERS_DIRECTORY_ENABLED

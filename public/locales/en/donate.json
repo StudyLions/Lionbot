@@ -1,7 +1,7 @@
 {
   "header": {
     "eyebrow": "Premium",
-    "title": "Make your study time feel premium",
+    "title": "Make your productive time feel premium",
     "subtitle": "LionHeart unlocks faster pet growth, monthly LionGems, animated profile cards, and the perks your community already loves.",
     "ctaPrimary": "See plans",
     "ctaSecondary": "Browse LionGems",
@@ -96,7 +96,7 @@
   "serverPremium": {
     "eyebrow": "Admins · Server-wide",
     "title": "Server Premium",
-    "subtitle": "10+ premium features that transform how your community studies, competes, and grows together.",
+    "subtitle": "10+ premium features that transform how your community works, competes, and grows together.",
     "footer": {
       "label": "One server price",
       "savePill": "Save 17%",

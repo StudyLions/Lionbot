@@ -33,7 +33,7 @@ const ITEMS: PreviewItem[] = [
   },
   {
     icon: ShieldOff,
-    name: "Anti-AFK in study rooms",
+    name: "Anti-AFK in voice rooms",
     blurb: "Quietly remove or pause members who go idle in voice for too long.",
   },
   {

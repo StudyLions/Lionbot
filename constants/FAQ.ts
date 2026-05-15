@@ -9,7 +9,7 @@ export const questionsAnswers = [
   },
   {
     question: "In how many Discord servers can I use my Gems?",
-    answer: "You can use you gems in any server that uses StudyLion.",
+    answer: "You can use you gems in any server that uses LionBot.",
   },
   {
     question: "Can I get an invoice for my payment?",

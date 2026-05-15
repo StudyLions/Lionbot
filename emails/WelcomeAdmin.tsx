@@ -55,7 +55,7 @@ const SETUP_STEPS: SetupStep[] = [
   {
     number: 3,
     title: "Stock the shop",
-    body: "Members spend study coins on roles, colors, and perks they unlock by focusing in voice. The sticky engagement loop.",
+    body: "Members spend coins on roles, colors, and perks they unlock by being active in voice. The sticky engagement loop.",
     link: (id) => `${brand.siteUrl}/dashboard/servers/${id}/shop`,
     linkLabel: "Edit the shop",
   },

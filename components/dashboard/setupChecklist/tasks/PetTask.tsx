@@ -75,7 +75,7 @@ export default function PetTask({ guildId, open, onClose, onComplete, onSkip }: 
       open={open}
       onClose={onClose}
       title="Pet game"
-      subtitle="Members hatch, feed, and grow a LionGotchi pet by studying."
+      subtitle="Members hatch, feed, and grow a LionGotchi pet by being active."
       icon={PawPrint}
       returnFocusTo="setup-task-trigger-pet"
       footer={
