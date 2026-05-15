@@ -888,29 +888,71 @@ function SubscriptionCard({
           Includes <span className="text-foreground/90 font-semibold">~{symbol}{gemValue.toFixed(2)}</span> of LionGems every month
         </p>
 
+        {/* --- AI-MODIFIED (2026-05-15) --- */}
+        {/* Purpose: Promote the per-vote LionGem bonus to an equal-weight stat */}
+        {/*   alongside the monthly subscription gems. Previously the vote bonus */}
+        {/*   was buried as 10.5px muted text under the monthly number, which */}
+        {/*   hid one of the strongest recurring value drivers (free gems every */}
+        {/*   12h just for voting) from the subscribe decision. New layout: */}
+        {/*   side-by-side stat boxes with a tier-color divider, Zap icon and */}
+        {/*   tier-color number on the vote side, plus a math row underneath */}
+        {/*   showing the monthly potential (gemsPerVote * ~60 votes if you */}
+        {/*   vote every 12h for a month). */}
         <div
-          className="rounded-xl p-3 mb-4 flex items-center gap-2.5"
+          className="rounded-xl p-3 mb-4"
           style={{
             background: `linear-gradient(135deg, ${tier.color}18, ${tier.color}06)`,
             border: `1px solid ${tier.color}30`,
           }}
         >
-          <GemIcon className="h-5 w-5 flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="text-base font-black text-foreground tabular-nums leading-none">
-              {numberWithCommas(tier.monthlyGems)} gems
-              <span
-                className="ml-1 text-xs font-semibold"
-                style={{ color: tier.color }}
-              >
-                / month
-              </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <GemIcon className="h-5 w-5 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-base font-black text-foreground tabular-nums leading-none">
+                  {numberWithCommas(tier.monthlyGems)}
+                </div>
+                <div className="text-[10.5px] text-muted-foreground mt-1 leading-tight">
+                  gems{" "}
+                  <span className="font-semibold" style={{ color: tier.color }}>
+                    / month
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="text-[10.5px] text-muted-foreground mt-0.5">
-              Plus {tier.gemsPerVote} gems every Top.gg vote
+            <div
+              className="flex items-center gap-2.5 min-w-0 border-l pl-3"
+              style={{ borderColor: `${tier.color}30` }}
+            >
+              <Zap
+                className="h-5 w-5 flex-shrink-0"
+                style={{ color: tier.color }}
+              />
+              <div className="min-w-0">
+                <div
+                  className="text-base font-black tabular-nums leading-none"
+                  style={{ color: tier.color }}
+                >
+                  +{tier.gemsPerVote}
+                </div>
+                <div className="text-[10.5px] text-muted-foreground mt-1 leading-tight">
+                  per Top.gg vote
+                </div>
+              </div>
             </div>
           </div>
+          <div
+            className="mt-2.5 pt-2.5 border-t text-[10.5px] text-muted-foreground/90 leading-snug"
+            style={{ borderColor: `${tier.color}20` }}
+          >
+            Vote every 12h on Top.gg to earn up to{" "}
+            <span className="font-bold" style={{ color: tier.color }}>
+              +{numberWithCommas(tier.gemsPerVote * 60)}
+            </span>{" "}
+            bonus gems / month
+          </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         {previousTierName ? (
           <p className="text-xs font-semibold text-foreground/80 mb-3">
