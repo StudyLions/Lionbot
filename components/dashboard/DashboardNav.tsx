@@ -25,7 +25,7 @@ import {
   BarChart3, Server, CheckSquare, History, Target, Bell,
   Gem, User, Menu, Trophy, ChevronRight, BookOpen, Radio, Crown, PawPrint,
   Volume2, VolumeX, DoorOpen, Coins, Clock, KanbanSquare, CalendarCheck, Shield,
-  Settings,
+  Settings, Gift,
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 // --- END AI-MODIFIED ---
@@ -97,6 +97,10 @@ const sections: NavSection[] = [
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Subscriptions management page link
       { href: "/dashboard/subscriptions", label: "Subscriptions", icon: <Crown size={16} /> },
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-05-15) ---
+      // Purpose: Gifts hub -- premium subscriptions you've sent + received.
+      { href: "/dashboard/gifts", label: "Gifts", icon: <Gift size={16} /> },
       // --- END AI-MODIFIED ---
       // --- AI-MODIFIED (2026-04-23) ---
       // Purpose: Dedicated settings page (sound, theme, future prefs)
