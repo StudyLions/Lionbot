@@ -376,6 +376,130 @@ async function isServerPremiumSubscription(subscriptionId: string): Promise<bool
 
 // --- END AI-MODIFIED ---
 
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Server Premium GIFT checkout completion. Same DB shape as a
+//          self-purchased server premium row, but with gifted_by_userid,
+//          gift_message, gift_is_anonymous filled so the recipient
+//          dashboard can render the "gifted by @X" card.
+async function handleServerPremiumGiftCheckout(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata;
+  if (!metadata?.senderId || !metadata?.recipientGuildId) {
+    console.error("Stripe webhook: missing gift metadata on session", session.id);
+    return;
+  }
+
+  const guildIdBig = BigInt(metadata.recipientGuildId);
+  const senderIdBig = BigInt(metadata.senderId);
+  const isAnonymous = metadata.gift_is_anonymous === "true";
+  const giftMessage = metadata.gift_message?.trim() ? metadata.gift_message.trim() : null;
+
+  const subscriptionId = typeof session.subscription === "string"
+    ? session.subscription
+    : (session.subscription as any)?.id ?? null;
+
+  const customerId = typeof session.customer === "string"
+    ? session.customer
+    : (session.customer as any)?.id ?? null;
+
+  if (!subscriptionId || !customerId) {
+    console.error("Stripe webhook: server premium gift checkout missing subscription/customer ID");
+    return;
+  }
+
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000)
+    : new Date(Date.now() + 30 * 86400000);
+  const periodStart = sub.current_period_start
+    ? new Date(sub.current_period_start * 1000)
+    : new Date();
+
+  await prisma.$transaction(async (tx) => {
+    // Idempotency: if we already saw this subscription_id (duplicate webhook
+    // delivery), just update the existing row instead of creating a duplicate.
+    const existingRow = await tx.server_premium_subscriptions.findFirst({
+      where: { stripe_subscription_id: subscriptionId },
+    });
+
+    if (existingRow) {
+      await tx.server_premium_subscriptions.update({
+        where: { id: existingRow.id },
+        data: {
+          guildid: guildIdBig,
+          userid: senderIdBig,
+          stripe_customer_id: customerId,
+          plan: "MONTHLY",
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          gifted_by_userid: senderIdBig,
+          gift_message: giftMessage,
+          gift_is_anonymous: isAnonymous,
+          updated_at: new Date(),
+        },
+      });
+    } else {
+      await tx.server_premium_subscriptions.create({
+        data: {
+          guildid: guildIdBig,
+          userid: senderIdBig,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          plan: "MONTHLY",
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          gifted_by_userid: senderIdBig,
+          gift_message: giftMessage,
+          gift_is_anonymous: isAnonymous,
+        },
+      });
+    }
+
+    // Extend premium_guilds.premium_until to at least periodEnd. Reuses the
+    // same max-expiry logic the non-gift server premium checkout uses, so
+    // overlapping sources (paid sub + gift + LH++ slot) all stack correctly.
+    const existing = await tx.premium_guilds.findUnique({
+      where: { guildid: guildIdBig },
+    });
+
+    if (existing) {
+      const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+      await tx.premium_guilds.update({
+        where: { guildid: guildIdBig },
+        data: { premium_until: newUntil },
+      });
+    } else {
+      await tx.premium_guilds.create({
+        data: {
+          guildid: guildIdBig,
+          premium_since: periodStart,
+          premium_until: periodEnd,
+        },
+      });
+    }
+  });
+
+  console.log(
+    `Stripe webhook: server premium GIFT activated for guild ${metadata.recipientGuildId} from user ${metadata.senderId} (anonymous=${isAnonymous})`
+  );
+
+  const giftAmount = formatMoney(session.amount_total, session.currency);
+  sendStripeAuditLog({
+    eventType: "checkout.session.completed",
+    title: "Server Premium Gift",
+    description: `<@${metadata.senderId}> gifted **MONTHLY** server premium to guild \`${metadata.recipientGuildId}\`${isAnonymous ? " (anonymous)" : ""}`,
+    fields: [
+      { name: "Amount", value: giftAmount, inline: true },
+      { name: "Recipient Guild", value: metadata.recipientGuildId, inline: true },
+      { name: "Anonymous", value: isAnonymous ? "Yes" : "No", inline: true },
+      { name: "Subscription", value: subscriptionId, inline: false },
+      ...(giftMessage ? [{ name: "Message", value: giftMessage, inline: false }] : []),
+    ],
+  });
+}
+// --- END AI-MODIFIED ---
+
 async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
   const metadata = session.metadata;
   if (!metadata?.discordId || !metadata?.totalGems) {
@@ -958,7 +1082,9 @@ export default async function handler(
       // Purpose: Handle one-time payments, LionHeart subscriptions, AND server premium subscriptions
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM") {
+        if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM_GIFT") {
+          await handleServerPremiumGiftCheckout(session);
+        } else if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM") {
           await handleServerPremiumCheckout(session);
         } else if (session.mode === "subscription") {
           console.log(`Stripe webhook: LionHeart subscription checkout completed, session ${session.id}`);
