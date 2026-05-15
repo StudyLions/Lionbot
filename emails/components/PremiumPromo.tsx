@@ -52,9 +52,9 @@ const PROMO: Record<PromoTier, PromoContent> = {
   lionheart_plus_plus: {
     title: "Thank you for going all-in",
     body:
-      "You are on the top tier. If you would like to spread the love, you can gift LionHeart to a friend or upgrade another one of your servers.",
-    ctaLabel: "Open the LionHeart store",
-    ctaHref: `${brand.siteUrl}/donate`,
+      "You are on the top tier. If you would like to spread the love, you can gift LionHeart to a friend or premium to another one of your servers.",
+    ctaLabel: "Open the gift hub",
+    ctaHref: `${brand.siteUrl}/dashboard/gifts`,
   },
 }
 

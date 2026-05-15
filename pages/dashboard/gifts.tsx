@@ -19,6 +19,7 @@
 //          billing UI.
 // ============================================================
 import { useEffect, useState } from "react"
+import { useRouter } from "next/router"
 import Head from "next/head"
 import Link from "next/link"
 import { GetServerSideProps } from "next"
@@ -87,9 +88,11 @@ function formatDate(iso: string | null): string {
 }
 
 export default function GiftsPage() {
+  const router = useRouter()
   const [tab, setTab] = useState<"sent" | "received">("sent")
   const [sent, setSent] = useState<SentGift[] | null>(null)
   const [received, setReceived] = useState<ReceivedGift[] | null>(null)
+  const [showRibbon, setShowRibbon] = useState(false)
 
   useEffect(() => {
     fetch("/api/dashboard/gifts")
@@ -104,6 +107,29 @@ export default function GiftsPage() {
       })
   }, [])
 
+  // Post-checkout success state: ribbon reveal + toast.
+  useEffect(() => {
+    if (!router.isReady) return
+    if (router.query.gift !== "sent") return
+    const kind = router.query.kind
+    setShowRibbon(true)
+    const token = typeof router.query.token === "string" ? router.query.token : null
+    if (kind === "lionheart" && token) {
+      const claimUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/gift/claim/${token}`
+      toast.success("Your gift is ready to share")
+      // Copy to clipboard after a short delay; users often expect it.
+      navigator.clipboard?.writeText(claimUrl).catch(() => {})
+    } else {
+      toast.success("Your gift is on its way")
+    }
+    // Strip the success params from the URL so refresh doesn't replay
+    const url = new URL(window.location.href)
+    url.searchParams.delete("gift")
+    url.searchParams.delete("kind")
+    url.searchParams.delete("token")
+    window.history.replaceState({}, "", url.pathname + url.search)
+  }, [router.isReady, router.query.gift, router.query.kind, router.query.token])
+
   return (
     <Layout
       SEO={{
@@ -115,6 +141,27 @@ export default function GiftsPage() {
         <title>Gifts | LionBot</title>
       </Head>
       <DashboardShell nav={<DashboardNav />}>
+        <style>{`
+          @media (prefers-reduced-motion: no-preference) {
+            @keyframes ribbon-reveal {
+              0%   { opacity: 0; transform: scaleX(0); }
+              100% { opacity: 1; transform: scaleX(1); }
+            }
+          }
+          .ribbon-reveal { animation: ribbon-reveal 600ms cubic-bezier(0.22, 1, 0.36, 1) both; transform-origin: left; }
+        `}</style>
+
+        {showRibbon && (
+          <div
+            aria-hidden
+            className="ribbon-reveal h-[2px] mb-3 rounded-full"
+            style={{
+              background:
+                "linear-gradient(90deg, rgba(245,158,11,0.0), rgba(245,158,11,0.7) 50%, rgba(245,158,11,0.0))",
+            }}
+          />
+        )}
+
         <PageHeader
           title="Gifts"
           description="Premium subscriptions you've sent and received."

@@ -525,7 +525,7 @@ export default function SubscriptionsPage() {
                   {/* LionHeart++ Included Server Premium */}
                   {lhPremium && (
                     <SectionCard
-                      title="LionHeart++ Server Premium"
+                      title="Gift premium to a server (included with LionHeart++)"
                       icon={<Crown className="h-5 w-5 text-yellow-400" />}
                     >
                       <div className="p-4 rounded-lg bg-card border border-blue-500/30">
@@ -580,12 +580,12 @@ export default function SubscriptionsPage() {
                               {lhPremium.isApplied ? (
                                 <>
                                   <ArrowRightLeft className="h-3.5 w-3.5" />
-                                  Transfer
+                                  Move to another server
                                 </>
                               ) : (
                                 <>
                                   <Check className="h-3.5 w-3.5" />
-                                  Apply Now
+                                  Pick a server
                                 </>
                               )}
                             </button>
