@@ -12,6 +12,12 @@ import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
 import { PageHeader, SectionCard, toast, DashboardShell } from "@/components/dashboard/ui"
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Prominent gift callout at the top of /dashboard/subscriptions
+// nudges paying subscribers to also gift -- they're already in a billing
+// mindset on this page, so the conversion path to a second gift is short.
+import DashboardGiftCallout from "@/components/dashboard/DashboardGiftCallout"
+// --- END AI-MODIFIED ---
 import { Skeleton } from "@/components/ui/skeleton"
 import { useSession } from "next-auth/react"
 // --- AI-MODIFIED (2026-04-25) ---
@@ -341,6 +347,13 @@ export default function SubscriptionsPage() {
                 </div>
               ) : (
                 <div className="space-y-6 mt-6">
+                  {/* --- AI-MODIFIED (2026-05-15) --- */}
+                  {/* Purpose: Gift CTA at the very top of the page -- paying    */}
+                  {/* subscribers are most likely to add a second gift since    */}
+                  {/* they're already in a billing context here.                */}
+                  <DashboardGiftCallout variant="subscriptions" />
+                  {/* --- END AI-MODIFIED --- */}
+
                   {/* LionHeart Subscription */}
                   <SectionCard
                     title="LionHeart Membership"
@@ -597,6 +610,21 @@ export default function SubscriptionsPage() {
                             Transfer available {formatDate(lhPremium.transferCooldownEnds)}
                           </div>
                         )}
+                        {/* --- AI-MODIFIED (2026-05-15) --- */}
+                        {/* Purpose: Encourage LH++ users to gift premium to OTHER */}
+                        {/* servers beyond their included slot. They're a high-LTV */}
+                        {/* segment and most likely to layer additional gifts.    */}
+                        <div className="mt-3 pt-3 border-t border-border/60 flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs text-muted-foreground">
+                            Want to gift premium to <span className="text-foreground font-medium">another</span> server too?
+                          </p>
+                          <Link href="/donate#server-premium">
+                            <a className="text-xs font-semibold text-amber-400 hover:text-amber-300 transition-colors">
+                              Send another gift →
+                            </a>
+                          </Link>
+                        </div>
+                        {/* --- END AI-MODIFIED --- */}
                       </div>
                     </SectionCard>
                   )}

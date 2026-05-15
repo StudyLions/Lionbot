@@ -14,6 +14,11 @@ import { DashboardShell, PageHeader } from "@/components/dashboard/ui"
 // Purpose: Use shared EmptyState for consistent empty UI across overview cards
 import EmptyState from "@/components/dashboard/ui/EmptyState"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Prominent gift CTA on the overview so gifting isn't only
+// discoverable from /donate or the sidebar nav.
+import DashboardGiftCallout from "@/components/dashboard/DashboardGiftCallout"
+// --- END AI-MODIFIED ---
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -563,6 +568,13 @@ export default function Dashboard() {
                       icon={InfinityIcon}
                     />
                   </div>
+                  {/* --- END AI-MODIFIED --- */}
+
+                  {/* --- AI-MODIFIED (2026-05-15) --- */}
+                  {/* Purpose: Gift CTA banner placed between hero stats and the */}
+                  {/* main activity surfaces. Prominent enough to be noticed,    */}
+                  {/* compact enough not to push real dashboard content down.   */}
+                  <DashboardGiftCallout variant="overview" />
                   {/* --- END AI-MODIFIED --- */}
 
                   {/* Weekly Insight */}
