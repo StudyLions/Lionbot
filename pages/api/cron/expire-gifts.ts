@@ -26,6 +26,11 @@ import type { NextApiRequest, NextApiResponse } from "next"
 import Stripe from "stripe"
 import { prisma } from "@/utils/prisma"
 import { sendStripeAuditLog } from "@/utils/discordAudit"
+import { notifyUser } from "@/utils/notifyQueue"
+// Note: GiftExpiringSoon email template is built but not wired here yet.
+// The plan is to add separate T-7d / T-1d "expiring soon" reminders via a
+// future cron tick that finds rows with claim_expires_at IN the warning
+// window. For now, the Discord DM coverage on actual expiry is enough.
 
 export const config = { maxDuration: 60 }
 
@@ -109,6 +114,18 @@ export default async function handler(
           { name: "Subscription", value: gift.stripe_subscription_id, inline: true },
           { name: "Claim Token", value: gift.claim_token, inline: false },
         ],
+      })
+
+      await notifyUser({
+        userId: gift.sender_userid,
+        payload: {
+          category: "lionheart_gift_expired_sender",
+          title: "Your gift expired",
+          body: "Your LionHeart gift wasn't claimed within 30 days. The subscription has been cancelled and Stripe will refund the unused portion to your card.",
+          link_url: "/dashboard/gifts",
+          link_label: "View your gifts",
+        },
+        dedupKey: `lh_gift_expired_sender:${gift.id}`,
       })
 
       expiredCount++

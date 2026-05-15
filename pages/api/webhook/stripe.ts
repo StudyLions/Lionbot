@@ -16,6 +16,24 @@ import { sendGemAuditLog, sendStripeAuditLog } from "@/utils/discordAudit";
 // Purpose: Shared premium recalculation for LionHeart++ server premium lifecycle
 import { recalculateGuildPremium } from "@/utils/premiumUtils";
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Queue Discord DM notifications + send sender-side transactional
+//          emails for gift lifecycle events. Recipient emails for LionHeart
+//          claims live in the claim endpoint (the recipient's userid isn't
+//          known here until they claim). Server-gift admin emails are
+//          intentionally not sent -- DM coverage handles that (admin
+//          email addresses aren't always known).
+import * as React from "react";
+import { notifyUser, notifyGuildAdmins } from "@/utils/notifyQueue";
+import { sendEmail } from "@/utils/email/send";
+import GiftClaimable from "../../../emails/GiftClaimable";
+// --- END AI-MODIFIED ---
+
+const GIFT_TIER_LABELS: Record<string, string> = {
+  LIONHEART: "LionHeart",
+  LIONHEART_PLUS: "LionHeart+",
+  LIONHEART_PLUS_PLUS: "LionHeart++",
+};
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
@@ -287,6 +305,39 @@ async function handleServerPremiumSubscriptionDeleted(subscription: Stripe.Subsc
   });
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: Notify on gift cancellations. We only DM recipient guild admins
+  //          (and the sender) when this was a gift -- self-purchased server
+  //          premium cancellations are surfaced via the existing dashboard
+  //          UI, not Discord DMs.
+  if (sub.gifted_by_userid) {
+    await notifyGuildAdmins({
+      guildId: sub.guildid,
+      payload: {
+        category: "server_gift_cancelled",
+        title: "A gift ended",
+        body: sub.gift_is_anonymous
+          ? "The anonymous gifter cancelled their Server Premium gift. Premium continues until the current billing period ends."
+          : `<@${sub.gifted_by_userid}> cancelled their Server Premium gift. Premium continues until the current billing period ends.`,
+        link_url: "/dashboard/servers/" + sub.guildid,
+        link_label: "Open server dashboard",
+      },
+      dedupKey: `server_gift_cancelled:${subscription.id}`,
+    });
+    await notifyUser({
+      userId: sub.gifted_by_userid,
+      payload: {
+        category: "server_gift_cancelled",
+        title: "Your gift was cancelled",
+        body: "Your Server Premium gift has been cancelled. The recipient keeps premium through the end of the current billing period.",
+        link_url: "/dashboard/gifts",
+        link_label: "View your gifts",
+      },
+      dedupKey: `server_gift_cancelled_sender_ack:${subscription.id}`,
+    });
+  }
+  // --- END AI-MODIFIED ---
+
   return true;
 }
 
@@ -497,6 +548,41 @@ async function handleServerPremiumGiftCheckout(session: Stripe.Checkout.Session)
       ...(giftMessage ? [{ name: "Message", value: giftMessage, inline: false }] : []),
     ],
   });
+
+  // Notify all admins of the recipient guild. The bot module resolves admin
+  // userids from its live permission cache at send-time, so we don't need a
+  // members list here.
+  await notifyGuildAdmins({
+    guildId: guildIdBig,
+    payload: {
+      category: "server_gift_activated",
+      title: "Your server received premium",
+      body: isAnonymous
+        ? "An anonymous gifter just activated Server Premium on your server."
+        : `<@${metadata.senderId}> just activated Server Premium on your server.`,
+      link_url: "/dashboard/servers/" + metadata.recipientGuildId,
+      link_label: "Open server dashboard",
+      context: {
+        senderId: isAnonymous ? null : metadata.senderId,
+        isAnonymous,
+        message: giftMessage,
+      },
+    },
+    dedupKey: `server_gift_activated:${subscriptionId}`,
+  });
+
+  // Sender ack: confirm the gift is live.
+  await notifyUser({
+    userId: senderIdBig,
+    payload: {
+      category: "server_gift_activated",
+      title: "Your gift is on its way",
+      body: "Server Premium just activated on your gift's recipient server. They've been notified.",
+      link_url: "/dashboard/gifts",
+      link_label: "Manage your gifts",
+    },
+    dedupKey: `server_gift_sender_ack:${subscriptionId}`,
+  });
 }
 
 // Purpose: LionHeart user-gift checkout completion. The lionheart_gifts row
@@ -570,6 +656,30 @@ async function handleLionheartGiftCheckout(session: Stripe.Checkout.Session) {
       { name: "Claim Token", value: claimToken, inline: false },
       ...(gift.gift_message ? [{ name: "Message", value: gift.gift_message, inline: false }] : []),
     ],
+  });
+
+  // Email the sender with the claim URL so they have a persistent record
+  // they can copy from any inbox. Fire-and-forget; sendEmail handles
+  // missing-email / preference / kill-switch gracefully.
+  const baseUrl = process.env.NEXTAUTH_URL || "https://lionbot.org";
+  const claimUrl = `${baseUrl}/gift/claim/${claimToken}`;
+  const tierLabel = GIFT_TIER_LABELS[gift.tier] ?? gift.tier;
+  const expiresLabel = gift.claim_expires_at.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  sendEmail({
+    userid: gift.sender_userid,
+    template: "gift_claimable",
+    subject: `Your ${tierLabel} gift is ready to share`,
+    react: React.createElement(GiftClaimable, {
+      tierLabel,
+      claimUrl,
+      expiresAtLabel: expiresLabel,
+    }),
+  }).catch((err: unknown) => {
+    console.warn("gift-checkout webhook: sendEmail failed (non-fatal):", err);
   });
 }
 
@@ -674,6 +784,35 @@ async function handleLionheartGiftSubscriptionUpdate(subscription: Stripe.Subscr
       { name: "Claimed", value: gift.recipient_userid ? "Yes" : "No", inline: true },
     ],
   });
+
+  // Notify recipient + sender when a claimed gift ends. We don't DM on
+  // CANCELLING (just scheduled to end at period end) -- only on the actual
+  // CANCELLED transition. PENDING_CLAIM cancellations are silent (the sender
+  // is informed via Stripe receipt + dashboard, the recipient never knew).
+  if (nextStatus === "CANCELLED" && gift.recipient_userid) {
+    await notifyUser({
+      userId: gift.recipient_userid,
+      payload: {
+        category: "lionheart_gift_cancelled",
+        title: "Your gifted LionHeart subscription ended",
+        body: "The gifter cancelled the subscription. Your perks stay active through the current billing period, then your tier returns to Base.",
+        link_url: "/dashboard/subscriptions",
+        link_label: "View your subscription",
+      },
+      dedupKey: `lh_gift_cancelled_recipient:${gift.id}`,
+    });
+    await notifyUser({
+      userId: gift.sender_userid,
+      payload: {
+        category: "lionheart_gift_cancelled",
+        title: "Your gift was cancelled",
+        body: "The LionHeart subscription you gifted has been cancelled. The recipient keeps perks through the current billing period.",
+        link_url: "/dashboard/gifts",
+        link_label: "View your gifts",
+      },
+      dedupKey: `lh_gift_cancelled_sender_ack:${gift.id}`,
+    });
+  }
 
   return true;
 }

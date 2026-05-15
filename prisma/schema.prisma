@@ -2167,6 +2167,21 @@ model lionheart_gifts {
   @@index([status, claim_expires_at], map: "lionheart_gifts_expiry_sweep")
 }
 
+model pending_notifications {
+  id                Int       @id @default(autoincrement())
+  kind              String
+  target_userid     BigInt?
+  target_guildid    BigInt?
+  dedup_key         String?   @unique
+  payload           Json
+  status            String    @default("PENDING")
+  attempts          Int       @default(0)
+  last_attempted_at DateTime? @db.Timestamptz(6)
+  last_error        String?
+  sent_at           DateTime? @db.Timestamptz(6)
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+}
+
 model lg_room_layout {
   userid     BigInt   @id
   layout     Json     @default("{}")

@@ -64,6 +64,9 @@ export type EmailTemplate =
   | "streak_saver"
   | "reengagement"
   | "premium_expiry"
+  | "gift_received"
+  | "gift_claimable"
+  | "gift_expiring_soon"
   | "test"
 
 export type EmailPrefKey =
@@ -82,6 +85,10 @@ export const TEMPLATE_PREF_KEY: Partial<Record<EmailTemplate, EmailPrefKey>> = {
   streak_saver: "email_pref_lifecycle",
   reengagement: "email_pref_lifecycle",
   premium_expiry: "email_pref_premium",
+  // Gift emails are transactional acknowledgements for an action the user
+  // (sender or recipient) just took. Not gated by a preference key -- if
+  // the user has email_unsubscribed_all set they still won't receive, but
+  // we don't want a "premium" pref toggle to suppress a gift-claim receipt.
 }
 
 export const PREF_DESCRIPTIONS: Record<

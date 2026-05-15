@@ -16,8 +16,27 @@
 //                recipient sees the perks the moment they claim
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
+import * as React from "react"
 import { requireAuth } from "@/utils/adminAuth"
 import { prisma } from "@/utils/prisma"
+import { notifyUser } from "@/utils/notifyQueue"
+import { sendEmail } from "@/utils/email/send"
+import GiftReceived from "../../../emails/GiftReceived"
+
+const TIER_PERK_LINE: Record<string, { label: string; perks: string }> = {
+  LIONHEART: {
+    label: "LionHeart",
+    perks: "500 LionGems per month, faster pet growth, double voice coins.",
+  },
+  LIONHEART_PLUS: {
+    label: "LionHeart+",
+    perks: "1,200 LionGems per month, bigger farm boosts, longer water duration.",
+  },
+  LIONHEART_PLUS_PLUS: {
+    label: "LionHeart++",
+    perks: "3,000 LionGems per month and a free Server Premium slot of your choice.",
+  },
+}
 
 const MONTHLY_GEM_ALLOWANCE: Record<string, number> = {
   LIONHEART: 500,
@@ -186,6 +205,75 @@ export default async function handler(
     console.log(
       `Gift claim: user ${auth.discordId} claimed gift id=${gift.id} (tier ${gift.tier}) from sender ${gift.sender_userid}`
     )
+
+    // Notify sender that their gift was claimed (always, even if recipient is
+    // anonymous on the sender side -- the sender knows whose link they sent).
+    await notifyUser({
+      userId: gift.sender_userid,
+      payload: {
+        category: "lionheart_gift_claimed_sender_ack",
+        title: "Your gift was claimed",
+        body: `<@${auth.discordId}> claimed the ${gift.tier.replace(/_/g, " ")} you gifted. Their perks are live now.`,
+        link_url: "/dashboard/gifts",
+        link_label: "View your gifts",
+        context: {
+          giftId: gift.id,
+          recipientUserId: auth.discordId,
+        },
+      },
+      dedupKey: `lh_gift_claimed_sender:${gift.id}`,
+    })
+
+    // Welcome the recipient via DM (mirrors the success-page experience they
+    // just saw in-browser, plus a persistent message they can scroll back to).
+    await notifyUser({
+      userId: claimantIdBig,
+      payload: {
+        category: "lionheart_gift_claimed_by_recipient",
+        title: "Premium activated",
+        body:
+          (gift.gift_is_anonymous
+            ? "Someone gifted you"
+            : `<@${gift.sender_userid}> gifted you`) +
+          ` ${gift.tier.replace(/_/g, " ")} on LionBot. Perks are live across every server.${
+            gemAmount > 0 ? ` ${gemAmount.toLocaleString()} LionGems just landed in your wallet.` : ""
+          }`,
+        link_url: "/dashboard",
+        link_label: "Open dashboard",
+      },
+      dedupKey: `lh_gift_claimed_recipient_welcome:${gift.id}`,
+    })
+
+    // Email the recipient (fire-and-forget; sendEmail handles pref + kill-switch).
+    const tierMeta = TIER_PERK_LINE[gift.tier] ?? { label: gift.tier, perks: "" }
+    let senderDisplayName: string | null = null
+    if (!gift.gift_is_anonymous) {
+      const senderMember = await prisma.members.findFirst({
+        where: { userid: gift.sender_userid, display_name: { not: null } },
+        select: { display_name: true },
+        orderBy: { first_joined: "desc" },
+      })
+      senderDisplayName = senderMember?.display_name ?? null
+    }
+    sendEmail({
+      userid: claimantIdBig,
+      template: "gift_received",
+      subject: gift.gift_is_anonymous
+        ? `You received ${tierMeta.label}`
+        : `${senderDisplayName ?? "A friend"} gifted you ${tierMeta.label}`,
+      react: React.createElement(GiftReceived, {
+        kind: "lionheart_user",
+        tierLabel: tierMeta.label,
+        perkLine: tierMeta.perks,
+        senderDisplayName,
+        isAnonymous: gift.gift_is_anonymous,
+        giftMessage: gift.gift_message,
+        ctaHref: `${process.env.NEXTAUTH_URL || "https://lionbot.org"}/dashboard`,
+        ctaLabel: "Open dashboard",
+      }),
+    }).catch((err) => {
+      console.warn("gift-claim: sendEmail failed (non-fatal):", err)
+    })
 
     return res.status(200).json({
       success: true,
