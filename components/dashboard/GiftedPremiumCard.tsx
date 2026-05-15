@@ -126,23 +126,21 @@ export default function GiftedPremiumCard({ guildId }: Props) {
           )}
 
           <div className="mt-4 flex flex-wrap gap-1.5">
-            <Link
-              href={`/dashboard/servers/${guildId}/anti-afk`}
-              className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors"
-            >
-              Anti-AFK
+            {/* Next.js 12 Link requires <a> child with className. */}
+            <Link href={`/dashboard/servers/${guildId}/anti-afk`}>
+              <a className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors">
+                Anti-AFK
+              </a>
             </Link>
-            <Link
-              href={`/dashboard/servers/${guildId}/sticky-messages`}
-              className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors"
-            >
-              Sticky messages
+            <Link href={`/dashboard/servers/${guildId}/sticky-messages`}>
+              <a className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors">
+                Sticky messages
+              </a>
             </Link>
-            <Link
-              href={`/dashboard/servers/${guildId}/leaderboard-autopost`}
-              className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors"
-            >
-              Leaderboard autopost
+            <Link href={`/dashboard/servers/${guildId}/leaderboard-autopost`}>
+              <a className="text-[11px] rounded-full bg-muted hover:bg-muted/70 text-foreground/80 px-2.5 py-1 transition-colors">
+                Leaderboard autopost
+              </a>
             </Link>
           </div>
         </div>

@@ -273,12 +273,12 @@ function EmptyState({
         <Gift size={22} className="text-amber-400" aria-hidden />
       </div>
       <p className="text-sm text-muted-foreground mb-5 max-w-md mx-auto">{children}</p>
-      <Link
-        href={ctaHref}
-        className="inline-flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors"
-      >
-        <Gift size={14} />
-        {ctaLabel}
+      {/* Next.js 12 Link requires <a> child with className, not className on Link */}
+      <Link href={ctaHref}>
+        <a className="inline-flex items-center gap-1.5 rounded-xl bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold hover:bg-primary/90 transition-colors">
+          <Gift size={14} />
+          {ctaLabel}
+        </a>
       </Link>
     </div>
   )
@@ -369,11 +369,10 @@ function SentRow({ g }: { g: SentGift }) {
 
           {!isCancelled && !isPending && (
             <div className="mt-3">
-              <Link
-                href="/donate#server-premium"
-                className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Manage billing <ExternalLink size={11} />
+              <Link href="/donate#server-premium">
+                <a className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Manage billing <ExternalLink size={11} />
+                </a>
               </Link>
             </div>
           )}
@@ -434,11 +433,10 @@ function ReceivedRow({ g }: { g: ReceivedGift }) {
 
           {g.kind === "server" && g.guildId && (
             <div className="mt-3">
-              <Link
-                href={`/dashboard/servers/${g.guildId}`}
-                className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Open server dashboard <ExternalLink size={11} />
+              <Link href={`/dashboard/servers/${g.guildId}`}>
+                <a className="inline-flex items-center gap-1 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Open server dashboard <ExternalLink size={11} />
+                </a>
               </Link>
             </div>
           )}
