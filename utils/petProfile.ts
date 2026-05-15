@@ -170,10 +170,15 @@ export async function fetchPetVisualData(userId: bigint) {
     furnitureMap[f.slot] = path
   }
 
-  const DECAY_INTERVAL_HOURS = 6
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: Match canonical decay constants (24h interval, cap at 4) used in care.ts /
+  // overview.ts so public pet profiles display the same effective stats as the owner's view.
+  const DECAY_INTERVAL_HOURS = 24
+  const MAX_DECAY_PER_WAKE = 4
   const now = new Date()
   const elapsedHours = (now.getTime() - pet.last_decay_at.getTime()) / (1000 * 3600)
-  const decayTicks = Math.floor(elapsedHours / DECAY_INTERVAL_HOURS)
+  const decayTicks = Math.min(Math.floor(elapsedHours / DECAY_INTERVAL_HOURS), MAX_DECAY_PER_WAKE)
+  // --- END AI-MODIFIED ---
   const effectiveFood = Math.max(0, pet.food - decayTicks)
   const effectiveBath = Math.max(0, pet.bath - decayTicks)
   const effectiveSleep = Math.max(0, pet.sleep - decayTicks)
