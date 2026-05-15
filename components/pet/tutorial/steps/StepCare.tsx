@@ -86,7 +86,7 @@ export default function StepCare() {
         <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-1">Mood = Gold</h3>
         <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed mb-4">
           Your pet&apos;s mood is calculated from all 4 stats combined. The happier your pet,
-          the more gold and XP you earn while studying. Neglect your pet and you earn less.
+          the more gold and XP you earn while you're active. Neglect your pet and you earn less.
         </p>
 
         <div className="grid grid-cols-3 gap-3">

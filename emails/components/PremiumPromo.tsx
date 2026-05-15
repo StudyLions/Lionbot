@@ -31,7 +31,7 @@ const PROMO: Record<PromoTier, PromoContent> = {
   free: {
     title: "Speed it up with LionHeart",
     body:
-      "Members get 500–3,000 LionGems each month, faster pet growth, and double study coins across every server. From €4.99/month.",
+      "Members get 500–3,000 LionGems each month, faster pet growth, and double voice coins across every server. From €4.99/month.",
     ctaLabel: "See LionHeart",
     ctaHref: `${brand.siteUrl}/donate`,
   },
@@ -45,16 +45,16 @@ const PROMO: Record<PromoTier, PromoContent> = {
   lionheart_plus: {
     title: "Top tier — LionHeart++",
     body:
-      "Includes a free Server Premium slot for one of your servers, the maximum study and farm boosts, and 3,000 monthly gems.",
+      "Includes a free Server Premium slot for one of your servers, the maximum activity and farm boosts, and 3,000 monthly gems.",
     ctaLabel: "Compare tiers",
     ctaHref: `${brand.siteUrl}/donate`,
   },
   lionheart_plus_plus: {
     title: "Thank you for going all-in",
     body:
-      "You are on the top tier. If you would like to spread the love, you can gift LionHeart to a friend or upgrade another one of your servers.",
-    ctaLabel: "Open the LionHeart store",
-    ctaHref: `${brand.siteUrl}/donate`,
+      "You are on the top tier. If you would like to spread the love, you can gift LionHeart to a friend or premium to another one of your servers.",
+    ctaLabel: "Open the gift hub",
+    ctaHref: `${brand.siteUrl}/dashboard/gifts`,
   },
 }
 

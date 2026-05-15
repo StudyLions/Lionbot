@@ -35,13 +35,13 @@ export default function WelcomeMember({
     >
       <H1>Welcome aboard, {firstName}.</H1>
       <Paragraph>
-        Thanks for signing in. I built {brand.name} so studying with friends on
-        Discord could feel like turning up to the same library every day —
+        Thanks for signing in. I built {brand.name} so being productive with friends on
+        Discord could feel like turning up to the same coffee shop every day —
         quietly motivating, gently competitive, and worth coming back to.
       </Paragraph>
       <Paragraph>
-        Your dashboard is ready, your study lion is waiting, and the bot is
-        already tracking voice study in any server you share with it.
+        Your dashboard is ready, your LionGotchi is waiting, and the bot is
+        already tracking your voice activity in any server you share with it.
       </Paragraph>
 
       <div style={{ marginTop: "8px", marginBottom: "4px" }}>
@@ -59,7 +59,7 @@ export default function WelcomeMember({
       />
       <Step
         number={2}
-        title="Sit in a study voice channel"
+        title="Join any voice channel"
         body="Hop into any voice room in a server that has LionBot. Tracking is automatic — no slash commands, no setup."
         ctaLabel="Read the quickstart"
         ctaHref={`${brand.siteUrl}/guides`}
@@ -67,7 +67,7 @@ export default function WelcomeMember({
       <Step
         number={3}
         title="Meet your LionGotchi"
-        body="A small virtual lion that grows when you study, eats food you grow on your farm, and earns gold while you focus."
+        body="A small virtual lion that grows when you're active in voice, eats food you grow on your farm, and earns gold while you focus."
         ctaLabel="Visit the pet tutorial"
         ctaHref={`${brand.siteUrl}/pet/tutorial`}
       />
@@ -75,7 +75,7 @@ export default function WelcomeMember({
       <Paragraph muted small>
         One more thing — voting for {brand.name} on{" "}
         <a href={brand.topggUrl} style={inlineLink}>top.gg</a>{" "}
-        every twelve hours unlocks a 1.25× study coin boost (and a stack of
+        every twelve hours unlocks a 1.25× voice coin boost (and a stack of
         gems if you upgrade to LionHeart).
       </Paragraph>
 

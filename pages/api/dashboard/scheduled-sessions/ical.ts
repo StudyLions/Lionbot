@@ -84,7 +84,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       select: { timezone: true, name: true },
     })
 
-    const calName = `StudyLion Sessions${userConfig?.name ? ` - ${userConfig.name}` : ""}`
+    const calName = `LionBot Sessions${userConfig?.name ? ` - ${userConfig.name}` : ""}`
 
     let ical = [
       "BEGIN:VCALENDAR",
@@ -109,8 +109,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         `DTSTAMP:${nowStamp}`,
         `DTSTART:${formatIcalDate(start)}`,
         `DTEND:${formatIcalDate(end)}`,
-        `SUMMARY:${escapeIcal(`Study Session — ${guildName}`)}`,
-        `DESCRIPTION:${escapeIcal(`Scheduled study session in ${guildName}. Open your Discord server to attend!`)}`,
+        `SUMMARY:${escapeIcal(`Session — ${guildName}`)}`,
+        `DESCRIPTION:${escapeIcal(`Scheduled session in ${guildName}. Open your Discord server to attend!`)}`,
         "STATUS:CONFIRMED",
         "BEGIN:VALARM",
         "TRIGGER:-PT15M",

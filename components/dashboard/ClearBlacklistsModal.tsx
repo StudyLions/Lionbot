@@ -51,7 +51,7 @@ interface Props {
 }
 
 const TYPE_LABELS: Record<BlacklistType, string> = {
-  STUDY_BAN: "Video / Study blacklists",
+  STUDY_BAN: "Video Blacklists",
   SCREEN_BAN: "Screen-share blacklists",
 }
 
@@ -242,7 +242,7 @@ export default function ClearBlacklistsModal({
                 <textarea
                   value={reason}
                   onChange={(e) => setReason(e.target.value)}
-                  placeholder="e.g. Removing study-ban role per server policy change"
+                  placeholder="e.g. Removing video-ban role per server policy change"
                   rows={2}
                   maxLength={500}
                   className="w-full bg-background border border-border rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-red-500/40 resize-none"

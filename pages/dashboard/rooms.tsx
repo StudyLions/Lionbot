@@ -180,7 +180,7 @@ function EmptyState({ onRentClick }: { onRentClick: () => void }) {
       <h2 className="text-xl font-semibold text-foreground mb-2">No Private Rooms Yet</h2>
       <p className="text-muted-foreground max-w-md mb-6 leading-relaxed">
         Private rooms are personal voice channels you rent in a server. You get your own space to
-        study with friends, set timers, and manage who can join.
+        hang out with friends, set timers, and manage who can join.
       </p>
       <div className="bg-card/50 rounded-xl p-5 max-w-sm w-full text-left space-y-3 border border-border/50 mb-4">
         <h3 className="text-sm font-semibold text-foreground">How to get started</h3>

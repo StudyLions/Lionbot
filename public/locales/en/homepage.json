@@ -6,7 +6,7 @@
     "viewDashboard": "View Dashboard",
     "trustBar": "Top.gg verified · {{count}}+ servers · Free forever",
     "liveCardTitle": "Live right now",
-    "liveCardStudying": "studying",
+    "liveCardStudying": "productive",
     "liveCardActive": "in voice rooms",
     "liveCardSessions": "sessions tracked all-time"
   },
@@ -14,7 +14,7 @@
     "label": "Powering communities like",
     "stat1Label": "active servers",
     "stat2Label": "members tracked",
-    "stat3Label": "study sessions"
+    "stat3Label": "productive sessions"
   },
   "liongotchiTabs": {
     "eyebrow": "LionGotchi · Premium-ready ecosystem",
@@ -48,7 +48,7 @@
   "farm": {
     "title": "Grow Your Farm",
     "subtitle": "Plant seeds, water your crops, and harvest gold — all powered by your Discord activity.",
-    "description": "Your study time and chat activity help your plants grow. Tend your farm, unlock rare plant varieties, and watch your gold pile up.",
+    "description": "Your voice time and chat activity help your plants grow. Tend your farm, unlock rare plant varieties, and watch your gold pile up.",
     "highlight1": "Plant Seeds & Watch Them Grow",
     "highlight2": "Water Crops to Boost Growth",
     "highlight3": "Harvest Gold & Materials",
@@ -109,14 +109,14 @@
     },
     "schedule": {
       "title": "Scheduled Sessions",
-      "description": "Schedule study sessions members can attend. Missing sessions costs a bonus, building accountability."
+      "description": "Schedule sessions members can attend. Missing sessions costs a bonus, building accountability."
     }
   },
   "socialProof": {
     "title": "Trusted by {{count}}+ Communities",
     "sessions": "Sessions",
     "users": "Users",
-    "studyingNow": "Studying Now",
+    "studyingNow": "Active Now",
     "timers": "Active Timers"
   },
   "howItWorks": {

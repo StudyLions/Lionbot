@@ -187,7 +187,7 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
       open={open}
       onClose={onClose}
       title="Accountability sessions"
-      subtitle="Members book a 1-hour study slot, show up on time, earn rewards."
+      subtitle="Members book a 1-hour session slot, show up on time, earn rewards."
       icon={Calendar}
       returnFocusTo="setup-task-trigger-schedule"
       footer={
@@ -211,7 +211,7 @@ export default function ScheduleTask({ guildId, open, onClose, onComplete, onSki
       }
     >
       <p className="text-sm text-muted-foreground mb-4">
-        Used by groups that want a structured, scheduled co-working rhythm. Skip if you just want free-form voice study.
+        Used by groups that want a structured, scheduled co-working rhythm. Skip if you just want free-form voice time.
       </p>
 
       <SettingRow label="Turn on accountability sessions" help="When off, the booking system is hidden from members.">

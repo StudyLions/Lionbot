@@ -526,7 +526,7 @@ export default function SurveyWidget() {
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
-                          What do you study?
+                          What's your focus?
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {FIELDS_OF_STUDY.map((o) => (
@@ -542,7 +542,7 @@ export default function SurveyWidget() {
 
                       <div className="space-y-2">
                         <label className="text-sm font-medium text-foreground">
-                          I currently study
+                          I currently focus on
                         </label>
                         <div className="flex flex-wrap gap-2">
                           {EDUCATION_LEVELS.map((o) => (

@@ -21,7 +21,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-is-lionbot",
         title: "What is LionBot?",
         paragraphs: [
-          "LionBot is a Discord bot built for productivity. It tracks your study and work time, lets you manage tasks and reminders, runs a coin economy with leaderboards, and gives you tools to stay motivated.",
+          "LionBot is a Discord bot built for productivity. It tracks your voice and chat activity, lets you manage tasks and reminders, runs a coin economy with leaderboards, and gives you tools to stay motivated.",
           "If you're part of a server that already has LionBot, you can start using it right away — no setup needed on your end. If you're an admin looking to add it to your server, check out the Admin tutorials instead.",
         ],
       },
@@ -29,7 +29,7 @@ export const memberTutorials: Tutorial[] = [
         id: "set-timezone",
         title: "Set Your Timezone",
         paragraphs: [
-          "Before anything else, tell LionBot your timezone. This makes sure your stats, reminders, and study sessions use the right clock.",
+          "Before anything else, tell LionBot your timezone. This makes sure your stats, reminders, and sessions use the right clock.",
           "Pick your timezone from the dropdown that appears, and you're good to go. You only need to do this once.",
         ],
         command: "/my timezone",
@@ -138,7 +138,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-are-reminders",
         title: "What Are Reminders?",
         paragraphs: [
-          "Reminders are personal notifications that LionBot sends you via DM at a time you choose. Use them for study sessions, assignment deadlines, meeting prep — anything you don't want to forget.",
+          "Reminders are personal notifications that LionBot sends you via DM at a time you choose. Use them for sessions, assignment deadlines, meeting prep — anything you don't want to forget.",
           "You can have up to 25 active reminders at a time.",
         ],
       },
@@ -161,7 +161,7 @@ export const memberTutorials: Tutorial[] = [
           "You can use formats like 30m, 2h, 1d, or combine them like 1h30m. LionBot will DM you when the time is up.",
         ],
         command: "/remindme in <duration> <message>",
-        tip: "Use short durations for study breaks (like /remindme in 25m Time for a break!) to create a simple pomodoro-style workflow.",
+        tip: "Use short durations for focus breaks (like /remindme in 25m Time for a break!) to create a simple pomodoro-style workflow.",
       },
       {
         id: "recurring",
@@ -195,7 +195,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "profile-and-stats",
     title: "Your Profile & Stats",
-    description: "See your study stats, achievements, and customize your profile card with skins.",
+    description: "See your activity stats, achievements, and customize your profile card with skins.",
     audience: "member",
     iconName: "User",
     estimatedMinutes: 5,
@@ -206,7 +206,7 @@ export const memberTutorials: Tutorial[] = [
         id: "your-profile",
         title: "Your LionBot Profile",
         paragraphs: [
-          "Every LionBot user has a profile card that shows your stats at a glance — study time, coin balance, gems, current rank, achievements, and your activity streak.",
+          "Every LionBot user has a profile card that shows your stats at a glance — voice time, coin balance, gems, current rank, achievements, and your activity streak.",
           "Think of it as your productivity report card, but way cooler because you can customize it.",
         ],
       },
@@ -214,7 +214,7 @@ export const memberTutorials: Tutorial[] = [
         id: "viewing-profile",
         title: "Viewing Your Profile",
         paragraphs: [
-          "Use /me to see your profile card. It shows everything in one clean visual — your study hours, coins, rank, and achievements.",
+          "Use /me to see your profile card. It shows everything in one clean visual — your activity hours, coins, rank, and achievements.",
           "You can also check out other people's profiles by mentioning them: /me @username",
         ],
         command: "/me",
@@ -223,7 +223,7 @@ export const memberTutorials: Tutorial[] = [
         id: "detailed-stats",
         title: "Detailed Statistics",
         paragraphs: [
-          "Want more detail? The /stats command breaks down your study time by today, this week, this month, and all-time.",
+          "Want more detail? The /stats command breaks down your activity by today, this week, this month, and all-time.",
           "You'll also see your leaderboard position and your activity streak. The longer your streak, the more impressive your profile looks.",
         ],
         command: "/stats",
@@ -232,7 +232,7 @@ export const memberTutorials: Tutorial[] = [
         id: "achievements",
         title: "Achievements",
         paragraphs: [
-          "LionBot tracks your achievements automatically. Total study hours, streak length, tasks completed, and more — each milestone unlocks a badge on your profile.",
+          "LionBot tracks your achievements automatically. Total activity hours, streak length, tasks completed, and more — each milestone unlocks a badge on your profile.",
           "Use /achievements to see which ones you've unlocked and how close you are to the next ones.",
         ],
         command: "/achievements",
@@ -258,11 +258,11 @@ export const memberTutorials: Tutorial[] = [
     ],
   },
 
-  // ── 5. Study Tracking & Pomodoro ────────────────────────
+  // ── 5. Activity Tracking & Pomodoro ────────────────────────
   {
     slug: "study-and-pomodoro",
-    title: "Study Tracking & Pomodoro",
-    description: "Learn how LionBot tracks your study time and how to use Pomodoro timers for focused sessions.",
+    title: "Activity Tracking & Pomodoro",
+    description: "Learn how LionBot tracks your voice activity and how to use Pomodoro timers for focused sessions.",
     audience: "member",
     iconName: "Timer",
     estimatedMinutes: 5,
@@ -271,9 +271,9 @@ export const memberTutorials: Tutorial[] = [
     steps: [
       {
         id: "how-tracking-works",
-        title: "How Study Tracking Works",
+        title: "How Activity Tracking Works",
         paragraphs: [
-          "LionBot automatically tracks your study time when you join a voice channel in a server that has it set up. Just join a study channel, and the clock starts ticking.",
+          "LionBot automatically tracks your voice activity when you join a voice channel in a server that has it set up. Just join a tracked channel, and the clock starts ticking.",
           "You don't need to run any commands — the bot detects when you join and leave voice channels and logs the time for you. It all shows up in your stats and on the leaderboard.",
         ],
         tip: "Make sure you're in a voice channel that LionBot is monitoring. Some servers only track specific channels. Ask your server admin if you're unsure which ones count.",
@@ -282,7 +282,7 @@ export const memberTutorials: Tutorial[] = [
         id: "pomodoro-timers",
         title: "Pomodoro Timers",
         paragraphs: [
-          "The Pomodoro technique is simple: study for a focused block of time (usually 25 minutes), then take a short break (5 minutes). Repeat.",
+          "The Pomodoro technique is simple: focus for a block of time (usually 25 minutes), then take a short break (5 minutes). Repeat.",
           "LionBot has built-in Pomodoro timers that work in voice channels. When a timer is running, everyone in the channel follows the same focus/break cycle.",
         ],
         command: "/pomodoro",
@@ -322,15 +322,15 @@ export const memberTutorials: Tutorial[] = [
         id: "what-are-coins",
         title: "What Are LionCoins?",
         paragraphs: [
-          "LionCoins are the in-server currency in LionBot. You earn them by studying in voice channels, completing tasks, and being active. You can spend them in your server's shop or send them to other members.",
-          "Each server has its own economy — coins you earn in one server are separate from another.",
+          "LionCoins are the in-server currency in LionBot. You earn them by being in voice channels, completing tasks, and being active. You can spend them in your server's shop or send them to other members.",
+          "Each server has its own economy, coins you earn in one server are separate from another.",
         ],
       },
       {
         id: "earning-coins",
         title: "How to Earn Coins",
         paragraphs: [
-          "The main way to earn coins is by studying in voice channels. The longer you study, the more you earn. You also get bonus coins for completing tasks.",
+          "The main way to earn coins is by being in voice channels. The longer you stay active, the more you earn. You also get bonus coins for completing tasks.",
           "Some servers have additional ways to earn — ask your server admin about coin rates and bonuses.",
         ],
         tip: "Voting for LionBot on top.gg gives you a 1.25x coin bonus for 12 hours. It's free and helps the bot grow!",
@@ -347,7 +347,7 @@ export const memberTutorials: Tutorial[] = [
         id: "sending-coins",
         title: "Sending Coins",
         paragraphs: [
-          "You can send coins to other members with the /send command. It's a great way to thank someone for helping you study or just spread the love.",
+          "You can send coins to other members with the /send command. It's a great way to thank someone for helping you out or just spread the love.",
         ],
         command: "/send <@user> <amount>",
       },
@@ -355,7 +355,7 @@ export const memberTutorials: Tutorial[] = [
         id: "leaderboard",
         title: "The Leaderboard",
         paragraphs: [
-          "Curious how you stack up? The leaderboard shows who has the most study time, highest coin balance, or best streak in your server.",
+          "Curious how you stack up? The leaderboard shows who has the most voice time, highest coin balance, or best streak in your server.",
           "Use /leaderboard to see where you rank. It updates in real time.",
         ],
         command: "/leaderboard",
@@ -378,7 +378,7 @@ export const memberTutorials: Tutorial[] = [
         id: "how-ranks-work",
         title: "How Ranks Work",
         paragraphs: [
-          "Ranks are milestones you hit as you study. Your server admin sets up rank tiers — each one requires a certain amount of activity to reach.",
+          "Ranks are milestones you hit as you stay active. Your server admin sets up rank tiers — each one requires a certain amount of activity to reach.",
           "Depending on the server, ranks can be based on voice time, XP (experience points), or message count. When you hit a new rank, you get a role and the bot announces it.",
         ],
       },
@@ -395,17 +395,17 @@ export const memberTutorials: Tutorial[] = [
         title: "Types of Ranks",
         paragraphs: [
           "Servers can set up different types of ranks:",
-          "Voice Time — You rank up by spending time in voice channels studying.",
+          "Voice Time — You rank up by spending time in voice channels.",
           "XP — You earn XP from messages and voice activity, and rank up as your XP accumulates.",
           "Messages — You rank up based on the number of messages you send.",
-          "Your server admin chooses which type to use. Most study servers use voice time.",
+          "Your server admin chooses which type to use. Most servers use voice time.",
         ],
       },
       {
         id: "achievements-detail",
         title: "Unlocking Achievements",
         paragraphs: [
-          "Achievements are personal milestones that show up on your profile. They're based on things like total study hours, streak length, tasks completed, and more.",
+          "Achievements are personal milestones that show up on your profile. They're based on things like total voice hours, streak length, tasks completed, and more.",
           "Some are easy to get, some take serious dedication. Collect them all to show off your commitment.",
         ],
         command: "/achievements",
@@ -455,7 +455,7 @@ export const memberTutorials: Tutorial[] = [
         id: "rooms",
         title: "Private Rooms",
         paragraphs: [
-          "Some servers let you rent private voice channels with /room rent. You get your own study room for a set amount of time, and you can invite whoever you want.",
+          "Some servers let you rent private voice channels with /room rent. You get your own voice room for a set amount of time, and you can invite whoever you want.",
           "Room rental costs LionCoins. The price and duration depend on your server's settings.",
         ],
         command: "/room rent",
@@ -480,7 +480,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-is-dashboard",
         title: "What Is the Dashboard?",
         paragraphs: [
-          "The LionBot dashboard is a full web interface for everything you can do with Discord commands — and more. Manage tasks, view study history, set reminders, browse skins, and customize your profile, all from your browser.",
+          "The LionBot dashboard is a full web interface for everything you can do with Discord commands — and more. Manage tasks, view activity history, set reminders, browse skins, and customize your profile, all from your browser.",
           "It syncs with Discord in real time. Anything you change on the dashboard shows up instantly in the bot, and vice versa.",
         ],
       },
@@ -498,7 +498,7 @@ export const memberTutorials: Tutorial[] = [
         title: "Navigating the Dashboard",
         paragraphs: [
           "The sidebar organizes everything into sections:",
-          "Activity — Tasks, Study History, Voice Editor, Goals, Reminders, and Live Session. This is where you manage your day-to-day productivity, review past study sessions, and enter Focus Mode for distraction-free studying.",
+          "Activity — Tasks, Activity History, Voice Editor, Goals, Reminders, and Live Session. This is where you manage your day-to-day productivity, review past sessions, and enter Focus Mode for distraction-free work.",
           "Collection — Skins, LionGems, Supporter perks, and the Leaderboard. Browse cosmetics, manage your gem balance and subscriptions, and see how you rank.",
           "Account — Your Profile page where you can customize your bio and see your stats card.",
           "If you're a server admin, you'll also see a Servers section for managing your server's LionBot configuration.",
@@ -524,13 +524,13 @@ export const memberTutorials: Tutorial[] = [
   },
   // --- END AI-MODIFIED ---
 
-  // ── 10. Study History ────────────────────────────────────
+  // ── 10. Activity History ────────────────────────────────────
   // --- AI-MODIFIED (2026-03-24) ---
-  // Purpose: New tutorial for the Study History dashboard page
+  // Purpose: New tutorial for the Activity History dashboard page
   {
     slug: "study-history",
-    title: "Study History",
-    description: "Review your past study sessions, see daily and weekly breakdowns, and track your productivity trends over time.",
+    title: "Activity History",
+    description: "Review your past sessions, see daily and weekly breakdowns, and track your productivity trends over time.",
     audience: "member",
     iconName: "History",
     estimatedMinutes: 3,
@@ -539,9 +539,9 @@ export const memberTutorials: Tutorial[] = [
     steps: [
       {
         id: "what-is-history",
-        title: "What Is Study History?",
+        title: "What Is Activity History?",
         paragraphs: [
-          "Study History is a dashboard page that shows every study session LionBot has tracked for you. Each session includes when you joined a voice channel, how long you studied, which server and channel it was in, and how many coins you earned.",
+          "Activity History is a dashboard page that shows every session LionBot has tracked for you. Each session includes when you joined a voice channel, how long you were active, which server and channel it was in, and how many coins you earned.",
           "It's your personal productivity journal — no manual logging required.",
         ],
       },
@@ -549,25 +549,25 @@ export const memberTutorials: Tutorial[] = [
         id: "viewing-sessions",
         title: "Viewing Your Sessions",
         paragraphs: [
-          "Head to the Study History page from the Activity section in the dashboard sidebar. You'll see a list of your recent sessions, sorted newest first.",
-          "Each session card shows the date, duration, server name, and coins earned. Longer sessions are visually distinct so you can quickly spot your best study days.",
+          "Head to the Activity History page from the Activity section in the dashboard sidebar. You'll see a list of your recent sessions, sorted newest first.",
+          "Each session card shows the date, duration, server name, and coins earned. Longer sessions are visually distinct so you can quickly spot your best days.",
         ],
       },
       {
         id: "charts-and-trends",
         title: "Charts & Trends",
         paragraphs: [
-          "Above the session list, you'll find charts that break down your study time by day, week, or month. These help you spot patterns — which days you study the most, whether your weekly totals are going up or down, and how consistent you've been.",
-          "Use these insights to adjust your study habits. If you notice a dip on Wednesdays, maybe that's the day to set a study reminder.",
+          "Above the session list, you'll find charts that break down your activity by day, week, or month. These help you spot patterns — which days you're most active, whether your weekly totals are going up or down, and how consistent you've been.",
+          "Use these insights to adjust your habits. If you notice a dip on Wednesdays, maybe that's the day to set a reminder.",
         ],
-        tip: "Check your Study History after each week to see if you're trending upward. Small, consistent improvements add up fast.",
+        tip: "Check your Activity History after each week to see if you're trending upward. Small, consistent improvements add up fast.",
       },
       {
         id: "filtering",
         title: "Filtering & Date Ranges",
         paragraphs: [
-          "You can filter your history by server, date range, or session length. This is useful if you study in multiple servers and want to see your activity in just one of them.",
-          "The date picker lets you zoom in on a specific week or month to analyze your study patterns during exam periods, project sprints, or any time frame you care about.",
+          "You can filter your history by server, date range, or session length. This is useful if you're active in multiple servers and want to see your activity in just one of them.",
+          "The date picker lets you zoom in on a specific week or month to analyze your patterns during exam periods, project sprints, or any time frame you care about.",
         ],
       },
     ],
@@ -580,7 +580,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "voice-editor",
     title: "Voice Time Editor",
-    description: "Edit your study sessions from the dashboard — adjust times, add missed sessions, and fix mistakes on a visual week timeline.",
+    description: "Edit your voice sessions from the dashboard — adjust times, add missed sessions, and fix mistakes on a visual week timeline.",
     audience: "member",
     iconName: "Pencil",
     estimatedMinutes: 4,
@@ -591,7 +591,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-is-voice-editor",
         title: "What Is the Voice Editor?",
         paragraphs: [
-          "The Voice Time Editor lets you adjust your study session records directly from the dashboard. If you forgot to leave a voice channel, had a session that didn't track properly, or need to log time you missed, the editor has you covered.",
+          "The Voice Time Editor lets you adjust your voice session records directly from the dashboard. If you forgot to leave a voice channel, had a session that didn't track properly, or need to log time you missed, the editor has you covered.",
           "It displays your sessions on a visual week timeline — each day is a horizontal strip where your sessions appear as blocks you can drag and resize.",
         ],
       },
@@ -608,7 +608,7 @@ export const memberTutorials: Tutorial[] = [
         id: "week-timeline",
         title: "The Week Timeline",
         paragraphs: [
-          "The main view shows seven day strips, one for each day of the current week. Each strip spans 24 hours, and your study sessions appear as colored blocks at the times they occurred.",
+          "The main view shows seven day strips, one for each day of the current week. Each strip spans 24 hours, and your voice sessions appear as colored blocks at the times they occurred.",
           "Use the week navigation arrows at the top to move forward or backward through weeks. The current day is highlighted so you can orient yourself quickly.",
         ],
       },
@@ -648,7 +648,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "live-session-and-focus",
     title: "Live Session & Focus Mode",
-    description: "Track your active study session in real time and enter Focus Mode for distraction-free studying with ambient sounds and timers.",
+    description: "Track your active session in real time and enter Focus Mode for distraction-free work with ambient sounds and timers.",
     audience: "member",
     iconName: "Maximize2",
     estimatedMinutes: 4,
@@ -659,8 +659,8 @@ export const memberTutorials: Tutorial[] = [
         id: "session-dashboard",
         title: "The Session Dashboard",
         paragraphs: [
-          "When you're actively studying in a voice channel, the Session page on the dashboard comes alive. It shows your current session in real time — elapsed time, which channel you're in, who else is in the room, and your active tasks.",
-          "Think of it as your study cockpit. Everything you need to stay on track is in one place.",
+          "When you're active in a voice channel, the Session page on the dashboard comes alive. It shows your current session in real time — elapsed time, which channel you're in, who else is in the room, and your active tasks.",
+          "Think of it as your productivity cockpit. Everything you need to stay on track is in one place.",
         ],
       },
       {
@@ -678,13 +678,13 @@ export const memberTutorials: Tutorial[] = [
           "Focus Mode comes with visual themes you can switch between — dark, light, nature, and more. Pick whichever helps you concentrate best.",
           "You can also enable ambient sounds directly from Focus Mode — rain, campfire, ocean waves, or white noise. These play through your browser without affecting your Discord audio.",
         ],
-        tip: "Try the rain ambient sound with the dark theme for a cozy late-night study vibe.",
+        tip: "Try the rain ambient sound with the dark theme for a cozy late-night focus vibe.",
       },
       {
         id: "wake-lock",
         title: "Wake Lock & Pop-out",
         paragraphs: [
-          "Focus Mode can keep your screen awake so your display doesn't turn off mid-session. This is especially useful on tablets propped up as a study timer.",
+          "Focus Mode can keep your screen awake so your display doesn't turn off mid-session. This is especially useful on tablets propped up as a focus timer.",
           "You can also pop the timer out into a small, always-on-top window. This lets you keep the timer visible while working in other apps.",
         ],
       },
@@ -692,7 +692,7 @@ export const memberTutorials: Tutorial[] = [
         id: "focus-tips",
         title: "Tips for Deep Work",
         paragraphs: [
-          "Enter Focus Mode before you start studying, not after. The act of switching into it signals your brain that it's time to concentrate.",
+          "Enter Focus Mode before you start your session, not after. The act of switching into it signals your brain that it's time to concentrate.",
           "Keep your task list updated — having a clear next action in front of you removes the mental overhead of deciding what to work on. If a task is done, check it off right from Focus Mode and move to the next one.",
         ],
       },
@@ -706,7 +706,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "goals",
     title: "Goals",
-    description: "Set weekly and monthly study goals to keep yourself accountable and track your progress over time.",
+    description: "Set weekly and monthly productivity goals to keep yourself accountable and track your progress over time.",
     audience: "member",
     iconName: "Target",
     estimatedMinutes: 3,
@@ -717,7 +717,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-are-goals",
         title: "What Are Goals?",
         paragraphs: [
-          "Goals let you set study hour targets for the week or month. They give you something concrete to aim for and help you build a consistent study habit.",
+          "Goals let you set activity hour targets for the week or month. They give you something concrete to aim for and help you build a consistent productive habit.",
           "Your progress updates automatically as LionBot tracks your voice channel time. You can see exactly how close you are to hitting your target.",
         ],
       },
@@ -726,7 +726,7 @@ export const memberTutorials: Tutorial[] = [
         title: "Setting a Goal",
         paragraphs: [
           "Head to the Goals page on the dashboard (under Activity in the sidebar). Choose whether you want a weekly or monthly goal, then set your target hours.",
-          "Start realistic — if you usually study 5 hours a week, try setting a goal of 7 hours. You can always adjust it later as you build momentum.",
+          "Start realistic — if you usually log 5 hours a week, try setting a goal of 7 hours. You can always adjust it later as you build momentum.",
         ],
         tip: "Weekly goals reset every Monday. Monthly goals reset on the 1st. Plan around these resets so you don't lose progress.",
       },
@@ -735,7 +735,7 @@ export const memberTutorials: Tutorial[] = [
         title: "Tracking Your Progress",
         paragraphs: [
           "The Goals page shows a visual progress bar for each active goal. You'll see your current hours, your target, and what percentage you've completed.",
-          "Goals tie directly into your study stats — the same voice time that counts toward ranks and leaderboards also counts toward your goals.",
+          "Goals tie directly into your activity stats — the same voice time that counts toward ranks and leaderboards also counts toward your goals.",
         ],
       },
     ],
@@ -760,7 +760,7 @@ export const memberTutorials: Tutorial[] = [
         title: "Voting on Top.gg",
         paragraphs: [
           "You can vote for LionBot on top.gg once every 12 hours. It's free, takes about 10 seconds, and helps the bot grow by improving its visibility on the platform.",
-          "As a thank-you, every vote gives you a 1.25x coin earning bonus for 12 hours. That means 25% more LionCoins from studying, completing tasks, and all other coin sources.",
+          "As a thank-you, every vote gives you a 1.25x coin earning bonus for 12 hours. That means 25% more LionCoins from being active, completing tasks, and all other coin sources.",
         ],
         tip: "Set a reminder with /remindme in 12h Time to vote for LionBot! so you never miss a vote window.",
       },
@@ -857,7 +857,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "private-rooms",
     title: "Private Rooms",
-    description: "Rent your own private voice channel, invite study partners, and focus without distractions.",
+    description: "Rent your own private voice channel, invite focus partners, and work without distractions.",
     audience: "member",
     iconName: "DoorOpen",
     estimatedMinutes: 3,
@@ -868,7 +868,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-are-rooms",
         title: "What Are Private Rooms?",
         paragraphs: [
-          "Private rooms are temporary voice channels you rent with LionCoins. You get your own space to study, and you control who can join.",
+          "Private rooms are temporary voice channels you rent with LionCoins. You get your own space, and you control who can join.",
           "Not every server has this feature enabled — it's up to the server admin. If you don't see the /room command, ask your admin about setting it up.",
         ],
       },
@@ -885,10 +885,10 @@ export const memberTutorials: Tutorial[] = [
         id: "managing-room",
         title: "Managing Your Room",
         paragraphs: [
-          "While your room is active, you can invite other members to join you for group study sessions. The room is yours for the rental duration.",
-          "When the rental period expires, the channel is automatically removed. Your study time in the room still counts toward your stats, ranks, and coin earnings just like any other tracked voice channel.",
+          "While your room is active, you can invite other members to join you for group sessions. The room is yours for the rental duration.",
+          "When the rental period expires, the channel is automatically removed. Your voice time in the room still counts toward your stats, ranks, and coin earnings just like any other tracked voice channel.",
         ],
-        tip: "Private rooms are great for focused group study. Invite a few friends, turn on cameras, and hold each other accountable.",
+        tip: "Private rooms are great for focused group sessions. Invite a few friends, turn on cameras, and hold each other accountable.",
       },
     ],
   },
@@ -911,7 +911,7 @@ export const memberTutorials: Tutorial[] = [
         id: "what-is-liongotchi",
         title: "What Is LionGotchi?",
         paragraphs: [
-          "LionGotchi is a virtual pet system built into LionBot. Every member can adopt their own pet lion, care for it, and watch it grow as they study.",
+          "LionGotchi is a virtual pet system built into LionBot. Every member can adopt their own pet lion, care for it, and watch it grow as they stay active.",
           "It's inspired by classic virtual pet games — your pet has needs (hunger, cleanliness, energy) that you manage through simple care actions. But there's more to it: farming, equipment, enhancement, a player marketplace, and room decoration.",
         ],
       },
@@ -940,8 +940,8 @@ export const memberTutorials: Tutorial[] = [
         id: "mood-system",
         title: "Mood & Bonus Effects",
         paragraphs: [
-          "Your pet's mood is calculated from its three needs. A happy, well-cared-for pet gives you bonus gold and XP from studying — up to 1.5x at peak happiness.",
-          "A neglected pet with low needs drops your multiplier down to 0.5x. The takeaway: spend a few seconds caring for your pet regularly and you'll earn significantly more from your study sessions.",
+          "Your pet's mood is calculated from its three needs. A happy, well-cared-for pet gives you bonus gold and XP from voice activity — up to 1.5x at peak happiness.",
+          "A neglected pet with low needs drops your multiplier down to 0.5x. The takeaway: spend a few seconds caring for your pet regularly and you'll earn significantly more from your sessions.",
         ],
         tip: "Check in on your pet once or twice a day. A quick feed-bathe-rest combo takes under a minute and keeps your bonus multiplier high.",
       },
@@ -1043,7 +1043,7 @@ export const memberTutorials: Tutorial[] = [
   {
     slug: "liongotchi-farm-equipment",
     title: "LionGotchi: Farm & Equipment",
-    description: "Grow resources on your farm, collect equipment from studying, and equip gear to boost your rewards.",
+    description: "Grow resources on your farm, collect equipment from being active, and equip gear to boost your rewards.",
     audience: "member",
     iconName: "Sprout",
     estimatedMinutes: 5,
@@ -1063,9 +1063,9 @@ export const memberTutorials: Tutorial[] = [
         title: "Planting & Watering",
         paragraphs: [
           "Select an empty plot and choose a seed to plant. Seeds come in different rarities — higher rarity seeds take longer to grow but yield better materials.",
-          "After planting, you need to water your crops. Growth is also driven by your activity — studying in voice channels and sending messages helps your plants grow faster.",
+          "After planting, you need to water your crops. Growth is also driven by your activity — being in voice channels and sending messages helps your plants grow faster.",
         ],
-        tip: "Use the 'Water All' button to water every plot at once. Check your farm after study sessions to see how much your crops have grown.",
+        tip: "Use the 'Water All' button to water every plot at once. Check your farm after sessions to see how much your crops have grown.",
       },
       {
         id: "harvesting",
@@ -1079,7 +1079,7 @@ export const memberTutorials: Tutorial[] = [
         id: "equipment-drops",
         title: "Equipment Drops",
         paragraphs: [
-          "As you study in voice channels and chat in text channels, you have a chance to receive equipment drops. These are wearable items for your pet — hats, accessories, outfits, wings, and shoes.",
+          "As you're in voice channels and chat in text channels, you have a chance to receive equipment drops. These are wearable items for your pet — hats, accessories, outfits, wings, and shoes.",
           "Equipment goes into your inventory automatically. You can also get equipment drops from harvesting crops on your farm. The more active you are, the more drops you'll collect.",
         ],
       },
@@ -1163,7 +1163,7 @@ export const memberTutorials: Tutorial[] = [
         id: "enhancement-overview",
         title: "What Is Enhancement?",
         paragraphs: [
-          "Enhancement is the system for powering up your equipment. By applying scrolls to your gear, you increase their stat bonuses — more gold from studying, better XP rates, and higher drop chances.",
+          "Enhancement is the system for powering up your equipment. By applying scrolls to your gear, you increase their stat bonuses — more gold from voice activity, better XP rates, and higher drop chances.",
           "The Enhancement page is in the Pet section sidebar. It features a cinematic forge ceremony inspired by classic RPGs, complete with animations, sound effects, and visual feedback.",
         ],
       },

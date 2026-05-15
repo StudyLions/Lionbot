@@ -30,19 +30,19 @@ const ADMIN_COMMANDS: Command[] = [
   { name: "/shop add", description: "Add an item to the server shop", example: "/shop add @VIP 500", category: "Economy" },
   { name: "/ranks edit", description: "Edit rank tiers and thresholds", example: "/ranks edit", category: "Ranks" },
   { name: "/rolemenu create", description: "Create a new role selection menu", example: "/rolemenu create #roles", category: "Community" },
-  { name: "/schedule create", description: "Create an accountability session", example: "/schedule create \"Study Time\" 09:00", category: "Schedule" },
+  { name: "/schedule create", description: "Create an accountability session", example: "/schedule create \"Morning Session\" 09:00", category: "Schedule" },
   { name: "/economy give", description: "Give coins to a member", example: "/economy give @user 500", category: "Economy" },
-  { name: "/moderation studyban", description: "Temporarily block a member from joining study voice channels", example: "/moderation studyban @user 1h", category: "Moderation" },
+  { name: "/warning", description: "Warn a member and log it to their moderation record", example: "/warning @user reason", category: "Moderation" },
 ]
 
 const MEMBER_COMMANDS: Command[] = [
   { name: "/me", description: "View your interactive profile with stats, rank, and customization", example: "/me", category: "Stats" },
   { name: "/profile", description: "Generate your full profile + stats card image", example: "/profile", category: "Stats" },
   { name: "/leaderboard", description: "See the server's top members", example: "/leaderboard voice", category: "Stats" },
-  { name: "/task add", description: "Add a task to your personal to-do list", example: "/task add Study Chapter 5", category: "Tasks" },
+  { name: "/task add", description: "Add a task to your personal to-do list", example: "/task add Finish report", category: "Tasks" },
   { name: "/task done", description: "Mark a task as completed and earn coins", example: "/task done 1", category: "Tasks" },
   { name: "/pomodoro", description: "Start a focus timer session", example: "/pomodoro", category: "Productivity" },
-  { name: "/room create", description: "Rent a private voice channel", example: "/room create \"Study Room\"", category: "Community" },
+  { name: "/room create", description: "Rent a private voice channel", example: "/room create \"Focus Room\"", category: "Community" },
   { name: "/shop", description: "Browse and buy items from the server shop", example: "/shop", category: "Economy" },
   { name: "/pet", description: "View and interact with your virtual pet lion", example: "/pet", category: "LionGotchi" },
   { name: "/farm", description: "Manage your LionGotchi farm", example: "/farm plant wheat", category: "LionGotchi" },

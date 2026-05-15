@@ -1426,7 +1426,7 @@ export default function LeaderboardAutopostPage() {
               <div className="flex-1 min-w-0">
                 {/* Bot name + timestamp */}
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="text-sm font-semibold text-amber-400">StudyLion</span>
+                  <span className="text-sm font-semibold text-amber-400">LionBot</span>
                   <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded font-medium">BOT</span>
                   <span className="text-[10px] text-gray-600">Today at 12:00 AM</span>
                 </div>

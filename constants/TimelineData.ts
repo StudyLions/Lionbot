@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 15, 2026 ───────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: LionGotchi decay slowdown + one-click care fix.
+  {
+    date: "2026-05-15",
+    title: "LionGotchi: slower decay + one-click care",
+    description:
+      "Stats now decay 4x slower (8 days to fully empty, was 2) and a single click on Feed, Bathe, or Sleep fills the bar to full. Long absences also can't drop a stat by more than 4 in one go, so you won't come back to a fainted pet. Reported by Potato Baggins.",
+    category: "liongotchi",
+    area: "both",
+  },
+  // --- END AI-MODIFIED ---
   // ── May 10, 2026 ───────────────────────────────────────────
   // --- AI-MODIFIED (2026-05-10) ---
   // Purpose: Timeline entries for setup experience overhaul + anti-AFK fixes.

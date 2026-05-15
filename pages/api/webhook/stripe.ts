@@ -16,6 +16,24 @@ import { sendGemAuditLog, sendStripeAuditLog } from "@/utils/discordAudit";
 // Purpose: Shared premium recalculation for LionHeart++ server premium lifecycle
 import { recalculateGuildPremium } from "@/utils/premiumUtils";
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Queue Discord DM notifications + send sender-side transactional
+//          emails for gift lifecycle events. Recipient emails for LionHeart
+//          claims live in the claim endpoint (the recipient's userid isn't
+//          known here until they claim). Server-gift admin emails are
+//          intentionally not sent -- DM coverage handles that (admin
+//          email addresses aren't always known).
+import * as React from "react";
+import { notifyUser, notifyGuildAdmins } from "@/utils/notifyQueue";
+import { sendEmail } from "@/utils/email/send";
+import GiftClaimable from "../../../emails/GiftClaimable";
+// --- END AI-MODIFIED ---
+
+const GIFT_TIER_LABELS: Record<string, string> = {
+  LIONHEART: "LionHeart",
+  LIONHEART_PLUS: "LionHeart+",
+  LIONHEART_PLUS_PLUS: "LionHeart++",
+};
 
 const stripe = new Stripe(`${process.env.STRIPE_SECRET_KEY}`, {
   apiVersion: "2020-08-27",
@@ -287,6 +305,39 @@ async function handleServerPremiumSubscriptionDeleted(subscription: Stripe.Subsc
   });
   // --- END AI-MODIFIED ---
 
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: Notify on gift cancellations. We only DM recipient guild admins
+  //          (and the sender) when this was a gift -- self-purchased server
+  //          premium cancellations are surfaced via the existing dashboard
+  //          UI, not Discord DMs.
+  if (sub.gifted_by_userid) {
+    await notifyGuildAdmins({
+      guildId: sub.guildid,
+      payload: {
+        category: "server_gift_cancelled",
+        title: "A gift ended",
+        body: sub.gift_is_anonymous
+          ? "The anonymous gifter cancelled their Server Premium gift. Premium continues until the current billing period ends."
+          : `<@${sub.gifted_by_userid}> cancelled their Server Premium gift. Premium continues until the current billing period ends.`,
+        link_url: "/dashboard/servers/" + sub.guildid,
+        link_label: "Open server dashboard",
+      },
+      dedupKey: `server_gift_cancelled:${subscription.id}`,
+    });
+    await notifyUser({
+      userId: sub.gifted_by_userid,
+      payload: {
+        category: "server_gift_cancelled",
+        title: "Your gift was cancelled",
+        body: "Your Server Premium gift has been cancelled. The recipient keeps premium through the end of the current billing period.",
+        link_url: "/dashboard/gifts",
+        link_label: "View your gifts",
+      },
+      dedupKey: `server_gift_cancelled_sender_ack:${subscription.id}`,
+    });
+  }
+  // --- END AI-MODIFIED ---
+
   return true;
 }
 
@@ -374,6 +425,569 @@ async function isServerPremiumSubscription(subscriptionId: string): Promise<bool
   return !!sub;
 }
 
+// --- END AI-MODIFIED ---
+
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Server Premium GIFT checkout completion. Same DB shape as a
+//          self-purchased server premium row, but with gifted_by_userid,
+//          gift_message, gift_is_anonymous filled so the recipient
+//          dashboard can render the "gifted by @X" card.
+async function handleServerPremiumGiftCheckout(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata;
+  if (!metadata?.senderId || !metadata?.recipientGuildId) {
+    console.error("Stripe webhook: missing gift metadata on session", session.id);
+    return;
+  }
+
+  const guildIdBig = BigInt(metadata.recipientGuildId);
+  const senderIdBig = BigInt(metadata.senderId);
+  const isAnonymous = metadata.gift_is_anonymous === "true";
+  const giftMessage = metadata.gift_message?.trim() ? metadata.gift_message.trim() : null;
+
+  const subscriptionId = typeof session.subscription === "string"
+    ? session.subscription
+    : (session.subscription as any)?.id ?? null;
+
+  const customerId = typeof session.customer === "string"
+    ? session.customer
+    : (session.customer as any)?.id ?? null;
+
+  if (!subscriptionId || !customerId) {
+    console.error("Stripe webhook: server premium gift checkout missing subscription/customer ID");
+    return;
+  }
+
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000)
+    : new Date(Date.now() + 30 * 86400000);
+  const periodStart = sub.current_period_start
+    ? new Date(sub.current_period_start * 1000)
+    : new Date();
+
+  await prisma.$transaction(async (tx) => {
+    // Idempotency: if we already saw this subscription_id (duplicate webhook
+    // delivery), just update the existing row instead of creating a duplicate.
+    const existingRow = await tx.server_premium_subscriptions.findFirst({
+      where: { stripe_subscription_id: subscriptionId },
+    });
+
+    if (existingRow) {
+      await tx.server_premium_subscriptions.update({
+        where: { id: existingRow.id },
+        data: {
+          guildid: guildIdBig,
+          userid: senderIdBig,
+          stripe_customer_id: customerId,
+          plan: "MONTHLY",
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          gifted_by_userid: senderIdBig,
+          gift_message: giftMessage,
+          gift_is_anonymous: isAnonymous,
+          updated_at: new Date(),
+        },
+      });
+    } else {
+      await tx.server_premium_subscriptions.create({
+        data: {
+          guildid: guildIdBig,
+          userid: senderIdBig,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          plan: "MONTHLY",
+          status: "ACTIVE",
+          current_period_start: periodStart,
+          current_period_end: periodEnd,
+          gifted_by_userid: senderIdBig,
+          gift_message: giftMessage,
+          gift_is_anonymous: isAnonymous,
+        },
+      });
+    }
+
+    // Extend premium_guilds.premium_until to at least periodEnd. Reuses the
+    // same max-expiry logic the non-gift server premium checkout uses, so
+    // overlapping sources (paid sub + gift + LH++ slot) all stack correctly.
+    const existing = await tx.premium_guilds.findUnique({
+      where: { guildid: guildIdBig },
+    });
+
+    if (existing) {
+      const newUntil = existing.premium_until > periodEnd ? existing.premium_until : periodEnd;
+      await tx.premium_guilds.update({
+        where: { guildid: guildIdBig },
+        data: { premium_until: newUntil },
+      });
+    } else {
+      await tx.premium_guilds.create({
+        data: {
+          guildid: guildIdBig,
+          premium_since: periodStart,
+          premium_until: periodEnd,
+        },
+      });
+    }
+  });
+
+  console.log(
+    `Stripe webhook: server premium GIFT activated for guild ${metadata.recipientGuildId} from user ${metadata.senderId} (anonymous=${isAnonymous})`
+  );
+
+  const giftAmount = formatMoney(session.amount_total, session.currency);
+  sendStripeAuditLog({
+    eventType: "checkout.session.completed",
+    title: "Server Premium Gift",
+    description: `<@${metadata.senderId}> gifted **MONTHLY** server premium to guild \`${metadata.recipientGuildId}\`${isAnonymous ? " (anonymous)" : ""}`,
+    fields: [
+      { name: "Amount", value: giftAmount, inline: true },
+      { name: "Recipient Guild", value: metadata.recipientGuildId, inline: true },
+      { name: "Anonymous", value: isAnonymous ? "Yes" : "No", inline: true },
+      { name: "Subscription", value: subscriptionId, inline: false },
+      ...(giftMessage ? [{ name: "Message", value: giftMessage, inline: false }] : []),
+    ],
+  });
+
+  // Notify all admins of the recipient guild. The bot module resolves admin
+  // userids from its live permission cache at send-time, so we don't need a
+  // members list here.
+  await notifyGuildAdmins({
+    guildId: guildIdBig,
+    payload: {
+      category: "server_gift_activated",
+      title: "Your server received premium",
+      body: isAnonymous
+        ? "An anonymous gifter just activated Server Premium on your server."
+        : `<@${metadata.senderId}> just activated Server Premium on your server.`,
+      link_url: "/dashboard/servers/" + metadata.recipientGuildId,
+      link_label: "Open server dashboard",
+      context: {
+        senderId: isAnonymous ? null : metadata.senderId,
+        isAnonymous,
+        message: giftMessage,
+      },
+    },
+    dedupKey: `server_gift_activated:${subscriptionId}`,
+  });
+
+  // Sender ack: confirm the gift is live.
+  await notifyUser({
+    userId: senderIdBig,
+    payload: {
+      category: "server_gift_activated",
+      title: "Your gift is on its way",
+      body: "Server Premium just activated on your gift's recipient server. They've been notified.",
+      link_url: "/dashboard/gifts",
+      link_label: "Manage your gifts",
+    },
+    dedupKey: `server_gift_sender_ack:${subscriptionId}`,
+  });
+}
+
+// Purpose: LionHeart user-gift checkout completion. The lionheart_gifts row
+//          was pre-created in PENDING_CLAIM by the checkout endpoint; here
+//          we back-fill the Stripe IDs and the first period_end. The gift
+//          stays PENDING_CLAIM until the recipient claims via /gift/claim
+//          (or until /api/cron/expire-gifts cancels it after 30 days).
+async function handleLionheartGiftCheckout(session: Stripe.Checkout.Session) {
+  const metadata = session.metadata;
+  const claimToken = metadata?.claim_token;
+  if (!claimToken) {
+    console.error("Stripe webhook: missing claim_token on LIONHEART_GIFT session", session.id);
+    return;
+  }
+
+  const subscriptionId = typeof session.subscription === "string"
+    ? session.subscription
+    : (session.subscription as any)?.id ?? null;
+
+  const customerId = typeof session.customer === "string"
+    ? session.customer
+    : (session.customer as any)?.id ?? null;
+
+  if (!subscriptionId || !customerId) {
+    console.error("Stripe webhook: LIONHEART_GIFT checkout missing subscription/customer ID");
+    return;
+  }
+
+  const sub = await stripe.subscriptions.retrieve(subscriptionId);
+  const periodEnd = sub.current_period_end
+    ? new Date(sub.current_period_end * 1000)
+    : new Date(Date.now() + 30 * 86400000);
+
+  const gift = await prisma.lionheart_gifts.findUnique({
+    where: { claim_token: claimToken },
+  });
+  if (!gift) {
+    console.error(`Stripe webhook: LIONHEART_GIFT row not found for claim_token ${claimToken}`);
+    return;
+  }
+
+  // Idempotency: only update if not already filled (duplicate webhook delivery)
+  if (gift.stripe_subscription_id && gift.stripe_subscription_id !== "") {
+    console.log(`Stripe webhook: LIONHEART_GIFT row ${gift.id} already linked to subscription, skipping`);
+    return;
+  }
+
+  await prisma.lionheart_gifts.update({
+    where: { id: gift.id },
+    data: {
+      stripe_subscription_id: subscriptionId,
+      stripe_customer_id: customerId,
+      current_period_end: periodEnd,
+      updated_at: new Date(),
+    },
+  });
+
+  console.log(
+    `Stripe webhook: LIONHEART_GIFT activated (PENDING_CLAIM) -- gift id=${gift.id}, tier=${gift.tier}, sender=${gift.sender_userid}, claim_token=${claimToken}`
+  );
+
+  const giftAmount = formatMoney(session.amount_total, session.currency);
+  sendStripeAuditLog({
+    eventType: "checkout.session.completed",
+    title: "LionHeart Gift Purchased",
+    description: `<@${gift.sender_userid}> bought a **${gift.tier}** gift (awaiting claim)${gift.gift_is_anonymous ? " (anonymous)" : ""}`,
+    fields: [
+      { name: "Amount", value: giftAmount, inline: true },
+      { name: "Tier", value: gift.tier, inline: true },
+      { name: "Gift ID", value: String(gift.id), inline: true },
+      { name: "Claim Token", value: claimToken, inline: false },
+      ...(gift.gift_message ? [{ name: "Message", value: gift.gift_message, inline: false }] : []),
+    ],
+  });
+
+  // Email the sender with the claim URL so they have a persistent record
+  // they can copy from any inbox. Fire-and-forget; sendEmail handles
+  // missing-email / preference / kill-switch gracefully.
+  const baseUrl = process.env.NEXTAUTH_URL || "https://lionbot.org";
+  const claimUrl = `${baseUrl}/gift/claim/${claimToken}`;
+  const tierLabel = GIFT_TIER_LABELS[gift.tier] ?? gift.tier;
+  const expiresLabel = gift.claim_expires_at.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+  sendEmail({
+    userid: gift.sender_userid,
+    template: "gift_claimable",
+    subject: `Your ${tierLabel} gift is ready to share`,
+    react: React.createElement(GiftClaimable, {
+      tierLabel,
+      claimUrl,
+      expiresAtLabel: expiresLabel,
+    }),
+  }).catch((err: unknown) => {
+    console.warn("gift-checkout webhook: sendEmail failed (non-fatal):", err);
+  });
+}
+
+async function isLionheartGiftSubscription(subscriptionId: string): Promise<boolean> {
+  const gift = await prisma.lionheart_gifts.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+    select: { id: true },
+  });
+  return !!gift;
+}
+
+// When the SENDER's gift sub changes status (e.g., cancels via Stripe Portal),
+// reflect it in lionheart_gifts AND -- if the gift has been claimed -- mirror
+// the change to the recipient's user_subscriptions. We never touch the sender's
+// own user_subscriptions row from this path; the sender may have their own
+// (separate) LionHeart sub that this gift does not affect.
+async function handleLionheartGiftSubscriptionUpdate(subscription: Stripe.Subscription): Promise<boolean> {
+  const gift = await prisma.lionheart_gifts.findFirst({
+    where: { stripe_subscription_id: subscription.id },
+  });
+  if (!gift) return false;
+
+  const giftStatus = subscription.cancel_at_period_end
+    ? "CANCELLING"
+    : subscription.status === "active"
+    ? "ACTIVE"
+    : subscription.status === "past_due"
+    ? "PAST_DUE"
+    : subscription.status === "canceled"
+    ? "CANCELLED"
+    : "INACTIVE";
+
+  const periodEnd = subscription.current_period_end
+    ? new Date(subscription.current_period_end * 1000)
+    : null;
+
+  // PENDING_CLAIM gifts stay PENDING_CLAIM until claimed/cancelled/expired --
+  // sub state changes here don't promote them to ACTIVE.
+  const nextStatus =
+    gift.status === "PENDING_CLAIM" && giftStatus !== "CANCELLED"
+      ? "PENDING_CLAIM"
+      : giftStatus;
+
+  await prisma.lionheart_gifts.update({
+    where: { id: gift.id },
+    data: {
+      status: nextStatus,
+      current_period_end: periodEnd ?? gift.current_period_end,
+      updated_at: new Date(),
+    },
+  });
+
+  // If the gift is claimed, mirror to recipient's user_subscriptions.
+  if (gift.recipient_userid && periodEnd) {
+    const recipientStatus =
+      giftStatus === "CANCELLED"
+        ? "CANCELLED"
+        : giftStatus === "CANCELLING"
+        ? "CANCELLING"
+        : giftStatus === "PAST_DUE"
+        ? "PAST_DUE"
+        : "ACTIVE";
+
+    await prisma.user_subscriptions.update({
+      where: { userid: gift.recipient_userid },
+      data: {
+        status: recipientStatus,
+        tier: giftStatus === "CANCELLED" ? "NONE" : gift.tier,
+        current_period_end: periodEnd,
+        updated_at: new Date(),
+      },
+    });
+
+    // LH++ slot revocation for claimed gifts that just downgraded.
+    if (giftStatus === "CANCELLED" && gift.tier === "LIONHEART_PLUS_PLUS") {
+      const grant = await prisma.lionheart_server_premium.findUnique({
+        where: { userid: gift.recipient_userid },
+      });
+      if (grant) {
+        const revokedGuildId = grant.guildid;
+        await prisma.lionheart_server_premium.delete({
+          where: { userid: gift.recipient_userid },
+        });
+        if (revokedGuildId) {
+          await recalculateGuildPremium(revokedGuildId);
+        }
+      }
+    }
+  }
+
+  console.log(
+    `Stripe webhook: LIONHEART_GIFT subscription ${subscription.id} -> gift id=${gift.id}, status=${nextStatus}`
+  );
+
+  sendStripeAuditLog({
+    eventType: "customer.subscription.updated",
+    title: "LionHeart Gift Subscription Update",
+    description: `Gift id \`${gift.id}\` (sender <@${gift.sender_userid}>) status changed to **${nextStatus}**`,
+    fields: [
+      { name: "Status", value: nextStatus, inline: true },
+      { name: "Tier", value: gift.tier, inline: true },
+      { name: "Claimed", value: gift.recipient_userid ? "Yes" : "No", inline: true },
+    ],
+  });
+
+  // Notify recipient + sender when a claimed gift ends. We don't DM on
+  // CANCELLING (just scheduled to end at period end) -- only on the actual
+  // CANCELLED transition. PENDING_CLAIM cancellations are silent (the sender
+  // is informed via Stripe receipt + dashboard, the recipient never knew).
+  if (nextStatus === "CANCELLED" && gift.recipient_userid) {
+    await notifyUser({
+      userId: gift.recipient_userid,
+      payload: {
+        category: "lionheart_gift_cancelled",
+        title: "Your gifted LionHeart subscription ended",
+        body: "The gifter cancelled the subscription. Your perks stay active through the current billing period, then your tier returns to Base.",
+        link_url: "/dashboard/subscriptions",
+        link_label: "View your subscription",
+      },
+      dedupKey: `lh_gift_cancelled_recipient:${gift.id}`,
+    });
+    await notifyUser({
+      userId: gift.sender_userid,
+      payload: {
+        category: "lionheart_gift_cancelled",
+        title: "Your gift was cancelled",
+        body: "The LionHeart subscription you gifted has been cancelled. The recipient keeps perks through the current billing period.",
+        link_url: "/dashboard/gifts",
+        link_label: "View your gifts",
+      },
+      dedupKey: `lh_gift_cancelled_sender_ack:${gift.id}`,
+    });
+  }
+
+  return true;
+}
+
+async function handleLionheartGiftSubscriptionDeleted(subscription: Stripe.Subscription): Promise<boolean> {
+  // Re-uses the update path -- subscription.status === "canceled" maps to
+  // giftStatus = "CANCELLED" which downgrades the recipient correctly.
+  return handleLionheartGiftSubscriptionUpdate(subscription);
+}
+
+async function handleLionheartGiftInvoiceSucceeded(invoice: Stripe.Invoice): Promise<boolean> {
+  if (!invoice.subscription) return false;
+
+  const subscriptionId = typeof invoice.subscription === "string"
+    ? invoice.subscription
+    : invoice.subscription.id;
+
+  const gift = await prisma.lionheart_gifts.findFirst({
+    where: { stripe_subscription_id: subscriptionId },
+  });
+  if (!gift) return false;
+
+  // Skip upgrade-proration invoices (same logic as the LionHeart self-sub
+  // handler). Only renew on subscription_create or subscription_cycle.
+  const billingReason = invoice.billing_reason;
+  const isRenewalLike =
+    billingReason === "subscription_create" ||
+    billingReason === "subscription_cycle";
+  if (!isRenewalLike) {
+    console.log(
+      `Stripe webhook: LIONHEART_GIFT invoice ${invoice.id} skipped (billing_reason=${billingReason})`
+    );
+    return true;
+  }
+
+  const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+  const newPeriodEnd = stripeSub.current_period_end
+    ? new Date(stripeSub.current_period_end * 1000)
+    : null;
+
+  if (newPeriodEnd) {
+    await prisma.lionheart_gifts.update({
+      where: { id: gift.id },
+      data: {
+        current_period_end: newPeriodEnd,
+        updated_at: new Date(),
+      },
+    });
+  }
+
+  // Only credit gems if claimed. Pre-claim, the gift is still PENDING_CLAIM
+  // and no one owns the gems yet.
+  if (!gift.recipient_userid) {
+    console.log(
+      `Stripe webhook: LIONHEART_GIFT invoice ${invoice.id} paid but gift still PENDING_CLAIM; no gem credit`
+    );
+    return true;
+  }
+
+  // --- AI-MODIFIED (2026-05-15 v2) ---
+  // Purpose: Avoid double-credit on the first month. The claim endpoint
+  // credits MONTHLY_GEM_ALLOWANCE immediately when the recipient claims
+  // (reference `gift_claim_gems_<gift.id>`). The FIRST invoice
+  // (billing_reason=subscription_create) fires on initial purchase --
+  // it may be delivered before or after the recipient claims. If it
+  // arrives AFTER, recipient_userid is already set and we'd credit again
+  // with a different reference (`gift_sub_gems_<invoice.id>`), bypassing
+  // idempotency. Skip the first invoice for gift subs -- the claim owns
+  // month 1; renewals (subscription_cycle) own months 2+.
+  if (billingReason === "subscription_create") {
+    console.log(
+      `Stripe webhook: LIONHEART_GIFT first invoice ${invoice.id} -- claim endpoint owns month-1 gems; skipping renewal credit`
+    );
+    return true;
+  }
+  // --- END AI-MODIFIED ---
+
+  const gemAmount = MONTHLY_GEM_ALLOWANCE[gift.tier] || 0;
+  if (gemAmount <= 0) return true;
+
+  const reference = `gift_sub_gems_${invoice.id}`;
+  const existing = await prisma.gem_transactions.findFirst({
+    where: { reference },
+  });
+  if (existing) {
+    console.log(`Stripe webhook: duplicate gift gem allowance for invoice ${invoice.id}, skipping`);
+    return true;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user_config.upsert({
+      where: { userid: gift.recipient_userid! },
+      create: { userid: gift.recipient_userid!, gems: 0 },
+      update: {},
+    });
+
+    await tx.$executeRaw`
+      UPDATE user_config
+      SET gems = COALESCE(gems, 0) + ${gemAmount}
+      WHERE userid = ${gift.recipient_userid!}
+    `;
+
+    await tx.gem_transactions.create({
+      data: {
+        transaction_type: "AUTOMATIC",
+        actorid: gift.recipient_userid!,
+        from_account: null,
+        to_account: gift.recipient_userid!,
+        amount: gemAmount,
+        description: `LionHeart gift gem allowance: ${gemAmount} LionGems (${gift.tier})`,
+        reference,
+        note: `Gift id ${gift.id} from user ${gift.sender_userid}`,
+      },
+    });
+
+    // Mirror new period_end to recipient's user_subscriptions
+    if (newPeriodEnd) {
+      await tx.user_subscriptions.update({
+        where: { userid: gift.recipient_userid! },
+        data: {
+          current_period_end: newPeriodEnd,
+          status: "ACTIVE",
+          updated_at: new Date(),
+        },
+      });
+    }
+  });
+
+  // Extend LH++ slot guild premium if recipient set one
+  if (gift.tier === "LIONHEART_PLUS_PLUS" && newPeriodEnd) {
+    const lhGrant = await prisma.lionheart_server_premium.findUnique({
+      where: { userid: gift.recipient_userid! },
+    });
+    if (lhGrant?.guildid) {
+      const guildPremium = await prisma.premium_guilds.findUnique({
+        where: { guildid: lhGrant.guildid },
+      });
+      if (guildPremium) {
+        const newUntil =
+          guildPremium.premium_until > newPeriodEnd
+            ? guildPremium.premium_until
+            : newPeriodEnd;
+        await prisma.premium_guilds.update({
+          where: { guildid: lhGrant.guildid },
+          data: { premium_until: newUntil },
+        });
+      } else {
+        await prisma.premium_guilds.create({
+          data: {
+            guildid: lhGrant.guildid,
+            premium_since: new Date(),
+            premium_until: newPeriodEnd,
+          },
+        });
+      }
+    }
+  }
+
+  console.log(
+    `Stripe webhook: credited ${gemAmount} monthly gems to gift recipient ${gift.recipient_userid} (gift ${gift.id})`
+  );
+
+  sendGemAuditLog({
+    transactionType: "AUTOMATIC",
+    amount: gemAmount,
+    actorId: gift.recipient_userid.toString(),
+    fromAccount: null,
+    toAccount: gift.recipient_userid.toString(),
+    description: `LionHeart gift gem allowance: ${gemAmount} LionGems (${gift.tier})`,
+    note: `Gift id ${gift.id} from user ${gift.sender_userid}`,
+    reference,
+  });
+
+  return true;
+}
 // --- END AI-MODIFIED ---
 
 async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
@@ -958,7 +1572,11 @@ export default async function handler(
       // Purpose: Handle one-time payments, LionHeart subscriptions, AND server premium subscriptions
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM") {
+        if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM_GIFT") {
+          await handleServerPremiumGiftCheckout(session);
+        } else if (session.mode === "subscription" && session.metadata?.type === "LIONHEART_GIFT") {
+          await handleLionheartGiftCheckout(session);
+        } else if (session.mode === "subscription" && session.metadata?.type === "SERVER_PREMIUM") {
           await handleServerPremiumCheckout(session);
         } else if (session.mode === "subscription") {
           console.log(`Stripe webhook: LionHeart subscription checkout completed, session ${session.id}`);
@@ -989,24 +1607,66 @@ export default async function handler(
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const subId = subscription.id;
-        const isServerPremium = await isServerPremiumSubscription(subId);
-        if (isServerPremium) {
+        // --- AI-MODIFIED (2026-05-15 v2) ---
+        // Purpose: Route by subscription.metadata.type FIRST. The DB-row
+        // lookups (isLionheartGiftSubscription / isServerPremiumSubscription)
+        // can return false for a gift sub if checkout.session.completed
+        // hasn't fired yet (Stripe event ordering isn't guaranteed). In that
+        // race window, the gift sub would fall through to the regular
+        // LionHeart user-sub handler and erroneously write the gift's tier
+        // to the SENDER's user_subscriptions row.
+        //
+        // subscription_data.metadata is set on both gift checkout endpoints
+        // so the subscription itself carries the discriminator.
+        const subMetaType = subscription.metadata?.type;
+        if (subMetaType === "LIONHEART_GIFT") {
+          // Returns false if the lionheart_gifts row hasn't been linked yet
+          // (sub.created beat checkout.session.completed); that's fine --
+          // skip; the checkout completion handler will run shortly and
+          // any follow-up subscription.updated will catch up.
+          await handleLionheartGiftSubscriptionUpdate(subscription);
+          break;
+        }
+        if (subMetaType === "SERVER_PREMIUM_GIFT") {
+          // Same rationale -- if the row doesn't exist yet, the update
+          // helper bails; checkout.session.completed will create it.
+          await handleServerPremiumSubscriptionUpdate(subscription);
+          break;
+        }
+        // Fallback: existing non-gift routing via DB lookups
+        if (await isLionheartGiftSubscription(subId)) {
+          await handleLionheartGiftSubscriptionUpdate(subscription);
+        } else if (await isServerPremiumSubscription(subId)) {
           await handleServerPremiumSubscriptionUpdate(subscription);
         } else {
           await handleSubscriptionCreatedOrUpdated(subscription);
         }
+        // --- END AI-MODIFIED ---
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const subId = subscription.id;
-        const isServerPremium = await isServerPremiumSubscription(subId);
-        if (isServerPremium) {
+        // --- AI-MODIFIED (2026-05-15 v2) ---
+        // Same metadata-first routing as the update case above.
+        const subMetaType = subscription.metadata?.type;
+        if (subMetaType === "LIONHEART_GIFT") {
+          await handleLionheartGiftSubscriptionDeleted(subscription);
+          break;
+        }
+        if (subMetaType === "SERVER_PREMIUM_GIFT") {
+          await handleServerPremiumSubscriptionDeleted(subscription);
+          break;
+        }
+        if (await isLionheartGiftSubscription(subId)) {
+          await handleLionheartGiftSubscriptionDeleted(subscription);
+        } else if (await isServerPremiumSubscription(subId)) {
           await handleServerPremiumSubscriptionDeleted(subscription);
         } else {
           await handleSubscriptionDeleted(subscription);
         }
+        // --- END AI-MODIFIED ---
         break;
       }
 
@@ -1015,11 +1675,12 @@ export default async function handler(
         const invoiceSubId = typeof invoice.subscription === "string"
           ? invoice.subscription
           : invoice.subscription?.id;
-        let handledByServerPremium = false;
+        let handled = false;
         if (invoiceSubId) {
-          handledByServerPremium = await handleServerPremiumInvoice(invoice);
+          handled = await handleLionheartGiftInvoiceSucceeded(invoice);
+          if (!handled) handled = await handleServerPremiumInvoice(invoice);
         }
-        if (!handledByServerPremium) {
+        if (!handled) {
           await handleInvoicePaymentSucceeded(invoice);
         }
         break;
@@ -1030,7 +1691,13 @@ export default async function handler(
         const failedSubId = typeof invoice.subscription === "string"
           ? invoice.subscription
           : invoice.subscription?.id;
-        if (failedSubId && await isServerPremiumSubscription(failedSubId)) {
+        if (failedSubId && await isLionheartGiftSubscription(failedSubId)) {
+          // Mark the gift PAST_DUE and mirror to claimed recipient if any.
+          // We reuse the update path which handles both flows.
+          const stripeSub = await stripe.subscriptions.retrieve(failedSubId);
+          await handleLionheartGiftSubscriptionUpdate(stripeSub);
+          console.log(`Stripe webhook: LIONHEART_GIFT payment failed for subscription ${failedSubId}`);
+        } else if (failedSubId && await isServerPremiumSubscription(failedSubId)) {
           const sub = await prisma.server_premium_subscriptions.findFirst({
             where: { stripe_subscription_id: failedSubId },
           });

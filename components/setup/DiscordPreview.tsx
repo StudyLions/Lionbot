@@ -292,7 +292,7 @@ export const FEATURE_CARDS: FeatureCardData[] = [
   {
     id: "leaderboard",
     title: "Leaderboards",
-    description: "Server-wide and global leaderboards that rank members by study time or XP.",
+    description: "Server-wide and global leaderboards that rank members by voice time or XP.",
     icon: <BarChart3 size={22} />,
     color: "#5865F2",
   },
@@ -306,7 +306,7 @@ export const FEATURE_CARDS: FeatureCardData[] = [
   {
     id: "schedule",
     title: "Scheduled Sessions",
-    description: "Plan group study sessions with RSVPs and accountability deposits.",
+    description: "Plan group sessions with RSVPs and accountability deposits.",
     icon: <Calendar size={22} />,
     color: "#7289da",
   },

@@ -196,10 +196,15 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-19) ---
     // Purpose: Calculate effective stats with lazy decay and derive mood + multiplier
-    const DECAY_INTERVAL_HOURS = 6
+    // --- AI-MODIFIED (2026-05-15) ---
+    // Purpose: 1pt/24h decay (was 1pt/6h) + cap accumulated decay at MAX_DECAY_PER_WAKE
+    // so long absences can't wipe everything out. Matches care.ts and bot constants.
+    const DECAY_INTERVAL_HOURS = 24
+    const MAX_DECAY_PER_WAKE = 4
     const now = new Date()
     const elapsedHours = (now.getTime() - pet.last_decay_at.getTime()) / (1000 * 3600)
-    const decayTicks = Math.floor(elapsedHours / DECAY_INTERVAL_HOURS)
+    const decayTicks = Math.min(Math.floor(elapsedHours / DECAY_INTERVAL_HOURS), MAX_DECAY_PER_WAKE)
+    // --- END AI-MODIFIED ---
     const effectiveFood = Math.max(0, pet.food - decayTicks)
     const effectiveBath = Math.max(0, pet.bath - decayTicks)
     const effectiveSleep = Math.max(0, pet.sleep - decayTicks)

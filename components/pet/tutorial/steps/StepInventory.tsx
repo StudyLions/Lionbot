@@ -22,7 +22,7 @@ export default function StepInventory() {
         <h3 className="font-pixel text-sm text-[var(--pet-gold,#f0c040)] mb-1">What Is Equipment?</h3>
         <p className="font-pixel text-[11px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed mb-4">
           Equipment is like clothing and accessories for your pet — hats, shirts, boots, and wings.
-          You earn them by studying in voice channels or chatting in Discord. Items appear randomly
+          You earn them by being in voice channels or chatting in Discord. Items appear randomly
           (we call these <strong className="text-[var(--pet-text,#e2e8f0)]">&quot;drops&quot;</strong>
           — think of it like finding treasure on the ground while walking).
         </p>
@@ -107,7 +107,7 @@ export default function StepInventory() {
           <div className="flex items-center gap-3">
             <div className="text-center">
               <div className="text-2xl mb-1">🎓</div>
-              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Study in<br/>voice chat</p>
+              <p className="font-pixel text-[9px] text-[var(--pet-text-dim,#8899aa)]">Be in<br/>voice chat</p>
             </div>
             <div className="font-pixel text-[var(--pet-text-dim,#8899aa)]">→</div>
             <div className="text-center">
@@ -121,8 +121,8 @@ export default function StepInventory() {
             </div>
           </div>
           <p className="font-pixel text-[10px] text-[var(--pet-text-dim,#8899aa)] leading-relaxed flex-1">
-            Every few minutes of studying, there&apos;s a small chance an item drops.
-            Chat messages also have a chance. You don&apos;t need to do anything special — just study!
+            Every few minutes of activity, there&apos;s a small chance an item drops.
+            Chat messages also have a chance. You don&apos;t need to do anything special — just stay active!
           </p>
         </div>
       </PixelCard>

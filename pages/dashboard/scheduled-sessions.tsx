@@ -212,12 +212,12 @@ export default function ScheduledSessionsPage() {
   }, [upcomingData?.sessions])
 
   return (
-    <Layout SEO={{ title: "Scheduled Sessions", description: "Your study session calendar" }}>
+    <Layout SEO={{ title: "Scheduled Sessions", description: "Your session calendar" }}>
       <AdminGuard>
         <DashboardShell nav={<DashboardNav />}>
           <PageHeader
             title="Scheduled Sessions"
-            description="Track your booked study sessions across all servers"
+            description="Track your booked sessions across all servers"
             breadcrumbs={[
               { label: "Dashboard", href: "/dashboard" },
               { label: "Scheduled Sessions" },
@@ -520,7 +520,7 @@ export default function ScheduledSessionsPage() {
                       sub={`Best: ${statsData.summary.bestStreak}`}
                     />
                     <StatCard
-                      label="Total Study Time"
+                      label="Total Productive Time"
                       value={formatClock(statsData.summary.totalClockSeconds)}
                       icon={<Clock size={12} />}
                     />

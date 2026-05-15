@@ -48,10 +48,16 @@ import {
   // Purpose: Marketplace 2.0 -- icon for the new store / marketplace perks.
   Store,
   // --- END AI-MODIFIED ---
-  // --- AI-MODIFIED (2026-04-30) ---
-  // Purpose: Icons for "Feature Your Server" tab.
-  Compass,
-  // --- END AI-MODIFIED ---
+  // --- AI-REPLACED (2026-05-15) ---
+  // Reason: "Feature Your Server" tab hidden on /donate, so Compass is no longer used.
+  //   Keeping import commented out so the tab can be restored cleanly.
+  // --- Original code (commented out for rollback) ---
+  // // --- AI-MODIFIED (2026-04-30) ---
+  // // Purpose: Icons for "Feature Your Server" tab.
+  // Compass,
+  // // --- END AI-MODIFIED ---
+  // --- End original code ---
+  // --- END AI-REPLACED ---
 } from "lucide-react";
 import Layout from "@/components/Layout/Layout";
 import { DonationSEO } from "@/constants/SeoData";
@@ -86,6 +92,13 @@ import ComparisonGrid from "@/components/donate/ComparisonGrid";
 import LossAversionStrip from "@/components/donate/LossAversionStrip";
 import TrustBand from "@/components/donate/TrustBand";
 import TierCarousel from "@/components/donate/TierCarousel";
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Gift Premium feature -- tier cards get a quieter "Gift this tier"
+// link beside the primary Subscribe CTA, opens the GiftFlowModal.
+import GiftFlowModal from "@/components/donate/GiftFlowModal";
+import type { GiftableLionHeartTier } from "@/components/donate/GiftFlowModal";
+import { Gift } from "lucide-react";
+// --- END AI-MODIFIED ---
 import StickyPricingBar from "@/components/donate/StickyPricingBar";
 // --- END AI-MODIFIED ---
 
@@ -650,6 +663,7 @@ function SubscriptionCard({
   subStatus,
   onSubscribe,
   onManage,
+  onGift,
   featured,
   subscribing,
   portalLoading,
@@ -660,6 +674,7 @@ function SubscriptionCard({
   subStatus: SubscriptionStatus | null;
   onSubscribe: (tier: SubscriptionTier) => void;
   onManage: () => void;
+  onGift: (tier: SubscriptionTier) => void;
   featured?: boolean;
   subscribing: boolean;
   portalLoading: boolean;
@@ -873,29 +888,71 @@ function SubscriptionCard({
           Includes <span className="text-foreground/90 font-semibold">~{symbol}{gemValue.toFixed(2)}</span> of LionGems every month
         </p>
 
+        {/* --- AI-MODIFIED (2026-05-15) --- */}
+        {/* Purpose: Promote the per-vote LionGem bonus to an equal-weight stat */}
+        {/*   alongside the monthly subscription gems. Previously the vote bonus */}
+        {/*   was buried as 10.5px muted text under the monthly number, which */}
+        {/*   hid one of the strongest recurring value drivers (free gems every */}
+        {/*   12h just for voting) from the subscribe decision. New layout: */}
+        {/*   side-by-side stat boxes with a tier-color divider, Zap icon and */}
+        {/*   tier-color number on the vote side, plus a math row underneath */}
+        {/*   showing the monthly potential (gemsPerVote * ~60 votes if you */}
+        {/*   vote every 12h for a month). */}
         <div
-          className="rounded-xl p-3 mb-4 flex items-center gap-2.5"
+          className="rounded-xl p-3 mb-4"
           style={{
             background: `linear-gradient(135deg, ${tier.color}18, ${tier.color}06)`,
             border: `1px solid ${tier.color}30`,
           }}
         >
-          <GemIcon className="h-5 w-5 flex-shrink-0" />
-          <div className="min-w-0 flex-1">
-            <div className="text-base font-black text-foreground tabular-nums leading-none">
-              {numberWithCommas(tier.monthlyGems)} gems
-              <span
-                className="ml-1 text-xs font-semibold"
-                style={{ color: tier.color }}
-              >
-                / month
-              </span>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <GemIcon className="h-5 w-5 flex-shrink-0" />
+              <div className="min-w-0">
+                <div className="text-base font-black text-foreground tabular-nums leading-none">
+                  {numberWithCommas(tier.monthlyGems)}
+                </div>
+                <div className="text-[10.5px] text-muted-foreground mt-1 leading-tight">
+                  gems{" "}
+                  <span className="font-semibold" style={{ color: tier.color }}>
+                    / month
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="text-[10.5px] text-muted-foreground mt-0.5">
-              Plus {tier.gemsPerVote} gems every Top.gg vote
+            <div
+              className="flex items-center gap-2.5 min-w-0 border-l pl-3"
+              style={{ borderColor: `${tier.color}30` }}
+            >
+              <Zap
+                className="h-5 w-5 flex-shrink-0"
+                style={{ color: tier.color }}
+              />
+              <div className="min-w-0">
+                <div
+                  className="text-base font-black tabular-nums leading-none"
+                  style={{ color: tier.color }}
+                >
+                  +{tier.gemsPerVote}
+                </div>
+                <div className="text-[10.5px] text-muted-foreground mt-1 leading-tight">
+                  per Top.gg vote
+                </div>
+              </div>
             </div>
           </div>
+          <div
+            className="mt-2.5 pt-2.5 border-t text-[10.5px] text-muted-foreground/90 leading-snug"
+            style={{ borderColor: `${tier.color}20` }}
+          >
+            Vote every 12h on Top.gg to earn up to{" "}
+            <span className="font-bold" style={{ color: tier.color }}>
+              +{numberWithCommas(tier.gemsPerVote * 60)}
+            </span>{" "}
+            bonus gems / month
+          </div>
         </div>
+        {/* --- END AI-MODIFIED --- */}
 
         {previousTierName ? (
           <p className="text-xs font-semibold text-foreground/80 mb-3">
@@ -946,6 +1003,21 @@ function SubscriptionCard({
         </ul>
 
         {renderButton()}
+        {/* --- AI-MODIFIED (2026-05-15 v2) --- */}
+        {/* Purpose: Gift is a first-class action -- equal-weight bordered    */}
+        {/* button under the primary Subscribe CTA, gold accent so users can */}
+        {/* tell the two options apart at a glance. The gift modal handles   */}
+        {/* the recipient picker for LionHeart-tier gifts (claim-link flow). */}
+        <button
+          type="button"
+          onClick={() => onGift(tierId)}
+          className="mt-2.5 w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 border-amber-500/40 hover:border-amber-500/70 text-amber-300 hover:text-amber-200 bg-amber-500/[0.04] hover:bg-amber-500/[0.08] transition-all duration-200 hover:-translate-y-[1px]"
+          style={{ boxShadow: "0 4px 14px rgba(245,158,11,0.10)" }}
+        >
+          <Gift className="h-4 w-4" aria-hidden />
+          Gift {tier.name} to a friend
+        </button>
+        {/* --- END AI-MODIFIED --- */}
         {renderRiskReversal()}
       </div>
     </div>
@@ -1150,11 +1222,16 @@ const FEATURE_GROUP_TAGS = [
   "LionGotchi Pet", "Button Labels", "Goals Cards",
 ];
 
-// --- AI-MODIFIED (2026-04-30) ---
-// Purpose: Added "Feature Your Server" as a new premium tab on /donate.
-//   Lives at the front so it's the first thing prospective subscribers see.
+// --- AI-REPLACED (2026-05-15) ---
+// Reason: Hiding "Feature Your Server" tab on the donate page so Visual Branding
+//   and Sounds get the attention. Tab entry preserved in commented-out form
+//   below so it can be restored if we ever want to feature server profiles again.
 // --- Original code (commented out for rollback) ---
+// // --- AI-MODIFIED (2026-04-30) ---
+// // Purpose: Added "Feature Your Server" as a new premium tab on /donate.
+// //   Lives at the front so it's the first thing prospective subscribers see.
 // const PREMIUM_TABS = [
+//   { id: "feature_server", label: "Feature Your Server", Icon: Compass },
 //   { id: "branding", label: "Visual Branding", Icon: Palette },
 //   { id: "text", label: "Text Branding", Icon: Type },
 //   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
@@ -1162,9 +1239,9 @@ const FEATURE_GROUP_TAGS = [
 //   { id: "sounds", label: "Sounds", Icon: Volume2 },
 //   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
 // ] as const;
+// // --- END AI-MODIFIED ---
 // --- End original code ---
 const PREMIUM_TABS = [
-  { id: "feature_server", label: "Feature Your Server", Icon: Compass },
   { id: "branding", label: "Visual Branding", Icon: Palette },
   { id: "text", label: "Text Branding", Icon: Type },
   { id: "pomodoro", label: "Pomodoro", Icon: Timer },
@@ -1172,9 +1249,16 @@ const PREMIUM_TABS = [
   { id: "sounds", label: "Sounds", Icon: Volume2 },
   { id: "liongotchi", label: "LionGotchi", Icon: Sparkles },
 ] as const;
-// --- END AI-MODIFIED ---
+// --- END AI-REPLACED ---
 
 type PremiumTabId = typeof PREMIUM_TABS[number]["id"];
+
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Mark which premium tabs should display a "Super Popular" badge and a
+//   pink/rose accent on the tab strip. Driven from a Set so the rendering loop
+//   stays data-driven and we can add/remove highlights without touching JSX.
+const POPULAR_TAB_IDS: ReadonlySet<PremiumTabId> = new Set<PremiumTabId>(["branding", "sounds"]);
+// --- END AI-MODIFIED ---
 
 const POMO_RING_R = 42;
 const POMO_RING_C = 2 * Math.PI * POMO_RING_R;
@@ -1202,7 +1286,15 @@ interface LionheartPremiumInfo {
   transferCooldownEnds: string | null;
 }
 
-function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbol: string }) {
+function ServerPremiumShowcase({
+  currency,
+  symbol,
+  onGiftClick,
+}: {
+  currency: Currency;
+  symbol: string;
+  onGiftClick: () => void;
+}) {
   const { data: session } = useSession();
 
   const [activeTab, setActiveTab] = useState<PremiumTabId>("branding");
@@ -1226,6 +1318,12 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
   const [serversLoading, setServersLoading] = useState(false);
   const [selectedServer, setSelectedServer] = useState<string>("");
   const [checkingOut, setCheckingOut] = useState(false);
+  // --- AI-MODIFIED (2026-05-15 v2) ---
+  // Purpose: Segmented toggle "For my server" / "Gift to a server" in the
+  // right-hand commerce column. Gift is a first-class action, not buried in
+  // a quiet link beneath the admin-buy CTAs.
+  const [serverViewMode, setServerViewMode] = useState<"buy" | "gift">("buy");
+  // --- END AI-MODIFIED ---
 
   const [myPaidSubs, setMyPaidSubs] = useState<ServerPremiumInfo[]>([]);
   const [myLhPremium, setMyLhPremium] = useState<LionheartPremiumInfo | null>(null);
@@ -1402,53 +1500,78 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
           onMouseEnter={() => setTabPaused(true)}
           onMouseLeave={() => setTabPaused(false)}
         >
-          <div className="flex overflow-x-auto border-b border-border bg-background/40 scrollbar-none">
-            {PREMIUM_TABS.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => { setActiveTab(tab.id); setTabPaused(true); }}
-                className={`flex items-center gap-2 px-3 lg:px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${
-                  activeTab === tab.id
-                    ? "text-blue-400 border-blue-400 bg-blue-500/5"
-                    : "text-muted-foreground/70 border-transparent hover:text-foreground/85 hover:bg-card/50"
-                }`}
-              >
-                <tab.Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{tab.label}</span>
-              </button>
-            ))}
+          {/* --- AI-MODIFIED (2026-05-15) --- */}
+          {/* Purpose: pt-6 reserves space inside the strip for the "Super Popular" */}
+          {/*   badge floating above the Visual Branding and Sounds tabs. The */}
+          {/*   strip uses overflow-x-auto, which forces overflow-y to compute to */}
+          {/*   auto, so the badge must live inside the padded box. Each popular */}
+          {/*   tab also gets a pink/rose accent so it reads as different even */}
+          {/*   when it isn't the active tab. */}
+          <div className="flex overflow-x-auto border-b border-border bg-background/40 scrollbar-none pt-6">
+            {PREMIUM_TABS.map((tab) => {
+              const isActive = activeTab === tab.id;
+              const isPopular = POPULAR_TAB_IDS.has(tab.id);
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setTabPaused(true); }}
+                  className={`relative flex items-center gap-2 px-3 lg:px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${
+                    isActive
+                      ? "text-blue-400 border-blue-400 bg-blue-500/5"
+                      : isPopular
+                        ? "text-pink-300 border-transparent hover:text-pink-200 hover:bg-pink-500/5"
+                        : "text-muted-foreground/70 border-transparent hover:text-foreground/85 hover:bg-card/50"
+                  }`}
+                >
+                  {isPopular && (
+                    <span className="hidden sm:inline-flex absolute -top-2.5 left-1/2 -translate-x-1/2 items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest text-white shadow-lg shadow-pink-500/40 whitespace-nowrap pointer-events-none">
+                      <Star className="h-2.5 w-2.5 fill-white" />
+                      Super Popular
+                    </span>
+                  )}
+                  <tab.Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                </button>
+              );
+            })}
           </div>
+          {/* --- END AI-MODIFIED --- */}
 
           <div className="grid grid-cols-1 lg:grid-cols-2 min-h-[460px]">
             <div className="p-6 lg:p-8 flex flex-col justify-center">
-              {/* --- AI-MODIFIED (2026-04-30) --- */}
-              {/* Purpose: Editorial rewrite of the "Feature Your Server" tab. */}
-              {/*   Less feature-list, more "what our editors look for". The */}
-              {/*   right-hand preview is now a real Atlantic-theme mock so */}
-              {/*   the section visually previews the actual product instead */}
-              {/*   of advertising it with stock card chrome. */}
-              {activeTab === "feature_server" && (
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">Public Server Profile</h3>
-                  <p className="text-muted-foreground mb-4 text-sm">
-                    Your own page at lionbot.org/servers/your-handle, listed in our public directory.
-                  </p>
-                  <div className="space-y-2 text-sm">
-                    {["Five dark editorial themes",
-                      "One DoFollow backlink to your website",
-                      "Live stats: members, study hours, in-voice",
-                      "Cover, description, photo gallery, tags",
-                      "Auto-generated social cards & embed widget",
-                      "Hand-reviewed before going live",
-                    ].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 text-foreground/85">
-                        <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
-                      </div>
-                    ))}
+              {/* --- AI-REPLACED (2026-05-15) --- */}
+              {/* Reason: feature_server tab removed from PREMIUM_TABS, so this */}
+              {/*   left-pane content is unreachable. Preserving the original */}
+              {/*   JSX as a comment block below for rollback. */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {/*
+                // AI-MODIFIED (2026-04-30): Editorial rewrite of the "Feature Your Server" tab.
+                //   Less feature-list, more "what our editors look for". The right-hand
+                //   preview is now a real Atlantic-theme mock so the section visually
+                //   previews the actual product instead of advertising it with stock card chrome.
+                {activeTab === "feature_server" && (
+                  <div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Public Server Profile</h3>
+                    <p className="text-muted-foreground mb-4 text-sm">
+                      Your own page at lionbot.org/servers/your-handle, listed in our public directory.
+                    </p>
+                    <div className="space-y-2 text-sm">
+                      {["Five dark editorial themes",
+                        "One DoFollow backlink to your website",
+                        "Live stats: members, study hours, in-voice",
+                        "Cover, description, photo gallery, tags",
+                        "Auto-generated social cards & embed widget",
+                        "Hand-reviewed before going live",
+                      ].map((t, i) => (
+                        <div key={i} className="flex items-center gap-2 text-foreground/85">
+                          <Check className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" /> {t}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-              {/* --- END AI-MODIFIED --- */}
+                )}
+              */}
+              {/* --- END AI-REPLACED --- */}
 
               {activeTab === "branding" && (
                 <div>
@@ -1592,191 +1715,203 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             </div>
 
             <div className="relative bg-background/60 border-t lg:border-t-0 lg:border-l border-border flex items-center justify-center p-6 lg:p-8 overflow-hidden min-h-[320px]">
-              {/* --- AI-MODIFIED (2026-04-30) --- */}
-              {/* Purpose: Replaced the rounded-card mock with a single */}
-              {/*   cropped Atlantic-theme profile mock. The preview now */}
-              {/*   *is* a tiny version of the actual product. */}
-              {activeTab === "feature_server" && (
-                <>
-                  <Head>
-                    <link
-                      key="feature-server-preview-font"
-                      rel="stylesheet"
-                      href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
-                    />
-                  </Head>
-                  <div
-                    className="relative w-full max-w-md mx-auto overflow-hidden shadow-2xl shadow-black/40"
-                    style={{
-                      background: "#f6f1e7",
-                      color: "#1a1612",
-                      borderRadius: 4,
-                      transform: "rotate(-0.5deg)",
-                    }}
-                    aria-hidden="true"
-                  >
-                    {/* Hero band */}
-                    <div
-                      style={{
-                        height: 168,
-                        background:
-                          "linear-gradient(180deg, rgba(246,241,231,0.0) 0%, rgba(246,241,231,0.45) 70%, #f6f1e7 100%), linear-gradient(135deg,#7a3a3a 0%,#3d2a2a 60%, #1a1612 100%)",
-                        position: "relative",
-                      }}
-                    >
-                      <div
-                        style={{
-                          position: "absolute",
-                          left: 22,
-                          bottom: 16,
-                          fontFamily: "Inter, sans-serif",
-                          fontSize: 9,
-                          letterSpacing: "0.28em",
-                          textTransform: "uppercase",
-                          color: "rgba(255,255,255,0.85)",
-                          fontWeight: 600,
-                        }}
-                      >
-                        FEATURED · STUDY · UNIVERSITY
-                      </div>
-                    </div>
-
-                    {/* Body */}
-                    <div style={{ padding: "22px 26px 28px" }}>
-                      <h4
-                        style={{
-                          fontFamily: "Spectral, Georgia, serif",
-                          fontSize: "1.6rem",
-                          fontWeight: 700,
-                          lineHeight: 1.05,
-                          letterSpacing: "-0.015em",
-                          color: "#1a1612",
-                          margin: 0,
-                        }}
-                      >
-                        Study Haven
-                      </h4>
-                      <p
-                        style={{
-                          fontFamily: "Spectral, Georgia, serif",
-                          fontStyle: "italic",
-                          fontSize: "0.92rem",
-                          lineHeight: 1.45,
-                          color: "#3d352c",
-                          margin: "8px 0 16px",
-                        }}
-                      >
-                        A wholesome co-working community of 12,000 learners,
-                        running daily pomodoros and quiet voice rooms.
-                      </p>
-
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          marginBottom: 16,
-                        }}
-                      >
-                        <div
-                          style={{
-                            background: "#8b1e1e",
-                            color: "#ffffff",
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: 11,
-                            fontWeight: 600,
-                            padding: "8px 14px",
-                            borderRadius: 999,
-                          }}
-                        >
-                          Join the community
-                        </div>
-                        <span
-                          style={{
-                            display: "inline-flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontFamily: "Inter, sans-serif",
-                            fontSize: 11,
-                            color: "#3d352c",
-                          }}
-                        >
-                          <span
-                            style={{
-                              width: 6,
-                              height: 6,
-                              borderRadius: "50%",
-                              background: "#22c55e",
-                              boxShadow: "0 0 0 4px rgba(34,197,94,0.18)",
-                              display: "inline-block",
-                            }}
-                          />
-                          87 in voice now
-                        </span>
-                      </div>
-
-                      <div
-                        style={{
-                          borderTop: "1px solid rgba(26,22,18,0.18)",
-                          borderBottom: "1px solid rgba(26,22,18,0.18)",
-                          padding: "14px 0",
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr 1fr",
-                        }}
-                      >
-                        <PreviewStat number="12,400" label="Members" />
-                        <PreviewStat number="4,200" label="Hours / 30d" />
-                        <PreviewStat number="87" label="In voice" liveDot />
-                      </div>
-
-                      <p
-                        style={{
-                          fontFamily: "Spectral, Georgia, serif",
-                          fontSize: "0.9rem",
-                          lineHeight: 1.65,
-                          color: "#1a1612",
-                          margin: "16px 0 0",
-                        }}
-                      >
-                        <span
-                          style={{
-                            float: "left",
-                            fontFamily: "Spectral, Georgia, serif",
-                            fontWeight: 700,
-                            fontSize: "3.2em",
-                            lineHeight: 0.85,
-                            padding: "0.08em 0.12em 0 0",
-                            margin: "0.05em 0.06em 0 0",
-                            color: "#1a1612",
-                          }}
-                        >
-                          W
-                        </span>
-                        e started Study Haven on a Friday after midterms with five
-                        people, a single voice room, and an hourly pomodoro alarm
-                        nobody could turn off…
-                      </p>
-                    </div>
-
-                    {/* Tape edge / colophon */}
-                    <div
-                      style={{
-                        borderTop: "1px solid rgba(26,22,18,0.18)",
-                        padding: "10px 26px",
-                        fontFamily:
-                          "ui-monospace, SFMono-Regular, Menlo, monospace",
-                        fontSize: 10,
-                        letterSpacing: "0.18em",
-                        textTransform: "uppercase",
-                        color: "#6b5d4f",
-                      }}
-                    >
-                      lionbot.org/servers/study-haven
-                    </div>
-                  </div>
-                </>
-              )}
-              {/* --- END AI-MODIFIED --- */}
+              {/* --- AI-REPLACED (2026-05-15) --- */}
+              {/* Reason: feature_server tab removed from PREMIUM_TABS, so this */}
+              {/*   right-pane Atlantic-theme profile preview is unreachable. The */}
+              {/*   original JSX (including the Head/Spectral-font fetch) is */}
+              {/*   preserved below as TS line comments inside an IIFE so the */}
+              {/*   nested JSX comment markers in the original don't break the */}
+              {/*   parser. The IIFE returns null so nothing renders. */}
+              {/* --- Original code (commented out for rollback) --- */}
+              {(() => {
+                // // --- AI-MODIFIED (2026-04-30) ---
+                // // Purpose: Replaced the rounded-card mock with a single
+                // //   cropped Atlantic-theme profile mock. The preview now
+                // //   *is* a tiny version of the actual product.
+                // {activeTab === "feature_server" && (
+                //   <>
+                //     <Head>
+                //       <link
+                //         key="feature-server-preview-font"
+                //         rel="stylesheet"
+                //         href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600&display=swap"
+                //       />
+                //     </Head>
+                //     <div
+                //       className="relative w-full max-w-md mx-auto overflow-hidden shadow-2xl shadow-black/40"
+                //       style={{
+                //         background: "#f6f1e7",
+                //         color: "#1a1612",
+                //         borderRadius: 4,
+                //         transform: "rotate(-0.5deg)",
+                //       }}
+                //       aria-hidden="true"
+                //     >
+                //       {/* Hero band */}
+                //       <div
+                //         style={{
+                //           height: 168,
+                //           background:
+                //             "linear-gradient(180deg, rgba(246,241,231,0.0) 0%, rgba(246,241,231,0.45) 70%, #f6f1e7 100%), linear-gradient(135deg,#7a3a3a 0%,#3d2a2a 60%, #1a1612 100%)",
+                //           position: "relative",
+                //         }}
+                //       >
+                //         <div
+                //           style={{
+                //             position: "absolute",
+                //             left: 22,
+                //             bottom: 16,
+                //             fontFamily: "Inter, sans-serif",
+                //             fontSize: 9,
+                //             letterSpacing: "0.28em",
+                //             textTransform: "uppercase",
+                //             color: "rgba(255,255,255,0.85)",
+                //             fontWeight: 600,
+                //           }}
+                //         >
+                //           FEATURED · STUDY · UNIVERSITY
+                //         </div>
+                //       </div>
+                //
+                //       {/* Body */}
+                //       <div style={{ padding: "22px 26px 28px" }}>
+                //         <h4
+                //           style={{
+                //             fontFamily: "Spectral, Georgia, serif",
+                //             fontSize: "1.6rem",
+                //             fontWeight: 700,
+                //             lineHeight: 1.05,
+                //             letterSpacing: "-0.015em",
+                //             color: "#1a1612",
+                //             margin: 0,
+                //           }}
+                //         >
+                //           Study Haven
+                //         </h4>
+                //         <p
+                //           style={{
+                //             fontFamily: "Spectral, Georgia, serif",
+                //             fontStyle: "italic",
+                //             fontSize: "0.92rem",
+                //             lineHeight: 1.45,
+                //             color: "#3d352c",
+                //             margin: "8px 0 16px",
+                //           }}
+                //         >
+                //           A wholesome co-working community of 12,000 learners,
+                //           running daily pomodoros and quiet voice rooms.
+                //         </p>
+                //
+                //         <div
+                //           style={{
+                //             display: "flex",
+                //             alignItems: "center",
+                //             gap: 10,
+                //             marginBottom: 16,
+                //           }}
+                //         >
+                //           <div
+                //             style={{
+                //               background: "#8b1e1e",
+                //               color: "#ffffff",
+                //               fontFamily: "Inter, sans-serif",
+                //               fontSize: 11,
+                //               fontWeight: 600,
+                //               padding: "8px 14px",
+                //               borderRadius: 999,
+                //             }}
+                //           >
+                //             Join the community
+                //           </div>
+                //           <span
+                //             style={{
+                //               display: "inline-flex",
+                //               alignItems: "center",
+                //               gap: 6,
+                //               fontFamily: "Inter, sans-serif",
+                //               fontSize: 11,
+                //               color: "#3d352c",
+                //             }}
+                //           >
+                //             <span
+                //               style={{
+                //                 width: 6,
+                //                 height: 6,
+                //                 borderRadius: "50%",
+                //                 background: "#22c55e",
+                //                 boxShadow: "0 0 0 4px rgba(34,197,94,0.18)",
+                //                 display: "inline-block",
+                //               }}
+                //             />
+                //             87 in voice now
+                //           </span>
+                //         </div>
+                //
+                //         <div
+                //           style={{
+                //             borderTop: "1px solid rgba(26,22,18,0.18)",
+                //             borderBottom: "1px solid rgba(26,22,18,0.18)",
+                //             padding: "14px 0",
+                //             display: "grid",
+                //             gridTemplateColumns: "1fr 1fr 1fr",
+                //           }}
+                //         >
+                //           <PreviewStat number="12,400" label="Members" />
+                //           <PreviewStat number="4,200" label="Hours / 30d" />
+                //           <PreviewStat number="87" label="In voice" liveDot />
+                //         </div>
+                //
+                //         <p
+                //           style={{
+                //             fontFamily: "Spectral, Georgia, serif",
+                //             fontSize: "0.9rem",
+                //             lineHeight: 1.65,
+                //             color: "#1a1612",
+                //             margin: "16px 0 0",
+                //           }}
+                //         >
+                //           <span
+                //             style={{
+                //               float: "left",
+                //               fontFamily: "Spectral, Georgia, serif",
+                //               fontWeight: 700,
+                //               fontSize: "3.2em",
+                //               lineHeight: 0.85,
+                //               padding: "0.08em 0.12em 0 0",
+                //               margin: "0.05em 0.06em 0 0",
+                //               color: "#1a1612",
+                //             }}
+                //           >
+                //             W
+                //           </span>
+                //           e started Study Haven on a Friday after midterms with five
+                //           people, a single voice room, and an hourly pomodoro alarm
+                //           nobody could turn off…
+                //         </p>
+                //       </div>
+                //
+                //       {/* Tape edge / colophon */}
+                //       <div
+                //         style={{
+                //           borderTop: "1px solid rgba(26,22,18,0.18)",
+                //           padding: "10px 26px",
+                //           fontFamily:
+                //             "ui-monospace, SFMono-Regular, Menlo, monospace",
+                //           fontSize: 10,
+                //           letterSpacing: "0.18em",
+                //           textTransform: "uppercase",
+                //           color: "#6b5d4f",
+                //         }}
+                //       >
+                //         lionbot.org/servers/study-haven
+                //       </div>
+                //     </div>
+                //   </>
+                // )}
+                // // --- END AI-MODIFIED ---
+                return null;
+              })()}
+              {/* --- END AI-REPLACED --- */}
 
               {activeTab === "branding" && (
                 <div className="relative w-full h-full flex items-center justify-center min-h-[320px]">
@@ -2105,70 +2240,150 @@ function ServerPremiumShowcase({ currency, symbol }: { currency: Currency; symbo
             </div>
 
             <div className="lg:border-l lg:border-border/60 lg:pl-10">
-              {!session ? (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => signIn("discord")}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
-                  >
-                    Sign in with Discord to subscribe
-                  </button>
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    You'll select a server after signing in.
-                  </p>
-                </div>
-              ) : serversLoading ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers…
-                </div>
-              ) : adminServers.length === 0 ? (
-                <div className="rounded-xl border border-border bg-background/60 p-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    You need to be an admin of a server with LionBot to subscribe.{" "}
-                    <a href="/invite" className="text-blue-400 hover:underline font-semibold">
-                      Add LionBot
-                    </a>
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                    Apply to server
-                  </label>
-                  <select
-                    value={selectedServer}
-                    onChange={(e) => setSelectedServer(e.target.value)}
-                    className="w-full rounded-xl bg-background border border-border text-foreground text-sm px-3 py-3 focus:border-blue-500 focus:outline-none transition-colors"
-                  >
-                    {adminServers.map((s) => (
-                      <option key={s.guildId} value={s.guildId}>
-                        {s.guildName}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="grid grid-cols-2 gap-2.5">
+              {/* --- AI-MODIFIED (2026-05-15 v2) --- */}
+              {/* Purpose: Segmented toggle puts gifting on equal footing with the */}
+              {/* admin-buy flow. Two pill segments at the top of the commerce     */}
+              {/* column; selecting "Gift to a server" swaps the body to a       */}
+              {/* prominent gift CTA card. Gift was previously a quiet text link  */}
+              {/* below the admin buttons -- way too easy to miss for a core      */}
+              {/* revenue driver.                                                  */}
+              <div className="inline-flex rounded-full bg-muted/60 p-1 mb-4 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => setServerViewMode("buy")}
+                  className={`px-3.5 py-1.5 rounded-full transition-colors ${
+                    serverViewMode === "buy"
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  For my server
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setServerViewMode("gift")}
+                  className={`px-3.5 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 ${
+                    serverViewMode === "gift"
+                      ? "bg-card text-amber-400 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Gift size={12} aria-hidden />
+                  Gift to a server
+                </button>
+              </div>
+              {/* --- END AI-MODIFIED --- */}
+
+              {serverViewMode === "buy" ? (
+                !session ? (
+                  <div className="space-y-2">
                     <button
-                      onClick={() => handleServerCheckout("MONTHLY")}
-                      disabled={checkingOut}
-                      className="px-3 py-3 rounded-xl bg-background border border-border hover:border-blue-500/50 hover:bg-card text-foreground text-sm font-bold transition-colors disabled:opacity-50"
+                      onClick={() => signIn("discord")}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
                     >
-                      {checkingOut ? "…" : `Monthly · ${symbol}${getServerPremiumPrice("MONTHLY", currency)}`}
+                      Sign in with Discord to subscribe
                     </button>
-                    <button
-                      onClick={() => handleServerCheckout("YEARLY")}
-                      disabled={checkingOut}
-                      className="px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold transition-all disabled:opacity-50 relative overflow-hidden shadow-lg shadow-blue-500/20"
-                    >
-                      {checkingOut ? "…" : `Yearly · ${symbol}${getServerPremiumPrice("YEARLY", currency)}`}
-                      <span className="absolute top-0 right-0 bg-emerald-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">
-                        SAVE
-                      </span>
-                    </button>
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      You'll select a server after signing in.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-muted-foreground text-center mt-1">
-                    Cancel anytime · Secure with Stripe · Instant activation
+                ) : serversLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers…
+                  </div>
+                ) : adminServers.length === 0 ? (
+                  <div className="rounded-xl border border-border bg-background/60 p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      You need to be an admin of a server with LionBot to subscribe.{" "}
+                      <a href="/invite" className="text-blue-400 hover:underline font-semibold">
+                        Add LionBot
+                      </a>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
+                      Apply to server
+                    </label>
+                    <select
+                      value={selectedServer}
+                      onChange={(e) => setSelectedServer(e.target.value)}
+                      className="w-full rounded-xl bg-background border border-border text-foreground text-sm px-3 py-3 focus:border-blue-500 focus:outline-none transition-colors"
+                    >
+                      {adminServers.map((s) => (
+                        <option key={s.guildId} value={s.guildId}>
+                          {s.guildName}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        onClick={() => handleServerCheckout("MONTHLY")}
+                        disabled={checkingOut}
+                        className="px-3 py-3 rounded-xl bg-background border border-border hover:border-blue-500/50 hover:bg-card text-foreground text-sm font-bold transition-colors disabled:opacity-50"
+                      >
+                        {checkingOut ? "…" : `Monthly · ${symbol}${getServerPremiumPrice("MONTHLY", currency)}`}
+                      </button>
+                      <button
+                        onClick={() => handleServerCheckout("YEARLY")}
+                        disabled={checkingOut}
+                        className="px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold transition-all disabled:opacity-50 relative overflow-hidden shadow-lg shadow-blue-500/20"
+                      >
+                        {checkingOut ? "…" : `Yearly · ${symbol}${getServerPremiumPrice("YEARLY", currency)}`}
+                        <span className="absolute top-0 right-0 bg-emerald-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">
+                          SAVE
+                        </span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground text-center mt-1">
+                      Cancel anytime · Secure with Stripe · Instant activation
+                    </p>
+                  </div>
+                )
+              ) : (
+                /* --- AI-MODIFIED (2026-05-15 v2) --- */
+                /* Purpose: Gift-mode panel. Gold-bordered card with a clear value    */
+                /* proposition, a prominent gold Gift CTA, and one line of social     */
+                /* pitch ("the server admin keeps the perks, you pay the bill").     */
+                <div className="space-y-3">
+                  <div className="rounded-2xl border-2 border-amber-500/40 bg-amber-500/[0.04] p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+                        <Gift className="h-5 w-5 text-amber-400" aria-hidden />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold text-foreground">
+                          Gift Server Premium
+                        </h3>
+                        <p className="text-[12.5px] text-muted-foreground leading-relaxed mt-0.5">
+                          {symbol}{getServerPremiumPrice("MONTHLY", currency)}/month on your card. Premium activates on a server you're a member of. Cancel anytime in your Stripe portal.
+                        </p>
+                      </div>
+                    </div>
+                    {!session ? (
+                      <button
+                        onClick={() => signIn("discord")}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-sm font-bold transition-colors"
+                      >
+                        Sign in with Discord to gift
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onGiftClick}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-amber-950 text-sm font-bold transition-all hover:-translate-y-[1px]"
+                        style={{ boxShadow: "0 10px 30px -10px rgba(245,158,11,0.45)" }}
+                      >
+                        <Gift size={16} aria-hidden />
+                        Choose a server to gift
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    The admin team gets all the premium perks · You can cancel at any time
                   </p>
                 </div>
+                /* --- END AI-MODIFIED --- */
               )}
             </div>
           </div>
@@ -2261,6 +2476,12 @@ export default function Donate() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [portalError, setPortalError] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: GiftFlowModal open-state for LionHeart-tier gifting. The
+  // server-gift entry lives in a separate section lower on the page (4.1).
+  const [giftLhTier, setGiftLhTier] = useState<GiftableLionHeartTier | null>(null);
+  const [giftServerOpen, setGiftServerOpen] = useState(false);
+  // --- END AI-MODIFIED ---
 
   const fetchSubscriptionStatus = useCallback(async () => {
     setSubLoading(true);
@@ -2628,6 +2849,7 @@ export default function Donate() {
                   subStatus={subStatus}
                   onSubscribe={handleSubscribe}
                   onManage={handleManageSubscription}
+                  onGift={(t) => setGiftLhTier(t as GiftableLionHeartTier)}
                   featured={tierId === "LIONHEART_PLUS"}
                   subscribing={subscribing}
                   portalLoading={portalLoading}
@@ -2648,6 +2870,7 @@ export default function Donate() {
                     subStatus={subStatus}
                     onSubscribe={handleSubscribe}
                     onManage={handleManageSubscription}
+                    onGift={(t) => setGiftLhTier(t as GiftableLionHeartTier)}
                     featured={tierId === "LIONHEART_PLUS"}
                     subscribing={subscribing}
                     portalLoading={portalLoading}
@@ -2672,7 +2895,7 @@ export default function Donate() {
         <LossAversionStrip />
         {/* --- END AI-MODIFIED --- */}
 
-        <ServerPremiumShowcase currency={currency} symbol={symbol} />
+        <ServerPremiumShowcase currency={currency} symbol={symbol} onGiftClick={() => setGiftServerOpen(true)} />
 
         {/* Gem Packages */}
         {/* --- AI-MODIFIED (2026-04-24) ---
@@ -2903,6 +3126,24 @@ export default function Donate() {
           symbol={symbol}
         />
       )}
+
+      {/* --- AI-MODIFIED (2026-05-15) --- */}
+      {/* Purpose: GiftFlowModal mounts here so it overlays the entire page. */}
+      {/* One instance per gift mode -- they never need to be open at the   */}
+      {/* same time. Picking a tier from a card sets giftLhTier; the server */}
+      {/* gift tab toggle sets giftServerOpen.                              */}
+      <GiftFlowModal
+        mode="lionheart"
+        open={!!giftLhTier}
+        onOpenChange={(v) => !v && setGiftLhTier(null)}
+        tier={giftLhTier ?? undefined}
+      />
+      <GiftFlowModal
+        mode="server"
+        open={giftServerOpen}
+        onOpenChange={setGiftServerOpen}
+      />
+      {/* --- END AI-MODIFIED --- */}
     </Layout>
   );
 }

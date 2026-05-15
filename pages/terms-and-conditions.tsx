@@ -30,7 +30,7 @@ export default function TermsAndConditions() {
               <h2>Agreement to Terms</h2>
               <p>
                 Welcome to LionBot.org. These Terms and Conditions (&ldquo;Terms&rdquo;) govern your
-                use of our website(s), Discord bot (StudyLion), web dashboard, virtual pet system
+                use of our website(s), Discord bot (LionBot), web dashboard, virtual pet system
                 (LionGotchi), mobile applications, and all related products and services (collectively,
                 the &ldquo;Services&rdquo;). By accessing or using any part of the Services, you agree
                 to be bound by these Terms. If you do not agree, do not use the Services.
@@ -90,7 +90,7 @@ export default function TermsAndConditions() {
               <p>LionBot.org provides the following services:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>
-                  <strong className="text-foreground">StudyLion Discord Bot</strong> — A productivity
+                  <strong className="text-foreground">LionBot Discord Bot</strong> — A productivity
                   bot that tracks study time, manages tasks, goals, reminders, and provides economy,
                   ranking, and moderation features within Discord servers.
                 </li>

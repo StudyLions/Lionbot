@@ -22,6 +22,11 @@ import { PageHeader, Badge, toast } from "@/components/dashboard/ui"
 // in place of the old auto-redirect-to-wizard flow. See plan and docs/setup-copy.md.
 import SetupChecklist from "@/components/dashboard/setupChecklist/SetupChecklist"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Surface "Premium gift active" card at the top of the server
+// overview when a gift sub is live for this guild.
+import GiftedPremiumCard from "@/components/dashboard/GiftedPremiumCard"
+// --- END AI-MODIFIED ---
 import Pagination from "@/components/dashboard/ui/Pagination"
 // --- AI-REPLACED (2026-03-24) ---
 // Reason: Migrating from Radix Tabs to shared TabBar component
@@ -585,6 +590,13 @@ export default function ServerDetail() {
                   {(perms.isAdmin || permsLoading) && (
                     <SetupChecklist guildId={id as string} />
                   )}
+                  {/* --- END AI-MODIFIED --- */}
+
+                  {/* --- AI-MODIFIED (2026-05-15) --- */}
+                  {/* Purpose: Premium gift card surfaces above the tabs (and below */}
+                  {/* the setup checklist) so any member of the server sees the    */}
+                  {/* gifter on visit. Self-hides when there's no active gift.    */}
+                  <GiftedPremiumCard guildId={id as string} />
                   {/* --- END AI-MODIFIED --- */}
 
                   {/* Tabs */}

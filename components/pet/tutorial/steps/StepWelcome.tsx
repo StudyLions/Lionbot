@@ -38,7 +38,7 @@ const LION_PARTS = ["body", "head", "hair"] as const
 
 const features = [
   { icon: <Heart className="h-5 w-5" />, title: "Care & Nurture", description: "Feed, bathe, and rest your pet. Happy pets earn more gold!", accent: "text-rose-400" },
-  { icon: <Swords className="h-5 w-5" />, title: "Collect Equipment", description: "Earn rare gear while studying. Hats, wings, boots, and more.", accent: "text-amber-400" },
+  { icon: <Swords className="h-5 w-5" />, title: "Collect Equipment", description: "Earn rare gear while you're active. Hats, wings, boots, and more.", accent: "text-amber-400" },
   { icon: <Sprout className="h-5 w-5" />, title: "Grow a Farm", description: "Plant seeds, water daily, harvest crops for gold.", accent: "text-emerald-400" },
   { icon: <Store className="h-5 w-5" />, title: "Trade & Socialize", description: "Buy and sell items. Visit friends. Join a family.", accent: "text-cyan-400" },
 ]
@@ -172,7 +172,7 @@ export default function StepWelcome({ onNext, onSkipAll }: StepWelcomeProps) {
           Welcome to <span className="text-[var(--pet-gold,#f0c040)]">LionGotchi</span>
         </h1>
         <p className="font-pixel text-[12px] text-[var(--pet-text-dim,#8899aa)] max-w-lg mx-auto leading-relaxed">
-          A virtual pet that grows alongside your study sessions.
+          A virtual pet that grows alongside your sessions.
           This tutorial will walk you through every feature.
         </p>
       </motion.div>

@@ -115,7 +115,7 @@ const FEATURES = [
   {
     id: "study",
     category: "productivity" as FeatureCategory,
-    title: "Study Tracking & Rewards",
+    title: "Activity Tracking & Rewards",
     icon: <Mic size={28} />,
     color: "text-blue-400",
     bg: "bg-blue-500/10",
@@ -140,7 +140,7 @@ const FEATURES = [
     border: "border-rose-500/20",
     glow: "from-rose-500/10",
     description:
-      "Built-in pomodoro timers help members stay focused during study sessions. Voice alerts signal focus and break periods, and streaks and milestones gamify the experience. Manage timers from Discord or the web dashboard.",
+      "Built-in pomodoro timers help members stay focused during sessions. Voice alerts signal focus and break periods, and streaks and milestones gamify the experience. Manage timers from Discord or the web dashboard.",
     bullets: [
       { icon: <Timer size={16} />, text: "Configurable focus/break cycles" },
       { icon: <Mic size={16} />, text: "Voice channel audio alerts" },
@@ -176,7 +176,7 @@ const FEATURES = [
     border: "border-indigo-500/20",
     glow: "from-indigo-500/10",
     description:
-      "Set up recurring or one-time study sessions that members can book and join. Sessions appear on a monthly calendar with iCal and Google Calendar sync. Attendance tracking and voice channel alerts keep everyone accountable.",
+      "Set up recurring or one-time sessions that members can book and join. Sessions appear on a monthly calendar with iCal and Google Calendar sync. Attendance tracking and voice channel alerts keep everyone accountable.",
     bullets: [
       { icon: <Calendar size={16} />, text: "Bookable sessions with attendance tracking" },
       { icon: <Star size={16} />, text: "Monthly calendar with iCal/Google sync" },
@@ -234,7 +234,7 @@ const FEATURES = [
     border: "border-orange-500/20",
     glow: "from-orange-500/10",
     description:
-      "Every member gets a virtual pet lion that grows as they study. Feed, bathe, and care for your LionGotchi. Collect equipment drops, farm resources, craft items, and trade on the player marketplace.",
+      "Every member gets a virtual pet lion that grows as they're productive. Feed, bathe, and care for your LionGotchi. Collect equipment drops, farm resources, craft items, and trade on the player marketplace.",
     bullets: [
       { icon: <Sprout size={16} />, text: "Farm resources and craft items" },
       { icon: <Shield size={16} />, text: "Equipment with stat boosts" },
@@ -343,14 +343,14 @@ const MORE_FEATURES = [
   {
     icon: <Award size={20} />,
     title: "Profiles & Achievements",
-    desc: "Beautiful profile cards with study stats, rank progress, and unlockable achievements.",
+    desc: "Beautiful profile cards with activity stats, rank progress, and unlockable achievements.",
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
   },
   {
     icon: <Video size={20} />,
     title: "Video & Screen Channels",
-    desc: "Enforce camera-on or screen-share rules in designated study channels automatically.",
+    desc: "Enforce camera-on or screen-share rules in designated voice channels automatically.",
     color: "text-violet-400",
     bg: "bg-violet-500/10",
   },
@@ -402,11 +402,11 @@ const FAQ_ITEMS = [
   },
   {
     q: "Can I customize which features are enabled?",
-    a: "Absolutely. Every feature can be toggled on or off independently from the dashboard or with /config commands. You can run Leo as a minimal study tracker or enable the full economy, ranks, LionGotchi, and more.",
+    a: "Absolutely. Every feature can be toggled on or off independently from the dashboard or with /config commands. You can run Leo as a minimal activity tracker or enable the full economy, ranks, LionGotchi, and more.",
   },
   {
     q: "How does LionGotchi work?",
-    a: "Every member gets a virtual pet lion that grows as they study. Your pet has health, hunger, and happiness stats. You can feed, bathe, and play with it. As you study more, you earn equipment drops, farm resources, craft items, and trade on the marketplace.",
+    a: "Every member gets a virtual pet lion that grows as they're productive. Your pet has health, hunger, and happiness stats. You can feed, bathe, and play with it. The more time you spend, the more you earn equipment drops, farm resources, craft items, and trade on the marketplace.",
   },
   {
     q: "What do LionGems do?",
@@ -426,7 +426,7 @@ function StatsBar({ stats }: { stats?: PublicStats }) {
   const items = [
     { label: "Servers", value: guilds, suffix: "+" },
     { label: "Total Users", value: users, suffix: "+" },
-    { label: "Studying Now", value: studyingNow, suffix: "" },
+    { label: "Active Now", value: studyingNow, suffix: "" },
     { label: "Active Timers", value: activeTimers, suffix: "" },
   ]
 
@@ -536,7 +536,7 @@ export default function FeaturesPage() {
       SEO={{
         title: "Features - LionBot",
         description:
-          "Discover everything LionBot can do for your Discord server: study tracking, ranks, economy, pomodoro timers, private rooms, ambient sounds, LionGotchi pets, and 20+ more features.",
+          "Discover everything LionBot can do for your Discord server: activity tracking, ranks, economy, pomodoro timers, private rooms, ambient sounds, LionGotchi pets, and 20+ more features.",
       }}
     >
       {/* Hero */}

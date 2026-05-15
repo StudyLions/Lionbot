@@ -14,6 +14,11 @@ import { DashboardShell, PageHeader } from "@/components/dashboard/ui"
 // Purpose: Use shared EmptyState for consistent empty UI across overview cards
 import EmptyState from "@/components/dashboard/ui/EmptyState"
 // --- END AI-MODIFIED ---
+// --- AI-MODIFIED (2026-05-15) ---
+// Purpose: Prominent gift CTA on the overview so gifting isn't only
+// discoverable from /donate or the sidebar nav.
+import DashboardGiftCallout from "@/components/dashboard/DashboardGiftCallout"
+// --- END AI-MODIFIED ---
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -370,7 +375,7 @@ function WeeklyInsight({ stats, pomStats }: { stats: StatsData; pomStats: Pomodo
     }
     if (list.length === 0) {
       list.push({
-        text: "Start a study session to see your weekly insights here!",
+        text: "Join voice to see your weekly insights here!",
         icon: Lightbulb,
       })
     }
@@ -462,7 +467,7 @@ export default function Dashboard() {
   const monthTrend = stats ? getTrend(stats.studyTime.thisMonthMinutes, stats.studyTime.lastMonthMinutes) : undefined
 
   return (
-    <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot study statistics" }}>
+    <Layout SEO={{ title: "Dashboard - LionBot", description: "Your LionBot productivity statistics" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -508,8 +513,8 @@ export default function Dashboard() {
                     title={`${getGreeting()}, ${displayName}!`}
                     description={
                       stats && stats.studyTime.todayMinutes > 0
-                        ? `You've studied ${formatMinutes(stats.studyTime.todayMinutes)} today`
-                        : "Ready to start studying?"
+                        ? `You've been productive for ${formatMinutes(stats.studyTime.todayMinutes)} today`
+                        : "Ready to be productive?"
                     }
                     actions={
                       <div className="flex items-center gap-3 flex-wrap">
@@ -565,13 +570,20 @@ export default function Dashboard() {
                   </div>
                   {/* --- END AI-MODIFIED --- */}
 
+                  {/* --- AI-MODIFIED (2026-05-15) --- */}
+                  {/* Purpose: Gift CTA banner placed between hero stats and the */}
+                  {/* main activity surfaces. Prominent enough to be noticed,    */}
+                  {/* compact enough not to push real dashboard content down.   */}
+                  <DashboardGiftCallout variant="overview" />
+                  {/* --- END AI-MODIFIED --- */}
+
                   {/* Weekly Insight */}
                   {stats && <WeeklyInsight stats={stats} pomStats={pomStats ?? null} />}
 
                   {/* Study Activity Chart */}
                   <Card className="border-border bg-card">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-foreground text-base">Study Activity</CardTitle>
+                      <CardTitle className="text-foreground text-base">Activity</CardTitle>
                       <p className="text-xs text-muted-foreground">Last 30 days</p>
                     </CardHeader>
                     <CardContent>
@@ -717,7 +729,7 @@ export default function Dashboard() {
                             compact
                             icon={<Clock size={36} strokeWidth={1.25} />}
                             title="No recent sessions"
-                            description="Join any voice channel in a server with LionBot to start studying."
+                            description="Join any voice channel in a server with LionBot to start tracking."
                           />
                           // --- END AI-MODIFIED ---
                         ) : (

@@ -136,6 +136,9 @@ export default async function handler(
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       metadata: { discordId, discordName, tier },
+      // Ari files taxes manually; lock automatic tax off at the API layer
+      // so a future Stripe Dashboard toggle can't silently start collecting.
+      automatic_tax: { enabled: false },
       success_url: `${baseUrl}${NavigationPaths.donate}?subscription=success`,
       cancel_url: `${baseUrl}${NavigationPaths.donate}?subscription=cancelled`,
     });

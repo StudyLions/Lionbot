@@ -440,7 +440,7 @@ export default function VoiceEditorPage() {
   const saveLabel = `${pendingEdits.size} unsaved edit${pendingEdits.size !== 1 ? "s" : ""} — press Save to apply`
 
   return (
-    <Layout SEO={{ title: "Voice Time Editor - LionBot Dashboard", description: "Add and edit your study sessions" }}>
+    <Layout SEO={{ title: "Voice Time Editor - LionBot Dashboard", description: "Add and edit your voice sessions" }}>
       <AdminGuard>
         {/* --- AI-REPLACED (2026-03-24) --- */}
         {/* Reason: Migrated to DashboardShell layout wrapper */}
@@ -483,7 +483,7 @@ export default function VoiceEditorPage() {
                 <EmptyState
                   icon={<Server size={24} />}
                   title="No servers found"
-                  description="Join a server with LionBot to start tracking your study time."
+                  description="Join a server with LionBot to start tracking your voice time."
                 />
               ) : (
                 <div className="relative">

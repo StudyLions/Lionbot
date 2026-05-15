@@ -2,7 +2,7 @@
 title: "How to Set Up Pomodoro Timers on Your Discord Server"
 description: "Learn how to add a free pomodoro bot to your Discord server. Step-by-step guide to setting up group pomodoro timers with LionBot - voice alerts, auto-kick, and more."
 slug: "pomodoro-bot-discord"
-keywords: ["pomodoro bot discord", "discord pomodoro timer", "study timer discord bot", "pomodoro technique discord", "discord study bot"]
+keywords: ["pomodoro bot discord", "discord pomodoro timer", "productivity timer discord bot", "pomodoro technique discord", "discord productivity bot"]
 category: "productivity"
 author: "Ari Horesh"
 publishedAt: "2026-03-24"
@@ -64,7 +64,7 @@ Setting up a timer takes about 30 seconds. Here's the command:
 
 The most popular setup is the classic 25-minute focus, 5-minute break cycle. Just run:
 
-<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 name:Study Session" />
+<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 name:Focus Session" />
 
 LionBot will create the timer and attach it to your current voice channel. If you're not in a voice channel, it'll create a new one for you.
 
@@ -72,7 +72,7 @@ LionBot will create the timer and attach it to your current voice channel. If yo
   <DiscordEmbed
     color="#3b82f6"
     title="Pomodoro Timer Created"
-    description="Timer **Study Session** has been created and attached to your voice channel."
+    description="Timer **Focus Session** has been created and attached to your voice channel."
     fields={[
       { name: "Focus Length", value: "25 minutes", inline: true },
       { name: "Break Length", value: "5 minutes", inline: true },
@@ -101,7 +101,7 @@ The bot posts a status card in your notification channel showing the current sta
 <DiscordMessage>
   <DiscordEmbed
     color="#3b82f6"
-    title="🎯 Focus Time — Study Session"
+    title="🎯 Focus Time — Focus Session"
     description="Time to focus! Stay on task until the break.\n\n⏱ **24:32** remaining"
     fields={[
       { name: "Members", value: "@Alex, @Sam, @Jordan", inline: false },
@@ -117,7 +117,7 @@ The bot posts a status card in your notification channel showing the current sta
 
 ### The "Present" Button
 
-This is one of my favorite features. During each cycle, members need to press the "Present" button to confirm they're actually studying and not browsing social media. If someone misses too many cycles without pressing it, the bot can automatically kick them from the voice channel.
+This is one of my favorite features. During each cycle, members need to press the "Present" button to confirm they're actually focusing and not browsing social media. If someone misses too many cycles without pressing it, the bot can automatically kick them from the voice channel.
 
 <Info title="Accountability without being annoying">
 The default is 3 missed cycles before a kick. You can change this with the `inactivity_threshold` parameter, or set it to 0 to disable kicks entirely. The goal is gentle accountability, not punishment.
@@ -130,7 +130,7 @@ When the focus period ends, LionBot announces the break. The status card updates
 <DiscordMessage>
   <DiscordEmbed
     color="#22c55e"
-    title="☕ Break Time — Study Session"
+    title="☕ Break Time — Focus Session"
     description="Great work! Take a short break.\n\n⏱ **4:47** remaining"
     footer="The next focus period starts automatically"
   />
@@ -142,11 +142,11 @@ Then the cycle repeats automatically until someone stops the timer.
 
 ### Multiple Timers per Server
 
-You can have a different timer in every voice channel. This is great for servers with different study groups:
+You can have a different timer in every voice channel. This is great for servers with different focus groups:
 
 - **#deep-work** -- 50/10 for long focus sessions
-- **#casual-study** -- 25/5 classic pomodoro
-- **#speed-study** -- 15/3 for quick review sessions
+- **#casual-focus** -- 25/5 classic pomodoro
+- **#speed-focus** -- 15/3 for quick review sessions
 
 <CommandShowcase command="/timers" description="Lists all pomodoro timers in your server with their current status." />
 
@@ -164,7 +164,7 @@ You can make the voice channel name update dynamically to show the timer status.
 - `{members}` -- Number of members
 - `{pattern}` -- Focus/break pattern (e.g., "25/5")
 
-<CommandShowcase command='/pomodoro edit timer_channel:#study-room channel_name:"{stage} | {remaining} left"' description="The channel name updates in real-time to show the current timer status." />
+<CommandShowcase command='/pomodoro edit timer_channel:#focus-room channel_name:"{stage} | {remaining} left"' description="The channel name updates in real-time to show the current timer status." />
 
 <Warning>
 Discord rate-limits channel name changes, so updates may be delayed by a minute or two. This is a Discord limitation, not a LionBot issue.
@@ -174,16 +174,16 @@ Discord rate-limits channel name changes, so updates may be delayed by a minute 
 
 If you don't want every admin managing timers, you can assign a specific role as the timer manager:
 
-<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 manager_role:@Study Leader" description="Only members with the 'Study Leader' role (plus admins) can start, stop, and edit this timer." />
+<CommandShowcase command="/pomodoro create focus_length:25 break_length:5 manager_role:@Focus Leader" description="Only members with the 'Focus Leader' role (plus admins) can start, stop, and edit this timer." />
 
 ## Pomodoro in Private Rooms
 
 Here's a feature I'm really proud of: if a member rents a private room using `/room rent`, they can create their own pomodoro timer in it. They get full control over the timer without needing any admin permissions.
 
 This is perfect for:
-- Solo study sessions where you want structure
-- Small group study with friends
-- Study accountability partners
+- Solo focus sessions where you want structure
+- Small group focus with friends
+- Accountability partners
 
 <CommandShowcase command="/room rent" description="Rent a private voice channel. You can then run /pomodoro create inside it to set up your own personal timer." />
 

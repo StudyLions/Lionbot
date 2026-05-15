@@ -83,7 +83,12 @@ export default apiHandler({
 
     // --- AI-MODIFIED (2026-03-24) ---
     // Purpose: Include food/bath/sleep with decay applied for friend cards
-    const DECAY_INTERVAL_HOURS = 6
+    // --- AI-MODIFIED (2026-05-15) ---
+    // Purpose: Match canonical decay constants (24h interval, cap at 4) so friend cards
+    // show the same effective stats as overview.ts / care.ts / bot.
+    const DECAY_INTERVAL_HOURS = 24
+    const MAX_DECAY_PER_WAKE = 4
+    // --- END AI-MODIFIED ---
     const now = new Date()
 
     const friends = friendUserIds.map((fid) => {
@@ -96,7 +101,10 @@ export default apiHandler({
       let sleep = p?.sleep ?? 0
       if (p?.last_decay_at) {
         const elapsed = (now.getTime() - new Date(p.last_decay_at).getTime()) / (1000 * 3600)
-        const ticks = Math.floor(elapsed / DECAY_INTERVAL_HOURS)
+        // --- AI-MODIFIED (2026-05-15) ---
+        // Purpose: Cap accumulated decay at 4 per wake (matches care.ts / overview.ts).
+        const ticks = Math.min(Math.floor(elapsed / DECAY_INTERVAL_HOURS), MAX_DECAY_PER_WAKE)
+        // --- END AI-MODIFIED ---
         food = Math.max(0, food - ticks)
         bath = Math.max(0, bath - ticks)
         sleep = Math.max(0, sleep - ticks)

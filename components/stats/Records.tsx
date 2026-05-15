@@ -56,7 +56,7 @@ export default function Records({
       label: "MIN_CONCURRENT",
       value: records.quietestMoment.value.toLocaleString(),
       date: formatDate(records.quietestMoment.date),
-      comment: "even on Christmas, StudyLion was busy",
+      comment: "even on Christmas, LionBot was busy",
     })
   }
 

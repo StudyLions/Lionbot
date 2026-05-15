@@ -92,20 +92,20 @@
 ## Task 3 — Member rewards
 
 **Drawer title:** "Member rewards"
-**Drawer subtitle:** "How many LionCoins members earn from studying."
+**Drawer subtitle:** "How many LionCoins members earn from voice activity."
 **Drawer "why" footer:** "Coins drive the in-server shop, role unlocks and accountability bookings. You can change these anytime."
 
 ### Settings
 
 | Field | Label | Help | Default | Notes |
 |---|---|---|---|---|
-| `study_hourly_reward` | Coins per hour of study | A standard rate is 50–150. | 100 | <MobileSlider min 0 max 500 step 10>. Recommended pill at 100. |
+| `study_hourly_reward` | Coins per hour in voice | A standard rate is 50–150. | 100 | <MobileSlider min 0 max 500 step 10>. Recommended pill at 100. |
 | `study_hourly_live_bonus` | Bonus for being on camera | Extra coins per hour when their camera is on | 50 | <MobileSlider min 0 max 200 step 10>. Recommended pill at 50. |
 | `starting_funds` | Starting balance for new members | A small welcome bonus | 0 | <NumberInput>. |
 | `coins_per_centixp` | Coin → XP conversion (1 coin = X XP) | Power-user only — leave default unless you know what you're doing | 1 | Hidden behind "Show advanced". |
 
 **Live preview:**
-> "A member who studies 1 hour with camera on earns **{study_hourly_reward + study_hourly_live_bonus} LionCoins**."
+> "A member who spends 1 hour in voice with camera on earns **{study_hourly_reward + study_hourly_live_bonus} LionCoins**."
 
 ---
 
@@ -174,8 +174,8 @@
 ## Task 7 — Accountability sessions *(optional)*
 
 **Drawer title:** "Accountability sessions"
-**Drawer subtitle:** "Members book a 1-hour study slot, show up on time and earn rewards."
-**Drawer "why" footer:** "Used by groups that want a structured, scheduled co-working rhythm. Skip if you just want free-form voice study."
+**Drawer subtitle:** "Members book a 1-hour session slot, show up on time and earn rewards."
+**Drawer "why" footer:** "Used by groups that want a structured, scheduled co-working rhythm. Skip if you just want free-form voice time."
 
 ### Settings (all routed to `schedule_guild_config`, NOT `guild_config`)
 
@@ -196,7 +196,7 @@
 ## Task 8 — Pet game *(optional)*
 
 **Drawer title:** "Pet game"
-**Drawer subtitle:** "Members can hatch, feed, and grow a LionGotchi pet by studying."
+**Drawer subtitle:** "Members can hatch, feed, and grow a LionGotchi pet by being active."
 **Drawer "why" footer:** "Adds a fun gamified loop on top of ranks. Off by default — turn on if your community likes games."
 
 ### Settings

@@ -24,7 +24,7 @@ export default function AmbientSoundsTask({ guildId, open, onClose, onComplete, 
       open={open}
       onClose={onClose}
       title="Ambient sounds"
-      subtitle="Quiet, looping background audio in your study channels."
+      subtitle="Quiet, looping background audio in your voice channels."
       icon={Music2}
       returnFocusTo="setup-task-trigger-ambient_sounds"
       footer={
@@ -44,7 +44,7 @@ export default function AmbientSoundsTask({ guildId, open, onClose, onComplete, 
       }
     >
       <p className="text-sm text-muted-foreground mb-4">
-        Add gentle background sound to your study voice channels — rain on a window,
+        Add gentle background sound to your voice channels — rain on a window,
         a crackling campfire, ocean waves, brown noise, or a curated LoFi playlist.
         Up to 10 ambient bots can run at once across different channels.
       </p>

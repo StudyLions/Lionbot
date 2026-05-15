@@ -44,14 +44,14 @@ type Action = "kick" | "pause" | "move_afk"
 const ACTION_LABELS: Record<Action, { title: string; subtitle: string }> = {
   kick: {
     title: "Disconnect them from voice",
-    subtitle: "Frees up the slot for someone who'll actually study.",
+    subtitle: "Frees up the slot for someone who'll actually use it.",
   },
   move_afk: {
     title: "Move them to the AFK channel",
     subtitle: "Quietly relocates them. Requires an AFK channel in Discord.",
   },
   pause: {
-    title: "Pause their study tracking",
+    title: "Pause their voice tracking",
     subtitle: "Doesn't kick — just stops the clock until they engage.",
   },
 }
@@ -122,7 +122,7 @@ export default function AntiAfkTask({ guildId, open, onClose, onComplete, onSkip
     <TaskDrawer
       open={open}
       onClose={onClose}
-      title="Anti-AFK in study rooms"
+      title="Anti-AFK in voice rooms"
       subtitle="Quietly remove members who go idle in voice for too long."
       icon={ShieldOff}
       returnFocusTo="setup-task-trigger-anti_afk"
@@ -147,7 +147,7 @@ export default function AntiAfkTask({ guildId, open, onClose, onComplete, onSkip
       }
     >
       <p className="text-sm text-muted-foreground mb-4">
-        Big study servers run into the same problem: members park in voice,
+        Big communities run into the same problem: members park in voice,
         forget about it, and the channel feels less alive. Anti-AFK
         catches that and frees up the slot.
       </p>

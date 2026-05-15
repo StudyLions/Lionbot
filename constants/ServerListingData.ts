@@ -39,13 +39,13 @@ export interface ListingCategory {
 }
 
 /**
- * 40 curated categories. The first one ("study") is the default and
- * matches our brand positioning. Order matters for the editor's
- * dropdown -- we group conceptually similar tags together.
+ * 40 curated categories. The first one is the default; we list general
+ * productivity first, then academic specialties. Order matters for the
+ * editor's dropdown -- we group conceptually similar tags together.
  */
 export const LISTING_CATEGORIES: ListingCategory[] = [
-  // Study & academics
-  { id: "study",            label: "Study & Focus",        emoji: "📚", description: "General study, productivity, and focus communities" },
+  // Productivity & academics
+  { id: "study",            label: "Productivity & Focus", emoji: "📚", description: "General productivity, focus, and study communities" },
   { id: "language-learning",label: "Language Learning",    emoji: "🗣️", description: "Practice or teach a new language together" },
   { id: "math",             label: "Math",                 emoji: "➗", description: "From arithmetic to abstract algebra" },
   { id: "science",          label: "Science",              emoji: "🔬", description: "Physics, chemistry, biology, and beyond" },
@@ -71,7 +71,7 @@ export const LISTING_CATEGORIES: ListingCategory[] = [
   { id: "mindfulness",      label: "Mindfulness",          emoji: "🧘", description: "Meditation, journaling, and mental wellness" },
   { id: "self-improvement", label: "Self-Improvement",     emoji: "🌱", description: "Habit-building, goals, and personal growth" },
   { id: "reading",          label: "Reading & Books",      emoji: "📖", description: "Book clubs and reading communities" },
-  { id: "gaming",           label: "Gaming",               emoji: "🎮", description: "Gaming communities that also study together" },
+  { id: "gaming",           label: "Gaming",               emoji: "🎮", description: "Gaming communities" },
   { id: "anime-manga",      label: "Anime & Manga",        emoji: "🌸", description: "Anime and manga fan communities" },
   { id: "chess",            label: "Chess & Strategy",     emoji: "♟️", description: "Chess and strategy game communities" },
   // Communities & demographics

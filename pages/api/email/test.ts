@@ -75,13 +75,10 @@ async function buildReact(
 
   if (template === "welcome_admin") {
     const tier = useRealData ? await getPromoTierForUser(userid) : "free"
-    const guilds = useRealData
-      ? await prisma.guild_config.findMany({
-          where: { ownerid: userid },
-          select: { guildid: true, name: true },
-          take: 6,
-        })
-      : []
+    // Note: guild_config has no ownerid column on the website-side schema,
+    // so we can't query owned guilds from here. The admin-test endpoint
+    // falls back to mock guild summaries below in both modes.
+    const guilds: { guildid: bigint; name: string | null }[] = []
     const guildSummaries =
       guilds.length > 0
         ? guilds.map((g) => ({

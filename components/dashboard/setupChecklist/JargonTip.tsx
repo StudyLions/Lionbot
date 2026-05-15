@@ -60,7 +60,7 @@ const DEFINITIONS: Record<JargonTerm, { title: string; body: string }> = {
   },
   xp: {
     title: "XP",
-    body: "Experience points. Earned from studying. Drives ranks.",
+    body: "Experience points. Earned from voice activity. Drives ranks.",
   },
   lioncoin: {
     title: "LionCoin",

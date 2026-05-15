@@ -50,13 +50,20 @@ const ROWS: Row[] = [
     ),
     highlight: true,
   },
+  // --- AI-MODIFIED (2026-05-15) ---
+  // Purpose: Promote the per-vote LionGem bonus row to a highlighted row
+  //   with emerald-green emphasis on the value, matching the treatment of
+  //   other "bonus" rows (drop-rate, farm growth). Previously this row was
+  //   unhighlighted plain-foreground text and easy to miss.
   {
     label: "Gems per Top.gg vote",
     free: <span className="text-muted-foreground/80">{FREE_TIER.gemsPerVote}</span>,
     values: (t) => (
-      <span className="font-semibold text-foreground">{t.gemsPerVote}</span>
+      <span className="font-semibold text-emerald-400">{t.gemsPerVote}</span>
     ),
+    highlight: true,
   },
+  // --- END AI-MODIFIED ---
   {
     label: "LionCoin vote boost",
     free: <span className="text-muted-foreground/80">{FREE_TIER.lionCoinBoost}x</span>,

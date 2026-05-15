@@ -5,7 +5,7 @@
     "servers": "My Servers",
     "activity": "Activity",
     "tasks": "Tasks",
-    "history": "Study History",
+    "history": "Activity History",
     "goals": "Goals",
     "reminders": "Reminders",
     "collection": "Collection",
@@ -27,7 +27,7 @@
       "empty": "No tasks yet. Create one to get started!"
     },
     "history": {
-      "title": "Study History"
+      "title": "Activity History"
     },
     "goals": {
       "title": "Your Goals"

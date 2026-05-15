@@ -217,7 +217,7 @@ export default function PrivacyPage() {
             </div>
             <p className="text-sm text-muted-foreground mb-2">
               Download a complete copy of all personal data we store about you in JSON format.
-              This includes your profile, study sessions, tasks, economy data, pet data, and more.
+              This includes your profile, voice sessions, tasks, economy data, pet data, and more.
             </p>
             <p className="text-xs text-muted-foreground/70 mb-4">
               You can download your data once every 24 hours. The file may take a moment to generate.
