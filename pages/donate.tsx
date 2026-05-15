@@ -961,16 +961,18 @@ function SubscriptionCard({
         </ul>
 
         {renderButton()}
-        {/* --- AI-MODIFIED (2026-05-15) --- */}
-        {/* Purpose: quieter "Gift this tier" link beneath the primary CTA. */}
-        {/* Single Gift icon as the brand mark; not a second equal-weight    */}
-        {/* gold button (which would muddy the focal point per UI principles). */}
+        {/* --- AI-MODIFIED (2026-05-15 v2) --- */}
+        {/* Purpose: Gift is a first-class action -- equal-weight bordered    */}
+        {/* button under the primary Subscribe CTA, gold accent so users can */}
+        {/* tell the two options apart at a glance. The gift modal handles   */}
+        {/* the recipient picker for LionHeart-tier gifts (claim-link flow). */}
         <button
           type="button"
           onClick={() => onGift(tierId)}
-          className="mt-2 w-full flex items-center justify-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+          className="mt-2.5 w-full py-3 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 border-2 border-amber-500/40 hover:border-amber-500/70 text-amber-300 hover:text-amber-200 bg-amber-500/[0.04] hover:bg-amber-500/[0.08] transition-all duration-200 hover:-translate-y-[1px]"
+          style={{ boxShadow: "0 4px 14px rgba(245,158,11,0.10)" }}
         >
-          <Gift size={13} aria-hidden />
+          <Gift className="h-4 w-4" aria-hidden />
           Gift {tier.name} to a friend
         </button>
         {/* --- END AI-MODIFIED --- */}
@@ -1274,6 +1276,12 @@ function ServerPremiumShowcase({
   const [serversLoading, setServersLoading] = useState(false);
   const [selectedServer, setSelectedServer] = useState<string>("");
   const [checkingOut, setCheckingOut] = useState(false);
+  // --- AI-MODIFIED (2026-05-15 v2) ---
+  // Purpose: Segmented toggle "For my server" / "Gift to a server" in the
+  // right-hand commerce column. Gift is a first-class action, not buried in
+  // a quiet link beneath the admin-buy CTAs.
+  const [serverViewMode, setServerViewMode] = useState<"buy" | "gift">("buy");
+  // --- END AI-MODIFIED ---
 
   const [myPaidSubs, setMyPaidSubs] = useState<ServerPremiumInfo[]>([]);
   const [myLhPremium, setMyLhPremium] = useState<LionheartPremiumInfo | null>(null);
@@ -2190,86 +2198,151 @@ function ServerPremiumShowcase({
             </div>
 
             <div className="lg:border-l lg:border-border/60 lg:pl-10">
-              {!session ? (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => signIn("discord")}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
-                  >
-                    Sign in with Discord to subscribe
-                  </button>
-                  <p className="text-[11px] text-muted-foreground text-center">
-                    You'll select a server after signing in.
-                  </p>
-                </div>
-              ) : serversLoading ? (
-                <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers…
-                </div>
-              ) : adminServers.length === 0 ? (
-                <div className="rounded-xl border border-border bg-background/60 p-4 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    You need to be an admin of a server with LionBot to subscribe.{" "}
-                    <a href="/invite" className="text-blue-400 hover:underline font-semibold">
-                      Add LionBot
-                    </a>
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
-                    Apply to server
-                  </label>
-                  <select
-                    value={selectedServer}
-                    onChange={(e) => setSelectedServer(e.target.value)}
-                    className="w-full rounded-xl bg-background border border-border text-foreground text-sm px-3 py-3 focus:border-blue-500 focus:outline-none transition-colors"
-                  >
-                    {adminServers.map((s) => (
-                      <option key={s.guildId} value={s.guildId}>
-                        {s.guildName}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <button
-                      onClick={() => handleServerCheckout("MONTHLY")}
-                      disabled={checkingOut}
-                      className="px-3 py-3 rounded-xl bg-background border border-border hover:border-blue-500/50 hover:bg-card text-foreground text-sm font-bold transition-colors disabled:opacity-50"
-                    >
-                      {checkingOut ? "…" : `Monthly · ${symbol}${getServerPremiumPrice("MONTHLY", currency)}`}
-                    </button>
-                    <button
-                      onClick={() => handleServerCheckout("YEARLY")}
-                      disabled={checkingOut}
-                      className="px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold transition-all disabled:opacity-50 relative overflow-hidden shadow-lg shadow-blue-500/20"
-                    >
-                      {checkingOut ? "…" : `Yearly · ${symbol}${getServerPremiumPrice("YEARLY", currency)}`}
-                      <span className="absolute top-0 right-0 bg-emerald-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">
-                        SAVE
-                      </span>
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground text-center mt-1">
-                    Cancel anytime · Secure with Stripe · Instant activation
-                  </p>
-                </div>
-              )}
-              {/* --- AI-MODIFIED (2026-05-15) --- */}
-              {/* Purpose: Gift entry visible in EVERY state of the right-hand */}
-              {/* column (signed-out, no-admin-servers, and admin-buy flow) so */}
-              {/* members find it whether or not they're a server admin.       */}
-              {session && (
+              {/* --- AI-MODIFIED (2026-05-15 v2) --- */}
+              {/* Purpose: Segmented toggle puts gifting on equal footing with the */}
+              {/* admin-buy flow. Two pill segments at the top of the commerce     */}
+              {/* column; selecting "Gift to a server" swaps the body to a       */}
+              {/* prominent gift CTA card. Gift was previously a quiet text link  */}
+              {/* below the admin buttons -- way too easy to miss for a core      */}
+              {/* revenue driver.                                                  */}
+              <div className="inline-flex rounded-full bg-muted/60 p-1 mb-4 text-xs font-semibold">
                 <button
                   type="button"
-                  onClick={onGiftClick}
-                  className="mt-3 w-full flex items-center justify-center gap-1.5 text-[12.5px] font-medium text-muted-foreground hover:text-foreground transition-colors py-1"
+                  onClick={() => setServerViewMode("buy")}
+                  className={`px-3.5 py-1.5 rounded-full transition-colors ${
+                    serverViewMode === "buy"
+                      ? "bg-card text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
                 >
-                  <Gift size={13} aria-hidden />
-                  Or gift Server Premium to a server you love
+                  For my server
                 </button>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setServerViewMode("gift")}
+                  className={`px-3.5 py-1.5 rounded-full transition-colors inline-flex items-center gap-1.5 ${
+                    serverViewMode === "gift"
+                      ? "bg-card text-amber-400 shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  <Gift size={12} aria-hidden />
+                  Gift to a server
+                </button>
+              </div>
               {/* --- END AI-MODIFIED --- */}
+
+              {serverViewMode === "buy" ? (
+                !session ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => signIn("discord")}
+                      className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold transition-colors"
+                    >
+                      Sign in with Discord to subscribe
+                    </button>
+                    <p className="text-[11px] text-muted-foreground text-center">
+                      You'll select a server after signing in.
+                    </p>
+                  </div>
+                ) : serversLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-4 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Loading your servers…
+                  </div>
+                ) : adminServers.length === 0 ? (
+                  <div className="rounded-xl border border-border bg-background/60 p-4 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      You need to be an admin of a server with LionBot to subscribe.{" "}
+                      <a href="/invite" className="text-blue-400 hover:underline font-semibold">
+                        Add LionBot
+                      </a>
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <label className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground block">
+                      Apply to server
+                    </label>
+                    <select
+                      value={selectedServer}
+                      onChange={(e) => setSelectedServer(e.target.value)}
+                      className="w-full rounded-xl bg-background border border-border text-foreground text-sm px-3 py-3 focus:border-blue-500 focus:outline-none transition-colors"
+                    >
+                      {adminServers.map((s) => (
+                        <option key={s.guildId} value={s.guildId}>
+                          {s.guildName}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <button
+                        onClick={() => handleServerCheckout("MONTHLY")}
+                        disabled={checkingOut}
+                        className="px-3 py-3 rounded-xl bg-background border border-border hover:border-blue-500/50 hover:bg-card text-foreground text-sm font-bold transition-colors disabled:opacity-50"
+                      >
+                        {checkingOut ? "…" : `Monthly · ${symbol}${getServerPremiumPrice("MONTHLY", currency)}`}
+                      </button>
+                      <button
+                        onClick={() => handleServerCheckout("YEARLY")}
+                        disabled={checkingOut}
+                        className="px-3 py-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white text-sm font-bold transition-all disabled:opacity-50 relative overflow-hidden shadow-lg shadow-blue-500/20"
+                      >
+                        {checkingOut ? "…" : `Yearly · ${symbol}${getServerPremiumPrice("YEARLY", currency)}`}
+                        <span className="absolute top-0 right-0 bg-emerald-500 text-[9px] text-white font-bold px-1.5 py-0.5 rounded-bl-md">
+                          SAVE
+                        </span>
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground text-center mt-1">
+                      Cancel anytime · Secure with Stripe · Instant activation
+                    </p>
+                  </div>
+                )
+              ) : (
+                /* --- AI-MODIFIED (2026-05-15 v2) --- */
+                /* Purpose: Gift-mode panel. Gold-bordered card with a clear value    */
+                /* proposition, a prominent gold Gift CTA, and one line of social     */
+                /* pitch ("the server admin keeps the perks, you pay the bill").     */
+                <div className="space-y-3">
+                  <div className="rounded-2xl border-2 border-amber-500/40 bg-amber-500/[0.04] p-5">
+                    <div className="flex items-start gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center shrink-0">
+                        <Gift className="h-5 w-5 text-amber-400" aria-hidden />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-base font-bold text-foreground">
+                          Gift Server Premium
+                        </h3>
+                        <p className="text-[12.5px] text-muted-foreground leading-relaxed mt-0.5">
+                          {symbol}{getServerPremiumPrice("MONTHLY", currency)}/month on your card. Premium activates on a server you're a member of. Cancel anytime in your Stripe portal.
+                        </p>
+                      </div>
+                    </div>
+                    {!session ? (
+                      <button
+                        onClick={() => signIn("discord")}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-sm font-bold transition-colors"
+                      >
+                        Sign in with Discord to gift
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={onGiftClick}
+                        className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-amber-950 text-sm font-bold transition-all hover:-translate-y-[1px]"
+                        style={{ boxShadow: "0 10px 30px -10px rgba(245,158,11,0.45)" }}
+                      >
+                        <Gift size={16} aria-hidden />
+                        Choose a server to gift
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground text-center">
+                    The admin team gets all the premium perks · You can cancel at any time
+                  </p>
+                </div>
+                /* --- END AI-MODIFIED --- */
+              )}
             </div>
           </div>
         </div>
