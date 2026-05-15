@@ -85,12 +85,24 @@ export default async function handler(
 
   for (const gift of expired) {
     try {
-      // Defensive: a freshly-created gift may not have its subscription_id
-      // back-filled yet (webhook race). Skip; we'll catch it next run.
+      // --- AI-MODIFIED (2026-05-15 v2) ---
+      // Purpose: A row can have an empty stripe_subscription_id when the
+      // sender clicked "Continue to checkout" (which pre-creates the row)
+      // but then closed the Stripe Checkout page without paying. No Stripe
+      // subscription exists to cancel, but the row still needs to be marked
+      // EXPIRED so it doesn't sit in PENDING_CLAIM forever and so the
+      // expiry-sweep index stays small. Skip the Stripe API call, just
+      // mark the row.
       if (!gift.stripe_subscription_id || gift.stripe_subscription_id === "") {
-        console.warn(`expire-gifts: gift ${gift.id} has no stripe_subscription_id yet, skipping`)
+        await prisma.lionheart_gifts.update({
+          where: { id: gift.id },
+          data: { status: "EXPIRED", updated_at: new Date() },
+        })
+        console.log(`expire-gifts: gift ${gift.id} abandoned at checkout, marked EXPIRED (no Stripe sub to cancel)`)
+        expiredCount++
         continue
       }
+      // --- END AI-MODIFIED ---
 
       // Cancel immediately. Stripe prorates the unused portion of the period.
       // `del` is the canonical method name on the 2020-08-27 SDK surface

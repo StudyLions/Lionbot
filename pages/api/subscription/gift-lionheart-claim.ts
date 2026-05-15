@@ -122,17 +122,31 @@ export default async function handler(
     const periodEnd = gift.current_period_end ?? new Date(Date.now() + 30 * 86400000)
     const gemAmount = MONTHLY_GEM_ALLOWANCE[gift.tier] || 0
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Mark the gift claimed
-      await tx.lionheart_gifts.update({
-        where: { id: gift.id },
-        data: {
-          recipient_userid: claimantIdBig,
-          claimed_at: new Date(),
-          status: "ACTIVE",
-          updated_at: new Date(),
-        },
+    // --- AI-MODIFIED (2026-05-15 v2) ---
+    // Purpose: Race-safe claim. The previous version did an unconditional
+    // update inside the transaction, which would silently succeed twice if
+    // two parallel requests both passed the PENDING_CLAIM check above. Use
+    // updateMany with a status filter so the database itself enforces the
+    // single-claim invariant -- count=0 means another request beat us to it.
+    const claimed = await prisma.lionheart_gifts.updateMany({
+      where: { id: gift.id, status: "PENDING_CLAIM" },
+      data: {
+        recipient_userid: claimantIdBig,
+        claimed_at: new Date(),
+        status: "ACTIVE",
+        updated_at: new Date(),
+      },
+    })
+    if (claimed.count === 0) {
+      return res.status(409).json({
+        error: "This gift was just claimed by someone else.",
+        code: "RACE_LOST",
       })
+    }
+    // --- END AI-MODIFIED ---
+
+    await prisma.$transaction(async (tx) => {
+      // 1. (Gift row already moved to ACTIVE above.)
 
       // 2. Upsert recipient's user_subscriptions, linked to sender's Stripe IDs
       await tx.user_subscriptions.upsert({

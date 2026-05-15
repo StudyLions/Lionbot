@@ -35,13 +35,17 @@ export default async function handler(
     return res.status(400).json({ error: "Invalid guildId" })
   }
 
-  // Must be a member of the guild
+  // Must be a member of the guild. Return 200 with active:false (not 404)
+  // so the client can render normally -- this is an authorization-style
+  // empty-state, not a missing-resource. The component checks res.ok in
+  // its fetch chain; 404 would short-circuit and silently log a network
+  // error in the console for every non-member visit.
   const isMember = await prisma.members.findFirst({
     where: { guildid: guildId, userid: BigInt(auth.discordId) },
     select: { userid: true },
   })
   if (!isMember) {
-    return res.status(404).json({ active: false })
+    return res.status(200).json({ active: false })
   }
 
   // Find the most recent active gift sub for this guild

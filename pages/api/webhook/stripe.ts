@@ -872,6 +872,24 @@ async function handleLionheartGiftInvoiceSucceeded(invoice: Stripe.Invoice): Pro
     return true;
   }
 
+  // --- AI-MODIFIED (2026-05-15 v2) ---
+  // Purpose: Avoid double-credit on the first month. The claim endpoint
+  // credits MONTHLY_GEM_ALLOWANCE immediately when the recipient claims
+  // (reference `gift_claim_gems_<gift.id>`). The FIRST invoice
+  // (billing_reason=subscription_create) fires on initial purchase --
+  // it may be delivered before or after the recipient claims. If it
+  // arrives AFTER, recipient_userid is already set and we'd credit again
+  // with a different reference (`gift_sub_gems_<invoice.id>`), bypassing
+  // idempotency. Skip the first invoice for gift subs -- the claim owns
+  // month 1; renewals (subscription_cycle) own months 2+.
+  if (billingReason === "subscription_create") {
+    console.log(
+      `Stripe webhook: LIONHEART_GIFT first invoice ${invoice.id} -- claim endpoint owns month-1 gems; skipping renewal credit`
+    );
+    return true;
+  }
+  // --- END AI-MODIFIED ---
+
   const gemAmount = MONTHLY_GEM_ALLOWANCE[gift.tier] || 0;
   if (gemAmount <= 0) return true;
 
@@ -1589,10 +1607,33 @@ export default async function handler(
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
         const subId = subscription.id;
-        // LIONHEART_GIFT subs must be checked BEFORE the regular LionHeart
-        // sub handler -- otherwise that handler would update the SENDER's
-        // user_subscriptions row, which the sender doesn't own (the gift is
-        // a separate sub paid by sender for someone else).
+        // --- AI-MODIFIED (2026-05-15 v2) ---
+        // Purpose: Route by subscription.metadata.type FIRST. The DB-row
+        // lookups (isLionheartGiftSubscription / isServerPremiumSubscription)
+        // can return false for a gift sub if checkout.session.completed
+        // hasn't fired yet (Stripe event ordering isn't guaranteed). In that
+        // race window, the gift sub would fall through to the regular
+        // LionHeart user-sub handler and erroneously write the gift's tier
+        // to the SENDER's user_subscriptions row.
+        //
+        // subscription_data.metadata is set on both gift checkout endpoints
+        // so the subscription itself carries the discriminator.
+        const subMetaType = subscription.metadata?.type;
+        if (subMetaType === "LIONHEART_GIFT") {
+          // Returns false if the lionheart_gifts row hasn't been linked yet
+          // (sub.created beat checkout.session.completed); that's fine --
+          // skip; the checkout completion handler will run shortly and
+          // any follow-up subscription.updated will catch up.
+          await handleLionheartGiftSubscriptionUpdate(subscription);
+          break;
+        }
+        if (subMetaType === "SERVER_PREMIUM_GIFT") {
+          // Same rationale -- if the row doesn't exist yet, the update
+          // helper bails; checkout.session.completed will create it.
+          await handleServerPremiumSubscriptionUpdate(subscription);
+          break;
+        }
+        // Fallback: existing non-gift routing via DB lookups
         if (await isLionheartGiftSubscription(subId)) {
           await handleLionheartGiftSubscriptionUpdate(subscription);
         } else if (await isServerPremiumSubscription(subId)) {
@@ -1600,12 +1641,24 @@ export default async function handler(
         } else {
           await handleSubscriptionCreatedOrUpdated(subscription);
         }
+        // --- END AI-MODIFIED ---
         break;
       }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
         const subId = subscription.id;
+        // --- AI-MODIFIED (2026-05-15 v2) ---
+        // Same metadata-first routing as the update case above.
+        const subMetaType = subscription.metadata?.type;
+        if (subMetaType === "LIONHEART_GIFT") {
+          await handleLionheartGiftSubscriptionDeleted(subscription);
+          break;
+        }
+        if (subMetaType === "SERVER_PREMIUM_GIFT") {
+          await handleServerPremiumSubscriptionDeleted(subscription);
+          break;
+        }
         if (await isLionheartGiftSubscription(subId)) {
           await handleLionheartGiftSubscriptionDeleted(subscription);
         } else if (await isServerPremiumSubscription(subId)) {
@@ -1613,6 +1666,7 @@ export default async function handler(
         } else {
           await handleSubscriptionDeleted(subscription);
         }
+        // --- END AI-MODIFIED ---
         break;
       }
 
