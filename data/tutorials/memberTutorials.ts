@@ -322,8 +322,8 @@ export const memberTutorials: Tutorial[] = [
         id: "what-are-coins",
         title: "What Are LionCoins?",
         paragraphs: [
-          "LionCoins are the in-server currency in LionBot. You earn them by being in voice channels, completing tasks, and being active. You can spend them in your server's shop or send them to other members.
-          "Each server has its own economy — coins you earn in one server are separate from another.",
+          "LionCoins are the in-server currency in LionBot. You earn them by being in voice channels, completing tasks, and being active. You can spend them in your server's shop or send them to other members.",
+          "Each server has its own economy, coins you earn in one server are separate from another.",
         ],
       },
       {
