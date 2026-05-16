@@ -32,6 +32,12 @@ export default apiHandler({
         select: {
           inventoryid: true,
           enhancement_level: true,
+          // --- AI-MODIFIED (2026-05-16) ---
+          // Purpose: Surface quantity so the UI can render N tiles for a
+          // stacked equipment row (unenhanced duplicates stack into one row
+          // via the partial unique index lg_inventory_stack_idx).
+          quantity: true,
+          // --- END AI-MODIFIED ---
           lg_items: { select: { itemid: true, name: true, rarity: true, slot: true, category: true, asset_path: true } },
           lg_enhancement_slots: {
             select: { slot_number: true, scroll_name: true, bonus_value: true, scroll_itemid: true },
@@ -65,6 +71,10 @@ export default apiHandler({
         inventoryId: e.inventoryid,
         enhancementLevel: e.enhancement_level,
         maxLevel: MAX_ENHANCEMENT_BY_RARITY[e.lg_items.rarity] ?? 5,
+        // --- AI-MODIFIED (2026-05-16) ---
+        // Purpose: Forward stack size to the UI so it can render N tiles.
+        quantity: e.quantity,
+        // --- END AI-MODIFIED ---
         totalBonus,
         glowTier,
         glowIntensity,
@@ -178,26 +188,88 @@ export default apiHandler({
       const newLevel = equipInv.enhancement_level + 1
       const bonusValue = scrollProps.bonus_value
 
-      await prisma.$transaction([
-        prisma.lg_user_inventory.update({
-          where: { inventoryid: equipInv.inventoryid },
-          data: { enhancement_level: newLevel },
-        }),
-        prisma.lg_enhancement_slots.upsert({
-          where: { inventoryid_slot_number: { inventoryid: equipInv.inventoryid, slot_number: newLevel } },
-          create: {
-            inventoryid: equipInv.inventoryid,
+      // --- AI-REPLACED (2026-05-16) ---
+      // Reason: When the source inventory row stacks multiple unenhanced
+      // copies (quantity > 1), updating enhancement_level in place would
+      // bump ALL stacked copies together — impossible to land in the
+      // expected "+0 x1, +1 x1" state, and the user effectively gets free
+      // enhancements on the other copies.
+      // What the new code does better: If quantity > 1, decrement the
+      // source stack and create a NEW row for the enhanced copy (the
+      // partial unique index lg_inventory_stack_idx only fires on
+      // enhancement_level = 0, so the new row at newLevel >= 1 is safe).
+      // The lg_enhancement_slots entry is keyed on the new row's
+      // inventoryid so the scroll trace tracks the right copy.
+      // --- Original code (commented out for rollback) ---
+      // await prisma.$transaction([
+      //   prisma.lg_user_inventory.update({
+      //     where: { inventoryid: equipInv.inventoryid },
+      //     data: { enhancement_level: newLevel },
+      //   }),
+      //   prisma.lg_enhancement_slots.upsert({
+      //     where: { inventoryid_slot_number: { inventoryid: equipInv.inventoryid, slot_number: newLevel } },
+      //     create: {
+      //       inventoryid: equipInv.inventoryid,
+      //       slot_number: newLevel,
+      //       scroll_itemid: scrollInv.lg_items.itemid,
+      //       scroll_name: scrollInv.lg_items.name,
+      //       bonus_value: bonusValue,
+      //     },
+      //     update: {},
+      //   }),
+      // ])
+      // --- End original code ---
+      let enhancedInventoryId = equipInv.inventoryid
+      if (equipInv.quantity > 1) {
+        const [, newRow] = await prisma.$transaction([
+          prisma.lg_user_inventory.update({
+            where: { inventoryid: equipInv.inventoryid },
+            data: { quantity: equipInv.quantity - 1 },
+          }),
+          prisma.lg_user_inventory.create({
+            data: {
+              userid: userId,
+              itemid: equipInv.lg_items.itemid,
+              source: equipInv.source,
+              quantity: 1,
+              enhancement_level: newLevel,
+            },
+            select: { inventoryid: true },
+          }),
+        ])
+        enhancedInventoryId = newRow.inventoryid
+        await prisma.lg_enhancement_slots.create({
+          data: {
+            inventoryid: enhancedInventoryId,
             slot_number: newLevel,
             scroll_itemid: scrollInv.lg_items.itemid,
             scroll_name: scrollInv.lg_items.name,
             bonus_value: bonusValue,
           },
-          update: {},
-        }),
-      ])
+        })
+      } else {
+        await prisma.$transaction([
+          prisma.lg_user_inventory.update({
+            where: { inventoryid: equipInv.inventoryid },
+            data: { enhancement_level: newLevel },
+          }),
+          prisma.lg_enhancement_slots.upsert({
+            where: { inventoryid_slot_number: { inventoryid: equipInv.inventoryid, slot_number: newLevel } },
+            create: {
+              inventoryid: equipInv.inventoryid,
+              slot_number: newLevel,
+              scroll_itemid: scrollInv.lg_items.itemid,
+              scroll_name: scrollInv.lg_items.name,
+              bonus_value: bonusValue,
+            },
+            update: {},
+          }),
+        ])
+      }
+      // --- END AI-REPLACED ---
 
       const allSlots = await prisma.lg_enhancement_slots.findMany({
-        where: { inventoryid: equipInv.inventoryid },
+        where: { inventoryid: enhancedInventoryId },
       })
       const totalBonus = allSlots.reduce((sum, s) => sum + s.bonus_value, 0)
       const glowTier = calcGlowTier(newLevel, totalBonus)
@@ -207,8 +279,13 @@ export default apiHandler({
 
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Log enhancement attempt + check achievements
+      // --- AI-MODIFIED (2026-05-16) ---
+      // Purpose: Reference the inventoryid of the row that actually holds
+      // the enhanced copy (new row when splitting a stack, original
+      // otherwise).
       const newAchievements = await logAndCheckAchievements(userId, {
-        inventoryid: equipInv.inventoryid,
+        inventoryid: enhancedInventoryId,
+        // --- END AI-MODIFIED ---
         itemName: equipInv.lg_items.name,
         scrollName: scrollInv.lg_items.name,
         outcome: "success",
@@ -242,19 +319,40 @@ export default apiHandler({
     // --- End original code ---
     if (Math.random() < destroyRate) {
     // --- END AI-REPLACED ---
-      await prisma.lg_pet_equipment.deleteMany({
-        where: { userid: userId, itemid: equipInv.lg_items.itemid },
-      })
-      // --- AI-MODIFIED (2026-04-24) ---
-      // Purpose: Cosmetic overlay rows reference lg_items.itemid; if a
-      // failed enhancement destroys the underlying inventory copy, also
-      // drop any cosmetic overlay tied to it so the renderer doesn't try
-      // to load a now-missing item the user no longer owns.
-      await prisma.lg_pet_cosmetics.deleteMany({
-        where: { userid: userId, itemid: equipInv.lg_items.itemid },
-      })
-      // --- END AI-MODIFIED ---
-      await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
+      // --- AI-REPLACED (2026-05-16) ---
+      // Reason: Destruction used to delete the entire inventory row, which
+      // wiped out every stacked copy when the row had quantity > 1 (the
+      // reported bug — user lost both Damper Suits when only one should
+      // have been destroyed).
+      // What the new code does better: If quantity > 1, just decrement —
+      // the user still owns at least one copy, so don't touch
+      // lg_pet_equipment / lg_pet_cosmetics either. Only when destroying
+      // the last copy do we delete the row and cascade-clean the equip
+      // and cosmetic references.
+      // --- Original code (commented out for rollback) ---
+      // await prisma.lg_pet_equipment.deleteMany({
+      //   where: { userid: userId, itemid: equipInv.lg_items.itemid },
+      // })
+      // await prisma.lg_pet_cosmetics.deleteMany({
+      //   where: { userid: userId, itemid: equipInv.lg_items.itemid },
+      // })
+      // await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
+      // --- End original code ---
+      if (equipInv.quantity > 1) {
+        await prisma.lg_user_inventory.update({
+          where: { inventoryid: equipInv.inventoryid },
+          data: { quantity: equipInv.quantity - 1 },
+        })
+      } else {
+        await prisma.lg_pet_equipment.deleteMany({
+          where: { userid: userId, itemid: equipInv.lg_items.itemid },
+        })
+        await prisma.lg_pet_cosmetics.deleteMany({
+          where: { userid: userId, itemid: equipInv.lg_items.itemid },
+        })
+        await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
+      }
+      // --- END AI-REPLACED ---
 
       // --- AI-MODIFIED (2026-03-23) ---
       // Purpose: Log destroy + check achievements

@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── May 16, 2026 ───────────────────────────────────────────
+  // --- AI-MODIFIED (2026-05-16) ---
+  // Purpose: Enhancement stack bug — destruction wiped all copies.
+  {
+    date: "2026-05-16",
+    title: "Enhancement no longer destroys duplicate copies",
+    description:
+      "If you had two of the same item and one was destroyed by an enhancement, both used to disappear. Now only the one you're enhancing is affected, and the enhancement menu shows each copy as its own tile so you can see what you really own. Reported by Jelly.",
+    category: "bugfix",
+    area: "both",
+  },
+  // --- END AI-MODIFIED ---
   // ── May 15, 2026 ───────────────────────────────────────────
   // --- AI-MODIFIED (2026-05-15) ---
   // Purpose: LionGotchi decay slowdown + one-click care fix.
