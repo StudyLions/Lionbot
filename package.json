@@ -5,7 +5,7 @@
   "main": "",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "node scripts/patch-redux-toolkit-exports.js && prisma generate && next build",
     "postbuild": "next-sitemap",
     "start": "next start",
     "start:dev": "next build && next",
