@@ -49,6 +49,12 @@ interface EquipmentItem {
   inventoryId: number
   enhancementLevel: number
   maxLevel: number
+  // --- AI-MODIFIED (2026-05-16) ---
+  // Purpose: Stack size for unenhanced duplicates. The enhancement menu
+  // expands each stacked row into `quantity` separate tiles (all sharing
+  // the same inventoryId), so users perceive their x2 as two items.
+  quantity: number
+  // --- END AI-MODIFIED ---
   totalBonus: number
   glowTier: GlowTier
   glowIntensity: number
@@ -137,6 +143,19 @@ export default function EnhancementPage() {
   const filteredEquipment = useMemo(() =>
     data?.equipment ? applyEquipmentFilter(data.equipment, equipFilter) : [],
   [data?.equipment, equipFilter])
+
+  // --- AI-MODIFIED (2026-05-16) ---
+  // Purpose: Equipment with quantity > 1 stacks into one inventory row in
+  // the DB, but users expect to see N separate items. Expand each row into
+  // `quantity` virtual tiles (all sharing the same inventoryId) so the
+  // user can pick which "copy" to enhance — the API still sees one
+  // inventoryid per request.
+  const expandedEquipment = useMemo(() =>
+    filteredEquipment.flatMap((e) =>
+      Array.from({ length: Math.max(1, e.quantity ?? 1) }, (_, i) => ({ e, copyIndex: i }))
+    ),
+  [filteredEquipment])
+  // --- END AI-MODIFIED ---
 
   const filteredScrolls = useMemo(() =>
     data?.scrolls ? applyScrollFilter(data.scrolls, scrollFilter) : [],
@@ -240,7 +259,11 @@ export default function EnhancementPage() {
     <div className="border-[3px] border-[#3a4a6c] bg-[#0c1020]" style={{ boxShadow: "3px 3px 0 #060810" }}>
       <div className="px-3 py-2 bg-[#111828] border-b-2 border-[#1a2a3c] flex items-center justify-between">
         <span className="font-pixel text-[12px] text-[#4a5a70] tracking-[0.15em]">
-          EQUIPMENT ({filteredEquipment.length})
+          {/* --- AI-MODIFIED (2026-05-16) --- */}
+          {/* Purpose: Show the expanded count (stacks counted per copy) so
+              the header matches what the user sees in the list. */}
+          EQUIPMENT ({expandedEquipment.length})
+          {/* --- END AI-MODIFIED --- */}
         </span>
       </div>
       <EquipmentFilter
@@ -265,7 +288,11 @@ export default function EnhancementPage() {
         </div>
       ) : (
         <div className="p-2 space-y-1 max-h-[28rem] lg:max-h-[28rem] overflow-y-auto scrollbar-hide">
-          {filteredEquipment.map((e) => {
+          {/* --- AI-MODIFIED (2026-05-16) --- */}
+          {/* Purpose: Iterate the expanded list so a stack of N renders as
+              N tiles. All copies share the same inventoryId (same DB row);
+              the React key disambiguates them. */}
+          {expandedEquipment.map(({ e, copyIndex }) => {
             const bc = e.glowTier !== "none" ? GLOW_BORDER[e.glowTier as GlowTier] : RARITY_BORDER[e.item.rarity] || "#3a4a6c"
             const imgUrl = getItemImageUrl(e.item.assetPath, e.item.category)
             const isSelected = selectedEquip === e.inventoryId
@@ -273,7 +300,8 @@ export default function EnhancementPage() {
             const isMaxed = e.enhancementLevel >= e.maxLevel
 
             return (
-              <ComparisonTooltip key={e.inventoryId} equip={e} scroll={scroll}>
+              <ComparisonTooltip key={`${e.inventoryId}-${copyIndex}`} equip={e} scroll={scroll}>
+              {/* --- END AI-MODIFIED --- */}
                 <ItemGlow rarity={e.item.rarity} glowTier={e.glowTier as GlowTier} glowIntensity={e.glowIntensity}>
                   <button
                     onClick={() => handleSelectEquip(e.inventoryId)}
