@@ -21,6 +21,24 @@ const baseSecurityHeaders = [
 module.exports = {
   reactStrictMode: true,
   i18n,
+  // --- AI-MODIFIED (2026-05-16) ---
+  // Purpose: Next.js 12.1 outputFileTracing drops @reduxjs/toolkit's
+  // dist/*.mjs files when bundling serverless functions — recharts v3
+  // pulls toolkit as a transitive ESM dep with conditional exports the
+  // tracer doesn't follow. Without this, /dashboard, /dashboard/history,
+  // /dashboard/servers/[id] etc. 500 with MODULE_NOT_FOUND on
+  // redux-toolkit.modern.mjs. Force the tracer to include them.
+  experimental: {
+    outputFileTracingIncludes: {
+      "/dashboard/**": [
+        "node_modules/@reduxjs/toolkit/dist/*.mjs",
+      ],
+      "/dashboard": [
+        "node_modules/@reduxjs/toolkit/dist/*.mjs",
+      ],
+    },
+  },
+  // --- END AI-MODIFIED ---
   async headers() {
     return [
       {
