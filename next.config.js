@@ -1,6 +1,18 @@
 // --- AI-MODIFIED (2026-03-14) ---
 // Purpose: Added i18n configuration for multi-language support
 const { i18n } = require("./next-i18next.config");
+// --- AI-MODIFIED (2026-05-16) ---
+// Purpose: Resolve @reduxjs/toolkit to its CJS entry in the SSR bundle so
+// Next.js 12.1's outputFileTracing doesn't drop the ESM .mjs file. recharts
+// v3 pulls @reduxjs/toolkit as a transitive ESM dep with conditional
+// `exports` the Next 12 tracer follows for resolution but doesn't COPY into
+// the serverless function bundle, producing
+//   Cannot find module '/var/task/node_modules/@reduxjs/toolkit/dist/redux-toolkit.modern.mjs'
+// at runtime on every /dashboard page. Aliasing to dist/cjs/index.js makes
+// the tracer follow a .js path it handles correctly. Client bundle is
+// untouched.
+const path = require("path");
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-03-20) ---
 // Purpose: Add security headers to protect against clickjacking, XSS, MIME sniffing,
@@ -22,21 +34,17 @@ module.exports = {
   reactStrictMode: true,
   i18n,
   // --- AI-MODIFIED (2026-05-16) ---
-  // Purpose: Next.js 12.1 outputFileTracing drops @reduxjs/toolkit's
-  // dist/*.mjs files when bundling serverless functions — recharts v3
-  // pulls toolkit as a transitive ESM dep with conditional exports the
-  // tracer doesn't follow. Without this, /dashboard, /dashboard/history,
-  // /dashboard/servers/[id] etc. 500 with MODULE_NOT_FOUND on
-  // redux-toolkit.modern.mjs. Force the tracer to include them.
-  experimental: {
-    outputFileTracingIncludes: {
-      "/dashboard/**": [
-        "node_modules/@reduxjs/toolkit/dist/*.mjs",
-      ],
-      "/dashboard": [
-        "node_modules/@reduxjs/toolkit/dist/*.mjs",
-      ],
-    },
+  // Purpose: See top-of-file note. Alias @reduxjs/toolkit to its CJS entry
+  // for the server bundle only so the file tracer follows a .js path it
+  // ships correctly. Client bundle stays on the ESM build.
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.resolve.alias["@reduxjs/toolkit"] = path.resolve(
+        __dirname,
+        "node_modules/@reduxjs/toolkit/dist/cjs/index.js"
+      );
+    }
+    return config;
   },
   // --- END AI-MODIFIED ---
   async headers() {
