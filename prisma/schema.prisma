@@ -2516,6 +2516,11 @@ enum lggoldtransactiontype {
   ADMIN
   FARM_PLANT
   FARM_UPROOT
+  // --- AI-MODIFIED (2026-05-19) ---
+  // Purpose: LionGotchi-for-Anki addon. Live DB ALTER TYPE applied
+  // via data/migration/v18-v19/migration.sql.
+  ANKI_REVIEW
+  // --- END AI-MODIFIED ---
   MARKETPLACE_SALE
   MARKETPLACE_PURCHASE
   GIFT
