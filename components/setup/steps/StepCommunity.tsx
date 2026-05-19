@@ -321,12 +321,21 @@ export default function StepCommunity({
               Moderation
             </div>
             <div className="flex items-center gap-3">
+              {/* --- AI-MODIFIED (2026-05-19) ---
+                  Purpose: Align fallback with bot default. Bot's RolePersistence._default = True
+                  (StudyLion/src/modules/member_admin/settings.py:405). Setup wizard previously
+                  showed unchecked for new guilds, hiding the fact that the bot persists roles
+                  by default. Now matches the bot's actual behavior. See ticket #0092.
+                  --- Original code (commented out for rollback) ---
+                  <input type="checkbox" checked={config.persist_roles ?? false} ... />
+                  --- End original code --- */}
               <input
                 type="checkbox"
-                checked={config.persist_roles ?? false}
+                checked={config.persist_roles ?? true}
                 onChange={(e) => onUpdate("persist_roles", e.target.checked)}
                 className="w-4 h-4 rounded border-gray-600 text-[#DDB21D] focus:ring-[#DDB21D]"
               />
+              {/* --- END AI-MODIFIED --- */}
               <div>
                 <label className="text-sm text-gray-300">Persist roles on rejoin</label>
                 <p className="text-xs text-gray-500">If a member leaves and comes back, restore their roles automatically</p>

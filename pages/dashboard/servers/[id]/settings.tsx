@@ -100,7 +100,14 @@ const DEFAULTS: Record<string, any> = {
   xp_per_centiword: null,
   video_studyban: true,
   video_grace_period: 90,
-  persist_roles: false,
+  // --- AI-MODIFIED (2026-05-19) ---
+  // Purpose: Align with bot's actual default. Bot's RolePersistence._default = True
+  // (StudyLion/src/modules/member_admin/settings.py:405). Was `false`, which caused
+  // the dashboard "Reset to default" + display fallback to misrepresent the bot's
+  // behavior for the 99.5% of guilds with NULL persist_roles. Investigated in
+  // Support ticket #0092 (1201-1600 Blockmates).
+  persist_roles: true,
+  // --- END AI-MODIFIED ---
   timezone: "UTC",
   locale: "en_GB",
   force_locale: false,
@@ -1114,7 +1121,16 @@ export default function ServerSettings() {
                           <NumberInput value={config.renting_cap} onChange={(v) => set("renting_cap", v)} min={1} defaultValue={DEFAULTS.renting_cap} allowNull placeholder={`Default: ${DEFAULTS.renting_cap}`} />
                         </SettingRow>
                         <SettingRow label="Visible to Others" description="Non-members can see private rooms (but can't join)" isModified={isModified("renting_visible")} onReset={() => resetField("renting_visible")}>
-                          <Toggle checked={config.renting_visible ?? true} onChange={(v) => set("renting_visible", v)} />
+                          {/* --- AI-MODIFIED (2026-05-19) ---
+                              Purpose: Align fallback with bot default. Bot's Visible._default = False
+                              (StudyLion/src/modules/rooms/settings.py:162). Previously `?? true` made
+                              the toggle claim rooms were visible for NULL guilds while the bot was
+                              actually creating them invisible. Same desync class as persist_roles.
+                              --- Original code (commented out for rollback) ---
+                              <Toggle checked={config.renting_visible ?? true} onChange={(v) => set("renting_visible", v)} />
+                              --- End original code --- */}
+                          <Toggle checked={config.renting_visible ?? false} onChange={(v) => set("renting_visible", v)} />
+                          {/* --- END AI-MODIFIED --- */}
                         </SettingRow>
                         <SettingRow label="Room Category" description="Discord category where private rooms are created" tooltip="New private study rooms will be created as voice channels under this category.">
                           <ChannelSelect guildId={guildId} value={config.renting_category ?? null} onChange={(v) => set("renting_category", (v as string) || null)} channelTypes={[4]} placeholder="Select room category" />
@@ -1228,7 +1244,17 @@ export default function ServerSettings() {
                           <NumberInput value={config.video_grace_period} onChange={(v) => set("video_grace_period", v)} unit="seconds" min={10} defaultValue={DEFAULTS.video_grace_period} allowNull placeholder={`Default: ${DEFAULTS.video_grace_period}`} />
                         </SettingRow>
                         <SettingRow label="Persist Roles" description="Restore member roles when they rejoin the server" tooltip="When a member leaves and comes back, LionBot will reassign the roles they had before." isModified={isModified("persist_roles")} onReset={() => resetField("persist_roles")}>
-                          <Toggle checked={config.persist_roles ?? false} onChange={(v) => set("persist_roles", v)} />
+                          {/* --- AI-MODIFIED (2026-05-19) ---
+                              Purpose: Align fallback with bot default. Bot's RolePersistence._default = True
+                              (StudyLion/src/modules/member_admin/settings.py:405). DB column has no default
+                              so 77,679 of 78,023 guilds (99.5%) have NULL persist_roles. The old `?? false`
+                              displayed OFF for those guilds while the bot was actively persisting roles —
+                              the core misrepresentation behind support ticket #0092 (1201-1600 Blockmates).
+                              --- Original code (commented out for rollback) ---
+                              <Toggle checked={config.persist_roles ?? false} onChange={(v) => set("persist_roles", v)} />
+                              --- End original code --- */}
+                          <Toggle checked={config.persist_roles ?? true} onChange={(v) => set("persist_roles", v)} />
+                          {/* --- END AI-MODIFIED --- */}
                         </SettingRow>
                       </SectionCard>
                     </div>

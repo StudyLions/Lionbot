@@ -281,6 +281,20 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
+    // --- AI-MODIFIED (2026-05-19) ---
+    // Purpose: Mirror the bot's on_guildset_role_persistence listener
+    // (StudyLion/src/modules/member_admin/cog.py:407-413) which clears stored
+    // roles when a guild explicitly disables persistence. The bot's listener
+    // only fires from its own dispatch_update() — which dashboard writes don't
+    // trigger — so without this, dashboard-disabled guilds accumulate stale
+    // past_member_roles forever. Idempotent on empty tables; fires only on
+    // explicit `false` (not null/undefined). Investigated in ticket #0092.
+    // past_member_roles is @@ignored in Prisma schema so we use raw SQL.
+    if (updates.persist_roles === false) {
+      await prisma.$executeRaw`DELETE FROM past_member_roles WHERE guildid = ${guildId}`
+    }
+    // --- END AI-MODIFIED ---
+
     return res.status(200).json({ success: true, updated: [...Object.keys(updates), ...Object.keys(scheduleUpdates)] })
   },
 
@@ -382,6 +396,13 @@ export default apiHandler({
         create: { guildid: guildId, ...scheduleImports },
         update: scheduleImports,
       })
+    }
+    // --- END AI-MODIFIED ---
+    // --- AI-MODIFIED (2026-05-19) ---
+    // Purpose: Same role-persistence cleanup as PATCH. If the imported config
+    // sets persist_roles=false, clear stored roles to match the bot's listener.
+    if (configUpdates.persist_roles === false) {
+      await prisma.$executeRaw`DELETE FROM past_member_roles WHERE guildid = ${guildId}`
     }
     // --- END AI-MODIFIED ---
     for (const op of listOps) {
