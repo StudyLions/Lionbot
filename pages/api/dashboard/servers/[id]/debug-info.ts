@@ -370,8 +370,19 @@ export default apiHandler({
         lg_teaser_enabled: gc?.lg_teaser_enabled ?? true,
         manual_sessions_enabled: gc?.manual_sessions_enabled ?? false,
         session_leave_summary: gc?.session_leave_summary ?? false,
-        allow_transfers: gc?.allow_transfers ?? false,
-        persist_roles: gc?.persist_roles ?? false,
+        // --- AI-MODIFIED (2026-05-19) ---
+        // Purpose: Align fallbacks with the bot's actual defaults so the debug page
+        // (which support staff and users read when filing tickets) reports what the
+        // bot is really doing. `allow_transfers` bot _default = True (economy/settings.py:83)
+        // and `persist_roles` bot _default = True (member_admin/settings.py:405).
+        // `renting_visible` bot _default = False (rooms/settings.py:162) — already correct.
+        // --- Original code (commented out for rollback) ---
+        // allow_transfers: gc?.allow_transfers ?? false,
+        // persist_roles: gc?.persist_roles ?? false,
+        // --- End original code ---
+        allow_transfers: gc?.allow_transfers ?? true,
+        persist_roles: gc?.persist_roles ?? true,
+        // --- END AI-MODIFIED ---
         renting_visible: gc?.renting_visible ?? false,
         renting_sync_perms: gc?.renting_sync_perms ?? false,
         renting_auto_extend: gc?.renting_auto_extend ?? false,
