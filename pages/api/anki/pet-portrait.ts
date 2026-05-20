@@ -47,6 +47,7 @@ const SCREEN_S = 200 // == CANVAS_SIZE
 const LION_NATIVE = 64 // LION_SPRITE_SIZE
 const LION_DISPLAY = 80 // LION_DISPLAY_SIZE
 const LION_POS: [number, number] = [60, 105] // DEFAULT_LION_POSITION (room-local)
+const CROP_Y = 244 // crop below the screen (bot's FULLSCREEN_CROP_Y)
 const DEFAULT_GAMEBOY = "gameboy/frames/gameboy-basic-01.png"
 
 const ROOM_LAYERS = [
@@ -371,10 +372,19 @@ async function composeFullPet(data: PetRenderData, scale: number): Promise<Buffe
     gbLayers.push({ input: frameRgba, left: 0, top: 0 })
   }
 
-  const gameboy = await sharp({
+  const gameboyFull = await sharp({
     create: { width: GB_W, height: GB_H, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(gbLayers)
+    .png()
+    .toBuffer()
+
+  // Crop below the screen (bot's FULLSCREEN_CROP_Y) — keeps the
+  // skin-specific bezel but drops the empty lower body for a
+  // cleaner, screen-focused view.
+  const cropH = Math.min(CROP_Y, GB_H)
+  const gameboy = await sharp(gameboyFull)
+    .extract({ left: 0, top: 0, width: GB_W, height: cropH })
     .png()
     .toBuffer()
 
@@ -382,7 +392,7 @@ async function composeFullPet(data: PetRenderData, scale: number): Promise<Buffe
   const s = Math.max(1, Math.min(3, scale))
   if (s === 1) return gameboy
   return sharp(gameboy)
-    .resize(GB_W * s, GB_H * s, { kernel: "nearest" })
+    .resize(GB_W * s, cropH * s, { kernel: "nearest" })
     .png()
     .toBuffer()
 }
@@ -463,6 +473,6 @@ export default async function handler(
     return res.status(200).send(buf)
   } catch (err) {
     console.error("[anki/pet-portrait] compose failed:", err)
-    return res.status(500).json({ error: "compose_failed", _debug: String(err).slice(0, 400) })
+    return res.status(500).json({ error: "compose_failed" })
   }
 }
