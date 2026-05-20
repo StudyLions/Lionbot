@@ -183,64 +183,82 @@ async function loadRenderData(userId: bigint): Promise<PetRenderData | null> {
   }
 }
 
-/** Compose the 64x64 lion (parts + equipment + expression) per the
- *  render sequence. Tall equipment expands the canvas upward
- *  (bottom-aligned), mirroring RoomCanvas. Returns {buf, height}. */
+/** Crop `buf` (natural size imgW x imgH) to the region that fits
+ *  within [0,boundW)x[0,boundH) at (left,top), then push the
+ *  cropped piece into `layers` at the clamped destination. This
+ *  mirrors the bot's PIL auto-clip behavior — sharp throws on
+ *  out-of-bounds composites, so we crop first. No-op if nothing
+ *  is visible. */
+async function placeClipped(
+  layers: sharp.OverlayOptions[],
+  buf: Buffer,
+  imgW: number,
+  imgH: number,
+  left: number,
+  top: number,
+  boundW: number,
+  boundH: number
+): Promise<void> {
+  const srcL = Math.max(0, -left)
+  const srcT = Math.max(0, -top)
+  const srcR = Math.min(imgW, boundW - left)
+  const srcB = Math.min(imgH, boundH - top)
+  if (srcR <= srcL || srcB <= srcT) return
+  let input = buf
+  if (srcL > 0 || srcT > 0 || srcR < imgW || srcB < imgH) {
+    input = await sharp(buf)
+      .ensureAlpha()
+      .extract({ left: srcL, top: srcT, width: srcR - srcL, height: srcB - srcT })
+      .png()
+      .toBuffer()
+  }
+  layers.push({ input, left: Math.max(0, left), top: Math.max(0, top) })
+}
+
+/** Compose the lion sprite (parts + equipment + expression) on a
+ *  64-wide canvas tall enough for oversized equipment, mirroring
+ *  the bot's compose_pet_sprite (renderer.py). Oversized equipment
+ *  is center-x / bottom-aligned and CROPPED to the canvas (sharp
+ *  rejects larger-than-canvas composites; PIL auto-clips). BACK is
+ *  handled separately in composeFullPet. Returns {buf, height, extraTop}. */
 async function composeLion(
   data: PetRenderData
-): Promise<{ buf: Buffer; width: number; height: number } | null> {
-  // Fetch all needed sprites in parallel.
-  const partUrls: Record<string, string> = {
-    body: assetUrl("lion/body/body_1.png"),
-    head: assetUrl("lion/head/head_1.png"),
-    hair: assetUrl("lion/hair/hair_1.png"),
-    expression: assetUrl(`lion/expressions/${data.expression}/face_1.png`),
-  }
+): Promise<{ buf: Buffer; width: number; height: number; extraTop: number } | null> {
   const [body, head, hair, faceMaybe] = await Promise.all([
-    fetchPng(partUrls.body),
-    fetchPng(partUrls.head),
-    fetchPng(partUrls.hair),
-    fetchPng(partUrls.expression),
+    fetchPng(assetUrl("lion/body/body_1.png")),
+    fetchPng(assetUrl("lion/head/head_1.png")),
+    fetchPng(assetUrl("lion/hair/hair_1.png")),
+    fetchPng(assetUrl(`lion/expressions/${data.expression}/face_1.png`)),
   ])
   const face =
     faceMaybe || (await fetchPng(assetUrl("lion/expressions/default/face_1.png")))
   if (!body && !head && !hair) return null
 
-  // Fetch equipment images (natural size, for bottom-align).
-  const equipBufs: Record<string, sharp.Sharp | null> = {}
-  const equipMeta: Record<string, { w: number; h: number }> = {}
+  // Equipment (raw buffers + natural size), excluding BACK.
+  const equip: Record<string, { buf: Buffer; w: number; h: number }> = {}
   await Promise.all(
     Object.entries(data.equipment).map(async ([slot, path]) => {
+      if (slot === "BACK") return
       const raw = await fetchPng(equipmentUrl(path))
-      if (!raw) {
-        equipBufs[slot] = null
-        return
+      if (!raw) return
+      try {
+        const meta = await sharp(raw).metadata()
+        equip[slot] = { buf: raw, w: meta.width || LION_NATIVE, h: meta.height || LION_NATIVE }
+      } catch {
+        /* skip unreadable asset */
       }
-      const img = sharp(raw).ensureAlpha()
-      const meta = await img.metadata()
-      equipBufs[slot] = sharp(raw).ensureAlpha()
-      equipMeta[slot] = { w: meta.width || LION_NATIVE, h: meta.height || LION_NATIVE }
     })
   )
 
-  // Determine canvas height (tall hats extend above the 64 sprite).
+  // Canvas height fits the tallest equipment (hats extend upward).
   let maxH = LION_NATIVE
-  for (const slot of Object.keys(equipBufs)) {
-    if (slot === "BACK") continue
-    const h = equipMeta[slot]?.h ?? LION_NATIVE
-    if (h > maxH) maxH = h
+  for (const slot of Object.keys(equip)) {
+    if (equip[slot].h > maxH) maxH = equip[slot].h
   }
   const extraTop = maxH - LION_NATIVE
-  const canvasH = LION_NATIVE + extraTop
+  const canvasH = maxH
 
   const layers: sharp.OverlayOptions[] = []
-
-  // BACK equipment behind everything.
-  if (equipBufs["BACK"]) {
-    const backRgba = await equipBufs["BACK"]!.resize(LION_NATIVE, LION_NATIVE, { fit: "fill", kernel: "nearest" }).png().toBuffer()
-    layers.push({ input: backRgba, left: 0, top: extraTop })
-  }
-
   for (const step of RENDER_SEQUENCE) {
     if (step.type === "lion") {
       const buf =
@@ -255,34 +273,33 @@ async function composeLion(
     } else {
       const slot = step.key
       if (slot === "BACK") continue
-      const s = equipBufs[slot]
-      if (!s) continue
-      const m = equipMeta[slot] || { w: LION_NATIVE, h: LION_NATIVE }
-      const rgba = await s.png().toBuffer()
-      // bottom-align, horizontally center within the 64-wide canvas
-      const left = Math.max(0, Math.round((LION_NATIVE - m.w) / 2))
-      const top = Math.max(0, canvasH - m.h)
-      layers.push({ input: rgba, left, top })
+      const e = equip[slot]
+      if (!e) continue
+      if (e.w !== LION_NATIVE || e.h !== LION_NATIVE) {
+        // oversized: center-x, bottom-align, crop to the 64-wide canvas
+        const cx = Math.floor((LION_NATIVE - e.w) / 2)
+        const cy = canvasH - e.h
+        await placeClipped(layers, e.buf, e.w, e.h, cx, cy, LION_NATIVE, canvasH)
+      } else {
+        const rgba = await sharp(e.buf).ensureAlpha().png().toBuffer()
+        layers.push({ input: rgba, left: 0, top: extraTop })
+      }
     }
   }
 
   const buf = await sharp({
-    create: {
-      width: LION_NATIVE,
-      height: canvasH,
-      channels: 4,
-      background: { r: 0, g: 0, b: 0, alpha: 0 },
-    },
+    create: { width: LION_NATIVE, height: canvasH, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
   })
     .composite(layers)
     .png()
     .toBuffer()
 
-  return { buf, width: LION_NATIVE, height: canvasH }
+  return { buf, width: LION_NATIVE, height: canvasH, extraTop }
 }
 
 async function composeFullPet(data: PetRenderData, scale: number): Promise<Buffer> {
-  // 1. Room scene (200x200): room layers in order, then the lion.
+  // 1. Room scene (200x200): room layers in order, then BACK wings,
+  //    then the lion. Mirrors the bot's compose_full_scene.
   const roomLayers: sharp.OverlayOptions[] = []
   for (const layer of ROOM_LAYERS) {
     const path = data.furniture[layer]
@@ -293,27 +310,47 @@ async function composeFullPet(data: PetRenderData, scale: number): Promise<Buffe
     roomLayers.push({ input: rgba, left: 0, top: 0 })
   }
 
+  const petSize = LION_DISPLAY // 80
+  const lionX = LION_POS[0]
+  const lionY = LION_POS[1]
+
+  // BACK (wings) behind the lion: scale to pet height, place behind.
+  const backPath = data.equipment["BACK"]
+  if (backPath) {
+    const raw = await fetchPng(equipmentUrl(backPath))
+    if (raw) {
+      try {
+        const meta = await sharp(raw).metadata()
+        const bw = meta.width || LION_NATIVE
+        const bh = meta.height || LION_NATIVE
+        const targetH = petSize
+        const targetW = Math.max(1, Math.round(bw * (targetH / bh)))
+        const wings = await sharp(raw)
+          .ensureAlpha()
+          .resize(targetW, targetH, { kernel: "nearest" })
+          .png()
+          .toBuffer()
+        const wx = lionX + Math.floor((petSize - targetW) / 2)
+        const wy = lionY - 15
+        await placeClipped(roomLayers, wings, targetW, targetH, wx, wy, SCREEN_S, SCREEN_S)
+      } catch {
+        /* skip */
+      }
+    }
+  }
+
   const lion = await composeLion(data)
   if (lion) {
-    // Scale the lion from native (64 wide, canvasH tall) to display
-    // (80 wide, proportional), placed so its 64x64 body region sits
-    // at LION_POS.
-    const scaleFactor = LION_DISPLAY / LION_NATIVE
-    const dispW = LION_DISPLAY
-    const dispH = Math.round(lion.height * scaleFactor)
-    const extraTopDisp = dispH - LION_DISPLAY
+    const scaleFactor = petSize / LION_NATIVE // 1.25
+    const scaledW = Math.max(1, Math.round(lion.width * scaleFactor))
+    const scaledH = Math.max(1, Math.round(lion.height * scaleFactor))
     const lionScaled = await sharp(lion.buf)
-      .resize(dispW, dispH, { fit: "fill", kernel: "nearest" })
+      .resize(scaledW, scaledH, { fit: "fill", kernel: "nearest" })
       .png()
       .toBuffer()
-    const left = LION_POS[0]
-    const top = LION_POS[1] - extraTopDisp
-    // Clamp to keep within the room canvas (sharp rejects negatives).
-    roomLayers.push({
-      input: lionScaled,
-      left: Math.max(0, left),
-      top: Math.max(0, top),
-    })
+    const pasteX = lionX
+    const pasteY = lionY - Math.round(lion.extraTop * scaleFactor)
+    await placeClipped(roomLayers, lionScaled, scaledW, scaledH, pasteX, pasteY, SCREEN_S, SCREEN_S)
   }
 
   const roomScene = await sharp({
@@ -426,6 +463,6 @@ export default async function handler(
     return res.status(200).send(buf)
   } catch (err) {
     console.error("[anki/pet-portrait] compose failed:", err)
-    return res.status(500).json({ error: "compose_failed" })
+    return res.status(500).json({ error: "compose_failed", _debug: String(err).slice(0, 400) })
   }
 }
