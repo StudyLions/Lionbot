@@ -31,6 +31,40 @@ export const ANKI_XP_PER_CARD = 1.0 / 3.0
 export const ANKI_REFILL_PER_CARDS = 50
 export const ANKI_REFILL_MAX_PER_SESSION = 3
 
+// Pet level-up curve — MUST match the bot's gameplay.py exactly:
+//   xp_for_level(level) = int(25 * level ** 1.3)
+//   LEVEL_UP_GOLD_BONUS = 50 gold per level gained
+export const LEVEL_UP_GOLD_BONUS = 50
+
+export function xpForLevel(level: number): number {
+  return Math.floor(25 * Math.pow(level, 1.3))
+}
+
+/**
+ * Apply XP to a pet and roll up level-ups. Mirrors the bot's
+ * check_level_up(current_level, current_xp).
+ *
+ * Returns the new level, the remaining XP within that level, and
+ * how many levels were gained (for the gold bonus).
+ */
+export function applyPetXp(
+  currentLevel: number,
+  currentXp: number,
+  xpToAdd: number
+): { newLevel: number; remainingXp: number; levelsGained: number } {
+  let level = Math.max(1, Math.floor(currentLevel) || 1)
+  let xp = Math.max(0, Math.floor(currentXp)) + Math.max(0, Math.floor(xpToAdd))
+  let levelsGained = 0
+  // Bound the loop defensively — a malicious huge xp can't be
+  // submitted (daily caps clamp it) but belt-and-braces.
+  while (xp >= xpForLevel(level) && levelsGained < 10_000) {
+    xp -= xpForLevel(level)
+    level += 1
+    levelsGained += 1
+  }
+  return { newLevel: level, remainingXp: xp, levelsGained }
+}
+
 export const DAILY_GOLD_CAP = 1500
 export const DAILY_XP_CAP = 2500
 

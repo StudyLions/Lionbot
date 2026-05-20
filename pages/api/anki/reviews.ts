@@ -26,6 +26,8 @@ import {
 } from "@/lib/anki/auth"
 import {
   computeBatchRewards,
+  applyPetXp,
+  LEVEL_UP_GOLD_BONUS,
   DAILY_GOLD_CAP,
   DAILY_XP_CAP,
   MOOD_MULT_BY_EXPRESSION,
@@ -380,6 +382,8 @@ interface ReviewsResponseBody {
     gold: number
     xp: number
     pet_care: { food: number; bath: number; sleep: number }
+    levels_gained: number
+    new_level: number | null
   }
   daily_progress: {
     gold: { earned: number; cap: number }
@@ -502,7 +506,13 @@ export default async function handler(
       accepted: 0,
       deduped: 0,
       rejected,
-      rewards: { gold: 0, xp: 0, pet_care: { food: 0, bath: 0, sleep: 0 } },
+      rewards: {
+        gold: 0,
+        xp: 0,
+        pet_care: { food: 0, bath: 0, sleep: 0 },
+        levels_gained: 0,
+        new_level: null,
+      },
       daily_progress: {
         gold: { earned: 0, cap: DAILY_GOLD_CAP },
         xp: { earned: 0, cap: DAILY_XP_CAP },
@@ -562,16 +572,29 @@ export default async function handler(
   const actualFoodRefill = newFood - currentFood
   const actualBathRefill = newBath - currentBath
 
-  // BIG TRANSACTION: insert review events, gold tx, xp row, and
-  // pet update — all-or-nothing.
-  let acceptedIds: Buffer[] = []
+  // BIG TRANSACTION: insert review events + credit the economy
+  // the SAME way the bot does (verified against gameplay.py):
+  //   - gold balance lives in user_config.gold (NOT summed from
+  //     the transactions ledger), with an lg_gold_transactions
+  //     audit row
+  //   - pet XP/level lives in lg_pets.xp / lg_pets.level, with a
+  //     LEVEL_UP_GOLD_BONUS (50/level) bonus on level-up
+  //   - pet care refills food/bath
+  // member_experience (the rank/leaderboard XP) is written
+  // OUTSIDE this transaction, best-effort, because its FK to
+  // members(guildid,userid) fails for users who aren't members
+  // of their home guild — and that must NOT roll back the
+  // gold/pet credit.
+  let acceptedCount = 0
   let dedupedCount = 0
+  let goldCredited = 0
+  let xpCredited = 0
+  let levelsGained = 0
+  let newLevel: number | null = null
+  let actualFoodRefillFinal = 0
+  let actualBathRefillFinal = 0
   try {
     await prisma.$transaction(async (tx) => {
-      // Insert reviews. Prisma doesn't have a built-in "INSERT ON
-      // CONFLICT DO NOTHING RETURNING" via createMany, so we
-      // simulate it: createMany with skipDuplicates=true,
-      // then query the inserted PKs back.
       const insertResult = await tx.anki_review_events.createMany({
         data: kept.map((r) => ({
           review_id: r.reviewIdBytes,
@@ -584,65 +607,92 @@ export default async function handler(
           ease: r.ease,
           time_ms: r.timeMs,
           reviewed_at: r.reviewedAt,
-          // reward_gold/xp on each row are 0 for now — we credit
-          // ONE aggregated row in lg_gold_transactions to keep the
-          // ledger compact. Phase 2: distribute per-card so the
-          // analytics can attribute.
           reward_gold: 0,
           reward_xp: 0,
           was_throttled: rewards.throttle !== "linear",
         })),
         skipDuplicates: true,
       })
-      acceptedIds = kept.slice(0, insertResult.count).map((r) => r.reviewIdBytes)
+      acceptedCount = insertResult.count
       dedupedCount = kept.length - insertResult.count
-
-      // If everything was deduped, no rewards.
       if (insertResult.count === 0) return
 
-      // Pro-rate rewards if some were dedup hits — we only pay
-      // out for actually accepted reviews. The compute fn
-      // assumed kept.length cards; we scale down proportionally.
-      // (Edge: avoids over-crediting if the addon retries a
-      // partial batch.)
+      // Pro-rate rewards by the fraction actually accepted (some
+      // may have been dedup hits).
       const acceptedFraction = insertResult.count / kept.length
-      const goldFinal = Math.floor(rewards.gold * acceptedFraction)
-      const xpFinal = Math.floor(rewards.xp * acceptedFraction)
+      const baseGold = Math.floor(rewards.gold * acceptedFraction)
+      xpCredited = Math.floor(rewards.xp * acceptedFraction)
 
-      if (goldFinal > 0) {
-        await tx.lg_gold_transactions.create({
-          data: {
-            transaction_type: "ANKI_REVIEW",
-            actorid: ctx.userId,
-            to_account: ctx.userId,
-            amount: goldFinal,
-            description: `Anki review batch: ${insertResult.count} cards`,
-            reference: `anki:batch:${body.batch_id}`,
-          },
-        })
-      }
-
-      if (xpFinal > 0) {
-        await tx.member_experience.create({
-          data: {
-            guildid: homeGuildId,
-            userid: ctx.userId,
-            amount: xpFinal,
-            exp_type: "ANKI_XP",
-            // earned_at default = now()
-          },
-        })
-      }
-
-      // Pet care refill — only if the user has a pet row.
-      if (pet && (actualFoodRefill > 0 || actualBathRefill > 0)) {
+      // --- Pet XP + level-up (mirrors award_xp_and_check_level) ---
+      // SELECT ... FOR UPDATE so a concurrent voice-session credit
+      // from the bot doesn't race us.
+      let levelUpBonusGold = 0
+      if (xpCredited > 0) {
+        const petRows = await tx.$queryRaw<
+          Array<{ level: number; xp: bigint }>
+        >`SELECT level, xp FROM lg_pets WHERE userid = ${ctx.userId} FOR UPDATE`
+        if (petRows.length > 0) {
+          const { newLevel: nl, remainingXp, levelsGained: lg } = applyPetXp(
+            Number(petRows[0].level) || 1,
+            Number(petRows[0].xp) || 0,
+            xpCredited
+          )
+          levelsGained = lg
+          newLevel = nl
+          levelUpBonusGold = lg * LEVEL_UP_GOLD_BONUS
+          // Merge level/xp + care refill into ONE update.
+          await tx.lg_pets.update({
+            where: { userid: ctx.userId },
+            data: {
+              level: nl,
+              xp: BigInt(remainingXp),
+              food: newFood,
+              bath: newBath,
+            },
+          })
+          actualFoodRefillFinal = actualFoodRefill
+          actualBathRefillFinal = actualBathRefill
+        }
+      } else if (pet && (actualFoodRefill > 0 || actualBathRefill > 0)) {
+        // No XP this batch but care refills are due.
         await tx.lg_pets.update({
           where: { userid: ctx.userId },
-          data: {
-            food: newFood,
-            bath: newBath,
-          },
+          data: { food: newFood, bath: newBath },
         })
+        actualFoodRefillFinal = actualFoodRefill
+        actualBathRefillFinal = actualBathRefill
+      }
+
+      // --- Gold balance (mirrors award_gold) ---
+      goldCredited = baseGold + levelUpBonusGold
+      if (goldCredited > 0) {
+        await tx.user_config.update({
+          where: { userid: ctx.userId },
+          data: { gold: { increment: goldCredited } },
+        })
+        if (baseGold > 0) {
+          await tx.lg_gold_transactions.create({
+            data: {
+              transaction_type: "ANKI_REVIEW",
+              actorid: ctx.userId,
+              to_account: ctx.userId,
+              amount: baseGold,
+              description: `Anki review batch: ${insertResult.count} cards`,
+              reference: `anki:batch:${body.batch_id}`,
+            },
+          })
+        }
+        if (levelUpBonusGold > 0) {
+          await tx.lg_gold_transactions.create({
+            data: {
+              transaction_type: "LEVEL_UP",
+              actorid: ctx.userId,
+              to_account: ctx.userId,
+              amount: levelUpBonusGold,
+              description: `Anki level up to ${newLevel}`,
+            },
+          })
+        }
       }
     }, {
       maxWait: 5000,
@@ -658,12 +708,30 @@ export default async function handler(
     )
   }
 
-  const acceptedCount = acceptedIds.length
-  // Re-scale the response rewards to match what was actually
-  // credited (mirrors the pro-rating done inside the transaction).
-  const acceptedFraction = kept.length > 0 ? acceptedCount / kept.length : 0
-  const goldCredited = Math.floor(rewards.gold * acceptedFraction)
-  const xpCredited = Math.floor(rewards.xp * acceptedFraction)
+  // --- member_experience (rank/leaderboard XP) — best-effort ---
+  // Outside the transaction so the FK-to-members failure (user not
+  // a member of their home guild) can't roll back the gold/pet
+  // credit above. Only attempted when the user IS a member.
+  if (xpCredited > 0) {
+    try {
+      const member = await prisma.members.findFirst({
+        where: { guildid: homeGuildId, userid: ctx.userId },
+        select: { userid: true },
+      })
+      if (member) {
+        await prisma.member_experience.create({
+          data: {
+            guildid: homeGuildId,
+            userid: ctx.userId,
+            amount: xpCredited,
+            exp_type: "ANKI_XP",
+          },
+        })
+      }
+    } catch (err) {
+      console.warn("[anki/reviews] member_experience write skipped:", err)
+    }
+  }
 
   const warnings: string[] = []
   if (homeGuildFallback) warnings.push("home_guild_unavailable_fallback_to_support")
@@ -678,10 +746,12 @@ export default async function handler(
       gold: goldCredited,
       xp: xpCredited,
       pet_care: {
-        food: actualFoodRefill,
-        bath: actualBathRefill,
+        food: actualFoodRefillFinal,
+        bath: actualBathRefillFinal,
         sleep: 0,
       },
+      levels_gained: levelsGained,
+      new_level: newLevel,
     },
     daily_progress: {
       gold: {
