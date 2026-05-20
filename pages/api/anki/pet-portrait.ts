@@ -1,135 +1,351 @@
 // ============================================================
 // AI-GENERATED FILE
-// Created: 2026-05-19
-// Purpose: Server-composed pet portrait PNG for the Anki addon.
-//          Returns one image so the addon stays light (no
-//          local image library).
+// Created: 2026-05-19  (full render 2026-05-20)
+// Purpose: Server-composed FULL LionGotchi render for the Anki
+//          addon: gameboy frame + room (wall/floor/furniture) +
+//          pet (body/head/hair) + equipment + expression.
 //
-//          v1 scope: base lion body + expression face. Equipment
-//          (hat/glasses/costume/shirt/wings/boots), cosmetics,
-//          and room background are deliberately out of scope for
-//          v1 to keep the latency budget tight. Phase 2 layers
-//          those in by querying lg_pet_equipment / lg_pet_cosmetics
-//          and adding more composite entries — the composition
-//          loop is already laid out for it.
+//          Mirrors the website's canonical composition:
+//            - geometry from pages/api/topgg/pet-showcase.ts
+//              (GB 260x400, screen at (30,36) size 200, scale 2)
+//            - room coordinate system from utils/roomConstraints.ts
+//              (CANVAS_SIZE 200, ROOM_LAYERS order, lion at [60,105]
+//               size 80 native 64, DEFAULT_RENDER_SEQUENCE)
+//            - data resolution from pages/api/pet/overview.ts
+//              (active room -> getRoomDefaults + lg_user_furniture,
+//               active gameboy skin, lg_pet_equipment + cosmetics)
 //
-//          Modeled on pages/api/topgg/pet-showcase.ts (same
-//          sharp-based composition, same blob URL convention).
+//          Faithful to defaults; v1 intentionally ignores
+//          per-item saved offsets/scales/flips and glow (only
+//          power users customize those). Every asset fetch is
+//          best-effort: a missing layer is skipped, never fatal,
+//          so we always return at least the frame + base pet.
 //
-//          Auth: requires a valid Anki bearer (anki.pet.read scope).
-//          We accept a query-string `?t=<token>` fallback so the
-//          addon's <img> tag can load the URL directly without
-//          fiddling with headers (HTTP <img> can't set Authorization).
+//          Output is a tall gameboy PNG (aspect 260:400). The
+//          addon scales it to fit, preserving aspect.
+//
+//          Auth: requires a valid Anki bearer (anki.pet.read).
+//          Accepts ?t=<token> so an <img> tag can load it.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import crypto from "crypto"
 import sharp from "sharp"
 import { prisma } from "@/utils/prisma"
-import { extractAnkiBearer, verifyAnkiBearer } from "@/lib/anki/auth"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { getRoomDefaults } from "@/utils/roomDefaults"
 
 const BLOB_BASE =
   process.env.NEXT_PUBLIC_BLOB_URL ||
   "https://dj03j4ltfyd6tjzw.public.blob.vercel-storage.com"
 
-const PET_BASE = 96 // native pet pixel size
-const SCALE_MAX = 4 // up to 384px output
-const DEFAULT_SIZE = 288
+// ---- geometry (matches pet-showcase.ts + roomConstraints.ts) ----
+const GB_W = 260
+const GB_H = 400
+const SCREEN_T = 36
+const SCREEN_L = 30
+const SCREEN_S = 200 // == CANVAS_SIZE
+const LION_NATIVE = 64 // LION_SPRITE_SIZE
+const LION_DISPLAY = 80 // LION_DISPLAY_SIZE
+const LION_POS: [number, number] = [60, 105] // DEFAULT_LION_POSITION (room-local)
+const DEFAULT_GAMEBOY = "gameboy/frames/gameboy-basic-01.png"
+
+const ROOM_LAYERS = [
+  "wall", "floor", "mat", "table", "chair", "bed", "lamp", "picture", "window",
+]
+
+// Lion + equipment z-order (DEFAULT_RENDER_SEQUENCE). Equipment is
+// keyed by SLOT (FEET/BODY/FACE/HEAD/BACK); BACK draws behind body.
+const RENDER_SEQUENCE: Array<{ type: "lion" | "equip"; key: string }> = [
+  { type: "lion", key: "body" },
+  { type: "equip", key: "FEET" },
+  { type: "equip", key: "BODY" },
+  { type: "lion", key: "head" },
+  { type: "lion", key: "expression" },
+  { type: "equip", key: "FACE" },
+  { type: "lion", key: "hair" },
+  { type: "equip", key: "HEAD" },
+]
+
+const KNOWN_EXPRESSIONS = new Set([
+  "default", "happy", "excited", "content", "sad", "tired", "upset", "neutral", "dead",
+])
 
 function assetUrl(path: string): string {
   return `${BLOB_BASE}/pet-assets/${path}`
 }
 
-// In-memory portrait cache (per Vercel instance). Keyed by
-// (userid|expression|size), 5-min TTL.
-const portraitCache: Map<string, { buf: Buffer; etag: string; ts: number }> = new Map()
-const PORTRAIT_TTL_MS = 5 * 60 * 1000
-
-async function fetchImage(url: string): Promise<Buffer> {
-  const res = await fetch(url)
-  if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`)
-  return Buffer.from(await res.arrayBuffer())
+function expressionDir(expr: string | null | undefined): string {
+  const norm = (expr || "default").toLowerCase()
+  return KNOWN_EXPRESSIONS.has(norm) ? norm : "default"
 }
 
-async function resizeNearest(
-  buf: Buffer,
-  w: number,
-  h: number
-): Promise<Buffer> {
+// Equipment asset path: equipment categories live under equipment/.
+function equipmentUrl(assetPath: string): string {
+  return assetUrl(`equipment/${assetPath}`)
+}
+
+async function fetchPng(url: string): Promise<Buffer | null> {
+  try {
+    const res = await fetch(url)
+    if (!res.ok) return null
+    return Buffer.from(await res.arrayBuffer())
+  } catch {
+    return null
+  }
+}
+
+async function toRgba(buf: Buffer, w: number, h: number): Promise<Buffer> {
   return sharp(buf)
     .resize(w, h, { fit: "fill", kernel: "nearest" })
+    .ensureAlpha()
     .png()
     .toBuffer()
 }
 
-/**
- * Map lg_pets.expression -> /pet-assets/lion/expressions/<dir>/face_1.png
- * Falls back to "default" if the expression isn't known.
- */
-function expressionDir(expr: string | null | undefined): string {
-  const norm = (expr || "DEFAULT").toLowerCase()
-  // Known directories on the blob — keep this list explicit so a
-  // typo on either side falls back cleanly rather than 500'ing.
-  const known = new Set([
-    "default",
-    "happy",
-    "excited",
-    "content",
-    "sad",
-    "tired",
-    "upset",
-    "neutral",
-    "dead",
-  ])
-  return known.has(norm) ? norm : "default"
+// In-memory render cache per (userid, signature, scale). Short TTL —
+// the pet changes rarely, and the cache busts on equipment/room change
+// via the signature included in the key by the caller.
+const renderCache: Map<string, { buf: Buffer; etag: string; ts: number }> = new Map()
+const RENDER_TTL_MS = 3 * 60 * 1000
+
+interface PetRenderData {
+  expression: string
+  gameboyPath: string
+  furniture: Record<string, string> // layer -> asset path
+  equipment: Record<string, string> // slot -> equipment asset path (already equipment/...-relative)
 }
 
-async function composePortrait(
-  expression: string,
-  outSize: number
-): Promise<Buffer> {
-  const parts = ["body", "head", "hair"]
-  const partFetches = parts.map((p) =>
-    fetchImage(assetUrl(`lion/${p}/${p}_1.png`))
-  )
-  const faceFetch = fetchImage(
-    assetUrl(`lion/expressions/${expression}/face_1.png`)
-  ).catch(() =>
-    // Fall back to default face if the expression-specific one
-    // is missing from the blob.
-    fetchImage(assetUrl("lion/expressions/default/face_1.png"))
-  )
+async function loadRenderData(userId: bigint): Promise<PetRenderData | null> {
+  const pet = await prisma.lg_pets.findUnique({
+    where: { userid: userId },
+    select: {
+      expression: true,
+      active_room_id: true,
+      active_gameboy_skin_id: true,
+      cosmetics_enabled: true,
+    },
+  })
+  if (!pet) return null
 
-  const [partBufs, faceBuf] = await Promise.all([
-    Promise.all(partFetches),
-    faceFetch,
+  const [skinRow, room, furnitureRows, equipmentRows, cosmeticRows] = await Promise.all([
+    pet.active_gameboy_skin_id
+      ? prisma.lg_gameboy_skins.findUnique({
+          where: { skin_id: pet.active_gameboy_skin_id },
+          select: { asset_path: true },
+        })
+      : Promise.resolve(null),
+    pet.active_room_id
+      ? prisma.lg_rooms.findUnique({
+          where: { room_id: pet.active_room_id },
+          select: { asset_prefix: true },
+        })
+      : Promise.resolve(null),
+    prisma.$queryRawUnsafe<{ slot: string; asset_path: string }[]>(
+      `SELECT slot, asset_path FROM lg_user_furniture WHERE userid = $1`,
+      userId
+    ),
+    prisma.lg_pet_equipment.findMany({
+      where: { userid: userId },
+      select: { slot: true, lg_items: { select: { asset_path: true } } },
+    }),
+    prisma.lg_pet_cosmetics.findMany({
+      where: { userid: userId },
+      select: { slot: true, lg_items: { select: { asset_path: true } } },
+    }),
   ])
 
-  const partResized = await Promise.all(
-    partBufs.map((b) => resizeNearest(b, PET_BASE, PET_BASE))
+  // Room furniture map: defaults for the active room theme, then
+  // per-slot user overrides (normalized to rooms/furniture/ when raw).
+  const roomPrefix = room?.asset_prefix ?? "rooms/default"
+  const furniture: Record<string, string> = getRoomDefaults(roomPrefix)
+  for (const f of furnitureRows) {
+    let p = f.asset_path
+    if (!p.startsWith("rooms/")) p = `rooms/furniture/${p}`
+    furniture[f.slot] = p
+  }
+
+  // Equipment by slot, cosmetics merged over equipment when enabled.
+  const equipment: Record<string, string> = {}
+  for (const e of equipmentRows) {
+    if (e.lg_items?.asset_path) equipment[e.slot] = e.lg_items.asset_path
+  }
+  if (pet.cosmetics_enabled !== false) {
+    for (const c of cosmeticRows) {
+      if (c.lg_items?.asset_path) equipment[c.slot] = c.lg_items.asset_path
+    }
+  }
+
+  return {
+    expression: expressionDir(pet.expression),
+    gameboyPath: skinRow?.asset_path || DEFAULT_GAMEBOY,
+    furniture,
+    equipment,
+  }
+}
+
+/** Compose the 64x64 lion (parts + equipment + expression) per the
+ *  render sequence. Tall equipment expands the canvas upward
+ *  (bottom-aligned), mirroring RoomCanvas. Returns {buf, height}. */
+async function composeLion(
+  data: PetRenderData
+): Promise<{ buf: Buffer; width: number; height: number } | null> {
+  // Fetch all needed sprites in parallel.
+  const partUrls: Record<string, string> = {
+    body: assetUrl("lion/body/body_1.png"),
+    head: assetUrl("lion/head/head_1.png"),
+    hair: assetUrl("lion/hair/hair_1.png"),
+    expression: assetUrl(`lion/expressions/${data.expression}/face_1.png`),
+  }
+  const [body, head, hair, faceMaybe] = await Promise.all([
+    fetchPng(partUrls.body),
+    fetchPng(partUrls.head),
+    fetchPng(partUrls.hair),
+    fetchPng(partUrls.expression),
+  ])
+  const face =
+    faceMaybe || (await fetchPng(assetUrl("lion/expressions/default/face_1.png")))
+  if (!body && !head && !hair) return null
+
+  // Fetch equipment images (natural size, for bottom-align).
+  const equipBufs: Record<string, sharp.Sharp | null> = {}
+  const equipMeta: Record<string, { w: number; h: number }> = {}
+  await Promise.all(
+    Object.entries(data.equipment).map(async ([slot, path]) => {
+      const raw = await fetchPng(equipmentUrl(path))
+      if (!raw) {
+        equipBufs[slot] = null
+        return
+      }
+      const img = sharp(raw).ensureAlpha()
+      const meta = await img.metadata()
+      equipBufs[slot] = sharp(raw).ensureAlpha()
+      equipMeta[slot] = { w: meta.width || LION_NATIVE, h: meta.height || LION_NATIVE }
+    })
   )
-  const faceResized = await resizeNearest(faceBuf, PET_BASE, PET_BASE)
 
-  const composites: sharp.OverlayOptions[] = [
-    ...partResized.map((input) => ({ input, left: 0, top: 0 })),
-    { input: faceResized, left: 0, top: 0 },
-  ]
+  // Determine canvas height (tall hats extend above the 64 sprite).
+  let maxH = LION_NATIVE
+  for (const slot of Object.keys(equipBufs)) {
+    if (slot === "BACK") continue
+    const h = equipMeta[slot]?.h ?? LION_NATIVE
+    if (h > maxH) maxH = h
+  }
+  const extraTop = maxH - LION_NATIVE
+  const canvasH = LION_NATIVE + extraTop
 
-  const native = await sharp({
+  const layers: sharp.OverlayOptions[] = []
+
+  // BACK equipment behind everything.
+  if (equipBufs["BACK"]) {
+    const backRgba = await equipBufs["BACK"]!.resize(LION_NATIVE, LION_NATIVE, { fit: "fill", kernel: "nearest" }).png().toBuffer()
+    layers.push({ input: backRgba, left: 0, top: extraTop })
+  }
+
+  for (const step of RENDER_SEQUENCE) {
+    if (step.type === "lion") {
+      const buf =
+        step.key === "body" ? body :
+        step.key === "head" ? head :
+        step.key === "hair" ? hair :
+        step.key === "expression" ? face : null
+      if (buf) {
+        const rgba = await toRgba(buf, LION_NATIVE, LION_NATIVE)
+        layers.push({ input: rgba, left: 0, top: extraTop })
+      }
+    } else {
+      const slot = step.key
+      if (slot === "BACK") continue
+      const s = equipBufs[slot]
+      if (!s) continue
+      const m = equipMeta[slot] || { w: LION_NATIVE, h: LION_NATIVE }
+      const rgba = await s.png().toBuffer()
+      // bottom-align, horizontally center within the 64-wide canvas
+      const left = Math.max(0, Math.round((LION_NATIVE - m.w) / 2))
+      const top = Math.max(0, canvasH - m.h)
+      layers.push({ input: rgba, left, top })
+    }
+  }
+
+  const buf = await sharp({
     create: {
-      width: PET_BASE,
-      height: PET_BASE,
+      width: LION_NATIVE,
+      height: canvasH,
       channels: 4,
       background: { r: 0, g: 0, b: 0, alpha: 0 },
     },
   })
-    .composite(composites)
+    .composite(layers)
     .png()
     .toBuffer()
 
-  // Upscale with nearest-neighbor to preserve pixel-art look.
-  return sharp(native)
-    .resize(outSize, outSize, { kernel: "nearest" })
+  return { buf, width: LION_NATIVE, height: canvasH }
+}
+
+async function composeFullPet(data: PetRenderData, scale: number): Promise<Buffer> {
+  // 1. Room scene (200x200): room layers in order, then the lion.
+  const roomLayers: sharp.OverlayOptions[] = []
+  for (const layer of ROOM_LAYERS) {
+    const path = data.furniture[layer]
+    if (!path) continue
+    const raw = await fetchPng(assetUrl(path))
+    if (!raw) continue
+    const rgba = await toRgba(raw, SCREEN_S, SCREEN_S)
+    roomLayers.push({ input: rgba, left: 0, top: 0 })
+  }
+
+  const lion = await composeLion(data)
+  if (lion) {
+    // Scale the lion from native (64 wide, canvasH tall) to display
+    // (80 wide, proportional), placed so its 64x64 body region sits
+    // at LION_POS.
+    const scaleFactor = LION_DISPLAY / LION_NATIVE
+    const dispW = LION_DISPLAY
+    const dispH = Math.round(lion.height * scaleFactor)
+    const extraTopDisp = dispH - LION_DISPLAY
+    const lionScaled = await sharp(lion.buf)
+      .resize(dispW, dispH, { fit: "fill", kernel: "nearest" })
+      .png()
+      .toBuffer()
+    const left = LION_POS[0]
+    const top = LION_POS[1] - extraTopDisp
+    // Clamp to keep within the room canvas (sharp rejects negatives).
+    roomLayers.push({
+      input: lionScaled,
+      left: Math.max(0, left),
+      top: Math.max(0, top),
+    })
+  }
+
+  const roomScene = await sharp({
+    create: { width: SCREEN_S, height: SCREEN_S, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite(roomLayers)
+    .png()
+    .toBuffer()
+
+  // 2. Gameboy: room scene into the screen, then the frame on top.
+  const gbLayers: sharp.OverlayOptions[] = [
+    { input: roomScene, left: SCREEN_L, top: SCREEN_T },
+  ]
+  const frameRaw = await fetchPng(assetUrl(data.gameboyPath))
+  const frameFinal = frameRaw || (await fetchPng(assetUrl(DEFAULT_GAMEBOY)))
+  if (frameFinal) {
+    const frameRgba = await toRgba(frameFinal, GB_W, GB_H)
+    gbLayers.push({ input: frameRgba, left: 0, top: 0 })
+  }
+
+  const gameboy = await sharp({
+    create: { width: GB_W, height: GB_H, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+  })
+    .composite(gbLayers)
+    .png()
+    .toBuffer()
+
+  // 3. Upscale with nearest-neighbor for crisp pixel art.
+  const s = Math.max(1, Math.min(3, scale))
+  if (s === 1) return gameboy
+  return sharp(gameboy)
+    .resize(GB_W * s, GB_H * s, { kernel: "nearest" })
     .png()
     .toBuffer()
 }
@@ -143,7 +359,7 @@ export default async function handler(
     return res.status(405).json({ error: "method_not_allowed" })
   }
 
-  // Token fallback for <img> tag usage.
+  // Token fallback for <img> usage.
   if (!req.headers.authorization && typeof req.query.t === "string") {
     req.headers.authorization = `Bearer ${req.query.t}`
   }
@@ -151,63 +367,65 @@ export default async function handler(
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
 
-  // Size: 64..384, default 288.
-  const sizeRaw = typeof req.query.size === "string" ? parseInt(req.query.size, 10) : DEFAULT_SIZE
-  const size = Math.max(64, Math.min(PET_BASE * SCALE_MAX, isFinite(sizeRaw) ? sizeRaw : DEFAULT_SIZE))
+  const scale = Math.max(1, Math.min(3, parseInt((req.query.scale as string) || "2", 10) || 2))
 
-  let expression = "default"
+  let data: PetRenderData | null
   try {
-    const pet = await prisma.lg_pets.findUnique({
-      where: { userid: ctx.userId },
-      select: { expression: true },
-    })
-    expression = expressionDir(pet?.expression)
+    data = await loadRenderData(ctx.userId)
   } catch (err) {
-    console.warn("[anki/pet-portrait] pet lookup failed:", err)
+    console.error("[anki/pet-portrait] data load failed:", err)
+    return res.status(503).json({ error: "db_unavailable" })
+  }
+  if (!data) {
+    // No pet yet — render an empty default gameboy + room.
+    data = {
+      expression: "default",
+      gameboyPath: DEFAULT_GAMEBOY,
+      furniture: getRoomDefaults("rooms/default"),
+      equipment: {},
+    }
   }
 
-  const cacheKey = `${ctx.discordId}:${expression}:${size}`
-  const cached = portraitCache.get(cacheKey)
-  if (cached && Date.now() - cached.ts < PORTRAIT_TTL_MS) {
-    if (req.headers["if-none-match"] === cached.etag) {
-      return res.status(304).end()
-    }
+  // Cache key from the render-affecting fields.
+  const sig = crypto
+    .createHash("sha1")
+    .update(
+      JSON.stringify({
+        e: data.expression,
+        g: data.gameboyPath,
+        f: data.furniture,
+        q: data.equipment,
+        s: scale,
+      })
+    )
+    .digest("hex")
+    .slice(0, 16)
+  const cacheKey = `${ctx.discordId}:${sig}`
+
+  const cached = renderCache.get(cacheKey)
+  if (cached && Date.now() - cached.ts < RENDER_TTL_MS) {
+    if (req.headers["if-none-match"] === cached.etag) return res.status(304).end()
     res.setHeader("Content-Type", "image/png")
-    res.setHeader("Cache-Control", "private, max-age=300")
+    res.setHeader("Cache-Control", "private, max-age=180")
     res.setHeader("ETag", cached.etag)
     return res.status(200).send(cached.buf)
   }
 
   try {
-    const buf = await composePortrait(expression, size)
+    const buf = await composeFullPet(data, scale)
     const etag = `"${crypto.createHash("sha256").update(buf).digest("base64url").slice(0, 16)}"`
-    portraitCache.set(cacheKey, { buf, etag, ts: Date.now() })
-
-    // Bound cache size — drop oldest 10% if we exceed 500 entries.
-    if (portraitCache.size > 500) {
-      const drop = Array.from(portraitCache.keys()).slice(0, 50)
-      drop.forEach((k) => portraitCache.delete(k))
+    renderCache.set(cacheKey, { buf, etag, ts: Date.now() })
+    if (renderCache.size > 300) {
+      const drop = Array.from(renderCache.keys()).slice(0, 30)
+      drop.forEach((k) => renderCache.delete(k))
     }
-
-    if (req.headers["if-none-match"] === etag) {
-      return res.status(304).end()
-    }
+    if (req.headers["if-none-match"] === etag) return res.status(304).end()
     res.setHeader("Content-Type", "image/png")
-    res.setHeader("Cache-Control", "private, max-age=300")
+    res.setHeader("Cache-Control", "private, max-age=180")
     res.setHeader("ETag", etag)
     return res.status(200).send(buf)
   } catch (err) {
     console.error("[anki/pet-portrait] compose failed:", err)
-    return res
-      .status(500)
-      .json({ error: "compose_failed", message: "Could not render portrait" })
+    return res.status(500).json({ error: "compose_failed" })
   }
 }
-
-// Silence the unused-export warning that arises from the
-// extractAnkiBearer + verifyAnkiBearer imports — we keep them
-// here as a comment to document the bearer extraction path,
-// in case future versions extract directly rather than via
-// requireAnkiAuth.
-void extractAnkiBearer
-void verifyAnkiBearer
