@@ -131,7 +131,10 @@ function sendError(
   return res.status(status).json({ error, message, ...extra })
 }
 
-/** Pull the trailing /24 (IPv4) or /48 (IPv6) for abuse triage. */
+/** Coarsen the client IPv4 to a bare /24 network address for abuse
+ *  triage. Returns a bare IP string (NOT CIDR) because Prisma's
+ *  INET serializer uses Rust's IpAddr parser, which rejects a
+ *  "/24" suffix (AddrParseError). IPv6 is skipped — best-effort. */
 function extractIpPrefix(req: NextApiRequest): string | null {
   const fwd = req.headers["x-forwarded-for"]
   const raw =
@@ -141,14 +144,13 @@ function extractIpPrefix(req: NextApiRequest): string | null {
       ? fwd[0]
       : null) || req.socket.remoteAddress
   if (!raw) return null
-  if (raw.includes(":")) {
-    // IPv6: keep first 3 groups -> /48
-    const parts = raw.split(":")
-    return parts.slice(0, 3).join(":") + "::/48"
+  const v4 = raw.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (v4) {
+    const octets = [v4[1], v4[2], v4[3]].map((o) => parseInt(o, 10))
+    if (octets.every((o) => o >= 0 && o <= 255)) {
+      return `${octets[0]}.${octets[1]}.${octets[2]}.0`
+    }
   }
-  // IPv4: keep first 3 octets -> /24
-  const parts = raw.split(".")
-  if (parts.length === 4) return parts.slice(0, 3).join(".") + ".0/24"
   return null
 }
 

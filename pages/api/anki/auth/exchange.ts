@@ -79,7 +79,11 @@ function extractIpPrefix(req: NextApiRequest): string | null {
   if (v4) {
     const octets = [v4[1], v4[2], v4[3]].map((o) => parseInt(o, 10))
     if (octets.every((o) => o >= 0 && o <= 255)) {
-      return `${octets[0]}.${octets[1]}.${octets[2]}.0/24`
+      // Bare network IP (last octet zeroed) — NOT CIDR. Prisma's
+      // INET serializer uses Rust's IpAddr parser which rejects a
+      // "/24" suffix (AddrParseError), so we coarsen by zeroing the
+      // last octet instead of appending a netmask.
+      return `${octets[0]}.${octets[1]}.${octets[2]}.0`
     }
     return null
   }
