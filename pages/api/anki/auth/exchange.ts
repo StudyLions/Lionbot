@@ -289,7 +289,6 @@ export default async function handler(
   let username = userid.toString()
   let globalName: string | null = null
   let avatar: string | null = null
-  let homeGuildId: bigint | null = null
   let petSnapshot: {
     pet_name: string
     level: number
@@ -305,7 +304,6 @@ export default async function handler(
       select: {
         name: true,
         avatar_hash: true,
-        anki_home_guildid: true,
         lg_pets: {
           select: {
             pet_name: true,
@@ -321,7 +319,6 @@ export default async function handler(
     if (cfg) {
       if (cfg.name) username = cfg.name
       if (cfg.avatar_hash) avatar = cfg.avatar_hash
-      homeGuildId = cfg.anki_home_guildid
       if (cfg.lg_pets) {
         petSnapshot = {
           pet_name: cfg.lg_pets.pet_name,
@@ -364,7 +361,6 @@ export default async function handler(
       avatar,
       is_premium: isPremium,
     },
-    home_guild_id: homeGuildId ? homeGuildId.toString() : null,
     pet: petSnapshot,
   })
 }

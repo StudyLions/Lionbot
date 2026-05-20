@@ -21,8 +21,8 @@ import { useEffect, useState, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import Head from "next/head"
 import {
-  Laptop, Server, RotateCcw, AlertTriangle, Check,
-  ChevronDown, Download, X, Pencil,
+  Laptop, Globe, RotateCcw, AlertTriangle,
+  Download, X, Pencil,
 } from "lucide-react"
 
 interface DeviceRow {
@@ -35,19 +35,6 @@ interface DeviceRow {
   last_seen_at: string
   revoked_at: string | null
   revoked_reason: string | null
-}
-
-interface HomeGuildOption {
-  guild_id: string
-  name: string
-  icon_hash: string | null
-  member_count: number | null
-}
-
-interface HomeGuildState {
-  current: { guild_id: string; name: string } | null
-  is_default_fallback: boolean
-  options: HomeGuildOption[]
 }
 
 function formatRelative(iso: string): string {
@@ -92,24 +79,16 @@ function PageInner() {
   const { status: sessionStatus } = useSession()
 
   const [devices, setDevices] = useState<DeviceRow[] | null>(null)
-  const [homeGuild, setHomeGuild] = useState<HomeGuildState | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
-  const [pickerOpen, setPickerOpen] = useState(false)
 
   const loadAll = useCallback(async () => {
     setLoadError(null)
     try {
-      const [dRes, hRes] = await Promise.all([
-        fetch("/api/anki/devices"),
-        fetch("/api/anki/home-guild"),
-      ])
+      const dRes = await fetch("/api/anki/devices")
       if (!dRes.ok) throw new Error("Failed to load devices")
-      if (!hRes.ok) throw new Error("Failed to load home guild")
       const dData = await dRes.json()
-      const hData = await hRes.json()
       setDevices(dData.devices)
-      setHomeGuild(hData)
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load"
       setLoadError(msg)
@@ -181,26 +160,6 @@ function PageInner() {
     }
   }
 
-  async function onPickGuild(guildId: string | null) {
-    setBusy("home_guild")
-    try {
-      const res = await fetch("/api/anki/home-guild", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ guild_id: guildId }),
-      })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        alert(d.message || "Couldn't change home server")
-      } else {
-        setPickerOpen(false)
-        await loadAll()
-      }
-    } finally {
-      setBusy(null)
-    }
-  }
-
   if (sessionStatus === "loading") return <div className="py-20 text-center text-muted-foreground">Loading…</div>
   if (sessionStatus !== "authenticated") return null // AdminGuard handles redirect
 
@@ -225,85 +184,15 @@ function PageInner() {
         </div>
       )}
 
-      <section className="rounded-xl border border-border bg-card overflow-hidden">
-        <div className="p-5 border-b border-border">
-          <h2 className="text-base font-medium text-foreground flex items-center gap-2">
-            <Server size={16} /> Home server
-          </h2>
-          <p className="text-xs text-muted-foreground mt-1">
-            Anki reviews credit to this server&apos;s leaderboard and member ranks.
-          </p>
-        </div>
-        <div className="p-5">
-          {!homeGuild ? (
-            <div className="h-10 rounded-md bg-secondary/30 animate-pulse" />
-          ) : (
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="text-sm">
-                <span className="text-muted-foreground">Currently: </span>
-                <span className="text-foreground font-medium">
-                  {homeGuild.current?.name || "LionBot Support Server"}
-                </span>
-                {homeGuild.is_default_fallback && (
-                  <span className="ml-2 text-xs text-muted-foreground italic">(default)</span>
-                )}
-              </div>
-              <button
-                type="button"
-                onClick={() => setPickerOpen((v) => !v)}
-                className="inline-flex items-center gap-2 rounded-md bg-secondary px-3 py-1.5 text-sm hover:bg-secondary/80 transition-colors"
-              >
-                Change <ChevronDown size={14} />
-              </button>
-            </div>
-          )}
-
-          {pickerOpen && homeGuild && (
-            <div className="mt-4 rounded-lg border border-border divide-y divide-border max-h-72 overflow-y-auto">
-              {homeGuild.options.map((opt) => {
-                const isCurrent = homeGuild.current?.guild_id === opt.guild_id
-                return (
-                  <button
-                    key={opt.guild_id}
-                    type="button"
-                    disabled={busy === "home_guild" || isCurrent}
-                    onClick={() => onPickGuild(opt.guild_id)}
-                    className="w-full flex items-center justify-between gap-3 p-3 text-left hover:bg-secondary/30 disabled:opacity-60 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {opt.icon_hash ? (
-                        <img
-                          src={`https://cdn.discordapp.com/icons/${opt.guild_id}/${opt.icon_hash}.png?size=64`}
-                          alt=""
-                          className="w-8 h-8 rounded-full"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center text-xs font-medium">
-                          {opt.name.slice(0, 2).toUpperCase()}
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm text-foreground truncate">{opt.name}</p>
-                        {opt.member_count !== null && (
-                          <p className="text-xs text-muted-foreground">
-                            {opt.member_count.toLocaleString()} members
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    {isCurrent && <Check size={16} className="text-emerald-500" />}
-                  </button>
-                )
-              })}
-              {homeGuild.options.length === 0 && (
-                <div className="p-4 text-sm text-muted-foreground">
-                  No eligible servers found. Invite LionBot to a server to make it
-                  selectable here.
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+      <section className="rounded-xl border border-border bg-card p-5">
+        <h2 className="text-base font-medium text-foreground flex items-center gap-2">
+          <Globe size={16} /> Global progress
+        </h2>
+        <p className="text-sm text-muted-foreground mt-2">
+          Anki reviews are global — they earn gold and XP for your LionGotchi and
+          count toward the global Anki leaderboard, on every server you&apos;re in.
+          Nothing to configure.
+        </p>
       </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden">

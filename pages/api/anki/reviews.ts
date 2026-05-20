@@ -47,7 +47,6 @@ const TIME_MS_MIN = 500
 const TIME_MS_MAX = 30_000
 const NEW_ACCOUNT_GRACE_DAYS = 7
 const NEW_ACCOUNT_GRACE_THRESHOLD_HOURS = 24
-const SUPPORT_GUILD_ID = BigInt("780195610154237993")
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -203,42 +202,6 @@ function normalizeReviews(
 }
 
 /**
- * Resolve the user's home guild via the fallback chain in the plan:
- *   1. user_config.anki_home_guildid IS NOT NULL AND that guild
- *      has lg_enabled = true → use it.
- *   2. Otherwise → support guild.
- *
- * Returns { guildId, fallback } where `fallback` is true if the
- * support guild was selected as a fallback (the caller surfaces
- * a warning in the response).
- */
-async function resolveHomeGuild(
-  userId: bigint
-): Promise<{ guildId: bigint; fallback: boolean }> {
-  try {
-    const cfg = await prisma.user_config.findUnique({
-      where: { userid: userId },
-      select: { anki_home_guildid: true },
-    })
-    const home = cfg?.anki_home_guildid
-    if (!home) return { guildId: SUPPORT_GUILD_ID, fallback: true }
-
-    // Confirm the guild exists in guild_config. If it doesn't,
-    // fall back. (We don't check lg_enabled here because that
-    // column might not exist on every deployment — let the bot
-    // decide what to render. The data is captured either way.)
-    const exists = await prisma.guild_config.findUnique({
-      where: { guildid: home },
-      select: { guildid: true },
-    })
-    if (!exists) return { guildId: SUPPORT_GUILD_ID, fallback: true }
-    return { guildId: home, fallback: false }
-  } catch {
-    return { guildId: SUPPORT_GUILD_ID, fallback: true }
-  }
-}
-
-/**
  * Per-device rate limit (sliding 60s window). Uses a single
  * COUNT query — cheap with the (userid, reviewed_at DESC) index,
  * plus we mostly care about it under abuse load anyway.
@@ -291,36 +254,20 @@ async function getActivityCounts(
  * SHARE the daily cap with voice/text rather than getting a
  * separate pool.
  */
-async function getDailyTotals(
-  userId: bigint,
-  now: Date
-): Promise<{ goldToday: number; xpToday: number }> {
+async function getDailyGoldToday(userId: bigint, now: Date): Promise<number> {
   const todayStart = utcDayStart(now)
   try {
-    const [goldAgg, xpAgg] = await Promise.all([
-      prisma.lg_gold_transactions.aggregate({
-        where: {
-          to_account: userId,
-          created_at: { gte: todayStart },
-          amount: { gt: 0 },
-        },
-        _sum: { amount: true },
-      }),
-      prisma.member_experience.aggregate({
-        where: {
-          userid: userId,
-          earned_at: { gte: todayStart },
-          amount: { gt: 0 },
-        },
-        _sum: { amount: true },
-      }),
-    ])
-    return {
-      goldToday: Number(goldAgg._sum.amount || 0),
-      xpToday: Number(xpAgg._sum.amount || 0),
-    }
+    const goldAgg = await prisma.lg_gold_transactions.aggregate({
+      where: {
+        to_account: userId,
+        created_at: { gte: todayStart },
+        amount: { gt: 0 },
+      },
+      _sum: { amount: true },
+    })
+    return Number(goldAgg._sum.amount || 0)
   } catch {
-    return { goldToday: 0, xpToday: 0 }
+    return 0
   }
 }
 
@@ -350,19 +297,6 @@ async function isInGracePeriod(userId: bigint, now: Date): Promise<boolean> {
   }
 }
 
-async function lookupServerPremium(guildId: bigint): Promise<boolean> {
-  try {
-    const row = await prisma.premium_guilds.findUnique({
-      where: { guildid: guildId },
-      select: { premium_until: true },
-    })
-    if (!row?.premium_until) return false
-    return row.premium_until > new Date()
-  } catch {
-    return false
-  }
-}
-
 async function lookupPet(userId: bigint) {
   try {
     return await prisma.lg_pets.findUnique({
@@ -387,11 +321,9 @@ interface ReviewsResponseBody {
   }
   daily_progress: {
     gold: { earned: number; cap: number }
-    xp: { earned: number; cap: number }
     cards_24h: number
   }
   throttle: string
-  home_guild_id: string
   warnings: string[]
 }
 
@@ -515,30 +447,31 @@ export default async function handler(
       },
       daily_progress: {
         gold: { earned: 0, cap: DAILY_GOLD_CAP },
-        xp: { earned: 0, cap: DAILY_XP_CAP },
         cards_24h: 0,
       },
       throttle: "linear",
-      home_guild_id: "",
       warnings: rejected > 0 ? ["all_reviews_rejected"] : [],
     }
     await cacheIdempotencyResponse(ctx.deviceId, idempHeader, 200, response)
     return res.status(200).json(response)
   }
 
-  // Resolve home guild and snapshot user state.
-  const { guildId: homeGuildId, fallback: homeGuildFallback } =
-    await resolveHomeGuild(ctx.userId)
+  // Anki is fully GLOBAL — reviews credit the user's pet + gold +
+  // global review count, with no per-server attribution. We store
+  // guildid = 0 as a "global" sentinel on each event. Server
+  // premium (a per-guild boost) does not apply since there's no
+  // server; LionHeart tier + vote (both user-level) still do.
+  const ANKI_GLOBAL_GUILDID = BigInt(0)
 
-  const [{ cards24h, cardsTodayUtc }, { goldToday, xpToday }, serverPremium, pet, isPremiumUser, graceMode] =
+  const [{ cards24h, cardsTodayUtc }, goldToday, pet, isPremiumUser, graceMode] =
     await Promise.all([
       getActivityCounts(ctx.userId, now),
-      getDailyTotals(ctx.userId, now),
-      lookupServerPremium(homeGuildId),
+      getDailyGoldToday(ctx.userId, now),
       lookupPet(ctx.userId),
       isLionheartActive(ctx.discordId),
       isInGracePeriod(ctx.userId, now),
     ])
+  const serverPremium = false
 
   const tier: Tier = tierFromIsPremium(isPremiumUser)
   // Mood multiplier from the pet's CURRENT needs (food/bath/sleep),
@@ -557,7 +490,11 @@ export default async function handler(
     moodMultiplier: mood,
     cardsTodayBefore: cards24h,
     goldEarnedTodayBefore: goldToday,
-    xpEarnedTodayBefore: xpToday,
+    // XP isn't tracked as a shared daily ledger (Anki no longer
+    // writes member_experience); the diminishing-returns curve is
+    // the effective XP limiter. Gold is the real economy cap and
+    // IS shared via lg_gold_transactions.
+    xpEarnedTodayBefore: 0,
     cardsThisSessionBefore: cardsTodayUtc,
     refillsGivenThisSessionBefore: Math.min(
       Math.floor(cardsTodayUtc / 50),
@@ -584,11 +521,9 @@ export default async function handler(
   //   - pet XP/level lives in lg_pets.xp / lg_pets.level, with a
   //     LEVEL_UP_GOLD_BONUS (50/level) bonus on level-up
   //   - pet care refills food/bath
-  // member_experience (the rank/leaderboard XP) is written
-  // OUTSIDE this transaction, best-effort, because its FK to
-  // members(guildid,userid) fails for users who aren't members
-  // of their home guild — and that must NOT roll back the
-  // gold/pet credit.
+  // Anki is GLOBAL: we do NOT write member_experience (the
+  // per-server rank XP) — Anki grows the pet + gold + the global
+  // leaderboard, never per-server rank roles.
   let acceptedCount = 0
   let dedupedCount = 0
   let goldCredited = 0
@@ -604,7 +539,7 @@ export default async function handler(
           review_id: r.reviewIdBytes,
           userid: ctx.userId,
           device_id: ctx.deviceId,
-          guildid: homeGuildId,
+          guildid: ANKI_GLOBAL_GUILDID,
           anki_user_guid: body.anki_user_guid!,
           card_id: r.cardId,
           deck_id: r.deckId,
@@ -712,33 +647,9 @@ export default async function handler(
     )
   }
 
-  // --- member_experience (rank/leaderboard XP) — best-effort ---
-  // Outside the transaction so the FK-to-members failure (user not
-  // a member of their home guild) can't roll back the gold/pet
-  // credit above. Only attempted when the user IS a member.
-  if (xpCredited > 0) {
-    try {
-      const member = await prisma.members.findFirst({
-        where: { guildid: homeGuildId, userid: ctx.userId },
-        select: { userid: true },
-      })
-      if (member) {
-        await prisma.member_experience.create({
-          data: {
-            guildid: homeGuildId,
-            userid: ctx.userId,
-            amount: xpCredited,
-            exp_type: "ANKI_XP",
-          },
-        })
-      }
-    } catch (err) {
-      console.warn("[anki/reviews] member_experience write skipped:", err)
-    }
-  }
+  // Anki is global — no member_experience / per-server rank XP write.
 
   const warnings: string[] = []
-  if (homeGuildFallback) warnings.push("home_guild_unavailable_fallback_to_support")
   if (rewards.capHit) warnings.push("daily_cap_hit")
   if (graceMode) warnings.push("new_account_grace_active")
 
@@ -762,14 +673,9 @@ export default async function handler(
         earned: goldToday + goldCredited,
         cap: DAILY_GOLD_CAP,
       },
-      xp: {
-        earned: xpToday + xpCredited,
-        cap: DAILY_XP_CAP,
-      },
       cards_24h: cards24h + acceptedCount,
     },
     throttle: rewards.throttle,
-    home_guild_id: homeGuildId.toString(),
     warnings,
   }
 

@@ -34,7 +34,6 @@ export default async function handler(
   let cfg: {
     name: string | null
     avatar_hash: string | null
-    anki_home_guildid: bigint | null
     first_seen: Date | null
     lg_pets: {
       pet_name: string
@@ -53,7 +52,6 @@ export default async function handler(
       select: {
         name: true,
         avatar_hash: true,
-        anki_home_guildid: true,
         first_seen: true,
         lg_pets: {
           select: {
@@ -101,7 +99,6 @@ export default async function handler(
       last_seen_at: ctx.device.lastSeenAt.toISOString(),
       scopes: ctx.scopes,
     },
-    home_guild_id: cfg?.anki_home_guildid?.toString() || null,
     pet: cfg?.lg_pets
       ? {
           pet_name: cfg.lg_pets.pet_name,

@@ -42,9 +42,6 @@ import {
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-const SUPPORT_GUILD_ID = "780195610154237993"
-const SUPPORT_GUILD_NAME = "LionBot Support Server"
-
 type ConnectView =
   | { state: "BAD_PARAMS"; reason: string }
   | { state: "SIGNED_OUT"; deviceName: string }
@@ -53,8 +50,6 @@ type ConnectView =
       pairingCode: string
       expiresAtIso: string
       deviceName: string
-      homeGuildName: string
-      isDefaultHomeGuild: boolean
     }
 
 interface PageProps {
@@ -137,35 +132,6 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
 
   const userId = BigInt(token.discordId as string)
 
-  // Determine the home guild label for the UI. Looking up the
-  // guild's actual name from Discord would require a bot-token
-  // API call per render — overkill for v1; we just show the ID
-  // or the support guild's name.
-  let homeGuildName = SUPPORT_GUILD_NAME
-  let isDefaultHomeGuild = true
-  try {
-    const cfg = await prisma.user_config.findUnique({
-      where: { userid: userId },
-      select: { anki_home_guildid: true },
-    })
-    if (cfg?.anki_home_guildid) {
-      const gid = cfg.anki_home_guildid.toString()
-      if (gid !== SUPPORT_GUILD_ID) {
-        // Try to pull a friendly name from guild_config (cached).
-        const guild = await prisma.guild_config.findUnique({
-          where: { guildid: cfg.anki_home_guildid },
-          select: { guildid: true },
-        })
-        if (guild) {
-          homeGuildName = `Server ${gid}`
-          isDefaultHomeGuild = false
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[anki/connect] home guild lookup failed:", err)
-  }
-
   // Drop any prior unconsumed codes for this (userid, device_id).
   // Keeps the table small if the user refreshes the page.
   try {
@@ -215,8 +181,6 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
         pairingCode,
         expiresAtIso: expiresAt.toISOString(),
         deviceName,
-        homeGuildName,
-        isDefaultHomeGuild,
       },
     },
   }
@@ -440,26 +404,8 @@ function CodeReady({
       </p>
 
       <div className="rounded-md bg-background/50 border border-border/50 p-3 text-xs text-muted-foreground">
-        Your Anki reviews will count toward{" "}
-        <span className="text-foreground font-medium">{view.homeGuildName}</span>
-        {view.isDefaultHomeGuild ? (
-          <>
-            {" "}
-            by default.{" "}
-            <a href="/dashboard/anki" className="underline hover:text-foreground">
-              Change later
-            </a>
-            .
-          </>
-        ) : (
-          <>
-            .{" "}
-            <a href="/dashboard/anki" className="underline hover:text-foreground">
-              Change in settings
-            </a>
-            .
-          </>
-        )}
+        Your reviews earn gold and XP for your LionGotchi and count
+        toward the global Anki leaderboard.
       </div>
     </div>
   )

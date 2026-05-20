@@ -17,7 +17,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
-import { DAILY_GOLD_CAP, DAILY_XP_CAP } from "@/lib/anki/rewards"
+import { DAILY_GOLD_CAP } from "@/lib/anki/rewards"
 
 const STREAK_MIN_CARDS = 10
 
@@ -99,84 +99,46 @@ export default async function handler(
     }
   }
 
-  // Home guild + rank.
-  let homeGuildId: bigint | null = null
-  try {
-    const cfg = await prisma.user_config.findUnique({
-      where: { userid: ctx.userId },
-      select: { anki_home_guildid: true },
-    })
-    homeGuildId = cfg?.anki_home_guildid ?? null
-  } catch {
-    // Non-fatal — surface unranked.
-  }
-
-  // Today's rank in home guild (cards reviewed today).
+  // GLOBAL rank — Anki is not tied to any server. Rank is the
+  // user's position across ALL LionBot users by review count.
+  // (groupBy+having scans the whole table; fine at current scale,
+  // revisit with a materialized leaderboard if it grows large.)
   let rankToday: number | null = null
   let rankAllTime: number | null = null
-  if (homeGuildId) {
-    try {
-      const myCardsToday = await prisma.anki_review_events.count({
-        where: {
-          userid: ctx.userId,
-          guildid: homeGuildId,
-          reviewed_at: { gte: dayStart },
-        },
+  try {
+    if (today > 0) {
+      const ahead = await prisma.anki_review_events.groupBy({
+        by: ["userid"],
+        where: { reviewed_at: { gte: dayStart }, NOT: { userid: ctx.userId } },
+        _count: { _all: true },
+        having: { userid: { _count: { gt: today } } },
       })
-      if (myCardsToday > 0) {
-        const ahead = await prisma.anki_review_events.groupBy({
-          by: ["userid"],
-          where: {
-            guildid: homeGuildId,
-            reviewed_at: { gte: dayStart },
-            NOT: { userid: ctx.userId },
-          },
-          _count: { _all: true },
-          having: { userid: { _count: { gt: myCardsToday } } },
-        })
-        rankToday = ahead.length + 1
-      }
-      const myCardsAll = await prisma.anki_review_events.count({
-        where: { userid: ctx.userId, guildid: homeGuildId },
-      })
-      if (myCardsAll > 0) {
-        const ahead = await prisma.anki_review_events.groupBy({
-          by: ["userid"],
-          where: {
-            guildid: homeGuildId,
-            NOT: { userid: ctx.userId },
-          },
-          _count: { _all: true },
-          having: { userid: { _count: { gt: myCardsAll } } },
-        })
-        rankAllTime = ahead.length + 1
-      }
-    } catch (err) {
-      console.warn("[anki/me/stats] rank lookup failed:", err)
+      rankToday = ahead.length + 1
     }
+    if (all > 0) {
+      const ahead = await prisma.anki_review_events.groupBy({
+        by: ["userid"],
+        where: { NOT: { userid: ctx.userId } },
+        _count: { _all: true },
+        having: { userid: { _count: { gt: all } } },
+      })
+      rankAllTime = ahead.length + 1
+    }
+  } catch (err) {
+    console.warn("[anki/me/stats] global rank lookup failed:", err)
   }
 
-  // Today's economy progress (mirrors what the ingest endpoint
-  // returns in daily_progress so the addon can show a consistent
-  // chip when reviews aren't actively happening).
-  const [goldAgg, xpAgg] = await Promise.all([
-    prisma.lg_gold_transactions.aggregate({
-      where: {
-        to_account: ctx.userId,
-        created_at: { gte: dayStart },
-        amount: { gt: 0 },
-      },
-      _sum: { amount: true },
-    }),
-    prisma.member_experience.aggregate({
-      where: {
-        userid: ctx.userId,
-        earned_at: { gte: dayStart },
-        amount: { gt: 0 },
-      },
-      _sum: { amount: true },
-    }),
-  ])
+  // Today's gold earned (shared across all sources via the gold
+  // ledger). Cards-reviewed is the natural Anki metric and is
+  // returned in `cards` above.
+  const goldAgg = await prisma.lg_gold_transactions.aggregate({
+    where: {
+      to_account: ctx.userId,
+      created_at: { gte: dayStart },
+      amount: { gt: 0 },
+    },
+    _sum: { amount: true },
+  })
 
   return res.status(200).json({
     cards: {
@@ -190,7 +152,7 @@ export default async function handler(
       min_cards_per_day: STREAK_MIN_CARDS,
     },
     rank: {
-      home_guild_id: homeGuildId?.toString() || null,
+      scope: "global",
       today: rankToday,
       all_time: rankAllTime,
     },
@@ -198,10 +160,6 @@ export default async function handler(
       gold: {
         earned: Number(goldAgg._sum.amount || 0),
         cap: DAILY_GOLD_CAP,
-      },
-      xp: {
-        earned: Number(xpAgg._sum.amount || 0),
-        cap: DAILY_XP_CAP,
       },
     },
   })
