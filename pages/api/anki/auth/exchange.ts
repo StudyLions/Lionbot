@@ -73,12 +73,19 @@ function extractIpPrefix(req: NextApiRequest): string | null {
       ? fwd[0]
       : null) || req.socket.remoteAddress
   if (!raw) return null
-  if (raw.includes(":")) {
-    const parts = raw.split(":")
-    return parts.slice(0, 3).join(":") + "::/48"
+  // IPv4 -> /24. Only emit when it's a clean dotted quad of
+  // numeric octets, so we never hand Postgres a malformed INET.
+  const v4 = raw.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
+  if (v4) {
+    const octets = [v4[1], v4[2], v4[3]].map((o) => parseInt(o, 10))
+    if (octets.every((o) => o >= 0 && o <= 255)) {
+      return `${octets[0]}.${octets[1]}.${octets[2]}.0/24`
+    }
+    return null
   }
-  const parts = raw.split(".")
-  if (parts.length === 4) return parts.slice(0, 3).join(".") + ".0/24"
+  // IPv6 truncation is error-prone (double-:: collapses), and this
+  // is best-effort abuse-triage telemetry only — skip rather than
+  // risk an invalid INET that fails the device insert.
   return null
 }
 
@@ -250,7 +257,12 @@ export default async function handler(
     if (code === "P2002") {
       return sendError(res, 409, "device_already_exists", "device_id is already registered")
     }
-    return sendError(res, 503, "db_unavailable", "Could not register device")
+    // TEMP DEBUG: surface the underlying error.
+    return res.status(503).json({
+      error: "db_unavailable",
+      message: "Could not register device",
+      _debug: String(err).slice(0, 600),
+    })
   }
 
   let sessionToken: string
