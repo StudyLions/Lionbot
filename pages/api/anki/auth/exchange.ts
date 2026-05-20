@@ -174,12 +174,7 @@ export default async function handler(
     consumed = row
   } catch (err) {
     console.error("[anki/exchange] DB consume failed:", err)
-    // TEMP DEBUG: surface the error detail to diagnose the 503.
-    return res.status(503).json({
-      error: "db_unavailable",
-      message: "Could not consume pairing code",
-      _debug: String(err).slice(0, 500),
-    })
+    return sendError(res, 503, "db_unavailable", "Could not consume pairing code")
   }
 
   // PKCE binding: recompute base64url(sha256(code_verifier)) and
