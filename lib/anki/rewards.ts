@@ -94,19 +94,36 @@ export const TIER_GOLD_BONUS: Record<Tier, number> = {
 
 export const SERVER_PREMIUM_GOLD_BONUS = 1.15
 
-// Mood -> reward multiplier (matches the bot's 0..8 mood scale
-// from gameplay.py). Indexed by lg_pets.expression enum string
-// mapped to numeric mood.
-export const MOOD_MULT_BY_EXPRESSION: Record<string, number> = {
-  HAPPY: 1.25,
-  EXCITED: 1.2,
-  CONTENT: 1.1,
-  DEFAULT: 1.0,
-  NEUTRAL: 1.0,
-  SAD: 0.85,
-  TIRED: 0.7,
-  UPSET: 0.6,
-  DEAD: 0.5,
+// Mood multiplier — keyed by the integer mood 0..8, matching the
+// bot's MOOD_MULTIPLIERS in gameplay.py EXACTLY. Mood itself is
+// derived from the average of the three needs (see calcMood),
+// NOT from lg_pets.expression (which is a lagging display value).
+export const MOOD_MULTIPLIERS: Record<number, number> = {
+  8: 1.25,
+  7: 1.2,
+  6: 1.1,
+  5: 1.0,
+  4: 0.95,
+  3: 0.85,
+  2: 0.75,
+  1: 0.6,
+  0: 0.5,
+}
+
+/** Derive mood (0-8) from the average of the three needs.
+ *  Mirrors gameplay.py calc_mood(food, bath, sleep) = (f+b+s)//3. */
+export function calcMood(food: number, bath: number, sleep: number): number {
+  const m = Math.floor((food + bath + sleep) / 3)
+  return Math.max(0, Math.min(8, m))
+}
+
+/** Mood multiplier for a given set of needs. */
+export function moodMultiplierForNeeds(
+  food: number,
+  bath: number,
+  sleep: number
+): number {
+  return MOOD_MULTIPLIERS[calcMood(food, bath, sleep)] ?? 1.0
 }
 
 export interface ComputeBatchRewardsInput {

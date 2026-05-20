@@ -27,10 +27,10 @@ import {
 import {
   computeBatchRewards,
   applyPetXp,
+  moodMultiplierForNeeds,
   LEVEL_UP_GOLD_BONUS,
   DAILY_GOLD_CAP,
   DAILY_XP_CAP,
-  MOOD_MULT_BY_EXPRESSION,
   tierFromIsPremium,
   type Tier,
 } from "@/lib/anki/rewards"
@@ -541,7 +541,11 @@ export default async function handler(
     ])
 
   const tier: Tier = tierFromIsPremium(isPremiumUser)
-  const mood = pet ? MOOD_MULT_BY_EXPRESSION[pet.expression] ?? 1.0 : 1.0
+  // Mood multiplier from the pet's CURRENT needs (food/bath/sleep),
+  // matching the bot's calc_mood. No pet -> neutral 1.0.
+  const mood = pet
+    ? moodMultiplierForNeeds(pet.food, pet.bath, pet.sleep)
+    : 1.0
 
   // Compute rewards BEFORE the DB transaction so we have the
   // numbers needed for both the inserts and the response.

@@ -261,12 +261,7 @@ export default async function handler(
     if (code === "P2002") {
       return sendError(res, 409, "device_already_exists", "device_id is already registered")
     }
-    // TEMP DEBUG: surface the underlying error.
-    return res.status(503).json({
-      error: "db_unavailable",
-      message: "Could not register device",
-      _debug: String(err).slice(0, 600),
-    })
+    return sendError(res, 503, "db_unavailable", "Could not register device")
   }
 
   let sessionToken: string
