@@ -2261,7 +2261,8 @@ model anki_devices {
   device_id             String               @id @db.Uuid
   userid                BigInt
   device_name           String
-  refresh_token_hash    Bytes
+  refresh_token_hash      Bytes
+  prev_refresh_token_hash Bytes?
   refresh_token_version Int                  @default(1)
   jwt_version           String
   scopes                String[]             @default(["anki.review.write", "anki.pet.read"])
