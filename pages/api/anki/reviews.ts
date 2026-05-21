@@ -1,6 +1,6 @@
 // ============================================================
 // AI-GENERATED FILE
-// Created: 2026-05-19
+// Created: 2026-05-19  (concurrency-hardened 2026-05-21)
 // Purpose: The lone ingest endpoint for the Anki addon. Accepts
 //          batches of flashcard reviews, deduplicates them,
 //          rate-limits abuse, computes rewards against the
@@ -9,9 +9,19 @@
 //
 //            - anki_review_events (one row per ACCEPTED review)
 //            - lg_gold_transactions (one ANKI_REVIEW row per batch)
-//            - member_experience  (one ANKI_XP row per batch)
-//            - lg_pets.food / .bath (incremented by refill count)
+//            - lg_pets.level / .xp / .food / .bath
 //            - anki_batch_idempotency (idempotency-key response cache)
+//
+//          ECONOMY SAFETY (the load-bearing bit): the daily gold
+//          cap, the 24h diminishing-returns count, the per-device
+//          rate limit, and the pet-care refill count are ALL read
+//          INSIDE the transaction under a per-user Postgres advisory
+//          lock (pg_advisory_xact_lock). Without that, concurrent
+//          batches each read a stale "~0 earned today" and each
+//          credit up to the full cap — firing N parallel requests
+//          would mint N x the daily cap. The advisory lock
+//          serializes a user's batches so every cap/counter read is
+//          consistent with prior committed batches.
 //
 //          The bot is NOT in this loop. It picks up the new rows
 //          automatically via its existing leaderboard / balance
@@ -19,7 +29,7 @@
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
-import { requireAnkiAuth, type AnkiAuthContext } from "@/lib/anki/requireAuth"
+import { requireAnkiAuth } from "@/lib/anki/requireAuth"
 import {
   computeAnkiReviewId,
   type AnkiScope,
@@ -30,7 +40,6 @@ import {
   moodMultiplierForNeeds,
   LEVEL_UP_GOLD_BONUS,
   DAILY_GOLD_CAP,
-  DAILY_XP_CAP,
   tierFromIsPremium,
   type Tier,
 } from "@/lib/anki/rewards"
@@ -202,78 +211,28 @@ function normalizeReviews(
 }
 
 /**
- * Per-device rate limit (sliding 60s window). Uses a single
- * COUNT query — cheap with the (userid, reviewed_at DESC) index,
- * plus we mostly care about it under abuse load anyway.
+ * Per-device rate limit (sliding 60s window) — cheap PRE-transaction
+ * early reject for the common case. The authoritative check runs
+ * again INSIDE the per-user advisory lock (see the transaction),
+ * because this read-before-write check is racy on its own.
  */
 async function getRateLimitCount(deviceId: string): Promise<number> {
   try {
-    const now = new Date()
-    const since = new Date(now.getTime() - 60_000)
-    const result = await prisma.anki_review_events.count({
+    const since = new Date(Date.now() - 60_000)
+    return await prisma.anki_review_events.count({
       where: { device_id: deviceId, ingested_at: { gte: since } },
     })
-    return result
   } catch {
-    // On DB blip, assume zero (fail open) — better to accept
-    // legit traffic than block during transient issues. The other
-    // anti-abuse layers still catch sustained abuse.
-    return 0
-  }
-}
-
-/**
- * Compute the per-user 24h card count + today (UTC) card count.
- * Both are needed: the diminishing-returns curve uses 24h, the
- * pet-care refills use UTC day.
- */
-async function getActivityCounts(
-  userId: bigint,
-  now: Date
-): Promise<{ cards24h: number; cardsTodayUtc: number }> {
-  const since24h = new Date(now.getTime() - 24 * 3600_000)
-  const todayStart = utcDayStart(now)
-  try {
-    const [c24h, cToday] = await Promise.all([
-      prisma.anki_review_events.count({
-        where: { userid: userId, reviewed_at: { gte: since24h } },
-      }),
-      prisma.anki_review_events.count({
-        where: { userid: userId, reviewed_at: { gte: todayStart } },
-      }),
-    ])
-    return { cards24h: c24h, cardsTodayUtc: cToday }
-  } catch {
-    return { cards24h: 0, cardsTodayUtc: 0 }
-  }
-}
-
-/**
- * Sum the user's gold and XP earned today across all sources
- * (voice, text, Anki, etc). This is what makes Anki rewards
- * SHARE the daily cap with voice/text rather than getting a
- * separate pool.
- */
-async function getDailyGoldToday(userId: bigint, now: Date): Promise<number> {
-  const todayStart = utcDayStart(now)
-  try {
-    const goldAgg = await prisma.lg_gold_transactions.aggregate({
-      where: {
-        to_account: userId,
-        created_at: { gte: todayStart },
-        amount: { gt: 0 },
-      },
-      _sum: { amount: true },
-    })
-    return Number(goldAgg._sum.amount || 0)
-  } catch {
+    // On DB blip, assume zero (fail open) — better to accept legit
+    // traffic than block during transient issues. The in-lock
+    // re-check + caps still bound abuse.
     return 0
   }
 }
 
 /**
  * Detect new accounts that should be on the 7-day 10% rate grace
- * period (kills mass-account farming).
+ * period (kills mass-account farming). Not race-sensitive.
  */
 async function isInGracePeriod(userId: bigint, now: Date): Promise<boolean> {
   try {
@@ -283,28 +242,12 @@ async function isInGracePeriod(userId: bigint, now: Date): Promise<boolean> {
     })
     if (!cfg?.first_seen) return false
     const accountAgeMs = now.getTime() - cfg.first_seen.getTime()
-    // Grace period applies only to accounts < 7 days old.
     const sevenDays = NEW_ACCOUNT_GRACE_DAYS * 86400_000
     if (accountAgeMs > sevenDays) return false
-    // Within first 24h, the grace applies. After 24h up to 7 days
-    // they're out of grace (already verified humanness for a day).
     const oneDay = NEW_ACCOUNT_GRACE_THRESHOLD_HOURS * 3600_000
     return accountAgeMs <= oneDay
-      ? true
-      : false
   } catch {
     return false
-  }
-}
-
-async function lookupPet(userId: bigint) {
-  try {
-    return await prisma.lg_pets.findUnique({
-      where: { userid: userId },
-      select: { food: true, bath: true, sleep: true, expression: true },
-    })
-  } catch {
-    return null
   }
 }
 
@@ -336,8 +279,6 @@ export default async function handler(
     return sendError(res, 405, "method_not_allowed", "POST only")
   }
 
-  // Body size guard (Next.js parses JSON up to 1 MB by default;
-  // tighten on Content-Length to be explicit).
   const lenHdr = req.headers["content-length"]
   const len = lenHdr ? parseInt(lenHdr as string, 10) : 0
   if (len > MAX_BODY_BYTES) {
@@ -353,20 +294,10 @@ export default async function handler(
       ? (req.headers["idempotency-key"] as string).trim()
       : null
   if (!idempHeader) {
-    return sendError(
-      res,
-      400,
-      "missing_idempotency_key",
-      "Idempotency-Key header is required"
-    )
+    return sendError(res, 400, "missing_idempotency_key", "Idempotency-Key header is required")
   }
   if (!UUID_RE.test(idempHeader)) {
-    return sendError(
-      res,
-      400,
-      "bad_idempotency_key",
-      "Idempotency-Key must be a UUID v4"
-    )
+    return sendError(res, 400, "bad_idempotency_key", "Idempotency-Key must be a UUID v4")
   }
 
   // Idempotency cache hit.
@@ -385,8 +316,6 @@ export default async function handler(
     }
   } catch (err) {
     console.warn("[anki/reviews] idempotency lookup failed:", err)
-    // Fall through — we'd rather double-credit in a true outage
-    // than 500 the whole batch.
   }
 
   // Body parse + shape checks.
@@ -401,39 +330,23 @@ export default async function handler(
     return sendError(res, 400, "bad_reviews", "reviews must be an array")
   }
   if (body.reviews.length > MAX_REVIEWS_PER_BATCH) {
-    return sendError(
-      res,
-      400,
-      "batch_too_large",
-      `reviews array must contain ≤ ${MAX_REVIEWS_PER_BATCH} items`
-    )
+    return sendError(res, 400, "batch_too_large", `reviews array must contain ≤ ${MAX_REVIEWS_PER_BATCH} items`)
   }
 
   const now = new Date()
 
-  // Per-device rate limit (60s sliding window).
+  // Cheap pre-transaction rate-limit reject (best-effort; the
+  // authoritative check is inside the advisory lock below).
   const recentCount = await getRateLimitCount(ctx.deviceId)
   if (recentCount + body.reviews.length > RATE_LIMIT_PER_MINUTE) {
     res.setHeader("Retry-After", "60")
-    return sendError(
-      res,
-      429,
-      "rate_limited",
-      `Per-device rate limit: ${RATE_LIMIT_PER_MINUTE} reviews/min`
-    )
+    return sendError(res, 429, "rate_limited", `Per-device rate limit: ${RATE_LIMIT_PER_MINUTE} reviews/min`)
   }
 
   // Normalize + dedup-within-batch.
-  const { kept, rejected } = normalizeReviews(
-    body,
-    body.anki_user_guid,
-    ctx.discordId,
-    now
-  )
+  const { kept, rejected } = normalizeReviews(body, body.anki_user_guid, ctx.discordId, now)
 
   if (kept.length === 0) {
-    // Nothing to credit. Still cache the response for
-    // idempotency.
     const response: ReviewsResponseBody = {
       accepted: 0,
       deduped: 0,
@@ -445,10 +358,7 @@ export default async function handler(
         levels_gained: 0,
         new_level: null,
       },
-      daily_progress: {
-        gold: { earned: 0, cap: DAILY_GOLD_CAP },
-        cards_24h: 0,
-      },
+      daily_progress: { gold: { earned: 0, cap: DAILY_GOLD_CAP }, cards_24h: 0 },
       throttle: "linear",
       warnings: rejected > 0 ? ["all_reviews_rejected"] : [],
     }
@@ -457,200 +367,222 @@ export default async function handler(
   }
 
   // Anki is fully GLOBAL — reviews credit the user's pet + gold +
-  // global review count, with no per-server attribution. We store
-  // guildid = 0 as a "global" sentinel on each event. Server
-  // premium (a per-guild boost) does not apply since there's no
-  // server; LionHeart tier + vote (both user-level) still do.
+  // global review count (guildid=0 sentinel). Server premium (a
+  // per-guild boost) doesn't apply; LionHeart tier (user-level) does.
   const ANKI_GLOBAL_GUILDID = BigInt(0)
 
-  const [{ cards24h, cardsTodayUtc }, goldToday, pet, isPremiumUser, graceMode] =
-    await Promise.all([
-      getActivityCounts(ctx.userId, now),
-      getDailyGoldToday(ctx.userId, now),
-      lookupPet(ctx.userId),
-      isLionheartActive(ctx.discordId),
-      isInGracePeriod(ctx.userId, now),
-    ])
-  const serverPremium = false
-
+  // Tier + grace are NOT race-sensitive (stable across a burst), so
+  // read them outside the lock. Everything that feeds a cap/limit is
+  // read INSIDE the lock below.
+  const [isPremiumUser, graceMode] = await Promise.all([
+    isLionheartActive(ctx.discordId).catch(() => false),
+    isInGracePeriod(ctx.userId, now),
+  ])
   const tier: Tier = tierFromIsPremium(isPremiumUser)
-  // Mood multiplier from the pet's CURRENT needs (food/bath/sleep),
-  // matching the bot's calc_mood. No pet -> neutral 1.0.
-  const mood = pet
-    ? moodMultiplierForNeeds(pet.food, pet.bath, pet.sleep)
-    : 1.0
 
-  // Compute rewards BEFORE the DB transaction so we have the
-  // numbers needed for both the inserts and the response.
-  const rewardInputs = {
-    cardCount: kept.length,
-    userTier: tier,
-    serverPremium,
-    voteGoldBoost: 1.0, // top.gg vote boost — Phase 1.5
-    moodMultiplier: mood,
-    cardsTodayBefore: cards24h,
-    goldEarnedTodayBefore: goldToday,
-    // XP isn't tracked as a shared daily ledger (Anki no longer
-    // writes member_experience); the diminishing-returns curve is
-    // the effective XP limiter. Gold is the real economy cap and
-    // IS shared via lg_gold_transactions.
-    xpEarnedTodayBefore: 0,
-    cardsThisSessionBefore: cardsTodayUtc,
-    refillsGivenThisSessionBefore: Math.min(
-      Math.floor(cardsTodayUtc / 50),
-      6
-    ),
-    graceMode,
-  }
-  const rewards = computeBatchRewards(rewardInputs)
+  // Per-user advisory lock key, namespaced (top byte 0x5A) away from
+  // any raw-userid locks so it can't collide with the bot. Low 56
+  // bits carry the snowflake — collisions only between users sharing
+  // those bits (effectively never) and only cost brief serialization.
+  const lockKey = BigInt.asIntN(
+    64,
+    (BigInt(0x5a) << BigInt(56)) | (ctx.userId & ((BigInt(1) << BigInt(56)) - BigInt(1)))
+  )
 
-  // Cap food/bath increments to 8 (pet stat scale). The bot's
-  // existing decay logic continues to apply.
-  const currentFood = pet?.food ?? 0
-  const currentBath = pet?.bath ?? 0
-  const newFood = Math.min(8, currentFood + rewards.foodRefill)
-  const newBath = Math.min(8, currentBath + rewards.bathRefill)
-  const actualFoodRefill = newFood - currentFood
-  const actualBathRefill = newBath - currentBath
-
-  // BIG TRANSACTION: insert review events + credit the economy
-  // the SAME way the bot does (verified against gameplay.py):
-  //   - gold balance lives in user_config.gold (NOT summed from
-  //     the transactions ledger), with an lg_gold_transactions
-  //     audit row
-  //   - pet XP/level lives in lg_pets.xp / lg_pets.level, with a
-  //     LEVEL_UP_GOLD_BONUS (50/level) bonus on level-up
-  //   - pet care refills food/bath
-  // Anki is GLOBAL: we do NOT write member_experience (the
-  // per-server rank XP) — Anki grows the pet + gold + the global
-  // leaderboard, never per-server rank roles.
   let acceptedCount = 0
   let dedupedCount = 0
   let goldCredited = 0
   let xpCredited = 0
   let levelsGained = 0
   let newLevel: number | null = null
-  let actualFoodRefillFinal = 0
-  let actualBathRefillFinal = 0
+  let foodRefillFinal = 0
+  let bathRefillFinal = 0
+  let throttleStr = "linear"
+  let capHit = false
+  let goldTodayResp = 0
+  let cards24hResp = 0
+  let rateLimited = false
+  let concurrentConflict = false
+
   try {
-    await prisma.$transaction(async (tx) => {
-      const insertResult = await tx.anki_review_events.createMany({
-        data: kept.map((r) => ({
-          review_id: r.reviewIdBytes,
-          userid: ctx.userId,
-          device_id: ctx.deviceId,
-          guildid: ANKI_GLOBAL_GUILDID,
-          anki_user_guid: body.anki_user_guid!,
-          card_id: r.cardId,
-          deck_id: r.deckId,
-          ease: r.ease,
-          time_ms: r.timeMs,
-          reviewed_at: r.reviewedAt,
-          reward_gold: 0,
-          reward_xp: 0,
-          was_throttled: rewards.throttle !== "linear",
-        })),
-        skipDuplicates: true,
-      })
-      acceptedCount = insertResult.count
-      dedupedCount = kept.length - insertResult.count
-      if (insertResult.count === 0) return
+    await prisma.$transaction(
+      async (tx) => {
+        // 1. Serialize this user's review batches. NON-blocking
+        //    try-lock so an attacker firing parallel batches can't
+        //    pile up in lock-waits and exhaust the connection pool —
+        //    a losing batch bails immediately and the addon retries.
+        const lockRows = await tx.$queryRaw<Array<{ locked: boolean }>>`
+          SELECT pg_try_advisory_xact_lock(${lockKey}::bigint) AS locked`
+        if (!lockRows[0]?.locked) {
+          concurrentConflict = true
+          return
+        }
 
-      // Pro-rate rewards by the fraction actually accepted (some
-      // may have been dedup hits).
-      const acceptedFraction = insertResult.count / kept.length
-      const baseGold = Math.floor(rewards.gold * acceptedFraction)
-      xpCredited = Math.floor(rewards.xp * acceptedFraction)
-
-      // --- Pet XP + level-up (mirrors award_xp_and_check_level) ---
-      // SELECT ... FOR UPDATE so a concurrent voice-session credit
-      // from the bot doesn't race us.
-      let levelUpBonusGold = 0
-      if (xpCredited > 0) {
+        // 2. Lock the pet row: fresh food/bath/level/xp, and blocks
+        //    the bot's concurrent voice/text pet writes.
         const petRows = await tx.$queryRaw<
-          Array<{ level: number; xp: bigint }>
-        >`SELECT level, xp FROM lg_pets WHERE userid = ${ctx.userId} FOR UPDATE`
-        if (petRows.length > 0) {
+          Array<{ level: number; xp: bigint; food: number; bath: number; sleep: number }>
+        >`SELECT level, xp, food, bath, sleep FROM lg_pets WHERE userid = ${ctx.userId} FOR UPDATE`
+        const pet = petRows[0] ?? null
+
+        // 3. Cap/limit counters — now race-safe under the lock.
+        const since24h = new Date(now.getTime() - 24 * 3600_000)
+        const todayStart = utcDayStart(now)
+        const since60s = new Date(now.getTime() - 60_000)
+        const [cards24h, cardsTodayUtc, goldAgg, recentDeviceCount] = await Promise.all([
+          tx.anki_review_events.count({ where: { userid: ctx.userId, reviewed_at: { gte: since24h } } }),
+          tx.anki_review_events.count({ where: { userid: ctx.userId, reviewed_at: { gte: todayStart } } }),
+          tx.lg_gold_transactions.aggregate({
+            where: { to_account: ctx.userId, created_at: { gte: todayStart }, amount: { gt: 0 } },
+            _sum: { amount: true },
+          }),
+          tx.anki_review_events.count({ where: { device_id: ctx.deviceId, ingested_at: { gte: since60s } } }),
+        ])
+        const goldToday = Number(goldAgg._sum.amount || 0)
+        goldTodayResp = goldToday
+        cards24hResp = cards24h
+
+        // 4. Authoritative rate-limit re-check (accurate under the lock).
+        if (recentDeviceCount + kept.length > RATE_LIMIT_PER_MINUTE) {
+          rateLimited = true
+          return
+        }
+
+        // 5. Rewards with the accurate counters.
+        const mood = pet ? moodMultiplierForNeeds(pet.food, pet.bath, pet.sleep) : 1.0
+        const rewards = computeBatchRewards({
+          cardCount: kept.length,
+          userTier: tier,
+          serverPremium: false,
+          voteGoldBoost: 1.0,
+          moodMultiplier: mood,
+          cardsTodayBefore: cards24h,
+          goldEarnedTodayBefore: goldToday,
+          xpEarnedTodayBefore: 0,
+          cardsThisSessionBefore: cardsTodayUtc,
+          refillsGivenThisSessionBefore: Math.min(Math.floor(cardsTodayUtc / 50), 6),
+          graceMode,
+        })
+        throttleStr = rewards.throttle
+        capHit = rewards.capHit
+
+        const currentFood = pet?.food ?? 0
+        const currentBath = pet?.bath ?? 0
+        const newFood = Math.min(8, currentFood + rewards.foodRefill)
+        const newBath = Math.min(8, currentBath + rewards.bathRefill)
+        const actualFoodRefill = newFood - currentFood
+        const actualBathRefill = newBath - currentBath
+
+        // 6. Insert events (server-recomputed review_id PK dedups).
+        const insertResult = await tx.anki_review_events.createMany({
+          data: kept.map((r) => ({
+            review_id: r.reviewIdBytes,
+            userid: ctx.userId,
+            device_id: ctx.deviceId,
+            guildid: ANKI_GLOBAL_GUILDID,
+            anki_user_guid: body.anki_user_guid!,
+            card_id: r.cardId,
+            deck_id: r.deckId,
+            ease: r.ease,
+            time_ms: r.timeMs,
+            reviewed_at: r.reviewedAt,
+            reward_gold: 0,
+            reward_xp: 0,
+            was_throttled: rewards.throttle !== "linear",
+          })),
+          skipDuplicates: true,
+        })
+        acceptedCount = insertResult.count
+        dedupedCount = kept.length - insertResult.count
+        if (insertResult.count === 0) return
+
+        // Pro-rate by the fraction actually accepted (some may dedup).
+        const acceptedFraction = insertResult.count / kept.length
+        const baseGold = Math.floor(rewards.gold * acceptedFraction)
+        xpCredited = Math.floor(rewards.xp * acceptedFraction)
+
+        // 7. Pet XP + level-up + care (pet already locked above).
+        let levelUpBonusGold = 0
+        if (xpCredited > 0 && pet) {
           const { newLevel: nl, remainingXp, levelsGained: lg } = applyPetXp(
-            Number(petRows[0].level) || 1,
-            Number(petRows[0].xp) || 0,
+            Number(pet.level) || 1,
+            Number(pet.xp) || 0,
             xpCredited
           )
           levelsGained = lg
           newLevel = nl
           levelUpBonusGold = lg * LEVEL_UP_GOLD_BONUS
-          // Merge level/xp + care refill into ONE update.
           await tx.lg_pets.update({
             where: { userid: ctx.userId },
-            data: {
-              level: nl,
-              xp: BigInt(remainingXp),
-              food: newFood,
-              bath: newBath,
-            },
+            data: { level: nl, xp: BigInt(remainingXp), food: newFood, bath: newBath },
           })
-          actualFoodRefillFinal = actualFoodRefill
-          actualBathRefillFinal = actualBathRefill
+          foodRefillFinal = actualFoodRefill
+          bathRefillFinal = actualBathRefill
+        } else if (pet && (actualFoodRefill > 0 || actualBathRefill > 0)) {
+          await tx.lg_pets.update({
+            where: { userid: ctx.userId },
+            data: { food: newFood, bath: newBath },
+          })
+          foodRefillFinal = actualFoodRefill
+          bathRefillFinal = actualBathRefill
         }
-      } else if (pet && (actualFoodRefill > 0 || actualBathRefill > 0)) {
-        // No XP this batch but care refills are due.
-        await tx.lg_pets.update({
-          where: { userid: ctx.userId },
-          data: { food: newFood, bath: newBath },
-        })
-        actualFoodRefillFinal = actualFoodRefill
-        actualBathRefillFinal = actualBathRefill
-      }
 
-      // --- Gold balance (mirrors award_gold) ---
-      goldCredited = baseGold + levelUpBonusGold
-      if (goldCredited > 0) {
-        await tx.user_config.update({
-          where: { userid: ctx.userId },
-          data: { gold: { increment: goldCredited } },
-        })
-        if (baseGold > 0) {
-          await tx.lg_gold_transactions.create({
-            data: {
-              transaction_type: "ANKI_REVIEW",
-              actorid: ctx.userId,
-              to_account: ctx.userId,
-              amount: baseGold,
-              description: `Anki review batch: ${insertResult.count} cards`,
-              reference: `anki:batch:${body.batch_id}`,
-            },
+        // 8. Gold balance + ledger (mirrors award_gold).
+        goldCredited = baseGold + levelUpBonusGold
+        if (goldCredited > 0) {
+          await tx.user_config.update({
+            where: { userid: ctx.userId },
+            data: { gold: { increment: goldCredited } },
           })
+          if (baseGold > 0) {
+            await tx.lg_gold_transactions.create({
+              data: {
+                transaction_type: "ANKI_REVIEW",
+                actorid: ctx.userId,
+                to_account: ctx.userId,
+                amount: baseGold,
+                description: `Anki review batch: ${insertResult.count} cards`,
+                reference: `anki:batch:${body.batch_id}`,
+              },
+            })
+          }
+          if (levelUpBonusGold > 0) {
+            await tx.lg_gold_transactions.create({
+              data: {
+                transaction_type: "LEVEL_UP",
+                actorid: ctx.userId,
+                to_account: ctx.userId,
+                amount: levelUpBonusGold,
+                description: `Anki level up to ${newLevel}`,
+              },
+            })
+          }
         }
-        if (levelUpBonusGold > 0) {
-          await tx.lg_gold_transactions.create({
-            data: {
-              transaction_type: "LEVEL_UP",
-              actorid: ctx.userId,
-              to_account: ctx.userId,
-              amount: levelUpBonusGold,
-              description: `Anki level up to ${newLevel}`,
-            },
-          })
-        }
-      }
-    }, {
-      maxWait: 5000,
-      timeout: 15000,
-    })
+      },
+      { maxWait: 8000, timeout: 15000 }
+    )
   } catch (err) {
     console.error("[anki/reviews] transaction failed:", err)
+    return sendError(res, 503, "db_unavailable", "Could not persist reviews — please retry")
+  }
+
+  if (concurrentConflict) {
+    res.setHeader("Retry-After", "2")
     return sendError(
       res,
-      503,
-      "db_unavailable",
-      "Could not persist reviews — please retry"
+      429,
+      "concurrent_batch",
+      "Another review batch for this account is being processed — retry shortly"
     )
   }
 
-  // Anki is global — no member_experience / per-server rank XP write.
+  if (rateLimited) {
+    res.setHeader("Retry-After", "60")
+    return sendError(res, 429, "rate_limited", `Per-device rate limit: ${RATE_LIMIT_PER_MINUTE} reviews/min`)
+  }
 
   const warnings: string[] = []
-  if (rewards.capHit) warnings.push("daily_cap_hit")
+  if (capHit) warnings.push("daily_cap_hit")
   if (graceMode) warnings.push("new_account_grace_active")
 
   const response: ReviewsResponseBody = {
@@ -660,22 +592,15 @@ export default async function handler(
     rewards: {
       gold: goldCredited,
       xp: xpCredited,
-      pet_care: {
-        food: actualFoodRefillFinal,
-        bath: actualBathRefillFinal,
-        sleep: 0,
-      },
+      pet_care: { food: foodRefillFinal, bath: bathRefillFinal, sleep: 0 },
       levels_gained: levelsGained,
       new_level: newLevel,
     },
     daily_progress: {
-      gold: {
-        earned: goldToday + goldCredited,
-        cap: DAILY_GOLD_CAP,
-      },
-      cards_24h: cards24h + acceptedCount,
+      gold: { earned: goldTodayResp + goldCredited, cap: DAILY_GOLD_CAP },
+      cards_24h: cards24hResp + acceptedCount,
     },
-    throttle: rewards.throttle,
+    throttle: throttleStr,
     warnings,
   }
 
@@ -699,8 +624,6 @@ async function cacheIdempotencyResponse(
       },
     })
   } catch (err) {
-    // P2002 = primary key collision = some other request beat us
-    // here for the same idempotency key. Either way, ignore.
     const code = (err as { code?: string }).code
     if (code === "P2002") return
     console.warn("[anki/reviews] idempotency cache write failed:", err)

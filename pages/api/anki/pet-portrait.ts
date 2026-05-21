@@ -38,8 +38,10 @@
 //          skipped, never fatal, so we always return at least the
 //          frame + base pet.
 //
-//          Auth: requires a valid Anki bearer (anki.pet.read).
-//          Accepts ?t=<token> so an <img> tag can load it.
+//          Auth: requires a valid Anki bearer (anki.pet.read) in
+//          the Authorization header. (No ?t= query-string token —
+//          tokens in URLs leak via logs/referrers; the addon always
+//          uses the header.)
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import crypto from "crypto"
@@ -542,11 +544,6 @@ export default async function handler(
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET")
     return res.status(405).json({ error: "method_not_allowed" })
-  }
-
-  // Token fallback for <img> usage.
-  if (!req.headers.authorization && typeof req.query.t === "string") {
-    req.headers.authorization = `Bearer ${req.query.t}`
   }
 
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")

@@ -19,8 +19,9 @@
 //          asset fetch is best-effort: a missing sprite is skipped,
 //          never fatal, so we always return at least the frame + bg.
 //
-//          Auth: requires a valid Anki bearer (anki.pet.read).
-//          Accepts ?t=<token> so an <img> tag can load it.
+//          Auth: requires a valid Anki bearer (anki.pet.read) in
+//          the Authorization header (no ?t= query token — avoids
+//          leaking the bearer via logs/referrers).
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import crypto from "crypto"
@@ -266,9 +267,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET")
     return res.status(405).json({ error: "method_not_allowed" })
-  }
-  if (!req.headers.authorization && typeof req.query.t === "string") {
-    req.headers.authorization = `Bearer ${req.query.t}`
   }
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
