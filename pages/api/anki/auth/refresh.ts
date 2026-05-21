@@ -1,24 +1,27 @@
 // ============================================================
 // AI-GENERATED FILE
-// Created: 2026-05-19  (reuse-detection hardened 2026-05-21)
+// Created: 2026-05-19  (reuse-detection softened 2026-05-21)
 // Purpose: Rotate the Anki addon's refresh token + mint a new
-//          bearer. Refresh tokens are single-use; rotation is an
-//          atomic compare-and-swap.
+//          bearer. Rotation is an atomic compare-and-swap so only
+//          one of two concurrent refreshes with the same token wins.
 //
-//          Reuse detection (OAuth 2.1): on rotate we snapshot the
-//          OLD hash into prev_refresh_token_hash. If a later refresh
-//          presents a token that matches that PREVIOUS hash, it's a
-//          genuine stale-token replay (theft / a second use after
-//          rotation) -> revoke the device. A token that matches
-//          NEITHER the current nor the previous hash is just wrong
-//          or garbage -> plain 401, NO revoke. This is what stops an
-//          attacker who merely learned a victim's device_id from
-//          force-revoking them by POSTing junk.
+//          We deliberately do NOT auto-revoke the device on a token
+//          mismatch. The original OAuth-2.1-style reuse-detection
+//          (revoke on any stale token) caused false positives:
+//          a refresh race or a lost-response retry presents a token
+//          the server already rotated, which looked identical to
+//          theft and locked real users out. The Anki bearer is
+//          scope-limited (anki.review.write + anki.pet.read — a
+//          stolen token can't touch Discord, spend gold, or benefit
+//          an attacker), so auto-revocation's marginal value isn't
+//          worth that breakage. A stale/wrong token just gets a 401;
+//          the addon recovers by re-pairing (which reactivates the
+//          device). Suspected compromise is handled explicitly via
+//          "sign out everywhere" on /dashboard/anki.
 //
-//          The atomic UPDATE ... WHERE refresh_token_hash=$presented
-//          guarantees only one of two concurrent refreshes with the
-//          same token wins (rowcount=1); the loser falls through to
-//          the reuse check.
+//          The addon also serializes refreshes (one in flight at a
+//          time) and does not retry the refresh POST on a network
+//          error, so it never double-uses a token in the first place.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
@@ -26,7 +29,6 @@ import {
   mintAnkiBearer,
   mintAnkiRefreshToken,
   hashAnkiRefreshToken,
-  timingSafeBufferEqual,
   ANKI_JWT_TTL,
 } from "@/lib/anki/auth"
 import { invalidateDeviceCache } from "@/lib/anki/requireAuth"
@@ -73,16 +75,15 @@ export default async function handler(
   const presentedHash = hashAnkiRefreshToken(refresh_token)
   const { token: newRefreshToken, hash: newRefreshHash } = mintAnkiRefreshToken()
 
-  // Atomic compare-and-swap. Snapshots the OLD hash into
-  // prev_refresh_token_hash (RHS references the pre-UPDATE row, so
-  // prev gets the old current). RETURNING gives us the userid for
-  // minting in the same round-trip.
+  // Atomic compare-and-swap: rotate only if the device exists, is
+  // not revoked, and the presented hash matches. RETURNING gives us
+  // the userid for minting in one round-trip. Two concurrent
+  // refreshes with the same token: exactly one gets a row back.
   let rotated: Array<{ userid: bigint }>
   try {
     rotated = await prisma.$queryRaw<Array<{ userid: bigint }>>`
       UPDATE anki_devices
-      SET prev_refresh_token_hash = refresh_token_hash,
-          refresh_token_hash = ${newRefreshHash},
+      SET refresh_token_hash = ${newRefreshHash},
           refresh_token_version = refresh_token_version + 1,
           last_seen_at = now()
       WHERE device_id = ${device_id}::uuid
@@ -114,48 +115,28 @@ export default async function handler(
     })
   }
 
-  // CAS failed. Read the device to disambiguate.
-  let row: { revoked_at: Date | null; prev_refresh_token_hash: Buffer | null } | null
+  // CAS failed. Distinguish "revoked" (explicit dashboard sign-out)
+  // from "stale/wrong token" — but in NEITHER case do we revoke.
+  let revoked: Date | null = null
+  let exists = false
   try {
-    const rows = await prisma.$queryRaw<
-      Array<{ revoked_at: Date | null; prev_refresh_token_hash: Buffer | null }>
-    >`SELECT revoked_at, prev_refresh_token_hash FROM anki_devices WHERE device_id = ${device_id}::uuid`
-    row = rows[0] ?? null
+    const rows = await prisma.$queryRaw<Array<{ revoked_at: Date | null }>>`
+      SELECT revoked_at FROM anki_devices WHERE device_id = ${device_id}::uuid`
+    if (rows[0]) {
+      exists = true
+      revoked = rows[0].revoked_at
+    }
   } catch (err) {
     console.error("[anki/refresh] disambiguate lookup failed:", err)
     return sendError(res, 503, "db_unavailable", "Could not verify device state")
   }
 
-  if (!row) {
+  if (!exists) {
     return sendError(res, 401, "device_unknown", "This device is not registered")
   }
-  if (row.revoked_at) {
+  if (revoked) {
     return sendError(res, 401, "device_revoked", "This device has been signed out")
   }
-
-  // Genuine reuse ONLY if the presented token matches the PREVIOUS
-  // (just-rotated) hash. Anything else is a wrong/garbage token and
-  // must NOT revoke the device (else anyone who learns the device_id
-  // could force a re-pair by posting junk).
-  const prev = row.prev_refresh_token_hash
-  if (prev && timingSafeBufferEqual(presentedHash, Buffer.from(prev))) {
-    try {
-      await prisma.anki_devices.update({
-        where: { device_id },
-        data: { revoked_at: new Date(), revoked_reason: "refresh_token_reuse" },
-      })
-      invalidateDeviceCache(device_id)
-    } catch (err) {
-      console.error("[anki/refresh] reuse-revoke failed:", err)
-    }
-    return sendError(
-      res,
-      401,
-      "refresh_token_reuse",
-      "Refresh token reuse detected — this device has been revoked for safety"
-    )
-  }
-
-  // Wrong / stale-beyond-one / garbage token. No revoke.
-  return sendError(res, 401, "invalid_refresh_token", "refresh_token is invalid")
+  // Stale or wrong token — no revoke. The addon re-pairs to recover.
+  return sendError(res, 401, "invalid_refresh_token", "refresh_token is invalid or stale")
 }

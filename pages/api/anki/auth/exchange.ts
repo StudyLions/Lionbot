@@ -40,6 +40,7 @@ import {
   ANKI_JWT_VERSION,
 } from "@/lib/anki/auth"
 import { isLionheartActive } from "../../auth/ios/exchange"
+import { invalidateDeviceCache } from "@/lib/anki/requireAuth"
 
 interface ExchangeBody {
   pairing_code?: string
@@ -233,11 +234,18 @@ export default async function handler(
 
   const ipPrefix = extractIpPrefix(req)
 
+  // Re-pair friendly: if THIS user already has a row for this
+  // device_id (e.g. a prior revoked / stale pairing), reactivate +
+  // re-key it in place rather than failing. This preserves their
+  // anki_review_events history (FK to device_id) and avoids the
+  // dead-end where a revoked device can never pair again. A
+  // device_id owned by a DIFFERENT account is rejected (P2002 on
+  // the create fallback).
+  let createdNew = false
   try {
-    await prisma.anki_devices.create({
+    const reactivated = await prisma.anki_devices.updateMany({
+      where: { device_id, userid: consumed.userid },
       data: {
-        device_id,
-        userid: consumed.userid,
         device_name,
         refresh_token_hash: refreshHash,
         refresh_token_version: 1,
@@ -247,22 +255,40 @@ export default async function handler(
         os_platform: os_platform || null,
         anki_version: anki_version || null,
         last_ip_prefix: ipPrefix || undefined,
+        last_seen_at: new Date(),
+        revoked_at: null,
+        revoked_reason: null,
       },
     })
+    if (reactivated.count === 0) {
+      await prisma.anki_devices.create({
+        data: {
+          device_id,
+          userid: consumed.userid,
+          device_name,
+          refresh_token_hash: refreshHash,
+          refresh_token_version: 1,
+          jwt_version: ANKI_JWT_VERSION,
+          scopes: DEFAULT_ANKI_SCOPES.slice(),
+          addon_version: addon_version || null,
+          os_platform: os_platform || null,
+          anki_version: anki_version || null,
+          last_ip_prefix: ipPrefix || undefined,
+        },
+      })
+      createdNew = true
+    }
   } catch (err: unknown) {
-    // P2002 = unique constraint violation. Most likely cause is
-    // the addon retried after a network blip and the pairing
-    // code was already consumed on the previous attempt, and
-    // somehow got to here a second time. The pairing code's
-    // single-use predicate should have caught that above, but
-    // defending in depth.
-    console.error("[anki/exchange] device insert failed:", err)
+    console.error("[anki/exchange] device register failed:", err)
     const code = (err as { code?: string }).code
     if (code === "P2002") {
-      return sendError(res, 409, "device_already_exists", "device_id is already registered")
+      // device_id exists but is registered to a different account.
+      return sendError(res, 409, "device_already_exists", "This device is registered to another account")
     }
     return sendError(res, 503, "db_unavailable", "Could not register device")
   }
+  // Clear any cached (revoked) state so the new bearer works at once.
+  invalidateDeviceCache(device_id)
 
   let sessionToken: string
   try {
@@ -276,9 +302,14 @@ export default async function handler(
     // code (which was the right behavior) but the addon would
     // sit unable to act.
     console.error("[anki/exchange] mint bearer failed:", err)
-    await prisma.anki_devices
-      .delete({ where: { device_id } })
-      .catch((e) => console.error("[anki/exchange] rollback delete failed:", e))
+    // Only roll back a row we just CREATED — never delete a
+    // reactivated pre-existing device (that would cascade-delete the
+    // user's anki_review_events history).
+    if (createdNew) {
+      await prisma.anki_devices
+        .delete({ where: { device_id } })
+        .catch((e) => console.error("[anki/exchange] rollback delete failed:", e))
+    }
     return sendError(res, 500, "mint_failed", "Could not issue session token")
   }
 
