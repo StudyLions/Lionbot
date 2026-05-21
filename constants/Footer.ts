@@ -33,6 +33,16 @@ export const MenuItems = [
       target: "",
     },
   },
+  // --- AI-MODIFIED (2026-05-21) ---
+  // Purpose: Surface the "LionGotchi for Anki" addon download page.
+  {
+    title: "Anki Addon",
+    link: {
+      href: "/anki/download",
+      target: "",
+    },
+  },
+  // --- END AI-MODIFIED ---
   {
     title: "Source Code",
     link: {
