@@ -228,6 +228,20 @@ export default async function handler(
     )
   }
 
+  // Brand-new-account bootstrap. A Discord user who has never used
+  // LionBot has no user_config / lg_pets row — but the addon must
+  // work for them (they may only ever use Anki and never join a
+  // server). Create both rows from DB defaults if missing, ordered
+  // so the FK targets exist first (anki_devices + lg_pets reference
+  // user_config). Idempotent (ON CONFLICT DO NOTHING).
+  try {
+    await prisma.$executeRaw`INSERT INTO user_config (userid) VALUES (${consumed.userid}) ON CONFLICT (userid) DO NOTHING`
+    await prisma.$executeRaw`INSERT INTO lg_pets (userid) VALUES (${consumed.userid}) ON CONFLICT (userid) DO NOTHING`
+  } catch (err) {
+    console.error("[anki/exchange] account bootstrap failed:", err)
+    return sendError(res, 503, "db_unavailable", "Could not initialize your account")
+  }
+
   // Mint the refresh token first; if anything fails after this
   // we abort without inserting the device row.
   const { token: refreshToken, hash: refreshHash } = mintAnkiRefreshToken()

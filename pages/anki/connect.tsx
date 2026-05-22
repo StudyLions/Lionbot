@@ -132,6 +132,29 @@ export const getServerSideProps: GetServerSideProps<PageProps> = async (
 
   const userId = BigInt(token.discordId as string)
 
+  // Seed user_config (name + avatar) for brand-new Discord users who
+  // have NEVER used LionBot — so the addon shows their Discord
+  // identity instead of a numeric id. COALESCE keeps any value the
+  // bot already maintains (never overwrites). lg_pets is bootstrapped
+  // at exchange time. Best-effort; failure must not block pairing.
+  const sessName = typeof token.name === "string" ? token.name : null
+  const sessPic = typeof token.picture === "string" ? token.picture : null
+  let avatarHash: string | null = null
+  if (sessPic) {
+    const m = sessPic.match(/avatars\/\d+\/([a-zA-Z0-9_]+)\.(?:png|webp|gif|jpe?g)/)
+    if (m) avatarHash = m[1]
+  }
+  try {
+    await prisma.$executeRaw`
+      INSERT INTO user_config (userid, name, avatar_hash)
+      VALUES (${userId}, ${sessName}, ${avatarHash})
+      ON CONFLICT (userid) DO UPDATE
+        SET name = COALESCE(user_config.name, EXCLUDED.name),
+            avatar_hash = COALESCE(user_config.avatar_hash, EXCLUDED.avatar_hash)`
+  } catch (err) {
+    console.warn("[anki/connect] user_config seed failed:", err)
+  }
+
   // Drop any prior unconsumed codes for this (userid, device_id).
   // Keeps the table small if the user refreshes the page.
   try {
