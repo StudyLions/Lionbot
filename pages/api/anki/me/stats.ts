@@ -21,6 +21,38 @@ import { DAILY_GOLD_CAP } from "@/lib/anki/rewards"
 
 const STREAK_MIN_CARDS = 10
 
+// Per-user response cache. The stats payload is read-only and only
+// shifts as reviews trickle in (batched every 30s by the addon), so
+// a short TTL is invisible to the user but hard-caps how often a
+// single client can trigger the expensive rank groupBy + streak loop.
+// Best-effort: each Vercel instance has its own Map; a client that
+// hammers the endpoint usually stays pinned to one warm instance, so
+// the cache absorbs the burst there. Cold instances just recompute.
+const STATS_CACHE_TTL_MS = 30_000
+const STATS_CACHE_MAX = 5_000
+type StatsPayload = Record<string, unknown>
+const statsCache = new Map<string, { at: number; body: StatsPayload }>()
+
+function cacheGet(userId: bigint): StatsPayload | null {
+  const key = userId.toString()
+  const hit = statsCache.get(key)
+  if (!hit) return null
+  if (Date.now() - hit.at > STATS_CACHE_TTL_MS) {
+    statsCache.delete(key)
+    return null
+  }
+  return hit.body
+}
+
+function cacheSet(userId: bigint, body: StatsPayload): void {
+  if (statsCache.size >= STATS_CACHE_MAX) {
+    // Evict the oldest insertion (Map preserves insertion order).
+    const oldest = statsCache.keys().next().value
+    if (oldest !== undefined) statsCache.delete(oldest)
+  }
+  statsCache.set(userId.toString(), { at: Date.now(), body })
+}
+
 function utcDayStart(d: Date): Date {
   return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()))
 }
@@ -48,6 +80,12 @@ export default async function handler(
 
   const ctx = await requireAnkiAuth(req, res)
   if (!ctx) return
+
+  const cached = cacheGet(ctx.userId)
+  if (cached) {
+    res.setHeader("X-Cache", "hit")
+    return res.status(200).json(cached)
+  }
 
   const now = new Date()
   const dayStart = utcDayStart(now)
@@ -140,7 +178,7 @@ export default async function handler(
     _sum: { amount: true },
   })
 
-  return res.status(200).json({
+  const body: StatsPayload = {
     cards: {
       today,
       week,
@@ -162,5 +200,9 @@ export default async function handler(
         cap: DAILY_GOLD_CAP,
       },
     },
-  })
+  }
+
+  cacheSet(ctx.userId, body)
+  res.setHeader("X-Cache", "miss")
+  return res.status(200).json(body)
 }
