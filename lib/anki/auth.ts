@@ -59,12 +59,18 @@ const ankiJwtKey: Uint8Array = new TextEncoder().encode(
     .digest("hex")
 )
 
-export type AnkiScope = "anki.review.write" | "anki.pet.read"
+// --- AI-MODIFIED (2026-06-02) ---
+// Added anki.pet.write: mutating pet/game actions (care/equip/farm/shop/…)
+// performed from the addon require this scope, kept distinct from the
+// read-only anki.pet.read so a future read-only token can't mutate state.
+export type AnkiScope = "anki.review.write" | "anki.pet.read" | "anki.pet.write"
 
 export const DEFAULT_ANKI_SCOPES: AnkiScope[] = [
   "anki.review.write",
   "anki.pet.read",
+  "anki.pet.write",
 ]
+// --- END AI-MODIFIED ---
 
 export interface VerifiedAnkiBearer {
   /** Discord snowflake (string, NOT bigint — JWT sub is a string). */
@@ -152,7 +158,9 @@ export async function verifyAnkiBearer(
     // older verifier deployment.
     const scopes = (payload.scp as unknown[]).filter(
       (s): s is AnkiScope =>
-        s === "anki.review.write" || s === "anki.pet.read"
+        s === "anki.review.write" ||
+        s === "anki.pet.read" ||
+        s === "anki.pet.write"
     )
 
     return {
