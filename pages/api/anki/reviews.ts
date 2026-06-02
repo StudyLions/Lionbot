@@ -38,11 +38,13 @@ import {
   computeBatchRewards,
   applyPetXp,
   moodMultiplierForNeeds,
+  calcMood,
   LEVEL_UP_GOLD_BONUS,
   DAILY_GOLD_CAP,
   tierFromIsPremium,
   type Tier,
 } from "@/lib/anki/rewards"
+import { rollReviewDrops, DAILY_DROP_CAP, type DropResult } from "@/lib/pet/dropService"
 import { isLionheartActive } from "../auth/ios/exchange"
 
 const REQUIRED_SCOPE: AnkiScope = "anki.review.write"
@@ -265,9 +267,16 @@ interface ReviewsResponseBody {
   daily_progress: {
     gold: { earned: number; cap: number }
     cards_24h: number
+    // --- AI-MODIFIED (2026-06-02) --- item drops
+    drops: { earned: number; cap: number }
+    // --- END AI-MODIFIED ---
   }
   throttle: string
   warnings: string[]
+  // --- AI-MODIFIED (2026-06-02) ---
+  // Items dropped by THIS batch (0 or 1). The addon celebrates them.
+  drops: DropResult[]
+  // --- END AI-MODIFIED ---
 }
 
 export default async function handler(
@@ -358,9 +367,14 @@ export default async function handler(
         levels_gained: 0,
         new_level: null,
       },
-      daily_progress: { gold: { earned: 0, cap: DAILY_GOLD_CAP }, cards_24h: 0 },
+      daily_progress: {
+        gold: { earned: 0, cap: DAILY_GOLD_CAP },
+        cards_24h: 0,
+        drops: { earned: 0, cap: DAILY_DROP_CAP },
+      },
       throttle: "linear",
       warnings: rejected > 0 ? ["all_reviews_rejected"] : [],
+      drops: [],
     }
     await cacheIdempotencyResponse(ctx.deviceId, idempHeader, 200, response)
     return res.status(200).json(response)
@@ -403,6 +417,10 @@ export default async function handler(
   let cards24hResp = 0
   let rateLimited = false
   let concurrentConflict = false
+  // --- AI-MODIFIED (2026-06-02) --- item drops
+  let dropsResult: DropResult[] = []
+  let dropsTodayResp = 0
+  // --- END AI-MODIFIED ---
 
   try {
     await prisma.$transaction(
@@ -558,6 +576,23 @@ export default async function handler(
             })
           }
         }
+
+        // 9. Item drops (server-authoritative). Uses the locked pet's
+        //    mood + the counters above; reaching here means acceptedCount
+        //    > 0. Rolled ONCE per batch — the cached idempotency response
+        //    makes a replay return the same drops without re-rolling or
+        //    double-granting (the whole txn is gated by the batch key).
+        const mood08 = pet ? calcMood(pet.food, pet.bath, pet.sleep) : 0
+        const dropOut = await rollReviewDrops(
+          tx,
+          ctx.userId,
+          acceptedCount,
+          mood08,
+          tier,
+          todayStart
+        )
+        dropsResult = dropOut.drops
+        dropsTodayResp = dropOut.dropsToday
       },
       { maxWait: 8000, timeout: 15000 }
     )
@@ -599,9 +634,15 @@ export default async function handler(
     daily_progress: {
       gold: { earned: goldTodayResp + goldCredited, cap: DAILY_GOLD_CAP },
       cards_24h: cards24hResp + acceptedCount,
+      // --- AI-MODIFIED (2026-06-02) ---
+      drops: { earned: dropsTodayResp, cap: DAILY_DROP_CAP },
+      // --- END AI-MODIFIED ---
     },
     throttle: throttleStr,
     warnings,
+    // --- AI-MODIFIED (2026-06-02) ---
+    drops: dropsResult,
+    // --- END AI-MODIFIED ---
   }
 
   await cacheIdempotencyResponse(ctx.deviceId, idempHeader, 200, response)
