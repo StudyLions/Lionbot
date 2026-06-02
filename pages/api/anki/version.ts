@@ -32,11 +32,11 @@ export default async function handler(
 
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400")
   return res.status(200).json({
-    latest: process.env.ANKI_ADDON_LATEST_VERSION || "0.1.0",
+    latest: process.env.ANKI_ADDON_LATEST_VERSION || "0.2.1",
     min_supported: process.env.ANKI_ADDON_MIN_VERSION || "0.1.0",
     download_url:
       process.env.ANKI_ADDON_DOWNLOAD_URL ||
-      "https://lionbot-website.vercel.app/anki/download",
+      "https://lionbot.org/anki/download",
     changelog_url:
       process.env.ANKI_ADDON_CHANGELOG_URL ||
       "https://github.com/StudyLions/lionbot-anki-addon/releases",

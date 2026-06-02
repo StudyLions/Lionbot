@@ -14,9 +14,15 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { ankiRateLimit } from "@/lib/anki/rateLimit"
 
 const TOP_N = 20
-const CACHE_TTL_MS = 45_000
+// --- AI-MODIFIED (2026-06-02) ---
+// Bumped 45s -> 120s: the top-N groupBy scans the period's reviews, so a
+// longer shared cache cuts how often that runs under public load. The
+// leaderboard barely changes within 2 minutes.
+const CACHE_TTL_MS = 120_000
+// --- END AI-MODIFIED ---
 
 type Period = "daily" | "weekly" | "monthly"
 
@@ -80,6 +86,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
+
+  // --- AI-MODIFIED (2026-06-02) ---
+  const rl = ankiRateLimit(ctx.userId, "leaderboard")
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
+  }
+  // --- END AI-MODIFIED ---
 
   const raw = (req.query.period as string) || "daily"
   const period: Period =

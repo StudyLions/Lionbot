@@ -28,6 +28,7 @@ import crypto from "crypto"
 import sharp from "sharp"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { ankiRateLimit } from "@/lib/anki/rateLimit"
 
 const BLOB_BASE =
   process.env.NEXT_PUBLIC_BLOB_URL ||
@@ -83,13 +84,20 @@ function plantAssetPath(plantType: string, typeId: number, stage: number, rarity
 }
 
 async function fetchPng(url: string): Promise<Buffer | null> {
+  // --- AI-MODIFIED (2026-06-02) ---
+  // 6s timeout so a slow asset host can't hang the function (abort -> null -> layer skipped).
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 6000)
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, { signal: ctrl.signal })
     if (!res.ok) return null
     return Buffer.from(await res.arrayBuffer())
   } catch {
     return null
+  } finally {
+    clearTimeout(timer)
   }
+  // --- END AI-MODIFIED ---
 }
 
 async function toRgba(buf: Buffer, w: number, h: number): Promise<Buffer> {
@@ -271,6 +279,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
 
+  // --- AI-MODIFIED (2026-06-02) ---
+  const rl = ankiRateLimit(ctx.userId, "farm-portrait")
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
+  }
+  // --- END AI-MODIFIED ---
+
   const scale = Math.max(1, Math.min(3, parseInt((req.query.scale as string) || "2", 10) || 2))
 
   let data: FarmData
@@ -298,9 +314,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const buf = await composeFarm(data, scale)
     const etag = `"${crypto.createHash("sha256").update(buf).digest("base64url").slice(0, 16)}"`
     renderCache.set(cacheKey, { buf, etag, ts: Date.now() })
-    if (renderCache.size > 300) {
-      Array.from(renderCache.keys()).slice(0, 30).forEach((k) => renderCache.delete(k))
+    // --- AI-MODIFIED (2026-06-02) --- bound memory (was 300)
+    if (renderCache.size > 120) {
+      Array.from(renderCache.keys()).slice(0, 40).forEach((k) => renderCache.delete(k))
     }
+    // --- END AI-MODIFIED ---
     res.setHeader("Content-Type", "image/png")
     res.setHeader("Cache-Control", "private, max-age=60")
     res.setHeader("ETag", etag)

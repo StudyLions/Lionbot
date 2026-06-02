@@ -48,6 +48,7 @@ import crypto from "crypto"
 import sharp from "sharp"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { ankiRateLimit } from "@/lib/anki/rateLimit"
 import { getRoomDefaults } from "@/utils/roomDefaults"
 import {
   ROOM_LAYERS,
@@ -101,13 +102,22 @@ function trunc(n: number): number {
 }
 
 async function fetchPng(url: string): Promise<Buffer | null> {
+  // --- AI-MODIFIED (2026-06-02) ---
+  // Bound the remote asset fetch with a 6s timeout so a slow/hanging
+  // asset host can't tie up the serverless function. A timeout/abort
+  // returns null -> the layer is skipped, same as a 404.
+  const ctrl = new AbortController()
+  const timer = setTimeout(() => ctrl.abort(), 6000)
   try {
-    const res = await fetch(url)
+    const res = await fetch(url, { signal: ctrl.signal })
     if (!res.ok) return null
     return Buffer.from(await res.arrayBuffer())
   } catch {
     return null
+  } finally {
+    clearTimeout(timer)
   }
+  // --- END AI-MODIFIED ---
 }
 
 async function toRgba(buf: Buffer, w: number, h: number): Promise<Buffer> {
@@ -549,6 +559,14 @@ export default async function handler(
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
 
+  // --- AI-MODIFIED (2026-06-02) ---
+  const rl = ankiRateLimit(ctx.userId, "pet-portrait")
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
+  }
+  // --- END AI-MODIFIED ---
+
   const scale = Math.max(1, Math.min(3, parseInt((req.query.scale as string) || "2", 10) || 2))
   // ?frames=4 -> animated strip; otherwise a single static frame
   // (the <img>?t= fallback can't animate a PNG).
@@ -604,10 +622,14 @@ export default async function handler(
     const { buf, frames } = await composeAnimated(data, scale, wantFrames)
     const etag = `"${crypto.createHash("sha256").update(buf).digest("base64url").slice(0, 16)}"`
     renderCache.set(cacheKey, { buf, etag, frames, ts: Date.now() })
-    if (renderCache.size > 300) {
-      const drop = Array.from(renderCache.keys()).slice(0, 30)
+    // --- AI-MODIFIED (2026-06-02) ---
+    // Bound memory: each animated render is ~20-30 MB, so cap entries
+    // lower (was 300 -> multi-GB worst case) and evict more per pass.
+    if (renderCache.size > 120) {
+      const drop = Array.from(renderCache.keys()).slice(0, 40)
       drop.forEach((k) => renderCache.delete(k))
     }
+    // --- END AI-MODIFIED ---
     res.setHeader("Content-Type", "image/png")
     res.setHeader("Cache-Control", "private, max-age=180")
     res.setHeader("ETag", etag)

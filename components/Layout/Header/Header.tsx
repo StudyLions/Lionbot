@@ -29,6 +29,9 @@ import {
   // --- END AI-MODIFIED ---
   Sparkles,
   ChevronDown,
+  // --- AI-MODIFIED (2026-06-02) --- icon for the new "Anki Addon" nav link
+  Download,
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-04-30) ---
   // Purpose: Compass icon for new "Servers" directory link
   Compass,
@@ -79,8 +82,29 @@ type NavLink = {
   icon: React.ElementType;
   matchExact?: boolean;
   external?: boolean;
+  // --- AI-MODIFIED (2026-06-02) --- small NEW / BETA pills on a nav item
+  badges?: ("NEW" | "BETA")[];
+  // --- END AI-MODIFIED ---
   children?: { label: string; href: string; icon: React.ElementType; external?: boolean }[];
 };
+
+// --- AI-MODIFIED (2026-06-02) ---
+// Tiny pill rendered next to a nav label to flag experimental features.
+function NavBadge({ kind }: { kind: "NEW" | "BETA" }) {
+  return (
+    <span
+      className={cn(
+        "ml-1 inline-flex items-center rounded-full border px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide",
+        kind === "NEW"
+          ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
+          : "bg-amber-500/15 text-amber-400 border-amber-500/30"
+      )}
+    >
+      {kind}
+    </span>
+  );
+}
+// --- END AI-MODIFIED ---
 
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: Top-level "Features" link replaced by "Servers" (premium directory).
@@ -123,6 +147,10 @@ const NAV_LINKS: NavLink[] = [
     ],
   },
   { label: "Updates", href: "/timeline", icon: Sparkles },
+  // --- AI-MODIFIED (2026-06-02) ---
+  // Surface the new (beta) LionGotchi-for-Anki addon in the main nav.
+  { label: "Anki Addon", href: "/anki/download", icon: Download, badges: ["NEW", "BETA"] },
+  // --- END AI-MODIFIED ---
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
 // --- END AI-MODIFIED ---
@@ -231,13 +259,16 @@ export default function Header() {
                 <Link key={link.href} href={link.href}>
                   <a
                     className={cn(
-                      "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center",
                       isActive(link.href, link.matchExact)
                         ? "text-foreground bg-accent"
                         : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
                     )}
                   >
                     {link.label}
+                    {/* --- AI-MODIFIED (2026-06-02) --- */}
+                    {link.badges?.map((b) => <NavBadge key={b} kind={b} />)}
+                    {/* --- END AI-MODIFIED --- */}
                   </a>
                 </Link>
               )
@@ -347,6 +378,20 @@ export default function Header() {
                       <User className="h-4 w-4 text-muted-foreground" />
                       Profile
                     </DropdownMenuItem>
+                    {/* --- AI-MODIFIED (2026-06-02) --- */}
+                    {/* Surface the Anki addon (beta) in the user menu too. */}
+                    <DropdownMenuItem
+                      onSelect={() => router.push("/anki/download")}
+                      className="cursor-pointer gap-3"
+                    >
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                      <span className="flex items-center">
+                        Anki Addon
+                        <NavBadge kind="NEW" />
+                        <NavBadge kind="BETA" />
+                      </span>
+                    </DropdownMenuItem>
+                    {/* --- END AI-MODIFIED --- */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="justify-between text-muted-foreground"
@@ -463,6 +508,9 @@ export default function Header() {
                           >
                             <Icon className="h-4 w-4 opacity-70" />
                             {link.label}
+                            {/* --- AI-MODIFIED (2026-06-02) --- */}
+                            {link.badges?.map((b) => <NavBadge key={b} kind={b} />)}
+                            {/* --- END AI-MODIFIED --- */}
                           </a>
                         </Link>
                       );
