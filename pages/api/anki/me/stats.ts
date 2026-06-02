@@ -17,6 +17,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { ankiRateLimit } from "@/lib/anki/rateLimit"
 import { DAILY_GOLD_CAP } from "@/lib/anki/rewards"
 
 const STREAK_MIN_CARDS = 10
@@ -81,6 +82,15 @@ export default async function handler(
   const ctx = await requireAnkiAuth(req, res)
   if (!ctx) return
 
+  // --- AI-MODIFIED (2026-06-02) ---
+  // Per-user rate limit — DoS backstop now that the addon is public.
+  const rl = ankiRateLimit(ctx.userId, "me/stats")
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
+  }
+  // --- END AI-MODIFIED ---
+
   const cached = cacheGet(ctx.userId)
   if (cached) {
     res.setHeader("X-Cache", "hit")
@@ -108,34 +118,66 @@ export default async function handler(
     }),
   ])
 
-  // Streak: walk back day by day until we hit a day with < STREAK_MIN_CARDS.
-  // Cap at 365 to bound the loop. For typical users the streak
-  // is short so this is fast; the index on (userid, reviewed_at)
-  // makes each per-day count cheap.
+  // --- AI-MODIFIED (2026-06-02) ---
+  // Purpose: DoS hardening before the addon goes public. The old streak
+  // computation fired up to 365 sequential `count()` queries PER request
+  // (one per day) — a single client could trigger ~365 DB round-trips, an
+  // easy amplification vector. Replace with ONE aggregate that returns
+  // per-UTC-day review counts for the last ~371 days, then walk the days
+  // in memory. Identical semantics: today in-progress doesn't break the
+  // streak; each prior day needs >= STREAK_MIN_CARDS.
+  // --- Original code (commented out for rollback) ---
+  // let streak = 0
+  // const STREAK_MAX = 365
+  // for (let i = 0; i < STREAK_MAX; i++) {
+  //   const start = new Date(dayStart.getTime() - i * 86400_000)
+  //   const end = new Date(start.getTime() + 86400_000)
+  //   const cnt = await prisma.anki_review_events.count({
+  //     where: {
+  //       userid: ctx.userId,
+  //       reviewed_at: { gte: start, lt: end },
+  //     },
+  //   })
+  //   if (cnt >= STREAK_MIN_CARDS) {
+  //     streak++
+  //   } else {
+  //     if (i === 0 && cnt < STREAK_MIN_CARDS) {
+  //       continue
+  //     }
+  //     break
+  //   }
+  // }
+  // --- End original code ---
+  const streakSince = new Date(dayStart.getTime() - 371 * 86400_000)
+  const dayRows = await prisma.$queryRaw<Array<{ d: string; c: number | bigint }>>`
+    SELECT to_char((reviewed_at AT TIME ZONE 'UTC')::date, 'YYYY-MM-DD') AS d,
+           count(*)::int AS c
+    FROM anki_review_events
+    WHERE userid = ${ctx.userId} AND reviewed_at >= ${streakSince}
+    GROUP BY 1`
+  const cardsByDay = new Map<string, number>()
+  for (const r of dayRows) cardsByDay.set(r.d, Number(r.c))
+
+  const utcDayKey = (ms: number): string => {
+    const dt = new Date(ms)
+    const y = dt.getUTCFullYear()
+    const m = String(dt.getUTCMonth() + 1).padStart(2, "0")
+    const day = String(dt.getUTCDate()).padStart(2, "0")
+    return `${y}-${m}-${day}`
+  }
+
   let streak = 0
-  const STREAK_MAX = 365
-  for (let i = 0; i < STREAK_MAX; i++) {
-    const start = new Date(dayStart.getTime() - i * 86400_000)
-    const end = new Date(start.getTime() + 86400_000)
-    const cnt = await prisma.anki_review_events.count({
-      where: {
-        userid: ctx.userId,
-        reviewed_at: { gte: start, lt: end },
-      },
-    })
+  for (let i = 0; i < 371; i++) {
+    const cnt = cardsByDay.get(utcDayKey(dayStart.getTime() - i * 86400_000)) ?? 0
     if (cnt >= STREAK_MIN_CARDS) {
       streak++
     } else {
-      // The current day "in progress" doesn't break the streak —
-      // only complete prior days count as breaks. So if today
-      // is below threshold but yesterday was at threshold, we
-      // continue checking yesterday.
-      if (i === 0 && cnt < STREAK_MIN_CARDS) {
-        continue
-      }
+      // The current day "in progress" doesn't break the streak.
+      if (i === 0) continue
       break
     }
   }
+  // --- END AI-MODIFIED ---
 
   // GLOBAL rank — Anki is not tied to any server. Rank is the
   // user's position across ALL LionBot users by review count.

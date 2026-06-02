@@ -11,6 +11,7 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
 import { requireAnkiAuth } from "@/lib/anki/requireAuth"
+import { ankiRateLimit } from "@/lib/anki/rateLimit"
 
 type PlotStatus = "empty" | "dead" | "ready" | "needs_water" | "growing"
 
@@ -21,6 +22,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
   const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
+
+  // --- AI-MODIFIED (2026-06-02) ---
+  const rl = ankiRateLimit(ctx.userId, "farm")
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
+  }
+  // --- END AI-MODIFIED ---
 
   let rows
   try {
