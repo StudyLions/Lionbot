@@ -23,6 +23,18 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── June 1, 2026 ───────────────────────────────────────────
+  // --- AI-MODIFIED (2026-06-01) ---
+  // Purpose: Dashboard hint clarifying that a season reset doesn't strip rank roles.
+  {
+    date: "2026-06-01",
+    title: "Clearer steps for resetting ranks when a new season starts",
+    description:
+      "Changing your season start date doesn't remove members' existing rank roles by itself. The Leaderboard settings page now reminds you to run /ranks and click Refresh to reset ranks for the new season. Reported by Kevin.",
+    category: "improvement",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── May 16, 2026 ───────────────────────────────────────────
   // --- AI-MODIFIED (2026-05-16) ---
   // Purpose: Enhancement stack bug — destruction wiped all copies.

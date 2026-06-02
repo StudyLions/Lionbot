@@ -1016,6 +1016,13 @@ model user_config {
   shared_tasklist_memberships                                              shared_tasklist_member[]
   shared_tasks_assigned                                                    shared_task[]                 @relation("shared_task_assignee")
   user_survey                                                              user_survey?
+  // --- AI-MODIFIED (2026-05-19) ---
+  // Purpose: LionGotchi-for-Anki addon — home-guild attribution
+  // for Anki reviews (NULL falls back to the support guild at
+  // ingest time) and back-relations to the new anki_* tables.
+  anki_home_guildid                                                        BigInt?
+  anki_devices                                                             anki_devices[]
+  // --- END AI-MODIFIED ---
 }
 
 model user_survey {
@@ -2240,6 +2247,96 @@ model shard_presence_stats {
   updated_at  DateTime @default(now()) @db.Timestamptz(6)
 }
 
+// ============================================================
+// AI-GENERATED MODELS (2026-05-19)
+// Purpose: LionGotchi-for-Anki addon. Paste-back PKCE auth,
+//          review event ingestion with dedup + rate limits,
+//          per-batch idempotency.
+// Schema source: StudyLion/data/migration/v18-v19/migration.sql
+// ============================================================
+
+/// One row per paired addon install. Long-lived. Indexed for
+/// the "list devices for this user" query on /dashboard/anki.
+model anki_devices {
+  device_id             String               @id @db.Uuid
+  userid                BigInt
+  device_name           String
+  refresh_token_hash      Bytes
+  prev_refresh_token_hash Bytes?
+  refresh_token_version Int                  @default(1)
+  jwt_version           String
+  scopes                String[]             @default(["anki.review.write", "anki.pet.read"])
+  addon_version         String?
+  os_platform           String?
+  anki_version          String?
+  created_at            DateTime             @default(now()) @db.Timestamptz(6)
+  last_seen_at          DateTime             @default(now()) @db.Timestamptz(6)
+  last_ip_prefix        String?              @db.Inet
+  revoked_at            DateTime?            @db.Timestamptz(6)
+  revoked_reason        String?
+  user_config           user_config          @relation(fields: [userid], references: [userid], onDelete: Cascade, onUpdate: NoAction)
+  anki_review_events    anki_review_events[]
+
+  @@index([userid], map: "anki_devices_active_userid")
+  @@index([last_seen_at], map: "anki_devices_last_seen")
+}
+
+/// 5-minute single-use pairing codes. code_hash is sha256(code).
+/// Pruned daily; expired rows are useless once consumed=true.
+model anki_pairing_codes {
+  code_hash      Bytes     @id
+  userid         BigInt
+  device_id      String    @db.Uuid
+  device_name    String?
+  code_challenge String
+  state          String
+  expires_at     DateTime  @db.Timestamptz(6)
+  consumed       Boolean   @default(false)
+  consumed_at    DateTime? @db.Timestamptz(6)
+  created_at     DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([expires_at], map: "anki_pairing_codes_unconsumed")
+}
+
+/// The big table. One row per accepted flashcard review. PRIMARY
+/// KEY review_id is a server-recomputed sha256 hash so a client
+/// cannot forge collisions; the UNIQUE constraint blocks
+/// double-submission across multi-device Anki sync.
+model anki_review_events {
+  review_id      Bytes        @id
+  userid         BigInt
+  device_id      String       @db.Uuid
+  guildid        BigInt
+  anki_user_guid String
+  card_id        BigInt
+  deck_id        BigInt?
+  ease           Int          @db.SmallInt
+  time_ms        Int
+  reviewed_at    DateTime     @db.Timestamptz(6)
+  ingested_at    DateTime     @default(now()) @db.Timestamptz(6)
+  reward_gold    Int          @default(0)
+  reward_xp      Int          @default(0)
+  was_throttled  Boolean      @default(false)
+  anki_devices   anki_devices @relation(fields: [device_id], references: [device_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userid, reviewed_at(sort: Desc)], map: "anki_review_events_user_time")
+  @@index([guildid, reviewed_at(sort: Desc)], map: "anki_review_events_guild_time")
+  @@index([ingested_at], map: "anki_review_events_ingested")
+}
+
+/// Batch-level idempotency. Replayed POSTs return the stored
+/// prior response instead of double-crediting. 24h retention.
+model anki_batch_idempotency {
+  device_id       String   @db.Uuid
+  idempotency_key String   @db.Uuid
+  response_body   Json
+  status_code     Int
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@id([device_id, idempotency_key])
+  @@index([created_at], map: "anki_batch_idempotency_created")
+}
+
 enum activitytype {
   PLAYING
   WATCHING
@@ -2277,6 +2374,11 @@ enum experiencetype {
   QUEST_XP
   ACHIEVEMENT_XP
   BONUS_XP
+  // --- AI-MODIFIED (2026-05-19) ---
+  // Purpose: New value for the LionGotchi-for-Anki addon. Live DB
+  // ALTER TYPE applied via data/migration/v18-v19/migration.sql.
+  ANKI_XP
+  // --- END AI-MODIFIED ---
 }
 
 enum gemtransactiontype {
@@ -2415,6 +2517,11 @@ enum lggoldtransactiontype {
   ADMIN
   FARM_PLANT
   FARM_UPROOT
+  // --- AI-MODIFIED (2026-05-19) ---
+  // Purpose: LionGotchi-for-Anki addon. Live DB ALTER TYPE applied
+  // via data/migration/v18-v19/migration.sql.
+  ANKI_REVIEW
+  // --- END AI-MODIFIED ---
   MARKETPLACE_SALE
   MARKETPLACE_PURCHASE
   GIFT

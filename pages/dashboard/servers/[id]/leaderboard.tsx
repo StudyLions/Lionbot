@@ -24,7 +24,7 @@ import { useDashboard } from "@/hooks/useDashboard"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/router"
 import { useEffect, useState, useCallback } from "react"
-import { BarChart3, EyeOff, Filter } from "lucide-react"
+import { BarChart3, EyeOff, Filter, Info, AlertTriangle } from "lucide-react"
 import { GetServerSideProps } from "next"
 import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 
@@ -75,6 +75,14 @@ export default function LeaderboardConfigPage() {
       data.roleFilterEnabled !== original.roleFilterEnabled ||
       JSON.stringify([...data.unrankedRoleIds].sort()) !== JSON.stringify([...original.unrankedRoleIds].sort()) ||
       JSON.stringify([...data.filterRoleIds].sort()) !== JSON.stringify([...original.filterRoleIds].sort()))
+
+  // --- AI-MODIFIED (2026-06-01) ---
+  // Purpose: detect an unsaved season-start change so we can surface the
+  // "run /ranks -> Refresh" prompt at the moment it's needed. Changing the
+  // season start does NOT strip existing rank roles (the bot only re-syncs
+  // roles on /ranks Refresh), which surprised real admins after a monthly reset.
+  const seasonChanged = !!data && !!original && data.seasonStart !== original.seasonStart
+  // --- END AI-MODIFIED ---
 
   const handleSave = async () => {
     if (!data || !original || !hasChanges) return
@@ -181,6 +189,49 @@ export default function LeaderboardConfigPage() {
                         className="bg-background border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </SettingRow>
+
+                    {/* --- AI-MODIFIED (2026-06-01) --- */}
+                    {/* Purpose: A season-start change does NOT remove the rank
+                        roles members already hold; the bot only re-syncs roles
+                        on /ranks -> Refresh. Real support gap (a premium guild
+                        on 2026-06-01 had 72 members still wearing last season's
+                        voice ranks after a monthly reset). This note documents
+                        the manual Refresh step and turns amber the moment the
+                        date is changed (the teachable moment). */}
+                    <div
+                      className={`flex items-start gap-3 rounded-lg border px-4 py-3 my-2 text-sm leading-relaxed ${
+                        seasonChanged
+                          ? "bg-amber-500/10 border-amber-500/30 text-amber-200/90"
+                          : "bg-muted/40 border-border/60 text-muted-foreground"
+                      }`}
+                    >
+                      {seasonChanged ? (
+                        <AlertTriangle size={18} aria-hidden="true" className="flex-shrink-0 mt-0.5 text-amber-400" />
+                      ) : (
+                        <Info size={18} aria-hidden="true" className="flex-shrink-0 mt-0.5 text-muted-foreground" />
+                      )}
+                      <p>
+                        {seasonChanged ? (
+                          <>
+                            <span className="font-semibold text-amber-300">Heads up:</span> after you save, run{" "}
+                            <code className="px-1 py-0.5 rounded bg-background/60 text-foreground text-xs">/ranks</code>{" "}
+                            in Discord and click <span className="font-medium text-foreground">Refresh</span> to remove
+                            old rank roles and reset ranks for the new season. Changing the date alone will not update
+                            roles members already have.
+                          </>
+                        ) : (
+                          <>
+                            <span className="font-medium text-foreground">Using activity rank roles?</span> Changing
+                            the season start does not remove rank roles members already have. To reset ranks for the
+                            new season, run{" "}
+                            <code className="px-1 py-0.5 rounded bg-background/60 text-foreground text-xs">/ranks</code>{" "}
+                            in your server and click <span className="font-medium text-foreground">Refresh</span>.
+                          </>
+                        )}
+                      </p>
+                    </div>
+                    {/* --- END AI-MODIFIED --- */}
+
                     {/* --- AI-REPLACED (2026-05-03) ---
                         Reason: Original copy only mentioned the leaderboard,
                         which led real admins to add region/education/vanity
