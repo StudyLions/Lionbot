@@ -11,10 +11,10 @@
 import Head from "next/head"
 import { Download as DownloadIcon, ShieldCheck } from "lucide-react"
 
-const ADDON_VERSION = "0.2.1"
+const ADDON_VERSION = "0.2.2"
 const ADDON_FILE = "/anki/lionbot.ankiaddon"
 const ADDON_SHA256 =
-  "44607e4068619dd5a84a5481f3ce7c07ef7f132ee993b20026d379ab0f375ca7"
+  "e2d1f3f344a4ca49b634672448aaa6b2ce7c4056d6e0de3069a66bb7de382ab1"
 const ADDON_SIZE = "85 KB"
 
 export default function AnkiDownloadPage() {
