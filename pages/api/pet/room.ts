@@ -33,6 +33,13 @@ const ROOM_LAYERS = ["wall", "floor", "mat", "table", "chair", "bed", "lamp", "p
 // --- End original code ---
 import { getRoomDefaults } from "@/utils/roomDefaults"
 // --- END AI-REPLACED ---
+// --- AI-MODIFIED (2026-06-04) ---
+// The activeRoomId switch now delegates to lib/pet/roomService.switchRoom
+// (shared with the Anki bearer route pages/api/anki/pet/room.ts) so the
+// ownership/IDOR check lives in exactly one place.
+import { switchRoom } from "@/lib/pet/roomService"
+import { PetServiceError } from "@/lib/pet/careService"
+// --- END AI-MODIFIED ---
 
 export default apiHandler({
   async GET(req, res) {
@@ -241,26 +248,20 @@ export default apiHandler({
     }
     // --- END AI-MODIFIED ---
 
-    // --- AI-MODIFIED (2026-03-20) ---
-    // Purpose: Verify user owns the room before allowing switch (IDOR fix)
+    // --- AI-MODIFIED (2026-06-04) ---
+    // Room switch (ownership/IDOR check) now lives in roomService.switchRoom,
+    // shared with the Anki bearer route. Behaviour unchanged: the default room
+    // is always allowed; any other room requires an lg_user_rooms ownership row.
     if (activeRoomId !== undefined) {
-      if (typeof activeRoomId !== "number" || !Number.isInteger(activeRoomId) || activeRoomId < 1) {
-        return res.status(400).json({ error: "Invalid activeRoomId" })
-      }
-      const DEFAULT_ROOM_ID = 1
-      if (activeRoomId !== DEFAULT_ROOM_ID) {
-        const ownedRoom = await prisma.lg_user_rooms.findFirst({
-          where: { userid: userId, room_id: activeRoomId },
-        })
-        if (!ownedRoom) {
-          return res.status(403).json({ error: "You do not own this room" })
+      try {
+        await switchRoom(userId, activeRoomId)
+        return res.status(200).json({ success: true })
+      } catch (err) {
+        if (err instanceof PetServiceError) {
+          return res.status(err.status).json({ error: err.message })
         }
+        throw err
       }
-      await prisma.lg_pets.update({
-        where: { userid: userId },
-        data: { active_room_id: activeRoomId },
-      })
-      return res.status(200).json({ success: true })
     }
     // --- END AI-MODIFIED ---
 
