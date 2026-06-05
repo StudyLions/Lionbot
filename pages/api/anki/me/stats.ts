@@ -79,7 +79,7 @@ export default async function handler(
     return res.status(405).json({ error: "method_not_allowed", message: "GET only" })
   }
 
-  const ctx = await requireAnkiAuth(req, res)
+  const ctx = await requireAnkiAuth(req, res, "anki.pet.read")
   if (!ctx) return
 
   // --- AI-MODIFIED (2026-06-02) ---

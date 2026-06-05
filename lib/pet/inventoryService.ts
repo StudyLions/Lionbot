@@ -12,7 +12,7 @@
 //          equipItem(userId, params)      -> { success, equipment }
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { PetServiceError } from "@/lib/pet/careService"
+import { PetServiceError, assertIntId } from "@/lib/pet/careService"
 import { calcGlowTier, calcGlowIntensity, GAME_CONSTANTS } from "@/utils/gameConstants"
 
 export const EQUIPMENT_CATEGORIES = ["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS"]
@@ -175,8 +175,9 @@ export async function equipItem(userId: bigint, params: EquipParams) {
     if (!inventoryId) {
       throw new PetServiceError(400, "inventory_id_required", "inventoryId required")
     }
+    const invId = assertIntId(inventoryId, "inventoryId")
     const invItem = await prisma.lg_user_inventory.findFirst({
-      where: { inventoryid: inventoryId, userid: userId },
+      where: { inventoryid: invId, userid: userId },
       include: { lg_items: true },
     })
     if (!invItem) {
@@ -385,8 +386,9 @@ export async function setCosmetic(userId: bigint, params: CosmeticParams) {
     if (!inventoryId) {
       throw new PetServiceError(400, "inventory_id_required", "inventoryId required")
     }
+    const invId = assertIntId(inventoryId, "inventoryId")
     const invItem = await prisma.lg_user_inventory.findFirst({
-      where: { inventoryid: inventoryId, userid: userId },
+      where: { inventoryid: invId, userid: userId },
       include: { lg_items: true },
     })
     if (!invItem) {

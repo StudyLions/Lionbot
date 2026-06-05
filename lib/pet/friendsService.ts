@@ -357,8 +357,13 @@ export async function interactWithFriend(userId: bigint, rawTargetId: unknown, t
     } else if (type === "SLEEP") {
       await tx.$executeRaw`UPDATE lg_pets SET sleep = LEAST(sleep + 2, 8) WHERE userid = ${targetId}`
     } else if (type === "WATER") {
-      const updated = await tx.lg_user_farm.updateMany({ where: { userid: targetId, plot_id: plot! }, data: { last_watered: new Date() } })
-      if (updated.count === 0) throw new PetServiceError(404, "plot_not_found", "Farm plot not found")
+      // Only a plot that's actually growing something can be watered — mirrors
+      // WATER_ALL. Prevents farming +5 XP by "watering" a friend's empty/dead plot.
+      const updated = await tx.lg_user_farm.updateMany({
+        where: { userid: targetId, plot_id: plot!, seed_id: { not: null }, dead: false },
+        data: { last_watered: new Date() },
+      })
+      if (updated.count === 0) throw new PetServiceError(400, "nothing_to_water", "That plot has nothing growing to water")
       await tx.$executeRaw`UPDATE lg_pets SET xp = xp + 5 WHERE userid = ${userId}`
     } else if (type === "WATER_ALL") {
       const plots = await tx.lg_user_farm.findMany({

@@ -15,7 +15,7 @@
 //          in the final-release pass.
 // ============================================================
 import { prisma } from "@/utils/prisma"
-import { PetServiceError } from "@/lib/pet/careService"
+import { PetServiceError, assertIntId } from "@/lib/pet/careService"
 import {
   getExpiresAt,
   MAX_PRICE_PER_UNIT,
@@ -118,7 +118,7 @@ export async function createListing(
   userId: bigint,
   params: { itemId?: number; quantity?: number; pricePerUnit?: number; currency?: string; enhancementLevel?: number }
 ) {
-  const itemId = params.itemId
+  const itemId = assertIntId(params.itemId, "itemId")
   const quantity = Math.floor(Number(params.quantity))
   const pricePerUnit = Math.floor(Number(params.pricePerUnit))
   const enhancementLevel = Math.floor(Number(params.enhancementLevel ?? 0))
