@@ -110,136 +110,157 @@ export async function applyEnhancement(
     throw new PetServiceError(400, "missing_ids", "Valid equipmentInventoryId and scrollInventoryId required")
   }
 
-  const equipInv = await prisma.lg_user_inventory.findFirst({
-    where: { inventoryid: eqId, userid: userId },
-    include: { lg_items: true },
-  })
-  if (!equipInv) throw new PetServiceError(404, "equipment_not_found", "Equipment not found")
+  // Consume-the-scroll AND apply-the-outcome run in ONE interactive
+  // transaction with both inventory rows locked FOR UPDATE. This makes the
+  // spend atomic (a crash can never eat the scroll without applying a result)
+  // and serializes concurrent enhancements on the same equipment/scroll, so
+  // two parallel calls can't burn two scrolls for a single level (lost-scroll
+  // double-spend) or split-race the stack. Achievement logging is best-effort
+  // and non-economic, so it runs AFTER commit to keep the locked section small.
+  const { clientResult, achParams } = await prisma.$transaction(async (tx) => {
+    // Lock both inventory rows (user-scoped) before reading them.
+    await tx.$executeRaw`
+      SELECT inventoryid FROM lg_user_inventory
+      WHERE userid = ${userId} AND inventoryid IN (${eqId}, ${scId})
+      FOR UPDATE`
 
-  const scrollInv = await prisma.lg_user_inventory.findFirst({
-    where: { inventoryid: scId, userid: userId },
-    include: { lg_items: { include: { lg_scroll_properties: true } } },
-  })
-  if (!scrollInv || scrollInv.quantity < 1) {
-    throw new PetServiceError(404, "scroll_not_found", "Scroll not found or none remaining")
-  }
-  const scrollProps = scrollInv.lg_items.lg_scroll_properties
-  if (!scrollProps) throw new PetServiceError(400, "not_a_scroll", "Item is not a scroll")
-
-  if (equipInv.is_locked) {
-    throw new PetServiceError(400, "equipment_locked", "This equipment is locked. Unlock it before enhancing.")
-  }
-  if (scrollInv.is_locked) {
-    throw new PetServiceError(400, "scroll_locked", "This scroll is locked. Unlock it before using it to enhance.")
-  }
-
-  const maxLevel = MAX_ENHANCEMENT_BY_RARITY[equipInv.lg_items.rarity] ?? 5
-  if (equipInv.enhancement_level >= maxLevel) {
-    throw new PetServiceError(400, "max_level", "Item already at max enhancement")
-  }
-
-  const effectiveSuccess = scrollProps.success_rate * calcLevelPenalty(equipInv.enhancement_level)
-  const destroyRate = scrollProps.destroy_rate
-
-  // Consume the scroll first (matches the web route).
-  if (scrollInv.quantity <= 1) {
-    await prisma.lg_user_inventory.delete({ where: { inventoryid: scrollInv.inventoryid } })
-  } else {
-    await prisma.lg_user_inventory.update({
-      where: { inventoryid: scrollInv.inventoryid },
-      data: { quantity: scrollInv.quantity - 1 },
+    const equipInv = await tx.lg_user_inventory.findFirst({
+      where: { inventoryid: eqId, userid: userId },
+      include: { lg_items: true },
     })
-  }
+    if (!equipInv) throw new PetServiceError(404, "equipment_not_found", "Equipment not found")
 
-  const roll = Math.random()
+    const scrollInv = await tx.lg_user_inventory.findFirst({
+      where: { inventoryid: scId, userid: userId },
+      include: { lg_items: { include: { lg_scroll_properties: true } } },
+    })
+    if (!scrollInv || scrollInv.quantity < 1) {
+      throw new PetServiceError(404, "scroll_not_found", "Scroll not found or none remaining")
+    }
+    const scrollProps = scrollInv.lg_items.lg_scroll_properties
+    if (!scrollProps) throw new PetServiceError(400, "not_a_scroll", "Item is not a scroll")
 
-  if (roll < effectiveSuccess) {
-    const newLevel = equipInv.enhancement_level + 1
-    const bonusValue = scrollProps.bonus_value
+    if (equipInv.is_locked) {
+      throw new PetServiceError(400, "equipment_locked", "This equipment is locked. Unlock it before enhancing.")
+    }
+    if (scrollInv.is_locked) {
+      throw new PetServiceError(400, "scroll_locked", "This scroll is locked. Unlock it before using it to enhance.")
+    }
 
-    let enhancedInventoryId = equipInv.inventoryid
-    if (equipInv.quantity > 1) {
-      // Split one copy off the stack so only it gains the level.
-      const [, newRow] = await prisma.$transaction([
-        prisma.lg_user_inventory.update({
+    const maxLevel = MAX_ENHANCEMENT_BY_RARITY[equipInv.lg_items.rarity] ?? 5
+    if (equipInv.enhancement_level >= maxLevel) {
+      throw new PetServiceError(400, "max_level", "Item already at max enhancement")
+    }
+
+    const effectiveSuccess = scrollProps.success_rate * calcLevelPenalty(equipInv.enhancement_level)
+    const destroyRate = scrollProps.destroy_rate
+
+    // Consume the scroll first (matches the web route), now under the row lock.
+    if (scrollInv.quantity <= 1) {
+      await tx.lg_user_inventory.delete({ where: { inventoryid: scrollInv.inventoryid } })
+    } else {
+      await tx.lg_user_inventory.update({
+        where: { inventoryid: scrollInv.inventoryid },
+        data: { quantity: scrollInv.quantity - 1 },
+      })
+    }
+
+    const roll = Math.random()
+
+    if (roll < effectiveSuccess) {
+      const newLevel = equipInv.enhancement_level + 1
+      const bonusValue = scrollProps.bonus_value
+
+      let enhancedInventoryId = equipInv.inventoryid
+      if (equipInv.quantity > 1) {
+        // Split one copy off the stack so only it gains the level.
+        await tx.lg_user_inventory.update({
           where: { inventoryid: equipInv.inventoryid },
           data: { quantity: equipInv.quantity - 1 },
-        }),
-        prisma.lg_user_inventory.create({
+        })
+        const newRow = await tx.lg_user_inventory.create({
           data: {
             userid: userId, itemid: equipInv.lg_items.itemid, source: equipInv.source,
             quantity: 1, enhancement_level: newLevel,
           },
           select: { inventoryid: true },
-        }),
-      ])
-      enhancedInventoryId = newRow.inventoryid
-      await prisma.lg_enhancement_slots.create({
-        data: {
-          inventoryid: enhancedInventoryId, slot_number: newLevel,
-          scroll_itemid: scrollInv.lg_items.itemid, scroll_name: scrollInv.lg_items.name, bonus_value: bonusValue,
-        },
-      })
-    } else {
-      await prisma.$transaction([
-        prisma.lg_user_inventory.update({
+        })
+        enhancedInventoryId = newRow.inventoryid
+        await tx.lg_enhancement_slots.create({
+          data: {
+            inventoryid: enhancedInventoryId, slot_number: newLevel,
+            scroll_itemid: scrollInv.lg_items.itemid, scroll_name: scrollInv.lg_items.name, bonus_value: bonusValue,
+          },
+        })
+      } else {
+        await tx.lg_user_inventory.update({
           where: { inventoryid: equipInv.inventoryid },
           data: { enhancement_level: newLevel },
-        }),
-        prisma.lg_enhancement_slots.upsert({
+        })
+        await tx.lg_enhancement_slots.upsert({
           where: { inventoryid_slot_number: { inventoryid: equipInv.inventoryid, slot_number: newLevel } },
           create: {
             inventoryid: equipInv.inventoryid, slot_number: newLevel,
             scroll_itemid: scrollInv.lg_items.itemid, scroll_name: scrollInv.lg_items.name, bonus_value: bonusValue,
           },
           update: {},
-        }),
-      ])
+        })
+      }
+
+      const allSlots = await tx.lg_enhancement_slots.findMany({ where: { inventoryid: enhancedInventoryId } })
+      const totalBonus = allSlots.reduce((sum, s) => sum + s.bonus_value, 0)
+      const glowTier = calcGlowTier(newLevel, totalBonus)
+      const goldGained = bonusValue * ENHANCEMENT_GOLD_BONUS * 100
+      const dropGained = bonusValue * ENHANCEMENT_DROP_BONUS * 100
+
+      return {
+        clientResult: {
+          outcome: "success", itemName: equipInv.lg_items.name, newLevel, maxLevel,
+          bonusGained: bonusValue, goldGained: Math.round(goldGained * 10) / 10,
+          dropGained: Math.round(dropGained * 100) / 100, totalBonus, glowTier,
+          scrollName: scrollInv.lg_items.name,
+        } as Record<string, unknown>,
+        achParams: {
+          inventoryid: enhancedInventoryId, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
+          outcome: "success", fromLevel: equipInv.enhancement_level, toLevel: newLevel,
+          itemRarity: equipInv.lg_items.rarity, glowTier,
+        } as LogParams,
+      }
     }
 
-    const allSlots = await prisma.lg_enhancement_slots.findMany({ where: { inventoryid: enhancedInventoryId } })
-    const totalBonus = allSlots.reduce((sum, s) => sum + s.bonus_value, 0)
-    const glowTier = calcGlowTier(newLevel, totalBonus)
-    const goldGained = bonusValue * ENHANCEMENT_GOLD_BONUS * 100
-    const dropGained = bonusValue * ENHANCEMENT_DROP_BONUS * 100
-
-    const newAchievements = await logAndCheckAchievements(userId, {
-      inventoryid: enhancedInventoryId, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
-      outcome: "success", fromLevel: equipInv.enhancement_level, toLevel: newLevel,
-      itemRarity: equipInv.lg_items.rarity, glowTier,
-    })
+    if (Math.random() < destroyRate) {
+      if (equipInv.quantity > 1) {
+        await tx.lg_user_inventory.update({
+          where: { inventoryid: equipInv.inventoryid },
+          data: { quantity: equipInv.quantity - 1 },
+        })
+      } else {
+        await tx.lg_pet_equipment.deleteMany({ where: { userid: userId, itemid: equipInv.lg_items.itemid } })
+        await tx.lg_pet_cosmetics.deleteMany({ where: { userid: userId, itemid: equipInv.lg_items.itemid } })
+        await tx.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
+      }
+      return {
+        clientResult: { outcome: "destroyed", itemName: equipInv.lg_items.name } as Record<string, unknown>,
+        achParams: {
+          inventoryid: equipInv.inventoryid, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
+          outcome: "destroyed", fromLevel: equipInv.enhancement_level, toLevel: null, itemRarity: equipInv.lg_items.rarity,
+        } as LogParams,
+      }
+    }
 
     return {
-      outcome: "success", itemName: equipInv.lg_items.name, newLevel, maxLevel,
-      bonusGained: bonusValue, goldGained: Math.round(goldGained * 10) / 10,
-      dropGained: Math.round(dropGained * 100) / 100, totalBonus, glowTier,
-      scrollName: scrollInv.lg_items.name, newAchievements,
+      clientResult: {
+        outcome: "failed", itemName: equipInv.lg_items.name, currentLevel: equipInv.enhancement_level,
+      } as Record<string, unknown>,
+      achParams: {
+        inventoryid: equipInv.inventoryid, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
+        outcome: "failed", fromLevel: equipInv.enhancement_level, toLevel: null, itemRarity: equipInv.lg_items.rarity,
+      } as LogParams,
     }
-  }
-
-  if (Math.random() < destroyRate) {
-    if (equipInv.quantity > 1) {
-      await prisma.lg_user_inventory.update({
-        where: { inventoryid: equipInv.inventoryid },
-        data: { quantity: equipInv.quantity - 1 },
-      })
-    } else {
-      await prisma.lg_pet_equipment.deleteMany({ where: { userid: userId, itemid: equipInv.lg_items.itemid } })
-      await prisma.lg_pet_cosmetics.deleteMany({ where: { userid: userId, itemid: equipInv.lg_items.itemid } })
-      await prisma.lg_user_inventory.delete({ where: { inventoryid: equipInv.inventoryid } })
-    }
-    const newAchievements = await logAndCheckAchievements(userId, {
-      inventoryid: equipInv.inventoryid, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
-      outcome: "destroyed", fromLevel: equipInv.enhancement_level, toLevel: null, itemRarity: equipInv.lg_items.rarity,
-    })
-    return { outcome: "destroyed", itemName: equipInv.lg_items.name, newAchievements }
-  }
-
-  const newAchievements = await logAndCheckAchievements(userId, {
-    inventoryid: equipInv.inventoryid, itemName: equipInv.lg_items.name, scrollName: scrollInv.lg_items.name,
-    outcome: "failed", fromLevel: equipInv.enhancement_level, toLevel: null, itemRarity: equipInv.lg_items.rarity,
   })
-  return { outcome: "failed", itemName: equipInv.lg_items.name, currentLevel: equipInv.enhancement_level, newAchievements }
+
+  const newAchievements = await logAndCheckAchievements(userId, achParams)
+  return { ...clientResult, newAchievements }
 }
 
 interface LogParams {
