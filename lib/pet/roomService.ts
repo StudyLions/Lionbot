@@ -136,23 +136,32 @@ export async function purchaseRoom(userId: bigint, rawRoomId: unknown) {
     throw new PetServiceError(400, "insufficient_gems", "Insufficient gems")
   }
 
-  await prisma.$transaction(async (tx) => {
-    if (goldCost > 0) {
-      const r = await tx.$queryRawUnsafe<{ gold: bigint }[]>(
-        `UPDATE user_config SET gold = gold - $2 WHERE userid = $1 AND gold >= $2 RETURNING gold`,
-        userId, BigInt(goldCost)
-      )
-      if (r.length === 0) throw new PetServiceError(400, "insufficient_gold", "Insufficient gold (race condition)")
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (goldCost > 0) {
+        const r = await tx.$queryRawUnsafe<{ gold: bigint }[]>(
+          `UPDATE user_config SET gold = gold - $2 WHERE userid = $1 AND gold >= $2 RETURNING gold`,
+          userId, BigInt(goldCost)
+        )
+        if (r.length === 0) throw new PetServiceError(400, "insufficient_gold", "Insufficient gold (race condition)")
+      }
+      if (gemCost > 0) {
+        const r = await tx.$queryRawUnsafe<{ gems: number }[]>(
+          `UPDATE user_config SET gems = gems - $2 WHERE userid = $1 AND gems >= $2 RETURNING gems`,
+          userId, gemCost
+        )
+        if (r.length === 0) throw new PetServiceError(400, "insufficient_gems", "Insufficient gems (race condition)")
+      }
+      // PK (userid, room_id): a racing second purchase hits a unique violation
+      // here, which rolls back the debit above — converted to a clean error below.
+      await tx.lg_user_rooms.create({ data: { userid: userId, room_id: roomId } })
+    })
+  } catch (err: unknown) {
+    if ((err as { code?: string }).code === "P2002") {
+      throw new PetServiceError(400, "already_owned", "Room already owned")
     }
-    if (gemCost > 0) {
-      const r = await tx.$queryRawUnsafe<{ gems: number }[]>(
-        `UPDATE user_config SET gems = gems - $2 WHERE userid = $1 AND gems >= $2 RETURNING gems`,
-        userId, gemCost
-      )
-      if (r.length === 0) throw new PetServiceError(400, "insufficient_gems", "Insufficient gems (race condition)")
-    }
-    await tx.lg_user_rooms.create({ data: { userid: userId, room_id: roomId } })
-  })
+    throw err
+  }
 
   const updated = await prisma.user_config.findUnique({
     where: { userid: userId },

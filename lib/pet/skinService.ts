@@ -184,6 +184,13 @@ export async function purchaseSkin(userId: bigint, rawSkinId: unknown) {
         newGems: updated?.gems ?? 0,
         activeSkinId: skinId,
       }
+    }).catch((err: unknown) => {
+      // PK (userid, skin_id): a racing second purchase hits a unique violation,
+      // rolling back its debit — surface it as a clean already_owned, not a 500.
+      if ((err as { code?: string }).code === "P2002") {
+        throw new PetServiceError(400, "already_owned", "You already own this skin")
+      }
+      throw err
     })
     if ("error" in result) throw new PetServiceError(400, "insufficient_gold", result.error as string)
     return result
@@ -220,6 +227,11 @@ export async function purchaseSkin(userId: bigint, rawSkinId: unknown) {
         newGems: updated?.gems ?? 0,
         activeSkinId: skinId,
       }
+    }).catch((err: unknown) => {
+      if ((err as { code?: string }).code === "P2002") {
+        throw new PetServiceError(400, "already_owned", "You already own this skin")
+      }
+      throw err
     })
     if ("error" in result) throw new PetServiceError(400, "insufficient_gems", result.error as string)
     // Fire-and-forget gem audit (both transports).
