@@ -382,25 +382,38 @@ export async function bankGold(userId: bigint, action: unknown, amountRaw: unkno
   if (!hasPermission(membership.role ?? "MEMBER", "withdraw_gold", family.role_permissions)) {
     throw new PetServiceError(403, "no_permission", "You don't have permission to withdraw gold")
   }
-  if ((family.gold ?? BigInt(0)) < BigInt(numAmount)) throw new PetServiceError(400, "treasury_low", "Not enough gold in the treasury")
+  const cap = family.daily_gold_withdraw_cap ?? 0
   const todayStart = new Date()
   todayStart.setUTCHours(0, 0, 0, 0)
-  const dailyWithdrawals = await prisma.lg_family_gold_withdrawals.aggregate({
-    where: { family_id: family.family_id, userid: userId, withdrawn_at: { gte: todayStart } },
-    _sum: { amount: true },
-  })
-  const dailyUsed = dailyWithdrawals._sum.amount ?? 0
-  const cap = family.daily_gold_withdraw_cap ?? 0
-  if (dailyUsed + numAmount > cap) {
-    throw new PetServiceError(400, "daily_cap", `Daily withdrawal cap exceeded. You can withdraw ${Math.max(0, cap - dailyUsed).toLocaleString()} more today.`)
-  }
-  await prisma.$transaction([
-    prisma.lg_families.update({ where: { family_id: family.family_id }, data: { gold: { decrement: numAmount } } }),
-    prisma.user_config.update({ where: { userid: userId }, data: { gold: { increment: numAmount } } }),
-    prisma.lg_family_gold_log.create({
+
+  await prisma.$transaction(async (tx) => {
+    // Serialize all bank withdrawals for this family so the daily-cap
+    // aggregate and the treasury debit can't race a concurrent withdraw
+    // (which would otherwise bypass the cap or drive the treasury negative).
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`family:bank:${family.family_id}`}))`
+
+    // Daily cap — aggregated INSIDE the lock so a parallel withdraw can't
+    // slip between this read and the withdrawal record insert below.
+    const agg = await tx.lg_family_gold_withdrawals.aggregate({
+      where: { family_id: family.family_id, userid: userId, withdrawn_at: { gte: todayStart } },
+      _sum: { amount: true },
+    })
+    const dailyUsed = agg._sum.amount ?? 0
+    if (dailyUsed + numAmount > cap) {
+      throw new PetServiceError(400, "daily_cap", `Daily withdrawal cap exceeded. You can withdraw ${Math.max(0, cap - dailyUsed).toLocaleString()} more today.`)
+    }
+
+    // Atomic, race-safe treasury debit — never goes negative.
+    const dec = await tx.$queryRaw<Array<{ gold: bigint }>>`
+      UPDATE lg_families SET gold = gold - ${numAmount}
+      WHERE family_id = ${family.family_id} AND gold >= ${numAmount} RETURNING gold`
+    if (dec.length === 0) throw new PetServiceError(400, "treasury_low", "Not enough gold in the treasury")
+
+    await tx.user_config.update({ where: { userid: userId }, data: { gold: { increment: numAmount } } })
+    await tx.lg_family_gold_log.create({
       data: { family_id: family.family_id, userid: userId, amount: -numAmount, action: "WITHDRAW", description: `Withdrew ${numAmount.toLocaleString()} gold` },
-    }),
-    prisma.lg_family_gold_withdrawals.create({ data: { family_id: family.family_id, userid: userId, amount: numAmount } }),
-  ])
+    })
+    await tx.lg_family_gold_withdrawals.create({ data: { family_id: family.family_id, userid: userId, amount: numAmount } })
+  })
   return { success: true, action: "withdrawn", amount: numAmount }
 }
