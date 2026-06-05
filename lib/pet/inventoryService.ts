@@ -347,12 +347,13 @@ export async function setItemLock(
   if (existing.is_locked === rawLocked) {
     return { success: true, inventoryId, isLocked: rawLocked, unchanged: true }
   }
-  const updated = await prisma.lg_user_inventory.update({
-    where: { inventoryid: inventoryId },
+  // Re-scope the write to (inventoryid, userid) — defence-in-depth so the
+  // mutation can never touch a row the caller doesn't own.
+  await prisma.lg_user_inventory.updateMany({
+    where: { inventoryid: inventoryId, userid: userId },
     data: { is_locked: rawLocked },
-    select: { inventoryid: true, is_locked: true },
   })
-  return { success: true, inventoryId: updated.inventoryid, isLocked: updated.is_locked }
+  return { success: true, inventoryId, isLocked: rawLocked }
 }
 
 export interface CosmeticParams {

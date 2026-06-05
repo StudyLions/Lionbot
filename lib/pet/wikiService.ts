@@ -32,11 +32,14 @@ export async function browseWiki(
   const page = Math.max(1, Number(opts.page) || 1)
   const pageSize = Math.min(100, Math.max(10, Number(opts.pageSize) || 40))
 
+  // Validate enum filters so a bad query param can't crash Prisma (→503).
+  const VALID_RARITY = new Set(["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY", "MYTHICAL"])
+  const VALID_CATEGORY = new Set(["HAT", "GLASSES", "COSTUME", "SHIRT", "WINGS", "BOOTS", "SCROLL", "FURNITURE", "FARM_SEED"])
   const where: any = { category: { not: "MATERIAL" } }
   if (search) where.name = { contains: search, mode: "insensitive" }
-  if (category) where.category = category
+  if (category && VALID_CATEGORY.has(category)) where.category = category
   if (rarityParam) {
-    const rarities = rarityParam.split(",").filter(Boolean)
+    const rarities = rarityParam.split(",").filter((r) => VALID_RARITY.has(r))
     if (rarities.length === 1) where.rarity = rarities[0]
     else if (rarities.length > 1) where.rarity = { in: rarities }
   }

@@ -324,57 +324,66 @@ export async function interactWithFriend(userId: bigint, rawTargetId: unknown, t
   const todayStart = new Date()
   todayStart.setUTCHours(0, 0, 0, 0)
 
-  if (type !== "WATER_ALL") {
-    const existing = await prisma.lg_friend_interactions.findFirst({
-      where: {
-        actor_userid: userId, target_userid: targetId, interaction_type: type,
-        created_at: { gte: todayStart }, ...(type === "WATER" ? { plot_id: plot } : {}),
-      },
-    })
-    if (existing) {
-      throw new PetServiceError(
-        400, "already_today",
-        type === "WATER" ? "You already watered this plot today" : `You already used ${type} on this friend's pet today`
-      )
-    }
-  }
-
   const targetPet = await prisma.lg_pets.findUnique({ where: { userid: targetId }, select: { userid: true } })
   if (!targetPet) throw new PetServiceError(404, "friend_no_pet", "Friend's pet not found")
 
-  if (type === "FEED") {
-    await prisma.$executeRaw`UPDATE lg_pets SET food = LEAST(food + 2, 8) WHERE userid = ${targetId}`
-  } else if (type === "BATHE") {
-    await prisma.$executeRaw`UPDATE lg_pets SET bath = LEAST(bath + 2, 8) WHERE userid = ${targetId}`
-  } else if (type === "SLEEP") {
-    await prisma.$executeRaw`UPDATE lg_pets SET sleep = LEAST(sleep + 2, 8) WHERE userid = ${targetId}`
-  } else if (type === "WATER") {
-    const updated = await prisma.lg_user_farm.updateMany({ where: { userid: targetId, plot_id: plot! }, data: { last_watered: new Date() } })
-    if (updated.count === 0) throw new PetServiceError(404, "plot_not_found", "Farm plot not found")
-    await prisma.$executeRaw`UPDATE lg_pets SET xp = xp + 5 WHERE userid = ${userId}`
-  } else if (type === "WATER_ALL") {
-    const plots = await prisma.lg_user_farm.findMany({
-      where: { userid: targetId, seed_id: { not: null }, dead: false },
-      select: { plot_id: true },
-    })
-    let wateredCount = 0
-    for (const p of plots) {
-      const already = await prisma.lg_friend_interactions.findFirst({
-        where: { actor_userid: userId, target_userid: targetId, interaction_type: "WATER", plot_id: p.plot_id, created_at: { gte: todayStart } },
-      })
-      if (already) continue
-      await prisma.lg_user_farm.updateMany({ where: { userid: targetId, plot_id: p.plot_id }, data: { last_watered: new Date() } })
-      await prisma.lg_friend_interactions.create({ data: { actor_userid: userId, target_userid: targetId, interaction_type: "WATER", plot_id: p.plot_id } })
-      wateredCount++
-    }
-    if (wateredCount > 0) {
-      await prisma.$executeRaw`UPDATE lg_pets SET xp = xp + ${wateredCount * 5} WHERE userid = ${userId}`
-    }
-    return { success: true, wateredCount }
-  }
+  // There is no unique constraint on lg_friend_interactions, so the
+  // check-then-insert dedup could be raced (e.g. WATER self-XP farming).
+  // Serialize same-kind interactions with a per-(actor,target,kind)
+  // advisory lock held for the transaction.
+  const lockKey = `fi:${userId}:${targetId}:${type === "WATER_ALL" ? "WATER" : type}`
+  return await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`
 
-  await prisma.lg_friend_interactions.create({
-    data: { actor_userid: userId, target_userid: targetId, interaction_type: type, plot_id: type === "WATER" ? plot : null },
+    if (type !== "WATER_ALL") {
+      const existing = await tx.lg_friend_interactions.findFirst({
+        where: {
+          actor_userid: userId, target_userid: targetId, interaction_type: type,
+          created_at: { gte: todayStart }, ...(type === "WATER" ? { plot_id: plot } : {}),
+        },
+      })
+      if (existing) {
+        throw new PetServiceError(
+          400, "already_today",
+          type === "WATER" ? "You already watered this plot today" : `You already used ${type} on this friend's pet today`
+        )
+      }
+    }
+
+    if (type === "FEED") {
+      await tx.$executeRaw`UPDATE lg_pets SET food = LEAST(food + 2, 8) WHERE userid = ${targetId}`
+    } else if (type === "BATHE") {
+      await tx.$executeRaw`UPDATE lg_pets SET bath = LEAST(bath + 2, 8) WHERE userid = ${targetId}`
+    } else if (type === "SLEEP") {
+      await tx.$executeRaw`UPDATE lg_pets SET sleep = LEAST(sleep + 2, 8) WHERE userid = ${targetId}`
+    } else if (type === "WATER") {
+      const updated = await tx.lg_user_farm.updateMany({ where: { userid: targetId, plot_id: plot! }, data: { last_watered: new Date() } })
+      if (updated.count === 0) throw new PetServiceError(404, "plot_not_found", "Farm plot not found")
+      await tx.$executeRaw`UPDATE lg_pets SET xp = xp + 5 WHERE userid = ${userId}`
+    } else if (type === "WATER_ALL") {
+      const plots = await tx.lg_user_farm.findMany({
+        where: { userid: targetId, seed_id: { not: null }, dead: false },
+        select: { plot_id: true },
+      })
+      let wateredCount = 0
+      for (const p of plots) {
+        const already = await tx.lg_friend_interactions.findFirst({
+          where: { actor_userid: userId, target_userid: targetId, interaction_type: "WATER", plot_id: p.plot_id, created_at: { gte: todayStart } },
+        })
+        if (already) continue
+        await tx.lg_user_farm.updateMany({ where: { userid: targetId, plot_id: p.plot_id }, data: { last_watered: new Date() } })
+        await tx.lg_friend_interactions.create({ data: { actor_userid: userId, target_userid: targetId, interaction_type: "WATER", plot_id: p.plot_id } })
+        wateredCount++
+      }
+      if (wateredCount > 0) {
+        await tx.$executeRaw`UPDATE lg_pets SET xp = xp + ${wateredCount * 5} WHERE userid = ${userId}`
+      }
+      return { success: true, wateredCount }
+    }
+
+    await tx.lg_friend_interactions.create({
+      data: { actor_userid: userId, target_userid: targetId, interaction_type: type, plot_id: type === "WATER" ? plot : null },
+    })
+    return { success: true }
   })
-  return { success: true }
 }

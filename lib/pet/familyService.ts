@@ -353,7 +353,8 @@ export async function bankGold(userId: bigint, action: unknown, amountRaw: unkno
     throw new PetServiceError(400, "bad_action", "action must be 'deposit' or 'withdraw'")
   }
   const numAmount = parseInt(String(amountRaw), 10)
-  if (!numAmount || numAmount <= 0) throw new PetServiceError(400, "bad_amount", "amount must be a positive integer")
+  if (!Number.isFinite(numAmount) || numAmount <= 0) throw new PetServiceError(400, "bad_amount", "amount must be a positive integer")
+  if (numAmount > 2_000_000_000) throw new PetServiceError(400, "amount_too_large", "Amount is too large")
 
   const membership = await activeMembership(userId)
   if (!membership) throw new PetServiceError(403, "not_in_family", "You are not in a family")
@@ -363,15 +364,17 @@ export async function bankGold(userId: bigint, action: unknown, amountRaw: unkno
     if (!hasPermission(membership.role ?? "MEMBER", "deposit_gold", family.role_permissions)) {
       throw new PetServiceError(403, "no_permission", "You don't have permission to deposit gold")
     }
-    const userConfig = await prisma.user_config.findUnique({ where: { userid: userId }, select: { gold: true } })
-    if (!userConfig || userConfig.gold < BigInt(numAmount)) throw new PetServiceError(400, "insufficient_gold", "Not enough gold")
-    await prisma.$transaction([
-      prisma.user_config.update({ where: { userid: userId }, data: { gold: { decrement: numAmount } } }),
-      prisma.lg_families.update({ where: { family_id: family.family_id }, data: { gold: { increment: numAmount } } }),
-      prisma.lg_family_gold_log.create({
+    await prisma.$transaction(async (tx) => {
+      // Atomic, race-safe debit from the member.
+      const dec = await tx.$queryRaw<Array<{ gold: bigint }>>`
+        UPDATE user_config SET gold = gold - ${numAmount}
+        WHERE userid = ${userId} AND gold >= ${numAmount} RETURNING gold`
+      if (dec.length === 0) throw new PetServiceError(400, "insufficient_gold", "Not enough gold")
+      await tx.lg_families.update({ where: { family_id: family.family_id }, data: { gold: { increment: numAmount } } })
+      await tx.lg_family_gold_log.create({
         data: { family_id: family.family_id, userid: userId, amount: numAmount, action: "DEPOSIT", description: `Deposited ${numAmount.toLocaleString()} gold` },
-      }),
-    ])
+      })
+    })
     return { success: true, action: "deposited", amount: numAmount }
   }
 

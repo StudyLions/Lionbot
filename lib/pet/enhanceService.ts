@@ -104,18 +104,20 @@ export async function applyEnhancement(
   equipmentInventoryId: number,
   scrollInventoryId: number
 ) {
-  if (!equipmentInventoryId || !scrollInventoryId) {
-    throw new PetServiceError(400, "missing_ids", "equipmentInventoryId and scrollInventoryId required")
+  const eqId = Math.floor(Number(equipmentInventoryId))
+  const scId = Math.floor(Number(scrollInventoryId))
+  if (!Number.isInteger(eqId) || eqId < 1 || !Number.isInteger(scId) || scId < 1) {
+    throw new PetServiceError(400, "missing_ids", "Valid equipmentInventoryId and scrollInventoryId required")
   }
 
   const equipInv = await prisma.lg_user_inventory.findFirst({
-    where: { inventoryid: equipmentInventoryId, userid: userId },
+    where: { inventoryid: eqId, userid: userId },
     include: { lg_items: true },
   })
   if (!equipInv) throw new PetServiceError(404, "equipment_not_found", "Equipment not found")
 
   const scrollInv = await prisma.lg_user_inventory.findFirst({
-    where: { inventoryid: scrollInventoryId, userid: userId },
+    where: { inventoryid: scId, userid: userId },
     include: { lg_items: { include: { lg_scroll_properties: true } } },
   })
   if (!scrollInv || scrollInv.quantity < 1) {

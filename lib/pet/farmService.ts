@@ -161,7 +161,7 @@ const CLEARED = {
 
 export async function plantSeed(userId: bigint, plotId: number, seedId: number) {
   assertPlotId(plotId)
-  if (!seedId) throw new PetServiceError(400, "seed_required", "seedId required")
+  if (!Number.isInteger(seedId) || seedId < 1) throw new PetServiceError(400, "seed_required", "A valid seedId is required")
   const [plot, seed, userConfig] = await Promise.all([
     prisma.lg_user_farm.findUnique({ where: { userid_plot_id: { userid: userId, plot_id: plotId } } }),
     prisma.lg_farm_seeds.findUnique({ where: { seed_id: seedId } }),
@@ -174,26 +174,29 @@ export async function plantSeed(userId: bigint, plotId: number, seedId: number) 
     throw new PetServiceError(400, "insufficient_gold", `Not enough gold. Need ${seed.plant_cost}`)
   }
   const rarity = rollRarity()
-  await prisma.$transaction([
-    prisma.lg_user_farm.update({
-      where: { userid_plot_id: { userid: userId, plot_id: plotId } },
+  await prisma.$transaction(async (tx) => {
+    // Atomic, race-safe spend: only decrements if the balance still covers it.
+    const dec = await tx.$queryRaw<Array<{ gold: bigint }>>`
+      UPDATE user_config SET gold = gold - ${seed.plant_cost}
+      WHERE userid = ${userId} AND gold >= ${seed.plant_cost} RETURNING gold`
+    if (dec.length === 0) throw new PetServiceError(400, "insufficient_gold", `Not enough gold. Need ${seed.plant_cost}`)
+    // Re-check the plot is still empty under the txn to avoid a double-plant race.
+    const updated = await tx.lg_user_farm.updateMany({
+      where: { userid: userId, plot_id: plotId, seed_id: null },
       data: {
         seed_id: seedId, planted_at: new Date(), last_watered: new Date(),
         growth_stage: 1, dead: false, growth_points: 0, gold_invested: seed.plant_cost,
         voice_minutes_earned: 0, messages_earned: 0, rarity,
       },
-    }),
-    prisma.user_config.update({
-      where: { userid: userId },
-      data: { gold: { decrement: seed.plant_cost } },
-    }),
-    prisma.lg_gold_transactions.create({
+    })
+    if (updated.count === 0) throw new PetServiceError(400, "plot_occupied", "Plot is not empty")
+    await tx.lg_gold_transactions.create({
       data: {
         transaction_type: "FARM_PLANT", actorid: userId, from_account: userId,
         amount: seed.plant_cost, description: `Planted ${seed.name} (${rarity})`,
       },
-    }),
-  ])
+    })
+  })
   return { success: true, action: "planted", seedName: seed.name, rarity, cost: seed.plant_cost }
 }
 
@@ -317,7 +320,7 @@ export async function waterAll(userId: bigint) {
 }
 
 export async function plantAll(userId: bigint, seedId: number) {
-  if (!seedId) throw new PetServiceError(400, "seed_required", "seedId required")
+  if (!Number.isInteger(seedId) || seedId < 1) throw new PetServiceError(400, "seed_required", "A valid seedId is required")
   const [allPlots, seed, userConfig] = await Promise.all([
     prisma.lg_user_farm.findMany({
       where: { userid: userId },
@@ -339,28 +342,30 @@ export async function plantAll(userId: bigint, seedId: number) {
   }
   const now = new Date()
   const rarityCounts: Record<string, number> = {}
-  const ops = emptyPlots.map((p) => {
-    const rarity = rollRarity()
-    rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1
-    return prisma.lg_user_farm.update({
-      where: { userid_plot_id: { userid: userId, plot_id: p.plot_id } },
-      data: {
-        seed_id: seedId, planted_at: now, last_watered: now, growth_stage: 1, dead: false,
-        growth_points: 0, gold_invested: seed.plant_cost, voice_minutes_earned: 0,
-        messages_earned: 0, rarity,
-      },
-    })
-  })
-  await prisma.$transaction([
-    ...ops,
-    prisma.user_config.update({ where: { userid: userId }, data: { gold: { decrement: totalCost } } }),
-    prisma.lg_gold_transactions.create({
+  await prisma.$transaction(async (tx) => {
+    const dec = await tx.$queryRaw<Array<{ gold: bigint }>>`
+      UPDATE user_config SET gold = gold - ${totalCost}
+      WHERE userid = ${userId} AND gold >= ${totalCost} RETURNING gold`
+    if (dec.length === 0) throw new PetServiceError(400, "insufficient_gold", `Not enough gold. Need ${totalCost}G`)
+    for (const p of emptyPlots) {
+      const rarity = rollRarity()
+      rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1
+      await tx.lg_user_farm.update({
+        where: { userid_plot_id: { userid: userId, plot_id: p.plot_id } },
+        data: {
+          seed_id: seedId, planted_at: now, last_watered: now, growth_stage: 1, dead: false,
+          growth_points: 0, gold_invested: seed.plant_cost, voice_minutes_earned: 0,
+          messages_earned: 0, rarity,
+        },
+      })
+    }
+    await tx.lg_gold_transactions.create({
       data: {
         transaction_type: "FARM_PLANT", actorid: userId, from_account: userId,
         amount: totalCost, description: `Bulk planted ${emptyPlots.length} x ${seed.name}`,
       },
-    }),
-  ])
+    })
+  })
   return { success: true, action: "plantedAll", count: emptyPlots.length, totalCost, seedName: seed.name, rarityCounts }
 }
 
