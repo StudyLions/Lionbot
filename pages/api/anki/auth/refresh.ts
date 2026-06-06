@@ -10,14 +10,17 @@
 //          (revoke on any stale token) caused false positives:
 //          a refresh race or a lost-response retry presents a token
 //          the server already rotated, which looked identical to
-//          theft and locked real users out. The Anki bearer is
-//          scope-limited (anki.review.write + anki.pet.read — a
-//          stolen token can't touch Discord, spend gold, or benefit
-//          an attacker), so auto-revocation's marginal value isn't
-//          worth that breakage. A stale/wrong token just gets a 401;
-//          the addon recovers by re-pairing (which reactivates the
-//          device). Suspected compromise is handled explicitly via
-//          "sign out everywhere" on /dashboard/anki.
+//          theft and locked real users out. The Anki bearer carries no
+//          Discord access; note its scope now includes anki.pet.write
+//          (since 2026-06-02), so a stolen un-rotated token could touch
+//          pet/economy state — but the economy is server-authoritative
+//          and cheat-bounded, the addon serializes refreshes and never
+//          retries the POST (so it can't trip a false reuse), and
+//          revoke-on-stale's user-lockout cost still outweighs its
+//          marginal benefit. A stale/wrong token just gets a 401; the
+//          addon recovers by re-pairing (which reactivates the device).
+//          Suspected compromise is handled explicitly via "sign out
+//          everywhere" on /dashboard/anki.
 //
 //          The addon also serializes refreshes (one in flight at a
 //          time) and does not retry the refresh POST on a network
@@ -32,6 +35,7 @@ import {
   ANKI_JWT_TTL,
 } from "@/lib/anki/auth"
 import { invalidateDeviceCache } from "@/lib/anki/requireAuth"
+import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
 
 interface RefreshBody {
   device_id?: string
@@ -57,6 +61,14 @@ export default async function handler(
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST")
     return sendError(res, 405, "method_not_allowed", "POST only")
+  }
+
+  // Per-IP throttle on this unauthenticated endpoint (generous — legit clients
+  // refresh ~hourly; this just caps a flood of guessed refresh tokens).
+  const rl = ankiRateLimitByKey(`anki-refresh:${clientIpKey(req)}`, 120, 60_000)
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return sendError(res, 429, "rate_limited", "Too many refresh attempts — slow down.")
   }
 
   const body = (req.body || {}) as RefreshBody

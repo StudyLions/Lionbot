@@ -41,6 +41,7 @@ import {
 } from "@/lib/anki/auth"
 import { isLionheartActive } from "../../auth/ios/exchange"
 import { invalidateDeviceCache } from "@/lib/anki/requireAuth"
+import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
 
 interface ExchangeBody {
   pairing_code?: string
@@ -66,13 +67,17 @@ function sendError(
 }
 
 function extractIpPrefix(req: NextApiRequest): string | null {
-  const fwd = req.headers["x-forwarded-for"]
+  // Prefer the platform-trusted source. A client can spoof x-forwarded-for,
+  // but Vercel overwrites x-real-ip with the true peer address, so this can't
+  // be poisoned the way the bare XFF[0] could.
+  const h = req.headers
+  const pickFirst = (v: string | string[] | undefined): string | null =>
+    typeof v === "string" ? v.split(",")[0].trim() : Array.isArray(v) ? v[0] || null : null
   const raw =
-    (typeof fwd === "string"
-      ? fwd.split(",")[0].trim()
-      : Array.isArray(fwd)
-      ? fwd[0]
-      : null) || req.socket.remoteAddress
+    pickFirst(h["x-real-ip"]) ||
+    pickFirst(h["x-vercel-forwarded-for"]) ||
+    pickFirst(h["x-forwarded-for"]) ||
+    req.socket.remoteAddress
   if (!raw) return null
   // IPv4 -> /24. Only emit when it's a clean dotted quad of
   // numeric octets, so we never hand Postgres a malformed INET.
@@ -101,6 +106,15 @@ export default async function handler(
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST")
     return sendError(res, 405, "method_not_allowed", "POST only")
+  }
+
+  // Per-IP throttle on this unauthenticated endpoint. Generous (60/min) — a
+  // real user pairs a handful of times; this just caps a flood. (Pairing codes
+  // are 60-bit + 5-min single-use, so brute-force isn't the threat here.)
+  const rl = ankiRateLimitByKey(`anki-exchange:${clientIpKey(req)}`, 60, 60_000)
+  if (!rl.ok) {
+    res.setHeader("Retry-After", String(rl.retryAfter))
+    return sendError(res, 429, "rate_limited", "Too many pairing attempts — slow down.")
   }
 
   const body = (req.body || {}) as ExchangeBody
@@ -141,9 +155,15 @@ export default async function handler(
 
   const codeHash = hashAnkiPairingCode(pairing_code)
 
-  // ATOMIC consume: race-safe single-shot. UpdateMany with the
-  // (consumed=false, expires_at > now()) predicate ensures we
-  // only succeed if the code is still redeemable. Returns count.
+  // Verify the secret-bearing checks (PKCE, state, device binding) BEFORE
+  // consuming the code. Deliberate ordering:
+  //   - a wrong guess can no longer BURN a victim's in-flight code (the old
+  //     consume-then-verify order let any correct code_hash grief the user
+  //     into re-pairing);
+  //   - every failure returns the SAME generic error, so there is no
+  //     valid-vs-invalid pairing-code oracle to aid guessing.
+  // The single-use consume is an atomic conditional UPDATE that runs only
+  // after all checks pass, so redemption is still race-safe.
   let consumed: {
     code_hash: Buffer
     userid: bigint
@@ -153,22 +173,6 @@ export default async function handler(
   } | null = null
 
   try {
-    const updateResult = await prisma.anki_pairing_codes.updateMany({
-      where: {
-        code_hash: codeHash,
-        consumed: false,
-        expires_at: { gt: new Date() },
-      },
-      data: { consumed: true, consumed_at: new Date() },
-    })
-    if (updateResult.count === 0) {
-      return sendError(
-        res,
-        401,
-        "invalid_pairing_code",
-        "Pairing code is invalid, already used, or expired"
-      )
-    }
     const row = await prisma.anki_pairing_codes.findUnique({
       where: { code_hash: codeHash },
       select: {
@@ -177,55 +181,62 @@ export default async function handler(
         device_id: true,
         code_challenge: true,
         state: true,
+        consumed: true,
+        expires_at: true,
       },
     })
-    if (!row) {
-      console.error("[anki/exchange] consumed but row vanished — DB inconsistency")
-      return sendError(res, 500, "internal_error", "Pairing record missing after consume")
+
+    // PKCE binding: recompute base64url(sha256(code_verifier)).
+    const challenge = crypto
+      .createHash("sha256")
+      .update(code_verifier, "utf8")
+      .digest("base64url")
+
+    // Single generic failure for EVERY case (no row / used / expired / wrong
+    // PKCE / wrong state / wrong device) so nothing distinguishes them. PKCE +
+    // state are compared in constant time.
+    const valid =
+      !!row &&
+      row.consumed === false &&
+      row.expires_at > new Date() &&
+      timingSafeStringEqual(challenge, row.code_challenge) &&
+      timingSafeStringEqual(state, row.state) &&
+      row.device_id.toLowerCase() === device_id.toLowerCase()
+
+    if (!row || !valid) {
+      return sendError(
+        res,
+        401,
+        "invalid_pairing_code",
+        "Pairing code is invalid, already used, or expired"
+      )
     }
-    consumed = row
+
+    // Verified — NOW consume atomically (race-safe single use). If a concurrent
+    // valid exchange already took it, count is 0 → same generic error.
+    const consumeResult = await prisma.anki_pairing_codes.updateMany({
+      where: { code_hash: codeHash, consumed: false, expires_at: { gt: new Date() } },
+      data: { consumed: true, consumed_at: new Date() },
+    })
+    if (consumeResult.count === 0) {
+      return sendError(
+        res,
+        401,
+        "invalid_pairing_code",
+        "Pairing code is invalid, already used, or expired"
+      )
+    }
+
+    consumed = {
+      code_hash: row.code_hash,
+      userid: row.userid,
+      device_id: row.device_id,
+      code_challenge: row.code_challenge,
+      state: row.state,
+    }
   } catch (err) {
-    console.error("[anki/exchange] DB consume failed:", err)
-    return sendError(res, 503, "db_unavailable", "Could not consume pairing code")
-  }
-
-  // PKCE binding: recompute base64url(sha256(code_verifier)) and
-  // compare to the stored code_challenge in constant time.
-  const challenge = crypto
-    .createHash("sha256")
-    .update(code_verifier, "utf8")
-    .digest("base64url")
-  if (!timingSafeStringEqual(challenge, consumed.code_challenge)) {
-    return sendError(
-      res,
-      401,
-      "pkce_mismatch",
-      "code_verifier does not match the bound code_challenge"
-    )
-  }
-
-  // state must match the value the connect page recorded.
-  if (!timingSafeStringEqual(state, consumed.state)) {
-    return sendError(res, 401, "state_mismatch", "state does not match")
-  }
-
-  // device_id must match the one bound to the pairing code.
-  // Without this, a leaked pairing code could be claimed by a
-  // different device — even with PKCE — since the attacker would
-  // generate their own verifier/challenge.
-  //
-  // Wait, that's wrong: PKCE protects against this because the
-  // attacker doesn't have the verifier. But: the device_id in
-  // the URL was chosen by the *legitimate* addon, and binding
-  // it lets the user inspect the pairing screen and notice if
-  // a different device is claiming the code. Belt-and-braces.
-  if (consumed.device_id.toLowerCase() !== device_id.toLowerCase()) {
-    return sendError(
-      res,
-      401,
-      "device_id_mismatch",
-      "device_id does not match the device this code was issued for"
-    )
+    console.error("[anki/exchange] pairing verify/consume failed:", err)
+    return sendError(res, 503, "db_unavailable", "Could not verify pairing code")
   }
 
   // Brand-new-account bootstrap. A Discord user who has never used

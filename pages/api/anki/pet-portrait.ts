@@ -328,7 +328,9 @@ async function composeStage(
     if (L.furnitureFlips[layer]) base = base.flop()
     const baseBuf = await base.ensureAlpha().png().toBuffer()
 
-    const scale = L.furnitureScales[layer] ?? 1.0
+    // Clamp: the room layout is stored as unvalidated client JSON, so a huge
+    // scale here would make sharp allocate a giant buffer (OOM/DoS). Bound it.
+    const scale = Math.min(3, Math.max(0.1, Number(L.furnitureScales[layer]) || 1.0))
     const off = L.furnitureOffsets[layer]
     const ox = off ? trunc(off[0]) : 0
     const oy = off ? trunc(off[1]) : 0
@@ -354,7 +356,7 @@ async function composeStage(
 
   // BACK (wings) behind the lion — depends only on lion pos/scale +
   // the (static) wings asset, so it belongs on the static stage.
-  const lionScale = L.lionScale || 1.0
+  const lionScale = Math.min(3, Math.max(0.1, Number(L.lionScale) || 1.0))  // clamp unvalidated layout (OOM guard)
   const petSize = Math.max(1, trunc(LION_DISPLAY * lionScale))
   const lionX = L.lionPosition?.[0] ?? DEFAULT_LION_POSITION[0]
   const lionY = L.lionPosition?.[1] ?? DEFAULT_LION_POSITION[1]
@@ -476,7 +478,7 @@ async function composeAnimated(
   const frameRgba = frameFinal ? await toRgba(frameFinal, GB_W, GB_H) : null
 
   const L = data.layout
-  const lionScale = L.lionScale || 1.0
+  const lionScale = Math.min(3, Math.max(0.1, Number(L.lionScale) || 1.0))  // clamp unvalidated layout (OOM guard)
   const petSize = Math.max(1, trunc(LION_DISPLAY * lionScale))
   const lionX = L.lionPosition?.[0] ?? DEFAULT_LION_POSITION[0]
   const lionY = L.lionPosition?.[1] ?? DEFAULT_LION_POSITION[1]

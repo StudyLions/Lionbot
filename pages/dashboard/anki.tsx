@@ -17,12 +17,12 @@
 import Layout from "@/components/Layout/Layout"
 import AdminGuard from "@/components/dashboard/AdminGuard"
 import DashboardNav from "@/components/dashboard/DashboardNav"
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, type ReactNode } from "react"
 import { useSession } from "next-auth/react"
 import Head from "next/head"
 import {
   Laptop, Globe, RotateCcw, AlertTriangle,
-  Download, X, Pencil,
+  Download, X, Pencil, Sparkles, Flame, Trophy, Heart, BookOpenCheck,
 } from "lucide-react"
 
 interface DeviceRow {
@@ -52,6 +52,55 @@ function formatRelative(iso: string): string {
   return `${yr} year${yr === 1 ? "" : "s"} ago`
 }
 
+interface AnkiSummary {
+  stats: {
+    cards: { today: number; week: number; month: number; all_time: number }
+    streak: { days: number; min_cards_per_day: number }
+    rank: { scope: string; today: number | null; all_time: number | null }
+    daily_progress: { gold: { earned: number; cap: number } }
+  }
+  pet: {
+    name: string | null
+    level: number
+    xp: number
+    food: number
+    bath: number
+    sleep: number
+    expression: string | null
+  } | null
+}
+
+function StatTile({ label, value, icon, accent }: { label: string; value: number; icon?: ReactNode; accent?: boolean }) {
+  return (
+    <div className={`rounded-lg border border-border ${accent ? "bg-amber-500/5" : "bg-background/40"} p-3`}>
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+        {icon}
+        <span>{label}</span>
+      </div>
+      <div className="text-2xl font-semibold text-foreground mt-1 tabular-nums">
+        {(value ?? 0).toLocaleString()}
+      </div>
+    </div>
+  )
+}
+
+function NeedBar({ label, value }: { label: string; value: number }) {
+  const v = Math.max(0, Math.min(8, value ?? 0))
+  const pct = (v / 8) * 100
+  const color = v >= 6 ? "bg-emerald-500" : v >= 3 ? "bg-amber-500" : "bg-rose-500"
+  return (
+    <div>
+      <div className="flex justify-between text-[11px] text-muted-foreground">
+        <span>{label}</span>
+        <span className="tabular-nums">{v}/8</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-secondary/60 mt-1 overflow-hidden">
+        <div className={`h-full ${color}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
+}
+
 export default function AnkiDashboardPage() {
   return (
     <AdminGuard>
@@ -79,6 +128,7 @@ function PageInner() {
   const { status: sessionStatus } = useSession()
 
   const [devices, setDevices] = useState<DeviceRow[] | null>(null)
+  const [summary, setSummary] = useState<AnkiSummary | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -92,6 +142,15 @@ function PageInner() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to load"
       setLoadError(msg)
+    }
+    // Summary (review stats + LionGotchi) is best-effort — it must never block
+    // or break the device manager, so failures are swallowed (the section just
+    // falls back to its static description).
+    try {
+      const sRes = await fetch("/api/anki/me/summary")
+      if (sRes.ok) setSummary(await sRes.json())
+    } catch {
+      /* ignore */
     }
   }, [])
 
@@ -186,13 +245,50 @@ function PageInner() {
 
       <section className="rounded-xl border border-border bg-card p-5">
         <h2 className="text-base font-medium text-foreground flex items-center gap-2">
-          <Globe size={16} /> Global progress
+          <Sparkles size={16} /> Your Anki impact
         </h2>
-        <p className="text-sm text-muted-foreground mt-2">
-          Anki reviews are global — they earn gold and XP for your LionGotchi and
-          count toward the global Anki leaderboard, on every server you&apos;re in.
-          Nothing to configure.
-        </p>
+        {summary ? (
+          <>
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <StatTile label="Reviews today" value={summary.stats.cards.today} icon={<BookOpenCheck size={14} />} />
+              <StatTile label="This week" value={summary.stats.cards.week} />
+              <StatTile label="All time" value={summary.stats.cards.all_time} />
+              <StatTile label="Day streak" value={summary.stats.streak.days} icon={<Flame size={14} />} accent />
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
+              {summary.stats.rank.all_time != null && (
+                <span className="flex items-center gap-1.5">
+                  <Trophy size={14} className="text-amber-500" /> Global rank #{summary.stats.rank.all_time.toLocaleString()}
+                </span>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Globe size={14} /> Reviews earn gold + XP for your LionGotchi on every server
+              </span>
+            </div>
+            {summary.pet && (
+              <div className="mt-4 rounded-lg border border-border bg-background/40 p-4 flex items-center gap-5 flex-wrap">
+                <div className="flex items-center gap-2.5">
+                  <Heart size={18} className="text-rose-400" />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{summary.pet.name || "Your LionGotchi"}</p>
+                    <p className="text-xs text-muted-foreground">Level {summary.pet.level}</p>
+                  </div>
+                </div>
+                <div className="flex-1 min-w-[200px] grid grid-cols-3 gap-3">
+                  <NeedBar label="Food" value={summary.pet.food} />
+                  <NeedBar label="Bath" value={summary.pet.bath} />
+                  <NeedBar label="Sleep" value={summary.pet.sleep} />
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-sm text-muted-foreground mt-2">
+            Anki reviews are global — they earn gold and XP for your LionGotchi and
+            count toward the global Anki leaderboard, on every server you&apos;re in.
+            Review some cards in Anki to see your stats here.
+          </p>
+        )}
       </section>
 
       <section className="rounded-xl border border-border bg-card overflow-hidden">

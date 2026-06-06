@@ -62,6 +62,17 @@ export class PetServiceError extends Error {
   }
 }
 
+/** Coerce a client-supplied id to a positive 32-bit integer or throw a clean
+ *  400 — so a float / NaN / out-of-range value can't reach a Prisma Int column
+ *  and surface as a confusing 503. */
+export function assertIntId(value: unknown, field = "id"): number {
+  const n = Math.floor(Number(value))
+  if (!Number.isInteger(n) || n < 1 || n > 2_147_483_647) {
+    throw new PetServiceError(400, "bad_id", `${field} must be a positive integer`)
+  }
+  return n
+}
+
 export interface CareResult {
   food: number
   bath: number

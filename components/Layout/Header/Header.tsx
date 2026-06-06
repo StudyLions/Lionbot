@@ -147,9 +147,11 @@ const NAV_LINKS: NavLink[] = [
     ],
   },
   { label: "Updates", href: "/timeline", icon: Sparkles },
-  // --- AI-MODIFIED (2026-06-02) ---
-  // Surface the new (beta) LionGotchi-for-Anki addon in the main nav.
-  { label: "Anki Addon", href: "/anki/download", icon: Download, badges: ["NEW", "BETA"] },
+  // --- AI-MODIFIED (2026-06-06) ---
+  // Anki addon entry HIDDEN from the main nav pre-launch (Ari): the backend is
+  // deployed but we don't want users discovering/downloading the addon yet.
+  // Restore this line (and the user-menu item below) to re-surface it.
+  // { label: "Anki Addon", href: "/anki/download", icon: Download, badges: ["NEW", "BETA"] },
   // --- END AI-MODIFIED ---
   { label: "Support", href: SUPPORT_URL, icon: HelpCircle, external: true },
 ];
@@ -378,19 +380,22 @@ export default function Header() {
                       <User className="h-4 w-4 text-muted-foreground" />
                       Profile
                     </DropdownMenuItem>
-                    {/* --- AI-MODIFIED (2026-06-02) --- */}
-                    {/* Surface the Anki addon (beta) in the user menu too. */}
-                    <DropdownMenuItem
-                      onSelect={() => router.push("/anki/download")}
-                      className="cursor-pointer gap-3"
-                    >
-                      <Download className="h-4 w-4 text-muted-foreground" />
-                      <span className="flex items-center">
-                        Anki Addon
-                        <NavBadge kind="NEW" />
-                        <NavBadge kind="BETA" />
-                      </span>
-                    </DropdownMenuItem>
+                    {/* --- AI-MODIFIED (2026-06-06) --- */}
+                    {/* Anki addon entry HIDDEN from the user menu pre-launch (Ari). */}
+                    {/* Flip `false` back to true (and restore the nav link above) to re-surface it. */}
+                    {false && (
+                      <DropdownMenuItem
+                        onSelect={() => router.push("/anki/download")}
+                        className="cursor-pointer gap-3"
+                      >
+                        <Download className="h-4 w-4 text-muted-foreground" />
+                        <span className="flex items-center">
+                          Anki Addon
+                          <NavBadge kind="NEW" />
+                          <NavBadge kind="BETA" />
+                        </span>
+                      </DropdownMenuItem>
+                    )}
                     {/* --- END AI-MODIFIED --- */}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem

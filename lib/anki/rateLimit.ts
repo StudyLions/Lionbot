@@ -19,6 +19,8 @@
 //          normal user / the dashboard will never hit them.
 // ============================================================
 
+import type { NextApiRequest } from "next"
+
 type Bucket = { count: number; resetAt: number }
 
 const buckets = new Map<string, Bucket>()
@@ -35,17 +37,7 @@ export interface RateLimitResult {
   retryAfter: number
 }
 
-/**
- * Fixed-window limiter keyed by `${userId}:${endpoint}`. Returns
- * `{ ok: false, retryAfter }` once the window budget is exceeded.
- */
-export function ankiRateLimit(
-  userId: bigint,
-  endpoint: string,
-  max: number = DEFAULT_MAX,
-  windowMs: number = DEFAULT_WINDOW_MS
-): RateLimitResult {
-  const key = `${userId.toString()}:${endpoint}`
+function hit(key: string, max: number, windowMs: number): RateLimitResult {
   const now = Date.now()
   let b = buckets.get(key)
   if (!b || now >= b.resetAt) {
@@ -62,4 +54,50 @@ export function ankiRateLimit(
     return { ok: false, retryAfter: Math.max(1, Math.ceil((b.resetAt - now) / 1000)) }
   }
   return { ok: true, retryAfter: 0 }
+}
+
+/**
+ * Fixed-window limiter keyed by `${userId}:${endpoint}`. Returns
+ * `{ ok: false, retryAfter }` once the window budget is exceeded.
+ */
+export function ankiRateLimit(
+  userId: bigint,
+  endpoint: string,
+  max: number = DEFAULT_MAX,
+  windowMs: number = DEFAULT_WINDOW_MS
+): RateLimitResult {
+  return hit(`${userId.toString()}:${endpoint}`, max, windowMs)
+}
+
+/**
+ * Fixed-window limiter keyed by an ARBITRARY string — for the unauthenticated
+ * auth endpoints (exchange/refresh) where there's no userId yet, so we key by
+ * client IP. Same in-memory best-effort caveat as ankiRateLimit.
+ */
+export function ankiRateLimitByKey(
+  key: string,
+  max: number = DEFAULT_MAX,
+  windowMs: number = DEFAULT_WINDOW_MS
+): RateLimitResult {
+  return hit(key, max, windowMs)
+}
+
+/**
+ * Best-effort client-IP discriminator for rate-limit keys. Prefers the
+ * platform-trusted `x-real-ip` (Vercel overwrites any client-sent value),
+ * then `x-vercel-forwarded-for`, then the first `x-forwarded-for` hop, then the
+ * socket address. Returns "noip" when nothing is available (local dev) — that
+ * becomes a single shared bucket, which is fine for a generous backstop.
+ */
+export function clientIpKey(req: NextApiRequest): string {
+  const h = req.headers
+  const pick = (v: string | string[] | undefined): string | null =>
+    typeof v === "string" ? v.split(",")[0].trim() : Array.isArray(v) ? v[0] || null : null
+  return (
+    pick(h["x-real-ip"]) ||
+    pick(h["x-vercel-forwarded-for"]) ||
+    pick(h["x-forwarded-for"]) ||
+    req.socket?.remoteAddress ||
+    "noip"
+  )
 }
