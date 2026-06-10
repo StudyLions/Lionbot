@@ -249,8 +249,16 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const rk = await tx.$executeRaw`UPDATE shared_task_history SET userid = 0 WHERE userid = ${userId}`
     record("shared_task_history", "anonymized", rk)
 
-    const rl = await tx.$executeRaw`UPDATE economy_admin_actions SET targetid = 0 WHERE targetid = ${userId}::int`
+    // --- AI-MODIFIED (2026-05-31) ---
+    // Fix: economy_admin_actions.targetid is an int4 column. Casting a Discord ID
+    // (bigint, always greater than int4 max) with ${userId}::int overflowed
+    // (Postgres 22003 "integer out of range") and aborted the entire deletion
+    // transaction, so no user deletion ever succeeded. Dropping the cast lets int4
+    // promote to bigint and match 0 rows safely (a Discord ID can never be stored
+    // in an int4 column, so there is no PII to leave behind here).
+    const rl = await tx.$executeRaw`UPDATE economy_admin_actions SET targetid = 0 WHERE targetid = ${userId}`
     record("economy_admin_actions", "anonymized", rl)
+    // --- END AI-MODIFIED ---
 
     const rm = await tx.$executeRaw`UPDATE lofi_blacklist SET blacklisted_by = NULL WHERE blacklisted_by = ${userId}`
     record("lofi_blacklist", "anonymized", rm)
@@ -280,8 +288,16 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const s5c = await tx.server_premium_subscriptions.deleteMany({ where: { userid: userId } })
     record("server_premium_subscriptions", "deleted", s5c.count)
 
-    const s6 = await tx.user_experience.deleteMany({ where: { userid: userId } })
-    record("user_experience", "deleted", s6.count)
+    // --- AI-MODIFIED (2026-05-31) ---
+    // Removed the explicit user_experience delete. user_experience.userid -> user_config
+    // is ON DELETE CASCADE, so these rows are removed by the Phase 4 user_config delete in
+    // the correct order. Deleting them here failed with a FK violation (23503) because
+    // text_sessions.user_expid still referenced them (text_sessions is only removed by the
+    // Phase 4 cascade via members). Letting the cascade handle it deletes text_sessions and
+    // user_experience together, satisfying the NO ACTION constraint.
+    // (was: const s6 = await tx.user_experience.deleteMany({ where: { userid: userId } })
+    //        record("user_experience", "deleted", s6.count) )
+    // --- END AI-MODIFIED ---
 
     const s7 = await tx.user_survey.deleteMany({ where: { userid: userId } })
     record("user_survey", "deleted", s7.count)
@@ -316,9 +332,28 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
     const s17 = await tx.rented_members.deleteMany({ where: { userid: userId } })
     record("rented_members", "deleted", s17.count)
 
+    // --- AI-MODIFIED (2026-05-31) ---
+    // Member-child tables whose FK to members is NO ACTION (NOT Cascade). They are not
+    // removed by the Phase 4 user_config -> members cascade, so they must be deleted
+    // explicitly first or that cascade fails with FK 23503. The original code wrongly
+    // assumed every member-child table cascades. (Confirmed via pg_constraint on the live
+    // schema 2026-05-31: only these four member-child FKs are NO ACTION.)
+    const sMR = await tx.member_ranks.deleteMany({ where: { userid: userId } })
+    record("member_ranks", "deleted", sMR.count)
+    const sSS = await tx.season_stats.deleteMany({ where: { userid: userId } })
+    record("season_stats", "deleted", sSS.count)
+    // past_member_roles is @@ignore in the Prisma schema (no primary
+    // key), so it has no client API — raw SQL like the other
+    // unmodeled tables in this file.
+    const sPMR = await tx.$executeRaw`DELETE FROM past_member_roles WHERE userid = ${userId}`
+    record("past_member_roles", "deleted", sPMR)
+    const sMPT = await tx.member_profile_tags.deleteMany({ where: { userid: userId } })
+    record("member_profile_tags", "deleted", sMPT.count)
+    // --- END AI-MODIFIED ---
+
     // =====================================================
-    // PHASE 4: DELETE user_config (cascades to members and
-    // all member-child tables via onDelete: Cascade)
+    // PHASE 4: DELETE user_config (cascades to members and the member-child tables whose
+    // FK is onDelete: Cascade; the NO ACTION member-child tables are handled just above)
     // =====================================================
 
     const s18 = await tx.user_config.deleteMany({ where: { userid: userId } })
