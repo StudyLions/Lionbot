@@ -67,6 +67,10 @@ export type EmailTemplate =
   | "gift_received"
   | "gift_claimable"
   | "gift_expiring_soon"
+  // Anki addon email-account security mail (verification / reset
+  // codes). Transactional + user-initiated: no pref key on purpose.
+  | "anki_verify_code"
+  | "anki_password_reset"
   | "test"
 
 export type EmailPrefKey =

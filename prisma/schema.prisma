@@ -2337,6 +2337,46 @@ model anki_batch_idempotency {
   @@index([created_at], map: "anki_batch_idempotency_created")
 }
 
+/// Standalone email/password accounts for the Anki addon (no Discord
+/// needed). userid is SYNTHETIC — allocated in [9.0e18, 9.2e18), a band
+/// Discord snowflakes can't reach until ~2083 — and deliberately has NO
+/// FK to user_config: the account row exists from REGISTER (unverified),
+/// while user_config/lg_pets are bootstrapped only at VERIFY, keeping
+/// abandoned registrations out of the main tables. linked_discord_id is
+/// reserved for the future "sync with Discord" flow.
+model anki_email_accounts {
+  userid             BigInt    @id
+  email              String    @unique(map: "anki_email_accounts_email_key")
+  password_hash      String
+  display_name       String
+  email_verified_at  DateTime? @db.Timestamptz(6)
+  linked_discord_id  BigInt?
+  failed_login_count Int       @default(0)
+  locked_until       DateTime? @db.Timestamptz(6)
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([linked_discord_id], map: "anki_email_accounts_linked_discord")
+}
+
+/// 6-digit email verification / password-reset codes for the addon's
+/// email accounts. Only sha256(code) is stored; 15-min expiry; per-code
+/// attempt counter (max 5); single-use via consumed_at.
+model anki_email_codes {
+  id          BigInt    @id @default(autoincrement())
+  email       String
+  purpose     String
+  code_hash   Bytes
+  userid      BigInt?
+  attempts    Int       @default(0)
+  expires_at  DateTime  @db.Timestamptz(6)
+  consumed_at DateTime? @db.Timestamptz(6)
+  created_at  DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([email, purpose, created_at(sort: Desc)], map: "anki_email_codes_lookup")
+  @@index([expires_at], map: "anki_email_codes_expiry")
+}
+
 enum activitytype {
   PLAYING
   WATCHING
