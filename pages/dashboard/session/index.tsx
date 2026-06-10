@@ -28,6 +28,9 @@ import {
   Bell, BellOff, Trophy, Timer, Coins, DoorOpen,
   Crown, UserMinus, ChevronDown, ChevronUp, ExternalLink, PencilLine, Settings,
   Play, Square,
+  // --- AI-MODIFIED (2026-06-10) --- icon for the daily-cap notice (tickets #0098/#0112)
+  Hourglass,
+  // --- END AI-MODIFIED ---
 } from "lucide-react"
 // --- END AI-MODIFIED ---
 import { GetServerSideProps } from "next"
@@ -37,6 +40,16 @@ import { serverSideTranslations } from "next-i18next/serverSideTranslations"
 // Purpose: Add privateRoom type to LiveSessionData for inline room controls
 interface LiveSessionData {
   active: boolean
+  // --- AI-MODIFIED (2026-06-10) ---
+  // Purpose: daily-cap notice data when no session is active (tickets #0098/#0112)
+  dailyCapReached?: Array<{
+    guildId: string
+    guildName: string | null
+    capSeconds: number
+    trackedSeconds: number
+    resumesAt: string
+  }>
+  // --- END AI-MODIFIED ---
   session?: {
     channelId: string
     guildId: string
@@ -555,7 +568,9 @@ export default function SessionPage() {
                   </button>
                 </div>
               ) : !data?.active ? (
-                <NoSession />
+                /* --- AI-MODIFIED (2026-06-10) --- pass daily-cap info (tickets #0098/#0112) --- */
+                <NoSession capInfo={data?.dailyCapReached} />
+                /* --- END AI-MODIFIED --- */
               ) : (
               /* --- END AI-MODIFIED --- */
                 <>
@@ -1318,7 +1333,27 @@ function TaskRow({
   )
 }
 
-function NoSession() {
+// --- AI-MODIFIED (2026-06-10) ---
+// Purpose: Tickets #0098/#0112 — when the member has reached a server's daily
+//   voice cap, this page used to say only "No Active Session", which read as a
+//   bug while sitting in a voice channel. Show which server's daily limit was
+//   reached and when tracking resumes (rendered in the viewer's local time).
+interface CapInfo {
+  guildId: string
+  guildName: string | null
+  capSeconds: number
+  trackedSeconds: number
+  resumesAt: string
+}
+
+function formatCapHours(seconds: number): string {
+  const hours = seconds / 3600
+  const rounded = Math.round(hours * 10) / 10
+  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded} hour${rounded === 1 ? "" : "s"}`
+}
+
+function NoSession({ capInfo }: { capInfo?: CapInfo[] }) {
+  const capped = capInfo && capInfo.length > 0 ? capInfo : null
   return (
     <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
       <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
@@ -1331,6 +1366,28 @@ function NoSession() {
           Your study time, room members, and tasks will appear automatically.
         </p>
       </div>
+      {capped && (
+        <div className="max-w-md w-full space-y-2">
+          {capped.map((c) => (
+            <div
+              key={c.guildId}
+              className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-left"
+            >
+              <Hourglass size={18} className="text-amber-400 flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-amber-200/90">
+                You have reached <strong>{c.guildName || "a server"}</strong>&apos;s daily voice limit
+                of {formatCapHours(c.capSeconds)}, so your voice time there is not being counted right
+                now. Tracking resumes at{" "}
+                <strong>
+                  {new Date(c.resumesAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                </strong>{" "}
+                ({new Date(c.resumesAt).toLocaleDateString([], { month: "short", day: "numeric" })}).
+                This limit is set by the server&apos;s admins.
+              </p>
+            </div>
+          ))}
+        </div>
+      )}
       <Link href="/dashboard">
         <a className="mt-2 text-sm text-primary hover:text-primary/80 flex items-center gap-1.5 transition-colors">
           <ArrowLeft size={14} /> Back to Overview
@@ -1339,6 +1396,7 @@ function NoSession() {
     </div>
   )
 }
+// --- END AI-MODIFIED ---
 
 function SessionSkeleton() {
   return (

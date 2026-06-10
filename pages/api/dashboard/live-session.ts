@@ -25,7 +25,61 @@ export default apiHandler({
     })
 
     if (ongoingSessions.length === 0) {
-      return res.status(200).json({ active: false })
+      // --- AI-MODIFIED (2026-06-10) ---
+      // Purpose: Tickets #0098/#0112 — when a member hits a server's daily voice cap,
+      //   the bot stops tracking until the server's midnight and this page just said
+      //   "not in any session" with no explanation. Detect servers where the member
+      //   has reached the cap today so the page can say why and when tracking resumes.
+      //   Cheap: recent-guild lookup is backed by the (userid, start_time) index and
+      //   users have at most a handful of recent servers. Fully defensive: any error
+      //   falls back to the original bare response.
+      let dailyCapReached: Array<{
+        guildId: string
+        guildName: string | null
+        capSeconds: number
+        trackedSeconds: number
+        resumesAt: string
+      }> = []
+      try {
+        const rows = await prisma.$queryRaw<Array<{
+          guild_id: string
+          name: string | null
+          cap_seconds: number
+          tracked_seconds: number | null
+          resumes_at: Date
+        }>>`
+          WITH recent AS (
+            SELECT DISTINCT guildid
+            FROM voice_sessions
+            WHERE userid = ${auth.userId} AND start_time > now() - interval '26 hours'
+          )
+          SELECT
+            gc.guildid::text AS guild_id,
+            gc.name,
+            COALESCE(gc.daily_study_cap, 57600)::int AS cap_seconds,
+            COALESCE(study_time_since(
+              gc.guildid, ${auth.userId},
+              (date_trunc('day', now() AT TIME ZONE COALESCE(gc.timezone, 'UTC')) AT TIME ZONE COALESCE(gc.timezone, 'UTC'))
+            ), 0)::int AS tracked_seconds,
+            ((date_trunc('day', now() AT TIME ZONE COALESCE(gc.timezone, 'UTC')) + interval '1 day') AT TIME ZONE COALESCE(gc.timezone, 'UTC')) AS resumes_at
+          FROM guild_config gc
+          JOIN recent r ON r.guildid = gc.guildid
+        `
+        // The bot stops a member's tracking within 90 seconds of the cap.
+        dailyCapReached = rows
+          .filter((r) => (r.tracked_seconds ?? 0) >= r.cap_seconds - 90)
+          .map((r) => ({
+            guildId: r.guild_id,
+            guildName: r.name,
+            capSeconds: r.cap_seconds,
+            trackedSeconds: r.tracked_seconds ?? 0,
+            resumesAt: r.resumes_at.toISOString(),
+          }))
+      } catch {
+        dailyCapReached = []
+      }
+      return res.status(200).json({ active: false, dailyCapReached })
+      // --- END AI-MODIFIED ---
     }
 
     const activeSession = ongoingSessions[0]

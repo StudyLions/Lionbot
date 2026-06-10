@@ -23,6 +23,50 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── June 10, 2026 ──────────────────────────────────────────
+  // --- AI-MODIFIED (2026-06-10) ---
+  // Purpose: Ticket batch fixes (#0111, #0112/#0098, #0113, #0114).
+  {
+    date: "2026-06-10",
+    title: "Fixed the shop getting stuck on \"thinking...\"",
+    description:
+      "Opening the colour shop froze in servers with more than 25 colour roles when you already owned one, due to a Discord menu limit. The shop now pages correctly and your owned colour shows on its own page.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-06-10",
+    title: "You now get a heads-up when you hit a server's daily voice limit",
+    description:
+      "When you reach a server's daily voice cap, Leo now sends you a DM explaining why tracking paused and when it resumes. The Live Session page on the dashboard explains it too, instead of just showing no session.",
+    category: "improvement",
+    area: "both",
+  },
+  {
+    date: "2026-06-10",
+    title: "Voice channels selectable for pomodoro notifications on the dashboard",
+    description:
+      "The bot has always supported posting timer notifications in a voice channel's chat, but the dashboard channel picker only listed text channels. Voice channels now appear in the list.",
+    category: "bugfix",
+    area: "website",
+  },
+  {
+    date: "2026-06-10",
+    title: "Role menu fixes and clearer dashboard editing",
+    description:
+      "Role menus edited on the dashboard now sync to Discord when you open them with /rolemenus. The dashboard also shows whether a menu is posted yet and explains errors instead of failing silently.",
+    category: "bugfix",
+    area: "both",
+  },
+  {
+    date: "2026-06-10",
+    title: "Fixed the Reset button on the rank settings panel",
+    description:
+      "Pressing Reset in the rank configuration panel showed \"Something went wrong!\" and reset nothing. It now properly restores the default rank settings.",
+    category: "bugfix",
+    area: "bot",
+  },
+  // --- END AI-MODIFIED ---
   // ── June 1, 2026 ───────────────────────────────────────────
   // --- AI-MODIFIED (2026-06-01) ---
   // Purpose: Dashboard hint clarifying that a season reset doesn't strip rank roles.

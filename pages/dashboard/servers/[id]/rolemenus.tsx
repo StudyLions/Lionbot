@@ -40,6 +40,10 @@ interface Menu {
   name: string
   menuType: string
   enabled: boolean
+  // --- AI-MODIFIED (2026-06-10) ---
+  // Purpose: Ticket #0113 — surface whether the menu is actually posted in Discord
+  messageId: string | null
+  // --- END AI-MODIFIED ---
   sticky: boolean
   refunds: boolean
   obtainable: number | null
@@ -84,12 +88,23 @@ export default function RoleMenusPage() {
       method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     }), [id])
 
+  // --- AI-MODIFIED (2026-06-10) ---
+  // Purpose: Ticket #0113 — failures showed a generic toast, hiding the actual
+  //   reason the server rejected the request. Surface the API error message.
+  const apiError = async (res: Response, fallback: string) => {
+    const body = await res.json().catch(() => null)
+    toast.error(body?.error ? `${fallback}: ${body.error}` : fallback)
+  }
+  // --- END AI-MODIFIED ---
+
   const createMenu = async () => {
     if (!newMenu.name) return
     setSaving(true)
     const res = await api("POST", { action: "createMenu", ...newMenu })
     if (res.ok) { toast.success("Menu created"); setNewMenu({ name: "", menuType: "BUTTON" }); mutate() }
-    else toast.error("Failed to create menu")
+    /* --- AI-MODIFIED (2026-06-10) --- show real error (ticket #0113) --- */
+    else await apiError(res, "Failed to create menu")
+    /* --- END AI-MODIFIED --- */
     setSaving(false)
   }
 
@@ -111,7 +126,14 @@ export default function RoleMenusPage() {
   }
 
   const addRoleToMenu = async (menuId: number) => {
-    if (!addRole.roleId || !addRole.label) return
+    // --- AI-MODIFIED (2026-06-10) ---
+    // Purpose: Ticket #0113 — this returned silently when the role or label was
+    //   missing, which looked like a dead Add button. Tell the user what's needed.
+    if (!addRole.roleId || !addRole.label) {
+      toast.error(!addRole.roleId ? "Select a role first" : "Enter a button label first")
+      return
+    }
+    // --- END AI-MODIFIED ---
     setSaving(true)
     const res = await api("POST", {
       action: "addRole",
@@ -123,7 +145,9 @@ export default function RoleMenusPage() {
       duration: addRole.duration ? parseInt(addRole.duration) : null,
     })
     if (res.ok) { toast.success("Role added to menu"); setAddRole({ menuId: 0, roleId: "", label: "", emoji: "", price: "", duration: "" }); mutate() }
-    else toast.error("Failed to add role")
+    /* --- AI-MODIFIED (2026-06-10) --- show real error (ticket #0113) --- */
+    else await apiError(res, "Failed to add role")
+    /* --- END AI-MODIFIED --- */
     setSaving(false)
   }
 
@@ -181,6 +205,11 @@ export default function RoleMenusPage() {
                               {isExpanded ? <ChevronDown size={16} className="text-muted-foreground flex-shrink-0" /> : <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />}
                               <h3 className="text-foreground font-medium truncate">{menu.name}</h3>
                               <Badge variant={typeConfig.variant}>{typeConfig.label}</Badge>
+                              {/* --- AI-MODIFIED (2026-06-10) ---
+                                  Purpose: Ticket #0113 — menus created here are not posted in Discord
+                                  yet, which silently made them look broken. Make that state visible. */}
+                              {!menu.messageId && <Badge variant="warning">Not posted</Badge>}
+                              {/* --- END AI-MODIFIED --- */}
                               <span className="text-muted-foreground text-xs">{menu.roles.length} role{menu.roles.length !== 1 ? "s" : ""}</span>
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -248,6 +277,16 @@ export default function RoleMenusPage() {
                               )}
 
                               <div className="p-4 border-t border-border">
+                                {/* --- AI-MODIFIED (2026-06-10) ---
+                                    Purpose: Ticket #0113 — explain how dashboard edits reach Discord.
+                                    Menus created here have no Discord message until posted via the bot,
+                                    and the bot refreshes a menu from the dashboard when its editor opens. */}
+                                <p className="text-xs text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 mb-3">
+                                  {menu.messageId
+                                    ? "Changes made here reach Discord when you next open this menu with /rolemenus in your server."
+                                    : "This menu is not posted in Discord yet. Open it with /rolemenus in your server to post it — roles you add here will be included."}
+                                </p>
+                                {/* --- END AI-MODIFIED --- */}
                                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">Add Role to Menu</p>
                                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-1 mb-3">
                                   <RoleSelect

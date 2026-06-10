@@ -1352,7 +1352,9 @@ export default function ServerSettings() {
                           <ChannelSelect guildId={guildId} value={config.alert_channel ?? null} onChange={(v) => set("alert_channel", (v as string) || null)} channelTypes={[0, 5]} placeholder="Select alert channel" />
                         </SettingRow>
                         <SettingRow label="Pomodoro Channel" description="Default channel for pomodoro timer notifications">
-                          <ChannelSelect guildId={guildId} value={config.pomodoro_channel ?? null} onChange={(v) => set("pomodoro_channel", (v as string) || null)} channelTypes={[0, 5]} placeholder="Select pomodoro channel" />
+                          {/* --- AI-MODIFIED (2026-06-10) --- Ticket #0111: allow voice channels (type 2) --- */}
+                          <ChannelSelect guildId={guildId} value={config.pomodoro_channel ?? null} onChange={(v) => set("pomodoro_channel", (v as string) || null)} channelTypes={[0, 5, 2]} placeholder="Select pomodoro channel" />
+                          {/* --- END AI-MODIFIED --- */}
                         </SettingRow>
                       </SectionCard>
                     </div>
