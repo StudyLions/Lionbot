@@ -756,13 +756,18 @@ export default function PomodoroPage() {
                   {data && (
                     <div className="bg-card/50 border border-border rounded-xl p-5 space-y-0">
                       <SettingRow label="Default notification channel" description="Fallback channel for timer notifications when a timer doesn't have its own notification channel set.">
+                        {/* --- AI-MODIFIED (2026-06-10) ---
+                            Purpose: Ticket #0111 — voice channels were missing from this picker
+                            (the bot supports posting timer notifications in a voice channel's chat).
+                            Added Discord channel type 2 (voice). */}
                         <ChannelSelect
                           guildId={guildId}
                           value={pomodoroChannel}
                           onChange={(v) => handleSetPomodoroChannel((v as string) || null)}
-                          channelTypes={[0, 5]}
+                          channelTypes={[0, 5, 2]}
                           placeholder="No default (use voice channel)"
                         />
+                        {/* --- END AI-MODIFIED --- */}
                       </SettingRow>
                       {/* --- AI-MODIFIED (2026-03-25) --- */}
                       {/* Purpose: Toggle for session leave summary messages */}
@@ -917,7 +922,9 @@ export default function PomodoroPage() {
                                 <RoleSelect guildId={guildId} value={(getTimerValue(timer, "manager_roleid") as string | null) ?? timer.manager_roleid} onChange={(v) => setTimerField(timer.timerid, "manager_roleid", Array.isArray(v) ? v[0] ?? null : v)} placeholder="Anyone" />
                               </SettingRow>
                               <SettingRow label="Notification channel" description="Channel where timer status cards are posted" tooltip="Leave empty to use the server's default or the voice channel.">
-                                <ChannelSelect guildId={guildId} value={(getTimerValue(timer, "notification_channelid") as string | null) ?? timer.notification_channelid} onChange={(v) => setTimerField(timer.timerid, "notification_channelid", (v as string) || null)} channelTypes={[0, 5]} placeholder="Default channel" />
+                                {/* --- AI-MODIFIED (2026-06-10) --- Ticket #0111: allow voice channels (type 2) --- */}
+                                <ChannelSelect guildId={guildId} value={(getTimerValue(timer, "notification_channelid") as string | null) ?? timer.notification_channelid} onChange={(v) => setTimerField(timer.timerid, "notification_channelid", (v as string) || null)} channelTypes={[0, 5, 2]} placeholder="Default channel" />
+                                {/* --- END AI-MODIFIED --- */}
                               </SettingRow>
                             </div>
                             <div className="flex gap-2 mt-4 pt-4 border-t border-border/50 flex-wrap">
@@ -984,7 +991,9 @@ export default function PomodoroPage() {
                           <label className="block text-sm font-medium text-foreground/80 mb-1">Timer name</label>
                           <input type="text" value={createForm.pretty_name} onChange={(e) => setCreateForm((f) => ({ ...f, pretty_name: e.target.value }))} placeholder="e.g. Main Study Timer" maxLength={100} className="w-full bg-card border border-input text-foreground rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring" />
                         </div>
-                        <ChannelSelect guildId={guildId} value={createForm.notification_channelid} onChange={(v) => setCreateForm((f) => ({ ...f, notification_channelid: (v as string) || null }))} channelTypes={[0, 5]} label="Notification channel" placeholder="Default (voice channel)" />
+                        {/* --- AI-MODIFIED (2026-06-10) --- Ticket #0111: allow voice channels (type 2) --- */}
+                        <ChannelSelect guildId={guildId} value={createForm.notification_channelid} onChange={(v) => setCreateForm((f) => ({ ...f, notification_channelid: (v as string) || null }))} channelTypes={[0, 5, 2]} label="Notification channel" placeholder="Default (voice channel)" />
+                        {/* --- END AI-MODIFIED --- */}
                         <div className="flex items-center gap-6">
                           <label className="flex items-center gap-2 text-sm text-foreground/80">
                             <Toggle checked={createForm.voice_alerts} onChange={(v) => setCreateForm((f) => ({ ...f, voice_alerts: v }))} />
