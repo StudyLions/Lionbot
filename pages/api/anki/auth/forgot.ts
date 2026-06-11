@@ -16,6 +16,7 @@ import { prisma } from "@/utils/prisma"
 import { normalizeEmail, issueCode } from "@/lib/anki/emailAccounts"
 import { sendAnkiAuthCodeEmail } from "@/lib/anki/emailAuthMail"
 import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
+import { consumeAuthEmailBudget } from "@/lib/anki/emailBudget"
 
 interface ForgotBody {
   email?: string
@@ -58,7 +59,10 @@ export default async function handler(
     })
     if (account && account.email_verified_at) {
       const issued = await issueCode(email, "reset", account.userid)
-      if (issued.ok) {
+      // Gate on the global hourly ceiling too (consumed only when a code
+      // was freshly issued, so it counts real sends). Skipping still
+      // returns the generic 200 below — no oracle.
+      if (issued.ok && (await consumeAuthEmailBudget())) {
         sendAnkiAuthCodeEmail({
           userid: account.userid,
           email,
@@ -67,8 +71,8 @@ export default async function handler(
           purpose: "reset",
         }).catch((err) => console.error("[anki/forgot] send mail failed:", err))
       }
-      // Cooldown/hourly-cap fall through to the generic 200 — a 429
-      // here would reveal that the email HAS an account.
+      // Cooldown/hourly-cap/ceiling all fall through to the generic 200 —
+      // a 429 here would reveal that the email HAS an account.
     }
   } catch (err) {
     console.error("[anki/forgot] failed:", err)

@@ -2378,6 +2378,16 @@ model anki_email_codes {
   @@index([expires_at], map: "anki_email_codes_expiry")
 }
 
+/// Global hourly ceiling on outbound Anki auth emails (verify + reset).
+/// One atomic counter row per clock-hour bucket (floor(epoch_ms/3.6e6)).
+/// System-wide backstop against a distributed flood (many IPs × many
+/// fresh emails) running up the Resend bill — the per-email and per-IP
+/// limits don't bound that. The daily anki-cleanup cron prunes old rows.
+model anki_email_budget {
+  bucket BigInt @id
+  count  Int    @default(0)
+}
+
 enum activitytype {
   PLAYING
   WATCHING

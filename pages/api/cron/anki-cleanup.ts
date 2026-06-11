@@ -87,6 +87,19 @@ export default async function handler(
   }
 
   try {
+    // Hourly auth-email ceiling buckets: only the current hour's row is
+    // ever read, so anything older than a day is dead weight. One row
+    // per hour means this is tiny regardless, but keep it swept.
+    const staleBucket = BigInt(Math.floor((Date.now() - 24 * 3_600_000) / 3_600_000))
+    const buckets = await prisma.anki_email_budget.deleteMany({
+      where: { bucket: { lt: staleBucket } },
+    })
+    out.email_budget_buckets = buckets.count
+  } catch (err) {
+    console.error("[cron/anki-cleanup] email budget buckets failed:", err)
+  }
+
+  try {
     // Stale unverified registrations: free the email + drop the bare
     // user_config row. Guards: never touch verified accounts; never
     // touch a userid that somehow grew devices or a pet.

@@ -37,6 +37,7 @@ import {
 } from "@/lib/anki/emailAccounts"
 import { sendAnkiAuthCodeEmail } from "@/lib/anki/emailAuthMail"
 import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
+import { consumeAuthEmailBudget } from "@/lib/anki/emailBudget"
 
 interface RegisterBody {
   email?: string
@@ -187,15 +188,21 @@ export default async function handler(
     )
   }
 
-  // Fire the mail. Failures are logged, not surfaced (enumeration +
-  // the addon's "I didn't get a code" path is the resend button).
-  sendAnkiAuthCodeEmail({
-    userid: userid!,
-    email,
-    displayName,
-    code: issued.code,
-    purpose: "verify",
-  }).catch((err) => console.error("[anki/register] send mail failed:", err))
+  // Fire the mail, unless the global hourly auth-email ceiling is hit
+  // (distributed-flood backstop). When skipped we answer identically —
+  // no oracle; the addon's resend path covers the rare legit miss during
+  // an active flood. Failures are logged, not surfaced.
+  if (await consumeAuthEmailBudget()) {
+    sendAnkiAuthCodeEmail({
+      userid: userid!,
+      email,
+      displayName,
+      code: issued.code,
+      purpose: "verify",
+    }).catch((err) => console.error("[anki/register] send mail failed:", err))
+  } else {
+    console.warn("[anki/register] global auth-email ceiling reached; send skipped")
+  }
 
   return res.status(200).json({ status: "code_sent" })
 }

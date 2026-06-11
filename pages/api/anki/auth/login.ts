@@ -28,6 +28,7 @@ import {
   issueCode,
 } from "@/lib/anki/emailAccounts"
 import { sendAnkiAuthCodeEmail } from "@/lib/anki/emailAuthMail"
+import { consumeAuthEmailBudget } from "@/lib/anki/emailBudget"
 import {
   bootstrapGameAccount,
   createDeviceSession,
@@ -177,7 +178,7 @@ export default async function handler(
     // The one deliberate non-generic response (see header). Re-issue
     // a code so the addon can jump straight to the code screen.
     const issued = await issueCode(email, "verify", account.userid).catch(() => null)
-    if (issued?.ok) {
+    if (issued?.ok && (await consumeAuthEmailBudget())) {
       sendAnkiAuthCodeEmail({
         userid: account.userid,
         email,
