@@ -32,7 +32,7 @@ export default async function handler(
 
   res.setHeader("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400")
   return res.status(200).json({
-    latest: process.env.ANKI_ADDON_LATEST_VERSION || "0.2.2",
+    latest: process.env.ANKI_ADDON_LATEST_VERSION || "0.4.0",
     min_supported: process.env.ANKI_ADDON_MIN_VERSION || "0.1.0",
     download_url:
       process.env.ANKI_ADDON_DOWNLOAD_URL ||
