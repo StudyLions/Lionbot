@@ -1048,6 +1048,19 @@ async function handleOneTimeGemPurchase(session: Stripe.Checkout.Session) {
     `Stripe webhook: credited ${totalGems} gems to Discord user ${metadata.discordId} (session ${session.id})`
   );
 
+  // --- AI-MODIFIED (2026-06-11) ---
+  // Purpose: Keep test-mode events out of the production money-audit
+  //          channels. The Anki e2e harness (and Stripe CLI replays)
+  //          deliver validly-signed livemode=false events — the DB
+  //          credit above still runs (against whatever DB this env
+  //          uses), but the Discord audit channels should only ever
+  //          see real money.
+  if (session.livemode === false) {
+    console.log(`Stripe webhook: test-mode session ${session.id} — skipping audit posts`);
+    return;
+  }
+  // --- END AI-MODIFIED ---
+
   // --- AI-MODIFIED (2026-03-23) ---
   // Purpose: Gem audit + Stripe money audit for one-time gem purchase
   sendGemAuditLog({
