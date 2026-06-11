@@ -123,14 +123,15 @@ export default async function handler(
   }
 
   if (account.locked_until && account.locked_until.getTime() > Date.now()) {
-    const retry = Math.ceil((account.locked_until.getTime() - Date.now()) / 1000)
-    res.setHeader("Retry-After", String(retry))
-    return sendError(
-      res,
-      403,
-      "account_locked",
-      "Too many failed attempts — this account is temporarily locked."
-    )
+    // Account is locked. Respond IDENTICALLY to a wrong password (no
+    // distinct code, no Retry-After header) so this can't be used to
+    // (a) confirm an email has an account or (b) tell an attacker they
+    // successfully locked a victim. We still equalize timing with the
+    // verify path and we do NOT process the password while locked
+    // (that's the CPU-DoS protection the lock buys). A legitimate
+    // locked-out user sees "incorrect" and retries after the window.
+    await verifyPassword(password, await dummyHash()).catch(() => false)
+    return sendError(res, 401, "invalid_credentials", "Email or password is incorrect")
   }
 
   const valid = await verifyPassword(password, account.password_hash).catch(

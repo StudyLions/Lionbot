@@ -2340,9 +2340,10 @@ model anki_batch_idempotency {
 /// Standalone email/password accounts for the Anki addon (no Discord
 /// needed). userid is SYNTHETIC — allocated in [9.0e18, 9.2e18), a band
 /// Discord snowflakes can't reach until ~2083 — and deliberately has NO
-/// FK to user_config: the account row exists from REGISTER (unverified),
-/// while user_config/lg_pets are bootstrapped only at VERIFY, keeping
-/// abandoned registrations out of the main tables. linked_discord_id is
+/// FK to user_config: REGISTER creates the account row (unverified) plus
+/// a BARE user_config row (mail prefs/log FK); the email address lands
+/// on user_config and lg_pets is bootstrapped only at VERIFY, keeping
+/// abandoned registrations out of the game tables. linked_discord_id is
 /// reserved for the future "sync with Discord" flow.
 model anki_email_accounts {
   userid             BigInt    @id

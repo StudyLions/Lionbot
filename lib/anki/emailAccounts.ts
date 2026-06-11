@@ -189,6 +189,58 @@ export async function issueCode(
 }
 
 /**
+ * Advance the SAME (email, "verify") cooldown + hourly-cap bookkeeping
+ * as issueCode, but WITHOUT minting a usable code or sending mail.
+ *
+ * Used by the register route's already-verified-account branch so its
+ * responses (200, then 429 on a fast retry) are indistinguishable from
+ * a fresh email's — closing the "two register calls classify
+ * verified-vs-everything-else" enumeration oracle. The decoy row's
+ * code_hash is 32 random bytes, which can never equal sha256(any
+ * 6-digit string), so checkAndConsumeCode can never accept it: there
+ * is no auth-bypass risk from these inert rows.
+ */
+export async function touchCodeCooldown(
+  email: string
+): Promise<
+  | { ok: true }
+  | { ok: false; error: "cooldown" | "hourly_cap"; retryAfterSec: number }
+> {
+  const now = Date.now()
+  const recent = await prisma.anki_email_codes.findFirst({
+    where: { email, purpose: "verify" },
+    orderBy: { created_at: "desc" },
+    select: { created_at: true },
+  })
+  if (recent) {
+    const since = now - recent.created_at.getTime()
+    if (since < CODE_RESEND_COOLDOWN_MS) {
+      return {
+        ok: false,
+        error: "cooldown",
+        retryAfterSec: Math.ceil((CODE_RESEND_COOLDOWN_MS - since) / 1000),
+      }
+    }
+  }
+  const lastHour = await prisma.anki_email_codes.count({
+    where: { email, purpose: "verify", created_at: { gte: new Date(now - 3_600_000) } },
+  })
+  if (lastHour >= CODE_MAX_SENDS_PER_HOUR) {
+    return { ok: false, error: "hourly_cap", retryAfterSec: 3600 }
+  }
+  await prisma.anki_email_codes.create({
+    data: {
+      email,
+      purpose: "verify",
+      code_hash: crypto.randomBytes(32), // never matches a 6-digit code
+      userid: null,
+      expires_at: new Date(now + CODE_TTL_MS),
+    },
+  })
+  return { ok: true }
+}
+
+/**
  * Check a submitted code for (email, purpose). Atomic attempt
  * accounting: the attempt counter is bumped BEFORE comparing, so
  * parallel guesses can't exceed CODE_MAX_ATTEMPTS. On success the
@@ -245,8 +297,11 @@ export async function checkAndConsumeCode(
 // Discord snowflake for the next ~60 years. 2e17 of space → random
 // collisions are vanishingly rare; we re-roll on conflict anyway.
 // (BigInt() constructor, not literals — tsconfig targets es5.)
-const SYNTH_MIN = BigInt("9000000000000000000")
-const SYNTH_SPAN = BigInt("200000000000000000")
+// Exported: the cleanup cron uses the band to find orphaned game rows
+// (a user_config in this band with NO anki_email_accounts row can only
+// be a half-finished account deletion — nothing else mints these ids).
+export const SYNTH_MIN = BigInt("9000000000000000000")
+export const SYNTH_SPAN = BigInt("200000000000000000")
 
 export function isSyntheticUserid(userid: bigint): boolean {
   return userid >= SYNTH_MIN && userid < SYNTH_MIN + SYNTH_SPAN

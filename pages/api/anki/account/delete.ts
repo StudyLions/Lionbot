@@ -15,14 +15,19 @@
 //          possession — a stolen unlocked Anki can't erase the
 //          account). Then:
 //            1. revoke every device + bust caches (sessions die now)
-//            2. executeUserDeletion(userid) — the same GDPR pipeline
+//            2. delete the credential ATOMICALLY (blank hash + codes
+//               + account row in one transaction) — once this commits
+//               nothing can sign in, so the erasure below can never
+//               be "resurrected" by a later login re-bootstrapping
+//               user_config/lg_pets; if it rolls back, nothing
+//               happened and the user can sign in again and retry
+//            3. executeUserDeletion(userid) — the same GDPR pipeline
 //               the website uses (user_config cascade removes
-//               anki_devices + review events; lg_* etc. handled)
-//            3. delete the anki_email_accounts row + outstanding
-//               codes (no FK by design, so explicit)
-//          Order matters: credentials are removed LAST so a crash
-//          mid-way leaves a re-runnable state, never an orphaned
-//          login that resurrects deleted data.
+//               anki_devices + review events; lg_* etc. handled).
+//               If THIS fails the user cannot retry (sessions + the
+//               credential are gone), so we report success with
+//               purge_pending and the daily anki-cleanup cron's
+//               synthetic-band orphan sweep finishes the erasure.
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import { prisma } from "@/utils/prisma"
@@ -92,7 +97,7 @@ export default async function handler(
     return sendError(res, 401, "invalid_credentials", "Password is incorrect")
   }
 
-  // 1. Kill every session first (the requesting device included).
+  // 1. Kill every session (the requesting device included).
   try {
     const devices = await prisma.anki_devices.findMany({
       where: { userid: ctx.userId },
@@ -108,24 +113,53 @@ export default async function handler(
     return sendError(res, 503, "db_unavailable", "Could not delete the account")
   }
 
-  // 2. The full GDPR erasure (same pipeline as the website).
+  // 2. Remove the CREDENTIAL, atomically. The credential-before-erasure
+  //    ordering is the security-critical part: once this commits the
+  //    account is non-loginable, so even if the game-data erasure below
+  //    fails mid-way nothing can resurrect it (login/verify can't
+  //    re-bootstrap user_config/lg_pets without a credential row). The
+  //    transaction means a failure here changes NOTHING — password and
+  //    codes are intact, so the user signs in again (step 1 revoked
+  //    this session) and retries. Blanking the hash inside the same
+  //    transaction is free defense-in-depth against a future
+  //    de-transactioning regression; the cleanup cron sweeps blank-hash
+  //    rows as the matching backstop.
+  try {
+    await prisma.$transaction([
+      prisma.anki_email_accounts.update({
+        where: { userid: ctx.userId },
+        data: { password_hash: "" }, // verifyPassword rejects an empty/non-scrypt hash
+      }),
+      prisma.anki_email_codes.deleteMany({ where: { email: account.email } }),
+      prisma.anki_email_accounts.delete({ where: { userid: ctx.userId } }),
+    ])
+  } catch (err) {
+    console.error("[anki/account-delete] credential removal failed:", err)
+    // Rolled back: credential fully intact, but step 1 already revoked
+    // every session — the honest recovery path is sign-in-and-retry.
+    return sendError(res, 503, "deletion_failed", "Couldn't delete the account — sign in again and retry")
+  }
+
+  // 3. The full GDPR erasure (same pipeline as the website). The
+  //    credential is already gone, so a failure here leaves only
+  //    orphaned game rows — no login, no resurrection, and ALSO no way
+  //    for the user to retry (their sessions died in step 1). A 503
+  //    "try again" would be a lie. The account is irreversibly dead at
+  //    this point, so report success with purge_pending: the daily
+  //    anki-cleanup cron's synthetic-band orphan sweep (user_config in
+  //    the synthetic id band with no credential row) is guaranteed to
+  //    finish the erasure. We log loudly for ops either way.
   try {
     const summary = await executeUserDeletion(ctx.userId)
     console.info(
       `[anki/account-delete] erased userid=${ctx.userId} tables=${Object.keys(summary).length}`
     )
   } catch (err) {
-    console.error("[anki/account-delete] executeUserDeletion failed:", err)
-    return sendError(res, 503, "deletion_failed", "Could not delete the account — try again")
-  }
-
-  // 3. Remove the credentials + codes last (see header).
-  try {
-    await prisma.anki_email_codes.deleteMany({ where: { email: account.email } })
-    await prisma.anki_email_accounts.delete({ where: { userid: ctx.userId } })
-  } catch (err) {
-    console.error("[anki/account-delete] credential cleanup failed:", err)
-    // The game data is already erased; surface success but log loudly.
+    console.error(
+      `[anki/account-delete] game-data erasure failed AFTER credential removal for userid=${ctx.userId}; the cleanup cron's orphan sweep will finish it:`,
+      err
+    )
+    return res.status(200).json({ status: "account_deleted", purge_pending: true })
   }
 
   return res.status(200).json({ status: "account_deleted" })

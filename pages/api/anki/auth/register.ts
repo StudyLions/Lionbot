@@ -33,6 +33,7 @@ import {
   normalizeDisplayName,
   allocateSyntheticUserid,
   issueCode,
+  touchCodeCooldown,
 } from "@/lib/anki/emailAccounts"
 import { sendAnkiAuthCodeEmail } from "@/lib/anki/emailAuthMail"
 import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
@@ -106,9 +107,24 @@ export default async function handler(
     })
 
     if (existing && existing.email_verified_at) {
-      // Verified account already owns this address. Do nothing,
-      // answer exactly like success (anti-enumeration). The real
-      // owner is unaffected; the requester can't tell.
+      // Verified account already owns this address. We do NOT touch it
+      // or send mail — but we MUST advance the same cooldown
+      // bookkeeping a fresh email would, or "register twice quickly"
+      // (200 then 429 for fresh emails, 200 then 200 for verified ones)
+      // becomes a verified-vs-not oracle. touchCodeCooldown writes an
+      // inert decoy row so the 429 fires identically.
+      const decoy = await touchCodeCooldown(email).catch(() => null)
+      if (decoy && !decoy.ok) {
+        res.setHeader("Retry-After", String(decoy.retryAfterSec))
+        return sendError(
+          res,
+          429,
+          decoy.error === "cooldown" ? "code_cooldown" : "code_hourly_cap",
+          decoy.error === "cooldown"
+            ? "A code was just sent — check your inbox, or retry in a minute."
+            : "Too many codes requested for this email — try again later."
+        )
+      }
       return res.status(200).json({ status: "code_sent" })
     }
 

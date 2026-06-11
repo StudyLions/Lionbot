@@ -120,27 +120,36 @@ export default async function handler(
     return sendError(res, 401, check.error, msg)
   }
 
-  // Activate: mark verified + finish the user_config row (address is
-  // proven now) + make sure the pet exists.
+  // Activate atomically: mark verified + bootstrap user_config/lg_pets
+  // + finish the user_config identity fields, all in ONE transaction.
+  // If any step throws the whole thing rolls back, so we never strand
+  // a consumed code against a half-provisioned account whose
+  // email_verified_at is set but user_config.email is NULL (which
+  // would also make register refuse to re-issue a code — a permanently
+  // stuck account). On rollback the account stays unverified and the
+  // user can simply register again to get a fresh code.
   try {
-    await prisma.anki_email_accounts.update({
-      where: { userid: account.userid },
-      data: {
-        email_verified_at: account.email_verified_at ?? new Date(),
-        failed_login_count: 0,
-        locked_until: null,
-        updated_at: new Date(),
-      },
-    })
-    await bootstrapGameAccount(account.userid)
-    // Set identity fields on user_config; never clobber an existing
-    // name (re-verification path safety).
-    await prisma.$executeRaw`
-      UPDATE user_config
-      SET email = ${email},
-          email_verified = true,
-          name = COALESCE(name, ${account.display_name})
-      WHERE userid = ${account.userid}`
+    await prisma.$transaction([
+      prisma.anki_email_accounts.update({
+        where: { userid: account.userid },
+        data: {
+          email_verified_at: account.email_verified_at ?? new Date(),
+          failed_login_count: 0,
+          locked_until: null,
+          updated_at: new Date(),
+        },
+      }),
+      // FK order: user_config before lg_pets (lg_pets references it).
+      prisma.$executeRaw`INSERT INTO user_config (userid) VALUES (${account.userid}) ON CONFLICT (userid) DO NOTHING`,
+      prisma.$executeRaw`INSERT INTO lg_pets (userid) VALUES (${account.userid}) ON CONFLICT (userid) DO NOTHING`,
+      // Set identity fields; never clobber an existing name (re-verify safety).
+      prisma.$executeRaw`
+        UPDATE user_config
+        SET email = ${email},
+            email_verified = true,
+            name = COALESCE(name, ${account.display_name})
+        WHERE userid = ${account.userid}`,
+    ])
   } catch (err) {
     console.error("[anki/verify-email] activation failed:", err)
     return sendError(res, 503, "db_unavailable", "Could not activate the account")
