@@ -32,6 +32,8 @@ const TIER_DEATH_TIMER_HOURS: Record<string, number | null> = {
 }
 const GROWTH_PER_TEXT_MESSAGE = 2.0
 
+const VALID_RARITIES = ["COMMON", "UNCOMMON", "RARE", "EPIC", "LEGENDARY"]
+
 export function isWatered(lastWatered: Date | null, waterIntervalHours: number, tier = "NONE"): boolean {
   if (!lastWatered) return false
   const elapsed = (Date.now() - lastWatered.getTime()) / 1000
@@ -422,4 +424,58 @@ export async function harvestAll(userId: bigint) {
     totalVoiceMinutes: Math.round(totalVoiceMin), totalMessages,
     details, materialDrops: allDrops,
   }
+}
+
+/**
+ * Uproot every LIVE, planted plot of a given rarity in ONE atomic statement,
+ * refunding 50% of each plot's gold_invested (parity with uprootPlot). Dead
+ * plants are excluded — like single uproot, they must be `clear`ed instead.
+ *
+ * The CTE captures each plot's pre-clear gold_invested under `FOR UPDATE`, so
+ * the refund is summed from exactly the rows we cleared — no read-then-write
+ * window, no refund drift if the user mutates the farm concurrently. Clear +
+ * refund + ledger row all commit together (or not at all).
+ */
+export async function removeByRarity(userId: bigint, rarity: string) {
+  const target = String(rarity ?? "").toUpperCase()
+  if (!VALID_RARITIES.includes(target)) {
+    throw new PetServiceError(400, "bad_rarity", `Invalid rarity. Use one of: ${VALID_RARITIES.join(", ")}`)
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const removed = await tx.$queryRaw<Array<{ plot_id: number; gold_invested: number }>>`
+      WITH victims AS (
+        SELECT plot_id, gold_invested
+        FROM lg_user_farm
+        WHERE userid = ${userId} AND seed_id IS NOT NULL AND dead = false AND rarity = ${target}
+        FOR UPDATE
+      ), cleared AS (
+        UPDATE lg_user_farm f
+        SET seed_id = NULL, planted_at = NULL, last_watered = NULL, growth_stage = 0,
+            dead = false, growth_points = 0, gold_invested = 0,
+            voice_minutes_earned = 0, messages_earned = 0, rarity = 'COMMON'
+        FROM victims v
+        WHERE f.userid = ${userId} AND f.plot_id = v.plot_id
+        RETURNING f.plot_id
+      )
+      SELECT plot_id, gold_invested FROM victims ORDER BY plot_id`
+
+    const plotIds = removed.map((r) => r.plot_id)
+    const totalRefund = removed.reduce((sum, r) => sum + Math.floor((r.gold_invested || 0) / 2), 0)
+
+    if (totalRefund > 0) {
+      await tx.user_config.update({
+        where: { userid: userId },
+        data: { gold: { increment: totalRefund } },
+      })
+      await tx.lg_gold_transactions.create({
+        data: {
+          transaction_type: "FARM_HARVEST", actorid: userId, to_account: userId,
+          amount: totalRefund, description: `Removed ${plotIds.length} ${target} plant(s) (50% refund)`,
+        },
+      })
+    }
+
+    return { success: true, action: "removedByRarity", rarity: target, count: plotIds.length, totalRefund, plotIds }
+  })
 }
