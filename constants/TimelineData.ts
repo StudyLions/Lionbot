@@ -23,6 +23,34 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // ── July 21, 2026 ──────────────────────────────────────────
+  // --- AI-MODIFIED (2026-07-21) ---
+  // Purpose: Ticket batch fixes (#129/#140/#131, #142/#121, #138).
+  {
+    date: "2026-07-21",
+    title: "Fixed pets not earning gold or XP from study sessions",
+    description:
+      "If you adopted your pet after you'd already been studying, some servers could silently stop counting your activity toward gold, XP and farm growth. That's fixed — earnings resume with your next study session.",
+    category: "liongotchi",
+    area: "bot",
+  },
+  {
+    date: "2026-07-21",
+    title: "Fixed members disappearing from the dashboard after rejoining",
+    description:
+      "If you left a server and came back, the website could keep treating you as gone — hidden from the members page, search and leaderboards even though the bot still tracked you. Everyone affected has been restored.",
+    category: "bugfix",
+    area: "website",
+  },
+  {
+    date: "2026-07-21",
+    title: "Today's study time now updates while you're still in voice",
+    description:
+      "The dashboard used to show under a minute for today until you left the channel, because ongoing sessions weren't counted. Your current session now counts in real time.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── June 10, 2026 ──────────────────────────────────────────
   // --- AI-MODIFIED (2026-06-10) ---
   // Purpose: Ticket batch fixes (#0111, #0112/#0098, #0113, #0114).
