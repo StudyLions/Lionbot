@@ -59,17 +59,36 @@ export default apiHandler({
       }),
       // --- END AI-MODIFIED ---
 
-      prisma.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(DISTINCT userid) as count
+      // --- AI-MODIFIED (2026-07-21) ---
+      // Purpose: "Studied Today"/"This Week" missed members whose first session
+      // of the window was still in progress (voice_sessions rows are only
+      // written when the member leaves voice). Select the distinct userids so
+      // they can be unioned with the ongoing sessions below. Ticket #138.
+      // --- Original code (commented out for rollback) ---
+      // prisma.$queryRaw<[{ count: bigint }]>`
+      //   SELECT COUNT(DISTINCT userid) as count
+      //   FROM voice_sessions
+      //   WHERE guildid = ${guildId} AND start_time >= ${todayStart}
+      // `,
+      //
+      // prisma.$queryRaw<[{ count: bigint }]>`
+      //   SELECT COUNT(DISTINCT userid) as count
+      //   FROM voice_sessions
+      //   WHERE guildid = ${guildId} AND start_time >= ${weekStart}
+      // `,
+      // --- End original code ---
+      prisma.$queryRaw<{ userid: bigint }[]>`
+        SELECT DISTINCT userid
         FROM voice_sessions
         WHERE guildid = ${guildId} AND start_time >= ${todayStart}
       `,
 
-      prisma.$queryRaw<[{ count: bigint }]>`
-        SELECT COUNT(DISTINCT userid) as count
+      prisma.$queryRaw<{ userid: bigint }[]>`
+        SELECT DISTINCT userid
         FROM voice_sessions
         WHERE guildid = ${guildId} AND start_time >= ${weekStart}
       `,
+      // --- END AI-MODIFIED ---
 
       // --- AI-MODIFIED (2026-03-15) ---
       // Purpose: filter to current members only (exclude those who left)
@@ -137,8 +156,22 @@ export default apiHandler({
         })),
       },
       activity: {
-        studiedToday: Number(studiedTodayResult[0]?.count ?? 0),
-        studiedThisWeek: Number(studiedThisWeekResult[0]?.count ?? 0),
+        // --- AI-MODIFIED (2026-07-21) ---
+        // Purpose: union members with a completed session in the window and
+        // members currently in an ongoing session (see query note above).
+        // --- Original code (commented out for rollback) ---
+        // studiedToday: Number(studiedTodayResult[0]?.count ?? 0),
+        // studiedThisWeek: Number(studiedThisWeekResult[0]?.count ?? 0),
+        // --- End original code ---
+        studiedToday: new Set([
+          ...studiedTodayResult.map((r) => r.userid.toString()),
+          ...activeSessions.map((s) => s.userid.toString()),
+        ]).size,
+        studiedThisWeek: new Set([
+          ...studiedThisWeekResult.map((r) => r.userid.toString()),
+          ...activeSessions.map((s) => s.userid.toString()),
+        ]).size,
+        // --- END AI-MODIFIED ---
         newMembersThisWeek: newMembersThisWeek,
         totalMembers: totalMembers,
       },
