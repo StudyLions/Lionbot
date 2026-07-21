@@ -21,9 +21,10 @@ export default function PrivacyPolicy() {
       <div className="bg-background min-h-screen">
         <div className="max-w-3xl mx-auto px-4 py-12 lg:py-20 lg:px-6">
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">Privacy Policy</h1>
-          {/* --- AI-MODIFIED (2026-04-06) --- */}
-          {/* Purpose: update date for email notifications + survey data additions */}
-          <p className="text-muted-foreground mb-10">Last updated: April 6, 2026</p>
+          {/* --- AI-MODIFIED (2026-06-11) --- */}
+          {/* Purpose: update date for the LionGotchi-for-Anki addon (standalone
+              email accounts, flashcard review data, device records, Resend). */}
+          <p className="text-muted-foreground mb-10">Last updated: June 11, 2026</p>
           {/* --- END AI-MODIFIED --- */}
 
           <div className="space-y-10 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7">
@@ -63,7 +64,7 @@ export default function PrivacyPolicy() {
 
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Identity &amp; Account Data</h3>
               <ul className="list-disc pl-6 space-y-2">
-                <li><strong className="text-foreground">Discord User ID</strong> — Your unique Discord snowflake ID. This is our primary identifier for your account.</li>
+                <li><strong className="text-foreground">Discord User ID</strong> — Your unique Discord snowflake ID. For Discord-based accounts this is our primary identifier. (Standalone Anki addon accounts instead use a system-generated internal ID — see the LionGotchi for Anki section below.)</li>
                 <li><strong className="text-foreground">Discord Username / Display Name</strong> — Cached from Discord to display in leaderboards and the dashboard.</li>
                 <li><strong className="text-foreground">Avatar Hash</strong> — Cached to render your profile picture on the dashboard.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
@@ -145,6 +146,31 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Server List</strong> — When you use the dashboard, we temporarily cache (in memory, not in database) your Discord server list to determine which servers you can manage.</li>
               </ul>
 
+              {/* --- AI-MODIFIED (2026-06-11) --- */}
+              {/* Purpose: document the LionGotchi-for-Anki desktop addon: standalone
+                  email accounts, flashcard review data, and device records. */}
+              <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">LionGotchi for Anki (Desktop Addon)</h3>
+              <p>
+                The LionGotchi for Anki desktop addon lets you earn rewards and care for your pet by reviewing
+                flashcards in Anki. You can use it with your existing Discord account (by pairing) or create a
+                standalone account with just an email and password — no Discord required. For standalone accounts
+                we store:
+              </p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong className="text-foreground">Email Address</strong> — Used to verify your account, send sign-in and password-reset codes, and identify your account. Standalone accounts are not linked to Discord unless you choose to connect one later.</li>
+                <li><strong className="text-foreground">Password</strong> — Stored only as a salted scrypt hash. We never store, log, or have any way to read your actual password.</li>
+                <li><strong className="text-foreground">Display Name</strong> — The name you choose, shown on leaderboards and to friends.</li>
+                <li><strong className="text-foreground">Verification &amp; Reset Codes</strong> — Six-digit codes, stored only as a hash and expiring within 15 minutes.</li>
+                <li><strong className="text-foreground">Account Identifier</strong> — A system-generated internal ID (not a Discord ID) that keys your pet, inventory, and progress.</li>
+              </ul>
+              <p>For every account that uses the addon — Discord-paired or standalone — we also store:</p>
+              <ul className="list-disc pl-6 space-y-2">
+                <li><strong className="text-foreground">Flashcard Review Events</strong> — For each card you review: an opaque numeric card ID and deck ID (<strong className="text-foreground">not</strong> the card&apos;s text), the ease you graded (1–4), the time spent (capped to 0.5–30 seconds), and a timestamp. These power your rewards, stats, and streak. We never receive your card content, deck names, notes, or media.</li>
+                <li><strong className="text-foreground">Anki Collection Identifier</strong> — A random identifier for your Anki profile, used so reviews from one profile cannot be double-counted from another.</li>
+                <li><strong className="text-foreground">Device Records</strong> — For each device you sign in from: a device name (derived from your computer&apos;s hostname, which you can rename or revoke), the addon, Anki, and operating-system versions, and a coarse network location — an IPv4 /24 prefix with the final number removed (IPv6 addresses are not stored). We use these for security, abuse prevention, and to let you manage your signed-in devices. We do <strong className="text-foreground">not</strong> store your full IP address.</li>
+              </ul>
+              {/* --- END AI-MODIFIED --- */}
+
               {/* --- AI-MODIFIED (2026-04-06) --- */}
               {/* Purpose: document survey data collection */}
               <h3 className="text-lg font-semibold text-foreground mt-6 mb-3">Optional Survey Data</h3>
@@ -172,7 +198,7 @@ export default function PrivacyPolicy() {
                 <li>We do <strong className="text-foreground">not</strong> read or store the content of your Discord messages. We only count messages and words in tracked channels.</li>
                 <li>We do <strong className="text-foreground">not</strong> store credit card numbers, billing addresses, or other payment details. All payment processing is handled by Stripe.</li>
                 <li>We do <strong className="text-foreground">not</strong> track your activity outside of tracked channels configured by server administrators.</li>
-                <li>We do <strong className="text-foreground">not</strong> collect your IP address, browser fingerprint, or use tracking cookies beyond the authentication session cookie.</li>
+                <li>We do <strong className="text-foreground">not</strong> store your full IP address, use browser fingerprinting, or use tracking cookies beyond the authentication session cookie. (The Anki addon stores only a coarse IPv4 /24 network prefix on your device record for security and abuse prevention, as described above. Hosting providers such as Vercel may process full IP addresses transiently in standard server logs.)</li>
                 <li>We do <strong className="text-foreground">not</strong> sell or share your data with any third party for advertising or marketing.</li>
               </ul>
             </section>
@@ -205,6 +231,10 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Stripe</strong> — If you purchase LionGems, Stripe processes your payment. Stripe&apos;s own privacy policy governs their handling of your payment data.</li>
                 <li><strong className="text-foreground">Vercel</strong> — Our website is hosted on Vercel. Vercel may process standard web server logs (IP addresses, request metadata) as part of hosting. See Vercel&apos;s privacy policy.</li>
                 <li><strong className="text-foreground">Hetzner</strong> — Our database and bot are hosted on Hetzner servers in the EU. Hetzner provides infrastructure only and does not access our data.</li>
+                {/* --- AI-MODIFIED (2026-06-11) --- */}
+                {/* Purpose: disclose Resend as the email delivery sub-processor */}
+                <li><strong className="text-foreground">Resend</strong> — Account and security emails (such as verification and password-reset codes for Anki addon accounts, and product notifications) are delivered through Resend, our email provider. Resend processes the recipient address and message content solely to deliver the email on our behalf.</li>
+                {/* --- END AI-MODIFIED --- */}
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: add business transfer / acquisition clause */}
                 <li><strong className="text-foreground">Business transfers</strong> — If LionBot is acquired, merged with another company, or its assets are sold, your data may be transferred to the new owner as part of that transaction. The new owner will be bound by this privacy policy with respect to your data. If such a transfer occurs, we will notify users through the bot, our Discord server, or email where available.</li>
@@ -250,7 +280,7 @@ export default function PrivacyPolicy() {
                 {/* Purpose: Updated rights section to reference self-service tools */}
                 <li><strong className="text-foreground">Right to access</strong> — You can view most of your data through the bot commands and web dashboard. A full summary is available on your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to rectification</strong> — You can update your timezone, locale, pet name, profile tags, and other user-configured settings at any time.</li>
-                <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period.</li>
+                <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period. Standalone Anki addon accounts (which have no Discord login for the dashboard) can be deleted directly inside the addon — Settings → Account → Delete my account — which immediately and permanently erases your account and all associated game data.</li>
                 <li><strong className="text-foreground">Right to data portability</strong> — You can download a full copy of your data in JSON format from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to object</strong> — You can stop using our services at any time by removing the bot from your server or leaving servers where it is present.</li>
                 {/* --- END AI-MODIFIED --- */}
@@ -266,9 +296,10 @@ export default function PrivacyPolicy() {
               <h2>Children&apos;s Privacy</h2>
               <p>
                 Our services are not intended for anyone under the age of 13, in accordance with Discord&apos;s own
-                Terms of Service. We do not knowingly collect personal data from children under 13. If we become
-                aware that we have collected data from a child under 13, we will delete it promptly. If you believe
-                a child under 13 has used our services, please contact us at{" "}
+                Terms of Service; standalone Anki addon accounts, which do not involve Discord, are likewise intended
+                only for users aged 13 and older. We do not knowingly collect personal data from children under 13.
+                If we become aware that we have collected data from a child under 13, we will delete it promptly. If
+                you believe a child under 13 has used our services, please contact us at{" "}
                 <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">
                   contact@arihoresh.com
                 </a>.

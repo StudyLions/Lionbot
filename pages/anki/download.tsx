@@ -11,11 +11,11 @@
 import Head from "next/head"
 import { Download as DownloadIcon, ShieldCheck } from "lucide-react"
 
-const ADDON_VERSION = "0.2.2"
+const ADDON_VERSION = "0.4.1"
 const ADDON_FILE = "/anki/lionbot.ankiaddon"
 const ADDON_SHA256 =
-  "e2d1f3f344a4ca49b634672448aaa6b2ce7c4056d6e0de3069a66bb7de382ab1"
-const ADDON_SIZE = "85 KB"
+  "513973a934bdcae95ae7bd05e776a745325d0bc31258a938a8a3ef9c08e53816"
+const ADDON_SIZE = "148 KB"
 
 export default function AnkiDownloadPage() {
   return (
@@ -66,7 +66,7 @@ export default function AnkiDownloadPage() {
                   <li>Download the .ankiaddon file above.</li>
                   <li>In Anki: Tools, then Add-ons, then Install from file.</li>
                   <li>Restart Anki.</li>
-                  <li>Open Tools, then LionGotchi, and sign in with Discord.</li>
+                  <li>Open Tools, then LionGotchi, and create an account with your email (or connect Discord).</li>
                 </ol>
                 <p className="text-xs text-muted-foreground pt-1">
                   Requires Anki 2.1.50 or newer (qt5 or qt6). Works on macOS,

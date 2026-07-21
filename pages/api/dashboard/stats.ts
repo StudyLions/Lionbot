@@ -194,16 +194,63 @@ export default apiHandler({
     ])
     // --- END AI-MODIFIED ---
 
-    const toMinutes = (s: number | null) => Math.round((s ?? 0) / 60)
-    const studyTime = {
-      todayMinutes: toMinutes(todayAgg._sum.duration),
-      yesterdayMinutes: toMinutes(yesterdayAgg._sum.duration),
-      thisWeekMinutes: toMinutes(weekAgg._sum.duration),
-      lastWeekMinutes: toMinutes(lastWeekAgg._sum.duration),
-      thisMonthMinutes: toMinutes(monthAgg._sum.duration),
-      lastMonthMinutes: toMinutes(lastMonthAgg._sum.duration),
-      allTimeMinutes: toMinutes(allTimeAgg._sum.duration),
+    // --- AI-MODIFIED (2026-07-21) ---
+    // Purpose: "Today" (and the other windows) only summed COMPLETED
+    // voice_sessions rows. The bot writes a session row when the member
+    // LEAVES voice, so a member sitting in one long session all day saw
+    // "<1m" for the whole day while previous days looked fine (ticket #138).
+    // Fold the elapsed time of in-progress voice_sessions_ongoing rows into
+    // each window. Rows are filtered on last_update within 24h and elapsed
+    // is capped at 24h as a guard against orphaned ongoing rows.
+    const ongoingRows = await prisma.voice_sessions_ongoing.findMany({
+      where: {
+        ...voiceWhere,
+        last_update: { gte: new Date(now.getTime() - 24 * 3600 * 1000) },
+      },
+      select: { start_time: true },
+    })
+    const ONGOING_CAP_MS = 24 * 3600 * 1000
+    const ongoingOverlapSeconds = (winStart: Date, winEnd: Date): number => {
+      let total = 0
+      for (const s of ongoingRows) {
+        if (!s.start_time) continue
+        const cappedStart = Math.max(s.start_time.getTime(), now.getTime() - ONGOING_CAP_MS)
+        const st = Math.max(cappedStart, winStart.getTime())
+        const en = Math.min(now.getTime(), winEnd.getTime())
+        if (en > st) total += (en - st) / 1000
+      }
+      return total
     }
+    const OPEN_END = new Date(now.getTime() + 1000)
+    const EPOCH_START = new Date(0)
+    // --- END AI-MODIFIED ---
+
+    const toMinutes = (s: number | null) => Math.round((s ?? 0) / 60)
+    // --- AI-MODIFIED (2026-07-21) ---
+    // Purpose: add the ongoing-session overlap into every window (see above).
+    // --- Original code (commented out for rollback) ---
+    // const studyTime = {
+    //   todayMinutes: toMinutes(todayAgg._sum.duration),
+    //   yesterdayMinutes: toMinutes(yesterdayAgg._sum.duration),
+    //   thisWeekMinutes: toMinutes(weekAgg._sum.duration),
+    //   lastWeekMinutes: toMinutes(lastWeekAgg._sum.duration),
+    //   thisMonthMinutes: toMinutes(monthAgg._sum.duration),
+    //   lastMonthMinutes: toMinutes(lastMonthAgg._sum.duration),
+    //   allTimeMinutes: toMinutes(allTimeAgg._sum.duration),
+    // }
+    // --- End original code ---
+    const toMinutesWithOngoing = (s: number | null, ongoingSecs: number) =>
+      Math.round(((s ?? 0) + ongoingSecs) / 60)
+    const studyTime = {
+      todayMinutes: toMinutesWithOngoing(todayAgg._sum.duration, ongoingOverlapSeconds(todayStart, OPEN_END)),
+      yesterdayMinutes: toMinutesWithOngoing(yesterdayAgg._sum.duration, ongoingOverlapSeconds(yesterdayStart, todayStart)),
+      thisWeekMinutes: toMinutesWithOngoing(weekAgg._sum.duration, ongoingOverlapSeconds(weekStart, OPEN_END)),
+      lastWeekMinutes: toMinutesWithOngoing(lastWeekAgg._sum.duration, ongoingOverlapSeconds(lastWeekStart, weekStart)),
+      thisMonthMinutes: toMinutesWithOngoing(monthAgg._sum.duration, ongoingOverlapSeconds(monthStart, OPEN_END)),
+      lastMonthMinutes: toMinutesWithOngoing(lastMonthAgg._sum.duration, ongoingOverlapSeconds(lastMonthStart, monthStart)),
+      allTimeMinutes: toMinutesWithOngoing(allTimeAgg._sum.duration, ongoingOverlapSeconds(EPOCH_START, OPEN_END)),
+    }
+    // --- END AI-MODIFIED ---
 
     // 2. Daily breakdown (last 30 days)
     const dailyRaw = await prisma.$queryRaw<
@@ -232,6 +279,17 @@ export default apiHandler({
       const dateStr = d.toISOString().slice(0, 10)
       dailyStudy.push({ date: dateStr, minutes: dailyMap.get(dateStr) ?? 0 })
     }
+
+    // --- AI-MODIFIED (2026-07-21) ---
+    // Purpose: include the in-progress session in today's bar of the daily
+    // chart, matching the todayMinutes fix above (ticket #138).
+    const todayIso = now.toISOString().slice(0, 10)
+    const todayOngoingMinutes = Math.round(ongoingOverlapSeconds(todayStart, OPEN_END) / 60)
+    if (todayOngoingMinutes > 0) {
+      const todayEntry = dailyStudy.find((e) => e.date === todayIso)
+      if (todayEntry) todayEntry.minutes += todayOngoingMinutes
+    }
+    // --- END AI-MODIFIED ---
 
     // --- AI-MODIFIED (2026-05-01) ---
     // Purpose: Bug fix — streak/longest were computed from current-month-only data,

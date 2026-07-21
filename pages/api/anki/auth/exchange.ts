@@ -26,21 +26,30 @@
 //
 //          Returns 4xx with a stable {error, message} body on
 //          every failure so the addon can switch on it.
+//
+// --- AI-MODIFIED (2026-06-10) ---
+// The account-bootstrap + device-upsert + token-mint + user/pet
+// snapshot block (steps e–g) moved VERBATIM to
+// lib/anki/deviceSession.ts so the new email-account auth routes
+// (login / verify-email) and this Discord pairing route share ONE
+// session-creation code path. extractIpPrefix moved with it. This
+// route keeps everything pairing-specific: the atomic code consume,
+// PKCE verify, state + device binding. Response shape unchanged
+// (plus user.account_type/email fields, additive).
+// --- END AI-MODIFIED ---
 // ============================================================
 import type { NextApiRequest, NextApiResponse } from "next"
 import crypto from "crypto"
 import { prisma } from "@/utils/prisma"
 import {
-  mintAnkiBearer,
-  mintAnkiRefreshToken,
   hashAnkiPairingCode,
   timingSafeStringEqual,
-  DEFAULT_ANKI_SCOPES,
-  ANKI_JWT_TTL,
-  ANKI_JWT_VERSION,
 } from "@/lib/anki/auth"
-import { isLionheartActive } from "../../auth/ios/exchange"
-import { invalidateDeviceCache } from "@/lib/anki/requireAuth"
+import {
+  bootstrapGameAccount,
+  createDeviceSession,
+  extractIpPrefix,
+} from "@/lib/anki/deviceSession"
 import { ankiRateLimitByKey, clientIpKey } from "@/lib/anki/rateLimit"
 
 interface ExchangeBody {
@@ -66,38 +75,8 @@ function sendError(
   return res.status(status).json({ error, message })
 }
 
-function extractIpPrefix(req: NextApiRequest): string | null {
-  // Prefer the platform-trusted source. A client can spoof x-forwarded-for,
-  // but Vercel overwrites x-real-ip with the true peer address, so this can't
-  // be poisoned the way the bare XFF[0] could.
-  const h = req.headers
-  const pickFirst = (v: string | string[] | undefined): string | null =>
-    typeof v === "string" ? v.split(",")[0].trim() : Array.isArray(v) ? v[0] || null : null
-  const raw =
-    pickFirst(h["x-real-ip"]) ||
-    pickFirst(h["x-vercel-forwarded-for"]) ||
-    pickFirst(h["x-forwarded-for"]) ||
-    req.socket.remoteAddress
-  if (!raw) return null
-  // IPv4 -> /24. Only emit when it's a clean dotted quad of
-  // numeric octets, so we never hand Postgres a malformed INET.
-  const v4 = raw.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/)
-  if (v4) {
-    const octets = [v4[1], v4[2], v4[3]].map((o) => parseInt(o, 10))
-    if (octets.every((o) => o >= 0 && o <= 255)) {
-      // Bare network IP (last octet zeroed) — NOT CIDR. Prisma's
-      // INET serializer uses Rust's IpAddr parser which rejects a
-      // "/24" suffix (AddrParseError), so we coarsen by zeroing the
-      // last octet instead of appending a netmask.
-      return `${octets[0]}.${octets[1]}.${octets[2]}.0`
-    }
-    return null
-  }
-  // IPv6 truncation is error-prone (double-:: collapses), and this
-  // is best-effort abuse-triage telemetry only — skip rather than
-  // risk an invalid INET that fails the device insert.
-  return null
-}
+// extractIpPrefix lives in lib/anki/deviceSession.ts now (moved
+// verbatim 2026-06-10, shared with the email-account auth routes).
 
 export default async function handler(
   req: NextApiRequest,
@@ -239,163 +218,28 @@ export default async function handler(
     return sendError(res, 503, "db_unavailable", "Could not verify pairing code")
   }
 
-  // Brand-new-account bootstrap. A Discord user who has never used
-  // LionBot has no user_config / lg_pets row — but the addon must
-  // work for them (they may only ever use Anki and never join a
-  // server). Create both rows from DB defaults if missing, ordered
-  // so the FK targets exist first (anki_devices + lg_pets reference
-  // user_config). Idempotent (ON CONFLICT DO NOTHING).
+  // Bootstrap (user_config + lg_pets if missing) + device upsert +
+  // token mint + user/pet snapshot — the shared session core
+  // (lib/anki/deviceSession.ts, extracted verbatim from here).
   try {
-    await prisma.$executeRaw`INSERT INTO user_config (userid) VALUES (${consumed.userid}) ON CONFLICT (userid) DO NOTHING`
-    await prisma.$executeRaw`INSERT INTO lg_pets (userid) VALUES (${consumed.userid}) ON CONFLICT (userid) DO NOTHING`
+    await bootstrapGameAccount(consumed.userid)
   } catch (err) {
     console.error("[anki/exchange] account bootstrap failed:", err)
     return sendError(res, 503, "db_unavailable", "Could not initialize your account")
   }
 
-  // Mint the refresh token first; if anything fails after this
-  // we abort without inserting the device row.
-  const { token: refreshToken, hash: refreshHash } = mintAnkiRefreshToken()
-
-  const ipPrefix = extractIpPrefix(req)
-
-  // Re-pair friendly: if THIS user already has a row for this
-  // device_id (e.g. a prior revoked / stale pairing), reactivate +
-  // re-key it in place rather than failing. This preserves their
-  // anki_review_events history (FK to device_id) and avoids the
-  // dead-end where a revoked device can never pair again. A
-  // device_id owned by a DIFFERENT account is rejected (P2002 on
-  // the create fallback).
-  let createdNew = false
-  try {
-    const reactivated = await prisma.anki_devices.updateMany({
-      where: { device_id, userid: consumed.userid },
-      data: {
-        device_name,
-        refresh_token_hash: refreshHash,
-        refresh_token_version: 1,
-        jwt_version: ANKI_JWT_VERSION,
-        scopes: DEFAULT_ANKI_SCOPES.slice(),
-        addon_version: addon_version || null,
-        os_platform: os_platform || null,
-        anki_version: anki_version || null,
-        last_ip_prefix: ipPrefix || undefined,
-        last_seen_at: new Date(),
-        revoked_at: null,
-        revoked_reason: null,
-      },
-    })
-    if (reactivated.count === 0) {
-      await prisma.anki_devices.create({
-        data: {
-          device_id,
-          userid: consumed.userid,
-          device_name,
-          refresh_token_hash: refreshHash,
-          refresh_token_version: 1,
-          jwt_version: ANKI_JWT_VERSION,
-          scopes: DEFAULT_ANKI_SCOPES.slice(),
-          addon_version: addon_version || null,
-          os_platform: os_platform || null,
-          anki_version: anki_version || null,
-          last_ip_prefix: ipPrefix || undefined,
-        },
-      })
-      createdNew = true
-    }
-  } catch (err: unknown) {
-    console.error("[anki/exchange] device register failed:", err)
-    const code = (err as { code?: string }).code
-    if (code === "P2002") {
-      // device_id exists but is registered to a different account.
-      return sendError(res, 409, "device_already_exists", "This device is registered to another account")
-    }
-    return sendError(res, 503, "db_unavailable", "Could not register device")
-  }
-  // Clear any cached (revoked) state so the new bearer works at once.
-  invalidateDeviceCache(device_id)
-
-  let sessionToken: string
-  try {
-    sessionToken = await mintAnkiBearer({
-      discordId: consumed.userid.toString(),
-      deviceId: device_id,
-    })
-  } catch (err) {
-    // Roll back the device row so the user can retry — leaving a
-    // device row without a token would still consume the pairing
-    // code (which was the right behavior) but the addon would
-    // sit unable to act.
-    console.error("[anki/exchange] mint bearer failed:", err)
-    // Only roll back a row we just CREATED — never delete a
-    // reactivated pre-existing device (that would cascade-delete the
-    // user's anki_review_events history).
-    if (createdNew) {
-      await prisma.anki_devices
-        .delete({ where: { device_id } })
-        .catch((e) => console.error("[anki/exchange] rollback delete failed:", e))
-    }
-    return sendError(res, 500, "mint_failed", "Could not issue session token")
-  }
-
-  // User snapshot — same shape as the iOS exchange where useful,
-  // plus the home guild + pet basics so the addon can render
-  // immediately without a second round-trip.
-  const userid = consumed.userid
-  let username = userid.toString()
-  let globalName: string | null = null
-  let avatar: string | null = null
-  let petSnapshot: {
-    pet_name: string
-    level: number
-    xp: string
-    food: number
-    bath: number
-    sleep: number
-  } | null = null
-
-  try {
-    const cfg = await prisma.user_config.findUnique({
-      where: { userid },
-      select: {
-        name: true,
-        avatar_hash: true,
-        lg_pets: {
-          select: {
-            pet_name: true,
-            level: true,
-            xp: true,
-            food: true,
-            bath: true,
-            sleep: true,
-          },
-        },
-      },
-    })
-    if (cfg) {
-      if (cfg.name) username = cfg.name
-      if (cfg.avatar_hash) avatar = cfg.avatar_hash
-      if (cfg.lg_pets) {
-        petSnapshot = {
-          pet_name: cfg.lg_pets.pet_name,
-          level: cfg.lg_pets.level,
-          xp: cfg.lg_pets.xp.toString(),
-          food: cfg.lg_pets.food,
-          bath: cfg.lg_pets.bath,
-          sleep: cfg.lg_pets.sleep,
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[anki/exchange] user snapshot lookup failed:", err)
-    // Non-fatal — the addon still gets the bearer.
-  }
-
-  let isPremium = false
-  try {
-    isPremium = await isLionheartActive(userid.toString())
-  } catch (err) {
-    console.warn("[anki/exchange] premium lookup failed:", err)
+  const session = await createDeviceSession({
+    userid: consumed.userid,
+    deviceId: device_id,
+    deviceName: device_name,
+    addonVersion: addon_version,
+    osPlatform: os_platform,
+    ankiVersion: anki_version,
+    ipPrefix: extractIpPrefix(req),
+    accountType: "discord",
+  })
+  if (!session.ok) {
+    return sendError(res, session.status, session.error, session.message)
   }
 
   // Best-effort cleanup: delete the now-consumed pairing code row
@@ -405,18 +249,5 @@ export default async function handler(
     .delete({ where: { code_hash: codeHash } })
     .catch((err) => console.warn("[anki/exchange] pairing code cleanup failed:", err))
 
-  return res.status(200).json({
-    session_token: sessionToken,
-    session_token_ttl: ANKI_JWT_TTL,
-    refresh_token: refreshToken,
-    device_id,
-    user: {
-      discord_id: userid.toString(),
-      username,
-      global_name: globalName,
-      avatar,
-      is_premium: isPremium,
-    },
-    pet: petSnapshot,
-  })
+  return res.status(200).json(session.payload)
 }
