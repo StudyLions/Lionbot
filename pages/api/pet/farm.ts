@@ -28,6 +28,7 @@ import {
   waterAll,
   plantAll,
   harvestAll,
+  removeByRarity,
 } from "@/lib/pet/farmService"
 
 export default apiHandler({
@@ -99,7 +100,7 @@ export default apiHandler({
     const auth = await requireAuth(req, res)
     if (!auth) return
     const userId = BigInt(auth.discordId)
-    const { action, plotId, seedId } = req.body
+    const { action, plotId, seedId, rarity } = req.body
 
     try {
       switch (action) {
@@ -119,6 +120,8 @@ export default apiHandler({
           return res.status(200).json(await plantAll(userId, seedId))
         case "harvestAll":
           return res.status(200).json(await harvestAll(userId))
+        case "removeByRarity":
+          return res.status(200).json(await removeByRarity(userId, rarity))
         case "toggleFullscreen": {
           const pet = await prisma.lg_pets.findUnique({
             where: { userid: userId },
