@@ -23,6 +23,17 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Announce the community fundraiser in the public changelog.
+  {
+    date: "2026-09-10",
+    title: "Help keep Leo online",
+    description:
+      "We're raising funds for Leo's new server and running costs. The website banner links to our GoFundMe, where you can read the plan, donate or share it with your community.",
+    category: "website",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // ── July 21, 2026 ──────────────────────────────────────────
   // --- AI-MODIFIED (2026-07-21) ---
   // Purpose: Ticket batch fixes (#129/#140/#131, #142/#121, #138).

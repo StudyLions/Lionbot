@@ -19,6 +19,11 @@ const baseSecurityHeaders = [
 ];
 
 module.exports = {
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Minify current Radix dependencies with SWC; Next 12's bundled
+  // Terser cannot parse the static class blocks in react-collection 1.1.15.
+  swcMinify: true,
+  // --- END AI-MODIFIED ---
   reactStrictMode: true,
   i18n,
   async headers() {

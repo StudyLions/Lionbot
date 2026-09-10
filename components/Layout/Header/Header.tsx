@@ -53,7 +53,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import Banner from "@/components/Layout/Header/Banner";
+// --- AI-REPLACED (2026-09-10) ---
+// Purpose: Use the existing shared announcement slot for Leo's server fundraiser.
+// Original Gift Premium banner preserved for rollback:
+// import Banner from "@/components/Layout/Header/Banner";
+import Banner from "@/components/Layout/Header/FundraiserBanner";
+// --- END AI-REPLACED ---
 // --- AI-MODIFIED (2026-05-01) ---
 // Purpose: Feature-flag the not-yet-shipped "Servers" directory link.
 import { SERVERS_DIRECTORY_ENABLED } from "@/constants/FeatureFlags";
