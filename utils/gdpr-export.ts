@@ -6,6 +6,10 @@
 //          object for the user to download.
 // ============================================================
 import { prisma } from "./prisma"
+// --- AI-MODIFIED (2026-09-10) ---
+// Purpose: Include address-bound email consent and delivery data in privacy exports.
+import { getUserCampaignPrivacyData, getUserCampaignPrivacyCounts } from "./email/campaigns/privacy"
+// --- END AI-MODIFIED ---
 
 function bigIntToString(obj: unknown): unknown {
   if (obj === null || obj === undefined) return obj
@@ -395,6 +399,10 @@ export async function exportUserData(userId: bigint) {
     }),
   ])
 
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Export only this user's email records, excluding delivery credentials.
+  const emailCampaigns = await getUserCampaignPrivacyData(userId)
+  // --- END AI-MODIFIED ---
   const exportData = {
     export_info: {
       exported_at: new Date().toISOString(),
@@ -403,6 +411,9 @@ export async function exportUserData(userId: bigint) {
     },
     profile: profile ? stripInternalFields(profile as Record<string, unknown>, ["avatar_hash", "api_timestamp"]) : null,
     survey: survey ? stripInternalFields(survey as Record<string, unknown>, ["userid"]) : null,
+    // --- AI-MODIFIED (2026-09-10) ---
+    email_campaigns: emailCampaigns,
+    // --- END AI-MODIFIED ---
     preferences: {
       timer: timerPrefs ? stripInternalFields(timerPrefs as Record<string, unknown>, ["userid"]) : null,
       card: cardPrefs ? stripInternalFields(cardPrefs as Record<string, unknown>, ["userid"]) : null,
@@ -485,6 +496,9 @@ export async function exportUserData(userId: bigint) {
 }
 
 export async function getUserDataCounts(userId: bigint) {
+  // --- AI-MODIFIED (2026-09-10) ---
+  const emailCounts = await getUserCampaignPrivacyCounts(userId)
+  // --- END AI-MODIFIED ---
   const [
     voiceCount, textCount, workoutCount, taskCount, reminderCount,
     memberCount, coinTxCount, gemTxCount, ticketCount,
@@ -517,5 +531,10 @@ export async function getUserDataCounts(userId: bigint) {
     has_pet: !!petExists,
     pet_inventory_items: petInventoryCount,
     farm_plots: farmPlotCount,
+    // --- AI-MODIFIED (2026-09-10) ---
+    email_campaign_deliveries: emailCounts.recipients,
+    email_campaign_subscriptions: emailCounts.subscriptions,
+    email_campaign_suppressions: emailCounts.suppressions,
+    // --- END AI-MODIFIED ---
   }
 }

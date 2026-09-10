@@ -8,6 +8,10 @@
 //          Category C = SPECIAL HANDLING.
 // ============================================================
 import { prisma } from "./prisma"
+// --- AI-MODIFIED (2026-09-10) ---
+// Purpose: Erase campaign recipients and payloads in the account-deletion transaction.
+import { deleteUserCampaignData, getUserCampaignPrivacyCounts } from "./email/campaigns/privacy"
+// --- END AI-MODIFIED ---
 
 export interface DeletionSummary {
   [table: string]: { action: "deleted" | "anonymized" | "special"; count: number }
@@ -21,6 +25,15 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
   }
 
   await prisma.$transaction(async (tx) => {
+    // --- AI-MODIFIED (2026-09-10) ---
+    // Purpose: Remove queued/history payloads and consent before deleting the account.
+    // Minimal address-level suppression survives so opt-outs are still honored.
+    const emailCleanup = await deleteUserCampaignData(userId, tx)
+    record("email_campaign_recipients", "deleted", emailCleanup.recipients)
+    record("email_campaign_subscriptions", "deleted", emailCleanup.subscriptions)
+    record("email_campaign_author_ids", "anonymized", emailCleanup.campaigns)
+    record("email_campaign_suppressions_retained", "special", emailCleanup.suppressionsRetained)
+    // --- END AI-MODIFIED ---
     // =====================================================
     // PHASE 0: SPECIAL HANDLING (Category C)
     // =====================================================
@@ -367,6 +380,9 @@ export async function executeUserDeletion(userId: bigint): Promise<DeletionSumma
 }
 
 export async function getDeletionPreview(userId: bigint): Promise<Record<string, number>> {
+  // --- AI-MODIFIED (2026-09-10) ---
+  const emailCounts = await getUserCampaignPrivacyCounts(userId)
+  // --- END AI-MODIFIED ---
   const [
     userExists, memberCount, voiceCount, textCount, workoutCount,
     taskCount, reminderCount, goalCount, expCount,
@@ -428,6 +444,12 @@ export async function getDeletionPreview(userId: bigint): Promise<Record<string,
 
   return {
     user_profile: userExists,
+    // --- AI-MODIFIED (2026-09-10) ---
+    email_campaign_recipients: emailCounts.recipients,
+    email_campaign_subscriptions: emailCounts.subscriptions,
+    email_campaign_author_ids_anonymized: emailCounts.campaigns,
+    email_campaign_suppressions_retained: emailCounts.suppressions,
+    // --- END AI-MODIFIED ---
     server_memberships: memberCount,
     voice_sessions: voiceCount,
     text_sessions: textCount,

@@ -67,6 +67,13 @@ module.exports = {
     ],
   },
   exclude: [
+    // --- AI-MODIFIED (2026-09-10) ---
+    // Purpose: Keep review-only and signed preference routes out of search indexes.
+    "/preview/*",
+    "/preview/**",
+    "/campaign-unsubscribe/*",
+    "/unsubscribe/*",
+    // --- END AI-MODIFIED ---
     "/api/*",
     "/dashboard/*",
     "/dashboard/**",
@@ -80,6 +87,10 @@ module.exports = {
   changefreq: "weekly",
   priority: 0.7,
   transform: async (config, urlPath) => {
+    // --- AI-MODIFIED (2026-09-10) ---
+    // Purpose: Apply the private-route exclusion to localized paths too.
+    if (/^\/(?:[a-z]{2}(?:-[A-Za-z]{2})?\/)?(?:preview|campaign-unsubscribe|unsubscribe)(?:\/|$)/.test(urlPath)) return null;
+    // --- END AI-MODIFIED ---
     if (urlPath.match(/^\/(pt-BR|he|tr|es|fr)\/(404|coming-soon|embed)/)) return null;
 
     if (

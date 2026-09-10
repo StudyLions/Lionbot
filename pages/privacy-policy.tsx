@@ -24,7 +24,11 @@ export default function PrivacyPolicy() {
           {/* --- AI-MODIFIED (2026-06-11) --- */}
           {/* Purpose: update date for the LionGotchi-for-Anki addon (standalone
               email accounts, flashcard review data, device records, Resend). */}
-          <p className="text-muted-foreground mb-10">Last updated: June 11, 2026</p>
+          {/* --- AI-REPLACED (2026-09-10) --- */}
+          {/* Reason: document explicit community-email opt-in and delivery records.
+              Original: <p className="text-muted-foreground mb-10">Last updated: June 11, 2026</p> */}
+          <p className="text-muted-foreground mb-10">Last updated: September 10, 2026</p>
+          {/* --- END AI-REPLACED --- */}
           {/* --- END AI-MODIFIED --- */}
 
           <div className="space-y-10 [&_h2]:text-xl [&_h2]:sm:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_p]:text-muted-foreground [&_p]:leading-7 [&_p]:my-3 [&_li]:text-muted-foreground [&_li]:leading-7">
@@ -40,7 +44,11 @@ export default function PrivacyPolicy() {
               </p>
               <p>
                 We believe in full transparency. We do <strong className="text-foreground">not</strong> sell, rent,
-                or share your personal data with third parties for advertising or marketing purposes.
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Original: or share your personal data with third parties for advertising or marketing purposes.
+                    Reason: email providers process our messages; they do not receive data for their own marketing. */}
+                or share your personal data with third parties for their own advertising or marketing purposes.
+                {/* --- END AI-REPLACED --- */}
               </p>
             </section>
 
@@ -69,7 +77,12 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Avatar Hash</strong> — Cached to render your profile picture on the dashboard.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: clarify email is also used for product notifications */}
-                <li><strong className="text-foreground">Email Address</strong> — Obtained through Discord OAuth when you sign in to the web dashboard. Used for authentication and to send you important product-related notifications (e.g. major feature launches, service updates, and account-related communications). By signing in, you agree to receive these communications. We will never send spam or share your email with third parties.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Reason: signing in does not provide the explicit opt-in required by community campaigns.
+                    Original: <li><strong className="text-foreground">Email Address</strong> — Obtained through Discord OAuth when you sign in to the web dashboard. Used for authentication and to send you important product-related notifications (e.g. major feature launches, service updates, and account-related communications). By signing in, you agree to receive these communications. We will never send spam or share your email with third parties.</li> */}
+                <li><strong className="text-foreground">Email Address</strong> — Obtained through Discord OAuth when you sign in to the web dashboard, together with the email-verification status supplied by Discord. Community announcements, including fundraising, require a separate opt-in in your email settings. Signing in by itself does not subscribe you to those emails.</li>
+                <li><strong className="text-foreground">Email Preferences &amp; Delivery Records</strong> — We store your email preferences, the address and account associated with an announcement opt-in, and opt-in or withdrawal dates. For email campaigns, we also store the message prepared for your address, sending attempts, and delivery status. A minimal suppression record contains the email address, reason, and date when we must avoid sending, such as an unsubscribe, delivery failure, or spam complaint.</li>
+                {/* --- END AI-REPLACED --- */}
                 {/* --- END AI-MODIFIED --- */}
                 <li><strong className="text-foreground">Timezone &amp; Locale</strong> — Set by you to display times correctly and localize the bot interface.</li>
               </ul>
@@ -199,7 +212,11 @@ export default function PrivacyPolicy() {
                 <li>We do <strong className="text-foreground">not</strong> store credit card numbers, billing addresses, or other payment details. All payment processing is handled by Stripe.</li>
                 <li>We do <strong className="text-foreground">not</strong> track your activity outside of tracked channels configured by server administrators.</li>
                 <li>We do <strong className="text-foreground">not</strong> store your full IP address, use browser fingerprinting, or use tracking cookies beyond the authentication session cookie. (The Anki addon stores only a coarse IPv4 /24 network prefix on your device record for security and abuse prevention, as described above. Hosting providers such as Vercel may process full IP addresses transiently in standard server logs.)</li>
-                <li>We do <strong className="text-foreground">not</strong> sell or share your data with any third party for advertising or marketing.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Original: <li>We do <strong className="text-foreground">not</strong> sell or share your data with any third party for advertising or marketing.</li>
+                    Reason: distinguish provider processing on our behalf from a third party's own marketing. */}
+                <li>We do <strong className="text-foreground">not</strong> sell or share your data with third parties for their own advertising or marketing.</li>
+                {/* --- END AI-REPLACED --- */}
               </ul>
             </section>
 
@@ -216,7 +233,11 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Notifications</strong> — Sending reminders and vote reminders you opt into.</li>
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: document email and survey data usage */}
-                <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of LionBot — never spam, never advertising, and never third-party promotions.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Reason: distinguish optional community campaigns from requested account/security emails.
+                    Original: <li><strong className="text-foreground">Email communications</strong> — Sending important product-related emails such as major feature announcements, service updates, and account notifications. By signing in to the web dashboard with Discord, you agree to receive these communications. We will only send emails that are directly relevant to your use of LionBot — never spam, never advertising, and never third-party promotions.</li> */}
+                <li><strong className="text-foreground">Email communications</strong> — We send optional community updates, product announcements, and fundraising emails only to verified addresses with an explicit announcement opt-in. Each campaign email includes an unsubscribe link, and you can also manage your preferences in <Link href="/dashboard/settings#email" className="text-primary hover:underline">email settings</Link>. Campaign opt-outs do not prevent account-security emails you request, such as verification or password-reset codes.</li>
+                {/* --- END AI-REPLACED --- */}
                 <li><strong className="text-foreground">Personalization &amp; audience insights</strong> — Using survey data to understand our user base, personalize your experience, deliver content and communications relevant to your profile (such as your field of interest or region), and prioritize features that matter most to our community.</li>
                 {/* --- END AI-MODIFIED --- */}
               </ul>
@@ -233,7 +254,11 @@ export default function PrivacyPolicy() {
                 <li><strong className="text-foreground">Hetzner</strong> — Our database and bot are hosted on Hetzner servers in the EU. Hetzner provides infrastructure only and does not access our data.</li>
                 {/* --- AI-MODIFIED (2026-06-11) --- */}
                 {/* Purpose: disclose Resend as the email delivery sub-processor */}
-                <li><strong className="text-foreground">Resend</strong> — Account and security emails (such as verification and password-reset codes for Anki addon accounts, and product notifications) are delivered through Resend, our email provider. Resend processes the recipient address and message content solely to deliver the email on our behalf.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Reason: disclose delivery processing for optional campaigns and suppression events.
+                    Original: <li><strong className="text-foreground">Resend</strong> — Account and security emails (such as verification and password-reset codes for Anki addon accounts, and product notifications) are delivered through Resend, our email provider. Resend processes the recipient address and message content solely to deliver the email on our behalf.</li> */}
+                <li><strong className="text-foreground">Resend</strong> — Account and security emails, along with optional community campaigns, are delivered through Resend, our email provider. Resend processes recipient addresses and message content to deliver emails on our behalf. We use delivery, bounce, and complaint events from Resend to update delivery records and prevent further mail to blocked addresses.</li>
+                {/* --- END AI-REPLACED --- */}
                 {/* --- END AI-MODIFIED --- */}
                 {/* --- AI-MODIFIED (2026-04-06) --- */}
                 {/* Purpose: add business transfer / acquisition clause */}
@@ -266,7 +291,12 @@ export default function PrivacyPolicy() {
               <ul className="list-disc pl-6 space-y-2">
                 <li>Session history, tasks, goals, and economy data are kept indefinitely while you are an active user.</li>
                 <li>If you leave all servers where LionBot is present, your per-server data remains stored but becomes inactive.</li>
-                <li>If you request data deletion (see below), all your data will be permanently removed within 30 days.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Reason: disclose the narrow suppression-record retention exception.
+                    Original: <li>If you request data deletion (see below), all your data will be permanently removed within 30 days.</li> */}
+                <li>If you request data deletion (see below), your account data will be permanently removed within 30 days, with the email suppression exception described here.</li>
+                <li>Account deletion removes your campaign recipient records, stored message payloads, and announcement subscription records. We retain only minimal email suppression records (address, reason, and date) to honor opt-outs and avoid sending to addresses blocked by delivery failures or complaints. These records are not used as a mailing list.</li>
+                {/* --- END AI-REPLACED --- */}
                 <li>Moderation tickets may be retained for server safety purposes even after you leave a server, unless you request full deletion.</li>
               </ul>
             </section>
@@ -280,7 +310,11 @@ export default function PrivacyPolicy() {
                 {/* Purpose: Updated rights section to reference self-service tools */}
                 <li><strong className="text-foreground">Right to access</strong> — You can view most of your data through the bot commands and web dashboard. A full summary is available on your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to rectification</strong> — You can update your timezone, locale, pet name, profile tags, and other user-configured settings at any time.</li>
-                <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period. Standalone Anki addon accounts (which have no Discord login for the dashboard) can be deleted directly inside the addon — Settings → Account → Delete my account — which immediately and permanently erases your account and all associated game data.</li>
+                {/* --- AI-REPLACED (2026-09-10) --- */}
+                {/* Reason: make the existing deletion instructions consistent with minimal suppression retention above.
+                    Original: <li><strong className="text-foreground">Right to deletion</strong> — You can request complete deletion of all your data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period. Standalone Anki addon accounts (which have no Discord login for the dashboard) can be deleted directly inside the addon — Settings → Account → Delete my account — which immediately and permanently erases your account and all associated game data.</li> */}
+                <li><strong className="text-foreground">Right to deletion</strong> — You can request deletion of your account data from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link> or by emailing <a href="mailto:contact@arihoresh.com" className="text-primary hover:underline">contact@arihoresh.com</a>. Requests include a 14-day cooling-off period. Standalone Anki addon accounts (which have no Discord login for the dashboard) can be deleted directly inside the addon — Settings → Account → Delete my account — which immediately and permanently erases your account and all associated game data. Minimal email suppression records are retained as described above.</li>
+                {/* --- END AI-REPLACED --- */}
                 <li><strong className="text-foreground">Right to data portability</strong> — You can download a full copy of your data in JSON format from your <Link href="/dashboard/privacy" className="text-primary hover:underline">Privacy dashboard</Link>.</li>
                 <li><strong className="text-foreground">Right to object</strong> — You can stop using our services at any time by removing the bot from your server or leaving servers where it is present.</li>
                 {/* --- END AI-MODIFIED --- */}

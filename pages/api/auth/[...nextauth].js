@@ -1,5 +1,8 @@
 import NextAuth from "next-auth"
 import DiscordProvider from "next-auth/providers/discord";
+// --- AI-MODIFIED (2026-09-10): Retain Discord's verified flag for email opt-in eligibility. ---
+import { preserveDiscordEmailVerification } from '../../../utils/email/discordProfile';
+// --- END AI-MODIFIED ---
 // --- AI-MODIFIED (2026-04-06) ---
 // Purpose: import Prisma to save Discord email on login
 import { prisma } from '../../../utils/prisma';
@@ -24,6 +27,14 @@ export default NextAuth({
       // --- AI-MODIFIED (2026-03-13) ---
       // Purpose: added 'guilds' scope for dashboard server list
       authorization: {params: {scope: 'identify email guilds'}},
+      // --- END AI-MODIFIED ---
+      // --- AI-MODIFIED (2026-09-10) ---
+      // Purpose: events.signIn receives NextAuth's normalized profile, which
+      // otherwise drops Discord's verified field. Reuse the stock mapping for
+      // id/name/email/image and retain only the raw boolean verification value.
+      profile(profile) {
+        return preserveDiscordEmailVerification(profile, DiscordProvider({}).profile(profile));
+      },
       // --- END AI-MODIFIED ---
     })
   ],

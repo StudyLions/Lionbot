@@ -4,6 +4,11 @@ import { SessionProvider } from "next-auth/react";
 import { DefaultSeo, OrganizationJsonLd, SoftwareAppJsonLd } from "next-seo";
 import { appWithTranslation } from "next-i18next";
 import Script from "next/script";
+// --- AI-MODIFIED (2026-09-10): Protect signed email routes from analytics. ---
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/router";
+import { advanceEmailAnalyticsGuard } from "@/utils/email/analyticsPrivacy";
+// --- END AI-MODIFIED ---
 import { ToastProvider } from "@/components/dashboard/ui/Toast";
 // --- AI-MODIFIED (2026-04-30) ---
 // Purpose: Mount the sonner Toaster globally so toast.success/error/message
@@ -34,6 +39,27 @@ import "public/styles/styles.scss";
 // Use of the <SessionProvider> is now mandatory to allow components that call
 // `useSession()` anywhere in your application to access the `session` object.
 function App({ Component, pageProps }) {
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Disable an already-loaded tracker before Next changes the URL,
+  // and omit analytics completely for direct visits to signed email links.
+  const router = useRouter();
+  const analyticsGuard = useRef({ blocked: false });
+  const browser = typeof window === "undefined" ? undefined : window;
+  advanceEmailAnalyticsGuard(analyticsGuard.current, router.pathname, browser);
+  const blockedOnThisRender = advanceEmailAnalyticsGuard(analyticsGuard.current, router.asPath, browser);
+  const [analyticsBlocked, setAnalyticsBlocked] = useState(blockedOnThisRender);
+  useEffect(() => {
+    const beforeRouteChange = (url) => {
+      if (advanceEmailAnalyticsGuard(analyticsGuard.current, url, window)) setAnalyticsBlocked(true);
+    };
+    router.events.on("routeChangeStart", beforeRouteChange);
+    router.events.on("hashChangeStart", beforeRouteChange);
+    return () => {
+      router.events.off("routeChangeStart", beforeRouteChange);
+      router.events.off("hashChangeStart", beforeRouteChange);
+    };
+  }, [router.events]);
+  // --- END AI-MODIFIED ---
   return (
     <SessionProvider
       // Provider options are not required but can be useful in situations where
@@ -54,16 +80,31 @@ function App({ Component, pageProps }) {
       // --- END AI-MODIFIED ---
       session={pageProps.session}
     >
-      <Script strategy={"lazyOnload"} src={"https://www.googletagmanager.com/gtag/js?id=G-5YBLTF11VW"} />
-      <Script id="gtag-script" strategy={"lazyOnload"}>
-        {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          
-          gtag('config', 'G-5YBLTF11VW');
-        `}
-      </Script>
+      {/* --- AI-REPLACED (2026-09-10) ---
+          Reason: Unconditional analytics would disclose permanent unsubscribe
+          tokens in page_location. Keep the original block for rollback:
+          <Script strategy={"lazyOnload"} src={"https://www.googletagmanager.com/gtag/js?id=G-5YBLTF11VW"} />
+          <Script id="gtag-script" strategy={"lazyOnload"}>
+            {`
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-5YBLTF11VW');
+            `}
+          </Script>
+      */}
+      {!analyticsBlocked && !blockedOnThisRender && <>
+        <Script strategy={"lazyOnload"} src={"https://www.googletagmanager.com/gtag/js?id=G-5YBLTF11VW"} />
+        <Script id="gtag-script" strategy={"lazyOnload"}>
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-5YBLTF11VW');
+          `}
+        </Script>
+      </>}
+      {/* --- END AI-REPLACED --- */}
       {/* --- AI-MODIFIED (2026-03-23) --- */}
       {/* Purpose: Site-wide default SEO tags + JSON-LD structured data */}
       <DefaultSeo {...defaultSEO} />

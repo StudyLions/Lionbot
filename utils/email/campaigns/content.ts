@@ -1,0 +1,87 @@
+// ============================================================
+// AI-GENERATED FILE
+// Created: 2026-09-10
+// Purpose: Shared editable campaign content, safe validation, and
+//          the founder-approved fundraiser and sender defaults.
+// ============================================================
+
+export type CampaignContent = {
+  subject: string
+  preheader: string
+  eyebrow: string
+  headline: string
+  body: string[]
+  ctaLabel: string
+  ctaUrl: string
+}
+
+export const FUNDRAISER_URL =
+  "https://www.gofundme.com/f/keep-lionbot-online-a-new-home-for-leo"
+
+export const CAMPAIGN_SENDER_DEFAULTS = {
+  senderName: "Ari Horesh",
+  postalAddress: "Via Francesco Orsi 27, Pavia, Italy",
+  vatNumber: "IT02865360180",
+} as const
+
+export const DEFAULT_FUNDRAISER_CONTENT: CampaignContent = {
+  subject: "A personal note: help keep Leo online",
+  preheader: "I’m building a more affordable home for LionBot, and I need your help.",
+  eyebrow: "A note from Ari",
+  headline: "A new home for Leo.",
+  body: [
+    "Hi, I’m Ari, the founder of LionBot. You probably know him as Leo.",
+    "Since 2021, I’ve put over €25,000 and more than 1,000 hours into this project: creating content, answering questions, listening to feedback, and helping Leo grow. Leo is free and open source, and I never built him to make a profit.",
+    "I’m grateful to everyone who has supported us. But we’ve rarely had more than ten paying members at a time, and rising hosting costs have become more than I can manage. I’m also about to graduate and hoping to start a family. I can’t keep covering everything myself.",
+    "I’ve opened a €5,000 fundraiser to build Leo a more affordable home: a server made from used parts, a smaller backup server in another location, and roughly two years of electricity, internet, and maintenance. €5,000 is the total estimate, including the hardware. I’ll build and maintain the servers myself, with room for Leo to grow.",
+    "Without enough support to make this sustainable, I may have to take Leo offline at the end of 2026. It’s difficult to write that after so many years, but I want to be honest about where things stand.",
+    "I’ll share videos of the build, the parts we buy, and our progress. The fundraiser page explains the plan and how I’ll use the funds if we fall short.",
+    "If Leo has helped you or your community, please consider donating or sharing the fundraiser. If you can’t, thank you for being part of Leo’s story. It means a lot.",
+  ],
+  ctaLabel: "Help keep Leo online",
+  ctaUrl: FUNDRAISER_URL,
+}
+
+function field(value: unknown, label: string, maximum: number): string {
+  if (typeof value !== "string") throw new Error(`${label} is required.`)
+  const cleaned = value.trim()
+  if (!cleaned || cleaned.length > maximum) {
+    throw new Error(`${label} must contain between 1 and ${maximum} characters.`)
+  }
+  // Reject header injection and invisible control characters in all fields.
+  // Paragraph boundaries belong in body[], rather than embedded newlines.
+  if (/[\u0000-\u001f\u007f]/.test(cleaned)) {
+    throw new Error(`${label} cannot contain control characters or line breaks.`)
+  }
+  return cleaned
+}
+
+export function validateCampaignContent(value: unknown): CampaignContent {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("Enter the email content before saving.")
+  }
+  const input = value as Record<string, unknown>
+  const subject = field(input.subject, "Subject", 140)
+  const preheader = field(input.preheader, "Preview text", 200)
+  const eyebrow = field(input.eyebrow, "Eyebrow", 80)
+  const headline = field(input.headline, "Headline", 160)
+  const ctaLabel = field(input.ctaLabel, "Button label", 80)
+  const ctaUrl = field(input.ctaUrl, "Button link", 2048)
+  let parsed: URL
+  try {
+    parsed = new URL(ctaUrl)
+  } catch {
+    throw new Error("Enter a valid HTTPS button link.")
+  }
+  if (parsed.protocol !== "https:" || !parsed.hostname || parsed.username || parsed.password) {
+    throw new Error("The button link must use HTTPS and must not contain login details.")
+  }
+  if (!Array.isArray(input.body) || input.body.length < 1 || input.body.length > 14) {
+    throw new Error("The email needs between 1 and 14 paragraphs.")
+  }
+  const body = input.body.map((paragraph, index) => field(paragraph, `Paragraph ${index + 1}`, 1800))
+  if (body.join("\n\n").length > 16000) {
+    throw new Error("Keep the email body below 16,000 characters.")
+  }
+  return { subject, preheader, eyebrow, headline, body, ctaLabel, ctaUrl }
+}

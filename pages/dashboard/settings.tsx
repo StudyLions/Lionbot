@@ -210,6 +210,12 @@ interface EmailPrefsResponse {
   preferences: Record<string, boolean>
   descriptions: Record<string, { label: string; description: string }>
   sendingEnabled?: boolean
+  // --- AI-MODIFIED (2026-09-10): Explicit campaign subscription is separate from legacy defaults. ---
+  campaignOptIn?: boolean
+  campaignConsentAt?: string | null
+  campaignSuppressed?: boolean
+  campaignSendingEnabled?: boolean
+  // --- END AI-MODIFIED ---
 }
 
 const EMAIL_PREF_KEYS = [
@@ -250,20 +256,23 @@ function EmailNotificationsCard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       })
-      if (!res.ok) throw new Error("PATCH failed")
       const updated = await res.json()
+      if (!res.ok) throw new Error(updated.error || "Could not save your preferences")
       setData((prev) =>
         prev
           ? {
               ...prev,
               preferences: updated.preferences,
               unsubscribedAll: updated.unsubscribedAll,
+              campaignOptIn: updated.campaignOptIn,
+              campaignConsentAt: updated.campaignConsentAt,
+              campaignSuppressed: updated.campaignSuppressed,
             }
           : prev
       )
       toast.success("Preferences saved")
-    } catch {
-      toast.error("Could not save your preferences")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save your preferences")
     } finally {
       setSavingKey(null)
     }
@@ -290,9 +299,10 @@ function EmailNotificationsCard() {
               <div className="flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-amber-200">
                 <AlertTriangle size={14} className="mt-0.5 flex-shrink-0" />
                 <div className="text-xs leading-relaxed">
-                  Email notifications are coming soon — we are not sending
-                  anything yet. Your preferences below are saved and will
-                  apply automatically the moment we turn this on.
+                  Automatic reminders and digests are currently paused. Your
+                  preferences are saved. Community updates below have their
+                  own optional subscription. Security emails can still be sent
+                  when you request them.
                 </div>
               </div>
             ) : null}
@@ -308,10 +318,11 @@ function EmailNotificationsCard() {
                   </span>
                 )}
               </span>
-              {data.email && data.emailVerified === false ? (
+              {data.email && data.emailVerified !== true ? (
                 <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-amber-500">
-                  <AlertTriangle size={11} /> This address is not verified on
-                  Discord — verify it there to receive emails.
+                  <AlertTriangle size={11} /> Email verification is not yet
+                  confirmed here. Check your address in Discord, then sign in
+                  again. Community updates wait until verification is confirmed.
                 </span>
               ) : null}
             </div>
@@ -339,7 +350,7 @@ function EmailNotificationsCard() {
                   <div className="pt-0.5">
                     <Toggle
                       checked={!disabledByMaster && value}
-                      disabled={disabledByMaster || savingKey === key}
+                      disabled={disabledByMaster || savingKey !== null}
                       onChange={(next) =>
                         patch({ [key]: next }, key)
                       }
@@ -348,6 +359,37 @@ function EmailNotificationsCard() {
                 </div>
               )
             })}
+
+            {/* --- AI-MODIFIED (2026-09-10): A default-off, explicit opt-in for fundraising and community news. --- */}
+            <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-4 py-3">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4 rounded border-border accent-amber-500"
+                  checked={Boolean(data.campaignOptIn) && !data.unsubscribedAll}
+                  disabled={data.unsubscribedAll || !data.email || savingKey !== null}
+                  onChange={(event) => patch({ campaignOptIn: event.target.checked }, "campaign")}
+                />
+                <span>
+                  <span className="block text-sm font-medium text-foreground">Community updates from Ari and Leo</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
+                    Yes, email me occasional LionBot news, project updates, and
+                    fundraising appeals. This is optional, and I can unsubscribe
+                    in any email or here at any time.
+                  </span>
+                </span>
+              </label>
+              {data.unsubscribedAll ? (
+                <p className="mt-2 text-xs text-muted-foreground">Enable LionBot emails below first, then choose whether to subscribe to community updates.</p>
+              ) : data.campaignOptIn && data.campaignSuppressed ? (
+                <p className="mt-2 text-xs text-amber-500">Your choice is saved, but delivery to this address is blocked. Contact support if you would like us to review it.</p>
+              ) : data.campaignOptIn && data.emailVerified !== true ? (
+                <p className="mt-2 text-xs text-amber-500">Your choice is saved. We will wait for email verification before sending community updates.</p>
+              ) : data.campaignOptIn ? (
+                <p className="mt-2 text-xs text-muted-foreground">You are subscribed with this email address. Signing in with a different address requires a new opt-in.</p>
+              ) : null}
+            </div>
+            {/* --- END AI-MODIFIED --- */}
 
             <div className="pt-2">
               {data.unsubscribedAll ? (

@@ -33,6 +33,12 @@ interface DataCounts {
   has_pet: boolean
   pet_inventory_items: number
   farm_plots: number
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Expose campaign data included in account exports and erasure.
+  email_campaign_deliveries?: number
+  email_campaign_subscriptions?: number
+  email_campaign_suppressions?: number
+  // --- END AI-MODIFIED ---
 }
 
 interface PendingRequest {
@@ -197,6 +203,12 @@ export default function PrivacyPage() {
                 <CountCard label="Coin Transactions" value={dataCounts.coin_transactions} />
                 <CountCard label="Gem Transactions" value={dataCounts.gem_transactions} />
                 <CountCard label="Moderation Tickets" value={dataCounts.moderation_tickets} />
+                {/* --- AI-MODIFIED (2026-09-10) --- */}
+                {/* Purpose: Show optional community-email records in the data summary. */}
+                <CountCard label="Community Email Records" value={dataCounts.email_campaign_deliveries ?? 0} />
+                <CountCard label="Email Opt-in Records" value={dataCounts.email_campaign_subscriptions ?? 0} />
+                <CountCard label="Email Delivery Blocks" value={dataCounts.email_campaign_suppressions ?? 0} />
+                {/* --- END AI-MODIFIED --- */}
                 {dataCounts.has_pet && (
                   <>
                     <CountCard label="Pet Inventory" value={dataCounts.pet_inventory_items} />

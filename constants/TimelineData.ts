@@ -24,6 +24,17 @@ export interface TimelineEntry {
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Explain the new optional community email subscription.
+  {
+    date: "2026-09-10",
+    title: "Choose whether to receive Leo’s community letters",
+    description:
+      "You can opt in to occasional community updates and fundraising emails in dashboard settings. Each letter includes an unsubscribe link, and changing your mind takes just one click from the confirmation page.",
+    category: "website",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-09-10) ---
   // Purpose: Announce the community fundraiser in the public changelog.
   {
     date: "2026-09-10",

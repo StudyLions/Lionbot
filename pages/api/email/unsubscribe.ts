@@ -12,6 +12,9 @@ import { prisma } from "@/utils/prisma"
 import { verifyUnsubscribeToken } from "@/utils/email/tokens"
 import { brand, PREF_DESCRIPTIONS } from "@/utils/email/brand"
 import type { EmailPrefKey } from "@/utils/email/brand"
+// --- AI-MODIFIED (2026-09-10): Legacy unsubscribe also revokes campaign consent. ---
+import { revokeCampaignConsentForUser } from "@/utils/email/campaigns/consent"
+// --- END AI-MODIFIED ---
 
 const PREF_KEYS: EmailPrefKey[] = [
   "email_pref_welcome",
@@ -87,18 +90,28 @@ async function applyUnsubscribe(
       email_unsubscribed_all: true,
     }
     for (const key of PREF_KEYS) data[key] = false
-    await prisma.user_config.upsert({
-      where: { userid },
-      update: data,
-      create: { userid, ...data },
+    // --- AI-MODIFIED (2026-09-10): Prevent legacy resubscribe from reviving old campaign consent. ---
+    await prisma.$transaction(async (tx) => {
+      await tx.user_config.upsert({
+        where: { userid },
+        update: data,
+        create: { userid, ...data },
+      })
+      await revokeCampaignConsentForUser(userid, tx)
     })
+    // --- END AI-MODIFIED ---
     return { scopeLabel: "any emails" }
   }
-  await prisma.user_config.upsert({
-    where: { userid },
-    update: { [scope]: false },
-    create: { userid, [scope]: false },
+  // --- AI-MODIFIED (2026-09-10): The announcement category also gates bulk campaigns. ---
+  await prisma.$transaction(async (tx) => {
+    await tx.user_config.upsert({
+      where: { userid },
+      update: { [scope]: false },
+      create: { userid, [scope]: false },
+    })
+    if (scope === "email_pref_announcements") await revokeCampaignConsentForUser(userid, tx)
   })
+  // --- END AI-MODIFIED ---
   return {
     scopeLabel: PREF_DESCRIPTIONS[scope]?.label.toLowerCase() ?? "these emails",
   }

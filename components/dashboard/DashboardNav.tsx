@@ -158,6 +158,10 @@ function NavItemLink({ item, isActive, onClick }: { item: NavItem; isActive: boo
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter()
   const { data: session } = useSession()
+  // --- AI-MODIFIED (2026-09-10) ---
+  // Purpose: Discover the founder's campaign desk; server APIs enforce owner access.
+  const isCampaignOwner = (session as any)?.discordId === "757652191656804413"
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-03-20) ---
   // Purpose: Sound toggle state from global context
   const { soundEnabled, setSoundEnabled, playSound } = useUISound()
@@ -227,6 +231,10 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* --- AI-MODIFIED (2026-09-10) --- */}
+      {/* Purpose: Keep the owner-only email tool discoverable. */}
+      {isCampaignOwner && <div className="px-3 pt-3"><NavItemLink item={{ href: "/dashboard/email-campaigns", label: "Community letters", icon: <Bell size={16} /> }} isActive={router.pathname === "/dashboard/email-campaigns"} onClick={onNavigate} /></div>}
+      {/* --- END AI-MODIFIED --- */}
       {session?.user && (
         // --- AI-MODIFIED (2026-04-25) ---
         // Purpose: Premium polish -- meaningful avatar alt text (was empty),
