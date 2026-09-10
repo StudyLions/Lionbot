@@ -21,7 +21,7 @@ export type CampaignRenderOptions = {
 }
 
 function publicSiteUrl(): string {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL || "https://lionbot.org"
+  const configured = process.env.NEXT_PUBLIC_SITE_URL || "https://www.lionbot.org"
   try {
     const parsed = new URL(configured)
     if (parsed.protocol === "https:" && !parsed.username && !parsed.password) return parsed.origin
@@ -70,7 +70,7 @@ export async function renderCampaignEmail(
     "LionBot", "", content.eyebrow, content.headline, "",
     content.body.join("\n\n"), "", `${content.ctaLabel}: ${content.ctaUrl}`, "",
     senderName, "Founder of LionBot", "", "---", "",
-    "You’re receiving a LionBot community announcement. You can change what you receive at any time.", "",
+    "You’re receiving this because you subscribed to LionBot community announcements. You can unsubscribe at any time.", "",
     `Unsubscribe from announcements: ${unsubscribeUrl}`,
     `Manage email preferences: ${preferencesUrl}`, "",
     `${senderName} · LionBot`, postalAddress, `P.IVA ${vatNumber}`,

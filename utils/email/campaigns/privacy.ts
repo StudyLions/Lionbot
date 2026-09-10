@@ -31,9 +31,12 @@ function ownedAddresses(userid: bigint, tables: Tables) {
 export async function getUserCampaignPrivacyData(userid: bigint, db: Db = prisma) {
   const tables = await campaignTables(db)
   const [subscriptions, deliveries, suppressions] = await Promise.all([
-    tables.subscriptions ? db.$queryRaw<Array<{ email: string; consented_at: Date; revoked_at: Date | null }>>`
-      SELECT email, consented_at, revoked_at FROM email_campaign_subscriptions
-      WHERE userid = ${userid} ORDER BY consented_at` : [],
+    tables.subscriptions ? db.$queryRaw<Array<{
+      email: string; consented_at: Date | null; revoked_at: Date | null;
+      source: string; imported_at: Date | null; evidence_note: string | null;
+    }>>`
+      SELECT email, consented_at, revoked_at, source, imported_at, evidence_note FROM email_campaign_subscriptions
+      WHERE userid = ${userid} ORDER BY COALESCE(consented_at, imported_at)` : [],
     tables.recipients ? db.$queryRaw<Array<{
       email: string; subject: string; status: string; delivery_status: string | null;
       created_at: Date; first_attempt_at: Date | null; last_attempt_at: Date | null; sent_at: Date | null;

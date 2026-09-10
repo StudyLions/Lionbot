@@ -106,7 +106,7 @@ export async function editCampaign(id: string, nameInput: unknown, contentInput:
 
 export async function queueCampaign(id: string, confirmSubject: unknown, expectedRevision: unknown, expectedRecipientCount: unknown) {
   const audience = await getCampaignAudience()
-  if (!audience.recipients.length) throw new ValidationError("There are no eligible recipients yet. Recipients need a verified email and an explicit announcement opt-in.", 409)
+  if (!audience.recipients.length) throw new ValidationError("There are no eligible recipients yet. Recipients need an active announcement subscription and must pass address and unsubscribe checks.", 409)
   if (typeof expectedRecipientCount !== "number" || expectedRecipientCount !== audience.recipients.length) {
     throw new ValidationError("The eligible audience count changed. Refresh and review the recipient count before queueing.", 409)
   }

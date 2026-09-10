@@ -179,7 +179,7 @@ export default function EmailCampaignsPage() {
         </div>
         <details className="rounded-xl border border-border bg-card/50 p-4 text-sm">
           <summary className="cursor-pointer font-medium">Audience &amp; sending setup</summary>
-          <p className="mt-3 text-muted-foreground">Having an address on file does not automatically subscribe someone. People can opt in to community updates and fundraising in their dashboard settings. Their current preferences are checked again before each email.</p>
+          <p className="mt-3 text-muted-foreground">Having an address on file does not automatically subscribe someone. The audience includes dashboard opt-ins and existing mailing-list subscriptions whose signup source has been recorded. Current preferences are checked again before each email.</p>
           <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {([['unverified', 'Verification missing'], ['unconsented', 'Opt-in missing'], ['unsubscribed', 'Unsubscribed'], ['invalid', 'Invalid addresses'], ['suppressed', 'Delivery suppressed']] as const).map(([key, label]) => <div key={key}><dt className="text-xs text-muted-foreground">{label}</dt><dd className="mt-1 font-semibold">{overview.audience.counts[key].toLocaleString()}</dd></div>)}
           </dl>

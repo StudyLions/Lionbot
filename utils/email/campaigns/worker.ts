@@ -89,7 +89,8 @@ export async function runCampaignWorker() {
       let payload = recipient.payload
       if (!payload) {
         const token = createCampaignUnsubscribeToken(recipient.id)
-        const site = brand.siteUrl.replace(/\/$/, "")
+        // Use the canonical host directly so one-click POSTs need no redirect.
+        const site = brand.siteUrl.replace(/\/$/, "").replace(/^https:\/\/lionbot\.org$/, "https://www.lionbot.org")
         const oneClickUrl = `${site}/api/email/campaign-unsubscribe?token=${encodeURIComponent(token)}`
         const unsubscribeUrl = `${site}/campaign-unsubscribe/${encodeURIComponent(token)}`
         let rendered: { html: string; text: string }

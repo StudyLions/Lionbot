@@ -99,7 +99,7 @@ export default function CampaignAnnouncement({
 
             <Section className="campaign-footer" style={{ padding: "24px 36px 4px", textAlign: "center" }}>
               <Text style={footerText}>
-                You’re receiving a LionBot community announcement. You can change what you receive at any time.
+                You’re receiving this because you subscribed to LionBot community announcements. You can unsubscribe at any time.
               </Text>
               <Text style={{ ...footerText, margin: "12px 0 16px" }}>
                 <Link href={unsubscribeUrl} style={footerLink}>Unsubscribe from announcements</Link>

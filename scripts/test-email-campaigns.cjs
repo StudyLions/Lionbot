@@ -122,7 +122,7 @@ test("a successful worker persists payload before a provider call and records ac
   assert.equal(state.recipient.attempts, 1); assert.equal(state.released, 1)
   const payload = JSON.parse(state.calls[0].body)
   assert.equal(payload.headers["List-Unsubscribe-Post"], "List-Unsubscribe=One-Click")
-  assert.match(payload.headers["List-Unsubscribe"], /^<https:\/\/lionbot\.org\/api\/email\/campaign-unsubscribe\?token=/)
+  assert.match(payload.headers["List-Unsubscribe"], /^<https:\/\/www\.lionbot\.org\/api\/email\/campaign-unsubscribe\?token=/)
   assert.equal(state.eligibilityCalls, 2)
 })
 
@@ -391,4 +391,14 @@ test("a transient receipt-storage failure rolls back the dedupe marker so the si
   assert.equal((await deliver("signed-retry", "email.delivered", now)).code, 200)
   assert.equal(state.events.has("signed-retry"), true)
   assert.equal(state.recipients[0].deliveryStatus, "delivered")
+})
+
+test("shared Resend team events from other projects never enter LionBot records", async () => {
+  const { state, deliver } = signedWebhookHarness()
+  const result = await deliver("other-project", "email.complained", new Date(), { from: "Other Project <hello@example.test>" })
+  assert.equal(result.code, 200)
+  assert.equal(state.events.size, 0)
+  assert.equal(state.suppressions.size, 0)
+  assert.equal(state.revoked.size, 0)
+  assert.equal(state.mutations, 0)
 })

@@ -112,7 +112,27 @@ async function main() {
       assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), true)
       await tx.user_config.update({ where: { userid: actor }, data: { email_verified: null } })
       assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), false)
+      await tx.$executeRaw(Prisma.sql`
+        UPDATE email_campaign_subscriptions SET source = 'founder_attested_external',
+          consented_at = NULL, imported_at = NOW(), evidence_note = 'Synthetic external signup attestation; historical date unknown'
+        WHERE email = ${newEmail} AND userid = ${actor}
+      `)
+      assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), true, "Documented external consent allows unknown historical verification")
+      const externalStatus = await consent.getCampaignConsentStatus(actor, newEmail, tx)
+      assert.equal(externalStatus.campaignOptIn, true)
+      assert.equal(externalStatus.campaignConsentAt, null, "Historical signup time remains unknown")
+      assert.equal(externalStatus.campaignConsentSource, "founder_attested_external")
+      assert.equal(await consent.isCampaignRecipientEligible(newEmail, ids[1].toString(), tx), false, "External consent stays bound to its exact owner")
+      await tx.user_config.update({ where: { userid: actor }, data: { email_verified: false } })
+      assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), false, "Explicitly false verification vetoes imported consent")
+      await tx.user_config.update({ where: { userid: actor }, data: { email_verified: null } })
+      await consent.revokeCampaignConsentForEmail(newEmail, tx)
+      assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), false, "Imported consent revocation takes effect immediately")
       await tx.user_config.update({ where: { userid: actor }, data: { email_verified: true } })
+      await patch({ campaignOptIn: true })
+      const dashboardStatus = await consent.getCampaignConsentStatus(actor, newEmail, tx)
+      assert.equal(dashboardStatus.campaignConsentSource, "dashboard", "A fresh dashboard opt-in has its own provenance")
+      assert.notEqual(dashboardStatus.campaignConsentAt, null)
 
       await tx.user_config.create({ data: { userid: ids[1], email: ` ${newEmail.toUpperCase()} `, email_verified: true, email_pref_announcements: false } })
       assert.equal(await consent.isCampaignRecipientEligible(newEmail, actor.toString(), tx), false, "Any duplicate account opt-out is honored")

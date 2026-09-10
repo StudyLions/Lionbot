@@ -21,6 +21,7 @@ const { buildCampaignAudience, isValidCampaignEmail } = loaded.exports
 const ready = (changes = {}) => ({
   email: "leo@example.org", userid: "1", verified: true,
   unsubscribed: false, announcements: true, consented: true, suppressed: false,
+  consentSource: "dashboard", externalConsentDocumented: false,
   ...changes,
 })
 
@@ -59,6 +60,46 @@ test("verification must be true on the current consent owner's account", () => {
     ])
     assert.equal(result.counts.eligible, 0)
     assert.equal(result.counts.unverified, 1)
+  }
+})
+
+const external = (changes = {}) => ready({
+  verified: null, consentSource: "founder_attested_external", externalConsentDocumented: true, ...changes,
+})
+
+test("documented external consent supports unknown historical verification without claiming it is verified", () => {
+  const row = external()
+  const result = buildCampaignAudience([row])
+  assert.deepEqual(result.recipients, [{ email: "leo@example.org", userid: "1" }])
+  assert.equal(result.counts.unverified, 0)
+  assert.equal(row.verified, null, "Eligibility never mutates verification records")
+})
+
+test("external consent never permits an explicitly unverified owner or borrows another account's verification", () => {
+  const result = buildCampaignAudience([
+    external({ verified: false }), ready({ userid: "2", consented: false }),
+  ])
+  assert.equal(result.counts.eligible, 0)
+  assert.equal(result.counts.unverified, 1)
+})
+
+test("unknown verification requires both external source and documented, active consent on the same row", () => {
+  for (const change of [
+    { consentSource: "dashboard" }, { consentSource: null },
+    { externalConsentDocumented: false }, { externalConsentDocumented: undefined }, { consented: false },
+  ]) {
+    assert.equal(buildCampaignAudience([external(change)]).counts.eligible, 0)
+  }
+  const result = buildCampaignAudience([
+    ready({ verified: null }), external({ userid: "2", consented: false }),
+  ])
+  assert.equal(result.counts.eligible, 0, "External provenance on another account cannot authorize the consent owner")
+})
+
+test("external consent cannot override duplicate-account opt-outs or any address suppression", () => {
+  for (const change of [{ unsubscribed: true }, { announcements: false }, { suppressed: true }]) {
+    const result = buildCampaignAudience([external(), ready({ userid: "2", consented: false, ...change })])
+    assert.equal(result.counts.eligible, 0)
   }
 })
 

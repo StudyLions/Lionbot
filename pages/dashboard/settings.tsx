@@ -213,6 +213,7 @@ interface EmailPrefsResponse {
   // --- AI-MODIFIED (2026-09-10): Explicit campaign subscription is separate from legacy defaults. ---
   campaignOptIn?: boolean
   campaignConsentAt?: string | null
+  campaignConsentSource?: "dashboard" | "founder_attested_external" | null
   campaignSuppressed?: boolean
   campaignSendingEnabled?: boolean
   // --- END AI-MODIFIED ---
@@ -266,6 +267,7 @@ function EmailNotificationsCard() {
               unsubscribedAll: updated.unsubscribedAll,
               campaignOptIn: updated.campaignOptIn,
               campaignConsentAt: updated.campaignConsentAt,
+              campaignConsentSource: updated.campaignConsentSource,
               campaignSuppressed: updated.campaignSuppressed,
             }
           : prev
@@ -322,7 +324,7 @@ function EmailNotificationsCard() {
                 <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-amber-500">
                   <AlertTriangle size={11} /> Email verification is not yet
                   confirmed here. Check your address in Discord, then sign in
-                  again. Community updates wait until verification is confirmed.
+                  again.
                 </span>
               ) : null}
             </div>
@@ -383,8 +385,10 @@ function EmailNotificationsCard() {
                 <p className="mt-2 text-xs text-muted-foreground">Enable LionBot emails below first, then choose whether to subscribe to community updates.</p>
               ) : data.campaignOptIn && data.campaignSuppressed ? (
                 <p className="mt-2 text-xs text-amber-500">Your choice is saved, but delivery to this address is blocked. Contact support if you would like us to review it.</p>
-              ) : data.campaignOptIn && data.emailVerified !== true ? (
+              ) : data.campaignOptIn && data.emailVerified !== true && !(data.emailVerified === null && data.campaignConsentSource === "founder_attested_external") ? (
                 <p className="mt-2 text-xs text-amber-500">Your choice is saved. We will wait for email verification before sending community updates.</p>
+              ) : data.campaignOptIn && data.campaignConsentSource === "founder_attested_external" ? (
+                <p className="mt-2 text-xs text-muted-foreground">Your existing LionBot mailing-list subscription is active for this address. You can unsubscribe here at any time.</p>
               ) : data.campaignOptIn ? (
                 <p className="mt-2 text-xs text-muted-foreground">You are subscribed with this email address. Signing in with a different address requires a new opt-in.</p>
               ) : null}

@@ -16,6 +16,10 @@ async function loadAudienceRows(email?: string, db: Db = prisma): Promise<Campai
       u.email_unsubscribed_all AS unsubscribed,
       u.email_pref_announcements AS announcements,
       (s.userid = u.userid AND s.revoked_at IS NULL) IS TRUE AS consented,
+      CASE WHEN s.userid = u.userid AND s.revoked_at IS NULL THEN s.source END AS "consentSource",
+      (s.userid = u.userid AND s.revoked_at IS NULL
+        AND s.source = 'founder_attested_external' AND s.imported_at IS NOT NULL
+        AND length(btrim(s.evidence_note)) > 0 AND s.consented_at IS NULL) IS TRUE AS "externalConsentDocumented",
       (x.email IS NOT NULL) AS suppressed
     FROM user_config u
     LEFT JOIN email_campaign_subscriptions s ON s.email = lower(btrim(u.email))
@@ -37,15 +41,16 @@ export async function isCampaignRecipientEligible(email: string, userid?: string
 }
 
 export async function getCampaignConsentStatus(userid: bigint, email: string | null, db: Db = prisma) {
-  if (!email) return { campaignOptIn: false, campaignConsentAt: null, campaignSuppressed: false }
-  const rows = await db.$queryRaw<{ consented_at: Date | null; reason: string | null }[]>(Prisma.sql`
-    SELECT s.consented_at, x.reason FROM (SELECT ${normalizeCampaignEmail(email)}::text AS email) a
+  if (!email) return { campaignOptIn: false, campaignConsentAt: null, campaignConsentSource: null, campaignSuppressed: false }
+  const rows = await db.$queryRaw<{ consented: boolean; consented_at: Date | null; source: string | null; reason: string | null }[]>(Prisma.sql`
+    SELECT (s.email IS NOT NULL) AS consented, s.consented_at, s.source, x.reason FROM (SELECT ${normalizeCampaignEmail(email)}::text AS email) a
     LEFT JOIN email_campaign_subscriptions s ON s.email = a.email AND s.userid = ${userid} AND s.revoked_at IS NULL
     LEFT JOIN email_campaign_suppressions x ON x.email = a.email
   `)
   return {
-    campaignOptIn: Boolean(rows[0]?.consented_at),
+    campaignOptIn: rows[0]?.consented === true,
     campaignConsentAt: rows[0]?.consented_at?.toISOString() ?? null,
+    campaignConsentSource: rows[0]?.source ?? null,
     campaignSuppressed: Boolean(rows[0]?.reason),
   }
 }
@@ -78,10 +83,11 @@ export async function setCampaignConsent(userid: bigint, email: string, enabled:
     WHERE userid = ${userid} AND email <> ${normalized}
   `)
   await db.$executeRaw(Prisma.sql`
-    INSERT INTO email_campaign_subscriptions (email, userid, consented_at, revoked_at)
-    VALUES (${normalized}, ${userid}, NOW(), NULL)
+    INSERT INTO email_campaign_subscriptions (email, userid, consented_at, revoked_at, source, imported_at, evidence_note)
+    VALUES (${normalized}, ${userid}, NOW(), NULL, 'dashboard', NULL, NULL)
     ON CONFLICT (email) DO UPDATE SET userid = EXCLUDED.userid,
-      consented_at = EXCLUDED.consented_at, revoked_at = NULL
+      consented_at = EXCLUDED.consented_at, revoked_at = NULL,
+      source = 'dashboard', imported_at = NULL, evidence_note = NULL
   `)
   // A fresh, explicit opt-in may reverse unsubscribe only. Delivery failures and
   // complaints remain suppressed until reviewed by the operator.

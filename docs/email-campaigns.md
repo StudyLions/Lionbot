@@ -12,7 +12,13 @@ Open `/dashboard/email-campaigns` while signed in with the founder's Discord acc
 4. Select **Review launch**, check the subject and audience count, then type the exact saved subject to launch.
 5. Watch progress, pause/resume, or cancel remaining emails. An email already submitted to the provider may still finish.
 
-The audience consists of unique, verified addresses with an explicit opt-in to community updates, including fundraising, in dashboard settings. Existing default-on announcement preferences are not backfilled as opt-in. Fresh Discord sign-ins now preserve Discord's verification flag; old unknown values remain unknown. Any linked account's opt-out excludes the address. Exclusion counts can overlap.
+The audience consists of unique addresses with explicit community/fundraising consent. Dashboard opt-ins require the current consent owner's verified address. A separately reviewed import can record the founder's attestation that an external list explicitly subscribed; that documented source supports historically unknown Discord verification, but never an explicitly false verification flag. Existing default-on announcement preferences are not backfilled as opt-in. Fresh Discord sign-ins now preserve Discord's verification flag; old unknown values remain unknown. Any linked account's opt-out or address suppression excludes the address. Exclusion counts can overlap.
+
+### Previously collected external signups
+
+On September 10, 2026, Ari Horesh confirmed that the intended recipients had explicitly subscribed through a mailing list or signup form outside the website. Record that as an operator attestation, not as an observed dashboard signup. External rows use `source = 'founder_attested_external'`, an `imported_at` timestamp showing when the evidence was recorded, a nonempty `evidence_note` describing the confirmation, and `consented_at = NULL` because the historical signup dates are unknown. The migration imports nobody and does not change `user_config.email_verified`.
+
+Review a dry-run import first. Match normalized addresses to one specific current account, deduplicate addresses, and preserve all existing consent records (especially revoked rows), global/category opt-outs, and provider suppressions. Never infer external consent from the legacy preference defaults. Unknown verification is accepted only for the same account/address that owns active, documented external consent; normal dashboard consent still requires verification. Changes of address, revocation, and account deletion invalidate the corresponding eligibility. A fresh dashboard opt-in records a new dashboard consent timestamp and follows dashboard verification rules.
 
 ## Deployment prerequisites
 
@@ -20,11 +26,12 @@ Apply these additive migrations **to the intended database**, in order, before d
 
 - `prisma/migrations/manual_2026_09_10_email_campaigns.sql`
 - `prisma/email_campaign_subscriptions.sql`
+- `prisma/migrations/manual_2026_09_10_email_external_consent.sql`
 - `prisma/migrations/manual_2026_09_10_email_campaign_index.sql`
 
 The index migration uses `CREATE INDEX CONCURRENTLY` and must run separately, outside a transaction, as the `user_config` table owner or a database administrator. It indexes only rows with an email. Readiness requires this index to be valid so each send does not scan millions of user records. If a concurrent index build is interrupted, inspect and repair the named invalid index before retrying; `IF NOT EXISTS` alone does not repair an invalid index.
 
-The migrations have no legacy consent backfill and are rerunnable. A live database migration and production deployment require the founder's approval under the project rules. They are separate from approval to launch a particular email campaign.
+The migrations have no automatic consent backfill and are rerunnable. A live database migration and production deployment require the founder's approval under the project rules. They are separate from approval to launch a particular email campaign.
 
 Production configuration:
 
@@ -41,7 +48,7 @@ Production configuration:
 
 The existing `EMAIL_SEND_ENABLED` switch for automated emails remains independent. Do not enable it to enable campaigns. Campaign provider calls are additionally restricted to `VERCEL_ENV=production`; previews cannot send emails.
 
-Register `https://lionbot.org/api/email/webhook` in Resend for `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, and `email.suppressed`. Save the returned signing secret in `RESEND_WEBHOOK_SECRET`. Webhook signatures are verified over the raw request body; duplicate events are ignored. Hard bounces, complaints and provider suppressions block future campaigns to that address. Events from other LionBot emails also contribute address-level suppression.
+Register `https://www.lionbot.org/api/email/webhook` in Resend for `email.sent`, `email.delivered`, `email.delivery_delayed`, `email.bounced`, `email.complained`, `email.failed`, and `email.suppressed`. Save the returned signing secret in `RESEND_WEBHOOK_SECRET`. Webhook signatures are verified over the raw request body; duplicate events are ignored. Hard bounces, complaints and provider suppressions block future campaigns to that address. Events from other LionBot emails also contribute address-level suppression. Signed events from other projects on the shared Resend team are acknowledged without storing their event or recipient data.
 
 Vercel calls `/api/email/cron/campaigns` every minute with the cron secret. Confirm the project's plan supports that schedule. Each pass processes at most 20 recipients at approximately one per second under a shared database lease. Provider rate limits defer work; quota and sending configuration errors pause the affected campaign. Inspect Resend's actual account limits before launching a large audience; this tool does not upgrade plans or buy credits.
 

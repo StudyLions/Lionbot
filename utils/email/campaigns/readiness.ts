@@ -33,6 +33,14 @@ export async function campaignDatabaseReady(): Promise<boolean> {
        AND to_regclass('public.email_campaign_webhook_events') IS NOT NULL
        AND to_regclass('public.email_campaign_worker_lock') IS NOT NULL AS ready`
   if (rows[0]?.ready !== true) return false
+  const provenance = await prisma.$queryRaw<Array<{ ready: boolean }>>`
+    SELECT (SELECT count(*) = 3 FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'email_campaign_subscriptions'
+        AND column_name IN ('source', 'imported_at', 'evidence_note'))
+      AND EXISTS (SELECT 1 FROM pg_constraint
+        WHERE conrelid = to_regclass('public.email_campaign_subscriptions')
+          AND conname = 'email_campaign_subscriptions_provenance_check' AND convalidated) AS ready`
+  if (provenance[0]?.ready !== true) return false
   const indexes = await prisma.$queryRaw<Array<{ ready: boolean }>>`
     SELECT EXISTS (SELECT 1 FROM pg_index WHERE indexrelid = to_regclass('public.user_config_campaign_email_idx')
       AND indisvalid) AS ready`
@@ -43,7 +51,7 @@ export async function getCampaignReadiness() {
   const issues = campaignConfigurationIssues()
   let databaseReady = false
   try { databaseReady = await campaignDatabaseReady() } catch { /* Do not expose database details. */ }
-  if (!databaseReady) issues.push("Apply the campaign, consent and email-index migrations before saving or sending campaigns.")
+  if (!databaseReady) issues.push("Apply the campaign, consent, external-consent and email-index migrations before saving or sending campaigns.")
   return { ready: issues.length === 0, issues, databaseReady, sendEnabled: process.env.EMAIL_CAMPAIGN_SEND_ENABLED === "true" }
 }
 

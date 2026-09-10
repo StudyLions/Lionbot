@@ -83,11 +83,20 @@ async function main() {
       }
       await tx.$executeRaw`INSERT INTO email_campaign_subscriptions (email, userid, revoked_at) VALUES
         (${currentEmail}, ${ids[0]}, NULL), (${historicEmail}, ${ids[0]}, now()), (${otherEmail}, ${ids[1]}, NULL)`
+      await tx.$executeRaw`UPDATE email_campaign_subscriptions SET source = 'founder_attested_external',
+        consented_at = NULL, imported_at = NOW(), evidence_note = 'Synthetic founder attestation; historical signup date unknown'
+        WHERE email = ${historicEmail} AND userid = ${ids[0]}`
       await tx.$executeRaw`INSERT INTO email_campaign_suppressions (email, reason) VALUES
         (${currentEmail}, 'unsubscribed'), (${historicEmail}, 'hard_bounce'), (${otherEmail}, 'complaint')`
 
       const exported = await privacy.getUserCampaignPrivacyData(ids[0], tx)
       assert.deepEqual(exported.subscriptions.map(row => row.email).sort(), [currentEmail, historicEmail].sort())
+      const externalConsent = exported.subscriptions.find(row => row.email === historicEmail)
+      assert.equal(externalConsent.source, "founder_attested_external")
+      assert.equal(externalConsent.consented_at, null, "Export does not invent a historical signup timestamp")
+      assert.ok(externalConsent.imported_at instanceof Date)
+      assert.equal(externalConsent.evidence_note, "Synthetic founder attestation; historical signup date unknown")
+      assert.ok(externalConsent.revoked_at instanceof Date, "Export preserves an external consent's revocation")
       assert.deepEqual(exported.deliveries.map(row => row.email).sort(), [currentEmail, historicEmail].sort())
       assert.equal(exported.deliveries.length, 2, "Other account's shared-address recipient is excluded")
       assert.ok(exported.deliveries.every(row => row.subject === "Own community letter"))

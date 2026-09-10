@@ -40,6 +40,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       headers: { id, timestamp, signature }, webhookSecret })
   } catch { return res.status(400).json({ error: "Invalid webhook signature." }) }
   if (!event || typeof event.type !== "string") return res.status(400).json({ error: "Invalid event." })
+  // This Resend team also hosts other projects. Do not retain their events or
+  // recipient addresses in LionBot's database.
+  if (typeof event.data?.from !== "string" || !/@lionbot\.org\s*>?$/i.test(event.data.from.trim())) {
+    return res.status(200).json({ ok: true, ignored: true })
+  }
   try {
     await prisma.$transaction(async (tx) => {
       const inserted = await tx.$executeRaw`INSERT INTO email_campaign_webhook_events (id, event_type)

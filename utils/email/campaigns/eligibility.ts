@@ -11,6 +11,8 @@ export interface CampaignAudienceRow {
   unsubscribed: boolean
   announcements: boolean
   consented: boolean
+  consentSource?: "dashboard" | "founder_attested_external" | null
+  externalConsentDocumented?: boolean
   suppressed: boolean
 }
 
@@ -65,14 +67,19 @@ export function buildCampaignAudience(rows: CampaignAudienceRow[]): CampaignAudi
     const unsubscribed = linked.some((row) => row.unsubscribed || !row.announcements)
     const consented = linked.filter((row) => row.consented)
     const verified = linked.some((row) => row.verified === true)
-    // Verification from another account must never authorize this consent owner.
-    const recipient = consented.find((row) => row.verified === true)
+    // Imported, documented external signups do not depend on historical Discord
+    // verification bookkeeping. Explicitly false verification still blocks them;
+    // consent and the exception must belong to this exact account/address row.
+    const recipient = consented.find((row) => row.verified === true || (
+      row.verified === null && row.consentSource === "founder_attested_external" &&
+      row.externalConsentDocumented === true
+    ))
     result.counts.total++
     if (invalid) result.counts.invalid++
     if (suppressed) result.counts.suppressed++
     if (unsubscribed) result.counts.unsubscribed++
     if (!consented.length) result.counts.unconsented++
-    if (!verified || (consented.length > 0 && !recipient)) result.counts.unverified++
+    if (!recipient && (!verified || consented.length > 0)) result.counts.unverified++
     if (!invalid && !suppressed && !unsubscribed && recipient) {
       result.recipients.push({ email, userid: recipient.userid })
       result.counts.eligible++
