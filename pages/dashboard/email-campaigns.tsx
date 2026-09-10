@@ -174,7 +174,7 @@ export default function EmailCampaignsPage() {
       {overview && <div className="space-y-6">
         <div className="grid gap-4 sm:grid-cols-3">
           <Metric label="Email addresses on file" value={overview.audience.counts.total} description="Unique addresses, counted once." />
-          <Metric label="Ready for community letters" value={overview.audience.counts.eligible} description="Verified, opted in, and not suppressed." />
+          <Metric label="Ready for community letters" value={overview.audience.counts.eligible} description="Subscribed and not suppressed." />
           <div className="rounded-2xl border border-border bg-card p-5"><p className="text-xs uppercase tracking-wider text-muted-foreground">Sending</p><p className="mt-2 text-xl font-semibold">{overview.readiness.ready ? "Ready for your review" : "Setup pending"}</p><p className="mt-2 text-xs text-muted-foreground">Campaigns start only after you confirm a saved draft.</p></div>
         </div>
         <details className="rounded-xl border border-border bg-card/50 p-4 text-sm">
