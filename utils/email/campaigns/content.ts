@@ -24,23 +24,21 @@ export const CAMPAIGN_SENDER_DEFAULTS = {
   vatNumber: "IT02865360180",
 } as const
 
+// --- AI-MODIFIED (2026-09-10) ---
+// Purpose: Keep the founder's appeal brief and direct readers to the full GoFundMe story.
 export const DEFAULT_FUNDRAISER_CONTENT: CampaignContent = {
-  subject: "A personal note: help keep Leo online",
-  preheader: "I’m building a more affordable home for LionBot, and I need your help.",
+  subject: "LionBot Might Shut Down",
+  preheader: "I can’t keep funding Leo alone. Here’s how you can help.",
   eyebrow: "A note from Ari",
-  headline: "A new home for Leo.",
+  headline: "LionBot Might Shut Down",
   body: [
-    "Hi, I’m Ari, the founder of LionBot. You probably know him as Leo.",
-    "Since 2021, I’ve put over €25,000 and more than 1,000 hours into this project: creating content, answering questions, listening to feedback, and helping Leo grow. Leo is free and open source, and I never built him to make a profit.",
-    "I’m grateful to everyone who has supported us. But we’ve rarely had more than ten paying members at a time, and rising hosting costs have become more than I can manage. I’m also about to graduate and hoping to start a family. I can’t keep covering everything myself.",
-    "I’ve opened a €5,000 fundraiser to build Leo a more affordable home: a server made from used parts, a smaller backup server in another location, and roughly two years of electricity, internet, and maintenance. €5,000 is the total estimate, including the hardware. I’ll build and maintain the servers myself, with room for Leo to grow.",
-    "Without enough support to make this sustainable, I may have to take Leo offline at the end of 2026. It’s difficult to write that after so many years, but I want to be honest about where things stand.",
-    "I’ll share videos of the build, the parts we buy, and our progress. The fundraiser page explains the plan and how I’ll use the funds if we fall short.",
-    "If Leo has helped you or your community, please consider donating or sharing the fundraiser. If you can’t, thank you for being part of Leo’s story. It means a lot.",
+    "I’m Ari, LionBot’s founder. I can no longer afford to keep Leo running on my own.",
+    "Without enough support, I may have to take Leo offline at the end of 2026.",
   ],
-  ctaLabel: "Help keep Leo online",
+  ctaLabel: "Read how you can help",
   ctaUrl: FUNDRAISER_URL,
 }
+// --- END AI-MODIFIED ---
 
 function field(value: unknown, label: string, maximum: number): string {
   if (typeof value !== "string") throw new Error(`${label} is required.`)
