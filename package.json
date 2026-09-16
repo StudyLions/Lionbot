@@ -9,7 +9,9 @@
     "postbuild": "next-sitemap",
     "start": "next start",
     "start:dev": "next build && next",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:preview": "node scripts/vercel-deploy.cjs --target preview",
+    "deploy:prod": "node scripts/vercel-deploy.cjs --target production"
   },
   "license": "ISC",
   "dependencies": {
