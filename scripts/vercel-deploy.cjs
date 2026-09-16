@@ -109,6 +109,17 @@ if (flag('--dry-run')) {
   process.exit(0);
 }
 
+// --- AI-MODIFIED (2026-09-16) ---
+// Purpose: the Vercel CLI rotates its stored token; a stale one makes the API answer
+//          403 invalidToken. Running any CLI command first refreshes the auth file.
+if (!process.env.VERCEL_TOKEN) {
+  try {
+    require('node:child_process').execSync('npx vercel whoami', { stdio: 'ignore', timeout: 60_000, shell: true });
+  } catch {
+    // whoami failing is not fatal here; the API call below will report a bad token clearly.
+  }
+}
+// --- END AI-MODIFIED ---
 const headers = { Authorization: `Bearer ${readToken()}`, 'Content-Type': 'application/json' };
 const api = (p, init) => fetch(`https://api.vercel.com${p}${p.includes('?') ? '&' : '?'}slug=${TEAM_SLUG}`, { headers, ...init });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
