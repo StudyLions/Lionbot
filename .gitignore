@@ -111,7 +111,12 @@ dist
 .DS_Store
 .idea
 /.server_hetzner/
-package-lock.json
+# --- AI-MODIFIED (2026-09-16) ---
+# Purpose: package-lock.json is now committed so Vercel builds the same dependency
+#          tree every time (unpinned installs drifted to packages Next 12's Terser
+#          cannot parse, and the SWC workaround broke framer-motion animations).
+# package-lock.json
+# --- END AI-MODIFIED ---
 /generated/prisma
 .env*.local
 

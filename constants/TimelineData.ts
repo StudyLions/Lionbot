@@ -23,6 +23,17 @@ export interface TimelineEntry {
 }
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
+  // --- AI-MODIFIED (2026-09-16) ---
+  // Purpose: Announce the fix for the blank dashboard / missing images on the website.
+  {
+    date: "2026-09-16",
+    title: "Fixed blank dashboard pages and missing images on the website",
+    description:
+      "Since September 10 many website sections, including the dashboard sign-in page and pet images, stayed invisible because their fade-in animation never finished. The page builder was fixed and everything shows again.",
+    category: "bugfix",
+    area: "website",
+  },
+  // --- END AI-MODIFIED ---
   // --- AI-MODIFIED (2026-09-10) ---
   // Purpose: Explain the new optional community email subscription.
   {

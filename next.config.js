@@ -19,11 +19,25 @@ const baseSecurityHeaders = [
 ];
 
 module.exports = {
-  // --- AI-MODIFIED (2026-09-10) ---
-  // Purpose: Minify current Radix dependencies with SWC; Next 12's bundled
-  // Terser cannot parse the static class blocks in react-collection 1.1.15.
-  swcMinify: true,
-  // --- END AI-MODIFIED ---
+  // --- AI-REPLACED (2026-09-16) ---
+  // Reason: Next 12.3.7's SWC minifier miscompiles `x ?? (x = y)` into `x, x = y`
+  //         (the nullish guard is dropped). framer-motion / motion-dom rely on that
+  //         pattern (keyframe wildcard fill, default duration/ease, enteringChildren),
+  //         so every entrance animation froze at opacity 0: pages looked blank and
+  //         images/media appeared to be missing across the live site.
+  // What the new code does better: back to Terser, which compiles this codebase
+  //         correctly. The Terser parse failure that motivated SWC (a static class
+  //         block in @radix-ui/react-collection 1.1.15, pulled in by an unpinned
+  //         install) is prevented by committing package-lock.json, which pins
+  //         react-collection 1.1.7 and the rest of the dependency tree.
+  // --- Original code (commented out for rollback) ---
+  // // --- AI-MODIFIED (2026-09-10) ---
+  // // Purpose: Minify current Radix dependencies with SWC; Next 12's bundled
+  // // Terser cannot parse the static class blocks in react-collection 1.1.15.
+  // swcMinify: true,
+  // // --- END AI-MODIFIED ---
+  // --- End original code ---
+  // --- END AI-REPLACED ---
   reactStrictMode: true,
   i18n,
   async headers() {
