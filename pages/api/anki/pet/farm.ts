@@ -25,6 +25,7 @@ import {
   waterAll,
   plantAll,
   harvestAll,
+  removeByRarity,
 } from "@/lib/pet/farmService"
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -52,10 +53,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       res.setHeader("Retry-After", String(rl.retryAfter))
       return res.status(429).json({ error: "rate_limited", message: "Too many requests — slow down." })
     }
-    const { action, plotId, seedId } = (req.body || {}) as {
+    const { action, plotId, seedId, rarity } = (req.body || {}) as {
       action?: string
       plotId?: number
       seedId?: number
+      rarity?: string
     }
     try {
       let out
@@ -68,6 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         case "waterAll": out = await waterAll(ctx.userId); break
         case "plantAll": out = await plantAll(ctx.userId, seedId as number); break
         case "harvestAll": out = await harvestAll(ctx.userId); break
+        case "removeByRarity": out = await removeByRarity(ctx.userId, rarity as string); break
         default:
           return res.status(400).json({ error: "bad_action", message: "Unknown farm action" })
       }

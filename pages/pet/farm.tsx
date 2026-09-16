@@ -27,6 +27,7 @@ const PlotDetail = dynamic(() => import("@/components/pet/farm/PlotDetail"), { s
 const SeedSelector = dynamic(() => import("@/components/pet/farm/SeedSelector"), { ssr: false })
 const HarvestModal = dynamic(() => import("@/components/pet/farm/HarvestModal"), { ssr: false })
 const FarmHistory = dynamic(() => import("@/components/pet/farm/FarmHistory"), { ssr: false })
+const RemoveByRarityPanel = dynamic(() => import("@/components/pet/farm/RemoveByRarityPanel"), { ssr: false })
 // --- AI-MODIFIED (2026-03-17) ---
 // Purpose: Use shared GameboyFrame from components/pet/ (supports skin + width props)
 const GameboyFrame = dynamic(() => import("@/components/pet/GameboyFrame"), { ssr: false })
@@ -85,6 +86,10 @@ export default function FarmPage() {
   //          mode (no plot id, costs multiplied by empty-plot count).
   const [showBulkPlanter, setShowBulkPlanter] = useState(false)
   // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-06-15) ---
+  // Purpose: Bulk "remove by rarity" panel toggle.
+  const [showRemoveByRarity, setShowRemoveByRarity] = useState(false)
+  // --- END AI-MODIFIED ---
   const [justWatered, setJustWatered] = useState(false)
   const [harvestResult, setHarvestResult] = useState<HarvestResult | null>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -137,6 +142,7 @@ export default function FarmPage() {
       return newVal
     })
     setShowSeedSelector(false)
+    setShowRemoveByRarity(false)
   }, [])
   // --- END AI-MODIFIED ---
 
@@ -278,6 +284,30 @@ export default function FarmPage() {
       )
 
       setShowBulkPlanter(false)
+      mutate()
+      invalidate("/api/pet/overview")
+    } catch { showMessage("Network error", "error") }
+  }, [mutate, showMessage])
+  // --- END AI-MODIFIED ---
+
+  // --- AI-MODIFIED (2026-06-15) ---
+  // Purpose: Bulk-remove every live plant of a rarity in one atomic call
+  //          (server-side removeByRarity). Closes the panel on success.
+  const handleRemoveByRarity = useCallback(async (rarity: string) => {
+    try {
+      const res = await fetch("/api/pet/farm", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "removeByRarity", rarity }),
+      })
+      const body = await res.json()
+      if (!res.ok) { showMessage(body.error || "Remove failed", "error"); return }
+      if (body.count === 0) {
+        showMessage(`No ${rarity} plants to remove`, "error")
+      } else {
+        showMessage(`Removed ${body.count} ${rarity} plant${body.count > 1 ? "s" : ""}. Refunded ${body.totalRefund}G`, "success")
+      }
+      setShowRemoveByRarity(false)
+      setSelectedPlot(null)
       mutate()
       invalidate("/api/pet/overview")
     } catch { showMessage("Network error", "error") }
@@ -452,6 +482,26 @@ export default function FarmPage() {
                           color="#e04040"
                         />
                       )}
+                      {/* --- AI-MODIFIED (2026-06-15) --- */}
+                      {/* Purpose: "Remove by Rarity" -- opens a panel to bulk-uproot
+                          every live plant of a chosen rarity (50% refund) via the
+                          server-side removeByRarity action. Only shown when live
+                          plants exist. */}
+                      {hasPlanted && <div className="w-px h-10 bg-[#1a2a3c]" />}
+                      {hasPlanted && (
+                        <ToolbarButton
+                          iconUrl={getUiIconUrl("liongotchi_greenpot")}
+                          label="Remove by Rarity"
+                          onClick={() => {
+                            setSelectedPlot(null)
+                            setShowSeedSelector(false)
+                            setShowBulkPlanter(false)
+                            setShowRemoveByRarity(true)
+                          }}
+                          color="#e04040"
+                        />
+                      )}
+                      {/* --- END AI-MODIFIED --- */}
                       {(hasPlanted || hasHarvestable || hasDead || hasEmpty) && <div className="w-px h-10 bg-[#1a2a3c]" />}
                       <ToolbarButton
                         iconUrl={getUiIconUrl(isFullscreen ? "liongotchi_heart" : "liongotchi_greenpot")}
@@ -468,7 +518,17 @@ export default function FarmPage() {
                   {/* --- AI-MODIFIED (2026-03-22) --- */}
                   {/* Purpose: Wrap PlotDetail/SeedSelector in a div with ref for auto-scroll */}
                   <div ref={plotDetailRef}>
-                  {selectedPlotData && !showSeedSelector && !showBulkPlanter && (
+                  {/* --- AI-MODIFIED (2026-06-15) --- */}
+                  {/* Purpose: Bulk remove-by-rarity panel (takes over the detail slot). */}
+                  {showRemoveByRarity && (
+                    <RemoveByRarityPanel
+                      plots={data.plots}
+                      onRemove={handleRemoveByRarity}
+                      onCancel={() => setShowRemoveByRarity(false)}
+                    />
+                  )}
+                  {/* --- END AI-MODIFIED --- */}
+                  {selectedPlotData && !showSeedSelector && !showBulkPlanter && !showRemoveByRarity && (
                     <PlotDetail
                       plot={selectedPlotData}
                       onAction={handleAction}
