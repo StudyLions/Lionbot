@@ -87,6 +87,10 @@ export default function FarmPage() {
   // --- END AI-MODIFIED ---
   const [justWatered, setJustWatered] = useState(false)
   const [harvestResult, setHarvestResult] = useState<HarvestResult | null>(null)
+  // --- AI-MODIFIED (2026-09-16) ---
+  // Purpose: block a second Harvest All while one is in flight (ticket #0155).
+  const [harvesting, setHarvesting] = useState(false)
+  // --- END AI-MODIFIED ---
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null)
   // --- AI-MODIFIED (2026-03-22) ---
@@ -225,20 +229,49 @@ export default function FarmPage() {
     } catch { showMessage("Network error", "error") }
   }, [mutate, showMessage])
 
+  // --- AI-REPLACED (2026-09-16) ---
+  // Reason: no in-flight guard (a second click started a second harvest) and no refresh on
+  //   error (the page kept showing plants the server had already processed).
+  // What the new code does better: ignores clicks while a harvest is pending and always
+  //   re-fetches the farm afterwards, including on errors.
+  // --- Original code (commented out for rollback) ---
+  // const handleHarvestAll = useCallback(async () => {
+  //   try {
+  //     const res = await fetch("/api/pet/farm", {
+  //       method: "POST", headers: { "Content-Type": "application/json" },
+  //       body: JSON.stringify({ action: "harvestAll" }),
+  //     })
+  //     const body = await res.json()
+  //     if (!res.ok) { showMessage(body.error || "Failed", "error"); return }
+  //     setHarvestResult(body)
+  //     setSelectedPlot(null)
+  //     mutate()
+  //     invalidate("/api/pet/overview")
+  //   } catch { showMessage("Network error", "error") }
+  // }, [mutate, showMessage])
+  // --- End original code ---
   const handleHarvestAll = useCallback(async () => {
+    if (harvesting) return
+    setHarvesting(true)
     try {
       const res = await fetch("/api/pet/farm", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "harvestAll" }),
       })
-      const body = await res.json()
-      if (!res.ok) { showMessage(body.error || "Failed", "error"); return }
+      const body = await res.json().catch(() => ({}))
+      if (!res.ok) { showMessage(body.error || "Failed", "error"); mutate(); return }
       setHarvestResult(body)
       setSelectedPlot(null)
       mutate()
       invalidate("/api/pet/overview")
-    } catch { showMessage("Network error", "error") }
-  }, [mutate, showMessage])
+    } catch {
+      showMessage("Network error", "error")
+      mutate()
+    } finally {
+      setHarvesting(false)
+    }
+  }, [harvesting, mutate, showMessage])
+  // --- END AI-REPLACED ---
 
   const handleClearDead = useCallback(async () => {
     if (!data) return
@@ -438,9 +471,10 @@ export default function FarmPage() {
                       {hasHarvestable && (
                         <ToolbarButton
                           iconUrl={getUiIconUrl("trophy")}
-                          label="Harvest All"
+                          label={harvesting ? "Harvesting..." : "Harvest All"}
                           onClick={handleHarvestAll}
                           color="#f0c040"
+                          disabled={harvesting}
                         />
                       )}
                       {(hasPlanted || hasHarvestable) && hasDead && <div className="w-px h-10 bg-[#1a2a3c]" />}
@@ -533,13 +567,15 @@ export default function FarmPage() {
   )
 }
 
-function ToolbarButton({ iconUrl, label, onClick, color }: {
-  iconUrl: string; label: string; onClick: () => void; color: string
+// --- AI-MODIFIED (2026-09-16): optional disabled state for in-flight actions ---
+function ToolbarButton({ iconUrl, label, onClick, color, disabled = false }: {
+  iconUrl: string; label: string; onClick: () => void; color: string; disabled?: boolean
 }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 px-5 py-2.5 transition-all hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.06)]"
+      disabled={disabled}
+      className="flex items-center gap-2 px-5 py-2.5 transition-all hover:bg-[rgba(255,255,255,0.03)] active:bg-[rgba(255,255,255,0.06)] disabled:opacity-60 disabled:cursor-wait"
     >
       <img
         src={iconUrl} alt="" width={18} height={18}

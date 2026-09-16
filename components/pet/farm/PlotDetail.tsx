@@ -141,9 +141,10 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
               <>
                 {/* Growth bar */}
                 <div className="border-2 border-[#1a2a3c] p-1.5 bg-[#080c18]">
+                  {/* --- AI-MODIFIED (2026-09-16): bar and count fill at the harvest threshold (stage 5) --- */}
                   <PixelBar
                     value={plot.growthPoints}
-                    max={plot.growthPointsNeeded}
+                    max={plot.growthPointsToHarvest || plot.growthPointsNeeded}
                     label={`Stg ${plot.stage}`}
                     color={plot.readyToHarvest ? "gold" : "green"}
                     segments={12}
@@ -152,7 +153,9 @@ export default function PlotDetail({ plot, onAction, onPlantClick, onRemove }: P
 
                 {/* 2-column stats */}
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                  <StatRow label="Growth" value={`${Math.round(plot.growthPoints)}/${plot.growthPointsNeeded}`} />
+                  {/* --- AI-MODIFIED (2026-09-16): show points against the harvest threshold --- */}
+                  <StatRow label="Growth" value={`${Math.round(Math.min(plot.growthPoints, plot.growthPointsToHarvest || plot.growthPointsNeeded))}/${plot.growthPointsToHarvest || plot.growthPointsNeeded}`} />
+                  {/* --- END AI-MODIFIED --- */}
                   {plot.goldInvested > 0 && (
                     <StatRow label="Invested" value={<GoldDisplay amount={plot.goldInvested} size="sm" />} />
                   )}

@@ -47,17 +47,44 @@ export function isDead(lastWatered: Date | null, plantedAt: Date | null, tier = 
   return (Date.now() - ref.getTime()) / 1000 > deathHours * 3600
 }
 
-export function computeProgress(growthPoints: number, growthPointsNeeded: number) {
-  if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false }
-  const totalPerStage = growthPointsNeeded / 5
-  const stage = Math.min(5, 1 + Math.floor(growthPoints / totalPerStage))
-  const progress = Math.min(100, Math.round((growthPoints / growthPointsNeeded) * 100))
-  return { stage, progress, readyToHarvest: stage >= 5 }
+// --- AI-REPLACED (2026-09-16) ---
+// Reason: stage 5 (= harvestable, and the point where the bot stops adding growth) starts
+//   at 4/5 of growthPointsNeeded, but the percentage was computed against the full number,
+//   so ripe plants showed "Harvest! 87%" and never reached 100% (ticket #0155; 1,629 ripe
+//   plots showed 80-99% on 2026-09-16).
+// What the new code does better: the percentage is relative to the real harvest threshold
+//   (no balance change) and the threshold is exposed for the UI.
+// --- Original code (commented out for rollback) ---
+// export function computeProgress(growthPoints: number, growthPointsNeeded: number) {
+//   if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false }
+//   const totalPerStage = growthPointsNeeded / 5
+//   const stage = Math.min(5, 1 + Math.floor(growthPoints / totalPerStage))
+//   const progress = Math.min(100, Math.round((growthPoints / growthPointsNeeded) * 100))
+//   return { stage, progress, readyToHarvest: stage >= 5 }
+// }
+// --- End original code ---
+export function harvestThresholdFor(growthPointsNeeded: number): number {
+  // Stage 5 begins once growthPoints >= 4 * (growthPointsNeeded / 5).
+  return growthPointsNeeded > 0 ? (growthPointsNeeded / 5) * 4 : 0
 }
 
+export function computeProgress(growthPoints: number, growthPointsNeeded: number) {
+  if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false, harvestThreshold: 0 }
+  const totalPerStage = growthPointsNeeded / 5
+  const stage = Math.min(5, 1 + Math.floor(growthPoints / totalPerStage))
+  const harvestThreshold = harvestThresholdFor(growthPointsNeeded)
+  const progress = Math.min(100, Math.round((growthPoints / harvestThreshold) * 100))
+  return { stage, progress, readyToHarvest: stage >= 5, harvestThreshold }
+}
+// --- END AI-REPLACED ---
+
 function estimateTimeRemaining(growthPoints: number, growthPointsNeeded: number): number | null {
-  if (growthPoints >= growthPointsNeeded) return 0
-  const remaining = growthPointsNeeded - growthPoints
+  // --- AI-MODIFIED (2026-09-16) ---
+  // Purpose: a plant is harvestable at the stage-5 threshold, not at 100% of growthPointsNeeded.
+  const target = harvestThresholdFor(growthPointsNeeded)
+  if (growthPoints >= target) return 0
+  const remaining = target - growthPoints
+  // --- END AI-MODIFIED ---
   const pointsPerMinute = GROWTH_PER_TEXT_MESSAGE * 2
   if (pointsPerMinute <= 0) return null
   return Math.ceil(remaining / pointsPerMinute) * 60
@@ -89,7 +116,7 @@ export function mapPlot(plot: any, tier = "NONE") {
     return {
       plotId: plot.plot_id, empty: true, dead: plot.dead, seed: null,
       stage: 0, progress: 0, readyToHarvest: false, needsWater: false, isWatered: false,
-      rarity: "COMMON", growthPoints: 0, growthPointsNeeded: 0, goldInvested: 0,
+      rarity: "COMMON", growthPoints: 0, growthPointsNeeded: 0, growthPointsToHarvest: 0, goldInvested: 0,
       assetPrefix: null, plantType: null, typeId: null,
       nextWaterAt: null, estimatedSecondsRemaining: null, plantedAt: null, lastWatered: null,
     }
@@ -115,6 +142,10 @@ export function mapPlot(plot: any, tier = "NONE") {
     rarity: plot.rarity || "COMMON",
     growthPoints: plot.growth_points,
     growthPointsNeeded: seed.growth_points_needed,
+    // --- AI-MODIFIED (2026-09-16) ---
+    // Purpose: the point count at which the plant is harvestable (stage 5), for the growth bar.
+    growthPointsToHarvest: Math.round(growth.harvestThreshold),
+    // --- END AI-MODIFIED ---
     goldInvested: plot.gold_invested,
     assetPrefix: seed.asset_prefix,
     plantType,
@@ -369,57 +400,145 @@ export async function plantAll(userId: bigint, seedId: number) {
   return { success: true, action: "plantedAll", count: emptyPlots.length, totalCost, seedName: seed.name, rarityCounts }
 }
 
+// --- AI-REPLACED (2026-09-16) ---
+// Reason: plots were cleared one by one (each update autocommitted) and the gold was credited
+//   only after the loop, with no double-submit protection. Any failure mid-loop destroyed the
+//   already-cleared plants without paying for them, and a second click harvested only the
+//   survivors (ticket #0155: 29 plants / ~12,000 gold lost in August 2026).
+// What the new code does better: one transaction, serialised per user with an advisory lock;
+//   each plot is cleared with a conditional update (it must still hold the same crop) and the
+//   whole harvest aborts if anything changed; gold + ledger are written in the same
+//   transaction; item drops are rolled only after the commit and can never undo the harvest.
+// --- Original code (commented out for rollback) ---
+// export async function harvestAll(userId: bigint) {
+//   const allPlots = await prisma.lg_user_farm.findMany({
+//     where: { userid: userId, dead: false },
+//     include: { lg_farm_seeds: true },
+//   })
+//   const harvestable = allPlots.filter((p) => {
+//     if (!p.seed_id || !p.lg_farm_seeds) return false
+//     return computeProgress(p.growth_points, p.lg_farm_seeds.growth_points_needed).readyToHarvest
+//   })
+//   if (harvestable.length === 0) throw new PetServiceError(400, "nothing_ready", "Nothing ready to harvest")
+////   let totalGold = 0
+//   let totalInvested = 0
+//   let totalVoiceMin = 0
+//   let totalMessages = 0
+//   const details: Array<{ name: string; rarity: string; gold: number; multiplier: number }> = []
+//   const allDrops: Array<{ itemId: number; name: string; rarity: string }> = []
+//   for (const plot of harvestable) {
+//     const seed = plot.lg_farm_seeds!
+//     const rarity = plot.rarity || "COMMON"
+//     const multiplier = RARITY_GOLD_MULTIPLIER[rarity] || 1.0
+//     const gold = Math.round(seed.harvest_gold * multiplier)
+//     totalGold += gold
+//     totalInvested += plot.gold_invested || 0
+//     totalVoiceMin += plot.voice_minutes_earned || 0
+//     totalMessages += plot.messages_earned || 0
+//     details.push({ name: seed.name, rarity, gold, multiplier })
+//     await prisma.lg_user_farm.update({
+//       where: { userid_plot_id: { userid: userId, plot_id: plot.plot_id } },
+//       data: { ...CLEARED },
+//     })
+//     const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
+//     const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
+//     if (drops) allDrops.push(...drops)
+//   }
+//   if (totalGold > 0) {
+//     await prisma.user_config.update({
+//       where: { userid: userId },
+//       data: { gold: { increment: totalGold } },
+//     })
+//     await prisma.lg_gold_transactions.create({
+//       data: {
+//         transaction_type: "FARM_HARVEST", actorid: userId, to_account: userId,
+//         amount: totalGold, description: `Bulk harvest ${harvestable.length} plants`,
+//       },
+//     })
+//   }
+//   return {
+//     success: true, action: "harvestedAll", count: harvestable.length,
+//     totalGold, totalInvested, netProfit: totalGold - totalInvested,
+//     totalVoiceMinutes: Math.round(totalVoiceMin), totalMessages,
+//     details, materialDrops: allDrops,
+//   }
+// }
+// --- End original code ---
 export async function harvestAll(userId: bigint) {
-  const allPlots = await prisma.lg_user_farm.findMany({
-    where: { userid: userId, dead: false },
-    include: { lg_farm_seeds: true },
-  })
-  const harvestable = allPlots.filter((p) => {
-    if (!p.seed_id || !p.lg_farm_seeds) return false
-    return computeProgress(p.growth_points, p.lg_farm_seeds.growth_points_needed).readyToHarvest
-  })
-  if (harvestable.length === 0) throw new PetServiceError(400, "nothing_ready", "Nothing ready to harvest")
+  const committed = await prisma.$transaction(async (tx) => {
+    // One harvest per user at a time: a double click or a second tab waits instead of racing.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`farm:harvest:${userId}`}))`
+    const allPlots = await tx.lg_user_farm.findMany({
+      where: { userid: userId, dead: false },
+      include: { lg_farm_seeds: true },
+    })
+    const harvestable = allPlots.filter((p) => {
+      if (!p.seed_id || !p.lg_farm_seeds) return false
+      return computeProgress(p.growth_points, p.lg_farm_seeds.growth_points_needed).readyToHarvest
+    })
+    if (harvestable.length === 0) throw new PetServiceError(400, "nothing_ready", "Nothing ready to harvest")
 
-  let totalGold = 0
-  let totalInvested = 0
-  let totalVoiceMin = 0
-  let totalMessages = 0
-  const details: Array<{ name: string; rarity: string; gold: number; multiplier: number }> = []
+    let totalGold = 0
+    let totalInvested = 0
+    let totalVoiceMin = 0
+    let totalMessages = 0
+    const details: Array<{ name: string; rarity: string; gold: number; multiplier: number }> = []
+    const dropRolls: number[] = []
+    for (const plot of harvestable) {
+      const seed = plot.lg_farm_seeds!
+      const rarity = plot.rarity || "COMMON"
+      const multiplier = RARITY_GOLD_MULTIPLIER[rarity] || 1.0
+      const gold = Math.round(seed.harvest_gold * multiplier)
+      totalGold += gold
+      totalInvested += plot.gold_invested || 0
+      totalVoiceMin += plot.voice_minutes_earned || 0
+      totalMessages += plot.messages_earned || 0
+      details.push({ name: seed.name, rarity, gold, multiplier })
+      dropRolls.push(RARITY_DROP_MULTIPLIER[rarity] || 1.0)
+    }
+    for (const plot of harvestable) {
+      // Conditional clear: the plot must still hold exactly the crop we priced. If it doesn't
+      // (e.g. harvested from Discord a moment ago), abort: nothing is paid and nothing is lost.
+      const r = await tx.lg_user_farm.updateMany({
+        where: { userid: userId, plot_id: plot.plot_id, seed_id: plot.seed_id, planted_at: plot.planted_at, dead: false },
+        data: { ...CLEARED },
+      })
+      if (r.count !== 1) {
+        throw new PetServiceError(409, "farm_changed", "Your farm changed while harvesting. Please try again.")
+      }
+    }
+    if (totalGold > 0) {
+      await tx.user_config.update({
+        where: { userid: userId },
+        data: { gold: { increment: totalGold } },
+      })
+      await tx.lg_gold_transactions.create({
+        data: {
+          transaction_type: "FARM_HARVEST", actorid: userId, to_account: userId,
+          amount: totalGold, description: `Bulk harvest ${harvestable.length} plants`,
+        },
+      })
+    }
+    return { count: harvestable.length, totalGold, totalInvested, totalVoiceMin, totalMessages, details, dropRolls }
+  }, { timeout: 20000, maxWait: 5000 })
+
+  // Item drops are a bonus on top of an already-committed harvest: a failure here must never
+  // affect the plots or the gold, so each roll is isolated.
   const allDrops: Array<{ itemId: number; name: string; rarity: string }> = []
-  for (const plot of harvestable) {
-    const seed = plot.lg_farm_seeds!
-    const rarity = plot.rarity || "COMMON"
-    const multiplier = RARITY_GOLD_MULTIPLIER[rarity] || 1.0
-    const gold = Math.round(seed.harvest_gold * multiplier)
-    totalGold += gold
-    totalInvested += plot.gold_invested || 0
-    totalVoiceMin += plot.voice_minutes_earned || 0
-    totalMessages += plot.messages_earned || 0
-    details.push({ name: seed.name, rarity, gold, multiplier })
-    await prisma.lg_user_farm.update({
-      where: { userid_plot_id: { userid: userId, plot_id: plot.plot_id } },
-      data: { ...CLEARED },
-    })
-    const rarityMult = RARITY_DROP_MULTIPLIER[rarity] || 1.0
-    const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
-    if (drops) allDrops.push(...drops)
+  for (const rarityMult of committed.dropRolls) {
+    try {
+      const drops = await tryItemDrop(userId, ITEM_DROP_CHANCE_HARVEST, rarityMult)
+      if (drops) allDrops.push(...drops)
+    } catch (err) {
+      console.error("harvestAll: item drop failed after commit (harvest itself is safe)", err)
+    }
   }
-  if (totalGold > 0) {
-    await prisma.user_config.update({
-      where: { userid: userId },
-      data: { gold: { increment: totalGold } },
-    })
-    await prisma.lg_gold_transactions.create({
-      data: {
-        transaction_type: "FARM_HARVEST", actorid: userId, to_account: userId,
-        amount: totalGold, description: `Bulk harvest ${harvestable.length} plants`,
-      },
-    })
-  }
+  const { count, totalGold, totalInvested, totalVoiceMin, totalMessages, details } = committed
   return {
-    success: true, action: "harvestedAll", count: harvestable.length,
+    success: true, action: "harvestedAll", count,
     totalGold, totalInvested, netProfit: totalGold - totalInvested,
     totalVoiceMinutes: Math.round(totalVoiceMin), totalMessages,
     details, materialDrops: allDrops,
   }
 }
+// --- END AI-REPLACED ---

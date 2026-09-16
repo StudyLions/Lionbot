@@ -20,7 +20,12 @@ function computeProgress(growthPoints: number, growthPointsNeeded: number) {
   if (growthPointsNeeded <= 0) return { stage: 1, progress: 0, readyToHarvest: false }
   const totalPerStage = growthPointsNeeded / 5
   const stage = Math.min(5, 1 + Math.floor(growthPoints / totalPerStage))
-  const progress = Math.min(100, Math.round((growthPoints / growthPointsNeeded) * 100))
+  // --- AI-MODIFIED (2026-09-16) ---
+  // Purpose: percentage relative to the stage-5 (harvestable) threshold, mirroring
+  // lib/pet/farmService.ts, so ripe crops show 100% instead of 80-99% (ticket #0155).
+  // Original: const progress = Math.min(100, Math.round((growthPoints / growthPointsNeeded) * 100))
+  const progress = Math.min(100, Math.round((growthPoints / (totalPerStage * 4)) * 100))
+  // --- END AI-MODIFIED ---
   return { stage, progress, readyToHarvest: stage >= 5 }
 }
 

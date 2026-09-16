@@ -24,6 +24,25 @@ export interface TimelineEntry {
 
 export const TIMELINE_ENTRIES: TimelineEntry[] = [
   // --- AI-MODIFIED (2026-09-16) ---
+  // Purpose: changelog entries for the timer-deletion and Harvest All fixes.
+  {
+    date: "2026-09-16",
+    title: "Pomodoro timers no longer vanish after a Discord reconnect",
+    description:
+      "A bug could make the bot delete a server's pomodoro timers after a Discord connection hiccup. Timers are now kept safe through reconnects and picked up again as soon as the server is back.",
+    category: "bugfix",
+    area: "bot",
+  },
+  {
+    date: "2026-09-16",
+    title: "Harvest All is now all-or-nothing",
+    description:
+      "Bulk harvesting on the website could lose plants if something went wrong halfway. It now either harvests everything and pays you, or changes nothing. Ready plants also show 100% instead of getting stuck at 80-99%.",
+    category: "liongotchi",
+    area: "both",
+  },
+  // --- END AI-MODIFIED ---
+  // --- AI-MODIFIED (2026-09-16) ---
   // Purpose: Announce the fix for the blank dashboard / missing images on the website.
   {
     date: "2026-09-16",

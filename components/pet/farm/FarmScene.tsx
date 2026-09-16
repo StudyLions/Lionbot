@@ -71,6 +71,7 @@ export interface FarmPlot {
   rarity: string
   growthPoints: number
   growthPointsNeeded: number
+  growthPointsToHarvest?: number  // AI-MODIFIED (2026-09-16): stage-5 threshold for the growth bar
   goldInvested: number
   assetPrefix: string | null
   plantType: string | null
